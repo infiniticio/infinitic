@@ -11,7 +11,7 @@ services:
     volumes:
       - "/pulsar/data"
       - "/pulsar/conf"
-      - "./engine/workflow-engine/build/libs:/engine/workflow-engine/build:delegated"
+      - "./engine/build/libs:/zenaton/engine/build:delegated"
     ports:
       - "6650:6650"
       - "8080:8080"
