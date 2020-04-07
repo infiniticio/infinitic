@@ -13,6 +13,3 @@ class Message(val type: MessageType, val msg: ByteArray) {
     }
 }
 
-enum class MessageType(val className: String?) {
-    WORKFLOW_DISPATCHED(WorkflowDispatched::class.qualifiedName)
-}

@@ -2,7 +2,7 @@ package com.zenaton.engine.messages
 
 import com.zenaton.engine.common.serializer.JavaSerDeSerializer
 
-class Message(val type: MessageType, val msg: ByteArray) {
+class Msg(val type: MessageType, val msg: ByteArray) {
 
     constructor(msg: WorkflowDispatched) : this(MessageType.WORKFLOW_DISPATCHED, JavaSerDeSerializer.serialize(msg))
 
@@ -11,8 +11,4 @@ class Message(val type: MessageType, val msg: ByteArray) {
         type.className -> JavaSerDeSerializer.deserialize<T>(msg)
         else -> throw UnsupportedOperationException()
     }
-}
-
-enum class MessageType(val className: String?) {
-    WORKFLOW_DISPATCHED(WorkflowDispatched::class.qualifiedName)
 }
