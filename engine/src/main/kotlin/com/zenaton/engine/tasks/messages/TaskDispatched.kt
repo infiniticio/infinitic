@@ -1,4 +1,4 @@
-package com.zenaton.engine.messages
+package com.zenaton.engine.tasks.messages
 
 import java.io.Serializable
 

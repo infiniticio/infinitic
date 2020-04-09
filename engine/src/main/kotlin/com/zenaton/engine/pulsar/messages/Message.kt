@@ -1,6 +1,8 @@
-package com.zenaton.engine.messages
+package com.zenaton.engine.pulsar.messages
 
 import com.zenaton.engine.common.serializer.JavaSerDeSerializer
+import com.zenaton.engine.tasks.messages.TaskDispatched
+import com.zenaton.engine.workflows.messages.WorkflowDispatched
 
 class Message(val type: MessageType?, val msg: ByteArray) {
     // empty constructor needed during serialization

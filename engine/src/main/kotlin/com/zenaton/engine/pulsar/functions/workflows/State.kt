@@ -1,9 +1,9 @@
-package com.zenaton.engine.workflows.functions
+package com.zenaton.engine.pulsar.functions.workflows
 
-import com.zenaton.engine.messages.Message
-import com.zenaton.engine.messages.MessageType
-import com.zenaton.engine.messages.TaskDispatched
-import com.zenaton.engine.messages.WorkflowDispatched
+import com.zenaton.engine.tasks.messages.TaskDispatched
+import com.zenaton.engine.workflows.messages.WorkflowDispatched
+import com.zenaton.engine.pulsar.messages.Message
+import com.zenaton.engine.pulsar.messages.MessageType
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
