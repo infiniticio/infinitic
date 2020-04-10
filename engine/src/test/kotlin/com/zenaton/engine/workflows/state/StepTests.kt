@@ -1,10 +1,9 @@
 package com.zenaton.engine.workflows.state
 
-import io.kotest.assertions.throwables.shouldNotThrowAny
+// import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import java.util.UUID
+// import io.kotest.matchers.shouldNotBe
 
 fun getStep() = Step.Id(UnitStepId())
 
@@ -71,50 +70,62 @@ class StepTests : StringSpec({
         step5.isCompleted() shouldBe true
     }
 
-    "Step.Or resolution" {
-        val step1 = getStep()
-        val step2 = getStep()
-        var step : Step = Step.Or(listOf(step1, step2))
+    "A OR B resolution" {
+        val stepA = getStep()
+        val stepB = getStep()
+        var step: Step = Step.Or(listOf(stepA, stepB))
 
-        step1.completed = true
+        stepA.completed = true
         step = step.resolve()
-        step shouldBe step1
+        step shouldBe stepA
     }
 
-    "Step.Or Or-nested resolution" {
-        val step1 = getStep()
-        val step2 = getStep()
-        val step3 = Step.Or(listOf(step1, step2))
-        val step4 = getStep()
-        var step : Step = Step.Or(listOf(step4, step3))
+    "A OR (B OR C) resolution" {
+        val stepA = getStep()
+        val stepB = getStep()
+        val stepC = getStep()
+        var step: Step = Step.Or(listOf(stepA, Step.Or(listOf(stepB, stepC))))
 
-        step1.completed = true
+        stepB.completed = true
         step = step.resolve()
-        step shouldBe step1
+        step shouldBe stepB
     }
 
-    "Step.Or And-nested resolution" {
-        val step1 = getStep()
-        val step2 = getStep()
-        val step3 = Step.And(listOf(step1, step2))
-        val step4 = getStep()
-        var step : Step = Step.Or(listOf(step4, step3))
+    "A OR (B AND C) resolution" {
+        val stepA = getStep()
+        val stepB = getStep()
+        val stepC = getStep()
+        var step: Step = Step.Or(listOf(stepA, Step.And(listOf(stepB, stepC))))
 
-        step1.completed = true
-        step2.completed = true
+        stepB.completed = true
         step = step.resolve()
-        step shouldBe step3
+        stepC.completed = true
+        step = step.resolve()
+        step shouldBe Step.And(listOf(stepB, stepC))
     }
 
-    "Step.And nested resolution" {
-        val step1 = getStep()
-        val step2 = getStep()
-        val step3 = Step.Or(listOf(step1, step2))
-        val step4 = getStep()
-        var step : Step = Step.And(listOf(step4, step3))
+    "A AND (B OR C) resolution" {
+        val stepA = getStep()
+        val stepB = getStep()
+        val stepC = getStep()
+        var step: Step = Step.And(listOf(stepA, Step.Or(listOf(stepB, stepC))))
 
-        step1.completed = true
+        stepB.completed = true
         step = step.resolve()
-        (step as Step.And).steps shouldBe listOf(step4, step1)
+        step shouldBe Step.And(listOf(stepA, stepB))
+    }
+
+    "A OR (B AND (C OR D)) resolution" {
+        val stepA = getStep()
+        val stepB = getStep()
+        val stepC = getStep()
+        val stepD = getStep()
+        var step: Step = Step.Or(listOf(stepA, Step.And(listOf(stepB, Step.Or(listOf(stepC, stepD))))))
+
+        stepC.completed = true
+        step = step.resolve()
+        stepB.completed = true
+        step = step.resolve()
+        step shouldBe Step.And(listOf(stepB, stepC))
     }
 })

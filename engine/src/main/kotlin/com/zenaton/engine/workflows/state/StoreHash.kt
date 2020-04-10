@@ -1,4 +1,3 @@
 package com.zenaton.engine.workflows.state
 
-class StoreHash {
-}
+class StoreHash

@@ -2,7 +2,6 @@ package com.zenaton.engine.workflows.state
 
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.util.UUID
 

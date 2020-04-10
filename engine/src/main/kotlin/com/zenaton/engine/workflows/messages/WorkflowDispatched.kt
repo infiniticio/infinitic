@@ -1,6 +1,6 @@
 package com.zenaton.engine.workflows.messages
 
-class WorkflowDispatched (
+class WorkflowDispatched(
     val workflowId: String,
     val workflowName: String
 ) : MessageInterface

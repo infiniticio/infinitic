@@ -1,5 +1,5 @@
 package com.zenaton.engine.workflows.messages
 
-class WorkflowCompleted (
+class WorkflowCompleted(
     val workflowId: String
 ) : MessageInterface

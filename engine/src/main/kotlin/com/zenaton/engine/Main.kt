@@ -1,8 +1,8 @@
 package com.zenaton.engine
 
+import com.zenaton.engine.pulsar.messages.Message
 import com.zenaton.engine.tasks.messages.TaskDispatched
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
-import com.zenaton.engine.pulsar.messages.Message
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.JSONSchema
 
