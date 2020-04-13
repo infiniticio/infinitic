@@ -4,8 +4,9 @@ import com.zenaton.engine.common.attributes.DecisionId
 import com.zenaton.engine.common.attributes.DelayId
 import com.zenaton.engine.common.attributes.TaskId
 import com.zenaton.engine.common.attributes.WorkflowId
+import java.io.Serializable
 
-sealed class Message() {
+sealed class Message() : Serializable {
     abstract val workflowId: WorkflowId
 
     data class WorkflowDispatched(

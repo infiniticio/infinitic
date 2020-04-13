@@ -44,7 +44,6 @@ tasks {
 tasks {
     build {
         dependsOn(shadowJar)
-        finalizedBy(buildFinalizer)
     }
 }
 
@@ -52,28 +51,27 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-val buildFinalizer by tasks.registering {
+tasks.register("uploadToPulsar") {
+    group = "Zenaton"
+    description = "Upload Zenaton functions to Pulsar"
+    dependsOn(":build")
     doLast {
-        updatePulsarFunction("com.zenaton.engine.pulsar.functions.workflows.State", "workflows")
+        uploadFunctionToPulsar("com.zenaton.engine.pulsar.functions.workflows.State", "workflows")
     }
 }
 
-fun updatePulsarFunction(className: String, topic: String) {
+fun uploadFunctionToPulsar(className: String, topic: String) {
     println("Updating $className in $topic")
-    val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "update", "--jar", "/zenaton/engine/build/engine-1.0-SNAPSHOT-all.jar", "--classname", className, "--inputs", topic)
+    val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "update",
+        "--jar", "/zenaton/engine/build/engine-1.0-SNAPSHOT-all.jar",
+        "--classname", className,
+        "--inputs", topic
+    )
     val p = Runtime.getRuntime().exec(cmd)
-    val output = getOutput(p)
-    val error = getError(p)
+    val output = BufferedReader(InputStreamReader(p.inputStream))
+    val error = BufferedReader(InputStreamReader(p.errorStream))
     var line: String? = ""
-    while (output?.readLine().also { line = it } != null) println(line)
-    while (error?.readLine().also { line = it } != null) println(line)
+    while (output.readLine().also { line = it } != null) println(line)
+    while (error.readLine().also { line = it } != null) println(line)
     p.waitFor()
-}
-
-fun getOutput(p: Process): BufferedReader? {
-    return BufferedReader(InputStreamReader(p.inputStream))
-}
-
-fun getError(p: Process): BufferedReader? {
-    return BufferedReader(InputStreamReader(p.errorStream))
 }
