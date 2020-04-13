@@ -34,21 +34,21 @@ sealed class Step {
 
     private fun compose(): Step {
         when (this) {
-            is And -> while (this.steps.any { s -> s is And || (s is Or && s.steps.count() == 1)}) {
-                this.steps = this.steps.fold(mutableListOf<Step>()){l, s ->
-                    when(s) {
-                        is Id -> { l.add(s); l}
-                        is And -> {l.addAll(s.steps); l}
-                        is Or -> { if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s); l}
+            is And -> while (this.steps.any { s -> s is And || (s is Or && s.steps.count() == 1) }) {
+                this.steps = this.steps.fold(mutableListOf<Step>()) { l, s ->
+                    when (s) {
+                        is Id -> { l.add(s); l }
+                        is And -> { l.addAll(s.steps); l }
+                        is Or -> { if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s); l }
                     }
                 }
             }
-            is Or -> while (this.steps.any { s -> s is Or || (s is And && s.steps.count() == 1)}) {
-                this.steps = this.steps.fold(mutableListOf<Step>()){l, s ->
-                    when(s) {
-                        is Id -> { l.add(s); l}
-                        is And -> { if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s); l}
-                        is Or -> {l.addAll(s.steps); l}
+            is Or -> while (this.steps.any { s -> s is Or || (s is And && s.steps.count() == 1) }) {
+                this.steps = this.steps.fold(mutableListOf<Step>()) { l, s ->
+                    when (s) {
+                        is Id -> { l.add(s); l }
+                        is And -> { if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s); l }
+                        is Or -> { l.addAll(s.steps); l }
                     }
                 }
             }

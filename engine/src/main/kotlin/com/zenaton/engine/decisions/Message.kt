@@ -1,6 +1,8 @@
 package com.zenaton.engine.decisions
 
-import com.zenaton.engine.common.attributes.*
+import com.zenaton.engine.common.attributes.DecisionAttemptId
+import com.zenaton.engine.common.attributes.DecisionId
+import com.zenaton.engine.common.attributes.WorkflowId
 import com.zenaton.engine.workflows.state.Action
 import com.zenaton.engine.workflows.state.ActionId
 import com.zenaton.engine.workflows.state.Branch
@@ -40,4 +42,3 @@ sealed class Message() {
         val attemptId: DecisionAttemptId
     ) : Message()
 }
-

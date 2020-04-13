@@ -1,7 +1,7 @@
 package com.zenaton.engine.workflows.state
 
-import com.zenaton.engine.workflows.state.Step.Or as Or
-import com.zenaton.engine.workflows.state.Step.And as And
+import com.zenaton.engine.workflows.state.Step.And
+import com.zenaton.engine.workflows.state.Step.Or
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
@@ -93,7 +93,6 @@ class StepTests : StringSpec({
         step.complete(stepC.id)
         step.isCompleted() shouldBe true
         step shouldBe And(listOf(stepA, stepB, stepC))
-
     }
 
     "A OR B resolution" {

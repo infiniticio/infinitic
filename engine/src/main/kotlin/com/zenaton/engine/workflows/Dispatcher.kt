@@ -1,7 +1,7 @@
 package com.zenaton.engine.workflows
 
-import com.zenaton.engine.tasks.Message.TaskDispatched
 import com.zenaton.engine.decisions.Message.DecisionDispatched
+import com.zenaton.engine.tasks.Message.TaskDispatched
 
 interface Dispatcher {
     fun createState(state: State)

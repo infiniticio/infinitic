@@ -33,4 +33,3 @@ sealed class Message() {
         val delayId: DelayId
     ) : Message()
 }
-

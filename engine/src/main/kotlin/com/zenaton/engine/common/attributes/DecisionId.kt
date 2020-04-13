@@ -1,7 +1,7 @@
 package com.zenaton.engine.common.attributes
 
-import java.util.*
+import java.util.UUID
 
-data class DecisionId (
+data class DecisionId(
     val uuid: String = UUID.randomUUID().toString()
 )

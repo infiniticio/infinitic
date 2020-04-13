@@ -14,6 +14,4 @@ data class State(
     val store: Map<StoreHash, String> = mapOf(),
     val actions: Map<ActionId, Action> = mapOf(),
     val runningBranches: List<Branch> = listOf()
-) {
-
-}
+)

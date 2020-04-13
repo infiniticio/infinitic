@@ -1,10 +1,5 @@
 package com.zenaton.engine.logs
 
-import com.zenaton.engine.common.attributes.DecisionId
-import com.zenaton.engine.common.attributes.DelayId
-import com.zenaton.engine.common.attributes.TaskId
-import com.zenaton.engine.common.attributes.WorkflowId
-
 sealed class Message() {
 
     data class Debug(
@@ -27,4 +22,3 @@ sealed class Message() {
         val message: String
     ) : Message()
 }
-

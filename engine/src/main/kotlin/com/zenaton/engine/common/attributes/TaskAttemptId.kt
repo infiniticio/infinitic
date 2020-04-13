@@ -1,7 +1,7 @@
 package com.zenaton.engine.common.attributes
 
-import java.util.*
+import java.util.UUID
 
-data class TaskAttemptId (
+data class TaskAttemptId(
     val uuid: String = UUID.randomUUID().toString()
 )

@@ -1,6 +1,8 @@
 package com.zenaton.engine.tasks
 
-import com.zenaton.engine.common.attributes.*
+import com.zenaton.engine.common.attributes.TaskAttemptId
+import com.zenaton.engine.common.attributes.TaskId
+import com.zenaton.engine.common.attributes.WorkflowId
 
 sealed class Message() {
     abstract val taskId: TaskId
@@ -35,4 +37,3 @@ sealed class Message() {
         val attemptId: TaskAttemptId
     ) : Message()
 }
-

@@ -1,10 +1,8 @@
 package com.zenaton.engine.workflows
 
-import com.zenaton.engine.common.attributes.WorkflowId
-import com.zenaton.engine.workflows.Message as WorkflowMessage
-import com.zenaton.engine.tasks.Message.TaskDispatched
 import com.zenaton.engine.decisions.Message.DecisionDispatched
-import com.zenaton.engine.workflows.Message.WorkflowDispatched
+import com.zenaton.engine.tasks.Message.TaskDispatched
+import com.zenaton.engine.workflows.Message as WorkflowMessage
 
 sealed class EngineAction {
     data class CreateState(val state: State)
@@ -20,7 +18,7 @@ data class EngineStep(
     val out: List<EngineAction>?
 )
 
-enum class EngineScenario(listOf: List<EngineStep>) {
+/*enum class EngineScenario(listOf: List<EngineStep>) {
     SINGLE_TASK_WORKFLOW(listOf(
         EngineStep(
             stateIn = null,
@@ -30,7 +28,7 @@ enum class EngineScenario(listOf: List<EngineStep>) {
             )
         )
     ))
-}
+}*/
 /*
 EngineTests
 
