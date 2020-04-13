@@ -1,7 +1,7 @@
 package com.zenaton.engine.workflows.state
 
-class UnitStep(
-    val type: UnitStepType,
-    val id: UnitStepId,
+class Action(
+    val type: ActionType,
+    val id: ActionId,
     val output: String?
 )

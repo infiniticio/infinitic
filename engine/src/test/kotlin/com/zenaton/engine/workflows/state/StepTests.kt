@@ -1,116 +1,140 @@
 package com.zenaton.engine.workflows.state
 
-// import io.kotest.assertions.throwables.shouldNotThrowAny
+import com.zenaton.engine.workflows.state.Step.Or as Or
+import com.zenaton.engine.workflows.state.Step.And as And
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-// import io.kotest.matchers.shouldNotBe
 
-fun getStep() = Step.Id(UnitStepId())
+fun getStep() = Step.Id(ActionId())
 
 class StepTests : StringSpec({
-    "Step is not completed by default" {
+    "Step should not be completed by default" {
         val step = getStep()
 
         step.isCompleted() shouldBe false
     }
 
-    "Condition to complete (A AND B AND C)" {
+    "Complete (OR A)" {
         val stepA = getStep()
-        val stepB = getStep()
-        val stepC = getStep()
-        val step = Step.And(listOf(stepA, stepB, stepC))
+        val step = Or(listOf(stepA))
 
         step.isCompleted() shouldBe false
-        stepA.completed = true
-        step.isCompleted() shouldBe false
-        stepB.completed = true
-        step.isCompleted() shouldBe false
-        stepC.completed = true
+        step.complete(stepA.id)
         step.isCompleted() shouldBe true
     }
 
-    "Condition to complete (A OR B OR C)" {
+    "Complete (AND A)" {
         val stepA = getStep()
-        val stepB = getStep()
-        val stepC = getStep()
-        val step = Step.Or(listOf(stepA, stepB, stepC))
+        val step = And(listOf(stepA))
 
         step.isCompleted() shouldBe false
-        stepA.completed = true
-        step.isCompleted() shouldBe true
-        stepB.completed = true
-        step.isCompleted() shouldBe true
-        stepC.completed = true
+        step.complete(stepA.id)
         step.isCompleted() shouldBe true
     }
 
-    "Condition to complete (A OR (B OR C))" {
+    "Complete (A AND B)" {
         val stepA = getStep()
         val stepB = getStep()
-        val stepC = getStep()
-        val step = Step.Or(listOf(stepA, Step.Or(listOf(stepB, stepC))))
+        val step = And(listOf(stepA, stepB))
 
         step.isCompleted() shouldBe false
-        stepB.completed = true
+        step.complete(stepA.id)
+        step.isCompleted() shouldBe false
+        step.complete(stepB.id)
         step.isCompleted() shouldBe true
+        step shouldBe And(listOf(stepA, stepB))
     }
 
-    "Condition to complete (A AND (B OR C))"  {
+    "Complete (A OR B)" {
+        val stepA = getStep()
+        val stepB = getStep()
+        val step = Or(listOf(stepA, stepB))
+
+        step.isCompleted() shouldBe false
+        step.complete(stepA.id)
+        step shouldBe Or(listOf(stepA))
+    }
+
+    "Complete (A OR (B OR C))" {
         val stepA = getStep()
         val stepB = getStep()
         val stepC = getStep()
-        val step = Step.And(listOf(stepA, Step.Or(listOf(stepB, stepC))))
+        val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
         step.isCompleted() shouldBe false
-        stepA.completed = true
+        step.complete(stepB.id)
+        step shouldBe Or(listOf(stepB))
+    }
+
+    "Complete (A AND (B OR C))" {
+        val stepA = getStep()
+        val stepB = getStep()
+        val stepC = getStep()
+        val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
+
         step.isCompleted() shouldBe false
-        stepB.completed = true
+        step.complete(stepA.id)
+        step.isCompleted() shouldBe false
+        step.complete(stepB.id)
+        step shouldBe And(listOf(stepA, stepB))
+    }
+
+    "Complete (A AND (B AND C))" {
+        val stepA = getStep()
+        val stepB = getStep()
+        val stepC = getStep()
+        val step = And(listOf(stepA, And(listOf(stepB, stepC))))
+
+        step.isCompleted() shouldBe false
+        step.complete(stepA.id)
+        step.isCompleted() shouldBe false
+        step.complete(stepB.id)
+        step.isCompleted() shouldBe false
+        step.complete(stepC.id)
         step.isCompleted() shouldBe true
+        step shouldBe And(listOf(stepA, stepB, stepC))
+
     }
 
     "A OR B resolution" {
         val stepA = getStep()
         val stepB = getStep()
-        var step: Step = Step.Or(listOf(stepA, stepB))
+        val step = Or(listOf(stepA, stepB))
 
-        stepA.completed = true
-        step = step.resolve()
-        step shouldBe stepA
+        step.complete(stepA.id)
+        step shouldBe Or(listOf(stepA))
     }
 
     "A OR (B OR C) resolution" {
         val stepA = getStep()
         val stepB = getStep()
         val stepC = getStep()
-        var step: Step = Step.Or(listOf(stepA, Step.Or(listOf(stepB, stepC))))
+        val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        stepB.completed = true
-        step = step.resolve()
-        step shouldBe stepB
+        step.complete(stepB.id)
+        step shouldBe Or(listOf(stepB))
     }
 
     "A OR (B AND C) resolution" {
         val stepA = getStep()
         val stepB = getStep()
         val stepC = getStep()
-        var step: Step = Step.Or(listOf(stepA, Step.And(listOf(stepB, stepC))))
+        val step = Or(listOf(stepA, And(listOf(stepB, stepC))))
 
-        stepB.completed = true
-        step = step.resolve()
-        stepC.completed = true
-        step = step.resolve()
-        step shouldBe Step.And(listOf(stepB, stepC))
+        step.complete(stepB.id)
+        step.complete(stepC.id)
+        step.isCompleted() shouldBe true
+        step shouldBe Or(listOf(And(listOf(stepB, stepC))))
     }
 
     "A AND (B OR C) resolution" {
         val stepA = getStep()
         val stepB = getStep()
         val stepC = getStep()
-        var step: Step = Step.And(listOf(stepA, Step.Or(listOf(stepB, stepC))))
+        val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        stepB.completed = true
-        step = step.resolve()
-        step shouldBe Step.And(listOf(stepA, stepB))
+        step.complete(stepB.id)
+        step shouldBe And(listOf(stepA, stepB))
     }
 
     "A OR (B AND (C OR D)) resolution" {
@@ -118,12 +142,10 @@ class StepTests : StringSpec({
         val stepB = getStep()
         val stepC = getStep()
         val stepD = getStep()
-        var step: Step = Step.Or(listOf(stepA, Step.And(listOf(stepB, Step.Or(listOf(stepC, stepD))))))
+        val step = Or(listOf(stepA, And(listOf(stepB, Or(listOf(stepC, stepD))))))
 
-        stepC.completed = true
-        step = step.resolve()
-        stepB.completed = true
-        step = step.resolve()
-        step shouldBe Step.And(listOf(stepB, stepC))
+        step.complete(stepC.id)
+        step.complete(stepB.id)
+        step shouldBe Or(listOf(And(listOf(stepB, stepC))))
     }
 })

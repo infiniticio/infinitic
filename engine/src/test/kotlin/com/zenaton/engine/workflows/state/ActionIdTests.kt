@@ -5,17 +5,17 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldNotBe
 import java.util.UUID
 
-class UnitStepIdTests : StringSpec({
+class ActionIdTests : StringSpec({
     "UnitStepId must create an uuid with a void constructor" {
-        val id = UnitStepId()
+        val id = ActionId()
         shouldNotThrowAny {
             UUID.fromString(id.uuid)
         }
     }
 
     "UnitStepId must create a different uuid when called twice" {
-        val id1 = UnitStepId()
-        val id2 = UnitStepId()
+        val id1 = ActionId()
+        val id2 = ActionId()
         id1 shouldNotBe id2
     }
 })

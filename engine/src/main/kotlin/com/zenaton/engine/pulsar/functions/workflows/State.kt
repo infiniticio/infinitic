@@ -2,8 +2,8 @@ package com.zenaton.engine.pulsar.functions.workflows
 
 import com.zenaton.engine.pulsar.messages.Message
 import com.zenaton.engine.pulsar.messages.MessageType
-import com.zenaton.engine.tasks.messages.TaskDispatched
-import com.zenaton.engine.workflows.messages.WorkflowDispatched
+import com.zenaton.engine.tasks.Message.TaskDispatched
+import com.zenaton.engine.workflows.Message.WorkflowDispatched
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
@@ -22,25 +22,21 @@ class State : Function<Message, Void> {
         return null
     }
 
-    private fun handle(msg: WorkflowDispatched): Unit? {
+    private fun handle(msg: WorkflowDispatched) {
         val logMessage = String.format(
             "WorkflowDispatched: {workflowId: \"%s\", workflowName: \"%s\"}",
             msg.workflowId,
             msg.workflowName
         )
         context.logger.info(logMessage)
-
-        return null
     }
 
-    private fun handle(msg: TaskDispatched): Unit? {
+    private fun handle(msg: TaskDispatched) {
         val logMessage = String.format(
             "TaskDispatched: {taskId: \"%s\", taskName: \"%s\"}",
             msg.taskId,
             msg.taskName
         )
         context.logger.info(logMessage)
-
-        return null
     }
 }

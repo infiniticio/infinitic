@@ -4,7 +4,8 @@ import java.time.LocalDateTime
 
 class Branch(
     val type: BranchType,
+    val data: String,
     val startedAt: LocalDateTime,
-    val storeHashAtStart: StoreHash,
-    val steps: List<Step>
+    val storeHashAtStart: StoreHash? = null,
+    val steps: List<Step> = listOf()
 )
