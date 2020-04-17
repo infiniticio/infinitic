@@ -20,6 +20,7 @@ dependencies {
     implementation("org.apache.pulsar:pulsar-client:2.5.+")
     implementation("org.apache.pulsar:pulsar-functions-api:2.5.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.10.+")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")
     testImplementation("io.kotest:kotest-core-jvm:4.0.+")
@@ -43,6 +44,7 @@ tasks {
 
 tasks {
     build {
+        dependsOn(":ktlintFormat")
         dependsOn(shadowJar)
     }
 }
@@ -51,22 +53,76 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-tasks.register("uploadToPulsar") {
+tasks.register("setupZenaton") {
+    group = "Zenaton"
+    description = "Setup Zenaton into Pulsar"
+    dependsOn(":build")
+    doLast {
+        createZenatonFunction("com.zenaton.pulsar.workflows.functions.StateFunction", "workflows")
+    }
+}
+
+tasks.register("uploadZenatonFunctions") {
     group = "Zenaton"
     description = "Upload Zenaton functions to Pulsar"
     dependsOn(":build")
     doLast {
-        uploadFunctionToPulsar("com.zenaton.engine.pulsar.functions.workflows.State", "workflows")
+        uploadZenatonFunction("com.zenaton.pulsar.workflows.functions.StateFunction", "workflows")
     }
 }
 
-fun uploadFunctionToPulsar(className: String, topic: String) {
+tasks.register("cleanZenaton") {
+    group = "Zenaton"
+    description = "Clean Zenaton from Pulsar"
+    doLast {
+        deleteZenatonFunction("StateFunction")
+        forceDeleteTopic("workflows")
+    }
+}
+
+fun createZenatonFunction(className: String, topic: String, tenant: String = "public", namespace: String = "default") {
+    println("Creating $className in $topic")
+    val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "create",
+        "--jar", "/zenaton/engine/build/engine-1.0-SNAPSHOT-all.jar",
+        "--classname", className,
+        // "--log-topic", "persistent://$tenant/$namespace/logs",
+        "--inputs", "persistent://$tenant/$namespace/$topic"
+    )
+    exec(cmd)
+}
+
+fun uploadZenatonFunction(className: String, topic: String, tenant: String = "public", namespace: String = "default") {
     println("Updating $className in $topic")
     val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "update",
         "--jar", "/zenaton/engine/build/engine-1.0-SNAPSHOT-all.jar",
         "--classname", className,
-        "--inputs", topic
+        // "--log-topic", "persistent://$tenant/$namespace/logs",
+        "--inputs", "persistent://$tenant/$namespace/$topic"
     )
+    exec(cmd)
+}
+
+fun deleteZenatonFunction(name: String, tenant: String = "public", namespace: String = "default") {
+    println("Deleting $name function from $tenant/$namespace")
+    val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "delete",
+        "--tenant", tenant,
+        "--namespace", namespace,
+        "--name", name
+    )
+    exec(cmd)
+}
+
+fun forceDeleteTopic(topic: String, tenant: String = "public", namespace: String = "default") {
+    println("Deleting $topic topic from $tenant/$namespace")
+    val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "topics", "delete",
+        "persistent://$tenant/$namespace/$topic",
+        "--deleteSchema",
+        "--force"
+    )
+    exec(cmd)
+}
+
+fun exec(cmd: Array<String>) {
     val p = Runtime.getRuntime().exec(cmd)
     val output = BufferedReader(InputStreamReader(p.inputStream))
     val error = BufferedReader(InputStreamReader(p.errorStream))

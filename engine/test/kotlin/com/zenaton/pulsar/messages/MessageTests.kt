@@ -1,5 +1,6 @@
 package com.zenaton.engine.pulsar.messages
 
+import com.zenaton.pulsar.workflows.PulsarMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -9,7 +10,7 @@ class MessageTests : StringSpec({
 
     "Message must allow a void constructor" {
         shouldNotThrowAny {
-            Message(null, ByteArray(0))
+            PulsarMessage()
         }
     }
 

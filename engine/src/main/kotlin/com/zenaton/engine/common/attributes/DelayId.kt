@@ -1,8 +1,15 @@
 package com.zenaton.engine.common.attributes
 
-import java.io.Serializable
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 import java.util.UUID
 
-data class DelayId(
-    val uuid: String = UUID.randomUUID().toString()
-) : Serializable
+data class DelayId(val id: String = UUID.randomUUID().toString()) {
+    companion object {
+        @JvmStatic
+        @JsonCreator
+        fun fromJson(value: String) = DelayId(value)
+    }
+    @JsonValue
+    override fun toString() = id
+}

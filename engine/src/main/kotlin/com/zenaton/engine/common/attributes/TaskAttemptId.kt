@@ -1,8 +1,15 @@
 package com.zenaton.engine.common.attributes
 
-import java.io.Serializable
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 import java.util.UUID
 
-data class TaskAttemptId(
-    val uuid: String = UUID.randomUUID().toString()
-) : Serializable
+data class TaskAttemptId(val id: String = UUID.randomUUID().toString()) {
+    companion object {
+        @JvmStatic
+        @JsonCreator
+        fun fromJson(value: String) = TaskAttemptId(value)
+    }
+    @JsonValue
+    override fun toString() = id
+}
