@@ -83,7 +83,7 @@ tasks.register("cleanZenaton") {
 fun createZenatonFunction(className: String, topic: String, tenant: String = "public", namespace: String = "default") {
     println("Creating $className in $topic")
     val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "create",
-        "--jar", "/zenaton/engine/build/engine-1.0-SNAPSHOT-all.jar",
+        "--jar", "/zenaton/engine/build/libs/engine-1.0-SNAPSHOT-all.jar",
         "--classname", className,
         // "--log-topic", "persistent://$tenant/$namespace/logs",
         "--inputs", "persistent://$tenant/$namespace/$topic"
@@ -94,7 +94,7 @@ fun createZenatonFunction(className: String, topic: String, tenant: String = "pu
 fun uploadZenatonFunction(className: String, topic: String, tenant: String = "public", namespace: String = "default") {
     println("Updating $className in $topic")
     val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "update",
-        "--jar", "/zenaton/engine/build/engine-1.0-SNAPSHOT-all.jar",
+        "--jar", "/zenaton/engine/build/libs/engine-1.0-SNAPSHOT-all.jar",
         "--classname", className,
         // "--log-topic", "persistent://$tenant/$namespace/logs",
         "--inputs", "persistent://$tenant/$namespace/$topic"
