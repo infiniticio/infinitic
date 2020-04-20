@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream
 import java.nio.ByteBuffer
 
 object StateSerDe : StateSerDeInterface {
+    // TODO This class needs to be refactored to handle schema evolution, eg. using AVRO
 
     override fun serialize(state: WorkflowState): ByteBuffer {
         val bos = ByteArrayOutputStream()

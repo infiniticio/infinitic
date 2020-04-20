@@ -1,7 +1,6 @@
 package com.zenaton.pulsar.workflows
 
 import com.zenaton.engine.workflows.WorkflowState
-import com.zenaton.pulsar.workflows.serializers.MessageSerDeInterface
 import com.zenaton.pulsar.workflows.serializers.StateSerDeInterface
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -16,11 +15,10 @@ class StaterTests : StringSpec({
     "Stater.getState with no state should return null" {
         // mocking
         val context = mockk<Context>()
-        val serde = mockk<StateSerDeInterface>()
         // given
         val key = Arb.string(1).toString()
         every { context.getState(key) } returns null
-        val dispatcher = Stater(context, serde)
+        val dispatcher = Stater(context)
         // when
         val state = dispatcher.getState(key)
         // then
@@ -30,16 +28,17 @@ class StaterTests : StringSpec({
     "Stater.getState state should return deserialized state" {
         // mocking
         val context = mockk<Context>()
-        val serde = mockk<StateSerDeInterface>()
+        val serDe = mockk<StateSerDeInterface>()
         val mockByteBuffer = mockk<ByteBuffer>()
         val mockWorkflowState = mockk<WorkflowState>()
         // given
         val key = Arb.string(1).toString()
         every { context.getState(key) } returns mockByteBuffer
-        every { serde.deserialize(mockByteBuffer) } returns mockWorkflowState
-        val dispatcher = Stater(context, serde)
+        every { serDe.deserialize(mockByteBuffer) } returns mockWorkflowState
+        val stater = Stater(context)
+        stater.serDe = serDe
         // when
-        val state = dispatcher.getState(key)
+        val state = stater.getState(key)
         // then
         state shouldBe mockWorkflowState
     }
