@@ -6,8 +6,7 @@ import java.util.UUID
 
 data class DelayId(val id: String = UUID.randomUUID().toString()) {
     companion object {
-        @JvmStatic
-        @JsonCreator
+        @JvmStatic @JsonCreator
         fun fromJson(value: String) = DelayId(value)
     }
     @JsonValue

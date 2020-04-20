@@ -1,12 +1,12 @@
 package com.zenaton.pulsar.workflows.serializers
 
-import com.zenaton.pulsar.utils.Json
-import com.zenaton.pulsar.utils.JsonInterface
 import com.zenaton.engine.workflows.messages.DecisionCompleted
 import com.zenaton.engine.workflows.messages.DelayCompleted
 import com.zenaton.engine.workflows.messages.TaskCompleted
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
 import com.zenaton.engine.workflows.messages.WorkflowMessage
+import com.zenaton.pulsar.utils.Json
+import com.zenaton.pulsar.utils.JsonInterface
 import com.zenaton.pulsar.workflows.PulsarMessage
 
 object MessageConverter : MessageConverterInterface {

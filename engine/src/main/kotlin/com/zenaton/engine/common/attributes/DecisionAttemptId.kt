@@ -6,8 +6,7 @@ import java.util.UUID
 
 data class DecisionAttemptId(val id: String = UUID.randomUUID().toString()) {
     companion object {
-        @JvmStatic
-        @JsonCreator
+        @JvmStatic @JsonCreator
         fun fromJson(value: String) = DecisionAttemptId(value)
     }
     @JsonValue

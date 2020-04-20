@@ -20,7 +20,7 @@ object StateSerDe : StateSerDeInterface {
         return ByteBuffer.wrap(bos.toByteArray())
     }
 
-    override fun  deserialize(data: ByteBuffer): WorkflowState {
+    override fun deserialize(data: ByteBuffer): WorkflowState {
         val bis = ByteArrayInputStream(data.array())
         val ois = ObjectInputStream(bis)
 

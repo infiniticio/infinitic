@@ -1,11 +1,11 @@
 package com.zenaton.engine.workflows.state
 
-import java.time.LocalDateTime
+import com.zenaton.engine.common.attributes.DateTime
 
 class Branch(
     val type: BranchType,
     val data: String,
-    val startedAt: LocalDateTime,
+    val startedAt: DateTime,
     val storeHashAtStart: StoreHash? = null,
     val steps: List<Step> = listOf()
 )

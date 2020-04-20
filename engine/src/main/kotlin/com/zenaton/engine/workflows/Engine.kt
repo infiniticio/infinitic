@@ -1,7 +1,7 @@
 package com.zenaton.engine.workflows
 
 import com.zenaton.engine.common.attributes.DecisionId
-import com.zenaton.engine.decisions.Message.DecisionDispatched
+import com.zenaton.engine.decisions.DecisionDispatched
 import com.zenaton.engine.workflows.messages.DecisionCompleted
 import com.zenaton.engine.workflows.messages.DelayCompleted
 import com.zenaton.engine.workflows.messages.TaskCompleted

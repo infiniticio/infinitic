@@ -5,7 +5,7 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class MessageTests : StringSpec({
+class DecisionMessageTests : StringSpec({
     beforeTest { println("Starting a test $it") }
 
     "Message must allow a void constructor" {

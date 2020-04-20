@@ -1,9 +1,12 @@
 package com.zenaton.engine.workflows.messages
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.zenaton.engine.common.attributes.DateTime
 import com.zenaton.engine.common.attributes.DelayId
 import com.zenaton.engine.common.attributes.TaskId
+import com.zenaton.engine.common.attributes.WorkflowData
 import com.zenaton.engine.common.attributes.WorkflowId
+import com.zenaton.engine.common.attributes.WorkflowName
 
 sealed class WorkflowMessage(val type: String, open var workflowId: WorkflowId) {
     fun getStateKey() = workflowId.id
@@ -18,8 +21,9 @@ data class DelayCompleted(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class WorkflowDispatched(
     override var workflowId: WorkflowId,
-    val workflowName: String,
-    val workflowData: String
+    val workflowName: WorkflowName,
+    val workflowData: WorkflowData,
+    val dispatchedAt: DateTime
 ) : WorkflowMessage("WorkflowDispatched", workflowId)
 
 @JsonIgnoreProperties(ignoreUnknown = true)

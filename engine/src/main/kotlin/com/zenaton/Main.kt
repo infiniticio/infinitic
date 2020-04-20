@@ -1,5 +1,8 @@
 package com.zenaton
+import com.zenaton.engine.common.attributes.DateTime
+import com.zenaton.engine.common.attributes.WorkflowData
 import com.zenaton.engine.common.attributes.WorkflowId
+import com.zenaton.engine.common.attributes.WorkflowName
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
 import com.zenaton.pulsar.workflows.PulsarMessage
 import com.zenaton.pulsar.workflows.serializers.MessageConverter
@@ -12,8 +15,9 @@ fun main() {
 
     val wd = WorkflowDispatched(
         workflowId = WorkflowId(),
-        workflowName = "MyHardcodedWorkflowName",
-        workflowData = "?"
+        workflowName = WorkflowName("MyHardcodedWorkflowName"),
+        workflowData = WorkflowData(ByteArray(10)),
+        dispatchedAt = DateTime()
     )
 
     producer.send(MessageConverter.toPulsar(wd))

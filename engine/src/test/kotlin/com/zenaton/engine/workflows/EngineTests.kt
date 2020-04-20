@@ -1,9 +1,12 @@
 package com.zenaton.engine.workflows
 
+import com.zenaton.engine.common.attributes.DateTime
 import com.zenaton.engine.common.attributes.DelayId
 import com.zenaton.engine.common.attributes.TaskId
+import com.zenaton.engine.common.attributes.WorkflowData
 import com.zenaton.engine.common.attributes.WorkflowId
-import com.zenaton.engine.decisions.Message.DecisionDispatched
+import com.zenaton.engine.common.attributes.WorkflowName
+import com.zenaton.engine.decisions.DecisionDispatched
 import com.zenaton.engine.workflows.messages.DecisionCompleted
 import com.zenaton.engine.workflows.messages.DelayCompleted
 import com.zenaton.engine.workflows.messages.TaskCompleted
@@ -24,11 +27,12 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 
-fun workflowDispatched(id: WorkflowId? = null, workflowData: String? = null, workflowName: String? = null): WorkflowDispatched {
+fun workflowDispatched(id: WorkflowId? = null, workflowData: WorkflowData? = null, workflowName: WorkflowName? = null): WorkflowDispatched {
     return WorkflowDispatched(
-        id ?: WorkflowId(),
-        workflowData ?: Arb.string(1).toString(),
-        workflowName ?: Arb.string(1).toString()
+        workflowId = id ?: WorkflowId(),
+        workflowName = workflowName ?: WorkflowName(Arb.string(1).toString()),
+        workflowData = workflowData ?: WorkflowData(Arb.string(1).toString().toByteArray()),
+        dispatchedAt = DateTime()
     )
 }
 

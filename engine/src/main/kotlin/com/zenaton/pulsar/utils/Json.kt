@@ -10,7 +10,7 @@ object Json : JsonInterface {
         return mapper.writeValueAsString(msg)
     }
 
-    override fun <M: Any> from(json: String, klass: KClass<M>) : Any {
+    override fun <M : Any> from(json: String, klass: KClass<M>): Any {
         return mapper.readValue(json, klass.java)
     }
 }

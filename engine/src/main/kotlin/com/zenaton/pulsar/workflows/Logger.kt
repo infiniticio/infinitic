@@ -9,7 +9,7 @@ import org.apache.pulsar.functions.api.Context
 class Logger(private val context: Context) : LoggerInterface {
 
     // Json injection
-    var json : JsonInterface = Json
+    var json: JsonInterface = Json
 
     override fun debug(txt: String, msg: WorkflowMessage?): String {
         val message = getMessage(txt, msg)
