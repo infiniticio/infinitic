@@ -8,26 +8,41 @@ import com.zenaton.engine.workflows.messages.TaskCompleted
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
 import com.zenaton.engine.workflows.messages.WorkflowMessage
 
-class Engine(val dispatcher: DispatcherInterface, val msg: WorkflowMessage) {
+class Engine(
+    val stater: StaterInterface,
+    val dispatcher: DispatcherInterface,
+    val logger: LoggerInterface
+) {
+    fun handle(msg: WorkflowMessage) {
+        val state = stater.getState(msg.getStateKey())
 
-    init {
-        val state = dispatcher.getState(msg.workflowId.id)
+        if (state == null) {
+            if (msg !is WorkflowDispatched) {
+                logger.warn("No state found for: ", msg)
+                return
+            }
+        } else {
+            if (state.workflowId != msg.workflowId) {
+                val message = logger.error("Inconsistent Message and State for: ", msg)
+                throw Exception(message)
+            }
 
-        if (state != null && state.workflowId != msg.workflowId) {
-            throw Exception("Inconsistent Message and State")
+            if (msg is WorkflowDispatched) {
+                logger.warn("Already existing state for: ", msg)
+                return
+            }
         }
-    }
 
-    fun handle() {
         when (msg) {
             is WorkflowDispatched -> dispatchWorkflow(msg)
-            is DecisionCompleted -> completeDecision(msg)
-            is TaskCompleted -> completeTask(msg)
-            is DelayCompleted -> completeDelay(msg)
+            is DecisionCompleted -> state?.let { completeDecision(it, msg) }
+            is TaskCompleted -> state?.let { completeTask(it, msg) }
+            is DelayCompleted -> state?.let { completeDelay(it, msg) }
         }
     }
 
     private fun dispatchWorkflow(msg: WorkflowDispatched) {
+
         val m = DecisionDispatched(
             decisionId = DecisionId(),
             workflowId = msg.workflowId,
@@ -35,24 +50,21 @@ class Engine(val dispatcher: DispatcherInterface, val msg: WorkflowMessage) {
         )
         dispatcher.dispatchDecision(m)
 
-        dispatcher.updateState(WorkflowState(
+        stater.createState(WorkflowState(
             workflowId = msg.workflowId,
             ongoingDecisionId = m.decisionId
         ))
     }
 
-    private fun completeDecision(msg: DecisionCompleted) {
+    private fun completeDecision(state: WorkflowState, msg: DecisionCompleted) {
+        //
     }
 
-    private fun completeTask(msg: TaskCompleted) {
+    private fun completeTask(state: WorkflowState, msg: TaskCompleted) {
+        //
     }
 
-    private fun completeDelay(msg: DelayCompleted) {
-    }
-
-    private fun logState(msg: WorkflowDispatched) {
-    }
-
-    private fun logNoState(msg: WorkflowMessage) {
+    private fun completeDelay(state: WorkflowState, msg: DelayCompleted) {
+        //
     }
 }

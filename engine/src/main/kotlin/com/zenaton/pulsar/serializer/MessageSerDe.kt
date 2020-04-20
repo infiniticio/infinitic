@@ -37,7 +37,7 @@ object MessageSerDe : MessageSerDeInterface {
         return mapper.readValue<T>(json)
     }
 
-    fun toJson(msg: Any): String {
+    override fun toJson(msg: Any): String {
         return mapper.writeValueAsString(msg)
     }
 

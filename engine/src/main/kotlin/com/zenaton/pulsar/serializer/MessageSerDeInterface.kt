@@ -10,4 +10,5 @@ interface MessageSerDeInterface {
     fun serializeState(state: WorkflowState): ByteBuffer
     fun fromPulsar(input: PulsarMessage): WorkflowMessage
     fun toPulsar(msg: WorkflowMessage): PulsarMessage
+    fun toJson(msg: Any): String
 }

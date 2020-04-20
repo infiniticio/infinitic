@@ -5,7 +5,9 @@ import com.zenaton.engine.common.attributes.DelayId
 import com.zenaton.engine.common.attributes.TaskId
 import com.zenaton.engine.common.attributes.WorkflowId
 
-sealed class WorkflowMessage(val type: String, open var workflowId: WorkflowId)
+sealed class WorkflowMessage(val type: String, open var workflowId: WorkflowId) {
+    fun getStateKey() = workflowId.id
+}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class DelayCompleted(
