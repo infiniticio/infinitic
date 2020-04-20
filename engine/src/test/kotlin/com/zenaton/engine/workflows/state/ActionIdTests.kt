@@ -7,9 +7,9 @@ import java.util.UUID
 
 class ActionIdTests : StringSpec({
     "UnitStepId must create an uuid with a void constructor" {
-        val id = ActionId()
+        val actionId = ActionId()
         shouldNotThrowAny {
-            UUID.fromString(id.uuid)
+            UUID.fromString(actionId.id)
         }
     }
 

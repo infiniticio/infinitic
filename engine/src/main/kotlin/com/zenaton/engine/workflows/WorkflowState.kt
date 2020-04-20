@@ -2,7 +2,6 @@ package com.zenaton.engine.workflows
 
 import com.zenaton.engine.common.attributes.DecisionId
 import com.zenaton.engine.common.attributes.WorkflowId
-import com.zenaton.engine.workflows.messages.WorkflowMessage
 import com.zenaton.engine.workflows.state.Action
 import com.zenaton.engine.workflows.state.ActionId
 import com.zenaton.engine.workflows.state.Branch

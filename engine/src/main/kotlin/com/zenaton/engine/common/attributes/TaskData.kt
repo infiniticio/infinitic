@@ -3,26 +3,11 @@ package com.zenaton.engine.common.attributes
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 
-data class TaskData(val data: ByteArray) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as TaskData
-
-        if (!data.contentEquals(other.data)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return data.contentHashCode()
-    }
-
+data class TaskData(override val data: ByteArray) : Data(data) {
     companion object {
         @JvmStatic @JsonCreator
-        fun fromJson(value: String) = WorkflowData(value.toByteArray(charset = Charsets.UTF_8))
+        fun fromJson(value: String) = TaskData(value.toByteArray(charset = Charsets.UTF_8))
     }
     @JsonValue
-    override fun toString() = String(bytes = data, charset = Charsets.UTF_8)
+    fun toJson() = String(bytes = data, charset = Charsets.UTF_8)
 }

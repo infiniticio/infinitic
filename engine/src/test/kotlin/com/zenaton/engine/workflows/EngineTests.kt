@@ -1,16 +1,13 @@
 package com.zenaton.engine.workflows
 
+import com.zenaton.engine.common.attributes.BranchData
 import com.zenaton.engine.common.attributes.DateTime
 import com.zenaton.engine.common.attributes.DelayId
+import com.zenaton.engine.common.attributes.TaskData
 import com.zenaton.engine.common.attributes.TaskId
-import com.zenaton.engine.common.attributes.WorkflowData
 import com.zenaton.engine.common.attributes.WorkflowId
 import com.zenaton.engine.common.attributes.WorkflowName
 import com.zenaton.engine.decisions.DecisionDispatched
-import com.zenaton.engine.workflows.messages.DecisionCompleted
-import com.zenaton.engine.workflows.messages.DelayCompleted
-import com.zenaton.engine.workflows.messages.TaskCompleted
-import com.zenaton.engine.workflows.messages.WorkflowDispatched
 import com.zenaton.pulsar.workflows.Dispatcher
 import com.zenaton.pulsar.workflows.Logger
 import com.zenaton.pulsar.workflows.Stater
@@ -27,11 +24,11 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 
-fun workflowDispatched(id: WorkflowId? = null, workflowData: WorkflowData? = null, workflowName: WorkflowName? = null): WorkflowDispatched {
+fun workflowDispatched(id: WorkflowId? = null, branchData: BranchData? = null, workflowName: WorkflowName? = null): WorkflowDispatched {
     return WorkflowDispatched(
         workflowId = id ?: WorkflowId(),
         workflowName = workflowName ?: WorkflowName(Arb.string(1).toString()),
-        workflowData = workflowData ?: WorkflowData(Arb.string(1).toString().toByteArray()),
+        workflowData = branchData ?: BranchData(Arb.string(1).toString().toByteArray()),
         dispatchedAt = DateTime()
     )
 }
@@ -42,11 +39,11 @@ fun decisionCompleted(id: WorkflowId? = null, workflowData: String? = null, work
     )
 }
 
-fun taskCompleted(id: WorkflowId? = null, taskId: TaskId? = null, taskData: String? = null): TaskCompleted {
+fun taskCompleted(id: WorkflowId? = null, taskId: TaskId? = null, taskData: TaskData? = null): TaskCompleted {
     return TaskCompleted(
-        id ?: WorkflowId(),
-        taskId ?: TaskId(),
-        taskData ?: ""
+        workflowId = id ?: WorkflowId(),
+        taskId = taskId ?: TaskId(),
+        taskData = taskData
     )
 }
 

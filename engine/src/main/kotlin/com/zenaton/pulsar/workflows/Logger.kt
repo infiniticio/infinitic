@@ -1,7 +1,7 @@
 package com.zenaton.pulsar.workflows
 
 import com.zenaton.engine.workflows.LoggerInterface
-import com.zenaton.engine.workflows.messages.WorkflowMessage
+import com.zenaton.engine.workflows.WorkflowMessage
 import com.zenaton.pulsar.utils.Json
 import com.zenaton.pulsar.utils.JsonInterface
 import org.apache.pulsar.functions.api.Context

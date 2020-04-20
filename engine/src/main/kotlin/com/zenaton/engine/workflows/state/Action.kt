@@ -1,6 +1,6 @@
 package com.zenaton.engine.workflows.state
 
-class Action(
+data class Action(
     val type: ActionType,
     val id: ActionId,
     val output: String?

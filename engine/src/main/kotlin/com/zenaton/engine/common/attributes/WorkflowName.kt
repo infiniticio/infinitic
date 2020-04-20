@@ -3,11 +3,11 @@ package com.zenaton.engine.common.attributes
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 
-data class WorkflowName(val name: String) {
+data class WorkflowName(override val name: String) : Name(name) {
     companion object {
         @JvmStatic @JsonCreator
         fun fromJson(value: String) = WorkflowName(value)
     }
     @JsonValue
-    override fun toString() = name
+    fun toJson() = name
 }

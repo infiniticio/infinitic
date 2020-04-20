@@ -10,5 +10,5 @@ data class DecisionId(val id: String = UUID.randomUUID().toString()) {
         fun fromJson(value: String) = DecisionId(value)
     }
     @JsonValue
-    override fun toString() = id
+    fun toJson() = id
 }

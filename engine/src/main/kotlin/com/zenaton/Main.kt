@@ -1,11 +1,12 @@
 package com.zenaton
+import com.zenaton.engine.common.attributes.BranchData
 import com.zenaton.engine.common.attributes.DateTime
-import com.zenaton.engine.common.attributes.WorkflowData
+import com.zenaton.engine.common.attributes.EventName
 import com.zenaton.engine.common.attributes.WorkflowId
 import com.zenaton.engine.common.attributes.WorkflowName
-import com.zenaton.engine.workflows.messages.WorkflowDispatched
+import com.zenaton.engine.workflows.WorkflowDispatched
+import com.zenaton.pulsar.utils.Json
 import com.zenaton.pulsar.workflows.PulsarMessage
-import com.zenaton.pulsar.workflows.serializers.MessageConverter
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.JSONSchema
 
@@ -16,11 +17,12 @@ fun main() {
     val wd = WorkflowDispatched(
         workflowId = WorkflowId(),
         workflowName = WorkflowName("MyHardcodedWorkflowName"),
-        workflowData = WorkflowData(ByteArray(10)),
+        workflowData = BranchData(ByteArray(10)),
         dispatchedAt = DateTime()
     )
-
-    producer.send(MessageConverter.toPulsar(wd))
+    val b = BranchData("".toByteArray())
+    println(b.hash())
+//    producer.send(MessageConverter.toPulsar(wd))
     producer.close()
     client.close()
 }

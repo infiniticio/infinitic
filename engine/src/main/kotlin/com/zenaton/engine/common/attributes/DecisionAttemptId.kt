@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import java.util.UUID
 
-data class DecisionAttemptId(val id: String = UUID.randomUUID().toString()) {
+data class DecisionAttemptId(override val id: String = UUID.randomUUID().toString()) : Id(id) {
     companion object {
         @JvmStatic @JsonCreator
         fun fromJson(value: String) = DecisionAttemptId(value)
     }
     @JsonValue
-    override fun toString() = id
+    fun toJson() = id
 }

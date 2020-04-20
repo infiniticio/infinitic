@@ -1,10 +1,11 @@
-package com.zenaton.engine.workflows.messages
+package com.zenaton.engine.workflows
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.zenaton.engine.common.attributes.BranchData
 import com.zenaton.engine.common.attributes.DateTime
 import com.zenaton.engine.common.attributes.DelayId
+import com.zenaton.engine.common.attributes.TaskData
 import com.zenaton.engine.common.attributes.TaskId
-import com.zenaton.engine.common.attributes.WorkflowData
 import com.zenaton.engine.common.attributes.WorkflowId
 import com.zenaton.engine.common.attributes.WorkflowName
 
@@ -22,7 +23,7 @@ data class DelayCompleted(
 data class WorkflowDispatched(
     override var workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val workflowData: WorkflowData,
+    val workflowData: BranchData?,
     val dispatchedAt: DateTime
 ) : WorkflowMessage("WorkflowDispatched", workflowId)
 
@@ -30,7 +31,7 @@ data class WorkflowDispatched(
 data class TaskCompleted(
     override var workflowId: WorkflowId,
     val taskId: TaskId,
-    val taskData: String
+    val taskData: TaskData?
 ) : WorkflowMessage("TaskCompleted", workflowId)
 
 @JsonIgnoreProperties(ignoreUnknown = true)

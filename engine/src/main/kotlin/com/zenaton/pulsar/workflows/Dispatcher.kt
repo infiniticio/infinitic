@@ -1,7 +1,7 @@
 package com.zenaton.pulsar.workflows
 
 import com.zenaton.engine.decisions.DecisionDispatched
-import com.zenaton.engine.tasks.Message.TaskDispatched
+import com.zenaton.engine.tasks.TaskDispatched
 import com.zenaton.engine.workflows.DispatcherInterface
 import com.zenaton.pulsar.workflows.serializers.MessageConverter
 import com.zenaton.pulsar.workflows.serializers.MessageConverterInterface

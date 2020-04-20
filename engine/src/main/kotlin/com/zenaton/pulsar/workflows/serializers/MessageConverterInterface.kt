@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.workflows.serializers
 
-import com.zenaton.engine.workflows.messages.WorkflowMessage
+import com.zenaton.engine.workflows.WorkflowMessage
 import com.zenaton.pulsar.workflows.PulsarMessage
 
 interface MessageConverterInterface {
