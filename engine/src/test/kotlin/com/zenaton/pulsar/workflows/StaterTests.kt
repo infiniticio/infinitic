@@ -1,7 +1,8 @@
 package com.zenaton.pulsar.workflows
 
 import com.zenaton.engine.workflows.WorkflowState
-import com.zenaton.pulsar.serializer.MessageSerDeInterface
+import com.zenaton.pulsar.workflows.serializers.MessageSerDeInterface
+import com.zenaton.pulsar.workflows.serializers.StateSerDeInterface
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
@@ -15,7 +16,7 @@ class StaterTests : StringSpec({
     "Stater.getState with no state should return null" {
         // mocking
         val context = mockk<Context>()
-        val serde = mockk<MessageSerDeInterface>()
+        val serde = mockk<StateSerDeInterface>()
         // given
         val key = Arb.string(1).toString()
         every { context.getState(key) } returns null
@@ -29,13 +30,13 @@ class StaterTests : StringSpec({
     "Stater.getState state should return deserialized state" {
         // mocking
         val context = mockk<Context>()
-        val serde = mockk<MessageSerDeInterface>()
+        val serde = mockk<StateSerDeInterface>()
         val mockByteBuffer = mockk<ByteBuffer>()
         val mockWorkflowState = mockk<WorkflowState>()
         // given
         val key = Arb.string(1).toString()
         every { context.getState(key) } returns mockByteBuffer
-        every { serde.deSerializeState(mockByteBuffer) } returns mockWorkflowState
+        every { serde.deserialize(mockByteBuffer) } returns mockWorkflowState
         val dispatcher = Stater(context, serde)
         // when
         val state = dispatcher.getState(key)

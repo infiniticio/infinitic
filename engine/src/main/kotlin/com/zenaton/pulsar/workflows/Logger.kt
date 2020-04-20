@@ -2,7 +2,7 @@ package com.zenaton.pulsar.workflows
 
 import com.zenaton.engine.workflows.LoggerInterface
 import com.zenaton.engine.workflows.messages.WorkflowMessage
-import com.zenaton.pulsar.serializer.MessageSerDeInterface
+import com.zenaton.pulsar.workflows.serializers.MessageSerDeInterface
 import org.apache.pulsar.functions.api.Context
 
 class Logger(private val context: Context, private val serde: MessageSerDeInterface) :

@@ -1,8 +1,8 @@
 package com.zenaton
 import com.zenaton.engine.common.attributes.WorkflowId
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
-import com.zenaton.pulsar.serializer.MessageSerDe
 import com.zenaton.pulsar.workflows.PulsarMessage
+import com.zenaton.pulsar.workflows.serializers.MessageSerDe
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.JSONSchema
 
