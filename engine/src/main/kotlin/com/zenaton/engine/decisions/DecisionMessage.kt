@@ -1,15 +1,15 @@
 package com.zenaton.engine.decisions
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.zenaton.engine.common.attributes.DecisionAttemptId
-import com.zenaton.engine.common.attributes.DecisionAttemptError
-import com.zenaton.engine.common.attributes.DecisionId
-import com.zenaton.engine.common.attributes.DecisionOutput
-import com.zenaton.engine.common.attributes.WorkflowId
-import com.zenaton.engine.common.attributes.WorkflowName
-import com.zenaton.engine.workflows.state.Action
-import com.zenaton.engine.workflows.state.ActionId
-import com.zenaton.engine.workflows.state.Branch
+import com.zenaton.engine.attributes.decisions.DecisionAttemptError
+import com.zenaton.engine.attributes.decisions.DecisionAttemptId
+import com.zenaton.engine.attributes.decisions.DecisionId
+import com.zenaton.engine.attributes.decisions.DecisionOutput
+import com.zenaton.engine.attributes.workflows.WorkflowId
+import com.zenaton.engine.attributes.workflows.WorkflowName
+import com.zenaton.engine.attributes.workflows.states.Action
+import com.zenaton.engine.attributes.workflows.states.ActionId
+import com.zenaton.engine.attributes.workflows.states.Branch
 
 sealed class DecisionMessage(val type: String, open var decisionId: DecisionId) {
     fun getStateKey() = decisionId.id

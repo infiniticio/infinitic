@@ -1,13 +1,13 @@
 package com.zenaton.engine.tasks
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.zenaton.engine.common.attributes.TaskAttemptId
-import com.zenaton.engine.common.attributes.TaskData
-import com.zenaton.engine.common.attributes.TaskAttemptError
-import com.zenaton.engine.common.attributes.TaskId
-import com.zenaton.engine.common.attributes.TaskName
-import com.zenaton.engine.common.attributes.TaskOutput
-import com.zenaton.engine.common.attributes.WorkflowId
+import com.zenaton.engine.attributes.tasks.TaskAttemptError
+import com.zenaton.engine.attributes.tasks.TaskAttemptId
+import com.zenaton.engine.attributes.tasks.TaskData
+import com.zenaton.engine.attributes.tasks.TaskId
+import com.zenaton.engine.attributes.tasks.TaskName
+import com.zenaton.engine.attributes.tasks.TaskOutput
+import com.zenaton.engine.attributes.workflows.WorkflowId
 
 sealed class TaskMessage(val type: String, open var taskId: TaskId) {
     fun getStateKey() = taskId.id

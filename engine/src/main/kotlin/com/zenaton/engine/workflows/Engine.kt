@@ -1,6 +1,9 @@
 package com.zenaton.engine.workflows
 
-import com.zenaton.engine.common.attributes.DecisionId
+import com.zenaton.engine.attributes.decisions.DecisionId
+import com.zenaton.engine.attributes.types.DateTime
+import com.zenaton.engine.attributes.workflows.WorkflowState
+import com.zenaton.engine.attributes.workflows.states.Branch
 import com.zenaton.engine.decisions.DecisionDispatched
 
 class Engine(
@@ -37,18 +40,29 @@ class Engine(
     }
 
     private fun dispatchWorkflow(msg: WorkflowDispatched) {
-
-        val m = DecisionDispatched(
-            decisionId = DecisionId(),
-            workflowId = msg.workflowId,
-            workflowName = msg.workflowName
+        val decisionId = DecisionId()
+        // define branch to process
+        val branch = Branch.Handle(
+            workflowData = msg.workflowData,
+            decidedAt = DateTime()
         )
-        dispatcher.dispatchDecision(m)
-
-        stater.createState(WorkflowState(
+        // build state
+        val state = WorkflowState(
             workflowId = msg.workflowId,
-            ongoingDecisionId = m.decisionId
-        ))
+            ongoingDecisionId = decisionId,
+            runningBranches = listOf(branch)
+        )
+        // create DecisionDispatched message
+        val m = DecisionDispatched(
+            decisionId = decisionId,
+            workflowId = msg.workflowId,
+            workflowName = msg.workflowName,
+            runningBranches = listOf(branch)
+        )
+        // dispatch decision
+        dispatcher.dispatchDecision(m)
+        // only then, save state
+        stater.createState(state)
     }
 
     private fun completeDecision(state: WorkflowState, msg: DecisionCompleted) {

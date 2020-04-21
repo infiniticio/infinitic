@@ -1,7 +1,7 @@
 package com.zenaton.pulsar.workflows
 
+import com.zenaton.engine.attributes.workflows.WorkflowState
 import com.zenaton.engine.workflows.StaterInterface
-import com.zenaton.engine.workflows.WorkflowState
 import com.zenaton.pulsar.workflows.serializers.StateSerDe
 import com.zenaton.pulsar.workflows.serializers.StateSerDeInterface
 import org.apache.pulsar.functions.api.Context

@@ -1,12 +1,13 @@
 package com.zenaton.engine.workflows
 
-import com.zenaton.engine.common.attributes.BranchData
-import com.zenaton.engine.common.attributes.DateTime
-import com.zenaton.engine.common.attributes.DelayId
-import com.zenaton.engine.common.attributes.TaskData
-import com.zenaton.engine.common.attributes.TaskId
-import com.zenaton.engine.common.attributes.WorkflowId
-import com.zenaton.engine.common.attributes.WorkflowName
+import com.zenaton.engine.attributes.delays.DelayId
+import com.zenaton.engine.attributes.tasks.TaskId
+import com.zenaton.engine.attributes.tasks.TaskOutput
+import com.zenaton.engine.attributes.types.DateTime
+import com.zenaton.engine.attributes.workflows.WorkflowData
+import com.zenaton.engine.attributes.workflows.WorkflowId
+import com.zenaton.engine.attributes.workflows.WorkflowName
+import com.zenaton.engine.attributes.workflows.WorkflowState
 import com.zenaton.engine.decisions.DecisionDispatched
 import com.zenaton.pulsar.workflows.Dispatcher
 import com.zenaton.pulsar.workflows.Logger
@@ -24,11 +25,15 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 
-fun workflowDispatched(id: WorkflowId? = null, branchData: BranchData? = null, workflowName: WorkflowName? = null): WorkflowDispatched {
+fun workflowDispatched(id: WorkflowId? = null, workflowData: WorkflowData? = null, workflowName: WorkflowName? = null): WorkflowDispatched {
     return WorkflowDispatched(
         workflowId = id ?: WorkflowId(),
-        workflowName = workflowName ?: WorkflowName(Arb.string(1).toString()),
-        workflowData = branchData ?: BranchData(Arb.string(1).toString().toByteArray()),
+        workflowName = workflowName ?: WorkflowName(
+            Arb.string(1).toString()
+        ),
+        workflowData = workflowData ?: WorkflowData(
+            Arb.string(1).toString().toByteArray()
+        ),
         dispatchedAt = DateTime()
     )
 }
@@ -39,11 +44,11 @@ fun decisionCompleted(id: WorkflowId? = null, workflowData: String? = null, work
     )
 }
 
-fun taskCompleted(id: WorkflowId? = null, taskId: TaskId? = null, taskData: TaskData? = null): TaskCompleted {
+fun taskCompleted(id: WorkflowId? = null, taskId: TaskId? = null, taskOutput: TaskOutput? = null): TaskCompleted {
     return TaskCompleted(
         workflowId = id ?: WorkflowId(),
         taskId = taskId ?: TaskId(),
-        taskData = taskData
+        taskOutput = taskOutput
     )
 }
 

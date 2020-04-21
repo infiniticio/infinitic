@@ -1,7 +1,9 @@
 package com.zenaton.engine.workflows.state
 
-import com.zenaton.engine.workflows.state.Step.And
-import com.zenaton.engine.workflows.state.Step.Or
+import com.zenaton.engine.attributes.workflows.states.ActionId
+import com.zenaton.engine.attributes.workflows.states.Step
+import com.zenaton.engine.attributes.workflows.states.Step.And
+import com.zenaton.engine.attributes.workflows.states.Step.Or
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

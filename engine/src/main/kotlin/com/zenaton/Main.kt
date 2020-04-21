@@ -1,10 +1,9 @@
 package com.zenaton
-import com.zenaton.engine.common.attributes.BranchData
-import com.zenaton.engine.common.attributes.DateTime
-import com.zenaton.engine.common.attributes.EventName
-import com.zenaton.engine.common.attributes.WorkflowId
-import com.zenaton.engine.common.attributes.WorkflowName
-import com.zenaton.engine.workflows.WorkflowDispatched
+import com.zenaton.engine.attributes.tasks.TaskId
+import com.zenaton.engine.attributes.tasks.TaskOutput
+import com.zenaton.engine.attributes.workflows.WorkflowId
+import com.zenaton.engine.workflows.TaskCompleted
+import com.zenaton.engine.workflows.WorkflowMessage
 import com.zenaton.pulsar.utils.Json
 import com.zenaton.pulsar.workflows.PulsarMessage
 import org.apache.pulsar.client.api.PulsarClient
@@ -14,14 +13,30 @@ fun main() {
     val client = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
     val producer = client.newProducer(JSONSchema.of(PulsarMessage::class.java)).topic("workflows").create()
 
-    val wd = WorkflowDispatched(
+//    val wd = WorkflowDispatched(
+//        workflowId = WorkflowId(),
+//        workflowName = WorkflowName("MyHardcodedWorkflowName"),
+//        workflowData = WorkflowData(ByteArray(10)),
+//        dispatchedAt = DateTime()
+//    )
+
+    var msg = TaskCompleted(
         workflowId = WorkflowId(),
-        workflowName = WorkflowName("MyHardcodedWorkflowName"),
-        workflowData = BranchData(ByteArray(10)),
-        dispatchedAt = DateTime()
+        taskId = TaskId(),
+        taskOutput = TaskOutput("oUtput".toByteArray())
     )
-    val b = BranchData("".toByteArray())
-    println(b.hash())
+    println(msg)
+    var json = Json.to(msg)
+    println(json)
+    var back = Json.from(json, msg::class)
+    println(back)
+    back = Json.from(json, PulsarMessage::class)
+    println(back)
+    json = Json.to(back)
+    println(json)
+    back = Json.from(json, WorkflowMessage::class)
+    println(back)
+
 //    producer.send(MessageConverter.toPulsar(wd))
     producer.close()
     client.close()

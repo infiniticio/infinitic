@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.workflows
 
-import com.zenaton.engine.workflows.WorkflowState
+import com.zenaton.engine.attributes.workflows.WorkflowState
 import com.zenaton.pulsar.workflows.serializers.StateSerDeInterface
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
