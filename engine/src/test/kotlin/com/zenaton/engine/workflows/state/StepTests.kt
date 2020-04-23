@@ -22,7 +22,7 @@ class StepTests : StringSpec({
         val step = Or(listOf(stepA))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.id)
+        step.complete(stepA.actionId)
         step.isCompleted() shouldBe true
     }
 
@@ -31,7 +31,7 @@ class StepTests : StringSpec({
         val step = And(listOf(stepA))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.id)
+        step.complete(stepA.actionId)
         step.isCompleted() shouldBe true
     }
 
@@ -41,9 +41,9 @@ class StepTests : StringSpec({
         val step = And(listOf(stepA, stepB))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.id)
+        step.complete(stepA.actionId)
         step.isCompleted() shouldBe false
-        step.complete(stepB.id)
+        step.complete(stepB.actionId)
         step.isCompleted() shouldBe true
         step shouldBe And(listOf(stepA, stepB))
     }
@@ -54,7 +54,7 @@ class StepTests : StringSpec({
         val step = Or(listOf(stepA, stepB))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.id)
+        step.complete(stepA.actionId)
         step shouldBe Or(listOf(stepA))
     }
 
@@ -65,7 +65,7 @@ class StepTests : StringSpec({
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
         step.isCompleted() shouldBe false
-        step.complete(stepB.id)
+        step.complete(stepB.actionId)
         step shouldBe Or(listOf(stepB))
     }
 
@@ -76,9 +76,9 @@ class StepTests : StringSpec({
         val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.id)
+        step.complete(stepA.actionId)
         step.isCompleted() shouldBe false
-        step.complete(stepB.id)
+        step.complete(stepB.actionId)
         step shouldBe And(listOf(stepA, stepB))
     }
 
@@ -89,11 +89,11 @@ class StepTests : StringSpec({
         val step = And(listOf(stepA, And(listOf(stepB, stepC))))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.id)
+        step.complete(stepA.actionId)
         step.isCompleted() shouldBe false
-        step.complete(stepB.id)
+        step.complete(stepB.actionId)
         step.isCompleted() shouldBe false
-        step.complete(stepC.id)
+        step.complete(stepC.actionId)
         step.isCompleted() shouldBe true
         step shouldBe And(listOf(stepA, stepB, stepC))
     }
@@ -103,7 +103,7 @@ class StepTests : StringSpec({
         val stepB = getStep()
         val step = Or(listOf(stepA, stepB))
 
-        step.complete(stepA.id)
+        step.complete(stepA.actionId)
         step shouldBe Or(listOf(stepA))
     }
 
@@ -113,7 +113,7 @@ class StepTests : StringSpec({
         val stepC = getStep()
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.complete(stepB.id)
+        step.complete(stepB.actionId)
         step shouldBe Or(listOf(stepB))
     }
 
@@ -123,8 +123,8 @@ class StepTests : StringSpec({
         val stepC = getStep()
         val step = Or(listOf(stepA, And(listOf(stepB, stepC))))
 
-        step.complete(stepB.id)
-        step.complete(stepC.id)
+        step.complete(stepB.actionId)
+        step.complete(stepC.actionId)
         step.isCompleted() shouldBe true
         step shouldBe Or(listOf(And(listOf(stepB, stepC))))
     }
@@ -135,7 +135,7 @@ class StepTests : StringSpec({
         val stepC = getStep()
         val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.complete(stepB.id)
+        step.complete(stepB.actionId)
         step shouldBe And(listOf(stepA, stepB))
     }
 
@@ -146,8 +146,8 @@ class StepTests : StringSpec({
         val stepD = getStep()
         val step = Or(listOf(stepA, And(listOf(stepB, Or(listOf(stepC, stepD))))))
 
-        step.complete(stepC.id)
-        step.complete(stepB.id)
+        step.complete(stepC.actionId)
+        step.complete(stepB.actionId)
         step shouldBe Or(listOf(And(listOf(stepB, stepC))))
     }
 

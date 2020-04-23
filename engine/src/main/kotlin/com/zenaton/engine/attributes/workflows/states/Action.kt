@@ -14,41 +14,48 @@ import com.zenaton.engine.attributes.workflows.WorkflowOutput
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
-    JsonSubTypes.Type(value = WaitingForTask::class, name = "WAITING_FOR_TASK"),
-    JsonSubTypes.Type(value = WaitingForWorkflow::class, name = "WAITING_FOR_WORKFLOW"),
-    JsonSubTypes.Type(value = WaitingForDelay::class, name = "WAITING_FOR_DELAY"),
-    JsonSubTypes.Type(value = WaitingForEvent::class, name = "WAITING_FOR_EVENT")
+    JsonSubTypes.Type(value = DispatchTask::class, name = "DISPATCH_TASK"),
+    JsonSubTypes.Type(value = InstantTask::class, name = "INSTANT_TASK"),
+    JsonSubTypes.Type(value = DispatchWorkflow::class, name = "DISPATCH_WORKFLOW"),
+    JsonSubTypes.Type(value = DispatchDelay::class, name = "DISPATCH_DELAY"),
+    JsonSubTypes.Type(value = ListenEvent::class, name = "LISTEN_EVENT")
 )
 sealed class Action(
-    open val actionId: ActionId,
     open val decidedAt: DateTime,
     open val status: ActionStatus
 )
 
-data class WaitingForTask(
+data class DispatchTask(
     val taskId: TaskId,
     val taskOutput: TaskOutput?,
     override val decidedAt: DateTime,
     override val status: ActionStatus
-) : Action(ActionId(taskId), decidedAt, status)
+) : Action(decidedAt, status)
 
-data class WaitingForWorkflow(
+data class InstantTask(
+    val taskId: TaskId,
+    val taskOutput: TaskOutput?,
+    override val decidedAt: DateTime,
+    override val status: ActionStatus = ActionStatus.COMPLETED
+) : Action(decidedAt, status)
+
+data class DispatchWorkflow(
     val workflowId: WorkflowId,
     val workflowOutput: WorkflowOutput?,
     override val decidedAt: DateTime,
     override val status: ActionStatus
-) : Action(ActionId(workflowId), decidedAt, status)
+) : Action(decidedAt, status)
 
-data class WaitingForDelay(
+data class DispatchDelay(
     val delayId: DelayId,
     override val decidedAt: DateTime,
     override val status: ActionStatus
-) : Action(ActionId(delayId), decidedAt, status)
+) : Action(decidedAt, status)
 
-data class WaitingForEvent(
+data class ListenEvent(
     val eventId: EventId,
     val eventName: EventName,
     val eventData: EventData?,
     override val decidedAt: DateTime,
     override val status: ActionStatus
-) : Action(ActionId(eventId), decidedAt, status)
+) : Action(decidedAt, status)

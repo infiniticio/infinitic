@@ -11,28 +11,20 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     JsonSubTypes.Type(value = Step.Or::class, name = "OR")
 )
 sealed class Step {
-    data class Id(val id: ActionId, var status: ActionStatus = ActionStatus.DISPATCHED) : Step() {
-        override fun isCompleted(): Boolean {
-            return status == ActionStatus.COMPLETED
-        }
-
-        fun complete() {
-            status = ActionStatus.COMPLETED
-        }
-    }
+    data class Id(val actionId: ActionId, var status: ActionStatus = ActionStatus.DISPATCHED) : Step()
     data class And(var steps: List<Step>) : Step()
     data class Or(var steps: List<Step>) : Step()
 
     @JsonIgnore
     open fun isCompleted(): Boolean = when (this) {
-        is Id -> this.isCompleted()
+        is Id -> this.status == ActionStatus.COMPLETED
         is And -> this.steps.all { s -> s.isCompleted() }
         is Or -> this.steps.any { s -> s.isCompleted() }
     }
 
     fun complete(actionId: ActionId): Step {
         when (this) {
-            is Id -> if (this.id == actionId) this.complete()
+            is Id -> if (this.actionId == actionId) this.status = ActionStatus.COMPLETED
             is And -> this.steps = this.steps.map { s -> s.complete(actionId) }
             is Or -> this.steps = this.steps.map { s -> s.complete(actionId) }
         }
