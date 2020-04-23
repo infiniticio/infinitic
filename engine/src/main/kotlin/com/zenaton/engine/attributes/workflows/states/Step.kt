@@ -1,69 +1,43 @@
 package com.zenaton.engine.attributes.workflows.states
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.zenaton.engine.attributes.delays.DelayId
+import com.zenaton.engine.attributes.events.EventId
+import com.zenaton.engine.attributes.tasks.TaskId
+import com.zenaton.engine.attributes.workflows.WorkflowId
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes(
-    JsonSubTypes.Type(value = Step.Id::class, name = "ID"),
-    JsonSubTypes.Type(value = Step.And::class, name = "AND"),
-    JsonSubTypes.Type(value = Step.Or::class, name = "OR")
-)
-sealed class Step {
-    data class Id(val actionId: ActionId, var status: ActionStatus = ActionStatus.DISPATCHED) : Step()
-    data class And(var steps: List<Step>) : Step()
-    data class Or(var steps: List<Step>) : Step()
-
+data class Step(
+    val hash: String,
+    val criterion: StepCriterion,
+    var propertiesAfterCompletion: Properties?
+) {
     @JsonIgnore
-    open fun isCompleted(): Boolean = when (this) {
-        is Id -> this.status == ActionStatus.COMPLETED
-        is And -> this.steps.all { s -> s.isCompleted() }
-        is Or -> this.steps.any { s -> s.isCompleted() }
+    fun isCompleted() = criterion.isCompleted()
+
+    fun completeTask(taskId: TaskId, properties: Properties): Boolean {
+        return complete(ActionId(taskId), properties)
     }
 
-    fun complete(actionId: ActionId): Step {
-        when (this) {
-            is Id -> if (this.actionId == actionId) this.status = ActionStatus.COMPLETED
-            is And -> this.steps = this.steps.map { s -> s.complete(actionId) }
-            is Or -> this.steps = this.steps.map { s -> s.complete(actionId) }
-        }
-        return this.resolveOr().compose()
+    fun completeWorkflow(workflowId: WorkflowId, properties: Properties): Boolean {
+        return complete(ActionId(workflowId), properties)
     }
 
-    private fun resolveOr(): Step {
-        when (this) {
-            is And -> this.steps = this.steps.map { s -> s.resolveOr() }
-            is Or -> this.steps =
-                if (this.isCompleted())
-                    listOf(this.steps.first { s -> s.isCompleted() }.resolveOr())
-                else
-                    this.steps.map { s -> s.resolveOr() }
-        }
-        return this
+    fun completeDelay(delayId: DelayId, properties: Properties): Boolean {
+        return complete(ActionId(delayId), properties)
     }
 
-    private fun compose(): Step {
-        when (this) {
-            is And -> while (this.steps.any { s -> s is And || (s is Or && s.steps.count() == 1) }) {
-                this.steps = this.steps.fold(mutableListOf<Step>()) { l, s ->
-                    return@fold when (s) {
-                        is Id -> { l.add(s); l }
-                        is And -> { l.addAll(s.steps); l }
-                        is Or -> { if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s); l }
-                    }
-                }
-            }
-            is Or -> while (this.steps.any { s -> s is Or || (s is And && s.steps.count() == 1) }) {
-                this.steps = this.steps.fold(mutableListOf<Step>()) { l, s ->
-                    return@fold when (s) {
-                        is Id -> { l.add(s); l }
-                        is And -> { if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s); l }
-                        is Or -> { l.addAll(s.steps); l }
-                    }
-                }
+    fun completeEvent(eventId: EventId, properties: Properties): Boolean {
+        return complete(ActionId(eventId), properties)
+    }
+
+    private fun complete(actionId: ActionId, properties: Properties): Boolean {
+        if (! isCompleted()) {
+            criterion.complete(actionId)
+            if (criterion.isCompleted()) {
+                propertiesAfterCompletion = properties.copy()
+                return true
             }
         }
-        return this
+        return false
     }
 }

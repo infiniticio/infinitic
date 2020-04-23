@@ -7,7 +7,6 @@ import com.zenaton.engine.attributes.events.EventId
 import com.zenaton.engine.attributes.tasks.TaskId
 import com.zenaton.engine.attributes.types.Id
 import com.zenaton.engine.attributes.workflows.WorkflowId
-import java.util.UUID
 
 data class ActionId(override val id: String) : Id(id) {
     constructor(taskId: TaskId) : this(taskId.id)

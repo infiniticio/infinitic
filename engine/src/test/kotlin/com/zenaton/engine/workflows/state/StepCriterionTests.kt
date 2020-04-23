@@ -1,16 +1,17 @@
 package com.zenaton.engine.workflows.state
 
+import com.zenaton.engine.attributes.tasks.TaskId
 import com.zenaton.engine.attributes.workflows.states.ActionId
-import com.zenaton.engine.attributes.workflows.states.Step
-import com.zenaton.engine.attributes.workflows.states.Step.And
-import com.zenaton.engine.attributes.workflows.states.Step.Or
+import com.zenaton.engine.attributes.workflows.states.StepCriterion
+import com.zenaton.engine.attributes.workflows.states.StepCriterion.And
+import com.zenaton.engine.attributes.workflows.states.StepCriterion.Or
 import com.zenaton.pulsar.utils.Json
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStep() = Step.Id(ActionId())
+fun getStep() = StepCriterion.Id(ActionId(TaskId()))
 
-class StepTests : StringSpec({
+class StepCriterionTests : StringSpec({
     "Step should not be completed by default" {
         val step = getStep()
 
@@ -154,7 +155,7 @@ class StepTests : StringSpec({
     "A serialization" {
         val stepA = getStep()
 
-        stepA shouldBe Json.from(Json.to(stepA), Step::class)
+        stepA shouldBe Json.from(Json.to(stepA), StepCriterion::class)
     }
 
     "A AND B serialization" {
@@ -162,7 +163,7 @@ class StepTests : StringSpec({
         val stepB = getStep()
         val step = And(listOf(stepA, stepB))
 
-        step shouldBe Json.from(Json.to(step), Step::class)
+        step shouldBe Json.from(Json.to(step), StepCriterion::class)
     }
 
     "A OR B serialization" {
@@ -170,7 +171,7 @@ class StepTests : StringSpec({
         val stepB = getStep()
         val step = Or(listOf(stepA, stepB))
 
-        step shouldBe Json.from(Json.to(step), Step::class)
+        step shouldBe Json.from(Json.to(step), StepCriterion::class)
     }
 
     "A AND (B OR C) serialization" {
@@ -179,7 +180,7 @@ class StepTests : StringSpec({
         val stepC = getStep()
         val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step shouldBe Json.from(Json.to(step), Step::class)
+        step shouldBe Json.from(Json.to(step), StepCriterion::class)
     }
 
     "A OR (B AND C) serialization" {
@@ -188,7 +189,7 @@ class StepTests : StringSpec({
         val stepC = getStep()
         val step = Or(listOf(stepA, And(listOf(stepB, stepC))))
 
-        step shouldBe Json.from(Json.to(step), Step::class)
+        step shouldBe Json.from(Json.to(step), StepCriterion::class)
     }
 
     "A OR (B OR C) serialization" {
@@ -197,7 +198,7 @@ class StepTests : StringSpec({
         val stepC = getStep()
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step shouldBe Json.from(Json.to(step), Step::class)
+        step shouldBe Json.from(Json.to(step), StepCriterion::class)
     }
 
     "A AND (B AND C) serialization" {
@@ -206,6 +207,6 @@ class StepTests : StringSpec({
         val stepC = getStep()
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step shouldBe Json.from(Json.to(step), Step::class)
+        step shouldBe Json.from(Json.to(step), StepCriterion::class)
     }
 })
