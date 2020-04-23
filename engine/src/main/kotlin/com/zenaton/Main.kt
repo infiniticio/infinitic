@@ -1,5 +1,6 @@
 package com.zenaton
 import com.zenaton.engine.attributes.workflows.states.Properties
+import com.zenaton.engine.attributes.workflows.states.PropertyData
 import com.zenaton.engine.attributes.workflows.states.PropertyHash
 import com.zenaton.engine.attributes.workflows.states.PropertyKey
 import com.zenaton.pulsar.utils.Json
@@ -17,13 +18,19 @@ fun main() {
 //        workflowData = WorkflowData(ByteArray(10)),
 //        dispatchedAt = DateTime()
 //    )
+    var prop = PropertyData("teste".toByteArray())
+    println(prop)
+    var json = Json.to(prop)
+    println(json)
+    prop = Json.from(json, PropertyData::class) as PropertyData
+    println(prop)
 
     var key1 = PropertyKey("key1")
     var key2 = PropertyKey("key2")
     var val1 = PropertyHash("hash1")
     var val2 = PropertyHash("hash2")
     println(val1)
-    var json = Json.to(val1)
+    json = Json.to(val1)
     println(json)
     val1 = Json.from(json, PropertyHash::class) as PropertyHash
     println(key1)

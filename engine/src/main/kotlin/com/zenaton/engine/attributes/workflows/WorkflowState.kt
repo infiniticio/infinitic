@@ -10,7 +10,10 @@ data class WorkflowState(
     val workflowId: WorkflowId,
     val ongoingDecisionId: DecisionId? = null,
     val bufferedMessages: List<WorkflowMessage> = listOf(),
+    /**
+     *
+     */
     val store: Store = Store(),
-    val runningBranches: List<Branch> = listOf(),
+    val runningBranches: List<Branch>,
     val currentProperties: Properties = Properties()
 )

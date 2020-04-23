@@ -1,10 +1,13 @@
 package com.zenaton.engine.attributes.types
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 import java.math.BigInteger
 import java.security.MessageDigest
 
-abstract class Data(open val data: ByteArray) {
-    fun hash(): String {
+abstract class Data @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(@get:JsonValue open val data: ByteArray) {
+
+    open fun hash(): String {
         // MD5 implementation
         val md = MessageDigest.getInstance("MD5")
         return BigInteger(1, md.digest(data)).toString(16).padStart(32, '0')

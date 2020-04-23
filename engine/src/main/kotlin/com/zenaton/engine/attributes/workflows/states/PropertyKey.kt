@@ -1,6 +1,5 @@
 package com.zenaton.engine.attributes.workflows.states
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
+import com.zenaton.engine.attributes.types.Key
 
-data class PropertyKey @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(@get:JsonValue val key: String)
+data class PropertyKey(override val key: String) : Key(key)
