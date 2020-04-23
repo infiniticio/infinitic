@@ -1,5 +1,15 @@
 package com.zenaton.engine.attributes.workflows.states
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = Step.Id::class, name = "ID"),
+    JsonSubTypes.Type(value = Step.And::class, name = "AND"),
+    JsonSubTypes.Type(value = Step.Or::class, name = "OR")
+)
 sealed class Step {
     data class Id(val id: ActionId, var status: ActionStatus = ActionStatus.DISPATCHED) : Step() {
         override fun isCompleted(): Boolean {
@@ -13,6 +23,7 @@ sealed class Step {
     data class And(var steps: List<Step>) : Step()
     data class Or(var steps: List<Step>) : Step()
 
+    @JsonIgnore
     open fun isCompleted(): Boolean = when (this) {
         is Id -> this.isCompleted()
         is And -> this.steps.all { s -> s.isCompleted() }

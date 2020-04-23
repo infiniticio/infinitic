@@ -13,14 +13,16 @@ import com.zenaton.engine.attributes.workflows.WorkflowData
     include = JsonTypeInfo.As.PROPERTY,
     property = "type")
 @JsonSubTypes(
-    Type(value = Branch.Handle::class, name = "Handle"),
-    Type(value = Branch.OnEvent::class, name = "OnEvent")
+    Type(value = Branch.Handle::class, name = "HANDLE"),
+    Type(value = Branch.OnEvent::class, name = "ON_EVENT")
 )
 sealed class Branch(
     open val decidedAt: DateTime,
     open val dispatchedAt: DateTime,
     open val storeHashAtStart: StoreHash?,
-    open val steps: List<Step>
+    open val steps: List<Step>,
+    open val actions: Map<ActionId, Action> = mapOf()
+
 ) {
     data class Handle(
         val workflowData: WorkflowData?,

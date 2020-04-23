@@ -14,11 +14,11 @@ import com.zenaton.engine.attributes.workflows.WorkflowOutput
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
-    JsonSubTypes.Type(value = WorkflowDispatched::class, name = "WorkflowDispatched"),
-    JsonSubTypes.Type(value = WorkflowCompleted::class, name = "WorkflowCompleted"),
-    JsonSubTypes.Type(value = TaskCompleted::class, name = "TaskCompleted"),
-    JsonSubTypes.Type(value = DelayCompleted::class, name = "DelayCompleted"),
-    JsonSubTypes.Type(value = DecisionCompleted::class, name = "DecisionCompleted")
+    JsonSubTypes.Type(value = WorkflowDispatched::class, name = "WORKFLOW_DISPATCHED"),
+    JsonSubTypes.Type(value = WorkflowCompleted::class, name = "WORKFLOW_COMPLETED"),
+    JsonSubTypes.Type(value = TaskCompleted::class, name = "TASK_COMPLETED"),
+    JsonSubTypes.Type(value = DelayCompleted::class, name = "DELAY_COMPLETED"),
+    JsonSubTypes.Type(value = DecisionCompleted::class, name = "DECISION_COMPLETED")
 )
 sealed class WorkflowMessage(open var workflowId: WorkflowId) {
     @JsonIgnore

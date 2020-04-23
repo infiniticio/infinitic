@@ -1,5 +1,7 @@
 package com.zenaton.engine.attributes.workflows.states
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.zenaton.engine.attributes.delays.DelayId
 import com.zenaton.engine.attributes.events.EventData
 import com.zenaton.engine.attributes.events.EventId
@@ -10,6 +12,13 @@ import com.zenaton.engine.attributes.types.DateTime
 import com.zenaton.engine.attributes.workflows.WorkflowId
 import com.zenaton.engine.attributes.workflows.WorkflowOutput
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = WaitingForTask::class, name = "WAITING_FOR_TASK"),
+    JsonSubTypes.Type(value = WaitingForWorkflow::class, name = "WAITING_FOR_WORKFLOW"),
+    JsonSubTypes.Type(value = WaitingForDelay::class, name = "WAITING_FOR_DELAY"),
+    JsonSubTypes.Type(value = WaitingForEvent::class, name = "WAITING_FOR_EVENT")
+)
 sealed class Action(
     open val actionId: ActionId,
     open val decidedAt: DateTime,
