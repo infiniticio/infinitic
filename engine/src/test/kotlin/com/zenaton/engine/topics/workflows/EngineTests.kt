@@ -12,6 +12,7 @@ import com.zenaton.engine.data.workflows.WorkflowId
 import com.zenaton.engine.data.workflows.WorkflowName
 import com.zenaton.engine.data.workflows.WorkflowOutput
 import com.zenaton.engine.data.workflows.WorkflowState
+import com.zenaton.engine.data.workflows.states.Branch
 import com.zenaton.engine.topics.decisions.DecisionDispatched
 import com.zenaton.pulsar.workflows.Dispatcher
 import com.zenaton.pulsar.workflows.Logger
@@ -240,5 +241,8 @@ class EngineTests : StringSpec({
         confirmVerified(logger)
         msgOut.workflowId shouldBe msgIn.workflowId
         msgOut.workflowName shouldBe msgIn.workflowName
+        msgOut.branches shouldBe listOf(Branch.Handle(workflowData = msgIn.workflowData))
+        stateOut.ongoingDecisionId shouldBe msgOut.decisionId
+        stateOut.runningBranches shouldBe listOf(Branch.Handle(workflowData = msgIn.workflowData))
     }
 })

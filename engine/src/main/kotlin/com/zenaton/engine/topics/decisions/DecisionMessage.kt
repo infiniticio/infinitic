@@ -32,7 +32,7 @@ data class DecisionDispatched(
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
     val actions: Map<ActionId, Action> = mapOf(),
-    val runningBranches: List<Branch> = listOf()
+    val branches: List<Branch> = listOf()
 ) : DecisionMessage(decisionId)
 
 data class DecisionCompleted(

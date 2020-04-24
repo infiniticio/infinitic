@@ -75,7 +75,7 @@ class Engine(
             decisionId = decisionId,
             workflowId = msg.workflowId,
             workflowName = msg.workflowName,
-            runningBranches = listOf(branch)
+            branches = listOf(branch)
         )
         // dispatch decision
         dispatcher.dispatchDecision(m)
