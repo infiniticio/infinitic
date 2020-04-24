@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.workflows.functions
 
-import com.zenaton.engine.workflows.Engine
+import com.zenaton.engine.topics.workflows.Engine
 import com.zenaton.pulsar.workflows.Dispatcher
 import com.zenaton.pulsar.workflows.Logger
 import com.zenaton.pulsar.workflows.PulsarMessage

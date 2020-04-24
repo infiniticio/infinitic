@@ -1,8 +1,8 @@
 package com.zenaton
-import com.zenaton.engine.attributes.workflows.states.Properties
-import com.zenaton.engine.attributes.workflows.states.PropertyData
-import com.zenaton.engine.attributes.workflows.states.PropertyHash
-import com.zenaton.engine.attributes.workflows.states.PropertyKey
+import com.zenaton.engine.data.workflows.states.Properties
+import com.zenaton.engine.data.workflows.states.PropertyData
+import com.zenaton.engine.data.workflows.states.PropertyHash
+import com.zenaton.engine.data.workflows.states.PropertyKey
 import com.zenaton.pulsar.utils.Json
 import com.zenaton.pulsar.workflows.PulsarMessage
 import org.apache.pulsar.client.api.PulsarClient
@@ -20,9 +20,9 @@ fun main() {
 //    )
     var prop = PropertyData("teste".toByteArray())
     println(prop)
-    var json = Json.to(prop)
+    var json = Json.stringify(prop)
     println(json)
-    prop = Json.from(json, PropertyData::class) as PropertyData
+    prop = Json.parse(json, PropertyData::class) as PropertyData
     println(prop)
 
     var key1 = PropertyKey("key1")
@@ -30,16 +30,16 @@ fun main() {
     var val1 = PropertyHash("hash1")
     var val2 = PropertyHash("hash2")
     println(val1)
-    json = Json.to(val1)
+    json = Json.stringify(val1)
     println(json)
-    val1 = Json.from(json, PropertyHash::class) as PropertyHash
+    val1 = Json.parse(json, PropertyHash::class) as PropertyHash
     println(key1)
 
     var p = Properties(mapOf(key1 to val1, key2 to val2))
     println(p)
-    json = Json.to(p)
+    json = Json.stringify(p)
     println(json)
-    p = Json.from(json, Properties::class) as Properties
+    p = Json.parse(json, Properties::class) as Properties
     println(p)
 
 //    var msg = TaskCompleted(

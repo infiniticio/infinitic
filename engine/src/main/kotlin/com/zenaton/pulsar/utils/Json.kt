@@ -6,11 +6,15 @@ import kotlin.reflect.KClass
 object Json : JsonInterface {
     val mapper = jacksonObjectMapper()
 
-    override fun to(msg: Any): String {
-        return mapper.writeValueAsString(msg)
+    override fun stringify(msg: Any, pretty: Boolean): String {
+        return if (pretty) {
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
+        } else {
+            mapper.writeValueAsString(msg)
+        }
     }
 
-    override fun <M : Any> from(json: String, klass: KClass<M>): Any {
+    override fun <M : Any> parse(json: String, klass: KClass<M>): Any {
         return mapper.readValue(json, klass.java)
     }
 }

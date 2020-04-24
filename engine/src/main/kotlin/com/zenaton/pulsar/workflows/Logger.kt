@@ -1,7 +1,6 @@
 package com.zenaton.pulsar.workflows
 
-import com.zenaton.engine.workflows.LoggerInterface
-import com.zenaton.engine.workflows.WorkflowMessage
+import com.zenaton.engine.topics.workflows.LoggerInterface
 import com.zenaton.pulsar.utils.Json
 import com.zenaton.pulsar.utils.JsonInterface
 import org.apache.pulsar.functions.api.Context
@@ -11,37 +10,40 @@ class Logger(private val context: Context) : LoggerInterface {
     // Json injection
     var json: JsonInterface = Json
 
-    override fun debug(txt: String, msg: WorkflowMessage?): String {
-        val message = getMessage(txt, msg)
+    override fun debug(txt: String, obj1: Any?, obj2: Any?): String {
+        val message = getMessage(txt, obj1, obj2)
         context.logger.debug(message)
         return message
     }
 
-    override fun error(txt: String, msg: WorkflowMessage?): String {
-        val message = getMessage(txt, msg)
+    override fun error(txt: String, obj1: Any?, obj2: Any?): String {
+        val message = getMessage(txt, obj1, obj2)
         context.logger.error(message)
         return message
     }
 
-    override fun info(txt: String, msg: WorkflowMessage?): String {
-        val message = getMessage(txt, msg)
+    override fun info(txt: String, obj1: Any?, obj2: Any?): String {
+        val message = getMessage(txt, obj1, obj2)
         context.logger.info(message)
         return message
     }
 
-    override fun warn(txt: String, msg: WorkflowMessage?): String {
-        val message = getMessage(txt, msg)
+    override fun warn(txt: String, obj1: Any?, obj2: Any?): String {
+        val message = getMessage(txt, obj1, obj2)
         context.logger.warn(message)
         return message
     }
 
-    override fun trace(txt: String, msg: WorkflowMessage?): String {
-        val message = getMessage(txt, msg)
+    override fun trace(txt: String, obj1: Any?, obj2: Any?): String {
+        val message = getMessage(txt, obj1, obj2)
         context.logger.trace(message)
         return message
     }
 
-    private fun getMessage(txt: String, msg: WorkflowMessage?): String {
-        return txt + msg?.let { json.to(it) }
+    private fun getMessage(txt: String, obj1: Any?, obj2: Any?): String {
+        val var1 = if (obj1 == null) "" else "\n${json.stringify(obj1, pretty = true)}\n"
+        val var2 = if (obj2 == null) "" else "\n${json.stringify(obj2, pretty = true)}\n"
+
+        return String.format(txt, var1, var2)
     }
 }

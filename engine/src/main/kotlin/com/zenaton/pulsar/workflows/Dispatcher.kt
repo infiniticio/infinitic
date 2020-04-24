@@ -1,10 +1,10 @@
 package com.zenaton.pulsar.workflows
 
-import com.zenaton.engine.decisions.DecisionDispatched
-import com.zenaton.engine.delays.DelayDispatched
-import com.zenaton.engine.tasks.TaskDispatched
-import com.zenaton.engine.workflows.DispatcherInterface
-import com.zenaton.engine.workflows.WorkflowDispatched
+import com.zenaton.engine.topics.decisions.DecisionDispatched
+import com.zenaton.engine.topics.delays.DelayDispatched
+import com.zenaton.engine.topics.tasks.TaskDispatched
+import com.zenaton.engine.topics.workflows.DispatcherInterface
+import com.zenaton.engine.topics.workflows.WorkflowDispatched
 import com.zenaton.pulsar.workflows.serializers.MessageConverter
 import com.zenaton.pulsar.workflows.serializers.MessageConverterInterface
 import org.apache.pulsar.functions.api.Context
