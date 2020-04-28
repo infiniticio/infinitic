@@ -14,9 +14,9 @@ import com.zenaton.engine.data.workflows.WorkflowOutput
 import com.zenaton.engine.data.workflows.WorkflowState
 import com.zenaton.engine.data.workflows.states.Branch
 import com.zenaton.engine.topics.decisions.DecisionDispatched
-import com.zenaton.pulsar.workflows.Dispatcher
-import com.zenaton.pulsar.workflows.Logger
-import com.zenaton.pulsar.workflows.Stater
+import com.zenaton.pulsar.topics.workflows.Dispatcher
+import com.zenaton.pulsar.topics.workflows.Stater
+import com.zenaton.pulsar.utils.Logger
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -43,7 +43,7 @@ fun workflowDispatched(id: WorkflowId? = null, workflowData: WorkflowData? = nul
     )
 }
 
-fun decisionCompleted(id: WorkflowId? = null, workflowData: String? = null, workflowName: String? = null): DecisionCompleted {
+fun decisionCompleted(id: WorkflowId? = null): DecisionCompleted {
     return DecisionCompleted(
         workflowId = id ?: WorkflowId(),
         decisionId = DecisionId()
@@ -241,8 +241,8 @@ class EngineTests : StringSpec({
         confirmVerified(logger)
         msgOut.workflowId shouldBe msgIn.workflowId
         msgOut.workflowName shouldBe msgIn.workflowName
-        msgOut.branches shouldBe listOf(Branch.Handle(workflowData = msgIn.workflowData))
+        msgOut.branches shouldBe listOf(Branch.Handle(branchId = msgOut.branches[0].branchId, workflowData = msgIn.workflowData))
         stateOut.ongoingDecisionId shouldBe msgOut.decisionId
-        stateOut.runningBranches shouldBe listOf(Branch.Handle(workflowData = msgIn.workflowData))
+        stateOut.runningBranches shouldBe listOf(Branch.Handle(branchId = msgOut.branches[0].branchId, workflowData = msgIn.workflowData))
     }
 })

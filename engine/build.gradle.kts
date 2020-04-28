@@ -44,7 +44,7 @@ tasks {
 
 tasks {
     build {
-        dependsOn(":ktlintFormat")
+        dependsOn("ktlintFormat")
         dependsOn(shadowJar)
     }
 }
@@ -58,7 +58,17 @@ tasks.register("setupZenaton") {
     description = "Setup Zenaton into Pulsar"
     dependsOn(":build")
     doLast {
-        createZenatonFunction("com.zenaton.pulsar.workflows.functions.StateFunction", "workflows")
+        setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.workflows.functions.StateFunction",
+            topicIn = "workflows",
+            action = "create"
+        )
+        setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.workflows.functions.TraceFunction",
+            topicIn = "workflows",
+            topicOut = "traces",
+            action = "create"
+        )
     }
 }
 
@@ -67,7 +77,15 @@ tasks.register("uploadZenatonFunctions") {
     description = "Upload Zenaton functions to Pulsar"
     dependsOn(":build")
     doLast {
-        uploadZenatonFunction("com.zenaton.pulsar.workflows.functions.StateFunction", "workflows")
+        setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.workflows.functions.StateFunction",
+            topicIn = "workflows"
+        )
+        setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.workflows.functions.TraceFunction",
+            topicIn = "workflows",
+            topicOut = "traces"
+        )
     }
 }
 
@@ -76,30 +94,36 @@ tasks.register("cleanZenaton") {
     description = "Clean Zenaton from Pulsar"
     doLast {
         deleteZenatonFunction("StateFunction")
+        deleteZenatonFunction("TraceFunction")
         forceDeleteTopic("workflows")
+        forceDeleteTopic("tasks")
+        forceDeleteTopic("decisions")
+        forceDeleteTopic("traces")
+        forceDeleteTopic("logs")
     }
 }
 
-fun createZenatonFunction(className: String, topic: String, tenant: String = "public", namespace: String = "default") {
-    println("Creating $className in $topic")
-    val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "create",
-        "--jar", "/zenaton/engine/build/libs/engine-1.0-SNAPSHOT-all.jar",
+fun setZenatonFunction(
+    className: String,
+    topicIn: String,
+    topicOut: String? = null,
+    topicLogs: String = "logs",
+    action: String = "update",
+    tenant: String = "public",
+    namespace: String = "default"
+) {
+    println("$action $className in $topicIn")
+    val cmd = mutableListOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", action,
+        "--jar", "/zenaton/engine/build/engine-1.0-SNAPSHOT-all.jar",
         "--classname", className,
-        // "--log-topic", "persistent://$tenant/$namespace/logs",
-        "--inputs", "persistent://$tenant/$namespace/$topic"
+        "--log-topic", "persistent://$tenant/$namespace/$topicLogs",
+        "--inputs", "persistent://$tenant/$namespace/$topicIn"
     )
-    exec(cmd)
-}
-
-fun uploadZenatonFunction(className: String, topic: String, tenant: String = "public", namespace: String = "default") {
-    println("Updating $className in $topic")
-    val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin", "functions", "update",
-        "--jar", "/zenaton/engine/build/libs/engine-1.0-SNAPSHOT-all.jar",
-        "--classname", className,
-        // "--log-topic", "persistent://$tenant/$namespace/logs",
-        "--inputs", "persistent://$tenant/$namespace/$topic"
-    )
-    exec(cmd)
+    if (topicOut != null) {
+        cmd.add("--output")
+        cmd.add("persistent://$tenant/$namespace/$topicOut")
+    }
+    exec(cmd.toTypedArray())
 }
 
 fun deleteZenatonFunction(name: String, tenant: String = "public", namespace: String = "default") {

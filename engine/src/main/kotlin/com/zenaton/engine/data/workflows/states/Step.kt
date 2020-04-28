@@ -7,7 +7,7 @@ import com.zenaton.engine.data.tasks.TaskId
 import com.zenaton.engine.data.workflows.WorkflowId
 
 data class Step(
-    val hash: String,
+    val stepHash: StepHash,
     val criterion: StepCriterion,
     var propertiesAfterCompletion: Properties?
 ) {
@@ -18,7 +18,7 @@ data class Step(
         return complete(ActionId(taskId), properties)
     }
 
-    fun completeWorkflow(workflowId: WorkflowId, properties: Properties): Boolean {
+    fun completeChildWorkflow(workflowId: WorkflowId, properties: Properties): Boolean {
         return complete(ActionId(workflowId), properties)
     }
 

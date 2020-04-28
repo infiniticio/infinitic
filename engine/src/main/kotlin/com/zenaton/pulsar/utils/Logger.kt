@@ -1,42 +1,42 @@
-package com.zenaton.pulsar.workflows
+package com.zenaton.pulsar.utils
 
 import com.zenaton.engine.topics.workflows.LoggerInterface
-import com.zenaton.pulsar.utils.Json
-import com.zenaton.pulsar.utils.JsonInterface
 import org.apache.pulsar.functions.api.Context
+import org.slf4j.Logger
 
 class Logger(private val context: Context) : LoggerInterface {
 
     // Json injection
     var json: JsonInterface = Json
+    private val logger: Logger = context.logger
 
     override fun debug(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        context.logger.debug(message)
+        logger.debug(message)
         return message
     }
 
     override fun error(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        context.logger.error(message)
+        logger.error(message)
         return message
     }
 
     override fun info(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        context.logger.info(message)
+        logger.info(message)
         return message
     }
 
     override fun warn(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        context.logger.warn(message)
+        logger.warn(message)
         return message
     }
 
     override fun trace(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        context.logger.trace(message)
+        logger.trace(message)
         return message
     }
 

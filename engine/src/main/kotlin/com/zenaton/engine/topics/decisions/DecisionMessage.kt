@@ -9,9 +9,8 @@ import com.zenaton.engine.data.decisions.DecisionId
 import com.zenaton.engine.data.decisions.DecisionOutput
 import com.zenaton.engine.data.workflows.WorkflowId
 import com.zenaton.engine.data.workflows.WorkflowName
-import com.zenaton.engine.data.workflows.states.Action
-import com.zenaton.engine.data.workflows.states.ActionId
 import com.zenaton.engine.data.workflows.states.Branch
+import com.zenaton.engine.data.workflows.states.Store
 import com.zenaton.engine.topics.workflows.DecisionCompleted
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
@@ -31,8 +30,8 @@ data class DecisionDispatched(
     override var decisionId: DecisionId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val actions: Map<ActionId, Action> = mapOf(),
-    val branches: List<Branch> = listOf()
+    val branches: List<Branch>,
+    val store: Store
 ) : DecisionMessage(decisionId)
 
 data class DecisionCompleted(
@@ -50,7 +49,6 @@ data class DecisionAttemptStarted(
     val decisionAttemptId: DecisionAttemptId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val actions: Map<ActionId, Action> = mapOf(),
     val runningBranches: List<Branch> = listOf()
 ) : DecisionMessage(decisionId)
 

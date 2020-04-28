@@ -1,4 +1,4 @@
-package com.zenaton.pulsar.workflows.serializers
+package com.zenaton.pulsar.topics.workflows.serializers
 
 import com.zenaton.engine.data.workflows.WorkflowState
 import java.io.ByteArrayInputStream

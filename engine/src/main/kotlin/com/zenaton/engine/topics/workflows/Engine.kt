@@ -4,6 +4,7 @@ import com.zenaton.engine.data.decisions.DecisionId
 import com.zenaton.engine.data.types.DateTime
 import com.zenaton.engine.data.workflows.WorkflowState
 import com.zenaton.engine.data.workflows.states.Branch
+import com.zenaton.engine.data.workflows.states.Store
 import com.zenaton.engine.topics.decisions.DecisionDispatched
 
 class Engine(
@@ -59,7 +60,10 @@ class Engine(
             is WorkflowDispatched -> dispatchWorkflow(state, msg)
             is DecisionCompleted -> completeDecision(state, msg)
             is TaskCompleted -> completeTask(state, msg)
+            is ChildWorkflowCompleted -> completeChildWorkflow(state, msg)
             is DelayCompleted -> completeDelay(state, msg)
+            is EventReceived -> eventReceived(state, msg)
+            is WorkflowCompleted -> workflowCompleted(state, msg)
         }
     }
 
@@ -75,7 +79,8 @@ class Engine(
             decisionId = decisionId,
             workflowId = msg.workflowId,
             workflowName = msg.workflowName,
-            branches = listOf(branch)
+            branches = listOf(branch),
+            store = filterStore(state.store, listOf(branch))
         )
         // dispatch decision
         dispatcher.dispatchDecision(m)
@@ -84,14 +89,43 @@ class Engine(
     }
 
     private fun completeDecision(state: WorkflowState, msg: DecisionCompleted) {
-        //
+        TODO()
     }
 
     private fun completeTask(state: WorkflowState, msg: TaskCompleted) {
-        //
+        TODO()
+    }
+
+    private fun completeChildWorkflow(state: WorkflowState, msg: ChildWorkflowCompleted) {
+        TODO()
     }
 
     private fun completeDelay(state: WorkflowState, msg: DelayCompleted) {
-        //
+        TODO()
+    }
+
+    private fun eventReceived(state: WorkflowState, msg: EventReceived) {
+        TODO()
+    }
+
+    private fun workflowCompleted(state: WorkflowState, msg: WorkflowCompleted) {
+        TODO()
+    }
+
+    private fun filterStore(store: Store, branches: List<Branch>): Store {
+        // Retrieve properties at step at completion in branches
+        val listProperties1 = branches.flatMap {
+            b -> b.steps.filter { it.propertiesAfterCompletion != null }.map { it.propertiesAfterCompletion!! }
+        }
+        // Retrieve properties when starting in branches
+        val listProperties2 = branches.map {
+                b -> b.propertiesAtStart
+        }
+        // Retrieve List<PropertyHash?> relevant for branches
+        val listHashes = listProperties1.union(listProperties2).flatMap { it.properties.values }
+        // Keep only relevant keys
+        val properties = store.properties.filterKeys { listHashes.contains(it) }
+
+        return Store(properties)
     }
 }

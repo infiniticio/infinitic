@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlin.reflect.KClass
 
 object Json : JsonInterface {
-    val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper()
 
     override fun stringify(msg: Any, pretty: Boolean): String {
         return if (pretty) {

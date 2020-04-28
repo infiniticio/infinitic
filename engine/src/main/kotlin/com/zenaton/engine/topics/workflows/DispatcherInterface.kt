@@ -6,7 +6,7 @@ import com.zenaton.engine.topics.tasks.TaskDispatched
 
 interface DispatcherInterface {
     fun dispatchTask(msg: TaskDispatched)
-    fun dispatchWorkflow(msg: WorkflowDispatched)
+    fun dispatchChildWorkflow(msg: WorkflowDispatched)
     fun dispatchDelay(msg: DelayDispatched)
     fun dispatchDecision(msg: DecisionDispatched)
 }

@@ -1,7 +1,7 @@
-package com.zenaton.pulsar.workflows
+package com.zenaton.pulsar.topics.workflows
 
 import com.zenaton.engine.data.workflows.WorkflowState
-import com.zenaton.pulsar.workflows.serializers.StateSerDeInterface
+import com.zenaton.pulsar.topics.workflows.serializers.StateSerDeInterface
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb

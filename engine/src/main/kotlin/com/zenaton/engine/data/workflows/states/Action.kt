@@ -15,47 +15,102 @@ import com.zenaton.engine.data.workflows.WorkflowOutput
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(value = DispatchTask::class, name = "DISPATCH_TASK"),
+    JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
+    JsonSubTypes.Type(value = WaitDelay::class, name = "WAIT_DELAY"),
+    JsonSubTypes.Type(value = WaitEvent::class, name = "WAIT_EVENT"),
     JsonSubTypes.Type(value = InstantTask::class, name = "INSTANT_TASK"),
-    JsonSubTypes.Type(value = DispatchWorkflow::class, name = "DISPATCH_WORKFLOW"),
-    JsonSubTypes.Type(value = DispatchDelay::class, name = "DISPATCH_DELAY"),
-    JsonSubTypes.Type(value = ListenEvent::class, name = "LISTEN_EVENT")
+    JsonSubTypes.Type(value = PauseWorkflow::class, name = "PAUSE_WORKFLOW"),
+    JsonSubTypes.Type(value = ResumeWorkflow::class, name = "RESUME_WORKFLOW"),
+    JsonSubTypes.Type(value = CompleteWorkflow::class, name = "COMPLETE_WORKFLOW"),
+    JsonSubTypes.Type(value = TerminateWorkflow::class, name = "TERMINATE_WORKFLOW"),
+    JsonSubTypes.Type(value = SendEvent::class, name = "SEND_EVENT")
 )
-sealed class Action(
+abstract sealed class Action(
     open val decidedAt: DateTime,
-    open val status: ActionStatus
+    open val actionHash: ActionHash,
+    open val actionStatus: ActionStatus
 )
 
 data class DispatchTask(
     val taskId: TaskId,
     var taskOutput: TaskOutput?,
     override val decidedAt: DateTime,
-    override var status: ActionStatus
-) : Action(decidedAt, status)
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
+) : Action(decidedAt, actionHash, actionStatus)
 
-data class InstantTask(
-    val taskId: TaskId,
-    val taskOutput: TaskOutput?,
+data class DispatchChildWorkflow(
+    val childWorkflowId: WorkflowId,
+    var childWorkflowOutput: WorkflowOutput?,
     override val decidedAt: DateTime,
-    override val status: ActionStatus = ActionStatus.COMPLETED
-) : Action(decidedAt, status)
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
+) : Action(decidedAt, actionHash, actionStatus)
 
-data class DispatchWorkflow(
-    val workflowId: WorkflowId,
-    var workflowOutput: WorkflowOutput?,
-    override val decidedAt: DateTime,
-    override var status: ActionStatus
-) : Action(decidedAt, status)
-
-data class DispatchDelay(
+data class WaitDelay(
     val delayId: DelayId,
     override val decidedAt: DateTime,
-    override var status: ActionStatus
-) : Action(decidedAt, status)
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
+) : Action(decidedAt, actionHash, actionStatus)
 
-data class ListenEvent(
+data class WaitEvent(
     val eventId: EventId,
     val eventName: EventName,
     var eventData: EventData?,
     override val decidedAt: DateTime,
-    override var status: ActionStatus
-) : Action(decidedAt, status)
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
+) : Action(decidedAt, actionHash, actionStatus)
+
+/**
+ * InstantTask have already been processed by the Decider
+ */
+data class InstantTask(
+    override val decidedAt: DateTime,
+    override val actionHash: ActionHash,
+    override val actionStatus: ActionStatus,
+    var taskOutput: TaskOutput?
+) : Action(decidedAt, actionHash, actionStatus)
+
+/**
+ * EngineAction are processed right away by the Engine
+ */
+abstract sealed class EngineAction(
+    override val decidedAt: DateTime,
+    override val actionHash: ActionHash,
+    override val actionStatus: ActionStatus
+) : Action(decidedAt, actionHash, actionStatus)
+
+data class PauseWorkflow(
+    override val decidedAt: DateTime,
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
+) : EngineAction(decidedAt, actionHash, actionStatus)
+
+data class ResumeWorkflow(
+    override val decidedAt: DateTime,
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
+) : EngineAction(decidedAt, actionHash, actionStatus)
+
+data class CompleteWorkflow(
+    override val decidedAt: DateTime,
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED,
+    val workflowOutput: WorkflowOutput? = null
+) : EngineAction(decidedAt, actionHash, actionStatus)
+
+data class TerminateWorkflow(
+    override val decidedAt: DateTime,
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
+) : EngineAction(decidedAt, actionHash, actionStatus)
+
+data class SendEvent(
+    override val decidedAt: DateTime,
+    override val actionHash: ActionHash,
+    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED,
+    val eventName: EventName,
+    var eventData: EventData?
+) : EngineAction(decidedAt, actionHash, actionStatus)

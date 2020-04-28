@@ -2,7 +2,7 @@
 
 ## Run Standalone Pulsar
 
-In same directory than `docker-compose.yaml`:
+In the same directory than `docker-compose.yaml`:
 ```bash
 docker-compose up
 ```

@@ -8,6 +8,7 @@ import com.zenaton.engine.topics.workflows.WorkflowMessage
 
 data class WorkflowState(
     val workflowId: WorkflowId,
+    var parentWorkflowId: WorkflowId? = null,
     var ongoingDecisionId: DecisionId? = null,
     val bufferedMessages: MutableList<WorkflowMessage> = mutableListOf(),
     val store: Store = Store(),

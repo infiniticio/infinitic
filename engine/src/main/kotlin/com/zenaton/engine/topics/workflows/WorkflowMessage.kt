@@ -36,6 +36,11 @@ data class WorkflowDispatched(
     val dispatchedAt: DateTime
 ) : WorkflowMessage(workflowId)
 
+data class DecisionCompleted(
+    override var workflowId: WorkflowId,
+    val decisionId: DecisionId
+) : WorkflowMessage(workflowId)
+
 data class TaskCompleted(
     override var workflowId: WorkflowId,
     val taskId: TaskId,
@@ -57,11 +62,6 @@ data class EventReceived(
     override var workflowId: WorkflowId,
     val eventName: EventName,
     val eventData: EventData?
-) : WorkflowMessage(workflowId)
-
-data class DecisionCompleted(
-    override var workflowId: WorkflowId,
-    val decisionId: DecisionId
 ) : WorkflowMessage(workflowId)
 
 data class WorkflowCompleted(

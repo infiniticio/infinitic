@@ -1,9 +1,9 @@
-package com.zenaton.pulsar.workflows
+package com.zenaton.pulsar.topics.workflows.messages
 
 import com.fasterxml.jackson.annotation.JsonInclude
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class PulsarMessage() {
+class PulsarWorkflowMessage() {
     var type: String? = null
     /**
      * Workflows
@@ -18,6 +18,7 @@ class PulsarMessage() {
      */
     var decisionId: String? = null
     /**
+     *
      * Tasks
      */
     var taskId: String? = null
