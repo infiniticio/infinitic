@@ -1,5 +1,7 @@
 package com.zenaton.engine.data.events
 
-import com.zenaton.engine.data.types.Name
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
+import java.util.UUID
 
-data class EventName(override val name: String) : Name(name)
+data class EventName @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(@get:JsonValue val id: String = UUID.randomUUID().toString())

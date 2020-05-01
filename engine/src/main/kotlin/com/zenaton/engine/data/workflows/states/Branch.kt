@@ -3,12 +3,12 @@ package com.zenaton.engine.data.workflows.states
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.zenaton.engine.data.DateTime
 import com.zenaton.engine.data.delays.DelayId
 import com.zenaton.engine.data.events.EventData
 import com.zenaton.engine.data.events.EventName
 import com.zenaton.engine.data.tasks.TaskId
 import com.zenaton.engine.data.tasks.TaskOutput
-import com.zenaton.engine.data.types.DateTime
 import com.zenaton.engine.data.workflows.WorkflowData
 import com.zenaton.engine.data.workflows.WorkflowId
 import com.zenaton.engine.data.workflows.WorkflowOutput

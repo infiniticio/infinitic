@@ -2,13 +2,13 @@ package com.zenaton.engine.data.workflows.states
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.zenaton.engine.data.DateTime
 import com.zenaton.engine.data.delays.DelayId
 import com.zenaton.engine.data.events.EventData
 import com.zenaton.engine.data.events.EventId
 import com.zenaton.engine.data.events.EventName
 import com.zenaton.engine.data.tasks.TaskId
 import com.zenaton.engine.data.tasks.TaskOutput
-import com.zenaton.engine.data.types.DateTime
 import com.zenaton.engine.data.workflows.WorkflowId
 import com.zenaton.engine.data.workflows.WorkflowOutput
 
@@ -25,7 +25,7 @@ import com.zenaton.engine.data.workflows.WorkflowOutput
     JsonSubTypes.Type(value = TerminateWorkflow::class, name = "TERMINATE_WORKFLOW"),
     JsonSubTypes.Type(value = SendEvent::class, name = "SEND_EVENT")
 )
-abstract sealed class Action(
+sealed class Action(
     open val decidedAt: DateTime,
     open val actionHash: ActionHash,
     open val actionStatus: ActionStatus
@@ -76,7 +76,7 @@ data class InstantTask(
 /**
  * EngineAction are processed right away by the Engine
  */
-abstract sealed class EngineAction(
+sealed class EngineAction(
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override val actionStatus: ActionStatus

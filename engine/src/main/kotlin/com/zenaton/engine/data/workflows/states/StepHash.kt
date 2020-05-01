@@ -1,5 +1,6 @@
 package com.zenaton.engine.data.workflows.states
 
-import com.zenaton.engine.data.types.Hash
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
 
-data class StepHash(override val hash: String) : Hash(hash)
+data class StepHash @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(@get:JsonValue val hash: String)
