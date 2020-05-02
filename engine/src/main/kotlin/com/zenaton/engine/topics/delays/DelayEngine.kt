@@ -1,14 +1,15 @@
 package com.zenaton.engine.topics.delays
 
-import com.zenaton.engine.LoggerInterface
 import com.zenaton.engine.data.DateTime
 import com.zenaton.engine.data.delays.DelayState
+import com.zenaton.engine.topics.LoggerInterface
+import com.zenaton.engine.topics.StaterInterface
 import com.zenaton.engine.topics.delays.messages.DelayCompleted
 import com.zenaton.engine.topics.delays.messages.DelayDispatched
 import com.zenaton.engine.topics.delays.messages.DelayMessageInterface
 
 class DelayEngine(
-    private val stater: DelayStaterInterface,
+    private val stater: StaterInterface<DelayState>,
     private val dispatcher: DelayDispatcherInterface,
     private val logger: LoggerInterface
 ) {

@@ -1,8 +1,9 @@
 package com.zenaton.engine.topics.decisions
 
-import com.zenaton.engine.LoggerInterface
 import com.zenaton.engine.data.DateTime
 import com.zenaton.engine.data.decisions.DecisionState
+import com.zenaton.engine.topics.LoggerInterface
+import com.zenaton.engine.topics.StaterInterface
 import com.zenaton.engine.topics.decisions.messages.DecisionAttemptCompleted
 import com.zenaton.engine.topics.decisions.messages.DecisionAttemptDispatched
 import com.zenaton.engine.topics.decisions.messages.DecisionAttemptFailed
@@ -12,7 +13,7 @@ import com.zenaton.engine.topics.decisions.messages.DecisionDispatched
 import com.zenaton.engine.topics.decisions.messages.DecisionMessageInterface
 
 class DecisionEngine(
-    private val stater: DecisionStaterInterface,
+    private val stater: StaterInterface<DecisionState>,
     private val dispatcher: DecisionDispatcherInterface,
     private val logger: LoggerInterface
 ) {

@@ -32,7 +32,7 @@ class WorkflowDispatcher(private val context: Context) : WorkflowDispatcherInter
             JSONSchema.of(WorkflowMessageContainer::class.java)
         )
         msgBuilder
-            .key(msg.getStateKey())
+            .key(msg.getKey())
             .value(WorkflowMessageContainer(workflowDispatched = msg))
             .send()
     }

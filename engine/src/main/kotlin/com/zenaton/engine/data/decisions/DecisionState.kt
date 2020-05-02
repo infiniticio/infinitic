@@ -1,5 +1,5 @@
 package com.zenaton.engine.data.decisions
 
-data class DecisionState(val decisionId: DecisionId) {
-    fun getKey() = decisionId.id
-}
+import com.zenaton.engine.data.StateInterface
+
+data class DecisionState(val decisionId: DecisionId) : StateInterface

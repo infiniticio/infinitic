@@ -22,8 +22,8 @@ import com.zenaton.engine.topics.workflows.messages.TaskCompleted
 import com.zenaton.engine.topics.workflows.messages.WorkflowDispatched
 import com.zenaton.engine.topics.workflows.messages.WorkflowMessageInterface
 import com.zenaton.pulsar.topics.workflows.WorkflowDispatcher
-import com.zenaton.pulsar.topics.workflows.WorkflowStater
 import com.zenaton.pulsar.utils.Logger
+import com.zenaton.pulsar.utils.Stater
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -98,17 +98,17 @@ fun workflowCompleted(id: WorkflowId? = null, taskId: TaskId? = null, taskOutput
 
 fun shouldWarnAndNothingMoreIfNotState(msgIn: WorkflowMessageInterface) = stringSpec {
     // mocking
-    val stater = mockk<WorkflowStater>()
+    val stater = mockk<Stater<WorkflowState>>()
     val dispatcher = mockk<WorkflowDispatcher>()
     val logger = mockk<Logger>()
-    every { stater.getState(msgIn.getStateKey()) } returns null
+    every { stater.getState(msgIn.getKey()) } returns null
     every { logger.warn(any(), msgIn) } returns "warning!"
     // given
     val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
     // when
     engine.handle(msg = msgIn)
     // then
-    verify(exactly = 1) { stater.getState(msgIn.getStateKey()) }
+    verify(exactly = 1) { stater.getState(msgIn.getKey()) }
     verify(exactly = 1) { logger.warn(any(), msgIn) }
     confirmVerified(stater)
     confirmVerified(dispatcher)
@@ -118,21 +118,21 @@ fun shouldWarnAndNothingMoreIfNotState(msgIn: WorkflowMessageInterface) = string
 fun shouldbufferMessageIfOngoingDecision(msgIn: WorkflowMessageInterface) = stringSpec {
     "Should buffer ${msgIn::class.simpleName} message if there is an ongoing decision" {
         // mocking
-        val stater = mockk<WorkflowStater>()
+        val stater = mockk<Stater<WorkflowState>>()
         val dispatcher = mockk<WorkflowDispatcher>()
         val logger = mockk<Logger>()
         val state = WorkflowState(workflowId = msgIn.workflowId, ongoingDecisionId = DecisionId())
         val slotState = slot<WorkflowState>()
-        every { stater.getState(msgIn.getStateKey()) } returns state
-        every { stater.updateState(state = capture(slotState)) } just Runs
+        every { stater.getState(msgIn.getKey()) } returns state
+        every { stater.updateState(any(), state = capture(slotState)) } just Runs
         // given
         val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
         // when
         engine.handle(msg = msgIn)
         // then
         val stateOut = slotState.captured
-        verify(exactly = 1) { stater.getState(msgIn.getStateKey()) }
-        verify(exactly = 1) { stater.updateState(stateOut) }
+        verify(exactly = 1) { stater.getState(msgIn.getKey()) }
+        verify(exactly = 1) { stater.updateState(msgIn.getKey(), stateOut) }
         confirmVerified(stater)
         confirmVerified(dispatcher)
         confirmVerified(logger)
@@ -146,11 +146,11 @@ class WorkflowEngineTests : StringSpec({
     "Should log error and nothing more if retrieved state and msg have not the same Id" {
         val msgIn = workflowDispatched()
         // mocking
-        val stater = mockk<WorkflowStater>()
+        val stater = mockk<Stater<WorkflowState>>()
         val dispatcher = mockk<WorkflowDispatcher>()
         val logger = mockk<Logger>()
         val state = mockk<WorkflowState>()
-        every { stater.getState(msgIn.getStateKey()) } returns state
+        every { stater.getState(msgIn.getKey()) } returns state
         every { state.workflowId } returns WorkflowId()
         every { logger.error(any(), msgIn, state) } returns "error!"
         // given
@@ -159,7 +159,7 @@ class WorkflowEngineTests : StringSpec({
         engine.handle(msg = msgIn)
         // then
         verify(exactly = 1) { logger.error(any(), msgIn, state) }
-        verify(exactly = 1) { stater.getState(msgIn.getStateKey()) }
+        verify(exactly = 1) { stater.getState(msgIn.getKey()) }
         confirmVerified(stater)
         confirmVerified(dispatcher)
         confirmVerified(logger)
@@ -168,11 +168,11 @@ class WorkflowEngineTests : StringSpec({
     "Should log error and nothing more if workflowDispatched with existing state" {
         val msgIn = workflowDispatched()
         // mocking
-        val stater = mockk<WorkflowStater>()
+        val stater = mockk<Stater<WorkflowState>>()
         val dispatcher = mockk<WorkflowDispatcher>()
         val logger = mockk<Logger>()
         val state = mockk<WorkflowState>()
-        every { stater.getState(msgIn.getStateKey()) } returns state
+        every { stater.getState(msgIn.getKey()) } returns state
         every { state.workflowId } returns msgIn.workflowId
         every { logger.error(any(), msgIn) } returns "error!"
         // given
@@ -180,7 +180,7 @@ class WorkflowEngineTests : StringSpec({
         // when
         engine.handle(msg = msgIn)
         // then
-        verify(exactly = 1) { stater.getState(msgIn.getStateKey()) }
+        verify(exactly = 1) { stater.getState(msgIn.getKey()) }
         verify(exactly = 1) { logger.error(any(), msgIn) }
         confirmVerified(stater)
         confirmVerified(dispatcher)
@@ -190,18 +190,18 @@ class WorkflowEngineTests : StringSpec({
     "Should log error and nothing more if decisionCompleted inconsistent with state ongoing decision" {
         val msgIn = decisionCompleted()
         // mocking
-        val stater = mockk<WorkflowStater>()
+        val stater = mockk<Stater<WorkflowState>>()
         val dispatcher = mockk<WorkflowDispatcher>()
         val logger = mockk<Logger>()
         val state = WorkflowState(workflowId = msgIn.workflowId, ongoingDecisionId = DecisionId())
-        every { stater.getState(msgIn.getStateKey()) } returns state
+        every { stater.getState(msgIn.getKey()) } returns state
         every { logger.error(any(), msgIn, state) } returns "error!"
         // given
         val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
         // when
         engine.handle(msg = msgIn)
         // then
-        verify(exactly = 1) { stater.getState(msgIn.getStateKey()) }
+        verify(exactly = 1) { stater.getState(msgIn.getKey()) }
         verify(exactly = 1) { logger.error(any(), msgIn, state) }
         confirmVerified(stater)
         confirmVerified(dispatcher)
@@ -222,27 +222,25 @@ class WorkflowEngineTests : StringSpec({
 
     "Dispatching a workflow" {
         // mocking
-        val stater = mockk<WorkflowStater>()
+        val stater = mockk<Stater<WorkflowState>>()
         val dispatcher = mockk<WorkflowDispatcher>()
         val logger = mockk<Logger>()
         val slotMsg = slot<DecisionDispatched>()
-        val slotKey = slot<String>()
         val slotState = slot<WorkflowState>()
-        every { stater.getState(key = capture(slotKey)) } returns null
-        every { dispatcher.dispatchDecision(msg = capture(slotMsg)) } just Runs
-        every { stater.createState(state = capture(slotState)) } just Runs
-        // given
         val msgIn = workflowDispatched()
+        every { stater.getState(msgIn.getKey()) } returns null
+        every { dispatcher.dispatchDecision(msg = capture(slotMsg)) } just Runs
+        every { stater.createState(key = msgIn.getKey(), state = capture(slotState)) } just Runs
+        // given
         val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
         // when
         engine.handle(msg = msgIn)
         // then
-        val keyOut = slotKey.captured
         val msgOut = slotMsg.captured
         val stateOut = slotState.captured
-        verify(exactly = 1) { stater.getState(keyOut) }
+        verify(exactly = 1) { stater.getState(msgIn.getKey()) }
         verify(exactly = 1) { dispatcher.dispatchDecision(msgOut) }
-        verify(exactly = 1) { stater.createState(stateOut) }
+        verify(exactly = 1) { stater.createState(msgIn.getKey(), stateOut) }
         confirmVerified(stater)
         confirmVerified(dispatcher)
         confirmVerified(logger)

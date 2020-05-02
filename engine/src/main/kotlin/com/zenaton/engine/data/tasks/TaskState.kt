@@ -1,5 +1,5 @@
 package com.zenaton.engine.data.tasks
 
-class TaskState(val taskId: TaskId) {
-    fun getKey() = taskId.id
-}
+import com.zenaton.engine.data.StateInterface
+
+data class TaskState(val taskId: TaskId) : StateInterface

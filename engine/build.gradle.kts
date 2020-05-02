@@ -60,14 +60,23 @@ tasks.register("setupZenaton") {
     dependsOn(":build")
     doLast {
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.workflows.functions.StateFunction",
+            className = "com.zenaton.pulsar.topics.workflows.functions.WorkflowStateFunction",
             topicIn = "workflows",
             action = "create"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.workflows.functions.TraceFunction",
-            topicIn = "workflows",
-            topicOut = "traces",
+            className = "com.zenaton.pulsar.topics.decisions.functions.DecisionStateFunction",
+            topicIn = "decisions",
+            action = "create"
+        )
+        setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.tasks.functions.TaskStateFunction",
+            topicIn = "tasks",
+            action = "create"
+        )
+        setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.delays.functions.DelayStateFunction",
+            topicIn = "delays",
             action = "create"
         )
     }
@@ -79,13 +88,20 @@ tasks.register("uploadZenatonFunctions") {
     dependsOn(":build")
     doLast {
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.workflows.functions.StateFunction",
+            className = "com.zenaton.pulsar.topics.workflows.functions.WorkflowStateFunction",
             topicIn = "workflows"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.workflows.functions.TraceFunction",
-            topicIn = "workflows",
-            topicOut = "traces"
+            className = "com.zenaton.pulsar.topics.decisions.functions.DecisionStateFunction",
+            topicIn = "decisions"
+        )
+        setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.tasks.functions.TaskStateFunction",
+            topicIn = "tasks"
+        )
+        setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.delays.functions.DelayStateFunction",
+            topicIn = "delays"
         )
     }
 }
@@ -94,12 +110,14 @@ tasks.register("cleanZenaton") {
     group = "Zenaton"
     description = "Clean Zenaton from Pulsar"
     doLast {
-        deleteZenatonFunction("StateFunction")
-        deleteZenatonFunction("TraceFunction")
+        deleteZenatonFunction("WorkflowStateFunction")
+        deleteZenatonFunction("DecisionStateFunction")
+        deleteZenatonFunction("TaskStateFunction")
+        deleteZenatonFunction("DelayStateFunction")
         forceDeleteTopic("workflows")
-        forceDeleteTopic("tasks")
         forceDeleteTopic("decisions")
-        forceDeleteTopic("traces")
+        forceDeleteTopic("tasks")
+        forceDeleteTopic("delays")
         forceDeleteTopic("logs")
     }
 }

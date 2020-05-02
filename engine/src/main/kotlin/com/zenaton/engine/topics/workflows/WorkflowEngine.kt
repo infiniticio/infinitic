@@ -1,11 +1,12 @@
 package com.zenaton.engine.topics.workflows
 
-import com.zenaton.engine.LoggerInterface
 import com.zenaton.engine.data.DateTime
 import com.zenaton.engine.data.decisions.DecisionId
 import com.zenaton.engine.data.workflows.WorkflowState
 import com.zenaton.engine.data.workflows.states.Branch
 import com.zenaton.engine.data.workflows.states.Store
+import com.zenaton.engine.topics.LoggerInterface
+import com.zenaton.engine.topics.StaterInterface
 import com.zenaton.engine.topics.decisions.messages.DecisionDispatched
 import com.zenaton.engine.topics.workflows.messages.ChildWorkflowCompleted
 import com.zenaton.engine.topics.workflows.messages.DecisionCompleted
@@ -17,7 +18,7 @@ import com.zenaton.engine.topics.workflows.messages.WorkflowDispatched
 import com.zenaton.engine.topics.workflows.messages.WorkflowMessageInterface
 
 class WorkflowEngine(
-    val stater: WorkflowStaterInterface,
+    val stater: StaterInterface<WorkflowState>,
     val dispatcher: WorkflowDispatcherInterface,
     val logger: LoggerInterface
 ) {
@@ -25,7 +26,7 @@ class WorkflowEngine(
         // timestamp the message
         msg.receivedAt = DateTime()
         // get associated state
-        var state = stater.getState(msg.getStateKey())
+        var state = stater.getState(msg.getKey())
         if (state == null) {
             // a null state should mean that this workflow is already terminated => all messages others than WorkflowDispatched are ignored
             if (msg !is WorkflowDispatched) {
@@ -60,7 +61,7 @@ class WorkflowEngine(
                 // buffer this message to handle it after decision returns
                 state.bufferedMessages.add(msg)
                 // save state
-                stater.updateState(state)
+                stater.updateState(msg.getKey(), state)
                 return
             }
         }
@@ -94,7 +95,7 @@ class WorkflowEngine(
         // dispatch decision
         dispatcher.dispatchDecision(m)
         // save state
-        stater.createState(state)
+        stater.createState(msg.getKey(), state)
     }
 
     private fun completeDecision(state: WorkflowState, msg: DecisionCompleted) {

@@ -1,15 +1,15 @@
 package com.zenaton.pulsar.topics.workflows.functions
 
+import com.zenaton.engine.data.workflows.WorkflowState
 import com.zenaton.engine.topics.workflows.WorkflowEngine
 import com.zenaton.pulsar.topics.workflows.WorkflowDispatcher
-import com.zenaton.pulsar.topics.workflows.WorkflowStater
 import com.zenaton.pulsar.topics.workflows.messages.WorkflowMessageContainer
 import com.zenaton.pulsar.utils.Logger
+import com.zenaton.pulsar.utils.Stater
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class StateFunction : Function<WorkflowMessageContainer, Void> {
-    // MessageConverter injection
+class WorkflowStateFunction : Function<WorkflowMessageContainer, Void> {
 
     override fun process(input: WorkflowMessageContainer, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received from workflows.StateFunction")
@@ -17,7 +17,7 @@ class StateFunction : Function<WorkflowMessageContainer, Void> {
         try {
             val msg = input.msg()
 
-            WorkflowEngine(stater = WorkflowStater(ctx), dispatcher = WorkflowDispatcher(ctx), logger = Logger(ctx)).handle(msg)
+            WorkflowEngine(stater = Stater<WorkflowState>(ctx), dispatcher = WorkflowDispatcher(ctx), logger = Logger(ctx)).handle(msg)
         } catch (e: Exception) {
             Logger(ctx).error("Error:%s for message:%s", e, input)
         }

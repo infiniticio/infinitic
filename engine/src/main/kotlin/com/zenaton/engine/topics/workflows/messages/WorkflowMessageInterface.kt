@@ -6,5 +6,5 @@ import com.zenaton.engine.data.workflows.WorkflowId
 interface WorkflowMessageInterface {
     val workflowId: WorkflowId
     var receivedAt: DateTime?
-    fun getStateKey() = workflowId.id
+    fun getKey() = workflowId.id
 }

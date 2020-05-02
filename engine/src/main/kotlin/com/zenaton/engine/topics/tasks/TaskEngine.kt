@@ -1,8 +1,9 @@
 package com.zenaton.engine.topics.tasks
 
-import com.zenaton.engine.LoggerInterface
 import com.zenaton.engine.data.DateTime
 import com.zenaton.engine.data.tasks.TaskState
+import com.zenaton.engine.topics.LoggerInterface
+import com.zenaton.engine.topics.StaterInterface
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptCompleted
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptDispatched
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptFailed
@@ -12,7 +13,7 @@ import com.zenaton.engine.topics.tasks.messages.TaskDispatched
 import com.zenaton.engine.topics.tasks.messages.TaskMessageInterface
 
 class TaskEngine(
-    private val stater: TaskStaterInterface,
+    private val stater: StaterInterface<TaskState>,
     private val dispatcher: TaskDispatcherInterface,
     private val logger: LoggerInterface
 ) {

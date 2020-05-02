@@ -1,4 +1,4 @@
-package com.zenaton.engine
+package com.zenaton.engine.topics
 
 interface LoggerInterface {
     fun debug(txt: String, obj1: Any? = null, obj2: Any? = null): String
