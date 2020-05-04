@@ -1,4 +1,4 @@
-package com.zenaton.engine.workflows.functions
+package com.zenaton.engine.workflows.engine
 
 import com.zenaton.engine.decisions.data.DecisionId
 import com.zenaton.engine.decisions.messages.DecisionDispatched

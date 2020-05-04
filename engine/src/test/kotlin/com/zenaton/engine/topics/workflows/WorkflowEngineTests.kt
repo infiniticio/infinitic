@@ -15,7 +15,7 @@ import com.zenaton.engine.workflows.data.WorkflowName
 import com.zenaton.engine.workflows.data.WorkflowOutput
 import com.zenaton.engine.workflows.data.WorkflowState
 import com.zenaton.engine.workflows.data.states.Branch
-import com.zenaton.engine.workflows.functions.WorkflowEngine
+import com.zenaton.engine.workflows.engine.WorkflowEngine
 import com.zenaton.engine.workflows.messages.ChildWorkflowCompleted
 import com.zenaton.engine.workflows.messages.DecisionCompleted
 import com.zenaton.engine.workflows.messages.DelayCompleted

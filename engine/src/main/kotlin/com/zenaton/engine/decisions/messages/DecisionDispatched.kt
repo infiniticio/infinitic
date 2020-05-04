@@ -7,7 +7,7 @@ import com.zenaton.engine.workflows.data.WorkflowName
 import com.zenaton.engine.workflows.data.states.Branch
 import com.zenaton.engine.workflows.data.states.Store
 
-class DecisionDispatched(
+data class DecisionDispatched(
     override var decisionId: DecisionId,
     override var workflowId: WorkflowId,
     override var sentAt: DateTime? = DateTime(),
@@ -15,4 +15,4 @@ class DecisionDispatched(
     val workflowName: WorkflowName,
     val branches: List<Branch>,
     val store: Store
-) : DecisionInterface
+) : DecisionMessageInterface

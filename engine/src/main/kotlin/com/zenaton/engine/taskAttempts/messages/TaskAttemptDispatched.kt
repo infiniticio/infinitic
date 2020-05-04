@@ -14,4 +14,6 @@ data class TaskAttemptDispatched(
     override var receivedAt: DateTime? = null,
     val taskName: TaskName,
     val taskData: TaskData?
-) : TaskAttemptInterface
+) : TaskAttemptMessageInterface {
+    override fun getName() = taskName
+}

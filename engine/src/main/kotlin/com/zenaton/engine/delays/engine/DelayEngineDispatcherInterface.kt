@@ -1,4 +1,4 @@
-package com.zenaton.engine.delays.functions
+package com.zenaton.engine.delays.engine
 
 import com.zenaton.engine.workflows.messages.DelayCompleted
 

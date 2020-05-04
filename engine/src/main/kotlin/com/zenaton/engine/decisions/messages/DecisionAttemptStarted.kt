@@ -5,10 +5,10 @@ import com.zenaton.engine.decisions.data.DecisionId
 import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.workflows.data.WorkflowId
 
-class DecisionAttemptStarted(
+data class DecisionAttemptStarted(
     override var decisionId: DecisionId,
     override var workflowId: WorkflowId,
     override var sentAt: DateTime? = DateTime(),
     override var receivedAt: DateTime? = null,
     val decisionAttemptId: DecisionAttemptId
-) : DecisionInterface
+) : DecisionMessageInterface

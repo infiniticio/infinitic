@@ -1,4 +1,4 @@
-package com.zenaton.engine.interfaces.messages
+package com.zenaton.engine.interfaces
 
 import com.zenaton.engine.interfaces.data.DateTime
 

@@ -1,4 +1,4 @@
-package com.zenaton.engine.tasks.functions
+package com.zenaton.engine.tasks.engine
 
 import com.zenaton.engine.taskAttempts.messages.TaskAttemptDispatched
 import com.zenaton.engine.workflows.messages.TaskCompleted

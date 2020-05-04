@@ -5,7 +5,7 @@ import com.zenaton.engine.decisions.messages.DecisionAttemptCompleted
 import com.zenaton.engine.decisions.messages.DecisionAttemptFailed
 import com.zenaton.engine.decisions.messages.DecisionAttemptStarted
 import com.zenaton.engine.decisions.messages.DecisionDispatched
-import com.zenaton.engine.decisions.messages.DecisionInterface
+import com.zenaton.engine.decisions.messages.DecisionMessageInterface
 import com.zenaton.engine.interfaces.LoggerInterface
 import com.zenaton.engine.interfaces.StaterInterface
 import com.zenaton.engine.interfaces.data.DateTime
@@ -15,7 +15,7 @@ class DecisionEngine(
     private val dispatcher: DecisionEngineDispatcherInterface,
     private val logger: LoggerInterface
 ) {
-    fun handle(msg: DecisionInterface) {
+    fun handle(msg: DecisionMessageInterface) {
         // timestamp the message
         msg.receivedAt = DateTime()
         // get associated state

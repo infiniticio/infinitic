@@ -1,7 +1,7 @@
 package com.zenaton.pulsar.topics.delays.functions
 
 import com.zenaton.engine.delays.data.DelayState
-import com.zenaton.engine.delays.functions.DelayEngine
+import com.zenaton.engine.delays.engine.DelayEngine
 import com.zenaton.pulsar.topics.delays.messages.DelayMessageContainer
 import com.zenaton.pulsar.utils.Logger
 import com.zenaton.pulsar.utils.Stater

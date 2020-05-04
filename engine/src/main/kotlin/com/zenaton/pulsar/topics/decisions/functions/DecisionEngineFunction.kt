@@ -2,7 +2,6 @@ package com.zenaton.pulsar.topics.decisions.functions
 
 import com.zenaton.engine.decisions.data.DecisionState
 import com.zenaton.engine.decisions.engine.DecisionEngine
-import com.zenaton.pulsar.topics.decisions.dispatcher.DecisionDispatcher
 import com.zenaton.pulsar.topics.decisions.messages.DecisionMessageContainer
 import com.zenaton.pulsar.utils.Logger
 import com.zenaton.pulsar.utils.Stater

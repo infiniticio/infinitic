@@ -1,7 +1,7 @@
 package com.zenaton.pulsar.topics.taskAttempts.messages
 
-import com.zenaton.engine.taskAttempts.messages.TaskAttemptInterface
+import com.zenaton.engine.taskAttempts.messages.TaskAttemptMessageInterface
 
-class TaskAttemptMessageContainer(private val taskAttemptDispatched: TaskAttemptInterface) {
-    fun msg(): TaskAttemptInterface = taskAttemptDispatched
+class TaskAttemptMessageContainer(private val taskAttemptDispatched: TaskAttemptMessageInterface) {
+    fun msg(): TaskAttemptMessageInterface = taskAttemptDispatched
 }

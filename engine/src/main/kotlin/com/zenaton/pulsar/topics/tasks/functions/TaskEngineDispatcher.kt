@@ -1,7 +1,7 @@
 package com.zenaton.pulsar.topics.tasks.functions
 
 import com.zenaton.engine.taskAttempts.messages.TaskAttemptDispatched
-import com.zenaton.engine.tasks.functions.TaskEngineDispatcherInterface
+import com.zenaton.engine.tasks.engine.TaskEngineDispatcherInterface
 import com.zenaton.engine.workflows.messages.TaskCompleted
 import com.zenaton.pulsar.topics.taskAttempts.dispatcher.TaskAttemptDispatcher
 import com.zenaton.pulsar.topics.workflows.dispatcher.WorkflowDispatcher

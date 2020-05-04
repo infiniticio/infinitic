@@ -1,8 +1,7 @@
 package com.zenaton.pulsar.topics.tasks.functions
 
 import com.zenaton.engine.tasks.data.TaskState
-import com.zenaton.engine.tasks.functions.TaskEngine
-import com.zenaton.pulsar.topics.tasks.dispatcher.TaskDispatcher
+import com.zenaton.engine.tasks.engine.TaskEngine
 import com.zenaton.pulsar.topics.tasks.messages.TaskMessageContainer
 import com.zenaton.pulsar.utils.Logger
 import com.zenaton.pulsar.utils.Stater

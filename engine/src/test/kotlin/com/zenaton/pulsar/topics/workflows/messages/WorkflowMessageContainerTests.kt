@@ -1,6 +1,5 @@
 package com.zenaton.engine.pulsar.messages
 
-import com.zenaton.engine.topics.workflows.workflowCompleted
 import com.zenaton.engine.workflows.messages.TaskCompleted
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
 import com.zenaton.pulsar.topics.workflows.messages.WorkflowMessageContainer
