@@ -7,8 +7,10 @@ import io.ktor.routing.*
 import io.ktor.http.*
 import io.ktor.auth.*
 import com.fasterxml.jackson.databind.*
+import com.zenaton.extensions.*
 import io.ktor.jackson.*
 import io.ktor.features.*
+import java.time.Instant
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -36,13 +38,18 @@ fun Application.module(testing: Boolean = false) {
     }
 
     routing {
-        get("/") {
-            call.respondText("HELLO WORLD!", contentType = ContentType.Text.Plain)
+        get("/workflows/{id}") {
+            val workflow = Workflow(call.getPath("id"), "SequentialWorkflow", "running", listOf("user:123"), Instant.now(), Instant.now())
+
+            call.respond(workflow)
         }
 
-        get("/json/jackson") {
-            call.respond(mapOf("hello" to "world"))
+        get("/tasks/{id}") {
+            val task = Task(call.getPath("id"), "TaskA", "completed", Instant.now())
+            task.startedAt = Instant.now()
+            task.completedAt = Instant.now()
+
+            call.respond(task)
         }
     }
 }
-
