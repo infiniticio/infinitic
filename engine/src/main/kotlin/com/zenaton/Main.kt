@@ -1,10 +1,11 @@
 package com.zenaton
 
-import com.zenaton.engine.data.DateTime
-import com.zenaton.engine.data.tasks.TaskId
-import com.zenaton.engine.data.tasks.TaskOutput
-import com.zenaton.engine.data.workflows.WorkflowId
-import com.zenaton.engine.topics.workflows.messages.TaskCompleted
+import com.zenaton.engine.interfaces.data.DateTime
+import com.zenaton.engine.tasks.data.TaskId
+import com.zenaton.engine.tasks.data.TaskOutput
+import com.zenaton.engine.workflows.data.WorkflowId
+import com.zenaton.engine.workflows.messages.TaskCompleted
+import com.zenaton.pulsar.topics.Topic
 import com.zenaton.pulsar.topics.workflows.messages.WorkflowMessageContainer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.JSONSchema
@@ -19,7 +20,8 @@ fun main() {
         taskOutput = TaskOutput("oUtput".toByteArray()),
         receivedAt = DateTime()
     )
-//    println(JSONSchema.of(WorkflowId::class.java))
+
+Topic.TASKS.get() //    println(JSONSchema.of(WorkflowId::class.java))
 
 //    println(AvroMapper().schemaFor(Test::class.java).avroSchema)
 //    println(JSONSchema.of(Test::class.java).schemaInfo)
@@ -43,7 +45,7 @@ fun main() {
 //    msg = Json.parse(json, DecisionDispatched::class) as DecisionDispatched
 //    println(msg)
 
-    producer.send(WorkflowMessageContainer(taskCompleted = msg))
+    producer.send(WorkflowMessageContainer(msg))
     producer.close()
     client.close()
 }

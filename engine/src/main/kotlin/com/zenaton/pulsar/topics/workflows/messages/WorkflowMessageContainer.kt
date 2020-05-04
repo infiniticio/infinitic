@@ -1,24 +1,36 @@
 package com.zenaton.pulsar.topics.workflows.messages
 
-import com.zenaton.engine.topics.workflows.messages.ChildWorkflowCompleted
-import com.zenaton.engine.topics.workflows.messages.DecisionCompleted
-import com.zenaton.engine.topics.workflows.messages.DelayCompleted
-import com.zenaton.engine.topics.workflows.messages.EventReceived
-import com.zenaton.engine.topics.workflows.messages.TaskCompleted
-import com.zenaton.engine.topics.workflows.messages.WorkflowCompleted
-import com.zenaton.engine.topics.workflows.messages.WorkflowDispatched
-import com.zenaton.engine.topics.workflows.messages.WorkflowMessageInterface
+import com.zenaton.engine.events.messages.EventReceived
+import com.zenaton.engine.workflows.messages.ChildWorkflowCompleted
+import com.zenaton.engine.workflows.messages.DecisionCompleted
+import com.zenaton.engine.workflows.messages.DelayCompleted
+import com.zenaton.engine.workflows.messages.TaskCompleted
+import com.zenaton.engine.workflows.messages.WorkflowCompleted
+import com.zenaton.engine.workflows.messages.WorkflowDispatched
+import com.zenaton.engine.workflows.messages.WorkflowMessageInterface
 import kotlin.reflect.full.declaredMemberProperties
 
-class WorkflowMessageContainer(
-    val childWorkflowCompleted: ChildWorkflowCompleted? = null,
-    val decisionCompleted: DecisionCompleted? = null,
-    val delayCompleted: DelayCompleted? = null,
-    val eventReceived: EventReceived? = null,
-    val taskCompleted: TaskCompleted? = null,
-    val workflowCompleted: WorkflowCompleted? = null,
-    val workflowDispatched: WorkflowDispatched? = null
-) {
+class WorkflowMessageContainer {
+    var childWorkflowCompleted: ChildWorkflowCompleted? = null
+    var decisionCompleted: DecisionCompleted? = null
+    var delayCompleted: DelayCompleted? = null
+    var eventReceived: EventReceived? = null
+    var taskCompleted: TaskCompleted? = null
+    var workflowCompleted: WorkflowCompleted? = null
+    var workflowDispatched: WorkflowDispatched? = null
+
+    constructor(msg: WorkflowMessageInterface) {
+        when (msg) {
+            is ChildWorkflowCompleted -> this.childWorkflowCompleted = msg
+            is DecisionCompleted -> this.decisionCompleted = msg
+            is DelayCompleted -> this.delayCompleted = msg
+            is EventReceived -> this.eventReceived = msg
+            is TaskCompleted -> this.taskCompleted = msg
+            is WorkflowCompleted -> this.workflowCompleted = msg
+            is WorkflowDispatched -> this.workflowDispatched = msg
+        }
+    }
+
     fun msg(): WorkflowMessageInterface {
         // get list of non null properties
         val msg = WorkflowMessageContainer::class.declaredMemberProperties.mapNotNull { it.get(this) }

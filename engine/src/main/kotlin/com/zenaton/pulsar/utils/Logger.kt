@@ -1,10 +1,11 @@
 package com.zenaton.pulsar.utils
 
-import com.zenaton.engine.topics.LoggerInterface
+import com.zenaton.engine.interfaces.LoggerInterface
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
 
-class Logger(private val context: Context) : LoggerInterface {
+class Logger(private val context: Context) :
+    LoggerInterface {
 
     // Json injection
     var json: JsonInterface = Json

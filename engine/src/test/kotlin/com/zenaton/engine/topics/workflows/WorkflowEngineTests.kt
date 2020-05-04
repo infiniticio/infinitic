@@ -1,27 +1,28 @@
 package com.zenaton.engine.topics.workflows
 
-import com.zenaton.engine.data.DateTime
-import com.zenaton.engine.data.decisions.DecisionId
-import com.zenaton.engine.data.delays.DelayId
-import com.zenaton.engine.data.events.EventData
-import com.zenaton.engine.data.events.EventName
-import com.zenaton.engine.data.tasks.TaskId
-import com.zenaton.engine.data.tasks.TaskOutput
-import com.zenaton.engine.data.workflows.WorkflowData
-import com.zenaton.engine.data.workflows.WorkflowId
-import com.zenaton.engine.data.workflows.WorkflowName
-import com.zenaton.engine.data.workflows.WorkflowOutput
-import com.zenaton.engine.data.workflows.WorkflowState
-import com.zenaton.engine.data.workflows.states.Branch
-import com.zenaton.engine.topics.decisions.messages.DecisionDispatched
-import com.zenaton.engine.topics.workflows.messages.ChildWorkflowCompleted
-import com.zenaton.engine.topics.workflows.messages.DecisionCompleted
-import com.zenaton.engine.topics.workflows.messages.DelayCompleted
-import com.zenaton.engine.topics.workflows.messages.EventReceived
-import com.zenaton.engine.topics.workflows.messages.TaskCompleted
-import com.zenaton.engine.topics.workflows.messages.WorkflowDispatched
-import com.zenaton.engine.topics.workflows.messages.WorkflowMessageInterface
-import com.zenaton.pulsar.topics.workflows.WorkflowDispatcher
+import com.zenaton.engine.decisions.data.DecisionId
+import com.zenaton.engine.decisions.messages.DecisionDispatched
+import com.zenaton.engine.delays.data.DelayId
+import com.zenaton.engine.events.data.EventData
+import com.zenaton.engine.events.data.EventName
+import com.zenaton.engine.events.messages.EventReceived
+import com.zenaton.engine.interfaces.data.DateTime
+import com.zenaton.engine.tasks.data.TaskId
+import com.zenaton.engine.tasks.data.TaskOutput
+import com.zenaton.engine.workflows.data.WorkflowData
+import com.zenaton.engine.workflows.data.WorkflowId
+import com.zenaton.engine.workflows.data.WorkflowName
+import com.zenaton.engine.workflows.data.WorkflowOutput
+import com.zenaton.engine.workflows.data.WorkflowState
+import com.zenaton.engine.workflows.data.states.Branch
+import com.zenaton.engine.workflows.functions.WorkflowEngine
+import com.zenaton.engine.workflows.messages.ChildWorkflowCompleted
+import com.zenaton.engine.workflows.messages.DecisionCompleted
+import com.zenaton.engine.workflows.messages.DelayCompleted
+import com.zenaton.engine.workflows.messages.TaskCompleted
+import com.zenaton.engine.workflows.messages.WorkflowDispatched
+import com.zenaton.engine.workflows.messages.WorkflowMessageInterface
+import com.zenaton.pulsar.topics.workflows.functions.WorkflowEngineDispatcher
 import com.zenaton.pulsar.utils.Logger
 import com.zenaton.pulsar.utils.Stater
 import io.kotest.core.spec.style.StringSpec
@@ -84,7 +85,9 @@ fun eventReceived(id: WorkflowId? = null, eventName: EventName? = null, eventDat
     return EventReceived(
         workflowId = id ?: WorkflowId(),
         eventName = eventName ?: EventName(Arb.string(1).toString()),
-        eventData = eventData ?: EventData(Arb.string(1).toString().toByteArray())
+        eventData = eventData ?: EventData(
+            Arb.string(1).toString().toByteArray()
+        )
     )
 }
 
@@ -99,12 +102,16 @@ fun workflowCompleted(id: WorkflowId? = null, taskId: TaskId? = null, taskOutput
 fun shouldWarnAndNothingMoreIfNotState(msgIn: WorkflowMessageInterface) = stringSpec {
     // mocking
     val stater = mockk<Stater<WorkflowState>>()
-    val dispatcher = mockk<WorkflowDispatcher>()
+    val dispatcher = mockk<WorkflowEngineDispatcher>()
     val logger = mockk<Logger>()
     every { stater.getState(msgIn.getKey()) } returns null
     every { logger.warn(any(), msgIn) } returns "warning!"
     // given
-    val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
+    val engine = WorkflowEngine(
+        stater = stater,
+        dispatcher = dispatcher,
+        logger = logger
+    )
     // when
     engine.handle(msg = msgIn)
     // then
@@ -119,14 +126,21 @@ fun shouldbufferMessageIfOngoingDecision(msgIn: WorkflowMessageInterface) = stri
     "Should buffer ${msgIn::class.simpleName} message if there is an ongoing decision" {
         // mocking
         val stater = mockk<Stater<WorkflowState>>()
-        val dispatcher = mockk<WorkflowDispatcher>()
+        val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
-        val state = WorkflowState(workflowId = msgIn.workflowId, ongoingDecisionId = DecisionId())
+        val state = WorkflowState(
+            workflowId = msgIn.workflowId,
+            ongoingDecisionId = DecisionId()
+        )
         val slotState = slot<WorkflowState>()
         every { stater.getState(msgIn.getKey()) } returns state
         every { stater.updateState(any(), state = capture(slotState)) } just Runs
         // given
-        val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
+        val engine = WorkflowEngine(
+            stater = stater,
+            dispatcher = dispatcher,
+            logger = logger
+        )
         // when
         engine.handle(msg = msgIn)
         // then
@@ -147,14 +161,18 @@ class WorkflowEngineTests : StringSpec({
         val msgIn = workflowDispatched()
         // mocking
         val stater = mockk<Stater<WorkflowState>>()
-        val dispatcher = mockk<WorkflowDispatcher>()
+        val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
         val state = mockk<WorkflowState>()
         every { stater.getState(msgIn.getKey()) } returns state
         every { state.workflowId } returns WorkflowId()
         every { logger.error(any(), msgIn, state) } returns "error!"
         // given
-        val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
+        val engine = WorkflowEngine(
+            stater = stater,
+            dispatcher = dispatcher,
+            logger = logger
+        )
         // when
         engine.handle(msg = msgIn)
         // then
@@ -169,14 +187,18 @@ class WorkflowEngineTests : StringSpec({
         val msgIn = workflowDispatched()
         // mocking
         val stater = mockk<Stater<WorkflowState>>()
-        val dispatcher = mockk<WorkflowDispatcher>()
+        val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
         val state = mockk<WorkflowState>()
         every { stater.getState(msgIn.getKey()) } returns state
         every { state.workflowId } returns msgIn.workflowId
         every { logger.error(any(), msgIn) } returns "error!"
         // given
-        val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
+        val engine = WorkflowEngine(
+            stater = stater,
+            dispatcher = dispatcher,
+            logger = logger
+        )
         // when
         engine.handle(msg = msgIn)
         // then
@@ -191,13 +213,20 @@ class WorkflowEngineTests : StringSpec({
         val msgIn = decisionCompleted()
         // mocking
         val stater = mockk<Stater<WorkflowState>>()
-        val dispatcher = mockk<WorkflowDispatcher>()
+        val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
-        val state = WorkflowState(workflowId = msgIn.workflowId, ongoingDecisionId = DecisionId())
+        val state = WorkflowState(
+            workflowId = msgIn.workflowId,
+            ongoingDecisionId = DecisionId()
+        )
         every { stater.getState(msgIn.getKey()) } returns state
         every { logger.error(any(), msgIn, state) } returns "error!"
         // given
-        val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
+        val engine = WorkflowEngine(
+            stater = stater,
+            dispatcher = dispatcher,
+            logger = logger
+        )
         // when
         engine.handle(msg = msgIn)
         // then
@@ -223,23 +252,27 @@ class WorkflowEngineTests : StringSpec({
     "Dispatching a workflow" {
         // mocking
         val stater = mockk<Stater<WorkflowState>>()
-        val dispatcher = mockk<WorkflowDispatcher>()
+        val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
         val slotMsg = slot<DecisionDispatched>()
         val slotState = slot<WorkflowState>()
         val msgIn = workflowDispatched()
         every { stater.getState(msgIn.getKey()) } returns null
-        every { dispatcher.dispatchDecision(msg = capture(slotMsg)) } just Runs
+        every { dispatcher.dispatch(msg = capture(slotMsg)) } just Runs
         every { stater.createState(key = msgIn.getKey(), state = capture(slotState)) } just Runs
         // given
-        val engine = WorkflowEngine(stater = stater, dispatcher = dispatcher, logger = logger)
+        val engine = WorkflowEngine(
+            stater = stater,
+            dispatcher = dispatcher,
+            logger = logger
+        )
         // when
         engine.handle(msg = msgIn)
         // then
         val msgOut = slotMsg.captured
         val stateOut = slotState.captured
         verify(exactly = 1) { stater.getState(msgIn.getKey()) }
-        verify(exactly = 1) { dispatcher.dispatchDecision(msgOut) }
+        verify(exactly = 1) { dispatcher.dispatch(msgOut) }
         verify(exactly = 1) { stater.createState(msgIn.getKey(), stateOut) }
         confirmVerified(stater)
         confirmVerified(dispatcher)

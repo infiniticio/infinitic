@@ -1,22 +1,27 @@
 package com.zenaton.pulsar.topics.tasks.messages
 
-import com.zenaton.engine.topics.tasks.messages.TaskAttemptCompleted
-import com.zenaton.engine.topics.tasks.messages.TaskAttemptDispatched
-import com.zenaton.engine.topics.tasks.messages.TaskAttemptFailed
-import com.zenaton.engine.topics.tasks.messages.TaskAttemptStarted
-import com.zenaton.engine.topics.tasks.messages.TaskDispatched
-import com.zenaton.engine.topics.tasks.messages.TaskMessageInterface
-import com.zenaton.engine.topics.workflows.messages.TaskCompleted
+import com.zenaton.engine.tasks.messages.TaskAttemptCompleted
+import com.zenaton.engine.tasks.messages.TaskAttemptFailed
+import com.zenaton.engine.tasks.messages.TaskAttemptStarted
+import com.zenaton.engine.tasks.messages.TaskDispatched
+import com.zenaton.engine.tasks.messages.TaskMessageInterface
 import kotlin.reflect.full.declaredMemberProperties
 
-class TaskMessageContainer(
-    val taskAttemptCompleted: TaskAttemptCompleted? = null,
-    val taskAttemptDispatched: TaskAttemptDispatched? = null,
-    val taskAttemptFailed: TaskAttemptFailed? = null,
-    val taskAttemptStarted: TaskAttemptStarted? = null,
-    val taskCompleted: TaskCompleted? = null,
-    val taskDispatched: TaskDispatched? = null
-) {
+class TaskMessageContainer {
+    var taskAttemptCompleted: TaskAttemptCompleted? = null
+    var taskAttemptFailed: TaskAttemptFailed? = null
+    var taskAttemptStarted: TaskAttemptStarted? = null
+    var taskDispatched: TaskDispatched? = null
+
+    constructor(msg: TaskMessageInterface) {
+        when (msg) {
+            is TaskAttemptCompleted -> this.taskAttemptCompleted = msg
+            is TaskAttemptFailed -> this.taskAttemptFailed = msg
+            is TaskAttemptStarted -> this.taskAttemptStarted = msg
+            is TaskDispatched -> taskDispatched = msg
+        }
+    }
+
     fun msg(): TaskMessageInterface {
         // get list of non null properties
         val msg = TaskMessageContainer::class.declaredMemberProperties.mapNotNull { it.get(this) }

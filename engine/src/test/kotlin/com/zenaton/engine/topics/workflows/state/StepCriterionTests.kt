@@ -1,10 +1,10 @@
 package com.zenaton.engine.topics.workflows.state
 
-import com.zenaton.engine.data.tasks.TaskId
-import com.zenaton.engine.data.workflows.states.ActionId
-import com.zenaton.engine.data.workflows.states.StepCriterion
-import com.zenaton.engine.data.workflows.states.StepCriterion.And
-import com.zenaton.engine.data.workflows.states.StepCriterion.Or
+import com.zenaton.engine.tasks.data.TaskId
+import com.zenaton.engine.workflows.data.states.ActionId
+import com.zenaton.engine.workflows.data.states.StepCriterion
+import com.zenaton.engine.workflows.data.states.StepCriterion.And
+import com.zenaton.engine.workflows.data.states.StepCriterion.Or
 import com.zenaton.pulsar.utils.Json
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

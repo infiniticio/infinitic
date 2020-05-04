@@ -1,28 +1,32 @@
 package com.zenaton.pulsar.topics.decisions.messages
 
-import com.zenaton.engine.topics.decisions.messages.DecisionAttemptCompleted
-import com.zenaton.engine.topics.decisions.messages.DecisionAttemptDispatched
-import com.zenaton.engine.topics.decisions.messages.DecisionAttemptFailed
-import com.zenaton.engine.topics.decisions.messages.DecisionAttemptStarted
-import com.zenaton.engine.topics.decisions.messages.DecisionDispatched
-import com.zenaton.engine.topics.decisions.messages.DecisionMessageInterface
-import com.zenaton.engine.topics.workflows.messages.DecisionCompleted
+import com.zenaton.engine.decisions.messages.DecisionAttemptCompleted
+import com.zenaton.engine.decisions.messages.DecisionAttemptFailed
+import com.zenaton.engine.decisions.messages.DecisionAttemptStarted
+import com.zenaton.engine.decisions.messages.DecisionDispatched
+import com.zenaton.engine.decisions.messages.DecisionInterface
 import kotlin.reflect.full.declaredMemberProperties
 
-class DecisionMessageContainer(
-    val decisionAttemptCompleted: DecisionAttemptCompleted? = null,
-    val decisionAttemptDispatched: DecisionAttemptDispatched? = null,
-    val decisionAttemptFailed: DecisionAttemptFailed? = null,
-    val decisionAttemptStarted: DecisionAttemptStarted? = null,
-    val decisionCompleted: DecisionCompleted? = null,
-    val decisionDispatched: DecisionDispatched? = null
-) {
-    fun msg(): DecisionMessageInterface {
+class DecisionMessageContainer {
+    var decisionAttemptCompleted: DecisionAttemptCompleted? = null
+    var decisionAttemptFailed: DecisionAttemptFailed? = null
+    var decisionAttemptStarted: DecisionAttemptStarted? = null
+    var decisionDispatched: DecisionDispatched? = null
+
+    constructor(msg: DecisionInterface) {
+        when (msg) {
+            is DecisionAttemptCompleted -> this.decisionAttemptCompleted = msg
+            is DecisionAttemptFailed -> this.decisionAttemptFailed = msg
+            is DecisionAttemptStarted -> decisionAttemptStarted = msg
+            is DecisionDispatched -> decisionDispatched = msg
+        }
+    }
+    fun msg(): DecisionInterface {
         // get list of non null properties
         val msg = DecisionMessageContainer::class.declaredMemberProperties.mapNotNull { it.get(this) }
         // check we have exactly one property
         if (msg.size != 1) throw Exception("${this::class.qualifiedName} must contain exactly one message, ${msg.size} found")
         // return it
-        return msg.first() as DecisionMessageInterface
+        return msg.first() as DecisionInterface
     }
 }

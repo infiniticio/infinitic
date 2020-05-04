@@ -1,14 +1,18 @@
 package com.zenaton.pulsar.topics.delays.messages
 
-import com.zenaton.engine.topics.delays.messages.DelayDispatched
-import com.zenaton.engine.topics.delays.messages.DelayMessageInterface
-import com.zenaton.engine.topics.workflows.messages.DelayCompleted
+import com.zenaton.engine.delays.messages.DelayDispatched
+import com.zenaton.engine.delays.messages.DelayMessageInterface
 import kotlin.reflect.full.declaredMemberProperties
 
-class DelayMessageContainer(
-    val delayCompleted: DelayCompleted? = null,
-    val delayDispatched: DelayDispatched? = null
-) {
+class DelayMessageContainer {
+    var delayDispatched: DelayDispatched? = null
+
+    constructor(msg: DelayMessageInterface) {
+        when (msg) {
+            is DelayDispatched -> this.delayDispatched = msg
+        }
+    }
+
     fun msg(): DelayMessageInterface {
         // get list of non null properties
         val msg = DelayMessageContainer::class.declaredMemberProperties.mapNotNull { it.get(this) }

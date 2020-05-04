@@ -1,7 +1,7 @@
 package com.zenaton.pulsar.utils
 
-import com.zenaton.engine.data.StateInterface
-import com.zenaton.engine.topics.StaterInterface
+import com.zenaton.engine.interfaces.StaterInterface
+import com.zenaton.engine.interfaces.data.StateInterface
 import org.apache.pulsar.functions.api.Context
 
 class Stater<T : StateInterface>(private val context: Context) :
