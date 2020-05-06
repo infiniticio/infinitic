@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.topics.workflows.dispatcher
 
-import com.zenaton.engine.workflows.messages.WorkflowMessageInterface
+import com.zenaton.engine.workflows.interfaces.WorkflowMessageInterface
 import com.zenaton.pulsar.topics.Topic
 import com.zenaton.pulsar.topics.workflows.messages.WorkflowMessageContainer
 import java.util.concurrent.TimeUnit

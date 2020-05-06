@@ -4,6 +4,7 @@ import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.workflows.data.WorkflowData
 import com.zenaton.engine.workflows.data.WorkflowId
 import com.zenaton.engine.workflows.data.WorkflowName
+import com.zenaton.engine.workflows.interfaces.WorkflowMessageInterface
 
 data class WorkflowDispatched(
     override var workflowId: WorkflowId,

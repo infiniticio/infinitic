@@ -1,10 +1,10 @@
 package com.zenaton.pulsar.topics.tasks.messages
 
+import com.zenaton.engine.tasks.interfaces.TaskMessageInterface
 import com.zenaton.engine.tasks.messages.TaskAttemptCompleted
 import com.zenaton.engine.tasks.messages.TaskAttemptFailed
 import com.zenaton.engine.tasks.messages.TaskAttemptStarted
 import com.zenaton.engine.tasks.messages.TaskDispatched
-import com.zenaton.engine.tasks.messages.TaskMessageInterface
 import kotlin.reflect.full.declaredMemberProperties
 
 class TaskMessageContainer {

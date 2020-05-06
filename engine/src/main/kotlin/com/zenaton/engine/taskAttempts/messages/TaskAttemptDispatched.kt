@@ -2,6 +2,7 @@ package com.zenaton.engine.taskAttempts.messages
 
 import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.taskAttempts.data.TaskAttemptId
+import com.zenaton.engine.taskAttempts.interfaces.TaskAttemptMessageInterface
 import com.zenaton.engine.tasks.data.TaskData
 import com.zenaton.engine.tasks.data.TaskId
 import com.zenaton.engine.tasks.data.TaskName

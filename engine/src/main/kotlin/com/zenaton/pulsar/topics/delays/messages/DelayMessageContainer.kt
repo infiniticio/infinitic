@@ -1,7 +1,7 @@
 package com.zenaton.pulsar.topics.delays.messages
 
+import com.zenaton.engine.delays.interfaces.DelayMessageInterface
 import com.zenaton.engine.delays.messages.DelayDispatched
-import com.zenaton.engine.delays.messages.DelayMessageInterface
 import kotlin.reflect.full.declaredMemberProperties
 
 class DelayMessageContainer {

@@ -16,12 +16,12 @@ import com.zenaton.engine.workflows.data.WorkflowOutput
 import com.zenaton.engine.workflows.data.WorkflowState
 import com.zenaton.engine.workflows.data.states.Branch
 import com.zenaton.engine.workflows.engine.WorkflowEngine
+import com.zenaton.engine.workflows.interfaces.WorkflowMessageInterface
 import com.zenaton.engine.workflows.messages.ChildWorkflowCompleted
 import com.zenaton.engine.workflows.messages.DecisionCompleted
 import com.zenaton.engine.workflows.messages.DelayCompleted
 import com.zenaton.engine.workflows.messages.TaskCompleted
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
-import com.zenaton.engine.workflows.messages.WorkflowMessageInterface
 import com.zenaton.pulsar.topics.workflows.functions.WorkflowEngineDispatcher
 import com.zenaton.pulsar.utils.Logger
 import com.zenaton.pulsar.utils.Stater

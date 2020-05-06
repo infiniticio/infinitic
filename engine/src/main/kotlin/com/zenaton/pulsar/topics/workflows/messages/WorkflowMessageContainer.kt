@@ -1,13 +1,13 @@
 package com.zenaton.pulsar.topics.workflows.messages
 
 import com.zenaton.engine.events.messages.EventReceived
+import com.zenaton.engine.workflows.interfaces.WorkflowMessageInterface
 import com.zenaton.engine.workflows.messages.ChildWorkflowCompleted
 import com.zenaton.engine.workflows.messages.DecisionCompleted
 import com.zenaton.engine.workflows.messages.DelayCompleted
 import com.zenaton.engine.workflows.messages.TaskCompleted
 import com.zenaton.engine.workflows.messages.WorkflowCompleted
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
-import com.zenaton.engine.workflows.messages.WorkflowMessageInterface
 import kotlin.reflect.full.declaredMemberProperties
 
 class WorkflowMessageContainer {

@@ -1,4 +1,4 @@
-package com.zenaton.engine.taskAttempts.messages
+package com.zenaton.engine.taskAttempts.interfaces
 
 import com.zenaton.engine.interfaces.MessageInterface
 import com.zenaton.engine.interfaces.data.DateTime

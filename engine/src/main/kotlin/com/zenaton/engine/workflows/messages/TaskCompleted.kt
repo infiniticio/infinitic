@@ -4,6 +4,7 @@ import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.tasks.data.TaskId
 import com.zenaton.engine.tasks.data.TaskOutput
 import com.zenaton.engine.workflows.data.WorkflowId
+import com.zenaton.engine.workflows.interfaces.WorkflowMessageInterface
 
 data class TaskCompleted(
     override var workflowId: WorkflowId,

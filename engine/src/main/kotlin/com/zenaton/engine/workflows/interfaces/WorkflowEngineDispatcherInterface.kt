@@ -1,4 +1,4 @@
-package com.zenaton.engine.workflows.engine
+package com.zenaton.engine.workflows.interfaces
 
 import com.zenaton.engine.decisions.messages.DecisionDispatched
 import com.zenaton.engine.delays.messages.DelayDispatched

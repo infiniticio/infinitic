@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.topics.tasks.dispatcher
 
-import com.zenaton.engine.tasks.messages.TaskMessageInterface
+import com.zenaton.engine.tasks.interfaces.TaskMessageInterface
 import com.zenaton.pulsar.topics.Topic
 import com.zenaton.pulsar.topics.tasks.messages.TaskMessageContainer
 import java.util.concurrent.TimeUnit

@@ -4,6 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "avro-js": "^1.9.2",
+    "avsc": "^5.4.21",
     "pulsar-client": "^1.1.0"
   }
 }

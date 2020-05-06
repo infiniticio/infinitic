@@ -1,9 +1,10 @@
 package com.zenaton.engine.delays.engine
 
 import com.zenaton.engine.delays.data.DelayState
+import com.zenaton.engine.delays.interfaces.DelayEngineDispatcherInterface
+import com.zenaton.engine.delays.interfaces.DelayMessageInterface
 import com.zenaton.engine.delays.messages.DelayCompleted
 import com.zenaton.engine.delays.messages.DelayDispatched
-import com.zenaton.engine.delays.messages.DelayMessageInterface
 import com.zenaton.engine.interfaces.LoggerInterface
 import com.zenaton.engine.interfaces.StaterInterface
 import com.zenaton.engine.interfaces.data.DateTime

@@ -9,13 +9,14 @@ import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.workflows.data.WorkflowState
 import com.zenaton.engine.workflows.data.states.Branch
 import com.zenaton.engine.workflows.data.states.Store
+import com.zenaton.engine.workflows.interfaces.WorkflowEngineDispatcherInterface
+import com.zenaton.engine.workflows.interfaces.WorkflowMessageInterface
 import com.zenaton.engine.workflows.messages.ChildWorkflowCompleted
 import com.zenaton.engine.workflows.messages.DecisionCompleted
 import com.zenaton.engine.workflows.messages.DelayCompleted
 import com.zenaton.engine.workflows.messages.TaskCompleted
 import com.zenaton.engine.workflows.messages.WorkflowCompleted
 import com.zenaton.engine.workflows.messages.WorkflowDispatched
-import com.zenaton.engine.workflows.messages.WorkflowMessageInterface
 
 class WorkflowEngine(
     val stater: StaterInterface<WorkflowState>,

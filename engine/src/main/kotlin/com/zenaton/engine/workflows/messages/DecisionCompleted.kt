@@ -3,6 +3,7 @@ package com.zenaton.engine.workflows.messages
 import com.zenaton.engine.decisions.data.DecisionId
 import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.workflows.data.WorkflowId
+import com.zenaton.engine.workflows.interfaces.WorkflowMessageInterface
 
 data class DecisionCompleted(
     override var workflowId: WorkflowId,

@@ -1,4 +1,4 @@
-package com.zenaton.engine.decisions.engine
+package com.zenaton.engine.decisions.interfaces
 
 import com.zenaton.engine.decisionAttempts.messages.DecisionAttemptDispatched
 import com.zenaton.engine.workflows.messages.DecisionCompleted

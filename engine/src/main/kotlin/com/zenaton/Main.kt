@@ -1,38 +1,32 @@
 package com.zenaton
 
+import com.fasterxml.jackson.dataformat.avro.AvroMapper
 import com.zenaton.engine.interfaces.data.DateTime
+import com.zenaton.engine.tasks.data.TaskData
 import com.zenaton.engine.tasks.data.TaskId
-import com.zenaton.engine.tasks.data.TaskOutput
+import com.zenaton.engine.tasks.data.TaskName
+import com.zenaton.engine.tasks.messages.TaskDispatched
 import com.zenaton.engine.workflows.data.WorkflowId
-import com.zenaton.engine.workflows.messages.TaskCompleted
-import com.zenaton.pulsar.topics.Topic
-import com.zenaton.pulsar.topics.workflows.messages.WorkflowMessageContainer
+import com.zenaton.pulsar.topics.tasks.messages.TaskMessageContainer
 import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.impl.schema.JSONSchema
+import org.apache.pulsar.client.impl.schema.AvroSchema
 
 fun main() {
     val client = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
-    val producer = client.newProducer(JSONSchema.of(WorkflowMessageContainer::class.java)).topic("workflows").create()
+    val producer = client.newProducer(AvroSchema.of(TaskMessageContainer::class.java)).topic("persistent://public/default/tasks").create()
 
-    var msg = TaskCompleted(
+    val msg = TaskDispatched(
         workflowId = WorkflowId(),
         taskId = TaskId(),
-        taskOutput = TaskOutput("oUtput".toByteArray()),
+        taskName = TaskName("myTask"),
+        taskData = TaskData("oUtput".toByteArray()),
         receivedAt = DateTime()
     )
-
-Topic.TASKS.get() //    println(JSONSchema.of(WorkflowId::class.java))
-
-//    println(AvroMapper().schemaFor(Test::class.java).avroSchema)
-//    println(JSONSchema.of(Test::class.java).schemaInfo)
-//    val json = Json.stringify(Test("t".toByteArray()))
-//    println(json)
-//    var msg = Json.parse(json, Test::class) as Test
-//    println(msg)
-//
-//    println(Json.stringify(Store(mapOf(PropertyHash("hhhh") to PropertyData("t".toByteArray())))))
-//    println(AvroMapper().schemaFor(WorkflowDispatched::class.java).avroSchema)
-
+    println(AvroMapper().schemaFor(TaskDispatched::class.java).avroSchema)
+//    println(Schema.AVRO(TaskId::class.java).schemaInfo)
+//    println(AvroMapper().schemaFor(TaskDispatched::class.java).avroSchema)//    println(Json.stringify(TaskMessageContainer(msg)))
+//    println(JSONSchema.of(WorkflowMessageContainer::class.java).avroSchema)
+//    println(AvroSchema.of(TaskMessageContainer::class.java).avroSchema)
 //    var msg = DecisionDispatched(
 //        decisionId = DecisionId(),
 //        workflowId = WorkflowId(),
@@ -40,12 +34,8 @@ Topic.TASKS.get() //    println(JSONSchema.of(WorkflowId::class.java))
 //        branches = listOf(),
 //        store = Store(mapOf(PropertyHash("errt") to PropertyData("dd".toByteArray())))
 //    )
-//    val json = Json.stringify(msg)
-//    println(json)
-//    msg = Json.parse(json, DecisionDispatched::class) as DecisionDispatched
-//    println(msg)
 
-    producer.send(WorkflowMessageContainer(msg))
+//    producer.send(TaskMessageContainer(msg))
     producer.close()
     client.close()
 }

@@ -4,7 +4,7 @@ import com.zenaton.engine.events.data.EventData
 import com.zenaton.engine.events.data.EventName
 import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.workflows.data.WorkflowId
-import com.zenaton.engine.workflows.messages.WorkflowMessageInterface
+import com.zenaton.engine.workflows.interfaces.WorkflowMessageInterface
 
 data class EventReceived(
     override var workflowId: WorkflowId,

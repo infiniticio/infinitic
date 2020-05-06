@@ -1,11 +1,12 @@
 package com.zenaton.engine.decisions.engine
 
 import com.zenaton.engine.decisions.data.DecisionState
+import com.zenaton.engine.decisions.interfaces.DecisionEngineDispatcherInterface
+import com.zenaton.engine.decisions.interfaces.DecisionMessageInterface
 import com.zenaton.engine.decisions.messages.DecisionAttemptCompleted
 import com.zenaton.engine.decisions.messages.DecisionAttemptFailed
 import com.zenaton.engine.decisions.messages.DecisionAttemptStarted
 import com.zenaton.engine.decisions.messages.DecisionDispatched
-import com.zenaton.engine.decisions.messages.DecisionMessageInterface
 import com.zenaton.engine.interfaces.LoggerInterface
 import com.zenaton.engine.interfaces.StaterInterface
 import com.zenaton.engine.interfaces.data.DateTime

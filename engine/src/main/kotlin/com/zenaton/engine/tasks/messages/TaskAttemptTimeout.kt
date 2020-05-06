@@ -3,14 +3,13 @@ package com.zenaton.engine.tasks.messages
 import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.taskAttempts.data.TaskAttemptId
 import com.zenaton.engine.tasks.data.TaskId
-import com.zenaton.engine.tasks.data.TaskOutput
-import com.zenaton.engine.tasks.interfaces.TaskMessageInterface
+import com.zenaton.engine.tasks.interfaces.TaskAttemptFailingMessageInterface
 
-data class TaskAttemptCompleted(
+data class TaskAttemptTimeout(
     override var taskId: TaskId,
     override var sentAt: DateTime? = DateTime(),
     override var receivedAt: DateTime? = null,
-    val taskAttemptId: TaskAttemptId,
-    val taskAttemptIndex: Int,
-    val taskOutput: TaskOutput?
-) : TaskMessageInterface
+    override val taskAttemptId: TaskAttemptId,
+    override val taskAttemptIndex: Int,
+    override val taskAttemptDelayBeforeRetry: Float?
+) : TaskAttemptFailingMessageInterface

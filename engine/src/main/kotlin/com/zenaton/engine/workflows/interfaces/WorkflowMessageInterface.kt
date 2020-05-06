@@ -1,13 +1,11 @@
-package com.zenaton.engine.decisions.messages
+package com.zenaton.engine.workflows.interfaces
 
-import com.zenaton.engine.decisions.data.DecisionId
 import com.zenaton.engine.interfaces.MessageInterface
 import com.zenaton.engine.interfaces.data.DateTime
 import com.zenaton.engine.workflows.data.WorkflowId
 
-interface DecisionMessageInterface : MessageInterface {
-    val decisionId: DecisionId
+interface WorkflowMessageInterface : MessageInterface {
     val workflowId: WorkflowId
     override var receivedAt: DateTime?
-    override fun getKey() = decisionId.id
+    override fun getKey() = workflowId.id
 }

@@ -1,4 +1,4 @@
-package com.zenaton.engine.tasks.messages
+package com.zenaton.engine.tasks.interfaces
 
 import com.zenaton.engine.interfaces.MessageInterface
 import com.zenaton.engine.interfaces.data.DateTime

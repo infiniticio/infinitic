@@ -1,6 +1,7 @@
 package com.zenaton.engine.delays.messages
 
 import com.zenaton.engine.delays.data.DelayId
+import com.zenaton.engine.delays.interfaces.DelayMessageInterface
 import com.zenaton.engine.interfaces.data.DateTime
 
 data class DelayCompleted(
