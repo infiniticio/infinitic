@@ -14,6 +14,7 @@ services:
     ports:
       - "6650:6650"
       - "8080:8080"
+      - "8081:8081"
     restart: unless-stopped
 
   dashboard:
@@ -34,5 +35,6 @@ services:
       USERNAME: "pulsar"
       PASSWORD: "pulsar"
       LOG_LEVEL: "DEBUG"
+
 volumes:
   pulsar-data:
