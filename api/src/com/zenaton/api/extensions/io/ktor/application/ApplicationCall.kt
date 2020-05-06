@@ -1,4 +1,4 @@
-package com.zenaton.extensions
+package com.zenaton.api.extensions.io.ktor.application
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.application.ApplicationCall
