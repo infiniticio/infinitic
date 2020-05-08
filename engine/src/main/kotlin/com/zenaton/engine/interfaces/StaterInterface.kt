@@ -1,6 +1,6 @@
 package com.zenaton.engine.interfaces
 
-import com.zenaton.engine.interfaces.data.StateInterface
+import com.zenaton.engine.data.interfaces.StateInterface
 
 interface StaterInterface<T : StateInterface> {
     fun getState(key: String): T?

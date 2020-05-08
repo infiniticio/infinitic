@@ -1,7 +1,7 @@
 package com.zenaton.engine.pulsar.messages
 
-import com.zenaton.engine.workflows.messages.TaskCompleted
-import com.zenaton.engine.workflows.messages.WorkflowDispatched
+import com.zenaton.engine.topics.workflows.messages.TaskCompleted
+import com.zenaton.engine.topics.workflows.messages.WorkflowDispatched
 import com.zenaton.pulsar.topics.workflows.messages.WorkflowMessageContainer
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny

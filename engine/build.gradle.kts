@@ -9,6 +9,7 @@ plugins {
     kotlin("jvm") version "1.3.70"
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    id("com.commercehub.gradle.plugin.avro") version "0.19.1"
 }
 
 repositories {
@@ -19,6 +20,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.apache.pulsar:pulsar-client:2.5.+")
     implementation("org.apache.pulsar:pulsar-functions-api:2.5.+")
+    implementation("org.apache.avro:avro:1.9.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.10.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.+")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-avro:2.10.+")
@@ -52,6 +54,18 @@ tasks {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+avro {
+    isCreateSetters.set(false)
+    isCreateOptionalGetters.set(false)
+    isGettersReturnOptional.set(false)
+    fieldVisibility.set("PUBLIC_DEPRECATED")
+    outputCharacterEncoding.set("UTF-8")
+    stringType.set("String")
+    templateDirectory.set(null as String?)
+    isEnableDecimalLogicalType.set(true)
+    dateTimeLogicalType.set("JSR310")
 }
 
 tasks.register("install") {

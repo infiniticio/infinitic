@@ -14,7 +14,7 @@ object Json : JsonInterface {
         }
     }
 
-    override fun <M : Any> parse(json: String, klass: KClass<M>): Any {
+    override fun <M : Any> parse(json: String, klass: KClass<M>): M {
         return mapper.readValue(json, klass.java)
     }
 }

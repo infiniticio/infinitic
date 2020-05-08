@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.topics
 
-import com.zenaton.engine.interfaces.data.NameInterface
+import com.zenaton.engine.data.interfaces.NameInterface
 
 enum class Topic {
     WORKFLOWS {

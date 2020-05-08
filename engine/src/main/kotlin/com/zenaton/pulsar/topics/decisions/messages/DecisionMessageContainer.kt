@@ -1,10 +1,10 @@
 package com.zenaton.pulsar.topics.decisions.messages
 
-import com.zenaton.engine.decisions.interfaces.DecisionMessageInterface
-import com.zenaton.engine.decisions.messages.DecisionAttemptCompleted
-import com.zenaton.engine.decisions.messages.DecisionAttemptFailed
-import com.zenaton.engine.decisions.messages.DecisionAttemptStarted
-import com.zenaton.engine.decisions.messages.DecisionDispatched
+import com.zenaton.engine.topics.decisions.interfaces.DecisionMessageInterface
+import com.zenaton.engine.topics.decisions.messages.DecisionAttemptCompleted
+import com.zenaton.engine.topics.decisions.messages.DecisionAttemptFailed
+import com.zenaton.engine.topics.decisions.messages.DecisionAttemptStarted
+import com.zenaton.engine.topics.decisions.messages.DecisionDispatched
 import kotlin.reflect.full.declaredMemberProperties
 
 class DecisionMessageContainer {

@@ -1,8 +1,8 @@
 package com.zenaton.pulsar.topics.decisions.functions
 
-import com.zenaton.engine.decisionAttempts.messages.DecisionAttemptDispatched
-import com.zenaton.engine.decisions.interfaces.DecisionEngineDispatcherInterface
-import com.zenaton.engine.workflows.messages.DecisionCompleted
+import com.zenaton.engine.topics.decisionAttempts.messages.DecisionAttemptDispatched
+import com.zenaton.engine.topics.decisions.interfaces.DecisionEngineDispatcherInterface
+import com.zenaton.engine.topics.workflows.messages.DecisionCompleted
 import com.zenaton.pulsar.topics.decisionAttempts.dispatcher.DecisionAttemptDispatcher
 import com.zenaton.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import org.apache.pulsar.functions.api.Context

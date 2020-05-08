@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.topics.delays.dispatcher
 
-import com.zenaton.engine.delays.interfaces.DelayMessageInterface
+import com.zenaton.engine.topics.delays.interfaces.DelayMessageInterface
 import com.zenaton.pulsar.topics.Topic
 import com.zenaton.pulsar.topics.delays.messages.DelayMessageContainer
 import java.util.concurrent.TimeUnit

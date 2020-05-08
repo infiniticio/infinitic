@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.topics.decisionAttempts.dispatcher
 
-import com.zenaton.engine.decisionAttempts.messages.DecisionAttemptMessageInterface
+import com.zenaton.engine.topics.decisionAttempts.messages.DecisionAttemptMessageInterface
 import com.zenaton.pulsar.topics.Topic
 import com.zenaton.pulsar.topics.decisionAttempts.messages.DecisionAttemptMessageContainer
 import java.util.concurrent.TimeUnit

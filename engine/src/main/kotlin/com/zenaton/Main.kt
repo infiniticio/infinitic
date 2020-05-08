@@ -1,28 +1,28 @@
 package com.zenaton
 
-import com.fasterxml.jackson.dataformat.avro.AvroMapper
-import com.zenaton.engine.interfaces.data.DateTime
-import com.zenaton.engine.tasks.data.TaskData
-import com.zenaton.engine.tasks.data.TaskId
-import com.zenaton.engine.tasks.data.TaskName
-import com.zenaton.engine.tasks.messages.TaskDispatched
-import com.zenaton.engine.workflows.data.WorkflowId
-import com.zenaton.pulsar.topics.tasks.messages.TaskMessageContainer
-import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.impl.schema.AvroSchema
+import com.zenaton.engine.topics.tasks.messages.TaskDispatched
+import com.zenaton.messages.topics.tasks.AvroTaskDispatched
+import com.zenaton.pulsar.utils.Json
+import java.nio.ByteBuffer
 
 fun main() {
-    val client = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
-    val producer = client.newProducer(AvroSchema.of(TaskMessageContainer::class.java)).topic("persistent://public/default/tasks").create()
+//    val client = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
+//    val producer = client.newProducer(AvroSchema.of(TaskMessageContainer::class.java)).topic("persistent://public/default/tasks").create()
 
-    val msg = TaskDispatched(
-        workflowId = WorkflowId(),
-        taskId = TaskId(),
-        taskName = TaskName("myTask"),
-        taskData = TaskData("oUtput".toByteArray()),
-        receivedAt = DateTime()
-    )
-    println(AvroMapper().schemaFor(TaskDispatched::class.java).avroSchema)
+    val avro = AvroTaskDispatched.newBuilder()
+        .setTaskId("fb82e2a8-8c52-41b8-9865-babaef0b3235")
+        .setSentAt(1588975137)
+        .setTaskName("myTask")
+        .setTaskData(ByteBuffer.wrap("b1V0cHV0".toByteArray()))
+        .setWorkflowId("3a53e888-a508-4e00-86f1-24a656e8fd80")
+        .build()
+
+    println(avro.toString())
+    val td = Json.parse(avro.toString(), TaskDispatched::class)
+    println(td)
+    println(Json.parse(Json.stringify(td), AvroTaskDispatched::class))
+
+//    println(AvroSchema.of(TaskMessage::class.java).avroSchema)
 //    println(Schema.AVRO(TaskId::class.java).schemaInfo)
 //    println(AvroMapper().schemaFor(TaskDispatched::class.java).avroSchema)//    println(Json.stringify(TaskMessageContainer(msg)))
 //    println(JSONSchema.of(WorkflowMessageContainer::class.java).avroSchema)
@@ -36,6 +36,6 @@ fun main() {
 //    )
 
 //    producer.send(TaskMessageContainer(msg))
-    producer.close()
-    client.close()
+//    producer.close()
+//    client.close()
 }

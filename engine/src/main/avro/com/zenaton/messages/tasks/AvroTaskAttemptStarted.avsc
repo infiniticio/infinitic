@@ -1,0 +1,30 @@
+{
+    "type": "record",
+    "name": "AvroTaskAttemptStarted",
+    "namespace": "com.zenaton.messages.topics.tasks",
+    "fields": [
+      {
+        "name": "taskId",
+        "type": "string",
+        "logicalType": "UUID"
+      },
+      {
+        "name": "sentAt",
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      {
+        "name": "taskAttemptId",
+        "type": "string",
+        "logicalType": "UUID"
+      },
+      {
+        "name": "taskAttemptIndex",
+        "type": "int"
+      },
+      {
+        "name": "taskAttemptDelayBeforeRetry",
+        "type": "float"
+      }
+    ]
+}

@@ -1,20 +1,21 @@
 package com.zenaton.pulsar.topics.tasks.functions
 
-import com.zenaton.engine.tasks.data.TaskState
-import com.zenaton.engine.tasks.engine.TaskEngine
-import com.zenaton.pulsar.topics.tasks.messages.TaskMessageContainer
+import com.zenaton.engine.topics.tasks.engine.TaskEngine
+import com.zenaton.engine.topics.tasks.state.TaskState
+import com.zenaton.messages.topics.tasks.AvroTaskMessage
+import com.zenaton.pulsar.topics.tasks.converter.TaskConverter
 import com.zenaton.pulsar.utils.Logger
 import com.zenaton.pulsar.utils.Stater
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class TaskEngineFunction : Function<TaskMessageContainer, Void> {
+class TaskEngineFunction : Function<AvroTaskMessage, Void> {
 
-    override fun process(input: TaskMessageContainer, context: Context?): Void? {
+    override fun process(input: AvroTaskMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received from tasks.StateFunction")
 
         try {
-            val msg = input.msg()
+            val msg = TaskConverter.fromAvro(input)
 
             TaskEngine(
                 stater = Stater<TaskState>(ctx),
@@ -23,6 +24,7 @@ class TaskEngineFunction : Function<TaskMessageContainer, Void> {
             ).handle(msg)
         } catch (e: Exception) {
             Logger(ctx).error("Error:%s for message:%s", e, input)
+            throw e
         }
 
         return null
