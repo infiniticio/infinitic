@@ -1,0 +1,235 @@
+{
+    "type": "record",
+    "name": "AvroTaskMessage",
+    "namespace": "com.zenaton.messages.topics.tasks",
+    "fields": [
+      {
+        "name": "type",
+        "type": {
+          "name": "MessageType",
+          "type": "enum",
+          "symbols": [
+            "TaskAttemptCompleted",
+            "TaskAttemptFailed",
+            "TaskAttemptRetried",
+            "TaskAttemptStarted",
+            "TaskAttemptTimeout",
+            "TaskDispatched"
+          ]
+        }
+      },
+      {
+        "name": "msg",
+        "type": [
+          {
+            "type": "record",
+            "name": "AvroTaskAttemptCompleted",
+            "namespace": "com.zenaton.messages.topics.tasks",
+            "fields": [
+                {
+                    "name": "taskId",
+                    "type": "string",
+                    "logicalType": "uuid"
+                },
+                {
+                    "name": "sentAt",
+                    "type": "long",
+                    "logicalType": "timestamp-millis"
+                },
+                {
+                    "name": "taskAttemptId",
+                    "type": "string",
+                    "logicalType": "uuid"
+                },
+                {
+                    "name": "taskAttemptIndex",
+                    "type": "int"
+                },
+                {
+                    "name": "taskOutput",
+                    "type": [
+                        "null",
+                        {
+                        "type": "bytes",
+                        "java-class": "[B"
+                        }
+                    ],
+                    "default": null
+                }
+            ]
+        },
+        {
+            "type": "record",
+            "name": "AvroTaskAttemptFailed",
+            "namespace": "com.zenaton.messages.topics.tasks",
+            "fields": [
+                {
+                    "name": "taskId",
+                    "type": "string",
+                    "logicalType": "uuid"
+                },
+                {
+                    "name": "sentAt",
+                    "type": "long",
+                    "logicalType": "timestamp-millis"
+                },
+                {
+                    "name": "taskAttemptId",
+                    "type": "string",
+                    "logicalType": "uuid"
+                },
+                {
+                    "name": "taskAttemptIndex",
+                    "type": "int"
+                },
+                {
+                    "name": "taskAttemptDelayBeforeRetry",
+                    "type": "float"
+                },
+                {
+                    "name": "taskAttemptError",
+                    "type": [
+                        "null",
+                        {
+                        "type": "bytes",
+                        "java-class": "[B"
+                        }
+                    ],
+                    "default": null
+                }
+            ]
+        },
+        {
+            "type": "record",
+            "name": "AvroTaskAttemptRetried",
+            "namespace": "com.zenaton.messages.topics.tasks",
+            "fields": [
+              {
+                "name": "taskId",
+                "type": "string",
+                "logicalType": "uuid"
+              },
+              {
+                "name": "sentAt",
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              },
+              {
+                "name": "taskAttemptId",
+                "type": "string",
+                "logicalType": "uuid"
+              },
+              {
+                "name": "taskAttemptIndex",
+                "type": "int"
+              }
+            ]
+        },
+        {
+            "type": "record",
+            "name": "AvroTaskAttemptStarted",
+            "namespace": "com.zenaton.messages.topics.tasks",
+            "fields": [
+              {
+                "name": "taskId",
+                "type": "string",
+                "logicalType": "uuid"
+              },
+              {
+                "name": "sentAt",
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              },
+              {
+                "name": "taskAttemptId",
+                "type": "string",
+                "logicalType": "uuid"
+              },
+              {
+                "name": "taskAttemptIndex",
+                "type": "int"
+              },
+              {
+                "name": "taskAttemptDelayBeforeRetry",
+                "type": "float"
+              }
+            ]
+        },
+        {
+            "type": "record",
+            "name": "AvroTaskAttemptTimeout",
+            "namespace": "com.zenaton.messages.topics.tasks",
+            "fields": [
+              {
+                "name": "taskId",
+                "type": "string",
+                "logicalType": "uuid"
+              },
+              {
+                "name": "sentAt",
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              },
+              {
+                "name": "taskAttemptId",
+                "type": "string",
+                "logicalType": "uuid"
+              },
+              {
+                "name": "taskAttemptIndex",
+                "type": "int"
+              },
+              {
+                "name": "taskAttemptDelayBeforeRetry",
+                "type": "float"
+              }
+            ]
+        }
+        ,
+        {
+            "type": "record",
+            "name": "AvroTaskDispatched",
+            "namespace": "com.zenaton.messages.topics.tasks",
+            "fields": [
+              {
+                "name": "taskId",
+                "type": "string",
+                "logicalType": "uuid"
+              },
+              {
+                "name": "sentAt",
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              },
+              {
+                "name": "taskName",
+                "type": "string"
+              },
+              {
+                "name": "taskData",
+                "type": [
+                    "null",
+                    {
+                      "type": "bytes",
+                      "java-class": "[B"
+                    }
+                  ],
+                  "default": null
+              },
+              {
+                "name": "workflowId",
+                "type": [
+                  "null",
+                  {
+                    "type": "string",
+                    "logicalType": "uuid"
+                  }
+                ],
+                "default": null
+              }
+            ]
+          }
+        ]
+      }
+    ]
+}

@@ -55,6 +55,6 @@ object TaskConverter {
             is AvroTaskDispatched -> TaskDispatched::class
             else -> throw Exception("Unknown message type ${o::class}")
         }
-        return Json.parse(o.toString(), klass)
+        return Json.parse(Json.stringify(o), klass)
     }
 }

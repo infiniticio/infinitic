@@ -6,7 +6,7 @@
       {
         "name": "taskId",
         "type": "string",
-        "logicalType": "UUID"
+        "logicalType": "uuid"
       },
       {
         "name": "sentAt",
@@ -22,8 +22,7 @@
         "type": [
             "null",
             {
-              "type": "bytes",
-              "java-class": "[B"
+              "type": "bytes"
             }
           ],
           "default": null
@@ -34,7 +33,7 @@
           "null",
           {
             "type": "string",
-            "logicalType": "UUID"
+            "logicalType": "uuid"
           }
         ],
         "default": null

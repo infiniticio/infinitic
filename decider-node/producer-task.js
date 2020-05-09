@@ -14,19 +14,43 @@ const Pulsar = require('pulsar-client');
     batchingEnabled: true,
   });
 
+  var util = require('util');
   var avro = require('avro-js');
+  var type = avro.parse("./tasks.asvc");
 
-  var type = avro.parse({"type":"record","name":"WorkflowMessageContainer","namespace":"com.zenaton.pulsar.topics.workflows.messages","fields":[{"name":"childWorkflowCompleted","type":["null",{"type":"record","name":"ChildWorkflowCompleted","namespace":"com.zenaton.engine.workflows.messages","fields":[{"name":"workflowId","type":["null",{"type":"record","name":"WorkflowId","namespace":"com.zenaton.engine.workflows.data","fields":[{"name":"id","type":["null","string"],"default":null}]}],"default":null},{"name":"sentAt","type":["null",{"type":"record","name":"DateTime","namespace":"com.zenaton.engine.interfaces.data","fields":[{"name":"time","type":"long"}]}],"default":null},{"name":"receivedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"childWorkflowId","type":["null","com.zenaton.engine.workflows.data.WorkflowId"],"default":null},{"name":"childWorkflowOutput","type":["null",{"type":"record","name":"WorkflowOutput","namespace":"com.zenaton.engine.workflows.data","fields":[{"name":"data","type":["null",{"type":"bytes","java-class":"[B"}],"default":null}]}],"default":null}]}],"default":null},{"name":"decisionCompleted","type":["null",{"type":"record","name":"DecisionCompleted","namespace":"com.zenaton.engine.workflows.messages","fields":[{"name":"workflowId","type":["null","com.zenaton.engine.workflows.data.WorkflowId"],"default":null},{"name":"sentAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"receivedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"decisionId","type":["null",{"type":"record","name":"DecisionId","namespace":"com.zenaton.engine.decisions.data","fields":[{"name":"id","type":["null","string"],"default":null}]}],"default":null}]}],"default":null},{"name":"delayCompleted","type":["null",{"type":"record","name":"DelayCompleted","namespace":"com.zenaton.engine.workflows.messages","fields":[{"name":"workflowId","type":["null","com.zenaton.engine.workflows.data.WorkflowId"],"default":null},{"name":"sentAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"receivedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"delayId","type":["null",{"type":"record","name":"DelayId","namespace":"com.zenaton.engine.delays.data","fields":[{"name":"id","type":["null","string"],"default":null}]}],"default":null}]}],"default":null},{"name":"eventReceived","type":["null",{"type":"record","name":"EventReceived","namespace":"com.zenaton.engine.events.messages","fields":[{"name":"workflowId","type":["null","com.zenaton.engine.workflows.data.WorkflowId"],"default":null},{"name":"sentAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"receivedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"eventName","type":["null",{"type":"record","name":"EventName","namespace":"com.zenaton.engine.events.data","fields":[{"name":"name","type":["null","string"],"default":null}]}],"default":null},{"name":"eventData","type":["null",{"type":"record","name":"EventData","namespace":"com.zenaton.engine.events.data","fields":[{"name":"data","type":["null",{"type":"bytes","java-class":"[B"}],"default":null}]}],"default":null}]}],"default":null},{"name":"taskCompleted","type":["null",{"type":"record","name":"TaskCompleted","namespace":"com.zenaton.engine.workflows.messages","fields":[{"name":"workflowId","type":["null","com.zenaton.engine.workflows.data.WorkflowId"],"default":null},{"name":"sentAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"receivedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"taskId","type":["null",{"type":"record","name":"TaskId","namespace":"com.zenaton.engine.tasks.data","fields":[{"name":"id","type":["null","string"],"default":null}]}],"default":null},{"name":"taskOutput","type":["null",{"type":"record","name":"TaskOutput","namespace":"com.zenaton.engine.tasks.data","fields":[{"name":"data","type":["null",{"type":"bytes","java-class":"[B"}],"default":null}]}],"default":null}]}],"default":null},{"name":"workflowCompleted","type":["null",{"type":"record","name":"WorkflowCompleted","namespace":"com.zenaton.engine.workflows.messages","fields":[{"name":"workflowId","type":["null","com.zenaton.engine.workflows.data.WorkflowId"],"default":null},{"name":"sentAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"receivedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"workflowOutput","type":["null","com.zenaton.engine.workflows.data.WorkflowOutput"],"default":null},{"name":"dispatchedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null}]}],"default":null},{"name":"workflowDispatched","type":["null",{"type":"record","name":"WorkflowDispatched","namespace":"com.zenaton.engine.workflows.messages","fields":[{"name":"workflowId","type":["null","com.zenaton.engine.workflows.data.WorkflowId"],"default":null},{"name":"sentAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"receivedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null},{"name":"workflowName","type":["null",{"type":"record","name":"WorkflowName","namespace":"com.zenaton.engine.workflows.data","fields":[{"name":"name","type":["null","string"],"default":null}]}],"default":null},{"name":"workflowData","type":["null",{"type":"record","name":"WorkflowData","namespace":"com.zenaton.engine.workflows.data","fields":[{"name":"data","type":["null",{"type":"bytes","java-class":"[B"}],"default":null}]}],"default":null},{"name":"parentWorkflowId","type":["null","com.zenaton.engine.workflows.data.WorkflowId"],"default":null},{"name":"dispatchedAt","type":["null","com.zenaton.engine.interfaces.data.DateTime"],"default":null}]}],"default":null}]});
+  class AvroTaskDispatched {}
+  class AvroTaskMessage {}
 
-  var msg = {"taskAttemptCompleted":null,"taskAttemptFailed":null,"taskAttemptStarted":null,"taskDispatched":{"taskId":{"id":"bae25546-1dcb-4206-9fe4-7aaaf526ee07"},"sentAt":{"time":1588705988},"receivedAt":{"time":1588705988},"taskName":{"name":"myTask"},"taskData":{"data":"b1V0cHV0"},"workflowId":{"id":"3d1e35d3-568b-4e30-83ef-cf7576211d28"},"key":"bae25546-1dcb-4206-9fe4-7aaaf526ee07"}};
-  var msg = {"taskAttemptCompleted":4}
+  var atd = new AvroTaskDispatched()
+  atd.taskId = "bae25546-1dcb-4206-9fe4-7aaaf526ee07"
+  atd.sentAt = 1588705988
+  atd.taskName = "myTask"
+  atd.taskData = { "bytes": Buffer.from('abc') }
+  atd.workflowId = { "string": 'OqUUovQGsMMAbsdfYBUPsQ' }
 
-  console.log(type.random());
-  console.log(type.isValid(msg));
-  //var buf = type.toBuffer(msg); // Serialized object.
+  var avro = new AvroTaskMessage()
+  avro.type = "TaskDispatched"
+  avro.msg = {'com.zenaton.messages.topics.tasks.AvroTaskDispatched': atd}
+
+function assertValid(type, val) {
+  return type.isValid(val, {errorHook: hook});
+
+  function hook(path, any) {
+    throw new Error(util.format('invalid %s: %j', path.join(), any));
+  }
+}
+
+try {
+  assertValid(type, avro); // Will throw.
+} catch (err) {
+  console.log(err)
+  // err.message === 'invalid age: null'
+}
+
+  var buf = type.toBuffer(avro); // Serialized object.
 
   // Send messages
-  //producer.send({data: buf});
+  producer.send({data: buf});
 
   await producer.flush();
 

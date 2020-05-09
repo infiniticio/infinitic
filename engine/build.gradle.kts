@@ -71,7 +71,7 @@ avro {
 tasks.register("install") {
     group = "Zenaton"
     description = "Install Zenaton into Pulsar"
-    dependsOn("build")
+    dependsOn("assemble")
     doLast {
         setZenatonFunction(
             className = "com.zenaton.pulsar.topics.workflows.functions.WorkflowEngineFunction",
@@ -99,7 +99,7 @@ tasks.register("install") {
 tasks.register("update") {
     group = "Zenaton"
     description = "Update Zenaton into Pulsar"
-    dependsOn("build")
+    dependsOn("assemble")
     doLast {
         setZenatonFunction(
             className = "com.zenaton.pulsar.topics.workflows.functions.WorkflowEngineFunction",
