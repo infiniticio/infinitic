@@ -21,7 +21,7 @@ fun main() {
         workflowId = WorkflowId()
     )
     producer.send(TaskConverter.toAvro(msg))
-    
+
     producer.close()
     client.close()
 }

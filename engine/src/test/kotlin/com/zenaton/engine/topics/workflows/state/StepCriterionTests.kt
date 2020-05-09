@@ -3,7 +3,7 @@ package com.zenaton.engine.topics.workflows.state
 import com.zenaton.engine.data.TaskId
 import com.zenaton.engine.topics.workflows.state.StepCriterion.And
 import com.zenaton.engine.topics.workflows.state.StepCriterion.Or
-import com.zenaton.pulsar.utils.Json
+import com.zenaton.utils.json.Json
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

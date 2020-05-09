@@ -1,6 +1,8 @@
 package com.zenaton.pulsar.utils
 
 import com.zenaton.engine.interfaces.LoggerInterface
+import com.zenaton.utils.json.Json
+import com.zenaton.utils.json.JsonInterface
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
 

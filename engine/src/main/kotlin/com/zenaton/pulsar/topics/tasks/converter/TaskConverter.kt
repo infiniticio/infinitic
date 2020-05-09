@@ -15,7 +15,7 @@ import com.zenaton.messages.topics.tasks.AvroTaskAttemptTimeout
 import com.zenaton.messages.topics.tasks.AvroTaskDispatched
 import com.zenaton.messages.topics.tasks.AvroTaskMessage
 import com.zenaton.messages.topics.tasks.MessageType
-import com.zenaton.pulsar.utils.Json
+import com.zenaton.utils.json.Json
 
 object TaskConverter {
     fun toAvro(msg: TaskMessageInterface): AvroTaskMessage {

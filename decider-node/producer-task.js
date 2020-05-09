@@ -1,4 +1,14 @@
 const Pulsar = require('pulsar-client');
+const util = require('util');
+const avro = require('avro-js');
+
+function assertValid(type, val) {
+  return type.isValid(val, {errorHook: hook});
+
+  function hook(path, any) {
+    throw new Error(util.format('invalid %s: %j', path.join(), any));
+  }
+}
 
 (async () => {
   // Create a client
@@ -14,44 +24,30 @@ const Pulsar = require('pulsar-client');
     batchingEnabled: true,
   });
 
-  var util = require('util');
-  var avro = require('avro-js');
-  var type = avro.parse("./tasks.asvc");
+  var registry = {}
+  var taskAttemptCompletedType = avro.parse("./avro/tasks/AvroTaskAttemptCompleted.avsc", { registry });
+  var taskAttemptFailedType = avro.parse("./avro/tasks/AvroTaskAttemptFailed.avsc", { registry });
+  var taskAttemptRetriedType = avro.parse("./avro/tasks/AvroTaskAttemptRetried.avsc", { registry });
+  var taskAttemptStartedType = avro.parse("./avro/tasks/AvroTaskAttemptStarted.avsc", { registry });
+  var taskAttemptTimeoutType = avro.parse("./avro/tasks/AvroTaskAttemptTimeout.avsc", { registry });
+  var taskDispatchedType = avro.parse("./avro/tasks/AvroTaskDispatched.avsc", { registry });
+  var taskMessageType = avro.parse("./avro/tasks/AvroTaskMessage.avsc", { registry });
 
-  class AvroTaskDispatched {}
-  class AvroTaskMessage {}
-
-  var atd = new AvroTaskDispatched()
+  var atd = new taskDispatchedType.getRecordConstructor()
   atd.taskId = "bae25546-1dcb-4206-9fe4-7aaaf526ee07"
   atd.sentAt = 1588705988
   atd.taskName = "myTask"
   atd.taskData = { "bytes": Buffer.from('abc') }
   atd.workflowId = { "string": 'OqUUovQGsMMAbsdfYBUPsQ' }
 
-  var avro = new AvroTaskMessage()
-  avro.type = "TaskDispatched"
-  avro.msg = {'com.zenaton.messages.topics.tasks.AvroTaskDispatched': atd}
+  var atm = new taskMessageType.getRecordConstructor()
+  atm.type = "TaskDispatched"
+  atm.msg = {'com.zenaton.messages.topics.tasks.AvroTaskDispatched': atd}
 
-function assertValid(type, val) {
-  return type.isValid(val, {errorHook: hook});
-
-  function hook(path, any) {
-    throw new Error(util.format('invalid %s: %j', path.join(), any));
-  }
-}
-
-try {
-  assertValid(type, avro); // Will throw.
-} catch (err) {
-  console.log(err)
-  // err.message === 'invalid age: null'
-}
-
-  var buf = type.toBuffer(avro); // Serialized object.
+  var buf = taskMessageType.toBuffer(atm); // Serialized object.
 
   // Send messages
   producer.send({data: buf});
-
   await producer.flush();
 
   await producer.close();
