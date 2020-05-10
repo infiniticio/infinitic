@@ -17,6 +17,9 @@ import com.zenaton.messages.topics.tasks.AvroTaskMessage
 import com.zenaton.messages.topics.tasks.MessageType
 import com.zenaton.utils.json.Json
 
+/**
+ * This class does the mapping between avro-generated classes and classes used by our code
+ */
 object TaskConverter {
     fun toAvro(msg: TaskMessageInterface): AvroTaskMessage {
         var builder = AvroTaskMessage.newBuilder()

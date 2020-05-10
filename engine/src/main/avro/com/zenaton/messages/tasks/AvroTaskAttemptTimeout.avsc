@@ -3,28 +3,28 @@
     "name": "AvroTaskAttemptTimeout",
     "namespace": "com.zenaton.messages.topics.tasks",
     "fields": [
-      {
-        "name": "taskId",
-        "type": "string",
-        "logicalType": "uuid"
-      },
-      {
-        "name": "sentAt",
-        "type": "long",
-        "logicalType": "timestamp-millis"
-      },
-      {
-        "name": "taskAttemptId",
-        "type": "string",
-        "logicalType": "uuid"
-      },
-      {
-        "name": "taskAttemptIndex",
-        "type": "int"
-      },
-      {
-        "name": "taskAttemptDelayBeforeRetry",
-        "type": "float"
-      }
+        {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "taskAttemptId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "taskAttemptIndex",
+            "type": "int"
+        },
+        {
+            "name": "taskAttemptDelayBeforeRetry",
+            "type": "float"
+        }
     ]
 }

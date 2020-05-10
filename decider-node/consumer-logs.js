@@ -1,14 +1,8 @@
-const Pulsar = require('pulsar-client');
+const { pulsar } = require('./pulsar');
 
 (async () => {
-  // Create a client
-  const client = new Pulsar.Client({
-    serviceUrl: 'pulsar://localhost:6650',
-    operationTimeoutSeconds: 30,
-  });
-
   // Create a consumer
-  const consumer = await client.subscribe({
+  const consumer = await pulsar.subscribe({
     topic: 'persistent://public/default/logs',
     subscription: 'subLogs',
     subscriptionType: 'Shared',
@@ -23,5 +17,5 @@ const Pulsar = require('pulsar-client');
   }
 
   await consumer.close();
-  await client.close();
+  await pulsar.close();
 })();

@@ -3,31 +3,31 @@
     "name": "AvroTaskMessage",
     "namespace": "com.zenaton.messages.topics.tasks",
     "fields": [
-      {
-        "name": "type",
-        "type": {
-          "name": "MessageType",
-          "type": "enum",
-          "symbols": [
-            "TaskAttemptCompleted",
-            "TaskAttemptFailed",
-            "TaskAttemptRetried",
-            "TaskAttemptStarted",
-            "TaskAttemptTimeout",
-            "TaskDispatched"
-          ]
+        {
+            "name": "type",
+            "type": {
+                "name": "MessageType",
+                "type": "enum",
+                "symbols": [
+                    "TaskAttemptCompleted",
+                    "TaskAttemptFailed",
+                    "TaskAttemptRetried",
+                    "TaskAttemptStarted",
+                    "TaskAttemptTimeout",
+                    "TaskDispatched"
+                ]
+            }
+        },
+        {
+            "name": "msg",
+            "type": [
+                "com.zenaton.messages.topics.tasks.AvroTaskAttemptCompleted",
+                "com.zenaton.messages.topics.tasks.AvroTaskAttemptFailed",
+                "com.zenaton.messages.topics.tasks.AvroTaskAttemptRetried",
+                "com.zenaton.messages.topics.tasks.AvroTaskAttemptStarted",
+                "com.zenaton.messages.topics.tasks.AvroTaskAttemptTimeout",
+                "com.zenaton.messages.topics.tasks.AvroTaskDispatched"
+            ]
         }
-      },
-      {
-        "name": "msg",
-        "type": [
-          "com.zenaton.messages.topics.tasks.AvroTaskAttemptCompleted",
-          "com.zenaton.messages.topics.tasks.AvroTaskAttemptFailed",
-          "com.zenaton.messages.topics.tasks.AvroTaskAttemptRetried",
-          "com.zenaton.messages.topics.tasks.AvroTaskAttemptStarted",
-          "com.zenaton.messages.topics.tasks.AvroTaskAttemptTimeout",
-          "com.zenaton.messages.topics.tasks.AvroTaskDispatched"
-        ]
-      }
     ]
 }

@@ -3,35 +3,29 @@
     "name": "AvroTaskAttemptCompleted",
     "namespace": "com.zenaton.messages.topics.tasks",
     "fields": [
-      {
-        "name": "taskId",
-        "type": "string",
-        "logicalType": "uuid"
-      },
-      {
-        "name": "sentAt",
-        "type": "long",
-        "logicalType": "timestamp-millis"
-      },
-      {
-        "name": "taskAttemptId",
-        "type": "string",
-        "logicalType": "uuid"
-      },
-      {
-        "name": "taskAttemptIndex",
-        "type": "int"
-      },
-      {
-        "name": "taskOutput",
-        "type": [
-            "null",
-            {
-              "type": "bytes",
-              "java-class": "[B"
-            }
-          ],
-          "default": null
-      }
+        {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "taskAttemptId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "taskAttemptIndex",
+            "type": "int"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "taskOutput",
+            "type": ["null", {"type":"bytes"}],
+            "default": null
+        }
     ]
 }
