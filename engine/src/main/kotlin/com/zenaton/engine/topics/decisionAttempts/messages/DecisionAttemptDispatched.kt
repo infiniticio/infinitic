@@ -1,5 +1,6 @@
 package com.zenaton.engine.topics.decisionAttempts.messages
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.zenaton.engine.data.DateTime
 import com.zenaton.engine.data.DecisionAttemptId
 import com.zenaton.engine.data.DecisionId
@@ -14,5 +15,6 @@ data class DecisionAttemptDispatched(
     val workflowName: WorkflowName,
     val workflowData: WorkflowData
 ) : DecisionAttemptMessageInterface {
-    override fun getName() = workflowName
+    @JsonIgnore
+    override fun getName() = workflowName.name
 }

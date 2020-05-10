@@ -13,6 +13,4 @@ data class TaskAttemptDispatched(
     var sentAt: DateTime? = DateTime(),
     val taskName: TaskName,
     val taskData: TaskData?
-) {
-    fun getName() = taskName
-}
+)

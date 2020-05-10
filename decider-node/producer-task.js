@@ -1,4 +1,5 @@
 const { pulsar } = require('./pulsar');
+const { v4: uuidv4 } = require('uuid');
 const { taskDispatchedType, taskMessageType } = require('./avro');
 
 (async () => {
@@ -10,20 +11,18 @@ const { taskDispatchedType, taskMessageType } = require('./avro');
   });
 
   var atd = new taskDispatchedType.getRecordConstructor()
-  atd.taskId = "bae25546-1dcb-4206-9fe4-7aaaf526ee08"
+  atd.taskId = uuidv4()
   atd.sentAt = 1588705988
-  atd.taskName = "myTask"
-  atd.taskData = { "bytes": Buffer.from('abc') }
-  atd.workflowId = { "string": 'OqUUovQGsMMAbsdfYBUPsQ' }
+  atd.taskName = "MyTask"
+  atd.taskData = null //{ "bytes": Buffer.from('abc') }
+  atd.workflowId = { "string": uuidv4() }
 
   var atm = new taskMessageType.getRecordConstructor()
   atm.type = "TaskDispatched"
   atm.msg = {'com.zenaton.messages.topics.tasks.AvroTaskDispatched': atd}
 
-  var buf = taskMessageType.toBuffer(atm); // Serialized object.
-
   // Send messages
-  producer.send({data: buf});
+  producer.send({data: taskMessageType.toBuffer(atm)});
   await producer.flush();
 
   await producer.close();

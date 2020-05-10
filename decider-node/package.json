@@ -5,6 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "avro-js": "^1.9.2",
-    "pulsar-client": "^1.1.0"
+    "pulsar-client": "^1.1.0",
+    "uuid": "^8.0.0"
   }
 }

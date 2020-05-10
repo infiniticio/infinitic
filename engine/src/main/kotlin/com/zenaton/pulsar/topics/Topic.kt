@@ -1,29 +1,27 @@
 package com.zenaton.pulsar.topics
 
-import com.zenaton.engine.data.interfaces.NameInterface
-
 enum class Topic {
     WORKFLOWS {
-        override fun get(name: NameInterface?) = "workflows"
+        override fun get(name: String?) = "workflows"
     },
     TASKS {
-        override fun get(name: NameInterface?) = "tasks"
+        override fun get(name: String?) = "tasks"
     },
     DECISIONS {
-        override fun get(name: NameInterface?) = "decisions"
+        override fun get(name: String?) = "decisions"
     },
     DELAYS {
-        override fun get(name: NameInterface?) = "delays"
+        override fun get(name: String?) = "delays"
     },
     TASK_ATTEMPTS {
-        override fun get(name: NameInterface?) = "tasks-$name"
+        override fun get(name: String?) = "tasks-$name"
     },
     DECISION_ATTEMPTS {
-        override fun get(name: NameInterface?) = "decisions-$name"
+        override fun get(name: String?) = "decisions-$name"
     },
     LOGS {
-        override fun get(name: NameInterface?) = "logs"
+        override fun get(name: String?) = "logs"
     };
 
-    abstract fun get(name: NameInterface? = null): String
+    abstract fun get(name: String? = ""): String
 }

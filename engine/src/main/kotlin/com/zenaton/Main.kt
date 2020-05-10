@@ -1,6 +1,5 @@
 package com.zenaton
 
-import com.zenaton.engine.data.TaskData
 import com.zenaton.engine.data.TaskId
 import com.zenaton.engine.data.TaskName
 import com.zenaton.engine.data.WorkflowId
@@ -14,10 +13,21 @@ fun main() {
     val client = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
     val producer = client.newProducer(AvroSchema.of(AvroTaskMessage::class.java)).topic("persistent://public/default/tasks").create()
 
+//    val tad = TaskAttemptDispatched(
+//        taskId = TaskId(),
+//        taskAttemptId = TaskAttemptId(),
+//        taskAttemptIndex = 1,
+//        taskName = TaskName("MyTask"),
+//        taskData = null
+//    )
+//    val v = TaskAttemptConverter.toAvro(tad)
+//    println(v.toString())
+//    println(TaskAttemptConverter.fromAvro(v))
+
     var msg = TaskDispatched(
         taskId = TaskId(),
         taskName = TaskName("MyTask"),
-        taskData = TaskData("abc".toByteArray()),
+        taskData = null, // TaskData("abc".toByteArray()),
         workflowId = WorkflowId()
     )
     producer.send(TaskConverter.toAvro(msg))

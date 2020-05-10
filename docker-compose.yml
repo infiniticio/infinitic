@@ -8,7 +8,7 @@ services:
       /bin/bash -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
     volumes:
       - "./data/:/pulsar/data"
-      - "./conf/:/pulsar/conf"
+      - "/pulsar/conf"
       - "./engine/build/libs:/zenaton/engine/build:delegated"
     ports:
       - "6650:6650"
