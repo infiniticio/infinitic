@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroTaskDispatched",
-    "namespace": "com.zenaton.messages.topics.tasks",
+    "namespace": "com.zenaton.messages.tasks",
     "fields": [
         {
             "name": "taskId",
@@ -19,7 +19,7 @@
         },
         {
             "name": "taskData",
-            "type": ["null", {"type":"bytes"}],
+            "type": ["null", "bytes"],
             "default": null
         },
         {

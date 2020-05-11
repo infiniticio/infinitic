@@ -1,0 +1,28 @@
+{
+    "type" : "record",
+    "name" : "AvroTaskState",
+    "namespace" : "com.zenaton.states",
+    "fields" : [
+        {
+            "name" : "taskAttemptId",
+            "type" : "string"
+        }, {
+            "name" : "taskAttemptIndex",
+            "type" : "int"
+        }, {
+            "name" : "taskData",
+            "type" : [ "null", "bytes" ],
+            "default": null
+        }, {
+            "name" : "taskId",
+            "type" : "string"
+        }, {
+            "name" : "taskName",
+            "type" : "string"
+        }, {
+            "name" : "workflowId",
+            "type" : [ "null", "string" ],
+            "default": null
+        }
+    ]
+}

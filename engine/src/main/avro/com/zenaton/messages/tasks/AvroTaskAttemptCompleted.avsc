@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroTaskAttemptCompleted",
-    "namespace": "com.zenaton.messages.topics.tasks",
+    "namespace": "com.zenaton.messages.tasks",
     "fields": [
         {
             "name": "taskId",
@@ -24,7 +24,7 @@
         },
         {
             "name": "taskOutput",
-            "type": ["null", {"type":"bytes"}],
+            "type": ["null", "bytes"],
             "default": null
         }
     ]

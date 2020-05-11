@@ -1,3 +1,5 @@
 package com.zenaton.engine.data.interfaces
 
-interface StateInterface
+import java.io.Serializable
+
+interface StateInterface : Serializable

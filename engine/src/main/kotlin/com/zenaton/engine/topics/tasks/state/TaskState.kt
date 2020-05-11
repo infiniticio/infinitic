@@ -10,7 +10,7 @@ import com.zenaton.engine.data.interfaces.StateInterface
 data class TaskState(
     val taskId: TaskId,
     val taskName: TaskName,
-    val taskData: TaskData?,
+    val taskData: TaskData? = null,
     var taskAttemptId: TaskAttemptId = TaskAttemptId(),
     var taskAttemptIndex: Int = 0,
     val workflowId: WorkflowId? = null

@@ -4,11 +4,12 @@ import com.zenaton.engine.topics.workflows.interfaces.WorkflowMessageInterface
 import com.zenaton.pulsar.topics.Topic
 import com.zenaton.pulsar.topics.workflows.messages.WorkflowMessageContainer
 import java.util.concurrent.TimeUnit
+import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.impl.schema.JSONSchema
 import org.apache.pulsar.functions.api.Context
 
 object WorkflowDispatcher {
-    fun dispatch(context: Context, msg: WorkflowMessageInterface, after: Float = 0f) {
+    fun dispatch(context: Context, msg: WorkflowMessageInterface, after: Float = 0f): MessageId {
         val msgBuilder = context
             .newOutputMessage(Topic.WORKFLOWS.get(), JSONSchema.of(WorkflowMessageContainer::class.java))
             .key(msg.getKey())
@@ -17,6 +18,7 @@ object WorkflowDispatcher {
         if (after > 0) {
             msgBuilder.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
         }
-        msgBuilder.send()
+
+        return msgBuilder.send()
     }
 }

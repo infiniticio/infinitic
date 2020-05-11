@@ -14,12 +14,12 @@ const { taskDispatchedType, taskMessageType } = require('./avro');
   atd.taskId = uuidv4()
   atd.sentAt = 1588705988
   atd.taskName = "MyTask"
-  atd.taskData = null //{ "bytes": Buffer.from('abc') }
+  atd.taskData = { "bytes": Buffer.from('abc') }
   atd.workflowId = { "string": uuidv4() }
 
   var atm = new taskMessageType.getRecordConstructor()
   atm.type = "TaskDispatched"
-  atm.msg = {'com.zenaton.messages.topics.tasks.AvroTaskDispatched': atd}
+  atm.taskDispatched = {'com.zenaton.messages.tasks.AvroTaskDispatched': atd}
 
   // Send messages
   producer.send({data: taskMessageType.toBuffer(atm)});
