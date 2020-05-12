@@ -6,7 +6,7 @@ const { taskMessageType } = require('./avro');
   const consumer = await pulsar.subscribe({
     topic: 'persistent://public/default/tasks',
     subscription: 'subTasks',
-    subscriptionType: 'Exclusive',
+    subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });
 

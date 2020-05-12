@@ -4,6 +4,7 @@ import com.zenaton.engine.interfaces.LoggerInterface
 import com.zenaton.engine.interfaces.StaterInterface
 import com.zenaton.engine.topics.taskAttempts.messages.TaskAttemptMessage
 import com.zenaton.engine.topics.tasks.interfaces.TaskAttemptFailingMessageInterface
+import com.zenaton.engine.topics.tasks.interfaces.TaskAttemptMessageInterface
 import com.zenaton.engine.topics.tasks.interfaces.TaskEngineDispatcherInterface
 import com.zenaton.engine.topics.tasks.interfaces.TaskMessageInterface
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptCompleted
@@ -42,6 +43,16 @@ class TaskEngine(
                 logger.error("Inconsistent taskId in message:%s and State:%s)", msg, state)
                 return
             }
+            if (msg is TaskAttemptMessageInterface) {
+                if (state.taskAttemptId != msg.taskAttemptId) {
+                    logger.warn("Inconsistent taskAttemptId in message: (Can happen if the task has been manually retried)%s and State:%s", msg, state)
+                    return
+                }
+                if (state.taskAttemptIndex != msg.taskAttemptIndex) {
+                    logger.warn("Inconsistent taskAttemptIndex in message: (Can happen if this task has had timeout)%s and State:%s", msg, state)
+                    return
+                }
+            }
             // a non-null state with TaskDispatched should mean that this message has been replicated
             if (msg is TaskDispatched) {
                 logger.error("Already existing state for message:%s", msg)
@@ -78,14 +89,6 @@ class TaskEngine(
     }
 
     private fun retryTaskAttempt(state: TaskState, msg: TaskAttemptRetried) {
-        if (state.taskAttemptId != msg.taskAttemptId) {
-            logger.warn("Inconsistent taskAttemptId in message:%s and State:%s(Can happen if the task has been manually retried)", msg, state)
-            return
-        }
-        if (state.taskAttemptIndex != msg.taskAttemptIndex) {
-            logger.warn("Inconsistent taskAttemptIndex in message:%s and State:%s(Can happen if this task has had timeout)", msg, state)
-            return
-        }
         val tad = TaskAttemptMessage(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
@@ -97,14 +100,14 @@ class TaskEngine(
     }
 
     private fun startTaskAttempt(state: TaskState, msg: TaskAttemptStarted) {
-        if (msg.taskAttemptDelayBeforeTimeout > 0) {
+        if (msg.taskAttemptDelayBeforeTimeout > 0f) {
             val tad = TaskAttemptTimeout(
                 taskId = msg.taskId,
                 taskAttemptId = msg.taskAttemptId,
                 taskAttemptIndex = msg.taskAttemptIndex,
                 taskAttemptDelayBeforeRetry = msg.taskAttemptDelayBeforeRetry
             )
-            dispatcher.dispatch(tad, msg.taskAttemptDelayBeforeTimeout)
+            dispatcher.dispatch(tad, after = msg.taskAttemptDelayBeforeTimeout)
         }
     }
 
@@ -127,14 +130,6 @@ class TaskEngine(
     }
 
     private fun triggerDelayedRetry(state: TaskState, msg: TaskAttemptFailingMessageInterface) {
-        if (state.taskAttemptId != msg.taskAttemptId) {
-            logger.info("Inconsistent taskAttemptId in message:%s and State:%s(Can happen if this task has been manually retried)", msg, state)
-            return
-        }
-        if (state.taskAttemptIndex != msg.taskAttemptIndex) {
-            logger.info("Inconsistent taskAttemptIndex in message:%s and State:%s(Can happen if timeout and failure mix out)", msg, state)
-            return
-        }
         if (msg.taskAttemptDelayBeforeRetry >= 0f) {
             val newIndex = 1 + msg.taskAttemptIndex
             // schedule next attempt

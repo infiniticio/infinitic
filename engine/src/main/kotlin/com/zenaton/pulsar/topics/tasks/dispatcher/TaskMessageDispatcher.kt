@@ -21,7 +21,7 @@ object TaskMessageDispatcher {
             .key(msg.getKey())
             .value(TaskMessageConverter.toAvro(msg))
 
-        if (after > 0) {
+        if (after > 0f) {
             msgBuilder.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
         }
 

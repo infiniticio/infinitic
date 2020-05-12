@@ -8,7 +8,7 @@ const name = 'MyTask';
   const consumer = await pulsar.subscribe({
     topic: `persistent://public/default/tasks-${name}`,
     subscription: `subTaskAttempts-${name}`,
-    subscriptionType: 'Exclusive',
+    subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });
 

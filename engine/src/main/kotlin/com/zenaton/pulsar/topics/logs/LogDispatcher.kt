@@ -21,7 +21,7 @@ object LogDispatcher {
 
     private fun dispatch(context: Context, msg: String, level: String): MessageId {
         return context
-            .newOutputMessage(Topic.TASKS.get(), Schema.STRING)
+            .newOutputMessage(Topic.LOGS.get(), Schema.STRING)
             .value("$level - $msg")
             .send()
     }
