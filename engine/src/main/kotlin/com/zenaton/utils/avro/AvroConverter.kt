@@ -1,6 +1,6 @@
 package com.zenaton.utils.avro
 
-import com.zenaton.engine.topics.taskAttempts.messages.TaskAttemptDispatched
+import com.zenaton.engine.topics.taskAttempts.messages.TaskAttemptMessage
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptCompleted
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptFailed
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptRetried
@@ -8,7 +8,7 @@ import com.zenaton.engine.topics.tasks.messages.TaskAttemptStarted
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptTimeout
 import com.zenaton.engine.topics.tasks.messages.TaskDispatched
 import com.zenaton.engine.topics.tasks.state.TaskState
-import com.zenaton.messages.taskAttempts.AvroTaskAttemptDispatched
+import com.zenaton.messages.taskAttempts.AvroTaskAttemptMessage
 import com.zenaton.messages.tasks.AvroTaskAttemptCompleted
 import com.zenaton.messages.tasks.AvroTaskAttemptFailed
 import com.zenaton.messages.tasks.AvroTaskAttemptRetried
@@ -34,10 +34,10 @@ object AvroConverter {
     /**
      *  Task Attempts Messages
      */
-    fun toAvro(obj: TaskAttemptDispatched) =
-        convert(obj, AvroTaskAttemptDispatched::class)
-    fun fromAvro(obj: AvroTaskAttemptDispatched) =
-        convert(obj, TaskAttemptDispatched::class)
+    fun toAvro(obj: TaskAttemptMessage) =
+        convert(obj, AvroTaskAttemptMessage::class)
+    fun fromAvro(obj: AvroTaskAttemptMessage) =
+        convert(obj, TaskAttemptMessage::class)
 
     /**
      *  Tasks Messages

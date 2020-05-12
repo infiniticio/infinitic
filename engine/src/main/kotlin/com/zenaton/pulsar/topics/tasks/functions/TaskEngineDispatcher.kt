@@ -1,6 +1,6 @@
 package com.zenaton.pulsar.topics.tasks.functions
 
-import com.zenaton.engine.topics.taskAttempts.messages.TaskAttemptDispatched
+import com.zenaton.engine.topics.taskAttempts.messages.TaskAttemptMessage
 import com.zenaton.engine.topics.tasks.interfaces.TaskEngineDispatcherInterface
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptRetried
 import com.zenaton.engine.topics.tasks.messages.TaskAttemptTimeout
@@ -16,7 +16,7 @@ import org.apache.pulsar.functions.api.Context
  */
 class TaskEngineDispatcher(private val context: Context) : TaskEngineDispatcherInterface {
 
-    override fun dispatch(msg: TaskAttemptDispatched): MessageId {
+    override fun dispatch(msg: TaskAttemptMessage): MessageId {
         return TaskAttemptDispatcher.dispatch(context, msg)
     }
 

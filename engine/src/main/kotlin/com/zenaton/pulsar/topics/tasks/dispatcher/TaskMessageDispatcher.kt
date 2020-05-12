@@ -4,6 +4,7 @@ import com.zenaton.engine.topics.tasks.interfaces.TaskMessageInterface
 import com.zenaton.messages.tasks.AvroTaskMessage
 import com.zenaton.pulsar.topics.Topic
 import com.zenaton.pulsar.topics.tasks.converter.TaskMessageConverter
+import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
@@ -20,9 +21,9 @@ object TaskMessageDispatcher {
             .key(msg.getKey())
             .value(TaskMessageConverter.toAvro(msg))
 
-//        if (after > 0) {
-//            msgBuilder.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
-//        }
+        if (after > 0) {
+            msgBuilder.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
+        }
 
         return msgBuilder.send()
     }

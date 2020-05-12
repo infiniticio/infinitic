@@ -24,11 +24,13 @@
         },
         {
             "name": "taskAttemptDelayBeforeRetry",
-            "type": "float"
+            "type": "float",
+            "default": -1.0
         },
         {
             "name": "taskAttemptDelayBeforeTimeout",
-            "type": "float"
+            "type": "float",
+            "default": -1.0
         }
     ]
 }

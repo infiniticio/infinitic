@@ -10,5 +10,5 @@ data class TaskAttemptTimeout(
     override var sentAt: DateTime? = DateTime(),
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int,
-    override val taskAttemptDelayBeforeRetry: Float?
+    override val taskAttemptDelayBeforeRetry: Float
 ) : TaskAttemptFailingMessageInterface

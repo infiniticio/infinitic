@@ -2,12 +2,16 @@
 
 ## Run Standalone Pulsar
 
+> Create those directories, if you don't have them yet:
+/engine/build/libs
+/engine/build/schemas
+
 In the same directory than `docker-compose.yaml`:
 ```bash
 docker-compose up
 ```
 
-> note: make sure you've compiled the project at least once to already have a directory `./engine/build/libs`
+
 
 To enter the docker container:
 

@@ -3,7 +3,7 @@ const { taskAttemptStartedType, taskMessageType } = require('./avro');
 
 const taskId = 'e1d157c4-f056-45e5-bfad-41919c4cc907';
 const taskAttemptId = '94863fa1-6fa5-4b8a-b376-484a941521fa';
-const taskAttemptIndex = 1;
+const taskAttemptIndex = 8;
 
 (async () => {
   // Create a producer
@@ -19,7 +19,7 @@ const taskAttemptIndex = 1;
   atd.taskAttemptId = taskAttemptId
   atd.taskAttemptIndex = taskAttemptIndex
   atd.taskAttemptDelayBeforeRetry = 8.0
-  atd.taskAttemptDelayBeforeTimeout = 3.0
+  atd.taskAttemptDelayBeforeTimeout = 8.0
 
   var atm = new taskMessageType.getRecordConstructor()
   atm.type = "TaskAttemptStarted"

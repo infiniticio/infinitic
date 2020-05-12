@@ -2,7 +2,7 @@ package com.zenaton.engine.topics.tasks.engine
 
 import com.zenaton.engine.interfaces.LoggerInterface
 import com.zenaton.engine.interfaces.StaterInterface
-import com.zenaton.engine.topics.taskAttempts.messages.TaskAttemptDispatched
+import com.zenaton.engine.topics.taskAttempts.messages.TaskAttemptMessage
 import com.zenaton.engine.topics.tasks.interfaces.TaskAttemptFailingMessageInterface
 import com.zenaton.engine.topics.tasks.interfaces.TaskEngineDispatcherInterface
 import com.zenaton.engine.topics.tasks.interfaces.TaskMessageInterface
@@ -86,7 +86,7 @@ class TaskEngine(
             logger.warn("Inconsistent taskAttemptIndex in message:%s and State:%s(Can happen if this task has had timeout)", msg, state)
             return
         }
-        val tad = TaskAttemptDispatched(
+        val tad = TaskAttemptMessage(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
@@ -97,7 +97,7 @@ class TaskEngine(
     }
 
     private fun startTaskAttempt(state: TaskState, msg: TaskAttemptStarted) {
-        if (msg.taskAttemptDelayBeforeTimeout != null && msg.taskAttemptDelayBeforeTimeout > 0) {
+        if (msg.taskAttemptDelayBeforeTimeout > 0) {
             val tad = TaskAttemptTimeout(
                 taskId = msg.taskId,
                 taskAttemptId = msg.taskAttemptId,
@@ -114,7 +114,7 @@ class TaskEngine(
 
     private fun dispatchTask(state: TaskState, msg: TaskDispatched) {
         // dispatch a task attempt
-        val tad = TaskAttemptDispatched(
+        val tad = TaskAttemptMessage(
             taskId = msg.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptIndex = state.taskAttemptIndex,
@@ -135,7 +135,7 @@ class TaskEngine(
             logger.info("Inconsistent taskAttemptIndex in message:%s and State:%s(Can happen if timeout and failure mix out)", msg, state)
             return
         }
-        if (msg.taskAttemptDelayBeforeRetry != null && msg.taskAttemptDelayBeforeRetry!! >= 0f) {
+        if (msg.taskAttemptDelayBeforeRetry >= 0f) {
             val newIndex = 1 + msg.taskAttemptIndex
             // schedule next attempt
             val tar = TaskAttemptRetried(
@@ -143,10 +143,10 @@ class TaskEngine(
                 taskAttemptId = state.taskAttemptId,
                 taskAttemptIndex = newIndex
             )
-            if (msg.taskAttemptDelayBeforeRetry == 0f) {
+            if (msg.taskAttemptDelayBeforeRetry <= 0f) {
                 retryTaskAttempt(state, tar)
             } else {
-                dispatcher.dispatch(tar, after = msg.taskAttemptDelayBeforeRetry!!)
+                dispatcher.dispatch(tar, after = msg.taskAttemptDelayBeforeRetry)
             }
             // update state
             state.taskAttemptIndex = newIndex

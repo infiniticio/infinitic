@@ -6,7 +6,7 @@ import com.zenaton.engine.data.TaskData
 import com.zenaton.engine.data.TaskId
 import com.zenaton.engine.data.TaskName
 
-data class TaskAttemptDispatched(
+data class TaskAttemptMessage(
     var taskId: TaskId,
     val taskAttemptId: TaskAttemptId,
     val taskAttemptIndex: Int,

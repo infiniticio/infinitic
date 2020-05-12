@@ -5,5 +5,5 @@ import com.zenaton.engine.data.TaskAttemptId
 interface TaskAttemptFailingMessageInterface : TaskMessageInterface {
     val taskAttemptId: TaskAttemptId
     val taskAttemptIndex: Int
-    val taskAttemptDelayBeforeRetry: Float?
+    val taskAttemptDelayBeforeRetry: Float
 }

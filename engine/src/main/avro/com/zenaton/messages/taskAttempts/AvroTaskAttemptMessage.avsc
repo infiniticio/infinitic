@@ -1,6 +1,6 @@
 {
     "type": "record",
-    "name": "AvroTaskAttemptDispatched",
+    "name": "AvroTaskAttemptMessage",
     "namespace": "com.zenaton.messages.taskAttempts",
     "fields": [
         {
