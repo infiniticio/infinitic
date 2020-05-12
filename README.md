@@ -6,17 +6,30 @@
 /engine/build/libs
 /engine/build/schemas
 
-In the same directory than `docker-compose.yaml`:
+In the same directory than `docker-compose.yaml`, do:
 ```bash
 docker-compose up
 ```
-
-
 
 To enter the docker container:
 
 ```bash
 docker exec -it zenaton_pulsar_1 /bin/bash
+```
+
+To install Zenaton:
+```bash
+gradle install
+```
+
+To remove Zenaton
+```bash
+gradle delete
+```
+
+To update Zenaton
+```bash
+gradle update
 ```
 
 ## Pulsar Manager

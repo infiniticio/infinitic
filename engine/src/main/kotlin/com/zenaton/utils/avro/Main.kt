@@ -24,9 +24,9 @@ fun main() {
     listOf(
         AvroTaskMessage::class,
         AvroTaskAttemptMessage::class
-    ).map {
-        val file = File(System.getProperty("user.dir") + "/build/schemas/${it.simpleName}.schema")
-        file.also { it.parentFile.mkdirs() }
-            .writeText(Json.stringify(Schema(it)))
+    ).map { klass ->
+        File(System.getProperty("user.dir") + "/build/schemas/${klass.simpleName}.schema")
+            .also { it.parentFile.mkdirs() }
+            .writeText(Json.stringify(Schema(klass)))
     }
 }
