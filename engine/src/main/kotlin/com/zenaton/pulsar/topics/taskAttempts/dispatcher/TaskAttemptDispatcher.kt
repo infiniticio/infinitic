@@ -3,7 +3,7 @@ package com.zenaton.pulsar.topics.taskAttempts.dispatcher
 import com.zenaton.engine.topics.taskAttempts.messages.TaskAttemptDispatched
 import com.zenaton.messages.taskAttempts.AvroTaskAttemptDispatched
 import com.zenaton.pulsar.topics.Topic
-import com.zenaton.pulsar.utils.AvroConverter
+import com.zenaton.utils.avro.AvroConverter
 import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context

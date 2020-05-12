@@ -1,4 +1,4 @@
-package com.zenaton.pulsar.utils
+package com.zenaton.utils.avro
 
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
@@ -24,6 +24,7 @@ object AvroSerDe {
 
     fun <T : SpecificRecord> deserialize(data: ByteBuffer, klass: KClass<T>): T {
         // transform ByteBuffer to bytes[]
+        data.rewind()
         val bytes = ByteArray(data.remaining())
         data.get(bytes, 0, bytes.size)
         // read data

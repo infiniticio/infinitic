@@ -73,6 +73,11 @@ tasks.register("install") {
     dependsOn("assemble")
     doLast {
         setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.tasks.functions.TaskEngineFunction",
+            topicIn = "tasks",
+            action = "create"
+        )
+        setZenatonFunction(
             className = "com.zenaton.pulsar.topics.workflows.functions.WorkflowEngineFunction",
             topicIn = "workflows",
             action = "create"
@@ -80,11 +85,6 @@ tasks.register("install") {
         setZenatonFunction(
             className = "com.zenaton.pulsar.topics.decisions.functions.DecisionEngineFunction",
             topicIn = "decisions",
-            action = "create"
-        )
-        setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.tasks.functions.TaskEngineFunction",
-            topicIn = "tasks",
             action = "create"
         )
         setZenatonFunction(
@@ -101,16 +101,16 @@ tasks.register("update") {
     dependsOn("assemble")
     doLast {
         setZenatonFunction(
+            className = "com.zenaton.pulsar.topics.tasks.functions.TaskEngineFunction",
+            topicIn = "tasks"
+        )
+        setZenatonFunction(
             className = "com.zenaton.pulsar.topics.workflows.functions.WorkflowEngineFunction",
             topicIn = "workflows"
         )
         setZenatonFunction(
             className = "com.zenaton.pulsar.topics.decisions.functions.DecisionEngineFunction",
             topicIn = "decisions"
-        )
-        setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.tasks.functions.TaskEngineFunction",
-            topicIn = "tasks"
         )
         setZenatonFunction(
             className = "com.zenaton.pulsar.topics.delays.functions.DelayEngineFunction",

@@ -2,11 +2,14 @@ package com.zenaton.pulsar.topics.tasks
 
 import com.zenaton.engine.interfaces.StaterInterface
 import com.zenaton.engine.topics.tasks.state.TaskState
-import com.zenaton.pulsar.utils.AvroConverter
-import com.zenaton.pulsar.utils.AvroSerDe
 import com.zenaton.states.AvroTaskState
+import com.zenaton.utils.avro.AvroConverter
+import com.zenaton.utils.avro.AvroSerDe
 import org.apache.pulsar.functions.api.Context
 
+/**
+ * This class provides methods to access task's state
+ */
 class TaskStater(private val context: Context) : StaterInterface<TaskState> {
     // serializer injection
     var avroSerDe = AvroSerDe
@@ -14,7 +17,7 @@ class TaskStater(private val context: Context) : StaterInterface<TaskState> {
     var avroConverter = AvroConverter
 
     override fun getState(key: String): TaskState? {
-        return context.getState(key) ?. let { avroConverter.fromAvro(avroSerDe.deserialize(it, AvroTaskState::class)) }
+        return context.getState(key)?. let { avroConverter.fromAvro(avroSerDe.deserialize(it, AvroTaskState::class)) }
     }
 
     override fun createState(key: String, state: TaskState) {

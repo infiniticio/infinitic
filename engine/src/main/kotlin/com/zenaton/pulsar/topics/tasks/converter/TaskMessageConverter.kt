@@ -9,7 +9,7 @@ import com.zenaton.engine.topics.tasks.messages.TaskAttemptTimeout
 import com.zenaton.engine.topics.tasks.messages.TaskDispatched
 import com.zenaton.messages.tasks.AvroTaskMessage
 import com.zenaton.messages.tasks.AvroTaskMessageType
-import com.zenaton.pulsar.utils.AvroConverter
+import com.zenaton.utils.avro.AvroConverter
 
 /**
  * This object provides methods to convert a TaskMessageInterface into an AvroTaskMessage, and back
@@ -17,6 +17,7 @@ import com.zenaton.pulsar.utils.AvroConverter
 object TaskMessageConverter {
     fun toAvro(msg: TaskMessageInterface): AvroTaskMessage {
         var builder = AvroTaskMessage.newBuilder()
+        builder.taskId = msg.taskId.id
         builder = when (msg) {
             is TaskAttemptCompleted -> builder
                 .setTaskAttemptCompleted(AvroConverter.toAvro(msg))

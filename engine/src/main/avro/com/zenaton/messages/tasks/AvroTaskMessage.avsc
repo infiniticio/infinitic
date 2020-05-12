@@ -18,6 +18,10 @@
                 ]
             }
         }, {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        }, {
             "name": "taskAttemptCompleted",
             "type": ["null", "com.zenaton.messages.tasks.AvroTaskAttemptCompleted"],
             "default": null

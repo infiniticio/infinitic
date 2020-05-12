@@ -2,6 +2,7 @@ package com.zenaton.pulsar.utils
 
 import com.zenaton.engine.data.interfaces.StateInterface
 import com.zenaton.engine.interfaces.StaterInterface
+import com.zenaton.utils.avro.AvroSerDe
 import org.apache.pulsar.functions.api.Context
 
 class Stater<T : StateInterface>(private val context: Context) :

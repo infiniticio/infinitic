@@ -25,6 +25,10 @@
         {
             "name": "taskAttemptDelayBeforeRetry",
             "type": "float"
+        },
+        {
+            "name": "taskAttemptDelayBeforeTimeout",
+            "type": "float"
         }
     ]
 }
