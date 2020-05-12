@@ -6,15 +6,12 @@ import com.zenaton.engine.data.TaskName
 import com.zenaton.engine.data.WorkflowId
 import com.zenaton.engine.topics.tasks.messages.TaskDispatched
 import com.zenaton.messages.tasks.AvroTaskMessage
-import com.zenaton.pulsar.topics.tasks.converter.TaskMessageConverter
-import com.zenaton.utils.json.Json
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.AvroSchema
 
 fun main() {
     val client = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
     val producer = client.newProducer(AvroSchema.of(AvroTaskMessage::class.java)).topic("persistent://public/default/tasks").create()
-
 
     var msg = TaskDispatched(
         taskId = TaskId(),

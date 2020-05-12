@@ -3,10 +3,10 @@ package com.zenaton.utils.avro
 import com.zenaton.messages.taskAttempts.AvroTaskAttemptMessage
 import com.zenaton.messages.tasks.AvroTaskMessage
 import com.zenaton.utils.json.Json
-import org.apache.avro.specific.SpecificRecordBase
 import java.io.File
-import org.apache.pulsar.client.impl.schema.AvroSchema
 import kotlin.reflect.KClass
+import org.apache.avro.specific.SpecificRecordBase
+import org.apache.pulsar.client.impl.schema.AvroSchema
 
 /**
  * This class creates files in /build/schemas, used to upload schemas to topics
