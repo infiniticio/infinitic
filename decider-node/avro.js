@@ -18,7 +18,7 @@ var taskAttemptTimeoutType = avro.parse("./avro/tasks/AvroTaskAttemptTimeout.avs
 var taskDispatchedType = avro.parse("./avro/tasks/AvroTaskDispatched.avsc", { registry });
 var taskMessageType = avro.parse("./avro/tasks/AvroTaskMessage.avsc", { registry });
 
-var taskAttemptDispatchedType = avro.parse("./avro/taskAttempts/AvroTaskAttemptDispatched.avsc", { registry });
+var taskAttemptMessageType = avro.parse("./avro/taskAttempts/AvroTaskAttemptMessage.avsc", { registry });
 
 module.exports = {
     assertValid,
@@ -29,5 +29,5 @@ module.exports = {
     taskAttemptTimeoutType,
     taskDispatchedType,
     taskMessageType,
-    taskAttemptDispatchedType
+    taskAttemptMessageType
 }

@@ -5,7 +5,8 @@
     "fields" : [
         {
             "name" : "taskAttemptId",
-            "type" : "string"
+            "type" : "string",
+            "logicalType": "uuid"
         }, {
             "name" : "taskAttemptIndex",
             "type" : "int"
@@ -15,13 +16,14 @@
             "default": null
         }, {
             "name" : "taskId",
-            "type" : "string"
+            "type" : "string",
+            "logicalType": "uuid"
         }, {
             "name" : "taskName",
             "type" : "string"
         }, {
             "name" : "workflowId",
-            "type" : [ "null", "string" ],
+            "type" : [ "null", {"type": "string", "logicalType": "uuid"} ],
             "default": null
         }
     ]
