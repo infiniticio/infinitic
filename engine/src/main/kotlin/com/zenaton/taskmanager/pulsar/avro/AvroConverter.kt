@@ -1,5 +1,6 @@
 package com.zenaton.taskmanager.pulsar.avro
 
+import com.zenaton.commons.utils.json.Json
 import com.zenaton.taskmanager.messages.AvroTaskAttemptCompleted
 import com.zenaton.taskmanager.messages.AvroTaskAttemptFailed
 import com.zenaton.taskmanager.messages.AvroTaskAttemptMessage
@@ -19,7 +20,6 @@ import com.zenaton.taskmanager.messages.TaskDispatched
 import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
-import com.zenaton.utils.json.Json
 import kotlin.reflect.KClass
 
 /**

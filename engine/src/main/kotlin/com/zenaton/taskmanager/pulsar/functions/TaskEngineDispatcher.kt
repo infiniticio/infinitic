@@ -1,12 +1,12 @@
 package com.zenaton.taskmanager.pulsar.functions
 
-import com.zenaton.engine.topics.workflows.messages.TaskCompleted
-import com.zenaton.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import com.zenaton.taskmanager.engine.TaskEngineDispatcherInterface
 import com.zenaton.taskmanager.messages.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.TaskAttemptRetried
 import com.zenaton.taskmanager.messages.TaskAttemptTimeout
 import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
+import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
+import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
 import org.apache.pulsar.functions.api.Context
 
 /**

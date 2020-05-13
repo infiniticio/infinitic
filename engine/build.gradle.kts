@@ -88,17 +88,17 @@ tasks.register("install") {
             action = "create"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.workflows.functions.WorkflowEngineFunction",
+            className = "com.zenaton.workflowengine.pulsar.topics.workflows.functions.WorkflowEngineFunction",
             topicIn = "workflows",
             action = "create"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.decisions.functions.DecisionEngineFunction",
+            className = "com.zenaton.decisionmanager.pulsar.functions.DecisionEngineFunction",
             topicIn = "decisions",
             action = "create"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.delays.functions.DelayEngineFunction",
+            className = "com.zenaton.workflowengine.pulsar.topics.delays.functions.DelayEngineFunction",
             topicIn = "delays",
             action = "create"
         )
@@ -120,15 +120,15 @@ tasks.register("update") {
             topicIn = "tasks"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.workflows.functions.WorkflowEngineFunction",
+            className = "com.zenaton.workflowengine.pulsar.topics.workflows.functions.WorkflowEngineFunction",
             topicIn = "workflows"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.decisions.functions.DecisionEngineFunction",
+            className = "com.zenaton.decisionmanager.pulsar.functions.DecisionEngineFunction",
             topicIn = "decisions"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.delays.functions.DelayEngineFunction",
+            className = "com.zenaton.workflowengine.pulsar.topics.delays.functions.DelayEngineFunction",
             topicIn = "delays"
         )
     }
@@ -153,7 +153,7 @@ tasks.register("delete") {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    val cmd = arrayOf("java", "-cp", "build/libs/engine-1.0-SNAPSHOT-all.jar", "com.zenaton.utils.avro.MainKt")
+    val cmd = arrayOf("java", "-cp", "build/libs/engine-1.0-SNAPSHOT-all.jar", "com.zenaton.commons.utils.avro.MainKt")
     exec(cmd)
 }
 

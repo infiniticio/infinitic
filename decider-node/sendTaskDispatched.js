@@ -20,7 +20,7 @@ const { taskDispatchedType, taskMessageType } = require('./avro');
   var atm = new taskMessageType.getRecordConstructor()
   atm.type = "TaskDispatched"
   atm.taskId = atd.taskId
-  atm.taskDispatched = {'com.zenaton.messages.tasks.AvroTaskDispatched': atd}
+  atm.taskDispatched = {'com.zenaton.taskmanager.messages.AvroTaskDispatched': atd}
 
   // Send taskDispatched messages
   producer.send({data: taskMessageType.toBuffer(atm)});

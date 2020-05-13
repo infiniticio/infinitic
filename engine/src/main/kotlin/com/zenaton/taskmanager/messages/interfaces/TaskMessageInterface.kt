@@ -1,7 +1,7 @@
 package com.zenaton.taskmanager.messages.interfaces
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.zenaton.engine.data.DateTime
+import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskId
 
 interface TaskMessageInterface {

@@ -1,10 +1,10 @@
 package com.zenaton.taskmanager.pulsar.stater
 
-import com.zenaton.engine.interfaces.StaterInterface
+import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.taskmanager.pulsar.avro.AvroConverter
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
-import com.zenaton.utils.avro.AvroSerDe
+import com.zenaton.workflowengine.interfaces.StaterInterface
 import org.apache.pulsar.functions.api.Context
 
 /**

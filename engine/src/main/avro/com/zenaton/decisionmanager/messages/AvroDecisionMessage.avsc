@@ -1,0 +1,50 @@
+{
+    "type": "record",
+    "name": "AvroDecisionMessage",
+    "namespace": "com.zenaton.decisionmanager.messages",
+    "fields": [
+        {
+            "name": "type",
+            "type": {
+                "name": "AvroDecisionMessageType",
+                "type": "enum",
+                "symbols": [
+                    "DecisionAttemptCompleted",
+                    "DecisionAttemptFailed",
+                    "DecisionAttemptRetried",
+                    "DecisionAttemptStarted",
+                    "DecisionAttemptTimeout",
+                    "DecisionDispatched"
+                ]
+            }
+        }, {
+            "name": "decisionId",
+            "type": "string",
+            "logicalType": "uuid"
+        }, {
+            "name": "decisionAttemptCompleted",
+            "type": ["null", "com.zenaton.decisionmanager.messages.AvroDecisionAttemptCompleted"],
+            "default": null
+        }, {
+            "name": "decisionAttemptFailed",
+            "type": ["null", "com.zenaton.decisionmanager.messages.AvroDecisionAttemptFailed"],
+            "default": null
+        }, {
+            "name": "decisionAttemptRetried",
+            "type": ["null", "com.zenaton.decisionmanager.messages.AvroDecisionAttemptRetried"],
+             "default": null
+        }, {
+            "name": "decisionAttemptStarted",
+            "type": ["null", "com.zenaton.decisionmanager.messages.AvroDecisionAttemptStarted"],
+            "default": null
+        }, {
+            "name": "decisionAttemptTimeout",
+            "type": ["null", "com.zenaton.decisionmanager.messages.AvroDecisionAttemptTimeout"],
+            "default": null
+        }, {
+            "name": "decisionDispatched",
+            "type": ["null", "com.zenaton.decisionmanager.messages.AvroDecisionDispatched"],
+            "default": null
+        }
+    ]
+}

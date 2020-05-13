@@ -24,7 +24,7 @@ const taskAttemptIndex = 10;
   var atm = new taskMessageType.getRecordConstructor()
   atm.type = "TaskAttemptStarted"
   atm.taskId = atd.taskId
-  atm.taskAttemptStarted = {'com.zenaton.messages.tasks.AvroTaskAttemptStarted': atd}
+  atm.taskAttemptStarted = {'com.zenaton.taskmanager.messages.AvroTaskAttemptStarted': atd}
 
   // Send taskDispatched messages
   producer.send({data: taskMessageType.toBuffer(atm)});

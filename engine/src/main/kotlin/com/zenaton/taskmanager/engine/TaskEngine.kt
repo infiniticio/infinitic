@@ -1,8 +1,5 @@
 package com.zenaton.taskmanager.engine
 
-import com.zenaton.engine.interfaces.LoggerInterface
-import com.zenaton.engine.interfaces.StaterInterface
-import com.zenaton.engine.topics.workflows.messages.TaskCompleted
 import com.zenaton.taskmanager.messages.TaskAttemptCompleted
 import com.zenaton.taskmanager.messages.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.TaskAttemptFailed
@@ -14,6 +11,9 @@ import com.zenaton.taskmanager.messages.interfaces.TaskAttemptFailingMessageInte
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
 import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.state.TaskState
+import com.zenaton.workflowengine.interfaces.LoggerInterface
+import com.zenaton.workflowengine.interfaces.StaterInterface
+import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
 
 class TaskEngine(
     private val stater: StaterInterface<TaskState>,

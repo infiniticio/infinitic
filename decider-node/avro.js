@@ -10,15 +10,15 @@ const assertValid = function assertValid(type, val) {
 
 var registry = {}
 
-var taskAttemptCompletedType = avro.parse("./avro/tasks/AvroTaskAttemptCompleted.avsc", { registry });
-var taskAttemptFailedType = avro.parse("./avro/tasks/AvroTaskAttemptFailed.avsc", { registry });
-var taskAttemptRetriedType = avro.parse("./avro/tasks/AvroTaskAttemptRetried.avsc", { registry });
-var taskAttemptStartedType = avro.parse("./avro/tasks/AvroTaskAttemptStarted.avsc", { registry });
-var taskAttemptTimeoutType = avro.parse("./avro/tasks/AvroTaskAttemptTimeout.avsc", { registry });
-var taskDispatchedType = avro.parse("./avro/tasks/AvroTaskDispatched.avsc", { registry });
-var taskMessageType = avro.parse("./avro/tasks/AvroTaskMessage.avsc", { registry });
+var taskAttemptCompletedType = avro.parse("./avro/taskmanager/messages/AvroTaskAttemptCompleted.avsc", { registry });
+var taskAttemptFailedType = avro.parse("./avro/taskmanager/messages/AvroTaskAttemptFailed.avsc", { registry });
+var taskAttemptMessageType = avro.parse("./avro/taskmanager/messages/AvroTaskAttemptMessage.avsc", { registry });
+var taskAttemptRetriedType = avro.parse("./avro/taskmanager/messages/AvroTaskAttemptRetried.avsc", { registry });
+var taskAttemptStartedType = avro.parse("./avro/taskmanager/messages/AvroTaskAttemptStarted.avsc", { registry });
+var taskAttemptTimeoutType = avro.parse("./avro/taskmanager/messages/AvroTaskAttemptTimeout.avsc", { registry });
+var taskDispatchedType = avro.parse("./avro/taskmanager/messages/AvroTaskDispatched.avsc", { registry });
+var taskMessageType = avro.parse("./avro/taskmanager/messages/AvroTaskMessage.avsc", { registry  });
 
-var taskAttemptMessageType = avro.parse("./avro/taskAttempts/AvroTaskAttemptMessage.avsc", { registry });
 
 module.exports = {
     assertValid,

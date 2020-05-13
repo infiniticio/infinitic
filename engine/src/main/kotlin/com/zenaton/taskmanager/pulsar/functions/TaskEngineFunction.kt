@@ -1,6 +1,6 @@
 package com.zenaton.taskmanager.pulsar.functions
 
-import com.zenaton.pulsar.utils.Logger
+import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.taskmanager.engine.TaskEngine
 import com.zenaton.taskmanager.messages.AvroTaskMessage
 import com.zenaton.taskmanager.pulsar.avro.AvroConverter
