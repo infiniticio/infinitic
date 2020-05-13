@@ -83,7 +83,7 @@ tasks.register("install") {
             topic = "tasks"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.tasks.functions.TaskEngineFunction",
+            className = "com.zenaton.taskmanager.pulsar.functions.TaskEngineFunction",
             topicIn = "tasks",
             action = "create"
         )
@@ -116,7 +116,7 @@ tasks.register("update") {
             topic = "tasks"
         )
         setZenatonFunction(
-            className = "com.zenaton.pulsar.topics.tasks.functions.TaskEngineFunction",
+            className = "com.zenaton.taskmanager.pulsar.functions.TaskEngineFunction",
             topicIn = "tasks"
         )
         setZenatonFunction(

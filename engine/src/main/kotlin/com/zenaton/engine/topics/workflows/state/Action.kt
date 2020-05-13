@@ -7,10 +7,10 @@ import com.zenaton.engine.data.DelayId
 import com.zenaton.engine.data.EventData
 import com.zenaton.engine.data.EventId
 import com.zenaton.engine.data.EventName
-import com.zenaton.engine.data.TaskId
-import com.zenaton.engine.data.TaskOutput
 import com.zenaton.engine.data.WorkflowId
 import com.zenaton.engine.data.WorkflowOutput
+import com.zenaton.taskmanager.data.TaskId
+import com.zenaton.taskmanager.data.TaskOutput
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(

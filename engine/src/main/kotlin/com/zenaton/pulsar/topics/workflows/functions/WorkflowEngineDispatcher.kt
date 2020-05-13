@@ -2,20 +2,20 @@ package com.zenaton.pulsar.topics.workflows.functions
 
 import com.zenaton.engine.topics.decisions.messages.DecisionDispatched
 import com.zenaton.engine.topics.delays.messages.DelayDispatched
-import com.zenaton.engine.topics.tasks.messages.TaskDispatched
 import com.zenaton.engine.topics.workflows.interfaces.WorkflowEngineDispatcherInterface
 import com.zenaton.engine.topics.workflows.messages.WorkflowDispatched
 import com.zenaton.pulsar.topics.decisions.dispatcher.DecisionDispatcher
 import com.zenaton.pulsar.topics.delays.dispatcher.DelayDispatcher
-import com.zenaton.pulsar.topics.tasks.dispatcher.TaskMessageDispatcher
 import com.zenaton.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
+import com.zenaton.taskmanager.messages.TaskDispatched
+import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
 import org.apache.pulsar.functions.api.Context
 
 class WorkflowEngineDispatcher(private val context: Context) :
     WorkflowEngineDispatcherInterface {
 
     override fun dispatch(msg: TaskDispatched, after: Float) {
-        TaskMessageDispatcher.dispatch(context, msg, after)
+        TaskDispatcher.dispatch(context, msg, after)
     }
 
     override fun dispatch(msg: WorkflowDispatched, after: Float) {

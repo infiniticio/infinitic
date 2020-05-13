@@ -2,8 +2,8 @@ package com.zenaton.engine.topics.workflows.interfaces
 
 import com.zenaton.engine.topics.decisions.messages.DecisionDispatched
 import com.zenaton.engine.topics.delays.messages.DelayDispatched
-import com.zenaton.engine.topics.tasks.messages.TaskDispatched
 import com.zenaton.engine.topics.workflows.messages.WorkflowDispatched
+import com.zenaton.taskmanager.messages.TaskDispatched
 
 interface WorkflowEngineDispatcherInterface {
     fun dispatch(msg: TaskDispatched, after: Float = 0f)

@@ -3,8 +3,8 @@ package com.zenaton.engine.topics.workflows.state
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.zenaton.engine.data.DelayId
 import com.zenaton.engine.data.EventId
-import com.zenaton.engine.data.TaskId
 import com.zenaton.engine.data.WorkflowId
+import com.zenaton.taskmanager.data.TaskId
 
 data class Step(
     val stepHash: StepHash,

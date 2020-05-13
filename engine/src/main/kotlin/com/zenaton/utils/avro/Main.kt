@@ -1,7 +1,7 @@
 package com.zenaton.utils.avro
 
-import com.zenaton.messages.taskAttempts.AvroTaskAttemptMessage
-import com.zenaton.messages.tasks.AvroTaskMessage
+import com.zenaton.taskmanager.messages.AvroTaskAttemptMessage
+import com.zenaton.taskmanager.messages.AvroTaskMessage
 import com.zenaton.utils.json.Json
 import java.io.File
 import kotlin.reflect.KClass
