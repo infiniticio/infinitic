@@ -24,7 +24,7 @@ const taskAttemptIndex = 0;
   var masg = new Object()
   masg.type = "TaskAttemptStarted"
   masg.taskId = m.taskId
-  masg.TaskAttemptStarted = {'com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted': m}
+  msg[msg.type] = {'com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted': m}
 
   // Send message
   producer.send({data: taskMessageType.toBuffer(masg)});

@@ -30,7 +30,7 @@ class TaskEngine(
         if (state == null) {
             // a null state should mean that this task is already terminated => all messages others than TaskDispatched are ignored
             if (msg !is DispatchTask) {
-                logger.warn("No state found for message:%s(It's normal if this task is already terminated)", msg)
+                logger.warn("No state found for message: (It's normal if this task is already terminated)%s", msg)
                 return
             }
             // init a state

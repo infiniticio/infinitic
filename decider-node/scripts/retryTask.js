@@ -18,7 +18,7 @@ const taskId = '15a243f6-5477-4dd7-9ebe-c89d8ad6744c';
   var msg = new Object()
   msg.type = "RetryTask"
   msg.taskId = m.taskId
-  msg.RetryTask = {"com.zenaton.taskmanager.messages.commands.AvroRetryTask": m}
+  msg[msg.type] = {"com.zenaton.taskmanager.messages.commands.AvroRetryTask": m}
 
   // Send message
   producer.send({data: taskMessageType.toBuffer(msg)});

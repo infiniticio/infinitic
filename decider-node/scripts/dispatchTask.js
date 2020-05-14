@@ -20,7 +20,7 @@ const { taskMessageType } = require('../avro');
   var msg = new Object()
   msg.type = "DispatchTask"
   msg.taskId = m.taskId
-  msg.DispatchTask = {'com.zenaton.taskmanager.messages.commands.AvroDispatchTask': m}
+  msg[msg.type] = {'com.zenaton.taskmanager.messages.commands.AvroDispatchTask': m}
 
   // Send message
   producer.send({data: taskMessageType.toBuffer(msg)});

@@ -1,9 +1,9 @@
 const { pulsar } = require('../pulsar');
 const { taskMessageType } = require('../avro');
 
-const taskId = '0957bf99-4183-42a8-aaea-e0086b3744f3';
-const taskAttemptId = '1faadefc-e106-4cb2-8b73-91e68356e3f5';
-const taskAttemptIndex = 1;
+const taskId = '7469c66c-2938-4ba0-84af-144f59f3ced4';
+const taskAttemptId = 'd79cceac-86e6-4a0d-b059-8c012c90f722';
+const taskAttemptIndex = 0;
 
 (async () => {
   // Create a producer
@@ -23,7 +23,7 @@ const taskAttemptIndex = 1;
   var msg = new Object()
   msg.type = "TaskAttemptCompleted"
   msg.taskId = m.taskId
-  msg.TaskAttemptCompleted = {"com.zenaton.taskmanager.messages.events.AvroTaskAttemptCompleted": m}
+  msg[msg.type] = {"com.zenaton.taskmanager.messages.events.AvroTaskAttemptCompleted": m}
 
   // Send message
   producer.send({data: taskMessageType.toBuffer(msg)});

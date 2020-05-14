@@ -81,34 +81,43 @@ object AvroConverter {
     fun toAvro(msg: TaskMessageInterface): AvroTaskMessage {
         var builder = AvroTaskMessage.newBuilder()
         builder.taskId = msg.taskId.id
-        builder = when (msg) {
-            is DispatchTask -> builder
-                .setDispatchTask(toAvro(msg))
-                .setType(AvroTaskMessageType.DispatchTask)
-            is RetryTask -> builder
-                .setRetryTask(toAvro(msg))
-                .setType(AvroTaskMessageType.RetryTask)
-            is RetryTaskAttempt -> builder
-                .setRetryTaskAttempt(toAvro(msg))
-                .setType(AvroTaskMessageType.RetryTaskAttempt)
-            is TimeOutTaskAttempt -> builder
-                .setTimeOutTaskAttempt(toAvro(msg))
-                .setType(AvroTaskMessageType.TimeoutTaskAttempt)
-            is TaskAttemptCompleted -> builder
-                .setTaskAttemptCompleted(toAvro(msg))
-                .setType(AvroTaskMessageType.TaskAttemptCompleted)
-            is TaskAttemptDispatched -> builder
-                .setTaskAttemptDispatched(toAvro(msg))
-                .setType(AvroTaskMessageType.TaskAttemptDispatched)
-            is TaskAttemptFailed -> builder
-                .setTaskAttemptFailed(toAvro(msg))
-                .setType(AvroTaskMessageType.TaskAttemptFailed)
-            is TaskAttemptStarted -> builder
-                .setTaskAttemptStarted(toAvro(msg))
-                .setType(AvroTaskMessageType.TaskAttemptStarted)
-            is TaskAttemptTimedOut -> builder
-                .setTaskAttemptTimedOut(toAvro(msg))
-                .setType(AvroTaskMessageType.TaskAttemptTimedOut)
+        when (msg) {
+            is DispatchTask -> {
+                builder.dispatchTask = toAvro(msg)
+                builder.type = AvroTaskMessageType.DispatchTask
+            }
+            is RetryTask -> {
+                builder.retryTask = toAvro(msg)
+                builder.type = AvroTaskMessageType.RetryTask
+            }
+            is RetryTaskAttempt -> {
+                builder.retryTaskAttempt = toAvro(msg)
+                builder.type = AvroTaskMessageType.RetryTaskAttempt
+            }
+            is TimeOutTaskAttempt -> {
+                builder.timeOutTaskAttempt = toAvro(msg)
+                builder.type = AvroTaskMessageType.TimeoutTaskAttempt
+            }
+            is TaskAttemptCompleted -> {
+                builder.taskAttemptCompleted = toAvro(msg)
+                builder.type = AvroTaskMessageType.TaskAttemptCompleted
+            }
+            is TaskAttemptDispatched -> {
+                builder.taskAttemptDispatched = toAvro(msg)
+                builder.type = AvroTaskMessageType.TaskAttemptDispatched
+            }
+            is TaskAttemptFailed -> {
+                builder.taskAttemptFailed = toAvro(msg)
+                builder.type = AvroTaskMessageType.TaskAttemptFailed
+            }
+            is TaskAttemptStarted -> {
+                builder.taskAttemptStarted = toAvro(msg)
+                builder.type = AvroTaskMessageType.TaskAttemptStarted
+            }
+            is TaskAttemptTimedOut -> {
+                builder.taskAttemptTimedOut = toAvro(msg)
+                builder.type = AvroTaskMessageType.TaskAttemptTimedOut
+            }
             else -> throw Exception("Unknown task message class ${msg::class}")
         }
         return builder.build()
