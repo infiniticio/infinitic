@@ -1,22 +1,28 @@
 package com.zenaton.taskmanager.pulsar.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.taskmanager.messages.AvroTaskAttemptCompleted
-import com.zenaton.taskmanager.messages.AvroTaskAttemptFailed
-import com.zenaton.taskmanager.messages.AvroTaskAttemptMessage
-import com.zenaton.taskmanager.messages.AvroTaskAttemptRetried
-import com.zenaton.taskmanager.messages.AvroTaskAttemptStarted
-import com.zenaton.taskmanager.messages.AvroTaskAttemptTimeout
-import com.zenaton.taskmanager.messages.AvroTaskDispatched
+import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
 import com.zenaton.taskmanager.messages.AvroTaskMessageType
-import com.zenaton.taskmanager.messages.TaskAttemptCompleted
-import com.zenaton.taskmanager.messages.TaskAttemptDispatched
-import com.zenaton.taskmanager.messages.TaskAttemptFailed
-import com.zenaton.taskmanager.messages.TaskAttemptRetried
-import com.zenaton.taskmanager.messages.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.TaskAttemptTimeout
-import com.zenaton.taskmanager.messages.TaskDispatched
+import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.messages.commands.AvroDispatchTask
+import com.zenaton.taskmanager.messages.commands.AvroRetryTask
+import com.zenaton.taskmanager.messages.commands.AvroRetryTaskAttempt
+import com.zenaton.taskmanager.messages.commands.AvroTimeOutTaskAttempt
+import com.zenaton.taskmanager.messages.commands.DispatchTask
+import com.zenaton.taskmanager.messages.commands.RetryTask
+import com.zenaton.taskmanager.messages.commands.RetryTaskAttempt
+import com.zenaton.taskmanager.messages.commands.TimeOutTaskAttempt
+import com.zenaton.taskmanager.messages.events.AvroTaskAttemptCompleted
+import com.zenaton.taskmanager.messages.events.AvroTaskAttemptDispatched
+import com.zenaton.taskmanager.messages.events.AvroTaskAttemptFailed
+import com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted
+import com.zenaton.taskmanager.messages.events.AvroTaskAttemptTimedOut
+import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
+import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
+import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
+import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
+import com.zenaton.taskmanager.messages.events.TaskAttemptTimedOut
 import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
@@ -33,54 +39,76 @@ object AvroConverter {
     fun fromAvro(obj: AvroTaskState) = convert(obj, TaskState::class)
 
     /**
-     *  Task Attempts Messages
+     *  Worker Task Messages
      */
-    fun toAvro(obj: TaskAttemptDispatched) = convert(obj, AvroTaskAttemptMessage::class)
-    fun fromAvro(obj: AvroTaskAttemptMessage) = convert(obj, TaskAttemptDispatched::class)
+    fun toAvro(obj: RunTask) = convert(obj, AvroRunTask::class)
+    fun fromAvro(obj: AvroRunTask) = convert(obj, RunTask::class)
 
     /**
-     *  Tasks Messages
+     *  Commands Tasks Messages
+     */
+
+    fun toAvro(obj: DispatchTask) = convert(obj, AvroDispatchTask::class)
+    fun fromAvro(obj: AvroDispatchTask) = convert(obj, DispatchTask::class)
+
+    fun toAvro(obj: RetryTask) = convert(obj, AvroRetryTask::class)
+    fun fromAvro(obj: AvroRetryTask) = convert(obj, RetryTask::class)
+
+    fun toAvro(obj: RetryTaskAttempt) = convert(obj, AvroRetryTaskAttempt::class)
+    fun fromAvro(obj: AvroRetryTaskAttempt) = convert(obj, RetryTaskAttempt::class)
+
+    fun toAvro(obj: TimeOutTaskAttempt) = convert(obj, AvroTimeOutTaskAttempt::class)
+    fun fromAvro(obj: AvroTimeOutTaskAttempt) = convert(obj, TimeOutTaskAttempt::class)
+
+    /**
+     *  Events Tasks Messages
      */
     fun toAvro(obj: TaskAttemptCompleted) = convert(obj, AvroTaskAttemptCompleted::class)
     fun fromAvro(obj: AvroTaskAttemptCompleted) = convert(obj, TaskAttemptCompleted::class)
 
+    fun toAvro(obj: TaskAttemptDispatched) = convert(obj, AvroTaskAttemptDispatched::class)
+    fun fromAvro(obj: AvroTaskAttemptDispatched) = convert(obj, TaskAttemptDispatched::class)
+
     fun toAvro(obj: TaskAttemptFailed) = convert(obj, AvroTaskAttemptFailed::class)
     fun fromAvro(obj: AvroTaskAttemptFailed) = convert(obj, TaskAttemptFailed::class)
-
-    fun toAvro(obj: TaskAttemptRetried) = convert(obj, AvroTaskAttemptRetried::class)
-    fun fromAvro(obj: AvroTaskAttemptRetried) = convert(obj, TaskAttemptRetried::class)
 
     fun toAvro(obj: TaskAttemptStarted) = convert(obj, AvroTaskAttemptStarted::class)
     fun fromAvro(obj: AvroTaskAttemptStarted) = convert(obj, TaskAttemptStarted::class)
 
-    fun toAvro(obj: TaskAttemptTimeout) = convert(obj, AvroTaskAttemptTimeout::class)
-    fun fromAvro(obj: AvroTaskAttemptTimeout) = convert(obj, TaskAttemptTimeout::class)
-
-    fun toAvro(obj: TaskDispatched) = convert(obj, AvroTaskDispatched::class)
-    fun fromAvro(obj: AvroTaskDispatched) = convert(obj, TaskDispatched::class)
+    fun toAvro(obj: TaskAttemptTimedOut) = convert(obj, AvroTaskAttemptTimedOut::class)
+    fun fromAvro(obj: AvroTaskAttemptTimedOut) = convert(obj, TaskAttemptTimedOut::class)
 
     fun toAvro(msg: TaskMessageInterface): AvroTaskMessage {
         var builder = AvroTaskMessage.newBuilder()
         builder.taskId = msg.taskId.id
         builder = when (msg) {
+            is DispatchTask -> builder
+                .setDispatchTask(toAvro(msg))
+                .setType(AvroTaskMessageType.DispatchTask)
+            is RetryTask -> builder
+                .setRetryTask(toAvro(msg))
+                .setType(AvroTaskMessageType.RetryTask)
+            is RetryTaskAttempt -> builder
+                .setRetryTaskAttempt(toAvro(msg))
+                .setType(AvroTaskMessageType.RetryTaskAttempt)
+            is TimeOutTaskAttempt -> builder
+                .setTimeOutTaskAttempt(toAvro(msg))
+                .setType(AvroTaskMessageType.TimeoutTaskAttempt)
             is TaskAttemptCompleted -> builder
                 .setTaskAttemptCompleted(toAvro(msg))
                 .setType(AvroTaskMessageType.TaskAttemptCompleted)
+            is TaskAttemptDispatched -> builder
+                .setTaskAttemptDispatched(toAvro(msg))
+                .setType(AvroTaskMessageType.TaskAttemptDispatched)
             is TaskAttemptFailed -> builder
                 .setTaskAttemptFailed(toAvro(msg))
                 .setType(AvroTaskMessageType.TaskAttemptFailed)
-            is TaskAttemptRetried -> builder
-                .setTaskAttemptRetried(toAvro(msg))
-                .setType(AvroTaskMessageType.TaskAttemptRetried)
             is TaskAttemptStarted -> builder
                 .setTaskAttemptStarted(toAvro(msg))
                 .setType(AvroTaskMessageType.TaskAttemptStarted)
-            is TaskAttemptTimeout -> builder
-                .setTaskAttemptTimeout(toAvro(msg))
-                .setType(AvroTaskMessageType.TaskAttemptTimeout)
-            is TaskDispatched -> builder
-                .setTaskDispatched(toAvro(msg))
-                .setType(AvroTaskMessageType.TaskDispatched)
+            is TaskAttemptTimedOut -> builder
+                .setTaskAttemptTimedOut(toAvro(msg))
+                .setType(AvroTaskMessageType.TaskAttemptTimedOut)
             else -> throw Exception("Unknown task message class ${msg::class}")
         }
         return builder.build()
@@ -89,12 +117,14 @@ object AvroConverter {
     fun fromAvro(input: AvroTaskMessage): TaskMessageInterface {
         val type = input.getType()
         return when (type) {
+            AvroTaskMessageType.DispatchTask -> fromAvro(input.getDispatchTask())
+            AvroTaskMessageType.RetryTask -> fromAvro(input.getRetryTask())
+            AvroTaskMessageType.RetryTaskAttempt -> fromAvro(input.getRetryTaskAttempt())
+            AvroTaskMessageType.TimeoutTaskAttempt -> fromAvro(input.getTimeOutTaskAttempt())
             AvroTaskMessageType.TaskAttemptCompleted -> fromAvro(input.getTaskAttemptCompleted())
             AvroTaskMessageType.TaskAttemptFailed -> fromAvro(input.getTaskAttemptFailed())
-            AvroTaskMessageType.TaskAttemptRetried -> fromAvro(input.getTaskAttemptRetried())
             AvroTaskMessageType.TaskAttemptStarted -> fromAvro(input.getTaskAttemptStarted())
-            AvroTaskMessageType.TaskAttemptTimeout -> fromAvro(input.getTaskAttemptTimeout())
-            AvroTaskMessageType.TaskDispatched -> fromAvro(input.getTaskDispatched())
+            AvroTaskMessageType.TaskAttemptTimedOut -> fromAvro(input.getTaskAttemptTimedOut())
             else -> throw Exception("Unknown avro task message type: $type")
         }
     }

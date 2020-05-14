@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroTaskAttemptFailed",
-    "namespace": "com.zenaton.taskmanager.messages",
+    "name": "AvroTaskAttemptStarted",
+    "namespace": "com.zenaton.taskmanager.messages.events",
     "fields": [
         {
             "name": "taskId",
@@ -28,8 +28,9 @@
             "default": -1.0
         },
         {
-            "name": "taskAttemptError",
-            "type": "bytes"
+            "name": "taskAttemptDelayBeforeTimeout",
+            "type": "float",
+            "default": -1.0
         }
     ]
 }

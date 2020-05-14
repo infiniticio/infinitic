@@ -1,0 +1,26 @@
+{
+    "type": "record",
+    "name": "AvroRetryTaskAttempt",
+    "namespace": "com.zenaton.taskmanager.messages.commands",
+    "fields": [
+        {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "taskAttemptId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "taskAttemptIndex",
+            "type": "int"
+        }
+    ]
+}

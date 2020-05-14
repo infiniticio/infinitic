@@ -1,9 +1,9 @@
 const { pulsar } = require('./pulsar');
 const { taskAttemptStartedType, taskMessageType } = require('./avro');
 
-const taskId = 'c6484107-c191-4581-b318-bf970ae357da';
-const taskAttemptId = '120c61ca-c866-4e68-94ec-5fe6e8d0fa0a';
-const taskAttemptIndex = 10;
+const taskId = '0957bf99-4183-42a8-aaea-e0086b3744f3';
+const taskAttemptId = '1faadefc-e106-4cb2-8b73-91e68356e3f5';
+const taskAttemptIndex = 0;
 
 (async () => {
   // Create a producer
@@ -13,18 +13,18 @@ const taskAttemptIndex = 10;
     batchingEnabled: false,
   });
 
-  var atd = new taskAttemptStartedType.getRecordConstructor()
-  atd.taskId = taskId
-  atd.sentAt = 1588705988
-  atd.taskAttemptId = taskAttemptId
-  atd.taskAttemptIndex = taskAttemptIndex
-  atd.taskAttemptDelayBeforeRetry = 15.0
-  atd.taskAttemptDelayBeforeTimeout = 30.0
+  var tas = new taskAttemptStartedType.getRecordConstructor()
+  tas.taskId = taskId
+  tas.sentAt = 1588705988
+  tas.taskAttemptId = taskAttemptId
+  tas.taskAttemptIndex = taskAttemptIndex
+  tas.taskAttemptDelayBeforeRetry = 10.0
+  tas.taskAttemptDelayBeforeTimeout = 3.0
 
   var atm = new taskMessageType.getRecordConstructor()
   atm.type = "TaskAttemptStarted"
-  atm.taskId = atd.taskId
-  atm.taskAttemptStarted = {'com.zenaton.taskmanager.messages.AvroTaskAttemptStarted': atd}
+  atm.taskId = tas.taskId
+  atm.TaskAttemptStarted = {'com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted': tas}
 
   // Send taskDispatched messages
   producer.send({data: taskMessageType.toBuffer(atm)});

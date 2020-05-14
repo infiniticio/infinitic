@@ -1,4 +1,4 @@
-package com.zenaton.taskmanager.messages
+package com.zenaton.taskmanager.messages.events
 
 import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskAttemptId

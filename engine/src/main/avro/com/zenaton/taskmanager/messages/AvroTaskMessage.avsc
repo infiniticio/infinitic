@@ -9,12 +9,15 @@
                 "name": "AvroTaskMessageType",
                 "type": "enum",
                 "symbols": [
+                    "DispatchTask",
+                    "RetryTask",
+                    "RetryTaskAttempt",
+                    "TimeoutTaskAttempt",
                     "TaskAttemptCompleted",
+                    "TaskAttemptDispatched",
                     "TaskAttemptFailed",
-                    "TaskAttemptRetried",
                     "TaskAttemptStarted",
-                    "TaskAttemptTimeout",
-                    "TaskDispatched"
+                    "TaskAttemptTimedOut"
                 ]
             }
         }, {
@@ -22,28 +25,40 @@
             "type": "string",
             "logicalType": "uuid"
         }, {
-            "name": "taskAttemptCompleted",
-            "type": ["null", "com.zenaton.taskmanager.messages.AvroTaskAttemptCompleted"],
+            "name": "DispatchTask",
+            "type": ["null", "com.zenaton.taskmanager.messages.commands.AvroDispatchTask"],
             "default": null
         }, {
-            "name": "taskAttemptFailed",
-            "type": ["null", "com.zenaton.taskmanager.messages.AvroTaskAttemptFailed"],
+            "name": "RetryTask",
+            "type": ["null", "com.zenaton.taskmanager.messages.commands.AvroRetryTask"],
             "default": null
         }, {
-            "name": "taskAttemptRetried",
-            "type": ["null", "com.zenaton.taskmanager.messages.AvroTaskAttemptRetried"],
-             "default": null
-        }, {
-            "name": "taskAttemptStarted",
-            "type": ["null", "com.zenaton.taskmanager.messages.AvroTaskAttemptStarted"],
+            "name": "RetryTaskAttempt",
+            "type": ["null", "com.zenaton.taskmanager.messages.commands.AvroRetryTaskAttempt"],
             "default": null
         }, {
-            "name": "taskAttemptTimeout",
-            "type": ["null", "com.zenaton.taskmanager.messages.AvroTaskAttemptTimeout"],
+            "name": "TimeOutTaskAttempt",
+            "type": ["null", "com.zenaton.taskmanager.messages.commands.AvroTimeOutTaskAttempt"],
             "default": null
         }, {
-            "name": "taskDispatched",
-            "type": ["null", "com.zenaton.taskmanager.messages.AvroTaskDispatched"],
+            "name": "TaskAttemptCompleted",
+            "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskAttemptCompleted"],
+            "default": null
+        }, {
+            "name": "TaskAttemptDispatched",
+            "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskAttemptDispatched"],
+            "default": null
+        }, {
+            "name": "TaskAttemptFailed",
+            "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskAttemptFailed"],
+            "default": null
+        }, {
+            "name": "TaskAttemptStarted",
+            "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted"],
+            "default": null
+        }, {
+            "name": "TaskAttemptTimedOut",
+            "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskAttemptTimedOut"],
             "default": null
         }
     ]

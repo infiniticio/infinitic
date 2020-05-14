@@ -1,6 +1,6 @@
 {
     "type": "record",
-    "name": "AvroTaskAttemptCompleted",
+    "name": "AvroRunTask",
     "namespace": "com.zenaton.taskmanager.messages",
     "fields": [
         {
@@ -9,13 +9,13 @@
             "logicalType": "uuid"
         },
         {
-            "name": "taskAttemptId",
-            "type": "string",
-            "logicalType": "uuid"
+          "name": "taskAttemptId",
+          "type": "string",
+          "logicalType": "uuid"
         },
         {
-            "name": "taskAttemptIndex",
-            "type": "int"
+          "name": "taskAttemptIndex",
+          "type": "int"
         },
         {
             "name": "sentAt",
@@ -23,8 +23,12 @@
             "logicalType": "timestamp-millis"
         },
         {
-            "name": "taskOutput",
-            "type": ["null", "bytes"],
+            "name": "taskName",
+            "type": "string"
+        },
+        {
+            "name": "taskData",
+            "type": ["null",{"type":"bytes"}],
             "default": null
         }
     ]

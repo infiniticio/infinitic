@@ -1,4 +1,4 @@
-package com.zenaton.taskmanager.messages
+package com.zenaton.taskmanager.messages.commands
 
 import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskData
@@ -7,7 +7,7 @@ import com.zenaton.taskmanager.data.TaskName
 import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.workflowengine.data.WorkflowId
 
-data class TaskDispatched(
+data class DispatchTask(
     override var taskId: TaskId,
     override var sentAt: DateTime? = DateTime(),
     val taskName: TaskName,

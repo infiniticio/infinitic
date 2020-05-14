@@ -1,0 +1,26 @@
+{
+    "type": "record",
+    "name": "AvroTaskAttemptDispatched",
+    "namespace": "com.zenaton.taskmanager.messages.events",
+    "fields": [
+        {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+          "name": "taskAttemptId",
+          "type": "string",
+          "logicalType": "uuid"
+        },
+        {
+          "name": "taskAttemptIndex",
+          "type": "int"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        }
+    ]
+}

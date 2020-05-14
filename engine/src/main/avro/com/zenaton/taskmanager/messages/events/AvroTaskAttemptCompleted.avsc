@@ -1,17 +1,12 @@
 {
     "type": "record",
-    "name": "AvroTaskAttemptRetried",
-    "namespace": "com.zenaton.taskmanager.messages",
+    "name": "AvroTaskAttemptCompleted",
+    "namespace": "com.zenaton.taskmanager.messages.events",
     "fields": [
         {
             "name": "taskId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
-            "name": "sentAt",
-            "type": "long",
-            "logicalType": "timestamp-millis"
         },
         {
             "name": "taskAttemptId",
@@ -21,6 +16,16 @@
         {
             "name": "taskAttemptIndex",
             "type": "int"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "taskOutput",
+            "type": ["null", "bytes"],
+            "default": null
         }
     ]
 }

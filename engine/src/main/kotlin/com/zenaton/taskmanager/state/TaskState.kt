@@ -10,8 +10,8 @@ import com.zenaton.workflowengine.data.WorkflowId
 data class TaskState(
     val taskId: TaskId,
     val taskName: TaskName,
-    val taskData: TaskData? = null,
-    var taskAttemptId: TaskAttemptId = TaskAttemptId(),
-    var taskAttemptIndex: Int = 0,
+    val taskData: TaskData?,
+    var taskAttemptId: TaskAttemptId,
+    var taskAttemptIndex: Int,
     val workflowId: WorkflowId? = null
 ) : StateInterface

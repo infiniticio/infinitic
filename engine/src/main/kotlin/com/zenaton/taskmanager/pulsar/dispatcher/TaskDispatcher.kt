@@ -1,8 +1,8 @@
 package com.zenaton.taskmanager.pulsar.dispatcher
 
-import com.zenaton.taskmanager.messages.AvroTaskAttemptMessage
+import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.messages.TaskAttemptDispatched
+import com.zenaton.taskmanager.messages.RunTask
 import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.AvroConverter
@@ -16,9 +16,9 @@ import org.apache.pulsar.functions.api.Context
  */
 object TaskDispatcher {
 
-    fun dispatch(context: Context, msg: TaskAttemptDispatched): MessageId {
+    fun dispatch(context: Context, msg: RunTask): MessageId {
         return context
-            .newOutputMessage(Topic.TASK_ATTEMPTS.get(msg.taskName.name), AvroSchema.of(AvroTaskAttemptMessage::class.java))
+            .newOutputMessage(Topic.TASK_ATTEMPTS.get(msg.taskName.name), AvroSchema.of(AvroRunTask::class.java))
             .value(AvroConverter.toAvro(msg))
             .send()
     }

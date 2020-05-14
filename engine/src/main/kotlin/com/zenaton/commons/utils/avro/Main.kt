@@ -1,7 +1,7 @@
 package com.zenaton.commons.utils.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.taskmanager.messages.AvroTaskAttemptMessage
+import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
 import java.io.File
 import kotlin.reflect.KClass
@@ -23,7 +23,7 @@ fun main() {
 
     listOf(
         AvroTaskMessage::class,
-        AvroTaskAttemptMessage::class
+        AvroRunTask::class
     ).map { klass ->
         File(System.getProperty("user.dir") + "/build/schemas/${klass.simpleName}.schema")
             .also { it.parentFile.mkdirs() }
