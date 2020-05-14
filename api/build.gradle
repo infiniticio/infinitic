@@ -2,7 +2,7 @@ buildscript {
     repositories {
         jcenter()
     }
-    
+
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
@@ -39,6 +39,6 @@ dependencies {
     testImplementation "io.ktor:ktor-server-tests:$ktor_version"
 
     implementation "io.prestosql:presto-jdbc:$prestojdbc_version"
-
     implementation "org.koin:koin-ktor:$koin_version"
+    implementation "org.apache.pulsar:pulsar-client-admin:$pulsarclientadmin_version"
 }

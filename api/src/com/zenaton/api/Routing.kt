@@ -1,29 +1,31 @@
 package com.zenaton.api
 
 import com.zenaton.api.extensions.io.ktor.application.*
-import com.zenaton.api.task.models.Task
-import com.zenaton.api.workflow.models.Workflow
-import com.zenaton.api.workflow.repositories.WorkflowRepository
+import com.zenaton.api.task.repositories.TaskRepository
 import io.ktor.application.*
+import io.ktor.http.HttpStatusCode
 import io.ktor.response.*
 import io.ktor.routing.*
+import org.apache.pulsar.client.admin.PulsarAdmin
 import org.koin.ktor.ext.inject
-import java.time.Instant
 
 fun Routing.root() {
-    get("/workflows/{id}") {
-        val workflowRepository: WorkflowRepository by this@root.inject()
-        val workflow = workflowRepository.getById(call.getPath("id"))
+    val taskRepository: TaskRepository by inject()
+    val pulsarAdmin: PulsarAdmin by inject()
 
-        call.respond(workflow)
+    get("/task-types/") {
+        val state =
+            pulsarAdmin.functions().getFunctionState("public", "default", "MonitoringGlobalPulsarFunction", "monitoringGlobal.state")
+
+        call.respond(state)
     }
 
     get("/tasks/{id}") {
-        val task =
-            Task(call.getPath("id"), "TaskA", "completed", Instant.now())
-        task.startedAt = Instant.now()
-        task.completedAt = Instant.now()
-
-        call.respond(task)
+        val task = taskRepository.getById(call.getPath("id"))
+        if (task == null) {
+            call.respond(HttpStatusCode.NotFound)
+        } else {
+            call.respond(task)
+        }
     }
 }
