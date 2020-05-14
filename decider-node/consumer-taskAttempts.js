@@ -15,7 +15,6 @@ const name = 'MyTask';
   // Receive messages
   for (let i = 0; i < 1000; i += 1) {
     const msg = await consumer.receive();
-    // console.log(Object.values(taskAttemptMessageType.fromBuffer(msg.getData()).msg)[0])
     console.log(runTaskType.fromBuffer(msg.getData()))
     consumer.acknowledge(msg);
   }

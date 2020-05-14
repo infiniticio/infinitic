@@ -10,7 +10,7 @@ const { pulsar } = require('./pulsar');
   });
 
   // Receive messages
-  for (let i = 0; i < 10; i += 1) {
+  for (let i = 0; i < 1000; i += 1) {
     const msg = await consumer.receive();
     console.log(msg.getData().toString());
     consumer.acknowledge(msg);

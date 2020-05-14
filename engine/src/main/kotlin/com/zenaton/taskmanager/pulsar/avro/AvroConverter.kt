@@ -117,14 +117,15 @@ object AvroConverter {
     fun fromAvro(input: AvroTaskMessage): TaskMessageInterface {
         val type = input.getType()
         return when (type) {
-            AvroTaskMessageType.DispatchTask -> fromAvro(input.getDispatchTask())
-            AvroTaskMessageType.RetryTask -> fromAvro(input.getRetryTask())
-            AvroTaskMessageType.RetryTaskAttempt -> fromAvro(input.getRetryTaskAttempt())
-            AvroTaskMessageType.TimeoutTaskAttempt -> fromAvro(input.getTimeOutTaskAttempt())
-            AvroTaskMessageType.TaskAttemptCompleted -> fromAvro(input.getTaskAttemptCompleted())
-            AvroTaskMessageType.TaskAttemptFailed -> fromAvro(input.getTaskAttemptFailed())
-            AvroTaskMessageType.TaskAttemptStarted -> fromAvro(input.getTaskAttemptStarted())
-            AvroTaskMessageType.TaskAttemptTimedOut -> fromAvro(input.getTaskAttemptTimedOut())
+            AvroTaskMessageType.DispatchTask -> fromAvro(input.dispatchTask)
+            AvroTaskMessageType.RetryTask -> fromAvro(input.retryTask)
+            AvroTaskMessageType.RetryTaskAttempt -> fromAvro(input.retryTaskAttempt)
+            AvroTaskMessageType.TimeoutTaskAttempt -> fromAvro(input.timeOutTaskAttempt)
+            AvroTaskMessageType.TaskAttemptCompleted -> fromAvro(input.taskAttemptCompleted)
+            AvroTaskMessageType.TaskAttemptDispatched -> fromAvro(input.taskAttemptDispatched)
+            AvroTaskMessageType.TaskAttemptFailed -> fromAvro(input.taskAttemptFailed)
+            AvroTaskMessageType.TaskAttemptStarted -> fromAvro(input.taskAttemptStarted)
+            AvroTaskMessageType.TaskAttemptTimedOut -> fromAvro(input.taskAttemptTimedOut)
             else -> throw Exception("Unknown avro task message type: $type")
         }
     }

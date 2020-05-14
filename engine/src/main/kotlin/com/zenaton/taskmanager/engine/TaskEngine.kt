@@ -144,7 +144,7 @@ class TaskEngine(
         val tar = TaskAttemptDispatched(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
-            taskAttemptIndex = state.taskAttemptIndex
+            taskAttemptIndex = newIndex
         )
         dispatcher.dispatch(tar)
 
@@ -171,7 +171,7 @@ class TaskEngine(
         if (state.workflowId != null) {
             val tc = TaskCompleted(
                 workflowId = state.workflowId,
-                taskId = msg.taskId,
+                taskId = state.taskId,
                 taskOutput = msg.taskOutput
             )
             dispatcher.dispatch(tc)
@@ -187,9 +187,9 @@ class TaskEngine(
     private fun taskAttemptStarted(state: TaskState, msg: TaskAttemptStarted) {
         if (msg.taskAttemptDelayBeforeTimeout > 0f) {
             val tad = TimeOutTaskAttempt(
-                taskId = msg.taskId,
-                taskAttemptId = msg.taskAttemptId,
-                taskAttemptIndex = msg.taskAttemptIndex,
+                taskId = state.taskId,
+                taskAttemptId = state.taskAttemptId,
+                taskAttemptIndex = state.taskAttemptIndex,
                 taskAttemptDelayBeforeRetry = msg.taskAttemptDelayBeforeRetry
             )
             dispatcher.dispatch(tad, after = msg.taskAttemptDelayBeforeTimeout)
