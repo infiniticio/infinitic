@@ -2,15 +2,15 @@ package com.zenaton.taskmanager.engine
 
 import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.messages.commands.CancelTask
 import com.zenaton.taskmanager.messages.commands.DispatchTask
 import com.zenaton.taskmanager.messages.commands.RetryTask
 import com.zenaton.taskmanager.messages.commands.RetryTaskAttempt
-import com.zenaton.taskmanager.messages.commands.TimeOutTaskAttempt
 import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
 import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.events.TaskAttemptTimedOut
+import com.zenaton.taskmanager.messages.events.TaskCanceled
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptFailingMessageInterface
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
 import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
@@ -66,17 +66,28 @@ class TaskEngine(
         }
 
         when (msg) {
+            is CancelTask -> cancelTask(state, msg)
             is DispatchTask -> dispatchTask(state, msg)
             is RetryTask -> retryTask(state, msg)
             is RetryTaskAttempt -> retryTaskAttempt(state, msg)
-            is TimeOutTaskAttempt -> timeOutTaskAttempt(state, msg)
             is TaskAttemptCompleted -> taskAttemptCompleted(state, msg)
             is TaskAttemptDispatched -> Unit
             is TaskAttemptFailed -> taskAttemptFailed(state, msg)
-            is TaskAttemptStarted -> taskAttemptStarted(state, msg)
-            is TaskAttemptTimedOut -> Unit
+            is TaskAttemptStarted -> Unit
+            is TaskCanceled -> Unit
             else -> throw Exception("Unknown Message $msg")
         }
+    }
+
+    private fun cancelTask(state: TaskState, msg: CancelTask) {
+        // update and save state
+        stater.deleteState(msg.getStateId())
+
+        // log event
+        val tad = TaskCanceled(
+            taskId = msg.taskId
+        )
+        dispatcher.dispatch(tad)
     }
 
     private fun dispatchTask(state: TaskState, msg: DispatchTask) {
@@ -153,19 +164,6 @@ class TaskEngine(
         stater.updateState(msg.getStateId(), state)
     }
 
-    private fun timeOutTaskAttempt(state: TaskState, msg: TimeOutTaskAttempt) {
-        // log event
-        val tar = TaskAttemptTimedOut(
-            taskId = state.taskId,
-            taskAttemptId = state.taskAttemptId,
-            taskAttemptIndex = state.taskAttemptIndex
-        )
-        dispatcher.dispatch(tar)
-
-        // trigger retry if needed
-        triggerDelayedRetry(state = state, msg = msg)
-    }
-
     private fun taskAttemptCompleted(state: TaskState, msg: TaskAttemptCompleted) {
         // if this task belongs to a workflow
         if (state.workflowId != null) {
@@ -184,30 +182,22 @@ class TaskEngine(
         triggerDelayedRetry(state = state, msg = msg)
     }
 
-    private fun taskAttemptStarted(state: TaskState, msg: TaskAttemptStarted) {
-        if (msg.taskAttemptDelayBeforeTimeout > 0f) {
-            val tad = TimeOutTaskAttempt(
-                taskId = state.taskId,
-                taskAttemptId = state.taskAttemptId,
-                taskAttemptIndex = state.taskAttemptIndex,
-                taskAttemptDelayBeforeRetry = msg.taskAttemptDelayBeforeRetry
-            )
-            dispatcher.dispatch(tad, after = msg.taskAttemptDelayBeforeTimeout)
-        }
-    }
-
     private fun triggerDelayedRetry(state: TaskState, msg: TaskAttemptFailingMessageInterface) {
-        if (msg.taskAttemptDelayBeforeRetry == 0f) {
+        if (msg.taskAttemptDelayBeforeRetry == null) {
+            return
+        }
+        val delay = msg.taskAttemptDelayBeforeRetry!!
+        if (delay <= 0f) {
             return retryTaskAttempt(state, msg)
         }
-        if (msg.taskAttemptDelayBeforeRetry > 0f) {
+        if (delay > 0f) {
             // schedule next attempt
             val tar = RetryTaskAttempt(
                 taskId = state.taskId,
                 taskAttemptId = state.taskAttemptId,
                 taskAttemptIndex = state.taskAttemptIndex
             )
-            dispatcher.dispatch(tar, after = msg.taskAttemptDelayBeforeRetry)
+            dispatcher.dispatch(tar, after = delay)
         }
     }
 }

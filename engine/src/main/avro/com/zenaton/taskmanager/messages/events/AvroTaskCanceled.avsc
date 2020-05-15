@@ -1,6 +1,6 @@
 {
     "type": "record",
-    "name": "AvroTaskAttemptTimedOut",
+    "name": "AvroTaskCanceled",
     "namespace": "com.zenaton.taskmanager.messages.events",
     "fields": [
         {
@@ -12,15 +12,6 @@
             "name": "sentAt",
             "type": "long",
             "logicalType": "timestamp-millis"
-        },
-        {
-            "name": "taskAttemptId",
-            "type": "string",
-            "logicalType": "uuid"
-        },
-        {
-            "name": "taskAttemptIndex",
-            "type": "int"
         }
     ]
 }

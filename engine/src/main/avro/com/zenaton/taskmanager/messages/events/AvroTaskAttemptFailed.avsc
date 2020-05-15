@@ -23,13 +23,13 @@
             "type": "int"
         },
         {
-            "name": "taskAttemptDelayBeforeRetry",
-            "type": "float",
-            "default": -1.0
-        },
-        {
             "name": "taskAttemptError",
             "type": "bytes"
+        },
+        {
+            "name": "taskAttemptDelayBeforeRetry",
+            "type": ["null", "float"],
+            "default": null
         }
     ]
 }

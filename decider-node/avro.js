@@ -10,16 +10,16 @@ const assertValid = function assertValid(type, val) {
 
 var registry = {}
 
+var cancelTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/commands/AvroCancelTask.avsc", { registry });
 var dispatchTaskType = avro.parse(__dirname + "/avro/taskmanager/messages/commands/AvroDispatchTask.avsc", { registry });
 var retryTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/commands/AvroRetryTask.avsc", { registry });
 var retryTaskAttemptType = avro.parse(__dirname +"/avro/taskmanager/messages/commands/AvroRetryTaskAttempt.avsc", { registry });
-var timeOutTaskAttemptType = avro.parse(__dirname +"/avro/taskmanager/messages/commands/AvroTimeOutTaskAttempt.avsc", { registry });
 
 var taskAttemptCompletedType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptCompleted.avsc", { registry });
 var taskAttemptDispatchedType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptDispatched.avsc", { registry });
 var taskAttemptFailedType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptFailed.avsc", { registry });
 var taskAttemptStartedType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptStarted.avsc", { registry });
-var taskAttemptTimedOutType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptTimedOut.avsc", { registry });
+var taskCanceledType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskCanceled.avsc", { registry });
 
 var taskMessageType = avro.parse(__dirname +"/avro/taskmanager/messages/AvroTaskMessage.avsc", { registry  });
 var runTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/AvroRunTask.avsc", { registry  });
@@ -27,15 +27,18 @@ var runTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/AvroRunTask.
 
 module.exports = {
     assertValid,
+
+    cancelTaskType,
     dispatchTaskType,
     retryTaskType,
     retryTaskAttemptType,
-    timeOutTaskAttemptType,
+
     taskAttemptCompletedType,
     taskAttemptDispatchedType,
     taskAttemptFailedType,
     taskAttemptStartedType,
-    taskAttemptTimedOutType,
+    taskCanceledType,
+
     taskMessageType,
     runTaskType
 }

@@ -9,15 +9,15 @@
                 "name": "AvroTaskMessageType",
                 "type": "enum",
                 "symbols": [
+                    "CancelTask",
                     "DispatchTask",
                     "RetryTask",
                     "RetryTaskAttempt",
-                    "TimeoutTaskAttempt",
                     "TaskAttemptCompleted",
                     "TaskAttemptDispatched",
                     "TaskAttemptFailed",
                     "TaskAttemptStarted",
-                    "TaskAttemptTimedOut"
+                    "TaskCanceled"
                 ]
             }
         }, {
@@ -25,6 +25,10 @@
             "type": "string",
             "logicalType": "uuid"
         }, {
+             "name": "CancelTask",
+             "type": ["null", "com.zenaton.taskmanager.messages.commands.AvroCancelTask"],
+             "default": null
+         }, {
             "name": "DispatchTask",
             "type": ["null", "com.zenaton.taskmanager.messages.commands.AvroDispatchTask"],
             "default": null
@@ -35,10 +39,6 @@
         }, {
             "name": "RetryTaskAttempt",
             "type": ["null", "com.zenaton.taskmanager.messages.commands.AvroRetryTaskAttempt"],
-            "default": null
-        }, {
-            "name": "TimeOutTaskAttempt",
-            "type": ["null", "com.zenaton.taskmanager.messages.commands.AvroTimeOutTaskAttempt"],
             "default": null
         }, {
             "name": "TaskAttemptCompleted",
@@ -57,8 +57,8 @@
             "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted"],
             "default": null
         }, {
-            "name": "TaskAttemptTimedOut",
-            "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskAttemptTimedOut"],
+            "name": "TaskCanceled",
+            "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskCanceled"],
             "default": null
         }
     ]

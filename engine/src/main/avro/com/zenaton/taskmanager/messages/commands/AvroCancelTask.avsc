@@ -1,0 +1,17 @@
+{
+    "type": "record",
+    "name": "AvroCancelTask",
+    "namespace": "com.zenaton.taskmanager.messages.commands",
+    "fields": [
+        {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        }
+    ]
+}
