@@ -39,82 +39,52 @@ object AvroConverter {
     fun fromAvro(obj: AvroTaskState) = convert(obj, TaskState::class)
 
     /**
-     *  Worker Task Messages
+     *  Worker Messages
      */
     fun toAvro(obj: RunTask) = convert(obj, AvroRunTask::class)
     fun fromAvro(obj: AvroRunTask) = convert(obj, RunTask::class)
 
     /**
-     *  Commands Tasks Messages
+     *  Tasks Messages
      */
-    fun toAvro(obj: CancelTask) = convert(obj, AvroCancelTask::class)
-    fun fromAvro(obj: AvroCancelTask) = convert(obj, CancelTask::class)
-
-    fun toAvro(obj: DispatchTask) = convert(obj, AvroDispatchTask::class)
-    fun fromAvro(obj: AvroDispatchTask) = convert(obj, DispatchTask::class)
-
-    fun toAvro(obj: RetryTask) = convert(obj, AvroRetryTask::class)
-    fun fromAvro(obj: AvroRetryTask) = convert(obj, RetryTask::class)
-
-    fun toAvro(obj: RetryTaskAttempt) = convert(obj, AvroRetryTaskAttempt::class)
-    fun fromAvro(obj: AvroRetryTaskAttempt) = convert(obj, RetryTaskAttempt::class)
-
-    /**
-     *  Events Tasks Messages
-     */
-    fun toAvro(obj: TaskAttemptCompleted) = convert(obj, AvroTaskAttemptCompleted::class)
-    fun fromAvro(obj: AvroTaskAttemptCompleted) = convert(obj, TaskAttemptCompleted::class)
-
-    fun toAvro(obj: TaskAttemptDispatched) = convert(obj, AvroTaskAttemptDispatched::class)
-    fun fromAvro(obj: AvroTaskAttemptDispatched) = convert(obj, TaskAttemptDispatched::class)
-
-    fun toAvro(obj: TaskAttemptFailed) = convert(obj, AvroTaskAttemptFailed::class)
-    fun fromAvro(obj: AvroTaskAttemptFailed) = convert(obj, TaskAttemptFailed::class)
-
-    fun toAvro(obj: TaskAttemptStarted) = convert(obj, AvroTaskAttemptStarted::class)
-    fun fromAvro(obj: AvroTaskAttemptStarted) = convert(obj, TaskAttemptStarted::class)
-
-    fun toAvro(obj: TaskCanceled) = convert(obj, AvroTaskCanceled::class)
-    fun fromAvro(obj: AvroTaskCanceled) = convert(obj, TaskCanceled::class)
-
     fun toAvro(msg: TaskMessageInterface): AvroTaskMessage {
         var builder = AvroTaskMessage.newBuilder()
         builder.taskId = msg.taskId.id
         when (msg) {
             is CancelTask -> {
-                builder.cancelTask = toAvro(msg)
+                builder.cancelTask = switch(msg)
                 builder.type = AvroTaskMessageType.CancelTask
             }
             is DispatchTask -> {
-                builder.dispatchTask = toAvro(msg)
+                builder.dispatchTask = switch(msg)
                 builder.type = AvroTaskMessageType.DispatchTask
             }
             is RetryTask -> {
-                builder.retryTask = toAvro(msg)
+                builder.retryTask = switch(msg)
                 builder.type = AvroTaskMessageType.RetryTask
             }
             is RetryTaskAttempt -> {
-                builder.retryTaskAttempt = toAvro(msg)
+                builder.retryTaskAttempt = switch(msg)
                 builder.type = AvroTaskMessageType.RetryTaskAttempt
             }
             is TaskAttemptCompleted -> {
-                builder.taskAttemptCompleted = toAvro(msg)
+                builder.taskAttemptCompleted = switch(msg)
                 builder.type = AvroTaskMessageType.TaskAttemptCompleted
             }
             is TaskAttemptDispatched -> {
-                builder.taskAttemptDispatched = toAvro(msg)
+                builder.taskAttemptDispatched = switch(msg)
                 builder.type = AvroTaskMessageType.TaskAttemptDispatched
             }
             is TaskAttemptFailed -> {
-                builder.taskAttemptFailed = toAvro(msg)
+                builder.taskAttemptFailed = switch(msg)
                 builder.type = AvroTaskMessageType.TaskAttemptFailed
             }
             is TaskAttemptStarted -> {
-                builder.taskAttemptStarted = toAvro(msg)
+                builder.taskAttemptStarted = switch(msg)
                 builder.type = AvroTaskMessageType.TaskAttemptStarted
             }
             is TaskCanceled -> {
-                builder.taskCanceled = toAvro(msg)
+                builder.taskCanceled = switch(msg)
                 builder.type = AvroTaskMessageType.TaskCanceled
             }
             else -> throw Exception("Unknown task message class ${msg::class}")
@@ -125,18 +95,51 @@ object AvroConverter {
     fun fromAvro(input: AvroTaskMessage): TaskMessageInterface {
         val type = input.getType()
         return when (type) {
-            AvroTaskMessageType.CancelTask -> fromAvro(input.cancelTask)
-            AvroTaskMessageType.DispatchTask -> fromAvro(input.dispatchTask)
-            AvroTaskMessageType.RetryTask -> fromAvro(input.retryTask)
-            AvroTaskMessageType.RetryTaskAttempt -> fromAvro(input.retryTaskAttempt)
-            AvroTaskMessageType.TaskAttemptCompleted -> fromAvro(input.taskAttemptCompleted)
-            AvroTaskMessageType.TaskAttemptDispatched -> fromAvro(input.taskAttemptDispatched)
-            AvroTaskMessageType.TaskAttemptFailed -> fromAvro(input.taskAttemptFailed)
-            AvroTaskMessageType.TaskAttemptStarted -> fromAvro(input.taskAttemptStarted)
-            AvroTaskMessageType.TaskCanceled -> fromAvro(input.taskCanceled)
+            AvroTaskMessageType.CancelTask -> switch(input.cancelTask)
+            AvroTaskMessageType.DispatchTask -> switch(input.dispatchTask)
+            AvroTaskMessageType.RetryTask -> switch(input.retryTask)
+            AvroTaskMessageType.RetryTaskAttempt -> switch(input.retryTaskAttempt)
+            AvroTaskMessageType.TaskAttemptCompleted -> switch(input.taskAttemptCompleted)
+            AvroTaskMessageType.TaskAttemptDispatched -> switch(input.taskAttemptDispatched)
+            AvroTaskMessageType.TaskAttemptFailed -> switch(input.taskAttemptFailed)
+            AvroTaskMessageType.TaskAttemptStarted -> switch(input.taskAttemptStarted)
+            AvroTaskMessageType.TaskCanceled -> switch(input.taskCanceled)
             else -> throw Exception("Unknown avro task message type: $type")
         }
     }
+
+    /**
+     *  Switching from and to Avro (Tasks commands)
+     */
+    private fun switch(obj: CancelTask) = convert(obj, AvroCancelTask::class)
+    private fun switch(obj: AvroCancelTask) = convert(obj, CancelTask::class)
+
+    private fun switch(obj: DispatchTask) = convert(obj, AvroDispatchTask::class)
+    private fun switch(obj: AvroDispatchTask) = convert(obj, DispatchTask::class)
+
+    private fun switch(obj: RetryTask) = convert(obj, AvroRetryTask::class)
+    private fun switch(obj: AvroRetryTask) = convert(obj, RetryTask::class)
+
+    private fun switch(obj: RetryTaskAttempt) = convert(obj, AvroRetryTaskAttempt::class)
+    private fun switch(obj: AvroRetryTaskAttempt) = convert(obj, RetryTaskAttempt::class)
+
+    /**
+     *  Switching from and to Avro (Tasks events)
+     */
+    private fun switch(obj: TaskAttemptCompleted) = convert(obj, AvroTaskAttemptCompleted::class)
+    private fun switch(obj: AvroTaskAttemptCompleted) = convert(obj, TaskAttemptCompleted::class)
+
+    private fun switch(obj: TaskAttemptDispatched) = convert(obj, AvroTaskAttemptDispatched::class)
+    private fun switch(obj: AvroTaskAttemptDispatched) = convert(obj, TaskAttemptDispatched::class)
+
+    private fun switch(obj: TaskAttemptFailed) = convert(obj, AvroTaskAttemptFailed::class)
+    private fun switch(obj: AvroTaskAttemptFailed) = convert(obj, TaskAttemptFailed::class)
+
+    private fun switch(obj: TaskAttemptStarted) = convert(obj, AvroTaskAttemptStarted::class)
+    private fun switch(obj: AvroTaskAttemptStarted) = convert(obj, TaskAttemptStarted::class)
+
+    private fun switch(obj: TaskCanceled) = convert(obj, AvroTaskCanceled::class)
+    private fun switch(obj: AvroTaskCanceled) = convert(obj, TaskCanceled::class)
 
     /**
      *  Mapping function by Json serialization/deserialization

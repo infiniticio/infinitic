@@ -1,21 +1,12 @@
 package com.zenaton.workflowengine.topics.workflows
 
-import com.zenaton.commons.data.DateTime
 import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.commons.pulsar.utils.Stater
+import com.zenaton.commons.utils.TestFactory
 import com.zenaton.decisionmanager.data.DecisionId
 import com.zenaton.decisionmanager.data.DecisionName
-import com.zenaton.decisionmanager.data.DecisionOutput
 import com.zenaton.decisionmanager.messages.DecisionDispatched
-import com.zenaton.taskmanager.data.TaskId
-import com.zenaton.taskmanager.data.TaskOutput
-import com.zenaton.workflowengine.data.DelayId
-import com.zenaton.workflowengine.data.EventData
-import com.zenaton.workflowengine.data.EventName
-import com.zenaton.workflowengine.data.WorkflowData
 import com.zenaton.workflowengine.data.WorkflowId
-import com.zenaton.workflowengine.data.WorkflowName
-import com.zenaton.workflowengine.data.WorkflowOutput
 import com.zenaton.workflowengine.pulsar.topics.workflows.functions.WorkflowEngineDispatcher
 import com.zenaton.workflowengine.topics.workflows.engine.WorkflowEngine
 import com.zenaton.workflowengine.topics.workflows.interfaces.WorkflowMessageInterface
@@ -24,13 +15,12 @@ import com.zenaton.workflowengine.topics.workflows.messages.DecisionCompleted
 import com.zenaton.workflowengine.topics.workflows.messages.DelayCompleted
 import com.zenaton.workflowengine.topics.workflows.messages.EventReceived
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
+import com.zenaton.workflowengine.topics.workflows.messages.WorkflowCompleted
 import com.zenaton.workflowengine.topics.workflows.messages.WorkflowDispatched
 import com.zenaton.workflowengine.topics.workflows.state.WorkflowState
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.property.Arb
-import io.kotest.property.arbitrary.string
 import io.mockk.Runs
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -39,67 +29,13 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 
-fun workflowDispatched(id: WorkflowId? = null, workflowData: WorkflowData? = null, workflowName: WorkflowName? = null): WorkflowDispatched {
-    return WorkflowDispatched(
-        workflowId = id ?: WorkflowId(),
-        workflowName = workflowName ?: WorkflowName(
-            Arb.string(1).toString()
-        ),
-        workflowData = workflowData ?: WorkflowData(
-            Arb.string(1).toString().toByteArray()
-        ),
-        dispatchedAt = DateTime()
-    )
-}
-
-fun decisionCompleted(id: WorkflowId? = null): DecisionCompleted {
-    return DecisionCompleted(
-        workflowId = id ?: WorkflowId(),
-        decisionId = DecisionId(),
-        decisionOutput = DecisionOutput("".toByteArray())
-    )
-}
-
-fun taskCompleted(id: WorkflowId? = null, taskId: TaskId? = null, taskOutput: TaskOutput? = null): TaskCompleted {
-    return TaskCompleted(
-        workflowId = id ?: WorkflowId(),
-        taskId = taskId ?: TaskId(),
-        taskOutput = taskOutput
-    )
-}
-
-fun childWorkflowCompleted(id: WorkflowId? = null, childWorkflowId: WorkflowId? = null, childWorkflowOutput: WorkflowOutput? = null): ChildWorkflowCompleted {
-    return ChildWorkflowCompleted(
-        workflowId = id ?: WorkflowId(),
-        childWorkflowId = childWorkflowId ?: WorkflowId(),
-        childWorkflowOutput = childWorkflowOutput
-    )
-}
-
-fun delayCompleted(id: WorkflowId? = null, delayId: DelayId? = null): DelayCompleted {
-    return DelayCompleted(
-        workflowId = id ?: WorkflowId(),
-        delayId = delayId ?: DelayId()
-    )
-}
-
-fun eventReceived(id: WorkflowId? = null, eventName: EventName? = null, eventData: EventData? = null): EventReceived {
-    return EventReceived(
-        workflowId = id ?: WorkflowId(),
-        eventName = eventName ?: EventName(Arb.string(1).toString()),
-        eventData = eventData ?: EventData(
-            Arb.string(1).toString().toByteArray()
-        )
-    )
-}
-
-fun workflowCompleted(id: WorkflowId? = null, taskId: TaskId? = null, taskOutput: TaskOutput? = null): TaskCompleted {
-    return TaskCompleted(
-        workflowId = id ?: WorkflowId(),
-        taskId = taskId ?: TaskId(),
-        taskOutput = taskOutput
-    )
-}
+fun workflowDispatched() = TestFactory.get(WorkflowDispatched::class)
+fun decisionCompleted() = TestFactory.get(DecisionCompleted::class)
+fun taskCompleted() = TestFactory.get(TaskCompleted::class)
+fun childWorkflowCompleted() = TestFactory.get(ChildWorkflowCompleted::class)
+fun delayCompleted() = TestFactory.get(DelayCompleted::class)
+fun eventReceived() = TestFactory.get(EventReceived::class)
+fun workflowCompleted() = TestFactory.get(WorkflowCompleted::class)
 
 fun shouldWarnAndNothingMoreIfNotState(msgIn: WorkflowMessageInterface) = stringSpec {
     // mocking

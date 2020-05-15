@@ -21,11 +21,6 @@
         {
             "name": "taskAttemptIndex",
             "type": "int"
-        },
-        {
-            "name": "taskAttemptDelayBeforeRetry",
-            "type": ["null", "float"],
-            "default": null
         }
     ]
 }
