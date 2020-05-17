@@ -16,14 +16,13 @@ import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
 import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.workflowengine.interfaces.LoggerInterface
-import com.zenaton.workflowengine.interfaces.StaterInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
 
-class TaskEngine(
-    private val stater: StaterInterface<TaskState>,
-    private val dispatcher: TaskEngineDispatcherInterface,
-    private val logger: LoggerInterface
-) {
+class TaskEngine {
+    lateinit var stater: TaskStaterInterface
+    lateinit var dispatcher: TaskEngineDispatcherInterface
+    lateinit var logger: LoggerInterface
+
     fun handle(msg: TaskMessageInterface) {
         // get associated state
         var state = stater.getState(msg.getStateId())

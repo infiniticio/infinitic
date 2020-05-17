@@ -14,7 +14,7 @@ import org.apache.pulsar.functions.api.Context
 /**
  * This class provides a Pulsar implementation of 'TaskEngineDispatcherInterface' used in TaskEngine
  */
-class TaskEngineDispatcher(private val context: Context) : TaskEngineDispatcherInterface {
+class TaskEngineDispatcher(val context: Context) : TaskEngineDispatcherInterface {
     override fun dispatch(msg: CancelTask) {
         TaskDispatcher.dispatch(context, msg)
     }

@@ -13,17 +13,20 @@ import org.apache.pulsar.functions.api.Function
  */
 class TaskEngineFunction : Function<AvroTaskMessage, Void> {
 
+    // task engine injection
+    var taskEngine = TaskEngine()
+    // avro converter injection
+    var avroConverter = TaskAvroConverter
+
     override fun process(input: AvroTaskMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received from tasks.StateFunction")
 
         try {
-            val msg = TaskAvroConverter.fromAvro(input)
+            taskEngine.stater = TaskStater(ctx)
+            taskEngine.dispatcher = TaskEngineDispatcher(ctx)
+            taskEngine.logger = Logger(ctx)
 
-            TaskEngine(
-                stater = TaskStater(ctx),
-                dispatcher = TaskEngineDispatcher(ctx),
-                logger = Logger(ctx)
-            ).handle(msg)
+            taskEngine.handle(avroConverter.fromAvro(input))
         } catch (e: Exception) {
             Logger(ctx).error("Error:%s for message:%s", e, input)
             throw e

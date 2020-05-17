@@ -18,22 +18,20 @@ class TaskStaterTests : StringSpec({
     "TaskStater.getState with no state should return null" {
         // mocking
         val context = mockk<Context>()
-        val key = TestFactory.get(String::class)
-        every { context.getState(key) } returns null
+        every { context.getState(any()) } returns null
         // given
         val stater = TaskStater(context)
         // when
-        val state = stater.getState(key)
+        val state = stater.getState("key")
         // then
         state shouldBe null
     }
 
-    "Stater.getState state should return deserialize state" {
+    "TaskStater.getState state should return deserialize state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
-        val byteBuffer = AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))
-        every { context.getState(any()) } returns byteBuffer
+        every { context.getState(any()) } returns AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))
         // given
         val stater = TaskStater(context)
         // when
@@ -42,11 +40,10 @@ class TaskStaterTests : StringSpec({
         stateOut shouldBe stateIn
     }
 
-    "Stater.createState should record serialized state" {
+    "TaskStater.createState should record serialized state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
-        val byteBuffer = AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))
         every { context.putState(any(), any()) } returns Unit
         // given
         val stater = TaskStater(context)
@@ -54,15 +51,14 @@ class TaskStaterTests : StringSpec({
         val key = TestFactory.get(String::class)
         stater.createState(key, stateIn)
         // then
-        verify(exactly = 1) { context.putState(key, byteBuffer) }
+        verify(exactly = 1) { context.putState(key, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))) }
         confirmVerified(context)
     }
 
-    "Stater.updateState should record serialized state" {
+    "TaskStater.updateState should record serialized state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
-        val byteBuffer = AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))
         every { context.putState(any(), any()) } returns Unit
         // given
         val stater = TaskStater(context)
@@ -70,11 +66,11 @@ class TaskStaterTests : StringSpec({
         val key = TestFactory.get(String::class)
         stater.updateState(key, stateIn)
         // then
-        verify(exactly = 1) { context.putState(key, byteBuffer) }
+        verify(exactly = 1) { context.putState(key, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))) }
         confirmVerified(context)
     }
 
-    "Stater.deleteState should delete state" {
+    "TaskStater.deleteState should delete state" {
         // mocking
         val context = mockk<Context>()
         every { context.deleteState(any()) } returns Unit

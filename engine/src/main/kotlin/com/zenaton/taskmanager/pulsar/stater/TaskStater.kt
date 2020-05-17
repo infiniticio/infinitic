@@ -1,16 +1,16 @@
 package com.zenaton.taskmanager.pulsar.stater
 
 import com.zenaton.commons.utils.avro.AvroSerDe
+import com.zenaton.taskmanager.engine.TaskStaterInterface
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
-import com.zenaton.workflowengine.interfaces.StaterInterface
 import org.apache.pulsar.functions.api.Context
 
 /**
  * This class provides methods to access task's state
  */
-class TaskStater(private val context: Context) : StaterInterface<TaskState> {
+class TaskStater(val context: Context) : TaskStaterInterface {
     // serializer injection
     var avroSerDe = AvroSerDe
     // converter injection
