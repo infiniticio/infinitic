@@ -1,7 +1,6 @@
 package com.zenaton.commons.pulsar.utils
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.commons.utils.json.JsonInterface
 import com.zenaton.workflowengine.interfaces.LoggerInterface
 import com.zenaton.workflowengine.pulsar.topics.logs.LogDispatcher
 import org.apache.pulsar.functions.api.Context
@@ -10,7 +9,7 @@ import org.slf4j.Logger
 class Logger(private val context: Context) : LoggerInterface {
 
     // Json injection
-    private var json: JsonInterface = Json
+    private var json = Json
     // Logger injection
     private var logger: Logger = context.logger
     // LogDispatcher injection

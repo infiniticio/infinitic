@@ -3,7 +3,7 @@ package com.zenaton.taskmanager.pulsar.functions
 import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.taskmanager.engine.TaskEngine
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.pulsar.avro.AvroConverter
+import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.stater.TaskStater
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -17,7 +17,7 @@ class TaskEngineFunction : Function<AvroTaskMessage, Void> {
         val ctx = context ?: throw NullPointerException("Null Context received from tasks.StateFunction")
 
         try {
-            val msg = AvroConverter.fromAvro(input)
+            val msg = TaskAvroConverter.fromAvro(input)
 
             TaskEngine(
                 stater = TaskStater(ctx),

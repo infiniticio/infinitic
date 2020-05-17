@@ -153,7 +153,7 @@ class StepCriterionTests : StringSpec({
     "A serialization" {
         val stepA = getStep()
 
-        stepA shouldBe Json.parse(Json.stringify(stepA), StepCriterion::class)
+        stepA shouldBe Json.parse<StepCriterion>(Json.stringify(stepA))
     }
 
     "A AND B serialization" {
@@ -161,7 +161,7 @@ class StepCriterionTests : StringSpec({
         val stepB = getStep()
         val step = And(listOf(stepA, stepB))
 
-        step shouldBe Json.parse(Json.stringify(step), StepCriterion::class)
+        step shouldBe Json.parse<StepCriterion>(Json.stringify(step))
     }
 
     "A OR B serialization" {
@@ -169,7 +169,7 @@ class StepCriterionTests : StringSpec({
         val stepB = getStep()
         val step = Or(listOf(stepA, stepB))
 
-        step shouldBe Json.parse(Json.stringify(step), StepCriterion::class)
+        step shouldBe Json.parse<StepCriterion>(Json.stringify(step))
     }
 
     "A AND (B OR C) serialization" {
@@ -178,7 +178,7 @@ class StepCriterionTests : StringSpec({
         val stepC = getStep()
         val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step shouldBe Json.parse(Json.stringify(step), StepCriterion::class)
+        step shouldBe Json.parse<StepCriterion>(Json.stringify(step))
     }
 
     "A OR (B AND C) serialization" {
@@ -187,7 +187,7 @@ class StepCriterionTests : StringSpec({
         val stepC = getStep()
         val step = Or(listOf(stepA, And(listOf(stepB, stepC))))
 
-        step shouldBe Json.parse(Json.stringify(step), StepCriterion::class)
+        step shouldBe Json.parse<StepCriterion>(Json.stringify(step))
     }
 
     "A OR (B OR C) serialization" {
@@ -196,7 +196,7 @@ class StepCriterionTests : StringSpec({
         val stepC = getStep()
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step shouldBe Json.parse(Json.stringify(step), StepCriterion::class)
+        step shouldBe Json.parse<StepCriterion>(Json.stringify(step))
     }
 
     "A AND (B AND C) serialization" {
@@ -205,6 +205,6 @@ class StepCriterionTests : StringSpec({
         val stepC = getStep()
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step shouldBe Json.parse(Json.stringify(step), StepCriterion::class)
+        step shouldBe Json.parse<StepCriterion>(Json.stringify(step))
     }
 })

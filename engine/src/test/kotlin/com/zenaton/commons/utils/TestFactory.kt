@@ -15,6 +15,7 @@ object TestFactory {
         val parameters = EasyRandomParameters()
             .seed(seed)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
+        
         easyRandom = EasyRandom(parameters)
     }
 

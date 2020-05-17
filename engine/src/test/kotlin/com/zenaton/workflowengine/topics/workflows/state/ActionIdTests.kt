@@ -7,14 +7,14 @@ import io.kotest.matchers.shouldNotBe
 import java.util.UUID
 
 class ActionIdTests : StringSpec({
-    "UnitStepId must create an uuid with a void constructor" {
+    "ActionId must create an uuid with a void constructor" {
         val actionId = ActionId(TaskId())
         shouldNotThrowAny {
             UUID.fromString(actionId.id)
         }
     }
 
-    "UnitStepId must create a different uuid when called twice" {
+    "ActionId must create a different uuid when called twice" {
         val id1 = ActionId(TaskId())
         val id2 = ActionId(TaskId())
         id1 shouldNotBe id2

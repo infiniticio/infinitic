@@ -20,7 +20,6 @@ import com.zenaton.decisionmanager.messages.DecisionDispatched
 import com.zenaton.decisionmanager.messages.interfaces.DecisionMessageInterface
 import com.zenaton.decisionmanager.state.DecisionState
 import com.zenaton.decisionmanager.states.AvroDecisionState
-import kotlin.reflect.KClass
 
 /**
  * This class does the mapping between avro-generated classes and classes actually used by our code
@@ -29,35 +28,35 @@ object AvroConverter {
     /**
      *  Decision State
      */
-    fun toAvro(obj: DecisionState) = convert(obj, AvroDecisionState::class)
-    fun fromAvro(obj: AvroDecisionState) = convert(obj, DecisionState::class)
+    fun toAvro(obj: DecisionState) = convert<AvroDecisionState>(obj)
+    fun fromAvro(obj: AvroDecisionState) = convert<DecisionState>(obj)
 
     /**
      *  Decision Attempts Messages
      */
-    fun toAvro(obj: DecisionAttemptDispatched) = convert(obj, AvroDecisionAttemptMessage::class)
-    fun fromAvro(obj: AvroDecisionAttemptMessage) = convert(obj, DecisionAttemptDispatched::class)
+    fun toAvro(obj: DecisionAttemptDispatched) = convert<AvroDecisionAttemptMessage>(obj)
+    fun fromAvro(obj: AvroDecisionAttemptMessage) = convert<DecisionAttemptDispatched>(obj)
 
     /**
      *  Decisions Messages
      */
-    fun toAvro(obj: DecisionAttemptCompleted) = convert(obj, AvroDecisionAttemptCompleted::class)
-    fun fromAvro(obj: AvroDecisionAttemptCompleted) = convert(obj, DecisionAttemptCompleted::class)
+    fun toAvro(obj: DecisionAttemptCompleted) = convert<AvroDecisionAttemptCompleted>(obj)
+    fun fromAvro(obj: AvroDecisionAttemptCompleted) = convert<DecisionAttemptCompleted>(obj)
 
-    fun toAvro(obj: DecisionAttemptFailed) = convert(obj, AvroDecisionAttemptFailed::class)
-    fun fromAvro(obj: AvroDecisionAttemptFailed) = convert(obj, DecisionAttemptFailed::class)
+    fun toAvro(obj: DecisionAttemptFailed) = convert<AvroDecisionAttemptFailed>(obj)
+    fun fromAvro(obj: AvroDecisionAttemptFailed) = convert<DecisionAttemptFailed>(obj)
 
-    fun toAvro(obj: DecisionAttemptRetried) = convert(obj, AvroDecisionAttemptRetried::class)
-    fun fromAvro(obj: AvroDecisionAttemptRetried) = convert(obj, DecisionAttemptRetried::class)
+    fun toAvro(obj: DecisionAttemptRetried) = convert<AvroDecisionAttemptRetried>(obj)
+    fun fromAvro(obj: AvroDecisionAttemptRetried) = convert<DecisionAttemptRetried>(obj)
 
-    fun toAvro(obj: DecisionAttemptStarted) = convert(obj, AvroDecisionAttemptStarted::class)
-    fun fromAvro(obj: AvroDecisionAttemptStarted) = convert(obj, DecisionAttemptStarted::class)
+    fun toAvro(obj: DecisionAttemptStarted) = convert<AvroDecisionAttemptStarted>(obj)
+    fun fromAvro(obj: AvroDecisionAttemptStarted) = convert<DecisionAttemptStarted>(obj)
 
-    fun toAvro(obj: DecisionAttemptTimeout) = convert(obj, AvroDecisionAttemptTimeout::class)
-    fun fromAvro(obj: AvroDecisionAttemptTimeout) = convert(obj, DecisionAttemptTimeout::class)
+    fun toAvro(obj: DecisionAttemptTimeout) = convert<AvroDecisionAttemptTimeout>(obj)
+    fun fromAvro(obj: AvroDecisionAttemptTimeout) = convert<DecisionAttemptTimeout>(obj)
 
-    fun toAvro(obj: DecisionDispatched) = convert(obj, AvroDecisionDispatched::class)
-    fun fromAvro(obj: AvroDecisionDispatched) = convert(obj, DecisionDispatched::class)
+    fun toAvro(obj: DecisionDispatched) = convert<AvroDecisionDispatched>(obj)
+    fun fromAvro(obj: AvroDecisionDispatched) = convert<DecisionDispatched>(obj)
 
     fun toAvro(msg: DecisionMessageInterface): AvroDecisionMessage {
         var builder = AvroDecisionMessage.newBuilder()
@@ -102,5 +101,5 @@ object AvroConverter {
     /**
      *  Mapping function by Json serialization/deserialization
      */
-    private fun <T : Any> convert(from: Any, to: KClass<T>): T = Json.parse(Json.stringify(from), to)
+    private inline fun <reified T : Any> convert(from: Any): T = Json.parse<T>(Json.stringify(from))
 }

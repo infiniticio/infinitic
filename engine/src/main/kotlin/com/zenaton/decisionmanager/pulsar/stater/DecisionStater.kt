@@ -17,7 +17,7 @@ class DecisionStater(private val context: Context) : StaterInterface<DecisionSta
     var avroConverter = AvroConverter
 
     override fun getState(key: String): DecisionState? {
-        return context.getState(key)?. let { avroConverter.fromAvro(avroSerDe.deserialize(it, AvroDecisionState::class)) }
+        return context.getState(key)?. let { avroConverter.fromAvro(avroSerDe.deserialize<AvroDecisionState>(it)) }
     }
 
     override fun createState(key: String, state: DecisionState) {

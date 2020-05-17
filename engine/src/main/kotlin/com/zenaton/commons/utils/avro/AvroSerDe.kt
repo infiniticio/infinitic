@@ -2,7 +2,6 @@ package com.zenaton.commons.utils.avro
 
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import kotlin.reflect.KClass
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumReader
@@ -22,13 +21,13 @@ object AvroSerDe {
         return ByteBuffer.wrap(baos.toByteArray())
     }
 
-    fun <T : SpecificRecord> deserialize(data: ByteBuffer, klass: KClass<T>): T {
+    inline fun <reified T : SpecificRecord> deserialize(data: ByteBuffer): T {
         // transform ByteBuffer to bytes[]
         data.rewind()
         val bytes = ByteArray(data.remaining())
         data.get(bytes, 0, bytes.size)
         // read data
-        val reader = SpecificDatumReader(klass.java)
+        val reader = SpecificDatumReader(T::class.java)
         val binaryDecoder = DecoderFactory.get().binaryDecoder(bytes, null)
         return reader.read(null, binaryDecoder)
     }

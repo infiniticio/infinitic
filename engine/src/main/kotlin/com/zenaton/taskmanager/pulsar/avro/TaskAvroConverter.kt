@@ -26,23 +26,22 @@ import com.zenaton.taskmanager.messages.events.TaskCanceled
 import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
-import kotlin.reflect.KClass
 
 /**
  * This class does the mapping between avro-generated classes and classes actually used by our code
  */
-object AvroConverter {
+object TaskAvroConverter {
     /**
      *  Task State
      */
-    fun toAvro(obj: TaskState) = convert(obj, AvroTaskState::class)
-    fun fromAvro(obj: AvroTaskState) = convert(obj, TaskState::class)
+    fun toAvro(obj: TaskState) = convert<AvroTaskState>(obj)
+    fun fromAvro(obj: AvroTaskState) = convert<TaskState>(obj)
 
     /**
      *  Worker Messages
      */
-    fun toAvro(obj: RunTask) = convert(obj, AvroRunTask::class)
-    fun fromAvro(obj: AvroRunTask) = convert(obj, RunTask::class)
+    fun toAvro(obj: RunTask) = convert<AvroRunTask>(obj)
+    fun fromAvro(obj: AvroRunTask) = convert<RunTask>(obj)
 
     /**
      *  Tasks Messages
@@ -111,38 +110,38 @@ object AvroConverter {
     /**
      *  Switching from and to Avro (Tasks commands)
      */
-    private fun switch(obj: CancelTask) = convert(obj, AvroCancelTask::class)
-    private fun switch(obj: AvroCancelTask) = convert(obj, CancelTask::class)
+    private fun switch(obj: CancelTask) = convert<AvroCancelTask>(obj)
+    private fun switch(obj: AvroCancelTask) = convert<CancelTask>(obj)
 
-    private fun switch(obj: DispatchTask) = convert(obj, AvroDispatchTask::class)
-    private fun switch(obj: AvroDispatchTask) = convert(obj, DispatchTask::class)
+    private fun switch(obj: DispatchTask) = convert<AvroDispatchTask>(obj)
+    private fun switch(obj: AvroDispatchTask) = convert<DispatchTask>(obj)
 
-    private fun switch(obj: RetryTask) = convert(obj, AvroRetryTask::class)
-    private fun switch(obj: AvroRetryTask) = convert(obj, RetryTask::class)
+    private fun switch(obj: RetryTask) = convert<AvroRetryTask>(obj)
+    private fun switch(obj: AvroRetryTask) = convert<RetryTask>(obj)
 
-    private fun switch(obj: RetryTaskAttempt) = convert(obj, AvroRetryTaskAttempt::class)
-    private fun switch(obj: AvroRetryTaskAttempt) = convert(obj, RetryTaskAttempt::class)
+    private fun switch(obj: RetryTaskAttempt) = convert<AvroRetryTaskAttempt>(obj)
+    private fun switch(obj: AvroRetryTaskAttempt) = convert<RetryTaskAttempt>(obj)
 
     /**
      *  Switching from and to Avro (Tasks events)
      */
-    private fun switch(obj: TaskAttemptCompleted) = convert(obj, AvroTaskAttemptCompleted::class)
-    private fun switch(obj: AvroTaskAttemptCompleted) = convert(obj, TaskAttemptCompleted::class)
+    private fun switch(obj: TaskAttemptCompleted) = convert<AvroTaskAttemptCompleted>(obj)
+    private fun switch(obj: AvroTaskAttemptCompleted) = convert<TaskAttemptCompleted>(obj)
 
-    private fun switch(obj: TaskAttemptDispatched) = convert(obj, AvroTaskAttemptDispatched::class)
-    private fun switch(obj: AvroTaskAttemptDispatched) = convert(obj, TaskAttemptDispatched::class)
+    private fun switch(obj: TaskAttemptDispatched) = convert<AvroTaskAttemptDispatched>(obj)
+    private fun switch(obj: AvroTaskAttemptDispatched) = convert<TaskAttemptDispatched>(obj)
 
-    private fun switch(obj: TaskAttemptFailed) = convert(obj, AvroTaskAttemptFailed::class)
-    private fun switch(obj: AvroTaskAttemptFailed) = convert(obj, TaskAttemptFailed::class)
+    private fun switch(obj: TaskAttemptFailed) = convert<AvroTaskAttemptFailed>(obj)
+    private fun switch(obj: AvroTaskAttemptFailed) = convert<TaskAttemptFailed>(obj)
 
-    private fun switch(obj: TaskAttemptStarted) = convert(obj, AvroTaskAttemptStarted::class)
-    private fun switch(obj: AvroTaskAttemptStarted) = convert(obj, TaskAttemptStarted::class)
+    private fun switch(obj: TaskAttemptStarted) = convert<AvroTaskAttemptStarted>(obj)
+    private fun switch(obj: AvroTaskAttemptStarted) = convert<TaskAttemptStarted>(obj)
 
-    private fun switch(obj: TaskCanceled) = convert(obj, AvroTaskCanceled::class)
-    private fun switch(obj: AvroTaskCanceled) = convert(obj, TaskCanceled::class)
+    private fun switch(obj: TaskCanceled) = convert<AvroTaskCanceled>(obj)
+    private fun switch(obj: AvroTaskCanceled) = convert<TaskCanceled>(obj)
 
     /**
      *  Mapping function by Json serialization/deserialization
      */
-    private fun <T : Any> convert(from: Any, to: KClass<T>): T = Json.parse(Json.stringify(from), to)
+    private inline fun <reified T : Any> convert(from: Any): T = Json.parse<T>(Json.stringify(from))
 }

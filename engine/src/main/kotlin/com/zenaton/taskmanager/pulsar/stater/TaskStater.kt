@@ -1,7 +1,7 @@
 package com.zenaton.taskmanager.pulsar.stater
 
 import com.zenaton.commons.utils.avro.AvroSerDe
-import com.zenaton.taskmanager.pulsar.avro.AvroConverter
+import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
 import com.zenaton.workflowengine.interfaces.StaterInterface
@@ -14,10 +14,10 @@ class TaskStater(private val context: Context) : StaterInterface<TaskState> {
     // serializer injection
     var avroSerDe = AvroSerDe
     // converter injection
-    var avroConverter = AvroConverter
+    var avroConverter = TaskAvroConverter
 
     override fun getState(key: String): TaskState? {
-        return context.getState(key)?. let { avroConverter.fromAvro(avroSerDe.deserialize(it, AvroTaskState::class)) }
+        return context.getState(key)?. let { avroConverter.fromAvro(avroSerDe.deserialize<AvroTaskState>(it)) }
     }
 
     override fun createState(key: String, state: TaskState) {
