@@ -8,7 +8,7 @@ import com.zenaton.taskmanager.messages.interfaces.TaskAttemptFailingMessageInte
 
 data class TaskAttemptFailed(
     override var taskId: TaskId,
-    override var sentAt: DateTime? = DateTime(),
+    override var sentAt: DateTime = DateTime(),
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int,
     override val taskAttemptDelayBeforeRetry: Float?,

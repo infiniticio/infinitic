@@ -6,6 +6,6 @@ import com.zenaton.taskmanager.data.TaskId
 
 interface TaskMessageInterface {
     val taskId: TaskId
-    var sentAt: DateTime?
+    var sentAt: DateTime
     @JsonIgnore fun getStateId() = taskId.id
 }

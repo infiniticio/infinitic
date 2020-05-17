@@ -11,7 +11,7 @@ data class RunTask(
     override var taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int,
-    override var sentAt: DateTime? = DateTime(),
+    override var sentAt: DateTime = DateTime(),
     val taskName: TaskName,
     val taskData: TaskData?
 ) : TaskAttemptMessageInterface

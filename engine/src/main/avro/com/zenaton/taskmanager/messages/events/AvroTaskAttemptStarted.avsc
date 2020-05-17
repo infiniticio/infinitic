@@ -9,18 +9,18 @@
             "logicalType": "uuid"
         },
         {
+          "name": "taskAttemptId",
+          "type": "string",
+          "logicalType": "uuid"
+        },
+        {
+          "name": "taskAttemptIndex",
+          "type": "int"
+        },
+        {
             "name": "sentAt",
             "type": "long",
             "logicalType": "timestamp-millis"
-        },
-        {
-            "name": "taskAttemptId",
-            "type": "string",
-            "logicalType": "uuid"
-        },
-        {
-            "name": "taskAttemptIndex",
-            "type": "int"
         }
     ]
 }
