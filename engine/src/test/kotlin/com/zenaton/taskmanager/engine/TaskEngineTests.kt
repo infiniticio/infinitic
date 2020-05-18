@@ -44,6 +44,59 @@ fun taskAttemptFailed() = TestFactory.get(TaskAttemptFailed::class)
 fun taskAttemptStarted() = TestFactory.get(TaskAttemptStarted::class)
 fun taskCanceled() = TestFactory.get(TaskCanceled::class)
 
+fun test(state: TaskState?, msgIn: TaskMessageInterface): Map<String, Any?> {
+    // mocking
+    val taskDispatcher = mockk<TaskDispatcher>()
+    val workflowDispatcher = mockk<WorkflowDispatcher>()
+    val stater = mockk<TaskStater>()
+    val logger = mockk<TaskLogger>()
+    val stateSlot = slot<TaskState>()
+    val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
+    val taskAttemptDispatchedSlot = slot<TaskAttemptDispatched>()
+    val taskAttemptFailedSlot = slot<TaskAttemptFailed>()
+    val taskAttemptStartedSlot = slot<TaskAttemptStarted>()
+    val taskCanceledSlot = slot<TaskCanceled>()
+    val runTaskSlot = slot<RunTask>()
+    every { logger.error(any(), msgIn) } returns "error!"
+    every { logger.warn(any(), msgIn) } returns "warn!"
+    every { stater.getState(msgIn.getStateId()) } returns state
+    every { stater.createState(any(), capture(stateSlot)) } just Runs
+    every { stater.updateState(any(), capture(stateSlot)) } just Runs
+    every { stater.deleteState(any()) } just Runs
+    every { taskDispatcher.dispatch(capture(runTaskSlot)) } just Runs
+    every { taskDispatcher.dispatch(capture(taskAttemptCompletedSlot)) } just Runs
+    every { taskDispatcher.dispatch(capture(taskAttemptDispatchedSlot)) } just Runs
+    every { taskDispatcher.dispatch(capture(taskAttemptFailedSlot)) } just Runs
+    every { taskDispatcher.dispatch(capture(taskAttemptStartedSlot)) } just Runs
+    every { taskDispatcher.dispatch(capture(taskCanceledSlot)) } just Runs
+    // given
+    val engine = TaskEngine()
+    engine.taskDispatcher = taskDispatcher
+    engine.workflowDispatcher = workflowDispatcher
+    engine.stater = stater
+    engine.logger = logger
+    // when
+    engine.handle(msg = msgIn)
+    // then
+    return mapOf(
+        "taskDispatcher" to taskDispatcher,
+        "workflowDispatcher" to workflowDispatcher,
+        "stater" to stater,
+        "logger" to logger,
+        "state" to if (stateSlot.isCaptured) stateSlot.captured else null,
+        "runTask" to if (runTaskSlot.isCaptured) runTaskSlot.captured else null,
+        "taskAttemptCompleted" to if (taskAttemptCompletedSlot.isCaptured) taskAttemptCompletedSlot.captured else null,
+        "taskAttemptDispatched" to if (taskAttemptDispatchedSlot.isCaptured) taskAttemptDispatchedSlot.captured else null,
+        "taskAttemptFailed" to if (taskAttemptFailedSlot.isCaptured) taskAttemptFailedSlot.captured else null,
+        "taskAttemptStarted" to if (taskAttemptStartedSlot.isCaptured) taskAttemptStartedSlot.captured else null,
+        "taskCanceled" to if (taskCanceledSlot.isCaptured) taskCanceledSlot.captured else null
+    )
+}
+
+inline fun <reified M : Any> getValue(results: Map<String, Any?>): M {
+    return results.values.first { it is M } as M
+}
+
 class TaskEngineTests : StringSpec({
     include(shouldWarnIfNotState(cancelTask()))
     include(shouldWarnIfNotState(retryTask()))
@@ -79,26 +132,17 @@ class TaskEngineTests : StringSpec({
 
     "Should error if task dispatched with existing state" {
         val msgIn = dispatchTask()
-        // mocking
-        val taskDispatcher = mockk<TaskDispatcher>()
-        val workflowDispatcher = mockk<WorkflowDispatcher>()
-        val stater = mockk<TaskStater>()
-        val logger = mockk<TaskLogger>()
-        val state = mockk<TaskState>()
-        every { stater.getState(msgIn.getStateId()) } returns state
-        every { state.taskId } returns msgIn.taskId
-        every { logger.error(any(), msgIn) } returns "error!"
-        // given
-        val engine = TaskEngine()
-        engine.taskDispatcher = taskDispatcher
-        engine.workflowDispatcher = workflowDispatcher
-        engine.stater = stater
-        engine.logger = logger
-        // when
-        engine.handle(msg = msgIn)
-        // then
-        verify(exactly = 1) { stater.getState(msgIn.getStateId()) }
-        verify(exactly = 1) { logger.error(any(), msgIn) }
+        val stateIn = mockk<TaskState>()
+        every { stateIn.taskId } returns msgIn.taskId
+        val results = test(stateIn, msgIn)
+        val taskDispatcher = getValue<TaskDispatcher>(results)
+        val workflowDispatcher = getValue<WorkflowDispatcher>(results)
+        val stater = getValue<TaskStater>(results)
+        val logger = getValue<TaskLogger>(results)
+        verifyOrder {
+            stater.getState(msgIn.getStateId())
+            logger.error(any(), msgIn)
+        }
         confirmVerified(taskDispatcher)
         confirmVerified(workflowDispatcher)
         confirmVerified(stater)
@@ -107,68 +151,42 @@ class TaskEngineTests : StringSpec({
 
     "Cancel Task" {
         val msgIn = cancelTask()
-        // mocking
-        val taskDispatcher = mockk<TaskDispatcher>()
-        val workflowDispatcher = mockk<WorkflowDispatcher>()
-        val stater = mockk<TaskStater>()
-        val logger = mockk<TaskLogger>()
-        val state = mockk<TaskState>()
-        every { stater.getState(msgIn.getStateId()) } returns state
-        every { state.taskId } returns msgIn.taskId
-        every { stater.deleteState(any()) } just Runs
-        val msgOutSlot = slot<TaskMessageInterface>()
-        every { taskDispatcher.dispatch(capture(msgOutSlot)) } just Runs
-        // given
-        val engine = TaskEngine()
-        engine.taskDispatcher = taskDispatcher
-        engine.workflowDispatcher = workflowDispatcher
-        engine.stater = stater
-        engine.logger = logger
-        // when
-        engine.handle(msg = msgIn)
-        // then
-        verify(exactly = 1) { stater.getState(msgIn.getStateId()) }
-        verify(exactly = 1) { stater.deleteState(msgIn.getStateId()) }
-        verify(exactly = 1) { taskDispatcher.dispatch(msgOutSlot.captured) }
-        (msgOutSlot.captured is TaskCanceled) shouldBe true
-        msgOutSlot.captured.taskId shouldBe msgIn.taskId
+        val stateIn = mockk<TaskState>()
+        every { stateIn.taskId } returns msgIn.taskId
+        val results = test(stateIn, msgIn)
+        val taskDispatcher = getValue<TaskDispatcher>(results)
+        val workflowDispatcher = getValue<WorkflowDispatcher>(results)
+        val stater = getValue<TaskStater>(results)
+        val logger = getValue<TaskLogger>(results)
+        val taskCanceled = getValue<TaskCanceled>(results)
+        verifyOrder {
+            stater.getState(msgIn.getStateId())
+            stater.deleteState(msgIn.getStateId())
+            taskDispatcher.dispatch(taskCanceled)
+        }
         confirmVerified(taskDispatcher)
         confirmVerified(workflowDispatcher)
         confirmVerified(stater)
         confirmVerified(logger)
+        // then
+        taskCanceled.taskId shouldBe msgIn.taskId
     }
 
     "Dispatch Task" {
         val msgIn = dispatchTask()
-        // mocking
-        val taskDispatcher = mockk<TaskDispatcher>()
-        val workflowDispatcher = mockk<WorkflowDispatcher>()
-        val stater = mockk<TaskStater>()
-        val logger = mockk<TaskLogger>()
-        val stateSlot = slot<TaskState>()
-        val msgOutSlot1 = slot<RunTask>()
-        val msgOutSlot2 = slot<TaskAttemptDispatched>()
-        every { stater.getState(msgIn.getStateId()) } returns null
-        every { stater.createState(any(), capture(stateSlot)) } just Runs
-        every { taskDispatcher.dispatch(capture(msgOutSlot1)) } just Runs
-        every { taskDispatcher.dispatch(capture(msgOutSlot2)) } just Runs
-        // given
-        val engine = TaskEngine()
-        engine.taskDispatcher = taskDispatcher
-        engine.workflowDispatcher = workflowDispatcher
-        engine.stater = stater
-        engine.logger = logger
-        // when
-        engine.handle(msg = msgIn)
-        // then
-        val runTask = msgOutSlot1.captured as RunTask
-        val taskAttemptDispatched = msgOutSlot2.captured
-        val state = stateSlot.captured
-        verify(exactly = 1) { stater.getState(msgIn.getStateId()) }
-        verify(exactly = 1) { stater.createState(msgIn.getStateId(), state) }
+        val results = test(null, msgIn)
+        val taskDispatcher = getValue<TaskDispatcher>(results)
+        val workflowDispatcher = getValue<WorkflowDispatcher>(results)
+        val stater = getValue<TaskStater>(results)
+        val logger = getValue<TaskLogger>(results)
+        val state = getValue<TaskState>(results)
+        val runTask = getValue<RunTask>(results)
+        val taskAttemptDispatched = getValue<TaskAttemptDispatched>(results)
         verifyOrder {
+            stater.getState(msgIn.getStateId())
             taskDispatcher.dispatch(runTask)
             taskDispatcher.dispatch(taskAttemptDispatched)
+            stater.createState(msgIn.getStateId(), state)
         }
         confirmVerified(taskDispatcher)
         confirmVerified(workflowDispatcher)
