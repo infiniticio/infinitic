@@ -2,7 +2,7 @@ package com.zenaton.taskmanager.messages.commands
 
 import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskId
-import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
+import com.zenaton.taskmanager.messages.TaskMessageInterface
 
 data class CancelTask(
     override var taskId: TaskId,

@@ -1,10 +1,10 @@
-package com.zenaton.taskmanager.pulsar.avro
+package com.zenaton.taskmanager.pulsar
 
 import com.zenaton.commons.utils.json.Json
 import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
 import com.zenaton.taskmanager.messages.AvroTaskMessageType
-import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.messages.TaskMessageInterface
 import com.zenaton.taskmanager.messages.commands.AvroCancelTask
 import com.zenaton.taskmanager.messages.commands.AvroDispatchTask
 import com.zenaton.taskmanager.messages.commands.AvroRetryTask
@@ -13,6 +13,7 @@ import com.zenaton.taskmanager.messages.commands.CancelTask
 import com.zenaton.taskmanager.messages.commands.DispatchTask
 import com.zenaton.taskmanager.messages.commands.RetryTask
 import com.zenaton.taskmanager.messages.commands.RetryTaskAttempt
+import com.zenaton.taskmanager.messages.commands.RunTask
 import com.zenaton.taskmanager.messages.events.AvroTaskAttemptCompleted
 import com.zenaton.taskmanager.messages.events.AvroTaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.AvroTaskAttemptFailed
@@ -23,7 +24,6 @@ import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
-import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
 

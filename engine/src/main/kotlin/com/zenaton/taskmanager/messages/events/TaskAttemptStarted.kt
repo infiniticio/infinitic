@@ -3,7 +3,7 @@ package com.zenaton.taskmanager.messages.events
 import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskId
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
+import com.zenaton.taskmanager.messages.TaskAttemptMessageInterface
 
 data class TaskAttemptStarted(
     override var taskId: TaskId,

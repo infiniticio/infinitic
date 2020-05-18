@@ -4,7 +4,7 @@ import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskOutput
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
+import com.zenaton.taskmanager.messages.TaskAttemptMessageInterface
 
 data class TaskAttemptCompleted(
     override var taskId: TaskId,

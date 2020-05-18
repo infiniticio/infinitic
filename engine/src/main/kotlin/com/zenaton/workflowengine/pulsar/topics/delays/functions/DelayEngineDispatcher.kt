@@ -9,6 +9,6 @@ class DelayEngineDispatcher(private val context: Context) :
     DelayEngineDispatcherInterface {
 
     override fun dispatch(msg: DelayCompleted, after: Float) {
-        WorkflowDispatcher.dispatch(context, msg, after)
+        WorkflowDispatcher(context).dispatch(msg, after)
     }
 }

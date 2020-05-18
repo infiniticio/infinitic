@@ -4,7 +4,7 @@ import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskData
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskName
-import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
+import com.zenaton.taskmanager.messages.TaskMessageInterface
 import com.zenaton.workflowengine.data.WorkflowId
 
 data class DispatchTask(

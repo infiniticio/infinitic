@@ -1,10 +1,13 @@
-package com.zenaton.taskmanager.pulsar.functions
+package com.zenaton.taskmanager.pulsar.engine
 
 import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.taskmanager.engine.TaskEngine
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
-import com.zenaton.taskmanager.pulsar.stater.TaskStater
+import com.zenaton.taskmanager.pulsar.TaskAvroConverter
+import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
+import com.zenaton.taskmanager.pulsar.logger.TaskLogger
+import com.zenaton.taskmanager.pulsar.state.TaskStater
+import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
@@ -22,9 +25,10 @@ class TaskEngineFunction : Function<AvroTaskMessage, Void> {
         val ctx = context ?: throw NullPointerException("Null Context received from tasks.StateFunction")
 
         try {
+            taskEngine.taskDispatcher = TaskDispatcher(ctx)
+            taskEngine.workflowDispatcher = WorkflowDispatcher(ctx)
             taskEngine.stater = TaskStater(ctx)
-            taskEngine.dispatcher = TaskEngineDispatcher(ctx)
-            taskEngine.logger = Logger(ctx)
+            taskEngine.logger = TaskLogger(ctx)
 
             taskEngine.handle(avroConverter.fromAvro(input))
         } catch (e: Exception) {

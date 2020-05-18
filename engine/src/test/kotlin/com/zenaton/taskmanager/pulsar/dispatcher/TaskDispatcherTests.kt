@@ -3,19 +3,19 @@ package com.zenaton.taskmanager.pulsar.dispatcher
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.messages.TaskMessageInterface
 import com.zenaton.taskmanager.messages.commands.CancelTask
 import com.zenaton.taskmanager.messages.commands.DispatchTask
 import com.zenaton.taskmanager.messages.commands.RetryTask
 import com.zenaton.taskmanager.messages.commands.RetryTaskAttempt
+import com.zenaton.taskmanager.messages.commands.RunTask
 import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
 import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
-import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
+import com.zenaton.taskmanager.pulsar.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.Topic
-import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -43,7 +43,7 @@ fun <T : TaskMessageInterface> dispatchShouldSendTaskMessageToTasksTopic(klass: 
     // given
     val msg = TestFactory.get(klass)
     // when
-    TaskDispatcher.dispatch(context, msg)
+    TaskDispatcher(context).dispatch(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.TASKS.get()
@@ -68,7 +68,7 @@ class TaskDispatcherTests : StringSpec({
         // given
         val msg = TestFactory.get(RunTask::class)
         // when
-        TaskDispatcher.dispatch(context, msg)
+        TaskDispatcher(context).dispatch(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe Topic.TASK_ATTEMPTS.get(msg.taskName.name)

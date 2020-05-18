@@ -1,6 +1,4 @@
-package com.zenaton.taskmanager.engine
-
-import com.zenaton.taskmanager.state.TaskState
+package com.zenaton.taskmanager.state
 
 interface TaskStaterInterface {
     fun getState(key: String): TaskState?

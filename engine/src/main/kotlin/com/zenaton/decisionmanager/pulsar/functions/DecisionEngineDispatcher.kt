@@ -19,7 +19,7 @@ class DecisionEngineDispatcher(private val context: Context) : DecisionEngineDis
     }
 
     override fun dispatch(msg: DecisionCompleted) {
-        WorkflowDispatcher.dispatch(context, msg)
+        WorkflowDispatcher(context).dispatch(msg)
     }
 
     override fun dispatch(msg: DecisionAttemptRetried, after: Float) {

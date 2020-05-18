@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroRunTask",
-    "namespace": "com.zenaton.taskmanager.messages",
+    "namespace": "com.zenaton.taskmanager.messages.commands",
     "fields": [
         {
             "name": "taskId",

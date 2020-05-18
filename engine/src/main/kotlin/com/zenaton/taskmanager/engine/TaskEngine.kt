@@ -1,27 +1,31 @@
 package com.zenaton.taskmanager.engine
 
 import com.zenaton.taskmanager.data.TaskAttemptId
-import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.dispatcher.TaskDispatcherInterface
+import com.zenaton.taskmanager.logger.TaskLoggerInterface
+import com.zenaton.taskmanager.messages.TaskAttemptFailingMessageInterface
+import com.zenaton.taskmanager.messages.TaskAttemptMessageInterface
+import com.zenaton.taskmanager.messages.TaskMessageInterface
 import com.zenaton.taskmanager.messages.commands.CancelTask
 import com.zenaton.taskmanager.messages.commands.DispatchTask
 import com.zenaton.taskmanager.messages.commands.RetryTask
 import com.zenaton.taskmanager.messages.commands.RetryTaskAttempt
+import com.zenaton.taskmanager.messages.commands.RunTask
 import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
 import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptFailingMessageInterface
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
-import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.state.TaskState
-import com.zenaton.workflowengine.interfaces.LoggerInterface
+import com.zenaton.taskmanager.state.TaskStaterInterface
+import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
 
 class TaskEngine {
+    lateinit var taskDispatcher: TaskDispatcherInterface
+    lateinit var workflowDispatcher: WorkflowDispatcherInterface
     lateinit var stater: TaskStaterInterface
-    lateinit var dispatcher: TaskEngineDispatcherInterface
-    lateinit var logger: LoggerInterface
+    lateinit var logger: TaskLoggerInterface
 
     fun handle(msg: TaskMessageInterface) {
         // get associated state
@@ -86,7 +90,7 @@ class TaskEngine {
         val tad = TaskCanceled(
             taskId = msg.taskId
         )
-        dispatcher.dispatch(tad)
+        taskDispatcher.dispatch(tad)
     }
 
     private fun dispatchTask(state: TaskState, msg: DispatchTask) {
@@ -98,7 +102,7 @@ class TaskEngine {
             taskName = msg.taskName,
             taskData = msg.taskData
         )
-        dispatcher.dispatch(rt)
+        taskDispatcher.dispatch(rt)
 
         // log event
         val tad = TaskAttemptDispatched(
@@ -106,7 +110,7 @@ class TaskEngine {
             taskAttemptId = state.taskAttemptId,
             taskAttemptIndex = state.taskAttemptIndex
         )
-        dispatcher.dispatch(tad)
+        taskDispatcher.dispatch(tad)
 
         // update and save state
         stater.createState(msg.getStateId(), state)
@@ -121,7 +125,7 @@ class TaskEngine {
             taskName = state.taskName,
             taskData = state.taskData
         )
-        dispatcher.dispatch(rt)
+        taskDispatcher.dispatch(rt)
 
         // log event
         val tad = TaskAttemptDispatched(
@@ -129,7 +133,7 @@ class TaskEngine {
             taskAttemptId = rt.taskAttemptId,
             taskAttemptIndex = rt.taskAttemptIndex
         )
-        dispatcher.dispatch(tad)
+        taskDispatcher.dispatch(tad)
 
         // update state
         state.taskAttemptId = rt.taskAttemptId
@@ -148,7 +152,7 @@ class TaskEngine {
             taskName = state.taskName,
             taskData = state.taskData
         )
-        dispatcher.dispatch(rt)
+        taskDispatcher.dispatch(rt)
 
         // log event
         val tar = TaskAttemptDispatched(
@@ -156,7 +160,7 @@ class TaskEngine {
             taskAttemptId = state.taskAttemptId,
             taskAttemptIndex = newIndex
         )
-        dispatcher.dispatch(tar)
+        taskDispatcher.dispatch(tar)
 
         // update state
         state.taskAttemptIndex = newIndex
@@ -171,7 +175,7 @@ class TaskEngine {
                 taskId = state.taskId,
                 taskOutput = msg.taskOutput
             )
-            dispatcher.dispatch(tc)
+            workflowDispatcher.dispatch(tc)
         }
         // delete state
         stater.deleteState(msg.getStateId())
@@ -196,7 +200,7 @@ class TaskEngine {
                 taskAttemptId = state.taskAttemptId,
                 taskAttemptIndex = state.taskAttemptIndex
             )
-            dispatcher.dispatch(tar, after = delay)
+            taskDispatcher.dispatch(tar, after = delay)
         }
     }
 }

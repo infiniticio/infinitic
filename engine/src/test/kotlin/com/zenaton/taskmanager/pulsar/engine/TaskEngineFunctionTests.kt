@@ -1,11 +1,13 @@
-package com.zenaton.taskmanager.pulsar.functions
+package com.zenaton.taskmanager.pulsar.engine
 
-import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.taskmanager.engine.TaskEngine
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
-import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
-import com.zenaton.taskmanager.pulsar.stater.TaskStater
+import com.zenaton.taskmanager.messages.TaskMessageInterface
+import com.zenaton.taskmanager.pulsar.TaskAvroConverter
+import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
+import com.zenaton.taskmanager.pulsar.logger.TaskLogger
+import com.zenaton.taskmanager.pulsar.state.TaskStater
+import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -35,9 +37,10 @@ class TaskEngineFunctionTests : StringSpec({
         // when
         fct.process(avroMsg, context)
         // then
+        (taskEngine.taskDispatcher as TaskDispatcher).context shouldBe context
+        (taskEngine.workflowDispatcher as WorkflowDispatcher).context shouldBe context
+        (taskEngine.logger as TaskLogger).context shouldBe context
         (taskEngine.stater as TaskStater).context shouldBe context
-        (taskEngine.dispatcher as TaskEngineDispatcher).context shouldBe context
-        (taskEngine.logger as Logger).context shouldBe context
         verify(exactly = 1) { taskEngine.handle(msg) }
     }
 

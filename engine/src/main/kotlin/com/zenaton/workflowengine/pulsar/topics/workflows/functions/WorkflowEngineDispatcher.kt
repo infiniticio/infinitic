@@ -15,11 +15,11 @@ class WorkflowEngineDispatcher(private val context: Context) :
     WorkflowEngineDispatcherInterface {
 
     override fun dispatch(msg: DispatchTask, after: Float) {
-        TaskDispatcher.dispatch(context, msg, after)
+        TaskDispatcher(context).dispatch(msg, after)
     }
 
     override fun dispatch(msg: WorkflowDispatched, after: Float) {
-        WorkflowDispatcher.dispatch(context, msg, after)
+        WorkflowDispatcher(context).dispatch(msg, after)
     }
 
     override fun dispatch(msg: DelayDispatched, after: Float) {
