@@ -105,10 +105,10 @@ class TaskEngine {
         taskDispatcher.dispatch(rt)
 
         // log event
-        val tad = TaskAttemptDispatched(
-            taskId = msg.taskId,
-            taskAttemptId = state.taskAttemptId,
-            taskAttemptIndex = state.taskAttemptIndex
+        val tad = TaskAttemptDispatched(git status
+            taskId = rt.taskId,
+            taskAttemptId = rt.taskAttemptId,
+            taskAttemptIndex = rt.taskAttemptIndex
         )
         taskDispatcher.dispatch(tad)
 

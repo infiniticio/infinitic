@@ -1,8 +1,8 @@
 package com.zenaton.commons.utils.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
+import com.zenaton.taskmanager.messages.commands.AvroRunTask
 import java.io.File
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase

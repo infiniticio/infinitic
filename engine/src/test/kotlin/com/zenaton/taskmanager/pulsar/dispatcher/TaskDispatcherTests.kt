@@ -1,9 +1,9 @@
 package com.zenaton.taskmanager.pulsar.dispatcher
 
 import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
 import com.zenaton.taskmanager.messages.TaskMessageInterface
+import com.zenaton.taskmanager.messages.commands.AvroRunTask
 import com.zenaton.taskmanager.messages.commands.CancelTask
 import com.zenaton.taskmanager.messages.commands.DispatchTask
 import com.zenaton.taskmanager.messages.commands.RetryTask

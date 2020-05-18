@@ -16,35 +16,35 @@ class TaskLogger(val context: Context) : TaskLoggerInterface {
 
     override fun debug(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        logger.debug(message)
+        if (logger.isDebugEnabled) { logger.debug(message) }
         dispatch(context, message, "DEBUG")
         return message
     }
 
     override fun error(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        logger.error(message)
+        if (logger.isErrorEnabled) { logger.error(message) }
         dispatch(context, message, "ERROR")
         return message
     }
 
     override fun info(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        logger.info(message)
+        if (logger.isInfoEnabled) { logger.info(message) }
         dispatch(context, message, "INFO")
         return message
     }
 
     override fun warn(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        logger.warn(message)
+        if (logger.isWarnEnabled) { logger.warn(message) }
         dispatch(context, message, "WARN")
         return message
     }
 
     override fun trace(txt: String, obj1: Any?, obj2: Any?): String {
         val message = getMessage(txt, obj1, obj2)
-        logger.trace(message)
+        if (logger.isTraceEnabled) { logger.trace(message) }
         dispatch(context, message, "TRACE")
         return message
     }

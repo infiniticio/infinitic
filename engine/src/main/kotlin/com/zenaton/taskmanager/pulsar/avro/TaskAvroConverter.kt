@@ -1,7 +1,6 @@
 package com.zenaton.taskmanager.pulsar.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
 import com.zenaton.taskmanager.messages.AvroTaskMessageType
 import com.zenaton.taskmanager.messages.TaskMessageInterface
@@ -9,6 +8,7 @@ import com.zenaton.taskmanager.messages.commands.AvroCancelTask
 import com.zenaton.taskmanager.messages.commands.AvroDispatchTask
 import com.zenaton.taskmanager.messages.commands.AvroRetryTask
 import com.zenaton.taskmanager.messages.commands.AvroRetryTaskAttempt
+import com.zenaton.taskmanager.messages.commands.AvroRunTask
 import com.zenaton.taskmanager.messages.commands.CancelTask
 import com.zenaton.taskmanager.messages.commands.DispatchTask
 import com.zenaton.taskmanager.messages.commands.RetryTask
