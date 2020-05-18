@@ -1,7 +1,7 @@
 package com.zenaton.taskmanager.pulsar.state
 
 import com.zenaton.commons.utils.avro.AvroSerDe
-import com.zenaton.taskmanager.pulsar.TaskAvroConverter
+import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.state.TaskStaterInterface
 import com.zenaton.taskmanager.states.AvroTaskState

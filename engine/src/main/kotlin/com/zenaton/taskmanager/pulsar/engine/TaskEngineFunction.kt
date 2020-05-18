@@ -3,7 +3,7 @@ package com.zenaton.taskmanager.pulsar.engine
 import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.taskmanager.engine.TaskEngine
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.pulsar.TaskAvroConverter
+import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.pulsar.logger.TaskLogger
 import com.zenaton.taskmanager.pulsar.state.TaskStater

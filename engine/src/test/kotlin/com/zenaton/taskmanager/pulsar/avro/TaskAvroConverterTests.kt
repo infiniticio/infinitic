@@ -20,7 +20,6 @@ import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
-import com.zenaton.taskmanager.pulsar.TaskAvroConverter
 import com.zenaton.taskmanager.state.TaskState
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec

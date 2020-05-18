@@ -4,7 +4,7 @@ import com.zenaton.commons.data.interfaces.StateInterface
 import com.zenaton.commons.pulsar.utils.Stater
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.commons.utils.avro.AvroSerDe
-import com.zenaton.taskmanager.pulsar.TaskAvroConverter
+import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.state.TaskStater
 import com.zenaton.taskmanager.state.TaskState
 import io.kotest.core.spec.style.StringSpec

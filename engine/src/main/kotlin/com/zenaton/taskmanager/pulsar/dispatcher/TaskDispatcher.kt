@@ -5,8 +5,8 @@ import com.zenaton.taskmanager.messages.AvroRunTask
 import com.zenaton.taskmanager.messages.AvroTaskMessage
 import com.zenaton.taskmanager.messages.TaskMessageInterface
 import com.zenaton.taskmanager.messages.commands.RunTask
-import com.zenaton.taskmanager.pulsar.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.Topic
+import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
