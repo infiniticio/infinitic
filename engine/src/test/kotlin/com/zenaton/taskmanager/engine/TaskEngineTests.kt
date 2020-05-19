@@ -1,8 +1,6 @@
 package com.zenaton.taskmanager.engine
 
 import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskmanager.data.TaskAttemptId
-import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.messages.TaskAttemptMessageInterface
 import com.zenaton.taskmanager.messages.TaskMessageInterface
 import com.zenaton.taskmanager.messages.commands.CancelTask
@@ -32,7 +30,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
 import io.mockk.verifyOrder
 
 fun state(values: Map<String, Any?>? = null) = TestFactory.get(TaskState::class, values)
@@ -84,8 +81,8 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
     val retryTaskAttemptDelaySlot = slot<Float>()
     val runTaskSlot = slot<RunTask>()
     val taskCompletedInWorkflowSlot = slot<TaskCompletedInWorkflow>()
-    every { logger.error(any(), msgIn) } returns "error!"
-    every { logger.warn(any(), msgIn) } returns "warn!"
+    every { logger.error(any(), msgIn, stateIn) } returns "error!"
+    every { logger.warn(any(), msgIn, stateIn) } returns "warn!"
     every { stater.getState(msgIn.getStateId()) } returns state
     every { stater.createState(any(), capture(stateSlot)) } just Runs
     every { stater.updateState(any(), capture(stateSlot)) } just Runs
@@ -137,15 +134,15 @@ class TaskEngineTests : StringSpec({
     include(shouldWarnIfNotState(taskAttemptStarted()))
     include(shouldWarnIfNotState(taskCanceled()))
 
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(cancelTask()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(retryTask()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(retryTaskAttempt()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(runTask()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(taskAttemptCompleted()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(taskAttemptDispatched()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(taskAttemptFailed()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(taskAttemptStarted()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentId(taskCanceled()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(cancelTask()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(retryTask()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(retryTaskAttempt()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(runTask()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskAttemptCompleted()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskAttemptDispatched()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskAttemptFailed()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskAttemptStarted()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskCanceled()))
 
     // Note: taskAttemptCompleted is voluntary excluded of this test
     include(shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(retryTaskAttempt()))
@@ -165,7 +162,7 @@ class TaskEngineTests : StringSpec({
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
             o.stater.getState(msgIn.getStateId())
-            o.logger.error(any(), msgIn)
+            o.logger.error(any(), msgIn, stateIn)
         }
         confirmVerified(o.taskDispatcher)
         confirmVerified(o.workflowDispatcher)
@@ -253,7 +250,7 @@ class TaskEngineTests : StringSpec({
             "taskAttemptIndex" to stateIn.taskAttemptIndex
         ))
         val o = engineHandle(stateIn, msgIn)
-        shouldRetryTaskAttempt(msgIn, stateIn, o)
+        checkShouldRetryTaskAttempt(msgIn, stateIn, o)
     }
 
     "Task Attempt Completed" {
@@ -323,7 +320,7 @@ class TaskEngineTests : StringSpec({
             "taskAttemptDelayBeforeRetry" to 0F
         ))
         val o = engineHandle(stateIn, msgIn)
-        shouldRetryTaskAttempt(msgIn, stateIn, o)
+        checkShouldRetryTaskAttempt(msgIn, stateIn, o)
     }
 
     "Task Attempt Failed with immediate retry (negative delay)" {
@@ -335,7 +332,7 @@ class TaskEngineTests : StringSpec({
             "taskAttemptDelayBeforeRetry" to -42F
         ))
         val o = engineHandle(stateIn, msgIn)
-        shouldRetryTaskAttempt(msgIn, stateIn, o)
+        checkShouldRetryTaskAttempt(msgIn, stateIn, o)
     }
 
     "Task Attempt Started" {
@@ -346,7 +343,7 @@ class TaskEngineTests : StringSpec({
             "taskAttemptIndex" to stateIn.taskAttemptIndex
         ))
         val o = engineHandle(stateIn, msgIn)
-        shouldDoNothing(msgIn, o)
+        checkShouldDoNothing(msgIn, o)
     }
 
     "Task Canceled" {
@@ -355,11 +352,37 @@ class TaskEngineTests : StringSpec({
             "taskId" to stateIn.taskId
         ))
         val o = engineHandle(stateIn, msgIn)
-        shouldDoNothing(msgIn, o)
+        checkShouldDoNothing(msgIn, o)
     }
 })
 
-fun shouldDoNothing(msgIn: TaskMessageInterface, o:EngineResults) {
+private fun shouldWarnIfNotState(msgIn: TaskMessageInterface) = stringSpec {
+    val o = engineHandle(null, msgIn)
+    checkShouldWarnAndDoNothingMore(null, msgIn, o)
+}
+
+private fun shouldErrorIfStateAndMessageHaveInconsistentTaskId(msgIn: TaskMessageInterface) = stringSpec {
+    val stateIn = state()
+    val o = engineHandle(stateIn, msgIn)
+    checkShouldErrorAndDoNothingMore(stateIn, msgIn, o)
+}
+
+private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: TaskAttemptMessageInterface) = stringSpec {
+    val stateIn = state(mapOf("taskId" to msgIn.taskId))
+    val o = engineHandle(stateIn, msgIn)
+    checkShouldWarnAndDoNothingMore(stateIn, msgIn, o)
+}
+
+private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: TaskAttemptMessageInterface) = stringSpec {
+    val stateIn = state(mapOf(
+        "taskId" to msgIn.taskId,
+        "taskAttemptId" to msgIn.taskAttemptId
+    ))
+    val o = engineHandle(stateIn, msgIn)
+    checkShouldWarnAndDoNothingMore(stateIn, msgIn, o)
+}
+
+private fun checkShouldDoNothing(msgIn: TaskMessageInterface, o: EngineResults) {
     verifyOrder {
         o.stater.getState(msgIn.getStateId())
     }
@@ -369,7 +392,7 @@ fun shouldDoNothing(msgIn: TaskMessageInterface, o:EngineResults) {
     confirmVerified(o.logger)
 }
 
-fun shouldRetryTaskAttempt(msgIn: TaskMessageInterface, stateIn: TaskState, o:EngineResults) {
+private fun checkShouldRetryTaskAttempt(msgIn: TaskMessageInterface, stateIn: TaskState, o: EngineResults) {
     verifyOrder {
         o.stater.getState(msgIn.getStateId())
         o.taskDispatcher.dispatch(o.runTask!!)
@@ -395,111 +418,24 @@ fun shouldRetryTaskAttempt(msgIn: TaskMessageInterface, stateIn: TaskState, o:En
     o.state!!.taskAttemptIndex shouldBe o.runTask!!.taskAttemptIndex
 }
 
-fun shouldWarnIfNotState(msgIn: TaskMessageInterface) = stringSpec {
-    // mocking
-    val taskDispatcher = mockk<TaskDispatcher>()
-    val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stater = mockk<TaskStater>()
-    val logger = mockk<TaskLogger>()
-    every { stater.getState(msgIn.getStateId()) } returns null
-    every { logger.warn(any(), msgIn) } returns "warning!"
-    // given
-    val engine = TaskEngine()
-    engine.taskDispatcher = taskDispatcher
-    engine.workflowDispatcher = workflowDispatcher
-    engine.stater = stater
-    engine.logger = logger
-    // when
-    engine.handle(msg = msgIn)
-    // then
-    verify(exactly = 1) { stater.getState(msgIn.getStateId()) }
-    verify(exactly = 1) { logger.warn(any(), msgIn) }
-    confirmVerified(taskDispatcher)
-    confirmVerified(workflowDispatcher)
-    confirmVerified(stater)
-    confirmVerified(logger)
+private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMessageInterface, o: EngineResults) {
+    verifyOrder {
+        o.stater.getState(msgIn.getStateId())
+        o.logger.warn(any(), msgIn, stateIn)
+    }
+    confirmVerified(o.taskDispatcher)
+    confirmVerified(o.workflowDispatcher)
+    confirmVerified(o.stater)
+    confirmVerified(o.logger)
 }
 
-fun shouldErrorIfStateAndMessageHaveInconsistentId(msgIn: TaskMessageInterface) = stringSpec {
-    // mocking
-    val taskDispatcher = mockk<TaskDispatcher>()
-    val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stater = mockk<TaskStater>()
-    val logger = mockk<TaskLogger>()
-    val state = mockk<TaskState>()
-    every { stater.getState(msgIn.getStateId()) } returns state
-    every { state.taskId } returns TaskId()
-    every { logger.error(any(), msgIn, state) } returns "error!"
-    // given
-    val engine = TaskEngine()
-    engine.taskDispatcher = taskDispatcher
-    engine.workflowDispatcher = workflowDispatcher
-    engine.stater = stater
-    engine.logger = logger
-    // when
-    engine.handle(msg = msgIn)
-    // then
-    verify(exactly = 1) { logger.error(any(), msgIn, state) }
-    verify(exactly = 1) { stater.getState(msgIn.getStateId()) }
-    confirmVerified(taskDispatcher)
-    confirmVerified(workflowDispatcher)
-    confirmVerified(stater)
-    confirmVerified(logger)
-}
-
-fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: TaskAttemptMessageInterface) = stringSpec {
-    // mocking
-    val taskDispatcher = mockk<TaskDispatcher>()
-    val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stater = mockk<TaskStater>()
-    val logger = mockk<TaskLogger>()
-    val state = mockk<TaskState>()
-    every { stater.getState(msgIn.getStateId()) } returns state
-    every { state.taskId } returns msgIn.taskId
-    every { state.taskAttemptId } returns TaskAttemptId()
-    every { logger.warn(any(), msgIn, state) } returns "warning!"
-    // given
-    val engine = TaskEngine()
-    engine.taskDispatcher = taskDispatcher
-    engine.workflowDispatcher = workflowDispatcher
-    engine.stater = stater
-    engine.logger = logger
-    // when
-    engine.handle(msg = msgIn)
-    // then
-    verify(exactly = 1) { logger.warn(any(), msgIn, state) }
-    verify(exactly = 1) { stater.getState(msgIn.getStateId()) }
-    confirmVerified(taskDispatcher)
-    confirmVerified(workflowDispatcher)
-    confirmVerified(stater)
-    confirmVerified(logger)
-}
-
-fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: TaskAttemptMessageInterface) = stringSpec {
-    // mocking
-    val taskDispatcher = mockk<TaskDispatcher>()
-    val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stater = mockk<TaskStater>()
-    val logger = mockk<TaskLogger>()
-    val state = mockk<TaskState>()
-    every { stater.getState(msgIn.getStateId()) } returns state
-    every { state.taskId } returns msgIn.taskId
-    every { state.taskAttemptId } returns msgIn.taskAttemptId
-    every { state.taskAttemptIndex } returns msgIn.taskAttemptIndex + 1
-    every { logger.warn(any(), msgIn, state) } returns "warning!"
-    // given
-    val engine = TaskEngine()
-    engine.taskDispatcher = taskDispatcher
-    engine.workflowDispatcher = workflowDispatcher
-    engine.stater = stater
-    engine.logger = logger
-    // when
-    engine.handle(msg = msgIn)
-    // then
-    verify(exactly = 1) { logger.warn(any(), msgIn, state) }
-    verify(exactly = 1) { stater.getState(msgIn.getStateId()) }
-    confirmVerified(taskDispatcher)
-    confirmVerified(workflowDispatcher)
-    confirmVerified(stater)
-    confirmVerified(logger)
+private fun checkShouldErrorAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMessageInterface, o: EngineResults) {
+    verifyOrder {
+        o.stater.getState(msgIn.getStateId())
+        o.logger.error(any(), msgIn, stateIn)
+    }
+    confirmVerified(o.taskDispatcher)
+    confirmVerified(o.workflowDispatcher)
+    confirmVerified(o.stater)
+    confirmVerified(o.logger)
 }

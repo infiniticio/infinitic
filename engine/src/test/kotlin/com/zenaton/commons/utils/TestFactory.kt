@@ -19,6 +19,9 @@ object TestFactory {
     }
 
     fun <T : Any> get(klass: KClass<T>, values: Map<String, Any?>? = null): T {
+        // if not updated, 2 subsequents calls to this method would provide same values
+        seed++
+
         val parameters = EasyRandomParameters()
             .seed(seed)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
