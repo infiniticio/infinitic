@@ -19,7 +19,9 @@ import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.pulsar.logger.TaskLogger
 import com.zenaton.taskmanager.pulsar.state.TaskStater
 import com.zenaton.taskmanager.state.TaskState
+import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
+import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -57,6 +59,7 @@ class EngineResults {
     var taskAttemptFailed: TaskAttemptFailed? = null
     var taskAttemptStarted: TaskAttemptStarted? = null
     var taskCanceled: TaskCanceled? = null
+    var taskCompletedInWorkflow: TaskCompletedInWorkflow? = null
 }
 
 fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResults {
@@ -74,6 +77,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
     val taskAttemptStartedSlot = slot<TaskAttemptStarted>()
     val taskCanceledSlot = slot<TaskCanceled>()
     val runTaskSlot = slot<RunTask>()
+    val taskCompletedInWorkflowSlot = slot<TaskCompletedInWorkflow>()
     every { logger.error(any(), msgIn) } returns "error!"
     every { logger.warn(any(), msgIn) } returns "warn!"
     every { stater.getState(msgIn.getStateId()) } returns state
@@ -86,6 +90,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
     every { taskDispatcher.dispatch(capture(taskAttemptFailedSlot)) } just Runs
     every { taskDispatcher.dispatch(capture(taskAttemptStartedSlot)) } just Runs
     every { taskDispatcher.dispatch(capture(taskCanceledSlot)) } just Runs
+    every { workflowDispatcher.dispatch(capture(taskCompletedInWorkflowSlot)) } just Runs
     // given
     val engine = TaskEngine()
     engine.taskDispatcher = taskDispatcher
@@ -95,7 +100,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
     // when
     engine.handle(msg = msgIn)
     // then
-    var o = EngineResults()
+    val o = EngineResults()
     o.taskDispatcher = taskDispatcher
     o.workflowDispatcher = workflowDispatcher
     o.stater = stater
@@ -107,6 +112,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
     if (taskAttemptFailedSlot.isCaptured) o.taskAttemptFailed = taskAttemptFailedSlot.captured
     if (taskAttemptStartedSlot.isCaptured) o.taskAttemptStarted = taskAttemptStartedSlot.captured
     if (taskCanceledSlot.isCaptured) o.taskCanceled = taskCanceledSlot.captured
+    if (taskCompletedInWorkflowSlot.isCaptured) o.taskCompletedInWorkflow = taskCompletedInWorkflowSlot.captured
 
     return o
 }
@@ -262,6 +268,27 @@ class TaskEngineTests : StringSpec({
         o.state!!.taskAttemptId shouldBe o.runTask!!.taskAttemptId
         o.state!!.taskAttemptIndex shouldBe o.runTask!!.taskAttemptIndex
     }
+//
+//    "Task Attempt Completed" {
+//        val msgIn = taskAttemptCompleted()
+//        val stateIn = TestFactory.get(TaskState::class, mapOf(
+//            "taskId" to msgIn.taskId,
+//            "workflowId" to TestFactory.get(WorkflowId::class)
+//        ))
+//        val o = engineHandle(stateIn, msgIn)
+//        verifyOrder {
+//            o.stater.getState(msgIn.getStateId())
+//            o.workflowDispatcher.dispatch(o.taskCompletedInWorkflow!!)
+//            o.stater.deleteState(msgIn.getStateId())
+//        }
+//        confirmVerified(o.taskDispatcher)
+//        confirmVerified(o.workflowDispatcher)
+//        confirmVerified(o.stater)
+//        confirmVerified(o.logger)
+//        o.taskCompletedInWorkflow!!.taskId shouldBe stateIn.taskId
+//        o.taskCompletedInWorkflow!!.workflowId shouldBe stateIn.workflowId
+//        o.taskCompletedInWorkflow!!.taskOutput shouldBe msgIn.taskOutput
+//    }
 })
 
 fun shouldWarnIfNotState(msgIn: TaskMessageInterface) = stringSpec {

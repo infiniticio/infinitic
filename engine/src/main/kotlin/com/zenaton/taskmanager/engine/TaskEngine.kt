@@ -69,7 +69,7 @@ class TaskEngine {
         }
 
         when (msg) {
-            is CancelTask -> cancelTask(state, msg)
+            is CancelTask -> cancelTask(msg)
             is DispatchTask -> dispatchTask(state, msg)
             is RetryTask -> retryTask(state, msg)
             is RetryTaskAttempt -> retryTaskAttempt(state, msg)
@@ -82,7 +82,7 @@ class TaskEngine {
         }
     }
 
-    private fun cancelTask(state: TaskState, msg: CancelTask) {
+    private fun cancelTask(msg: CancelTask) {
         // update and save state
         stater.deleteState(msg.getStateId())
 
