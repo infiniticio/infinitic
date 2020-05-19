@@ -6,8 +6,8 @@ import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.messages.TaskAttemptMessageInterface
 
 data class TaskAttemptDispatched(
-    override var taskId: TaskId,
+    override val taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int,
-    override var sentAt: DateTime = DateTime()
+    override val sentAt: DateTime = DateTime()
 ) : TaskAttemptMessageInterface

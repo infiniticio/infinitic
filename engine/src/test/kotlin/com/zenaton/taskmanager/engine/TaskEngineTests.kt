@@ -23,6 +23,7 @@ import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDis
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.mockk.Runs
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -58,7 +59,9 @@ class EngineResults {
     var taskCanceled: TaskCanceled? = null
 }
 
-fun engineHandle(state: TaskState?, msgIn: TaskMessageInterface): EngineResults {
+fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResults {
+    // avoid deep updates of stateIn
+    val state = stateIn?.copy()
     // mocking
     val taskDispatcher = mockk<TaskDispatcher>()
     val workflowDispatcher = mockk<WorkflowDispatcher>()
@@ -143,8 +146,7 @@ class TaskEngineTests : StringSpec({
 
     "Should error if task dispatched with existing state" {
         val msgIn = dispatchTask()
-        val stateIn = mockk<TaskState>()
-        every { stateIn.taskId } returns msgIn.taskId
+        val stateIn = TestFactory.get(TaskState::class, mapOf("taskId" to msgIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
             o.stater.getState(msgIn.getStateId())
@@ -158,8 +160,7 @@ class TaskEngineTests : StringSpec({
 
     "Cancel Task" {
         val msgIn = cancelTask()
-        val stateIn = mockk<TaskState>()
-        every { stateIn.taskId } returns msgIn.taskId
+        val stateIn = TestFactory.get(TaskState::class, mapOf("taskId" to msgIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
             o.stater.getState(msgIn.getStateId())
@@ -198,6 +199,68 @@ class TaskEngineTests : StringSpec({
         o.state!!.taskAttemptId shouldBe o.runTask!!.taskAttemptId
         o.state!!.taskAttemptIndex shouldBe 0
         o.state!!.workflowId shouldBe msgIn.workflowId
+    }
+
+    "Retry Task" {
+        val msgIn = retryTask()
+        val stateIn = TestFactory.get(TaskState::class, mapOf("taskId" to msgIn.taskId))
+        val o = engineHandle(stateIn, msgIn)
+        verifyOrder {
+            o.stater.getState(msgIn.getStateId())
+            o.taskDispatcher.dispatch(o.runTask!!)
+            o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
+            o.stater.updateState(msgIn.getStateId(), o.state!!)
+        }
+        confirmVerified(o.taskDispatcher)
+        confirmVerified(o.workflowDispatcher)
+        confirmVerified(o.stater)
+        confirmVerified(o.logger)
+        o.runTask!!.taskId shouldBe stateIn.taskId
+        o.runTask!!.taskAttemptId shouldNotBe stateIn.taskAttemptId
+        o.runTask!!.taskAttemptIndex shouldBe 0
+        o.runTask!!.taskName shouldBe stateIn.taskName
+        o.runTask!!.taskData shouldBe stateIn.taskData
+        o.taskAttemptDispatched!!.taskId shouldBe stateIn.taskId
+        o.taskAttemptDispatched!!.taskAttemptId shouldBe o.runTask!!.taskAttemptId
+        o.taskAttemptDispatched!!.taskAttemptIndex shouldBe 0
+        o.state!!.taskId shouldBe stateIn.taskId
+        o.state!!.taskName shouldBe stateIn.taskName
+        o.state!!.taskData shouldBe stateIn.taskData
+        o.state!!.taskAttemptId shouldBe o.runTask!!.taskAttemptId
+        o.state!!.taskAttemptIndex shouldBe o.runTask!!.taskAttemptIndex
+    }
+
+    "Retry Task Attempt" {
+        val msgIn = retryTaskAttempt()
+        val stateIn = TestFactory.get(TaskState::class, mapOf(
+            "taskId" to msgIn.taskId,
+            "taskAttemptId" to msgIn.taskAttemptId,
+            "taskAttemptIndex" to msgIn.taskAttemptIndex
+        ))
+        val o = engineHandle(stateIn, msgIn)
+        verifyOrder {
+            o.stater.getState(msgIn.getStateId())
+            o.taskDispatcher.dispatch(o.runTask!!)
+            o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
+            o.stater.updateState(msgIn.getStateId(), o.state!!)
+        }
+        confirmVerified(o.taskDispatcher)
+        confirmVerified(o.workflowDispatcher)
+        confirmVerified(o.stater)
+        confirmVerified(o.logger)
+        o.runTask!!.taskId shouldBe stateIn.taskId
+        o.runTask!!.taskAttemptId shouldBe stateIn.taskAttemptId
+        o.runTask!!.taskAttemptIndex shouldBe stateIn.taskAttemptIndex + 1
+        o.runTask!!.taskName shouldBe stateIn.taskName
+        o.runTask!!.taskData shouldBe stateIn.taskData
+        o.taskAttemptDispatched!!.taskId shouldBe stateIn.taskId
+        o.taskAttemptDispatched!!.taskAttemptId shouldBe o.runTask!!.taskAttemptId
+        o.taskAttemptDispatched!!.taskAttemptIndex shouldBe o.runTask!!.taskAttemptIndex
+        o.state!!.taskId shouldBe stateIn.taskId
+        o.state!!.taskName shouldBe stateIn.taskName
+        o.state!!.taskData shouldBe stateIn.taskData
+        o.state!!.taskAttemptId shouldBe o.runTask!!.taskAttemptId
+        o.state!!.taskAttemptIndex shouldBe o.runTask!!.taskAttemptIndex
     }
 })
 
