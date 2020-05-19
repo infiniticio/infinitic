@@ -133,8 +133,6 @@ class TaskEngine {
     }
 
     private fun retryTask(state: TaskState, msg: RetryTask) {
-        val newStatus = if (state.taskAttemptIndex > 0) TaskStatus.WARNING else TaskStatus.OK
-
         // send task to workers
         val rt = RunTask(
             taskId = state.taskId,
@@ -156,7 +154,7 @@ class TaskEngine {
         // update state
         state.taskAttemptId = rt.taskAttemptId
         state.taskAttemptIndex = rt.taskAttemptIndex
-        state.taskStatus = newStatus
+        state.taskStatus = TaskStatus.WARNING
         stater.updateState(msg.getStateId(), state)
     }
 
@@ -222,8 +220,8 @@ class TaskEngine {
                 taskAttemptIndex = state.taskAttemptIndex
             )
             taskDispatcher.dispatch(tar, after = delay)
-
             state.taskStatus = TaskStatus.WARNING
+            stater.updateState(msg.getStateId(), state)
         }
     }
 
