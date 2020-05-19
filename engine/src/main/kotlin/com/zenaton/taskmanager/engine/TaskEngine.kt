@@ -1,6 +1,7 @@
 package com.zenaton.taskmanager.engine
 
 import com.zenaton.taskmanager.data.TaskAttemptId
+import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.dispatcher.TaskDispatcherInterface
 import com.zenaton.taskmanager.logger.TaskLoggerInterface
 import com.zenaton.taskmanager.messages.TaskAttemptFailingMessageInterface
@@ -40,6 +41,7 @@ class TaskEngine {
             state = TaskState(
                 taskId = msg.taskId,
                 taskName = msg.taskName,
+                taskStatus = TaskStatus.OK,
                 taskData = msg.taskData,
                 taskAttemptId = TaskAttemptId(),
                 taskAttemptIndex = 0,
