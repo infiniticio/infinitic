@@ -51,7 +51,7 @@ class TaskEngine {
                 logger.error("Inconsistent taskId in message:%s and State:%s)", msg, state)
                 return
             }
-            if (msg is TaskAttemptMessageInterface) {
+            if (msg is TaskAttemptMessageInterface && msg !is TaskAttemptCompleted) {
                 if (state.taskAttemptId != msg.taskAttemptId) {
                     logger.warn("Inconsistent taskAttemptId in message: (Can happen if the task has been manually retried)%s and State:%s", msg, state)
                     return

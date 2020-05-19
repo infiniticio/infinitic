@@ -18,7 +18,7 @@ object TestFactory {
         return this
     }
 
-    fun <T : Any> get(klass: KClass<T>, values: Map<String, Any>? = null): T {
+    fun <T : Any> get(klass: KClass<T>, values: Map<String, Any?>? = null): T {
         val parameters = EasyRandomParameters()
             .seed(seed)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
