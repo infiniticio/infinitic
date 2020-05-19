@@ -119,6 +119,8 @@ class TaskEngine {
     }
 
     private fun retryTask(state: TaskState, msg: RetryTask) {
+        val newStatus = if (state.taskAttemptIndex > 0) TaskStatus.WARNING else TaskStatus.OK
+
         // send task to workers
         val rt = RunTask(
             taskId = state.taskId,
@@ -140,6 +142,7 @@ class TaskEngine {
         // update state
         state.taskAttemptId = rt.taskAttemptId
         state.taskAttemptIndex = rt.taskAttemptIndex
+        state.taskStatus = newStatus
         stater.updateState(msg.getStateId(), state)
     }
 
@@ -166,6 +169,7 @@ class TaskEngine {
 
         // update state
         state.taskAttemptIndex = newIndex
+        state.taskStatus = TaskStatus.WARNING
         stater.updateState(msg.getStateId(), state)
     }
 
@@ -179,19 +183,20 @@ class TaskEngine {
             )
             workflowDispatcher.dispatch(tc)
         }
+        // need to set the state to null for the status updated notification
+        state.taskStatus = null
         // delete state
         stater.deleteState(msg.getStateId())
     }
 
     private fun taskAttemptFailed(state: TaskState, msg: TaskAttemptFailed) {
+        state.taskStatus = TaskStatus.ERROR
+
         triggerDelayedRetry(state = state, msg = msg)
     }
 
     private fun triggerDelayedRetry(state: TaskState, msg: TaskAttemptFailingMessageInterface) {
-        if (msg.taskAttemptDelayBeforeRetry == null) {
-            return
-        }
-        val delay = msg.taskAttemptDelayBeforeRetry!!
+        val delay = msg.taskAttemptDelayBeforeRetry ?: return
         if (delay <= 0f) {
             return retryTaskAttempt(state, msg)
         }
@@ -203,6 +208,8 @@ class TaskEngine {
                 taskAttemptIndex = state.taskAttemptIndex
             )
             taskDispatcher.dispatch(tar, after = delay)
+
+            state.taskStatus = TaskStatus.WARNING
         }
     }
 }
