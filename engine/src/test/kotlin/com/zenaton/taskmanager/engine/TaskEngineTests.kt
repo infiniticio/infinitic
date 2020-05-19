@@ -124,6 +124,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
 }
 
 class TaskEngineTests : StringSpec({
+    // Note: dispatchTask is voluntary excluded of this test
     include(shouldWarnIfNotState(cancelTask()))
     include(shouldWarnIfNotState(retryTask()))
     include(shouldWarnIfNotState(retryTaskAttempt()))
@@ -164,10 +165,7 @@ class TaskEngineTests : StringSpec({
             o.stater.getState(msgIn.getStateId())
             o.logger.error(any(), msgIn, stateIn)
         }
-        confirmVerified(o.taskDispatcher)
-        confirmVerified(o.workflowDispatcher)
-        confirmVerified(o.stater)
-        confirmVerified(o.logger)
+        checkConfirmVerified(o)
     }
 
     "Cancel Task" {
@@ -179,10 +177,7 @@ class TaskEngineTests : StringSpec({
             o.stater.deleteState(msgIn.getStateId())
             o.taskDispatcher.dispatch(o.taskCanceled!!)
         }
-        confirmVerified(o.taskDispatcher)
-        confirmVerified(o.workflowDispatcher)
-        confirmVerified(o.stater)
-        confirmVerified(o.logger)
+        checkConfirmVerified(o)
         o.taskCanceled!!.taskId shouldBe msgIn.taskId
     }
 
@@ -195,10 +190,7 @@ class TaskEngineTests : StringSpec({
             o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
             o.stater.createState(msgIn.getStateId(), o.state!!)
         }
-        confirmVerified(o.taskDispatcher)
-        confirmVerified(o.workflowDispatcher)
-        confirmVerified(o.stater)
-        confirmVerified(o.logger)
+        checkConfirmVerified(o)
         o.runTask!!.taskId shouldBe msgIn.taskId
         o.runTask!!.taskName shouldBe msgIn.taskName
         o.runTask!!.taskData shouldBe msgIn.taskData
@@ -223,10 +215,7 @@ class TaskEngineTests : StringSpec({
             o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
             o.stater.updateState(msgIn.getStateId(), o.state!!)
         }
-        confirmVerified(o.taskDispatcher)
-        confirmVerified(o.workflowDispatcher)
-        confirmVerified(o.stater)
-        confirmVerified(o.logger)
+        checkConfirmVerified(o)
         o.runTask!!.taskId shouldBe stateIn.taskId
         o.runTask!!.taskAttemptId shouldNotBe stateIn.taskAttemptId
         o.runTask!!.taskAttemptIndex shouldBe 0
@@ -265,10 +254,7 @@ class TaskEngineTests : StringSpec({
             o.workflowDispatcher.dispatch(o.taskCompletedInWorkflow!!)
             o.stater.deleteState(msgIn.getStateId())
         }
-        confirmVerified(o.taskDispatcher)
-        confirmVerified(o.workflowDispatcher)
-        confirmVerified(o.stater)
-        confirmVerified(o.logger)
+        checkConfirmVerified(o)
         o.taskCompletedInWorkflow!!.taskId shouldBe stateIn.taskId
         o.taskCompletedInWorkflow!!.workflowId shouldBe stateIn.workflowId
         o.taskCompletedInWorkflow!!.taskOutput shouldBe msgIn.taskOutput
@@ -286,10 +272,7 @@ class TaskEngineTests : StringSpec({
         verifyOrder {
             o.stater.getState(msgIn.getStateId())
         }
-        confirmVerified(o.taskDispatcher)
-        confirmVerified(o.workflowDispatcher)
-        confirmVerified(o.stater)
-        confirmVerified(o.logger)
+        checkConfirmVerified(o)
     }
 
     "Task Attempt Failed with future retry" {
@@ -305,10 +288,9 @@ class TaskEngineTests : StringSpec({
             o.stater.getState(msgIn.getStateId())
             o.taskDispatcher.dispatch(o.retryTaskAttempt!!, o.retryTaskAttemptDelay!!)
         }
-        confirmVerified(o.taskDispatcher)
-        confirmVerified(o.workflowDispatcher)
-        confirmVerified(o.stater)
-        confirmVerified(o.logger)
+        checkConfirmVerified(o)
+        o.retryTaskAttemptDelay!! shouldBe msgIn.taskAttemptDelayBeforeRetry
+        //TODO("check retryTaskAttempt values")
     }
 
     "Task Attempt Failed with immediate retry" {
@@ -386,10 +368,7 @@ private fun checkShouldDoNothing(msgIn: TaskMessageInterface, o: EngineResults) 
     verifyOrder {
         o.stater.getState(msgIn.getStateId())
     }
-    confirmVerified(o.taskDispatcher)
-    confirmVerified(o.workflowDispatcher)
-    confirmVerified(o.stater)
-    confirmVerified(o.logger)
+    checkConfirmVerified(o)
 }
 
 private fun checkShouldRetryTaskAttempt(msgIn: TaskMessageInterface, stateIn: TaskState, o: EngineResults) {
@@ -399,10 +378,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskMessageInterface, stateIn: Ta
         o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
         o.stater.updateState(msgIn.getStateId(), o.state!!)
     }
-    confirmVerified(o.taskDispatcher)
-    confirmVerified(o.workflowDispatcher)
-    confirmVerified(o.stater)
-    confirmVerified(o.logger)
+    checkConfirmVerified(o)
     o.runTask!!.taskId shouldBe stateIn.taskId
     o.runTask!!.taskAttemptId shouldBe stateIn.taskAttemptId
     o.runTask!!.taskAttemptIndex shouldBe stateIn.taskAttemptIndex + 1
@@ -423,10 +399,7 @@ private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMess
         o.stater.getState(msgIn.getStateId())
         o.logger.warn(any(), msgIn, stateIn)
     }
-    confirmVerified(o.taskDispatcher)
-    confirmVerified(o.workflowDispatcher)
-    confirmVerified(o.stater)
-    confirmVerified(o.logger)
+    checkConfirmVerified(o)
 }
 
 private fun checkShouldErrorAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMessageInterface, o: EngineResults) {
@@ -434,6 +407,10 @@ private fun checkShouldErrorAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMes
         o.stater.getState(msgIn.getStateId())
         o.logger.error(any(), msgIn, stateIn)
     }
+    checkConfirmVerified(o)
+}
+
+private fun checkConfirmVerified(o: EngineResults) {
     confirmVerified(o.taskDispatcher)
     confirmVerified(o.workflowDispatcher)
     confirmVerified(o.stater)
