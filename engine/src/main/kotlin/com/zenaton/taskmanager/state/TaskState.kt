@@ -17,3 +17,13 @@ data class TaskState(
     var taskAttemptIndex: Int,
     val workflowId: WorkflowId? = null
 ) : StateInterface
+
+data class TaskStatusTransition(val oldStatus: TaskStatus? = null) {
+    var newStatus: TaskStatus? = null
+    inline val isVoid: Boolean get() = oldStatus != newStatus
+
+    companion object {
+        fun createFromState(state: TaskState): TaskStatusTransition = TaskStatusTransition(state.taskStatus)
+        fun createNew(): TaskStatusTransition = TaskStatusTransition()
+    }
+}

@@ -5,6 +5,8 @@ import com.zenaton.taskmanager.messages.AvroTaskMessage
 import com.zenaton.taskmanager.messages.TaskMessageInterface
 import com.zenaton.taskmanager.messages.commands.AvroRunTask
 import com.zenaton.taskmanager.messages.commands.RunTask
+import com.zenaton.taskmanager.messages.events.AvroTaskStatusUpdated
+import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import java.util.concurrent.TimeUnit
@@ -19,6 +21,13 @@ class TaskDispatcher(val context: Context) : TaskDispatcherInterface {
     override fun dispatch(msg: RunTask) {
         context
             .newOutputMessage(Topic.TASK_ATTEMPTS.get(msg.taskName.name), AvroSchema.of(AvroRunTask::class.java))
+            .value(TaskAvroConverter.toAvro(msg))
+            .send()
+    }
+
+    override fun dispatch(msg: TaskStatusUpdated) {
+        context
+            .newOutputMessage(Topic.TASK_STATUS_UPDATES.get(), AvroSchema.of(AvroTaskStatusUpdated::class.java))
             .value(TaskAvroConverter.toAvro(msg))
             .send()
     }

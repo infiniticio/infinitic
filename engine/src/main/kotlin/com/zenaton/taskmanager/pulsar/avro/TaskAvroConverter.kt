@@ -19,11 +19,13 @@ import com.zenaton.taskmanager.messages.events.AvroTaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.AvroTaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.AvroTaskCanceled
+import com.zenaton.taskmanager.messages.events.AvroTaskStatusUpdated
 import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
 import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
+import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
 
@@ -46,6 +48,14 @@ object TaskAvroConverter {
         convert<AvroRunTask>(obj)
     fun fromAvro(obj: AvroRunTask) =
         convert<RunTask>(obj)
+
+    /**
+     * Task status updates
+     */
+    fun toAvro(obj: TaskStatusUpdated) =
+        convert<AvroTaskStatusUpdated>(obj)
+    fun fromAvro(obj: AvroTaskStatusUpdated) =
+        convert<TaskStatusUpdated>(obj)
 
     /**
      *  Tasks Messages
@@ -187,6 +197,11 @@ object TaskAvroConverter {
         convert<AvroTaskCanceled>(obj)
     private fun switch(obj: AvroTaskCanceled) =
         convert<TaskCanceled>(obj)
+
+    private fun switch(obj: TaskStatusUpdated) =
+        convert<AvroTaskStatusUpdated>(obj)
+    private fun switch(obj: AvroTaskStatusUpdated) =
+        convert<TaskStatusUpdated>(obj)
 
     /**
      *  Mapping function by Json serialization/deserialization

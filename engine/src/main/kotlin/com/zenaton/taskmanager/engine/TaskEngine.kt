@@ -17,8 +17,10 @@ import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
+import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.state.TaskStaterInterface
+import com.zenaton.taskmanager.state.TaskStatusTransition
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
 
@@ -31,12 +33,17 @@ class TaskEngine {
     fun handle(msg: TaskMessageInterface) {
         // get associated state
         var state = stater.getState(msg.getStateId())
+        var stateTransition: TaskStatusTransition
         if (state == null) {
             // a null state should mean that this task is already terminated => all messages others than TaskDispatched are ignored
             if (msg !is DispatchTask) {
                 logger.warn("No state found for message: (It's normal if this task is already terminated)%s", msg, null)
                 return
             }
+
+            // init a state transition for the new task
+            stateTransition = TaskStatusTransition.createNew()
+
             // init a state
             state = TaskState(
                 taskId = msg.taskId,
@@ -68,6 +75,9 @@ class TaskEngine {
                 logger.error("Already existing state:%s for message:%s", msg, state)
                 return
             }
+
+            // init a state transition for the already existing task
+            stateTransition = TaskStatusTransition.createFromState(state)
         }
 
         when (msg) {
@@ -82,6 +92,10 @@ class TaskEngine {
             is TaskCanceled -> Unit
             else -> throw Exception("Unknown Message $msg")
         }
+
+        // capture the new state of the task and notify change of status
+        stateTransition.newStatus = state.taskStatus
+        notifyTaskStatusUpdated(state, stateTransition)
     }
 
     private fun cancelTask(msg: CancelTask) {
@@ -211,5 +225,20 @@ class TaskEngine {
 
             state.taskStatus = TaskStatus.WARNING
         }
+    }
+
+    private fun notifyTaskStatusUpdated(state: TaskState, transition: TaskStatusTransition) {
+        if (!transition.isVoid) {
+            return
+        }
+
+        val tsc = TaskStatusUpdated(
+            taskId = state.taskId,
+            taskName = state.taskName,
+            oldStatus = transition.oldStatus,
+            newStatus = transition.newStatus
+        )
+
+        taskDispatcher.dispatch(tsc)
     }
 }
