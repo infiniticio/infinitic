@@ -94,7 +94,11 @@ class TaskEngine {
         }
 
         // capture the new state of the task and notify change of status
-        stateTransition.newStatus = state.taskStatus
+        when (msg) {
+            is CancelTask -> stateTransition.newStatus = null
+            is TaskAttemptCompleted -> stateTransition.newStatus = null
+            else -> stateTransition.newStatus = state.taskStatus
+        }
         notifyTaskStatusUpdated(state, stateTransition)
     }
 
@@ -195,8 +199,6 @@ class TaskEngine {
             )
             workflowDispatcher.dispatch(tc)
         }
-        // need to set the state to null for the status updated notification
-        state.taskStatus = null
         // delete state
         stater.deleteState(msg.getStateId())
     }

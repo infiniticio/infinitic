@@ -176,16 +176,21 @@ class TaskEngineTests : StringSpec({
     }
 
     "Cancel Task" {
-        val stateIn = state()
+        val stateIn = state(mapOf(
+            "taskStatus" to TaskStatus.OK
+        ))
         val msgIn = cancelTask(mapOf("taskId" to stateIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
             o.stater.getState(msgIn.getStateId())
             o.stater.deleteState(msgIn.getStateId())
             o.taskDispatcher.dispatch(o.taskCanceled!!)
+            o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
         o.taskCanceled!!.taskId shouldBe msgIn.taskId
+        o.taskStatusUpdated!!.oldStatus shouldBe stateIn.taskStatus
+        o.taskStatusUpdated!!.newStatus shouldBe null
     }
 
     "Dispatch Task" {

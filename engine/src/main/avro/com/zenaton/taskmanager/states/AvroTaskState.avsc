@@ -23,8 +23,7 @@
             "type" : "string"
         }, {
              "name" : "taskStatus",
-             "type" : [ "null", "com.zenaton.taskmanager.data.AvroTaskStatus" ],
-             "default": null
+             "type" : "com.zenaton.taskmanager.data.AvroTaskStatus"
         }, {
             "name" : "workflowId",
             "type" : [ "null", {"type": "string", "logicalType": "uuid"} ],
