@@ -2,11 +2,11 @@ package com.zenaton.taskmanager.pulsar.dispatcher
 
 import com.zenaton.taskmanager.dispatcher.TaskDispatcherInterface
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.messages.TaskMessageInterface
+import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.messages.TaskMessage
+import com.zenaton.taskmanager.messages.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.commands.AvroRunTask
-import com.zenaton.taskmanager.messages.commands.RunTask
 import com.zenaton.taskmanager.messages.events.AvroTaskStatusUpdated
-import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import java.util.concurrent.TimeUnit
@@ -32,7 +32,7 @@ class TaskDispatcher(val context: Context) : TaskDispatcherInterface {
             .send()
     }
 
-    override fun dispatch(msg: TaskMessageInterface, after: Float) {
+    override fun dispatch(msg: TaskMessage, after: Float) {
 
         val msgBuilder = context
             .newOutputMessage(Topic.TASKS.get(), AvroSchema.of(AvroTaskMessage::class.java))

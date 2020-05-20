@@ -4,22 +4,22 @@ import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.dispatcher.TaskDispatcherInterface
 import com.zenaton.taskmanager.logger.TaskLoggerInterface
-import com.zenaton.taskmanager.messages.TaskAttemptFailingMessageInterface
-import com.zenaton.taskmanager.messages.TaskAttemptMessageInterface
-import com.zenaton.taskmanager.messages.TaskMessageInterface
-import com.zenaton.taskmanager.messages.commands.CancelTask
-import com.zenaton.taskmanager.messages.commands.DispatchTask
-import com.zenaton.taskmanager.messages.commands.RetryTask
-import com.zenaton.taskmanager.messages.commands.RetryTaskAttempt
-import com.zenaton.taskmanager.messages.commands.RunTask
-import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
-import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
-import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
-import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.events.TaskCanceled
-import com.zenaton.taskmanager.messages.events.TaskCompleted
-import com.zenaton.taskmanager.messages.events.TaskDispatched
-import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
+import com.zenaton.taskmanager.messages.CancelTask
+import com.zenaton.taskmanager.messages.DispatchTask
+import com.zenaton.taskmanager.messages.FailingTaskAttemptMessage
+import com.zenaton.taskmanager.messages.RetryTask
+import com.zenaton.taskmanager.messages.RetryTaskAttempt
+import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.messages.TaskAttemptCompleted
+import com.zenaton.taskmanager.messages.TaskAttemptDispatched
+import com.zenaton.taskmanager.messages.TaskAttemptFailed
+import com.zenaton.taskmanager.messages.TaskAttemptMessage
+import com.zenaton.taskmanager.messages.TaskAttemptStarted
+import com.zenaton.taskmanager.messages.TaskCanceled
+import com.zenaton.taskmanager.messages.TaskCompleted
+import com.zenaton.taskmanager.messages.TaskDispatched
+import com.zenaton.taskmanager.messages.TaskMessage
+import com.zenaton.taskmanager.messages.TaskStatusUpdated
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.state.TaskStaterInterface
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
@@ -31,7 +31,7 @@ class TaskEngine {
     lateinit var stater: TaskStaterInterface
     lateinit var logger: TaskLoggerInterface
 
-    fun handle(msg: TaskMessageInterface) {
+    fun handle(msg: TaskMessage) {
         var oldStatus: TaskStatus? = null
 
         // get associated state
@@ -58,7 +58,7 @@ class TaskEngine {
                 logger.error("Inconsistent taskId in message:%s and State:%s)", msg, state)
                 return
             }
-            if (msg is TaskAttemptMessageInterface && msg !is TaskAttemptCompleted) {
+            if (msg is TaskAttemptMessage && msg !is TaskAttemptCompleted) {
                 if (state.taskAttemptId != msg.taskAttemptId) {
                     logger.warn("Inconsistent taskAttemptId in message: (Can happen if the task has been manually retried)%s and State:%s", msg, state)
                     return
@@ -90,7 +90,8 @@ class TaskEngine {
             is TaskCanceled -> Unit
             is TaskCompleted -> Unit
             is TaskDispatched -> Unit
-            else -> throw Exception("Unknown Message $msg")
+            is RunTask -> throw Exception("RunTask should not be seen by the task engine")
+            is TaskStatusUpdated -> throw Exception("TaskStatusUpdated should not be seen by the task engine")
         }
 
         // capture the new state of the task and notify change of status
@@ -177,7 +178,7 @@ class TaskEngine {
         stater.updateState(msg.getStateId(), state)
     }
 
-    private fun retryTaskAttempt(state: TaskState, msg: TaskMessageInterface) {
+    private fun retryTaskAttempt(state: TaskState, msg: TaskMessage) {
         state.taskAttemptIndex = state.taskAttemptIndex + 1
         state.taskStatus = TaskStatus.WARNING
 
@@ -231,7 +232,7 @@ class TaskEngine {
         triggerDelayedRetry(state = state, msg = msg)
     }
 
-    private fun triggerDelayedRetry(state: TaskState, msg: TaskAttemptFailingMessageInterface) {
+    private fun triggerDelayedRetry(state: TaskState, msg: FailingTaskAttemptMessage) {
         val delay = msg.taskAttemptDelayBeforeRetry ?: return
         if (delay <= 0f) {
             return retryTaskAttempt(state, msg)

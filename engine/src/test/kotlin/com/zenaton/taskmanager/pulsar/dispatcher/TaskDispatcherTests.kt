@@ -2,18 +2,20 @@ package com.zenaton.taskmanager.pulsar.dispatcher
 
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.messages.TaskMessageInterface
+import com.zenaton.taskmanager.messages.CancelTask
+import com.zenaton.taskmanager.messages.DispatchTask
+import com.zenaton.taskmanager.messages.RetryTask
+import com.zenaton.taskmanager.messages.RetryTaskAttempt
+import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.messages.TaskAttemptCompleted
+import com.zenaton.taskmanager.messages.TaskAttemptDispatched
+import com.zenaton.taskmanager.messages.TaskAttemptFailed
+import com.zenaton.taskmanager.messages.TaskAttemptStarted
+import com.zenaton.taskmanager.messages.TaskCanceled
+import com.zenaton.taskmanager.messages.TaskCompleted
+import com.zenaton.taskmanager.messages.TaskDispatched
+import com.zenaton.taskmanager.messages.TaskMessage
 import com.zenaton.taskmanager.messages.commands.AvroRunTask
-import com.zenaton.taskmanager.messages.commands.CancelTask
-import com.zenaton.taskmanager.messages.commands.DispatchTask
-import com.zenaton.taskmanager.messages.commands.RetryTask
-import com.zenaton.taskmanager.messages.commands.RetryTaskAttempt
-import com.zenaton.taskmanager.messages.commands.RunTask
-import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
-import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
-import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
-import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.events.TaskCanceled
 import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import io.kotest.core.spec.style.StringSpec
@@ -30,7 +32,7 @@ import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 
-fun <T : TaskMessageInterface> dispatchShouldSendTaskMessageToTasksTopic(klass: KClass<T>) = stringSpec {
+fun <T : TaskMessage> dispatchShouldSendTaskMessageToTasksTopic(klass: KClass<T>) = stringSpec {
     // mocking
     val context = mockk<Context>()
     val builder = mockk<TypedMessageBuilder<AvroTaskMessage>>()
@@ -88,4 +90,6 @@ class TaskDispatcherTests : StringSpec({
     include(dispatchShouldSendTaskMessageToTasksTopic(TaskAttemptFailed::class))
     include(dispatchShouldSendTaskMessageToTasksTopic(TaskAttemptStarted::class))
     include(dispatchShouldSendTaskMessageToTasksTopic(TaskCanceled::class))
+    include(dispatchShouldSendTaskMessageToTasksTopic(TaskCompleted::class))
+    include(dispatchShouldSendTaskMessageToTasksTopic(TaskDispatched::class))
 })

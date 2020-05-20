@@ -2,7 +2,7 @@ package com.zenaton.taskmanager.pulsar.engine
 
 import com.zenaton.taskmanager.engine.TaskEngine
 import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.messages.TaskMessageInterface
+import com.zenaton.taskmanager.messages.TaskMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.pulsar.logger.TaskLogger
@@ -27,7 +27,7 @@ class TaskEngineFunctionTests : StringSpec({
         val taskEngine = spyk(TaskEngine())
         every { taskEngine.handle(any()) } just Runs
         val avroConverter = mockk<TaskAvroConverter>()
-        val msg = mockk<TaskMessageInterface>()
+        val msg = mockk<TaskMessage>()
         val avroMsg = mockk<AvroTaskMessage>()
         every { avroConverter.fromAvro(avroMsg) } returns msg
         // given

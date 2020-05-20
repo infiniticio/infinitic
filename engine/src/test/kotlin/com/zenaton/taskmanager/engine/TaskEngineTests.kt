@@ -2,21 +2,21 @@ package com.zenaton.taskmanager.engine
 
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.data.TaskStatus
-import com.zenaton.taskmanager.messages.TaskAttemptMessageInterface
-import com.zenaton.taskmanager.messages.TaskMessageInterface
-import com.zenaton.taskmanager.messages.commands.CancelTask
-import com.zenaton.taskmanager.messages.commands.DispatchTask
-import com.zenaton.taskmanager.messages.commands.RetryTask
-import com.zenaton.taskmanager.messages.commands.RetryTaskAttempt
-import com.zenaton.taskmanager.messages.commands.RunTask
-import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
-import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
-import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
-import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.events.TaskCanceled
-import com.zenaton.taskmanager.messages.events.TaskCompleted
-import com.zenaton.taskmanager.messages.events.TaskDispatched
-import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
+import com.zenaton.taskmanager.messages.CancelTask
+import com.zenaton.taskmanager.messages.DispatchTask
+import com.zenaton.taskmanager.messages.RetryTask
+import com.zenaton.taskmanager.messages.RetryTaskAttempt
+import com.zenaton.taskmanager.messages.RunTask
+import com.zenaton.taskmanager.messages.TaskAttemptCompleted
+import com.zenaton.taskmanager.messages.TaskAttemptDispatched
+import com.zenaton.taskmanager.messages.TaskAttemptFailed
+import com.zenaton.taskmanager.messages.TaskAttemptMessage
+import com.zenaton.taskmanager.messages.TaskAttemptStarted
+import com.zenaton.taskmanager.messages.TaskCanceled
+import com.zenaton.taskmanager.messages.TaskCompleted
+import com.zenaton.taskmanager.messages.TaskDispatched
+import com.zenaton.taskmanager.messages.TaskMessage
+import com.zenaton.taskmanager.messages.TaskStatusUpdated
 import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.pulsar.logger.TaskLogger
 import com.zenaton.taskmanager.pulsar.state.TaskStater
@@ -72,7 +72,7 @@ class EngineResults {
     var taskStatusUpdated: TaskStatusUpdated? = null
 }
 
-fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResults {
+fun engineHandle(stateIn: TaskState?, msgIn: TaskMessage): EngineResults {
     // avoid deep updates of stateIn
     val state = stateIn?.copy()
     // mocking
@@ -421,24 +421,24 @@ class TaskEngineTests : StringSpec({
     }
 })
 
-private fun shouldWarnIfNotState(msgIn: TaskMessageInterface) = stringSpec {
+private fun shouldWarnIfNotState(msgIn: TaskMessage) = stringSpec {
     val o = engineHandle(null, msgIn)
     checkShouldWarnAndDoNothingMore(null, msgIn, o)
 }
 
-private fun shouldErrorIfStateAndMessageHaveInconsistentTaskId(msgIn: TaskMessageInterface) = stringSpec {
+private fun shouldErrorIfStateAndMessageHaveInconsistentTaskId(msgIn: TaskMessage) = stringSpec {
     val stateIn = state()
     val o = engineHandle(stateIn, msgIn)
     checkShouldErrorAndDoNothingMore(stateIn, msgIn, o)
 }
 
-private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: TaskAttemptMessageInterface) = stringSpec {
+private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: TaskAttemptMessage) = stringSpec {
     val stateIn = state(mapOf("taskId" to msgIn.taskId))
     val o = engineHandle(stateIn, msgIn)
     checkShouldWarnAndDoNothingMore(stateIn, msgIn, o)
 }
 
-private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: TaskAttemptMessageInterface) = stringSpec {
+private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: TaskAttemptMessage) = stringSpec {
     val stateIn = state(mapOf(
         "taskId" to msgIn.taskId,
         "taskAttemptId" to msgIn.taskAttemptId
@@ -447,14 +447,14 @@ private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn
     checkShouldWarnAndDoNothingMore(stateIn, msgIn, o)
 }
 
-private fun checkShouldDoNothing(msgIn: TaskMessageInterface, o: EngineResults) {
+private fun checkShouldDoNothing(msgIn: TaskMessage, o: EngineResults) {
     verifyOrder {
         o.stater.getState(msgIn.getStateId())
     }
     checkConfirmVerified(o)
 }
 
-private fun checkShouldRetryTaskAttempt(msgIn: TaskMessageInterface, stateIn: TaskState, o: EngineResults) {
+private fun checkShouldRetryTaskAttempt(msgIn: TaskMessage, stateIn: TaskState, o: EngineResults) {
     verifyOrder {
         o.stater.getState(msgIn.getStateId())
         o.taskDispatcher.dispatch(o.runTask!!)
@@ -481,7 +481,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskMessageInterface, stateIn: Ta
     o.taskStatusUpdated!!.newStatus shouldBe TaskStatus.WARNING
 }
 
-private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMessageInterface, o: EngineResults) {
+private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMessage, o: EngineResults) {
     verifyOrder {
         o.stater.getState(msgIn.getStateId())
         o.logger.warn(any(), msgIn, stateIn)
@@ -489,7 +489,7 @@ private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMess
     checkConfirmVerified(o)
 }
 
-private fun checkShouldErrorAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMessageInterface, o: EngineResults) {
+private fun checkShouldErrorAndDoNothingMore(stateIn: TaskState?, msgIn: TaskMessage, o: EngineResults) {
     verifyOrder {
         o.stater.getState(msgIn.getStateId())
         o.logger.error(any(), msgIn, stateIn)
