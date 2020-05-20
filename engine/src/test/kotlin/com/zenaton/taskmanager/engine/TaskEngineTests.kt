@@ -20,7 +20,7 @@ import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
-import com.zenaton.taskmanager.stater.TaskStaterInterface
+import com.zenaton.taskmanager.state.StateStorage
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
@@ -55,7 +55,7 @@ fun taskDispatched(values: Map<String, Any?>? = null) = TestFactory.get(TaskDisp
 class EngineResults {
     lateinit var taskDispatcher: TaskDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcher
-    lateinit var stater: TaskStaterInterface
+    lateinit var stater: StateStorage
     lateinit var logger: TaskLogger
     var state: TaskState? = null
     var runTask: RunTask? = null
@@ -78,7 +78,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     // mocking
     val taskDispatcher = mockk<TaskDispatcher>()
     val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stater = mockk<TaskStaterInterface>()
+    val stateStorage = mockk<StateStorage>()
     val logger = mockk<TaskLogger>()
     val stateSlot = slot<TaskState>()
     val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
@@ -95,10 +95,10 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     val taskStatusUpdatedSlot = slot<TaskStatusUpdated>()
     every { logger.error(any(), msgIn, stateIn) } returns "error!"
     every { logger.warn(any(), msgIn, stateIn) } returns "warn!"
-    every { stater.getState(msgIn.getStateId()) } returns state
-    every { stater.createState(any(), capture(stateSlot)) } just Runs
-    every { stater.updateState(any(), capture(stateSlot)) } just Runs
-    every { stater.deleteState(any()) } just Runs
+    every { stateStorage.getState(msgIn.getStateId()) } returns state
+    every { stateStorage.createState(any(), capture(stateSlot)) } just Runs
+    every { stateStorage.updateState(any(), capture(stateSlot)) } just Runs
+    every { stateStorage.deleteState(any()) } just Runs
     every { taskDispatcher.dispatch(capture(runTaskSlot)) } just Runs
     every { taskDispatcher.dispatch(capture(retryTaskAttemptSlot), capture(retryTaskAttemptDelaySlot)) } just Runs
     every { taskDispatcher.dispatch(capture(taskAttemptCompletedSlot)) } just Runs
@@ -113,8 +113,8 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     // given
     val engine = TaskEngine()
     engine.taskDispatcher = taskDispatcher
+    engine.stateStorage = stateStorage
     engine.workflowDispatcher = workflowDispatcher
-    engine.stater = stater
     engine.logger = logger
     // when
     engine.handle(msg = msgIn)
@@ -122,7 +122,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     val o = EngineResults()
     o.taskDispatcher = taskDispatcher
     o.workflowDispatcher = workflowDispatcher
-    o.stater = stater
+    o.stater = stateStorage
     o.logger = logger
     if (stateSlot.isCaptured) o.state = stateSlot.captured
     if (runTaskSlot.isCaptured) o.runTask = runTaskSlot.captured

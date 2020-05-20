@@ -1,15 +1,15 @@
 package com.zenaton.taskmanager.pulsar.metrics
 
 import com.zenaton.commons.pulsar.utils.Logger
-import com.zenaton.taskmanager.messages.events.AvroTaskStatusUpdated
+import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessage
 import com.zenaton.taskmanager.metrics.TaskMetrics
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.state.StateStorageImpl
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class TaskMetricsFunction : Function<AvroTaskStatusUpdated, Void> {
-    override fun process(input: AvroTaskStatusUpdated, context: Context?): Void? {
+class TaskMetricsFunction : Function<AvroTaskMetricMessage, Void> {
+    override fun process(input: AvroTaskMetricMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received from tasks.StateFunction")
 
         try {

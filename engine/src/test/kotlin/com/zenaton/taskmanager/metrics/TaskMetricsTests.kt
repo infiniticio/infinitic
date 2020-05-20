@@ -3,7 +3,7 @@ package com.zenaton.taskmanager.metrics
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.data.TaskName
 import com.zenaton.taskmanager.data.TaskStatus
-import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
+import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.pulsar.state.StateStorageImpl
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.data.forAll
