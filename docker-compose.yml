@@ -7,7 +7,7 @@ services:
     command: >
       /bin/bash -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
     volumes:
-      - "./data/:/pulsar/data"
+      - "pulsar-data:/pulsar/data"
       - "/pulsar/conf"
       - "./engine/build/libs:/zenaton/engine/libs:delegated"
       - "./engine/build/schemas:/zenaton/engine/schemas:delegated"
@@ -25,7 +25,7 @@ services:
     links:
       - pulsar
     volumes:
-      - "./data/:/data"
+      - "pulsar-data:/data"
     environment:
       REDIRECT_HOST: "http://127.0.0.1"
       REDIRECT_PORT: "9527"
@@ -34,3 +34,5 @@ services:
       USERNAME: "pulsar"
       PASSWORD: "pulsar"
       LOG_LEVEL: "DEBUG"
+volumes:
+  pulsar-data:

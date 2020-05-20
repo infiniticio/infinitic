@@ -1,0 +1,35 @@
+{
+    "type": "record",
+    "name": "AvroTaskStatusUpdated",
+    "namespace": "com.zenaton.taskmanager.messages.events",
+    "fields": [
+        {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "taskName",
+            "type": "string"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "oldStatus",
+            "type": [
+                "null",
+                "com.zenaton.taskmanager.data.AvroTaskStatus"
+            ]
+        },
+        {
+            "name": "newStatus",
+            "type": [
+                "null",
+                "com.zenaton.taskmanager.data.AvroTaskStatus"
+            ]
+        }
+    ]
+}

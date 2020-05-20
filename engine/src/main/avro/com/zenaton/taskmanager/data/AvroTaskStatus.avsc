@@ -1,0 +1,6 @@
+{
+    "type": "enum",
+    "name": "AvroTaskStatus",
+    "namespace": "com.zenaton.taskmanager.data",
+    "symbols": ["OK", "WARNING", "ERROR"]
+}

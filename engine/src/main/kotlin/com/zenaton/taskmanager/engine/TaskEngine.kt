@@ -1,6 +1,7 @@
 package com.zenaton.taskmanager.engine
 
 import com.zenaton.taskmanager.data.TaskAttemptId
+import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.dispatcher.TaskDispatcherInterface
 import com.zenaton.taskmanager.logger.TaskLoggerInterface
 import com.zenaton.taskmanager.messages.TaskAttemptFailingMessageInterface
@@ -16,8 +17,10 @@ import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
+import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.state.TaskStaterInterface
+import com.zenaton.taskmanager.state.TaskStatusTransition
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
 
@@ -30,16 +33,22 @@ class TaskEngine {
     fun handle(msg: TaskMessageInterface) {
         // get associated state
         var state = stater.getState(msg.getStateId())
+        var stateTransition: TaskStatusTransition
         if (state == null) {
             // a null state should mean that this task is already terminated => all messages others than TaskDispatched are ignored
             if (msg !is DispatchTask) {
                 logger.warn("No state found for message: (It's normal if this task is already terminated)%s", msg, null)
                 return
             }
+
+            // init a state transition for the new task
+            stateTransition = TaskStatusTransition.createNew()
+
             // init a state
             state = TaskState(
                 taskId = msg.taskId,
                 taskName = msg.taskName,
+                taskStatus = TaskStatus.OK,
                 taskData = msg.taskData,
                 taskAttemptId = TaskAttemptId(),
                 taskAttemptIndex = 0,
@@ -66,6 +75,9 @@ class TaskEngine {
                 logger.error("Already existing state:%s for message:%s", msg, state)
                 return
             }
+
+            // init a state transition for the already existing task
+            stateTransition = TaskStatusTransition.createFromState(state)
         }
 
         when (msg) {
@@ -80,6 +92,14 @@ class TaskEngine {
             is TaskCanceled -> Unit
             else -> throw Exception("Unknown Message $msg")
         }
+
+        // capture the new state of the task and notify change of status
+        when (msg) {
+            is CancelTask -> stateTransition.newStatus = null
+            is TaskAttemptCompleted -> stateTransition.newStatus = null
+            else -> stateTransition.newStatus = state.taskStatus
+        }
+        notifyTaskStatusUpdated(state, stateTransition)
     }
 
     private fun cancelTask(msg: CancelTask) {
@@ -138,6 +158,7 @@ class TaskEngine {
         // update state
         state.taskAttemptId = rt.taskAttemptId
         state.taskAttemptIndex = rt.taskAttemptIndex
+        state.taskStatus = TaskStatus.WARNING
         stater.updateState(msg.getStateId(), state)
     }
 
@@ -164,6 +185,7 @@ class TaskEngine {
 
         // update state
         state.taskAttemptIndex = newIndex
+        state.taskStatus = TaskStatus.WARNING
         stater.updateState(msg.getStateId(), state)
     }
 
@@ -182,14 +204,13 @@ class TaskEngine {
     }
 
     private fun taskAttemptFailed(state: TaskState, msg: TaskAttemptFailed) {
+        state.taskStatus = TaskStatus.ERROR
+
         triggerDelayedRetry(state = state, msg = msg)
     }
 
     private fun triggerDelayedRetry(state: TaskState, msg: TaskAttemptFailingMessageInterface) {
-        if (msg.taskAttemptDelayBeforeRetry == null) {
-            return
-        }
-        val delay = msg.taskAttemptDelayBeforeRetry!!
+        val delay = msg.taskAttemptDelayBeforeRetry ?: return
         if (delay <= 0f) {
             return retryTaskAttempt(state, msg)
         }
@@ -201,6 +222,23 @@ class TaskEngine {
                 taskAttemptIndex = state.taskAttemptIndex
             )
             taskDispatcher.dispatch(tar, after = delay)
+            state.taskStatus = TaskStatus.WARNING
+            stater.updateState(msg.getStateId(), state)
         }
+    }
+
+    private fun notifyTaskStatusUpdated(state: TaskState, transition: TaskStatusTransition) {
+        if (!transition.isVoid) {
+            return
+        }
+
+        val tsc = TaskStatusUpdated(
+            taskId = state.taskId,
+            taskName = state.taskName,
+            oldStatus = transition.oldStatus,
+            newStatus = transition.newStatus
+        )
+
+        taskDispatcher.dispatch(tsc)
     }
 }

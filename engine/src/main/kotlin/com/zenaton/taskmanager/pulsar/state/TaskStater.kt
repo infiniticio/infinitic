@@ -10,8 +10,7 @@ import org.apache.pulsar.functions.api.Context
 /**
  * This class provides methods to access task's state
  */
-class TaskStater(val context: Context) :
-    TaskStaterInterface {
+class TaskStater(val context: Context) : TaskStaterInterface {
     // serializer injection
     var avroSerDe = AvroSerDe
     // converter injection
