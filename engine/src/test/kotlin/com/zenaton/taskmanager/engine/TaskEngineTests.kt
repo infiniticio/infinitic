@@ -391,6 +391,19 @@ class TaskEngineTests : StringSpec({
         checkShouldDoNothing(msgIn, o)
     }
 
+    "Task attempt started on a OK task should do nothing" {
+        val stateIn = state(mapOf(
+            "taskStatus" to TaskStatus.OK
+        ))
+        val msgIn = taskAttemptStarted(mapOf(
+            "taskId" to stateIn.taskId,
+            "taskAttemptId" to stateIn.taskAttemptId,
+            "taskAttemptIndex" to stateIn.taskAttemptIndex
+        ))
+        val o = engineHandle(stateIn, msgIn)
+        checkShouldDoNothing(msgIn, o)
+    }
+
     "Task Canceled" {
         val stateIn = state()
         val msgIn = taskCanceled(mapOf(
