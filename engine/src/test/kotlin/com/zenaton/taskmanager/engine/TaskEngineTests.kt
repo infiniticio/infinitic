@@ -24,7 +24,6 @@ import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDis
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
-import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.Runs
@@ -328,7 +327,7 @@ class TaskEngineTests : StringSpec({
         o.retryTaskAttemptDelay!! shouldBe msgIn.taskAttemptDelayBeforeRetry
         o.taskStatusUpdated!!.oldStatus shouldBe stateIn.taskStatus
         o.taskStatusUpdated!!.newStatus shouldBe TaskStatus.WARNING
-        //TODO("check retryTaskAttempt values")
+        // TODO("check retryTaskAttempt values")
     }
 
     "Task Attempt Failed with immediate retry" {
