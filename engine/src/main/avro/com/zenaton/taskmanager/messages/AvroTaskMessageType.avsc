@@ -1,0 +1,18 @@
+{
+    "name": "AvroTaskMessageType",
+    "namespace": "com.zenaton.taskmanager.messages",
+    "type": "enum",
+    "symbols": [
+        "CancelTask",
+        "DispatchTask",
+        "RetryTask",
+        "RetryTaskAttempt",
+        "TaskAttemptCompleted",
+        "TaskAttemptDispatched",
+        "TaskAttemptFailed",
+        "TaskAttemptStarted",
+        "TaskCanceled",
+        "TaskCompleted",
+        "TaskDispatched"
+    ]
+}

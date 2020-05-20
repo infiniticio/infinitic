@@ -9,13 +9,13 @@
             "logicalType": "uuid"
         },
         {
-            "name": "taskName",
-            "type": "string"
-        },
-        {
             "name": "sentAt",
             "type": "long",
             "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "taskName",
+            "type": "string"
         },
         {
             "name": "oldStatus",

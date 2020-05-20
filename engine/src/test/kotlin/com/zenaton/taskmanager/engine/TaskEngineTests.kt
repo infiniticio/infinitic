@@ -14,6 +14,8 @@ import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
+import com.zenaton.taskmanager.messages.events.TaskCompleted
+import com.zenaton.taskmanager.messages.events.TaskDispatched
 import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.pulsar.logger.TaskLogger
@@ -47,6 +49,8 @@ fun taskAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.get(T
 fun taskAttemptFailed(values: Map<String, Any?>? = null) = TestFactory.get(TaskAttemptFailed::class, values)
 fun taskAttemptStarted(values: Map<String, Any?>? = null) = TestFactory.get(TaskAttemptStarted::class, values)
 fun taskCanceled(values: Map<String, Any?>? = null) = TestFactory.get(TaskCanceled::class, values)
+fun taskCompleted(values: Map<String, Any?>? = null) = TestFactory.get(TaskCompleted::class, values)
+fun taskDispatched(values: Map<String, Any?>? = null) = TestFactory.get(TaskDispatched::class, values)
 
 class EngineResults {
     lateinit var taskDispatcher: TaskDispatcher
@@ -62,6 +66,8 @@ class EngineResults {
     var taskAttemptFailed: TaskAttemptFailed? = null
     var taskAttemptStarted: TaskAttemptStarted? = null
     var taskCanceled: TaskCanceled? = null
+    var taskCompleted: TaskCompleted? = null
+    var taskDispatched: TaskDispatched? = null
     var taskCompletedInWorkflow: TaskCompletedInWorkflow? = null
     var taskStatusUpdated: TaskStatusUpdated? = null
 }
@@ -80,6 +86,8 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
     val taskAttemptFailedSlot = slot<TaskAttemptFailed>()
     val taskAttemptStartedSlot = slot<TaskAttemptStarted>()
     val taskCanceledSlot = slot<TaskCanceled>()
+    val taskCompletedSlot = slot<TaskCompleted>()
+    val taskDispatchedSlot = slot<TaskDispatched>()
     val retryTaskAttemptSlot = slot<RetryTaskAttempt>()
     val retryTaskAttemptDelaySlot = slot<Float>()
     val runTaskSlot = slot<RunTask>()
@@ -98,6 +106,8 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
     every { taskDispatcher.dispatch(capture(taskAttemptFailedSlot)) } just Runs
     every { taskDispatcher.dispatch(capture(taskAttemptStartedSlot)) } just Runs
     every { taskDispatcher.dispatch(capture(taskCanceledSlot)) } just Runs
+    every { taskDispatcher.dispatch(capture(taskCompletedSlot)) } just Runs
+    every { taskDispatcher.dispatch(capture(taskDispatchedSlot)) } just Runs
     every { taskDispatcher.dispatch(capture(taskStatusUpdatedSlot)) } just Runs
     every { workflowDispatcher.dispatch(capture(taskCompletedInWorkflowSlot)) } just Runs
     // given
@@ -123,6 +133,8 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskMessageInterface): EngineResult
     if (taskAttemptFailedSlot.isCaptured) o.taskAttemptFailed = taskAttemptFailedSlot.captured
     if (taskAttemptStartedSlot.isCaptured) o.taskAttemptStarted = taskAttemptStartedSlot.captured
     if (taskCanceledSlot.isCaptured) o.taskCanceled = taskCanceledSlot.captured
+    if (taskCompletedSlot.isCaptured) o.taskCompleted = taskCompletedSlot.captured
+    if (taskDispatchedSlot.isCaptured) o.taskDispatched = taskDispatchedSlot.captured
     if (taskStatusUpdatedSlot.isCaptured) o.taskStatusUpdated = taskStatusUpdatedSlot.captured
     if (taskCompletedInWorkflowSlot.isCaptured) o.taskCompletedInWorkflow = taskCompletedInWorkflowSlot.captured
 
@@ -140,6 +152,8 @@ class TaskEngineTests : StringSpec({
     include(shouldWarnIfNotState(taskAttemptFailed()))
     include(shouldWarnIfNotState(taskAttemptStarted()))
     include(shouldWarnIfNotState(taskCanceled()))
+    include(shouldWarnIfNotState(taskCompleted()))
+    include(shouldWarnIfNotState(taskDispatched()))
 
     include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(cancelTask()))
     include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(retryTask()))
@@ -150,6 +164,8 @@ class TaskEngineTests : StringSpec({
     include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskAttemptFailed()))
     include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskAttemptStarted()))
     include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskCanceled()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskCompleted()))
+    include(shouldErrorIfStateAndMessageHaveInconsistentTaskId(taskDispatched()))
 
     // Note: taskAttemptCompleted is voluntary excluded of this test
     include(shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(retryTaskAttempt()))
@@ -198,6 +214,7 @@ class TaskEngineTests : StringSpec({
         verifyOrder {
             o.stater.getState(msgIn.getStateId())
             o.taskDispatcher.dispatch(o.runTask!!)
+            o.taskDispatcher.dispatch(o.taskDispatched!!)
             o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
             o.stater.createState(msgIn.getStateId(), o.state!!)
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
@@ -277,6 +294,7 @@ class TaskEngineTests : StringSpec({
         verifyOrder {
             o.stater.getState(msgIn.getStateId())
             o.workflowDispatcher.dispatch(o.taskCompletedInWorkflow!!)
+            o.taskDispatcher.dispatch(o.taskCompleted!!)
             o.stater.deleteState(msgIn.getStateId())
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
@@ -324,10 +342,14 @@ class TaskEngineTests : StringSpec({
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
+        o.retryTaskAttempt!!.taskId shouldBe stateIn.taskId
+        o.retryTaskAttempt!!.taskAttemptId shouldBe stateIn.taskAttemptId
+        o.retryTaskAttempt!!.taskAttemptIndex shouldBe stateIn.taskAttemptIndex
         o.retryTaskAttemptDelay!! shouldBe msgIn.taskAttemptDelayBeforeRetry
+        o.taskStatusUpdated!!.taskId shouldBe stateIn.taskId
+        o.taskStatusUpdated!!.taskName shouldBe stateIn.taskName
         o.taskStatusUpdated!!.oldStatus shouldBe stateIn.taskStatus
         o.taskStatusUpdated!!.newStatus shouldBe TaskStatus.WARNING
-        // TODO("check retryTaskAttempt values")
     }
 
     "Task Attempt Failed with immediate retry" {
@@ -374,6 +396,24 @@ class TaskEngineTests : StringSpec({
     "Task Canceled" {
         val stateIn = state()
         val msgIn = taskCanceled(mapOf(
+            "taskId" to stateIn.taskId
+        ))
+        val o = engineHandle(stateIn, msgIn)
+        checkShouldDoNothing(msgIn, o)
+    }
+
+    "Task Completed" {
+        val stateIn = state()
+        val msgIn = taskCompleted(mapOf(
+            "taskId" to stateIn.taskId
+        ))
+        val o = engineHandle(stateIn, msgIn)
+        checkShouldDoNothing(msgIn, o)
+    }
+
+    "Task Dispatched" {
+        val stateIn = state()
+        val msgIn = taskDispatched(mapOf(
             "taskId" to stateIn.taskId
         ))
         val o = engineHandle(stateIn, msgIn)

@@ -1,0 +1,17 @@
+{
+    "type": "record",
+    "name": "AvroTaskDispatched",
+    "namespace": "com.zenaton.taskmanager.messages.events",
+    "fields": [
+        {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        }
+    ]
+}

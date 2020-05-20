@@ -8,8 +8,8 @@ import com.zenaton.taskmanager.messages.TaskMessageInterface
 
 data class TaskStatusUpdated(
     override var taskId: TaskId,
-    var taskName: TaskName,
     override var sentAt: DateTime = DateTime(),
+    var taskName: TaskName,
     val oldStatus: TaskStatus?,
     val newStatus: TaskStatus?
 ) : TaskMessageInterface

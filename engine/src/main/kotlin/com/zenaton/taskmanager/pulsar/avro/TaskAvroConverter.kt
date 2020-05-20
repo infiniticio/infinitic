@@ -19,12 +19,16 @@ import com.zenaton.taskmanager.messages.events.AvroTaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.AvroTaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.AvroTaskCanceled
+import com.zenaton.taskmanager.messages.events.AvroTaskCompleted
+import com.zenaton.taskmanager.messages.events.AvroTaskDispatched
 import com.zenaton.taskmanager.messages.events.AvroTaskStatusUpdated
 import com.zenaton.taskmanager.messages.events.TaskAttemptCompleted
 import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
+import com.zenaton.taskmanager.messages.events.TaskCompleted
+import com.zenaton.taskmanager.messages.events.TaskDispatched
 import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.states.AvroTaskState
@@ -43,19 +47,17 @@ object TaskAvroConverter {
      *  Topic.TASK_ATTEMPTS message
      */
     fun toAvro(obj: RunTask) = convert<AvroRunTask>(obj)
-    fun fromAvro(obj: AvroRunTask) = convert<RunTask>(obj)
 
     /**
      * Topic.TASK_STATUS_UPDATES message
      */
     fun toAvro(obj: TaskStatusUpdated) = convert<AvroTaskStatusUpdated>(obj)
-    fun fromAvro(obj: AvroTaskStatusUpdated) = convert<TaskStatusUpdated>(obj)
 
     /**
      * Topic.TASKS message
      */
     fun toAvro(msg: TaskMessageInterface): AvroTaskMessage {
-        var builder = AvroTaskMessage.newBuilder()
+        val builder = AvroTaskMessage.newBuilder()
         builder.taskId = msg.taskId.id
         when (msg) {
             is CancelTask -> {
@@ -94,14 +96,21 @@ object TaskAvroConverter {
                 builder.taskCanceled = switch(msg)
                 builder.type = AvroTaskMessageType.TaskCanceled
             }
+            is TaskCompleted -> {
+                builder.taskCompleted = switch(msg)
+                builder.type = AvroTaskMessageType.TaskCompleted
+            }
+            is TaskDispatched -> {
+                builder.taskDispatched = switch(msg)
+                builder.type = AvroTaskMessageType.TaskDispatched
+            }
             else -> throw Exception("Unknown task message class ${msg::class}")
         }
         return builder.build()
     }
 
     fun fromAvro(input: AvroTaskMessage): TaskMessageInterface {
-        val type = input.getType()
-        return when (type) {
+        return when (val type = input.getType()) {
             AvroTaskMessageType.CancelTask -> switch(input.cancelTask)
             AvroTaskMessageType.DispatchTask -> switch(input.dispatchTask)
             AvroTaskMessageType.RetryTask -> switch(input.retryTask)
@@ -111,6 +120,8 @@ object TaskAvroConverter {
             AvroTaskMessageType.TaskAttemptFailed -> switch(input.taskAttemptFailed)
             AvroTaskMessageType.TaskAttemptStarted -> switch(input.taskAttemptStarted)
             AvroTaskMessageType.TaskCanceled -> switch(input.taskCanceled)
+            AvroTaskMessageType.TaskCompleted -> switch(input.taskCompleted)
+            AvroTaskMessageType.TaskDispatched -> switch(input.taskDispatched)
             else -> throw Exception("Unknown avro task message type: $type")
         }
     }
@@ -148,8 +159,14 @@ object TaskAvroConverter {
     private fun switch(obj: TaskCanceled) = convert<AvroTaskCanceled>(obj)
     private fun switch(obj: AvroTaskCanceled) = convert<TaskCanceled>(obj)
 
+    private fun switch(obj: TaskCompleted) = convert<AvroTaskCompleted>(obj)
+    private fun switch(obj: AvroTaskCompleted) = convert<TaskCompleted>(obj)
+
+    private fun switch(obj: TaskDispatched) = convert<AvroTaskDispatched>(obj)
+    private fun switch(obj: AvroTaskDispatched) = convert<TaskDispatched>(obj)
+
     /**
      *  Mapping function by Json serialization/deserialization
      */
-    private inline fun <reified T : Any> convert(from: Any): T = Json.parse<T>(Json.stringify(from))
+    private inline fun <reified T : Any> convert(from: Any): T = Json.parse(Json.stringify(from))
 }

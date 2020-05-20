@@ -5,21 +5,7 @@
     "fields": [
         {
             "name": "type",
-            "type": {
-                "name": "AvroTaskMessageType",
-                "type": "enum",
-                "symbols": [
-                    "CancelTask",
-                    "DispatchTask",
-                    "RetryTask",
-                    "RetryTaskAttempt",
-                    "TaskAttemptCompleted",
-                    "TaskAttemptDispatched",
-                    "TaskAttemptFailed",
-                    "TaskAttemptStarted",
-                    "TaskCanceled"
-                ]
-            }
+            "type": "com.zenaton.taskmanager.messages.AvroTaskMessageType"
         }, {
             "name": "taskId",
             "type": "string",
@@ -60,6 +46,14 @@
             "name": "TaskCanceled",
             "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskCanceled"],
             "default": null
-        }
+        }, {
+             "name": "TaskCompleted",
+             "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskCompleted"],
+             "default": null
+         }, {
+             "name": "TaskDispatched",
+             "type": ["null", "com.zenaton.taskmanager.messages.events.AvroTaskDispatched"],
+             "default": null
+         }
     ]
 }

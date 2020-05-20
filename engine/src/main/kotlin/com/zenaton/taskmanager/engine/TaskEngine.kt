@@ -17,11 +17,13 @@ import com.zenaton.taskmanager.messages.events.TaskAttemptDispatched
 import com.zenaton.taskmanager.messages.events.TaskAttemptFailed
 import com.zenaton.taskmanager.messages.events.TaskAttemptStarted
 import com.zenaton.taskmanager.messages.events.TaskCanceled
+import com.zenaton.taskmanager.messages.events.TaskCompleted
+import com.zenaton.taskmanager.messages.events.TaskDispatched
 import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.state.TaskStaterInterface
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
-import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
+import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine {
     lateinit var taskDispatcher: TaskDispatcherInterface
@@ -86,6 +88,8 @@ class TaskEngine {
             is TaskAttemptFailed -> taskAttemptFailed(state, msg)
             is TaskAttemptStarted -> Unit
             is TaskCanceled -> Unit
+            is TaskCompleted -> Unit
+            is TaskDispatched -> Unit
             else -> throw Exception("Unknown Message $msg")
         }
 
@@ -129,7 +133,12 @@ class TaskEngine {
         )
         taskDispatcher.dispatch(rt)
 
-        // log event
+        // log events
+        val td = TaskDispatched(
+            taskId = state.taskId
+        )
+        taskDispatcher.dispatch(td)
+
         val tad = TaskAttemptDispatched(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
@@ -197,13 +206,21 @@ class TaskEngine {
     private fun taskAttemptCompleted(state: TaskState, msg: TaskAttemptCompleted) {
         // if this task belongs to a workflow
         if (state.workflowId != null) {
-            val tc = TaskCompleted(
+            val tciw = TaskCompletedInWorkflow(
                 workflowId = state.workflowId,
                 taskId = state.taskId,
                 taskOutput = msg.taskOutput
             )
-            workflowDispatcher.dispatch(tc)
+            workflowDispatcher.dispatch(tciw)
         }
+
+        // log event
+        val tc = TaskCompleted(
+            taskId = state.taskId,
+            taskOutput = msg.taskOutput
+        )
+        taskDispatcher.dispatch(tc)
+
         // delete state
         stater.deleteState(msg.getStateId())
     }
