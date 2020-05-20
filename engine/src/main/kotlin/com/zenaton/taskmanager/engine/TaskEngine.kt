@@ -20,7 +20,6 @@ import com.zenaton.taskmanager.messages.events.TaskCanceled
 import com.zenaton.taskmanager.messages.events.TaskStatusUpdated
 import com.zenaton.taskmanager.state.TaskState
 import com.zenaton.taskmanager.state.TaskStaterInterface
-import com.zenaton.taskmanager.state.TaskStatusTransition
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted
 
@@ -31,28 +30,25 @@ class TaskEngine {
     lateinit var logger: TaskLoggerInterface
 
     fun handle(msg: TaskMessageInterface) {
+        var oldStatus: TaskStatus? = null
+
         // get associated state
         var state = stater.getState(msg.getStateId())
-        var stateTransition: TaskStatusTransition
         if (state == null) {
             // a null state should mean that this task is already terminated => all messages others than TaskDispatched are ignored
             if (msg !is DispatchTask) {
                 logger.warn("No state found for message: (It's normal if this task is already terminated)%s", msg, null)
                 return
             }
-
-            // init a state transition for the new task
-            stateTransition = TaskStatusTransition.createNew()
-
             // init a state
             state = TaskState(
                 taskId = msg.taskId,
                 taskName = msg.taskName,
-                taskStatus = TaskStatus.OK,
                 taskData = msg.taskData,
+                workflowId = msg.workflowId,
                 taskAttemptId = TaskAttemptId(),
                 taskAttemptIndex = 0,
-                workflowId = msg.workflowId
+                taskStatus = TaskStatus.OK
             )
         } else {
             // this should never happen
@@ -76,8 +72,8 @@ class TaskEngine {
                 return
             }
 
-            // init a state transition for the already existing task
-            stateTransition = TaskStatusTransition.createFromState(state)
+            // set current status
+            oldStatus = state.taskStatus
         }
 
         when (msg) {
@@ -94,12 +90,21 @@ class TaskEngine {
         }
 
         // capture the new state of the task and notify change of status
-        when (msg) {
-            is CancelTask -> stateTransition.newStatus = null
-            is TaskAttemptCompleted -> stateTransition.newStatus = null
-            else -> stateTransition.newStatus = state.taskStatus
+        val newStatus = when (msg) {
+            is CancelTask, is TaskAttemptCompleted -> null
+            else -> state.taskStatus
         }
-        notifyTaskStatusUpdated(state, stateTransition)
+
+        if (oldStatus != newStatus) {
+            val tsc = TaskStatusUpdated(
+                taskId = state.taskId,
+                taskName = state.taskName,
+                oldStatus = oldStatus,
+                newStatus = newStatus
+            )
+
+            taskDispatcher.dispatch(tsc)
+        }
     }
 
     private fun cancelTask(msg: CancelTask) {
@@ -116,19 +121,19 @@ class TaskEngine {
     private fun dispatchTask(state: TaskState, msg: DispatchTask) {
         // send task to workers
         val rt = RunTask(
-            taskId = msg.taskId,
+            taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptIndex = state.taskAttemptIndex,
-            taskName = msg.taskName,
-            taskData = msg.taskData
+            taskName = state.taskName,
+            taskData = state.taskData
         )
         taskDispatcher.dispatch(rt)
 
         // log event
         val tad = TaskAttemptDispatched(
-            taskId = rt.taskId,
-            taskAttemptId = rt.taskAttemptId,
-            taskAttemptIndex = rt.taskAttemptIndex
+            taskId = state.taskId,
+            taskAttemptId = state.taskAttemptId,
+            taskAttemptIndex = state.taskAttemptIndex
         )
         taskDispatcher.dispatch(tad)
 
@@ -137,11 +142,15 @@ class TaskEngine {
     }
 
     private fun retryTask(state: TaskState, msg: RetryTask) {
+        state.taskAttemptId = TaskAttemptId()
+        state.taskAttemptIndex = 0
+        state.taskStatus = TaskStatus.WARNING
+
         // send task to workers
         val rt = RunTask(
             taskId = state.taskId,
-            taskAttemptId = TaskAttemptId(),
-            taskAttemptIndex = 0,
+            taskAttemptId = state.taskAttemptId,
+            taskAttemptIndex = state.taskAttemptIndex,
             taskName = state.taskName,
             taskData = state.taskData
         )
@@ -149,27 +158,25 @@ class TaskEngine {
 
         // log event
         val tad = TaskAttemptDispatched(
-            taskId = rt.taskId,
-            taskAttemptId = rt.taskAttemptId,
-            taskAttemptIndex = rt.taskAttemptIndex
+            taskId = state.taskId,
+            taskAttemptId = state.taskAttemptId,
+            taskAttemptIndex = state.taskAttemptIndex
         )
         taskDispatcher.dispatch(tad)
 
         // update state
-        state.taskAttemptId = rt.taskAttemptId
-        state.taskAttemptIndex = rt.taskAttemptIndex
-        state.taskStatus = TaskStatus.WARNING
         stater.updateState(msg.getStateId(), state)
     }
 
     private fun retryTaskAttempt(state: TaskState, msg: TaskMessageInterface) {
-        val newIndex = state.taskAttemptIndex + 1
+        state.taskAttemptIndex = state.taskAttemptIndex + 1
+        state.taskStatus = TaskStatus.WARNING
 
         // send task to workers
         val rt = RunTask(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
-            taskAttemptIndex = newIndex,
+            taskAttemptIndex = state.taskAttemptIndex,
             taskName = state.taskName,
             taskData = state.taskData
         )
@@ -179,13 +186,11 @@ class TaskEngine {
         val tar = TaskAttemptDispatched(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
-            taskAttemptIndex = newIndex
+            taskAttemptIndex = state.taskAttemptIndex
         )
         taskDispatcher.dispatch(tar)
 
         // update state
-        state.taskAttemptIndex = newIndex
-        state.taskStatus = TaskStatus.WARNING
         stater.updateState(msg.getStateId(), state)
     }
 
@@ -222,23 +227,9 @@ class TaskEngine {
                 taskAttemptIndex = state.taskAttemptIndex
             )
             taskDispatcher.dispatch(tar, after = delay)
+
             state.taskStatus = TaskStatus.WARNING
             stater.updateState(msg.getStateId(), state)
         }
-    }
-
-    private fun notifyTaskStatusUpdated(state: TaskState, transition: TaskStatusTransition) {
-        if (!transition.isVoid) {
-            return
-        }
-
-        val tsc = TaskStatusUpdated(
-            taskId = state.taskId,
-            taskName = state.taskName,
-            oldStatus = transition.oldStatus,
-            newStatus = transition.newStatus
-        )
-
-        taskDispatcher.dispatch(tsc)
     }
 }

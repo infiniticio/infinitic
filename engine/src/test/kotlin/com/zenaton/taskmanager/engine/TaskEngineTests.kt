@@ -360,7 +360,7 @@ class TaskEngineTests : StringSpec({
 
     "Task Attempt Started" {
         val stateIn = state(mapOf(
-            "taskStatus" to TaskStatus.WARNING
+            "taskStatus" to TaskStatus.OK
         ))
         val msgIn = taskAttemptStarted(mapOf(
             "taskId" to stateIn.taskId,
