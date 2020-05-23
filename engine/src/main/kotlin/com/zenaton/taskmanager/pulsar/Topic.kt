@@ -1,14 +1,14 @@
 package com.zenaton.taskmanager.pulsar
 
 enum class Topic {
-    TASKS {
+    ENGINE {
         override fun get(name: String?) = "tasks"
     },
-    TASK_ATTEMPTS {
+    WORKERS {
         override fun get(name: String?) = "tasks-$name"
     },
-    TASK_STATUS_UPDATES {
-        override fun get(name: String?) = "task-status-updates"
+    METRICS {
+        override fun get(name: String?) = "tasks-status-updated"
     },
     LOGS {
         override fun get(name: String?) = "logs"

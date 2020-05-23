@@ -1,11 +1,11 @@
 package com.zenaton.taskmanager.dispatcher
 
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
-import com.zenaton.taskmanager.messages.workers.RunTask
+import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
+import com.zenaton.taskmanager.messages.workers.TaskWorkerMessage
 
 interface TaskDispatcherInterface {
-    fun dispatch(msg: RunTask)
-    fun dispatch(msg: TaskStatusUpdated)
+    fun dispatch(msg: TaskWorkerMessage)
+    fun dispatch(msg: TaskMetricMessage)
     fun dispatch(msg: TaskEngineMessage, after: Float = 0f)
 }

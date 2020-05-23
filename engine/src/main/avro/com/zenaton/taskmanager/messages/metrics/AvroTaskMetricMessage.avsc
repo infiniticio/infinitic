@@ -7,7 +7,7 @@
             "name": "type",
             "type": "com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessageType"
         }, {
-             "name": "RunTask",
+             "name": "TaskStatusUpdated",
              "type": ["null", "com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated"],
              "default": null
         }

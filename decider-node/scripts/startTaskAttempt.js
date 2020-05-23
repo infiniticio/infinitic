@@ -1,8 +1,8 @@
 const { pulsar } = require('../pulsar');
-const { taskMessageType } = require('../avro');
+const { taskEngineMessageType } = require('../avro');
 
-const taskId = '0957bf99-4183-42a8-aaea-e0086b3744f3';
-const taskAttemptId = '1faadefc-e106-4cb2-8b73-91e68356e3f5';
+const taskId = '563b520d-f0b1-458f-a49f-4d8e8274885f';
+const taskAttemptId = '967fee3c-36ad-42f3-9cc9-7de72343e9b5';
 const taskAttemptIndex = 0;
 
 (async () => {
@@ -21,13 +21,13 @@ const taskAttemptIndex = 0;
   m.taskAttemptDelayBeforeRetry = 10.0
   m.taskAttemptDelayBeforeTimeout = 3.0
 
-  var masg = new Object()
-  masg.type = "TaskAttemptStarted"
-  masg.taskId = m.taskId
-  msg[msg.type] = {'com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted': m}
+  var msg = new Object()
+  msg.type = "TaskAttemptStarted"
+  msg.taskId = m.taskId
+  msg[msg.type] = {'com.zenaton.taskmanager.messages.engine.AvroTaskAttemptStarted': m}
 
   // Send message
-  producer.send({data: taskMessageType.toBuffer(masg)});
+  producer.send({data: taskEngineMessageType.toBuffer(msg)});
   await producer.flush();
 
   await producer.close();

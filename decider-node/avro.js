@@ -10,19 +10,23 @@ const assertValid = function assertValid(type, val) {
 
 var registry = {}
 
-var cancelTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/commands/AvroCancelTask.avsc", { registry });
-var dispatchTaskType = avro.parse(__dirname + "/avro/taskmanager/messages/commands/AvroDispatchTask.avsc", { registry });
-var retryTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/commands/AvroRetryTask.avsc", { registry });
-var retryTaskAttemptType = avro.parse(__dirname +"/avro/taskmanager/messages/commands/AvroRetryTaskAttempt.avsc", { registry });
+avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskEngineMessageType.avsc", { registry  });
+var cancelTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroCancelTask.avsc", { registry });
+var dispatchTaskType = avro.parse(__dirname + "/avro/taskmanager/messages/engine/AvroDispatchTask.avsc", { registry });
+var retryTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroRetryTask.avsc", { registry });
+var retryTaskAttemptType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroRetryTaskAttempt.avsc", { registry });
+var taskAttemptCompletedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskAttemptCompleted.avsc", { registry });
+var taskAttemptDispatchedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskAttemptDispatched.avsc", { registry });
+var taskAttemptFailedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskAttemptFailed.avsc", { registry });
+var taskAttemptStartedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskAttemptStarted.avsc", { registry });
+var taskCanceledType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskCanceled.avsc", { registry });
+var taskCompletedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskCompleted.avsc", { registry });
+var taskDispatchedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskDispatched.avsc", { registry });
+var taskEngineMessageType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskEngineMessage.avsc", { registry  });
 
-var taskAttemptCompletedType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptCompleted.avsc", { registry });
-var taskAttemptDispatchedType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptDispatched.avsc", { registry });
-var taskAttemptFailedType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptFailed.avsc", { registry });
-var taskAttemptStartedType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskAttemptStarted.avsc", { registry });
-var taskCanceledType = avro.parse(__dirname +"/avro/taskmanager/messages/events/AvroTaskCanceled.avsc", { registry });
-
-var taskMessageType = avro.parse(__dirname +"/avro/taskmanager/messages/AvroTaskMessage.avsc", { registry  });
-var runTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/AvroRunTask.avsc", { registry  });
+avro.parse(__dirname +"/avro/taskmanager/messages/workers/AvroTaskworkerMessageType.avsc", { registry  });
+var runTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/workers/AvroRunTask.avsc", { registry  });
+var taskWorkerMessageType = avro.parse(__dirname +"/avro/taskmanager/messages/workers/AvroTaskWorkerMessage.avsc", { registry  });
 
 
 module.exports = {
@@ -32,13 +36,15 @@ module.exports = {
     dispatchTaskType,
     retryTaskType,
     retryTaskAttemptType,
-
     taskAttemptCompletedType,
     taskAttemptDispatchedType,
     taskAttemptFailedType,
     taskAttemptStartedType,
     taskCanceledType,
+    taskCompletedType,
+    taskDispatchedType,
+    taskEngineMessageType,
 
-    taskMessageType,
-    runTaskType
+    runTaskType,
+    taskWorkerMessageType,
 }

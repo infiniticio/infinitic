@@ -29,7 +29,6 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     testImplementation("org.jeasy:easy-random-core:4.2.+")
-//    testImplementation("com.github.javafaker:javafaker:1.0.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")
     testImplementation("io.kotest:kotest-core-jvm:4.0.+")
@@ -71,7 +70,7 @@ avro {
     isCreateSetters.set(false)
     isCreateOptionalGetters.set(false)
     isGettersReturnOptional.set(false)
-    fieldVisibility.set("PUBLIC_DEPRECATED")
+    fieldVisibility.set("PRIVATE")
     outputCharacterEncoding.set("UTF-8")
     stringType.set("String")
     templateDirectory.set(null as String?)
@@ -86,8 +85,12 @@ tasks.register("install") {
     doLast {
         createSchemaFiles()
         uploadSchemaToTopic(
-            name = "AvroTaskMessage",
+            name = "AvroTaskEngineMessage",
             topic = "tasks"
+        )
+        uploadSchemaToTopic(
+                name = "AvroTaskMetricMessage",
+                topic = "tasks-status-updated"
         )
         setZenatonFunction(
             className = "com.zenaton.taskmanager.pulsar.engine.TaskEngineFunction",
@@ -119,8 +122,12 @@ tasks.register("update") {
     doLast {
         createSchemaFiles()
         uploadSchemaToTopic(
-            name = "AvroTaskMessage",
+            name = "AvroTaskEngineMessage",
             topic = "tasks"
+        )
+        uploadSchemaToTopic(
+                name = "AvroTaskMetricMessage",
+                topic = "tasks-status-updated"
         )
         setZenatonFunction(
             className = "com.zenaton.taskmanager.pulsar.engine.TaskEngineFunction",
@@ -152,6 +159,7 @@ tasks.register("delete") {
         forceDeleteTopic("workflows")
         forceDeleteTopic("decisions")
         forceDeleteTopic("tasks")
+        forceDeleteTopic("tasks-status-updated")
         forceDeleteTopic("delays")
         forceDeleteTopic("logs")
     }
@@ -170,7 +178,7 @@ fun uploadSchemaToTopic(
     tenant: String = "public",
     namespace: String = "default"
 ) {
-    println("Uploading $name schema to $topic...")
+    println("Uploading $name schema to $topic topic...")
     val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin",
         "schemas", "upload",
         "persistent://$tenant/$namespace/$topic",

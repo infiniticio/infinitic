@@ -1,5 +1,5 @@
 const { pulsar } = require('../pulsar');
-const { taskMessageType } = require('../avro');
+const { taskEngineMessageType } = require('../avro');
 
 const taskId = '15a243f6-5477-4dd7-9ebe-c89d8ad6744c';
 
@@ -18,10 +18,10 @@ const taskId = '15a243f6-5477-4dd7-9ebe-c89d8ad6744c';
   var msg = new Object()
   msg.type = "RetryTask"
   msg.taskId = m.taskId
-  msg[msg.type] = {"com.zenaton.taskmanager.messages.commands.AvroRetryTask": m}
+  msg[msg.type] = {"com.zenaton.taskmanager.messages.engine.AvroRetryTask": m}
 
   // Send message
-  producer.send({data: taskMessageType.toBuffer(msg)});
+  producer.send({data: taskEngineMessageType.toBuffer(msg)});
   await producer.flush();
 
   await producer.close();

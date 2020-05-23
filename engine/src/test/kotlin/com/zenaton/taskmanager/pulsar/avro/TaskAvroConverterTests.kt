@@ -25,37 +25,36 @@ import com.zenaton.taskmanager.messages.engine.TaskCanceled
 import com.zenaton.taskmanager.messages.engine.TaskCompleted
 import com.zenaton.taskmanager.messages.engine.TaskDispatched
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
+import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
+import com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated
+import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
+import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
+import com.zenaton.taskmanager.messages.workers.AvroRunTask
+import com.zenaton.taskmanager.messages.workers.RunTask
+import com.zenaton.taskmanager.messages.workers.TaskWorkerMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
 
-inline fun <reified T : TaskEngineMessage, P : SpecificRecordBase> shouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
-    // given
-    val msg = TestFactory.get(from)
-    // when
-    val avroMsg = TaskAvroConverter.toAvro(msg)
-    val msg2 = TaskAvroConverter.fromAvro(avroMsg)
-    val avroMsg2 = TaskAvroConverter.toAvro(msg2)
-    // then
-    msg shouldBe msg2
-    avroMsg shouldBe avroMsg2
-}
-
 class TaskAvroConverterTests : StringSpec({
 
-    include(shouldBeAvroReversible(CancelTask::class, AvroCancelTask::class))
-    include(shouldBeAvroReversible(DispatchTask::class, AvroDispatchTask::class))
-    include(shouldBeAvroReversible(RetryTask::class, AvroRetryTask::class))
-    include(shouldBeAvroReversible(RetryTaskAttempt::class, AvroRetryTaskAttempt::class))
-    include(shouldBeAvroReversible(TaskAttemptCompleted::class, AvroTaskAttemptCompleted::class))
-    include(shouldBeAvroReversible(TaskAttemptDispatched::class, AvroTaskAttemptDispatched::class))
-    include(shouldBeAvroReversible(TaskAttemptFailed::class, AvroTaskAttemptFailed::class))
-    include(shouldBeAvroReversible(TaskAttemptStarted::class, AvroTaskAttemptStarted::class))
-    include(shouldBeAvroReversible(TaskCanceled::class, AvroTaskCanceled::class))
-    include(shouldBeAvroReversible(TaskCompleted::class, AvroTaskCompleted::class))
-    include(shouldBeAvroReversible(TaskDispatched::class, AvroTaskDispatched::class))
+    include(workerMessageShouldBeAvroReversible(RunTask::class, AvroRunTask::class))
+
+    include(metricMessageShouldBeAvroReversible(TaskStatusUpdated::class, AvroTaskStatusUpdated::class))
+
+    include(engineMessageShouldBeAvroReversible(CancelTask::class, AvroCancelTask::class))
+    include(engineMessageShouldBeAvroReversible(DispatchTask::class, AvroDispatchTask::class))
+    include(engineMessageShouldBeAvroReversible(RetryTask::class, AvroRetryTask::class))
+    include(engineMessageShouldBeAvroReversible(RetryTaskAttempt::class, AvroRetryTaskAttempt::class))
+    include(engineMessageShouldBeAvroReversible(TaskAttemptCompleted::class, AvroTaskAttemptCompleted::class))
+    include(engineMessageShouldBeAvroReversible(TaskAttemptDispatched::class, AvroTaskAttemptDispatched::class))
+    include(engineMessageShouldBeAvroReversible(TaskAttemptFailed::class, AvroTaskAttemptFailed::class))
+    include(engineMessageShouldBeAvroReversible(TaskAttemptStarted::class, AvroTaskAttemptStarted::class))
+    include(engineMessageShouldBeAvroReversible(TaskCanceled::class, AvroTaskCanceled::class))
+    include(engineMessageShouldBeAvroReversible(TaskCompleted::class, AvroTaskCompleted::class))
+    include(engineMessageShouldBeAvroReversible(TaskDispatched::class, AvroTaskDispatched::class))
 
     "task state should be avroReversible" {
         // given
@@ -69,3 +68,39 @@ class TaskAvroConverterTests : StringSpec({
         avroState2 shouldBe avroState
     }
 })
+
+inline fun <reified T : TaskEngineMessage, P : SpecificRecordBase> engineMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+    // given
+    val msg = TestFactory.get(from)
+    // when
+    val avroMsg = TaskAvroConverter.toAvro(msg)
+    val msg2 = TaskAvroConverter.fromAvro(avroMsg)
+    val avroMsg2 = TaskAvroConverter.toAvro(msg2)
+    // then
+    msg shouldBe msg2
+    avroMsg shouldBe avroMsg2
+}
+
+inline fun <reified T : TaskMetricMessage, P : SpecificRecordBase> metricMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+    // given
+    val msg = TestFactory.get(from)
+    // when
+    val avroMsg = TaskAvroConverter.toAvro(msg)
+    val msg2 = TaskAvroConverter.fromAvro(avroMsg)
+    val avroMsg2 = TaskAvroConverter.toAvro(msg2)
+    // then
+    msg shouldBe msg2
+    avroMsg shouldBe avroMsg2
+}
+
+inline fun <reified T : TaskWorkerMessage, P : SpecificRecordBase> workerMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+    // given
+    val msg = TestFactory.get(from)
+    // when
+    val avroMsg = TaskAvroConverter.toAvro(msg)
+    val msg2 = TaskAvroConverter.fromAvro(avroMsg)
+    val avroMsg2 = TaskAvroConverter.toAvro(msg2)
+    // then
+    msg shouldBe msg2
+    avroMsg shouldBe avroMsg2
+}

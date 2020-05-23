@@ -1,5 +1,5 @@
 const { pulsar } = require('./pulsar');
-const { taskMessageType } = require('./avro');
+const { taskEngineMessageType } = require('./avro');
 
 (async () => {
   // Create a consumer
@@ -13,7 +13,7 @@ const { taskMessageType } = require('./avro');
   // Receive messages
   for (let i = 0; i < 1000; i += 1) {
     const msg = await consumer.receive();
-    console.log(taskMessageType.fromBuffer(msg.getData()))
+    console.log(taskEngineMessageType.fromBuffer(msg.getData()))
     consumer.acknowledge(msg);
   }
 

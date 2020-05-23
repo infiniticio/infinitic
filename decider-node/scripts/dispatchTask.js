@@ -1,6 +1,6 @@
 const { pulsar } = require('../pulsar');
 const { v4: uuidv4 } = require('uuid');
-const { taskMessageType } = require('../avro');
+const { taskEngineMessageType } = require('../avro');
 
 (async () => {
   // Create a producer
@@ -20,10 +20,10 @@ const { taskMessageType } = require('../avro');
   var msg = new Object()
   msg.type = "DispatchTask"
   msg.taskId = m.taskId
-  msg[msg.type] = {'com.zenaton.taskmanager.messages.commands.AvroDispatchTask': m}
+  msg[msg.type] = {'com.zenaton.taskmanager.messages.engine.AvroDispatchTask': m}
 
   // Send message
-  producer.send({data: taskMessageType.toBuffer(msg)});
+  producer.send({data: taskEngineMessageType.toBuffer(msg)});
   await producer.flush();
 
   await producer.close();
