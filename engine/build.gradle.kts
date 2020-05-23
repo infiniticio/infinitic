@@ -126,8 +126,8 @@ tasks.register("update") {
             topic = "tasks"
         )
         uploadSchemaToTopic(
-                name = "AvroTaskMetricMessage",
-                topic = "tasks-status-updated"
+            name = "AvroTaskMetricMessage",
+            topic = "tasks-status-updated"
         )
         setZenatonFunction(
             className = "com.zenaton.taskmanager.pulsar.engine.TaskEngineFunction",
