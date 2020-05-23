@@ -1,12 +1,12 @@
 package com.zenaton.taskmanager.pulsar.engine
 
 import com.zenaton.taskmanager.engine.TaskEngine
-import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.messages.TaskMessage
+import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
+import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.pulsar.logger.TaskLogger
-import com.zenaton.taskmanager.pulsar.state.TaskStater
+import com.zenaton.taskmanager.pulsar.stater.TaskStater
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -24,11 +24,11 @@ class TaskEngineFunctionTests : StringSpec({
         // mocking
         val context = mockk<Context>()
         every { context.logger } returns mockk<org.slf4j.Logger>()
-        val taskEngine = spyk(TaskEngine())
+        val taskEngine = spyk(TaskEngine)
         every { taskEngine.handle(any()) } just Runs
         val avroConverter = mockk<TaskAvroConverter>()
-        val msg = mockk<TaskMessage>()
-        val avroMsg = mockk<AvroTaskMessage>()
+        val msg = mockk<TaskEngineMessage>()
+        val avroMsg = mockk<AvroTaskEngineMessage>()
         every { avroConverter.fromAvro(avroMsg) } returns msg
         // given
         val fct = TaskEngineFunction()
@@ -49,7 +49,7 @@ class TaskEngineFunctionTests : StringSpec({
         val engine = TaskEngineFunction()
         // then
         shouldThrowAny {
-            engine.process(mockk<AvroTaskMessage>(), null)
+            engine.process(mockk<AvroTaskEngineMessage>(), null)
         }
     }
 })

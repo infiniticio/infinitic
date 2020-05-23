@@ -1,0 +1,59 @@
+{
+    "type": "record",
+    "name": "AvroTaskEngineMessage",
+    "namespace": "com.zenaton.taskmanager.messages.engine",
+    "fields": [
+        {
+            "name": "type",
+            "type": "com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessageType"
+        }, {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        }, {
+             "name": "CancelTask",
+             "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroCancelTask"],
+             "default": null
+         }, {
+            "name": "DispatchTask",
+            "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroDispatchTask"],
+            "default": null
+        }, {
+            "name": "RetryTask",
+            "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroRetryTask"],
+            "default": null
+        }, {
+            "name": "RetryTaskAttempt",
+            "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroRetryTaskAttempt"],
+            "default": null
+        }, {
+            "name": "TaskAttemptCompleted",
+            "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroTaskAttemptCompleted"],
+            "default": null
+        }, {
+            "name": "TaskAttemptDispatched",
+            "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroTaskAttemptDispatched"],
+            "default": null
+        }, {
+            "name": "TaskAttemptFailed",
+            "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroTaskAttemptFailed"],
+            "default": null
+        }, {
+            "name": "TaskAttemptStarted",
+            "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroTaskAttemptStarted"],
+            "default": null
+        }, {
+            "name": "TaskCanceled",
+            "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroTaskCanceled"],
+            "default": null
+        }, {
+             "name": "TaskCompleted",
+             "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroTaskCompleted"],
+             "default": null
+         }, {
+             "name": "TaskDispatched",
+             "type": ["null", "com.zenaton.taskmanager.messages.engine.AvroTaskDispatched"],
+             "default": null
+         }
+    ]
+}

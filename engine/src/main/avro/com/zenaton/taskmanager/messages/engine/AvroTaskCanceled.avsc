@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroTaskDispatched",
-    "namespace": "com.zenaton.taskmanager.messages.events",
+    "name": "AvroTaskCanceled",
+    "namespace": "com.zenaton.taskmanager.messages.engine",
     "fields": [
         {
             "name": "taskId",

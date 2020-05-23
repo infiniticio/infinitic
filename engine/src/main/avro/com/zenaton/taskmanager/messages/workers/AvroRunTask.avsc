@@ -1,12 +1,21 @@
 {
     "type": "record",
-    "name": "AvroDispatchTask",
-    "namespace": "com.zenaton.taskmanager.messages.commands",
+    "name": "AvroRunTask",
+    "namespace": "com.zenaton.taskmanager.messages.workers",
     "fields": [
         {
             "name": "taskId",
             "type": "string",
             "logicalType": "uuid"
+        },
+        {
+          "name": "taskAttemptId",
+          "type": "string",
+          "logicalType": "uuid"
+        },
+        {
+          "name": "taskAttemptIndex",
+          "type": "int"
         },
         {
             "name": "sentAt",
@@ -19,12 +28,7 @@
         },
         {
             "name": "taskData",
-            "type": ["null", "bytes"],
-            "default": null
-        },
-        {
-            "name": "workflowId",
-            "type": ["null", {"type": "string", "logicalType": "uuid"}],
+            "type": ["null",{"type":"bytes"}],
             "default": null
         }
     ]

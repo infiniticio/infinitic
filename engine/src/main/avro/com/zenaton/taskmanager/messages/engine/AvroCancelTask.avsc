@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroRetryTask",
-    "namespace": "com.zenaton.taskmanager.messages.commands",
+    "name": "AvroCancelTask",
+    "namespace": "com.zenaton.taskmanager.messages.engine",
     "fields": [
         {
             "name": "taskId",

@@ -2,7 +2,7 @@ package com.zenaton.workflowengine.pulsar.topics.workflows.functions
 
 import com.zenaton.decisionmanager.messages.DecisionDispatched
 import com.zenaton.decisionmanager.pulsar.dispatcher.DecisionDispatcher
-import com.zenaton.taskmanager.messages.DispatchTask
+import com.zenaton.taskmanager.messages.engine.DispatchTask
 import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
 import com.zenaton.workflowengine.pulsar.topics.delays.dispatcher.DelayDispatcher
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher

@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroRetryTaskAttempt",
-    "namespace": "com.zenaton.taskmanager.messages.commands",
+    "name": "AvroTaskAttemptFailed",
+    "namespace": "com.zenaton.taskmanager.messages.engine",
     "fields": [
         {
             "name": "taskId",
@@ -21,6 +21,15 @@
         {
             "name": "taskAttemptIndex",
             "type": "int"
+        },
+        {
+            "name": "taskAttemptError",
+            "type": "bytes"
+        },
+        {
+            "name": "taskAttemptDelayBeforeRetry",
+            "type": ["null", "float"],
+            "default": null
         }
     ]
 }

@@ -1,12 +1,12 @@
 package com.zenaton.taskmanager.pulsar.dispatcher
 
 import com.zenaton.taskmanager.dispatcher.TaskDispatcherInterface
-import com.zenaton.taskmanager.messages.AvroTaskMessage
-import com.zenaton.taskmanager.messages.RunTask
-import com.zenaton.taskmanager.messages.TaskMessage
-import com.zenaton.taskmanager.messages.TaskStatusUpdated
-import com.zenaton.taskmanager.messages.commands.AvroRunTask
-import com.zenaton.taskmanager.messages.events.AvroTaskStatusUpdated
+import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
+import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
+import com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated
+import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
+import com.zenaton.taskmanager.messages.workers.AvroRunTask
+import com.zenaton.taskmanager.messages.workers.RunTask
 import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import java.util.concurrent.TimeUnit
@@ -18,6 +18,9 @@ import org.apache.pulsar.functions.api.Context
  */
 class TaskDispatcher(val context: Context) : TaskDispatcherInterface {
 
+    /**
+     *  Workers message
+     */
     override fun dispatch(msg: RunTask) {
         context
             .newOutputMessage(Topic.TASK_ATTEMPTS.get(msg.taskName.name), AvroSchema.of(AvroRunTask::class.java))
@@ -25,6 +28,9 @@ class TaskDispatcher(val context: Context) : TaskDispatcherInterface {
             .send()
     }
 
+    /**
+     *  Metrics message
+     */
     override fun dispatch(msg: TaskStatusUpdated) {
         context
             .newOutputMessage(Topic.TASK_STATUS_UPDATES.get(), AvroSchema.of(AvroTaskStatusUpdated::class.java))
@@ -32,10 +38,13 @@ class TaskDispatcher(val context: Context) : TaskDispatcherInterface {
             .send()
     }
 
-    override fun dispatch(msg: TaskMessage, after: Float) {
+    /**
+     *  Engine messages
+     */
+    override fun dispatch(msg: TaskEngineMessage, after: Float) {
 
         val msgBuilder = context
-            .newOutputMessage(Topic.TASKS.get(), AvroSchema.of(AvroTaskMessage::class.java))
+            .newOutputMessage(Topic.TASKS.get(), AvroSchema.of(AvroTaskEngineMessage::class.java))
             .key(msg.getStateId())
             .value(TaskAvroConverter.toAvro(msg))
 

@@ -1,12 +1,17 @@
 {
     "type": "record",
-    "name": "AvroTaskCanceled",
-    "namespace": "com.zenaton.taskmanager.messages.events",
+    "name": "AvroTaskCompleted",
+    "namespace": "com.zenaton.taskmanager.messages.engine",
     "fields": [
         {
             "name": "taskId",
             "type": "string",
             "logicalType": "uuid"
+        },
+        {
+            "name": "taskOutput",
+            "type": ["null", "bytes"],
+            "default": null
         },
         {
             "name": "sentAt",

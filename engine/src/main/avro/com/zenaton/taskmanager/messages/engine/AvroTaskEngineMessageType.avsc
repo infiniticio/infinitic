@@ -1,7 +1,7 @@
 {
-    "name": "AvroTaskMessageType",
-    "namespace": "com.zenaton.taskmanager.messages",
     "type": "enum",
+    "name": "AvroTaskEngineMessageType",
+    "namespace": "com.zenaton.taskmanager.messages.engine",
     "symbols": [
         "CancelTask",
         "DispatchTask",

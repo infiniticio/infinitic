@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroTaskStatusUpdated",
-    "namespace": "com.zenaton.taskmanager.messages.events",
+    "name": "AvroDispatchTask",
+    "namespace": "com.zenaton.taskmanager.messages.engine",
     "fields": [
         {
             "name": "taskId",
@@ -18,18 +18,14 @@
             "type": "string"
         },
         {
-            "name": "oldStatus",
-            "type": [
-                "null",
-                "com.zenaton.taskmanager.data.AvroTaskStatus"
-            ]
+            "name": "taskData",
+            "type": ["null", "bytes"],
+            "default": null
         },
         {
-            "name": "newStatus",
-            "type": [
-                "null",
-                "com.zenaton.taskmanager.data.AvroTaskStatus"
-            ]
+            "name": "workflowId",
+            "type": ["null", {"type": "string", "logicalType": "uuid"}],
+            "default": null
         }
     ]
 }

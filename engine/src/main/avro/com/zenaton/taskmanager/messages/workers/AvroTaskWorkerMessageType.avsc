@@ -1,0 +1,8 @@
+{
+    "type": "enum",
+    "name": "AvroTaskWorkerMessageType",
+    "namespace": "com.zenaton.taskmanager.messages.workers",
+    "symbols": [
+        "RunTask"
+    ]
+}

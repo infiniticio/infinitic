@@ -1,37 +1,37 @@
 package com.zenaton.taskmanager.pulsar.avro
 
 import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskmanager.messages.CancelTask
-import com.zenaton.taskmanager.messages.DispatchTask
-import com.zenaton.taskmanager.messages.RetryTask
-import com.zenaton.taskmanager.messages.RetryTaskAttempt
-import com.zenaton.taskmanager.messages.TaskAttemptCompleted
-import com.zenaton.taskmanager.messages.TaskAttemptDispatched
-import com.zenaton.taskmanager.messages.TaskAttemptFailed
-import com.zenaton.taskmanager.messages.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.TaskCanceled
-import com.zenaton.taskmanager.messages.TaskCompleted
-import com.zenaton.taskmanager.messages.TaskDispatched
-import com.zenaton.taskmanager.messages.TaskMessage
-import com.zenaton.taskmanager.messages.commands.AvroCancelTask
-import com.zenaton.taskmanager.messages.commands.AvroDispatchTask
-import com.zenaton.taskmanager.messages.commands.AvroRetryTask
-import com.zenaton.taskmanager.messages.commands.AvroRetryTaskAttempt
-import com.zenaton.taskmanager.messages.events.AvroTaskAttemptCompleted
-import com.zenaton.taskmanager.messages.events.AvroTaskAttemptDispatched
-import com.zenaton.taskmanager.messages.events.AvroTaskAttemptFailed
-import com.zenaton.taskmanager.messages.events.AvroTaskAttemptStarted
-import com.zenaton.taskmanager.messages.events.AvroTaskCanceled
-import com.zenaton.taskmanager.messages.events.AvroTaskCompleted
-import com.zenaton.taskmanager.messages.events.AvroTaskDispatched
-import com.zenaton.taskmanager.state.TaskState
+import com.zenaton.taskmanager.data.TaskState
+import com.zenaton.taskmanager.messages.engine.AvroCancelTask
+import com.zenaton.taskmanager.messages.engine.AvroDispatchTask
+import com.zenaton.taskmanager.messages.engine.AvroRetryTask
+import com.zenaton.taskmanager.messages.engine.AvroRetryTaskAttempt
+import com.zenaton.taskmanager.messages.engine.AvroTaskAttemptCompleted
+import com.zenaton.taskmanager.messages.engine.AvroTaskAttemptDispatched
+import com.zenaton.taskmanager.messages.engine.AvroTaskAttemptFailed
+import com.zenaton.taskmanager.messages.engine.AvroTaskAttemptStarted
+import com.zenaton.taskmanager.messages.engine.AvroTaskCanceled
+import com.zenaton.taskmanager.messages.engine.AvroTaskCompleted
+import com.zenaton.taskmanager.messages.engine.AvroTaskDispatched
+import com.zenaton.taskmanager.messages.engine.CancelTask
+import com.zenaton.taskmanager.messages.engine.DispatchTask
+import com.zenaton.taskmanager.messages.engine.RetryTask
+import com.zenaton.taskmanager.messages.engine.RetryTaskAttempt
+import com.zenaton.taskmanager.messages.engine.TaskAttemptCompleted
+import com.zenaton.taskmanager.messages.engine.TaskAttemptDispatched
+import com.zenaton.taskmanager.messages.engine.TaskAttemptFailed
+import com.zenaton.taskmanager.messages.engine.TaskAttemptStarted
+import com.zenaton.taskmanager.messages.engine.TaskCanceled
+import com.zenaton.taskmanager.messages.engine.TaskCompleted
+import com.zenaton.taskmanager.messages.engine.TaskDispatched
+import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
 
-inline fun <reified T : TaskMessage, P : SpecificRecordBase> shouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+inline fun <reified T : TaskEngineMessage, P : SpecificRecordBase> shouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
     // given
     val msg = TestFactory.get(from)
     // when

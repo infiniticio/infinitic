@@ -2,7 +2,7 @@ package com.zenaton
 
 fun main() {
 //    val client = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
-//    val producer = client.newProducer(AvroSchema.of(AvroTaskMessage::class.java)).topic("persistent://public/default/tasks").create()
+//    val producer = client.newProducer(AvroSchema.of(AvroTaskEngineMessage::class.java)).topic("persistent://public/default/tasks").create()
 //
 //    var msg = DispatchTask(
 //        taskId = TaskId(),
