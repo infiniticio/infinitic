@@ -9,11 +9,14 @@ import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
 class TaskMetricsFunction : Function<AvroTaskMetricMessage, Void> {
+    var taskMetrics = TaskMetrics()
+
     override fun process(input: AvroTaskMetricMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received from tasks.StateFunction")
 
         try {
-            TaskMetrics(StateStorageImpl(context)).handle(TaskAvroConverter.fromAvro(input))
+            taskMetrics.stateStorage = StateStorageImpl(context)
+            taskMetrics.handle(TaskAvroConverter.fromAvro(input))
         } catch (e: Exception) {
             Logger(ctx).error("Error:%s for message:%s", e, input)
             throw e

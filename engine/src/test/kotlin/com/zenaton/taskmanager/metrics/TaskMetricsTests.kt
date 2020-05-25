@@ -40,7 +40,11 @@ class TaskMetricsTests : ShouldSpec({
             ).forAll { taskStatusUpdated, decrementedCounter, incrementedCounter ->
                 val context = mockk<Context>()
                 every { context.incrCounter(any(), any()) } just Runs
-                TaskMetrics(StateStorageImpl(context)).handle(taskStatusUpdated)
+
+                val metrics = TaskMetrics()
+                metrics.stateStorage = StateStorageImpl(context)
+                metrics.handle(taskStatusUpdated)
+
                 verifyAll {
                     context.incrCounter(decrementedCounter, -1)
                     context.incrCounter(incrementedCounter, 1)
