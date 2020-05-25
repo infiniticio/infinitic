@@ -1,5 +1,7 @@
 package com.zenaton.taskmanager.metrics
 
+import com.zenaton.taskmanager.data.TaskName
+import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.state.StateStorage
@@ -14,17 +16,15 @@ class TaskMetrics() {
         }
     }
 
-    private fun decrementOldCounter(message: TaskStatusUpdated) {
+    private fun decrementOldCounter(message: TaskStatusUpdated) =
         message.oldStatus?.let {
-            val counterKey = "metrics.rt.counter.task.${message.taskName.name.toLowerCase()}.${it.toString().toLowerCase()}"
-            stateStorage.incrCounter(counterKey, -1)
+            stateStorage.incrCounter(getCounterKey(message.taskName, it), -1)
         }
-    }
 
-    private fun incrementNewCounter(message: TaskStatusUpdated) {
+    private fun incrementNewCounter(message: TaskStatusUpdated) =
         message.newStatus?.let {
-            val counterKey = "metrics.rt.counter.task.${message.taskName.name.toLowerCase()}.${it.toString().toLowerCase()}"
-            stateStorage.incrCounter(counterKey, 1)
+            stateStorage.incrCounter(getCounterKey(message.taskName, it), 1)
         }
-    }
+
+    private fun getCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "metrics.rt.counter.task.${taskName.name.toLowerCase()}.${taskStatus.toString().toLowerCase()}"
 }
