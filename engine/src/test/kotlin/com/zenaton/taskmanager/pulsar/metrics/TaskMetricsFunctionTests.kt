@@ -12,7 +12,6 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import io.mockk.verifyAll
-import org.apache.pulsar.functions.api.Context
 
 class TaskMetricsFunctionTests : ShouldSpec({
     context("TaskMetricsFunction.handle") {
