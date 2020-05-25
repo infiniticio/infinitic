@@ -12,7 +12,7 @@ class TaskMetricsFunction : Function<AvroTaskMetricMessage, Void> {
     var taskMetrics = TaskMetrics()
 
     override fun process(input: AvroTaskMetricMessage, context: Context?): Void? {
-        val ctx = context ?: throw NullPointerException("Null Context received from tasks.StateFunction")
+        val ctx = context ?: throw NullPointerException("Null Context received in TaskMetricsFunction::process method.")
 
         try {
             taskMetrics.stateStorage = PulsarTaskEngineStateStorage(context)
