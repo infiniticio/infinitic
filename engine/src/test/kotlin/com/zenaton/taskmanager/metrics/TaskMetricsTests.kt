@@ -11,6 +11,7 @@ import io.kotest.data.headers
 import io.kotest.data.row
 import io.kotest.data.table
 import io.mockk.Runs
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -49,6 +50,48 @@ class TaskMetricsTests : ShouldSpec({
                     stateStorage.incrCounter(incrementedCounter, 1)
                 }
             }
+        }
+
+        should("only increment new counter when old status is null") {
+            val stateStorage = mockk<StateStorage>()
+            every { stateStorage.incrCounter(any(), any()) } just Runs
+
+            val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to null, "newStatus" to TaskStatus.OK))
+
+            val metrics = TaskMetrics()
+            metrics.stateStorage = stateStorage
+            metrics.handle(message)
+
+            verifyAll {
+                stateStorage.incrCounter("metrics.rt.counter.task.othertask.ok", 1)
+            }
+        }
+
+        should("only decrement old counter when new status is null") {
+            val stateStorage = mockk<StateStorage>()
+            every { stateStorage.incrCounter(any(), any()) } just Runs
+
+            val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to TaskStatus.OK, "newStatus" to null))
+
+            val metrics = TaskMetrics()
+            metrics.stateStorage = stateStorage
+            metrics.handle(message)
+
+            verifyAll {
+                stateStorage.incrCounter("metrics.rt.counter.task.othertask.ok", -1)
+            }
+        }
+
+        should("do nothing when both statuses are null") {
+            val stateStorage = mockk<StateStorage>()
+
+            val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to null, "newStatus" to null))
+
+            val metrics = TaskMetrics()
+            metrics.stateStorage = stateStorage
+            metrics.handle(message)
+
+            confirmVerified(stateStorage)
         }
     }
 })
