@@ -4,10 +4,9 @@ import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskId
 
-interface FailingTaskAttemptMessageInterface : TaskAttemptMessageInterface {
+interface TaskAttemptMessage : TaskMessage {
     override val taskId: TaskId
     override val sentAt: DateTime
-    override val taskAttemptId: TaskAttemptId
-    override val taskAttemptIndex: Int
-    val taskAttemptDelayBeforeRetry: Float?
+    val taskAttemptId: TaskAttemptId
+    val taskAttemptIndex: Int
 }

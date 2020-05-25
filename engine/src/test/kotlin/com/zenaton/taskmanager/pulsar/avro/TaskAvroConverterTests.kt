@@ -25,7 +25,6 @@ import com.zenaton.taskmanager.messages.engine.TaskCanceled
 import com.zenaton.taskmanager.messages.engine.TaskCompleted
 import com.zenaton.taskmanager.messages.engine.TaskDispatched
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
 import com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated
 import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated

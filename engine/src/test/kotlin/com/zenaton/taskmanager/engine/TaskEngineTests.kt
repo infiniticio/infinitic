@@ -15,11 +15,11 @@ import com.zenaton.taskmanager.messages.engine.TaskCanceled
 import com.zenaton.taskmanager.messages.engine.TaskCompleted
 import com.zenaton.taskmanager.messages.engine.TaskDispatched
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
+import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
-import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
-import com.zenaton.taskmanager.pulsar.logger.TaskLogger
+import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
+import com.zenaton.taskmanager.pulsar.logger.PulsarTaskLogger
 import com.zenaton.taskmanager.pulsar.stater.TaskStater
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
@@ -53,10 +53,10 @@ fun taskCompleted(values: Map<String, Any?>? = null) = TestFactory.get(TaskCompl
 fun taskDispatched(values: Map<String, Any?>? = null) = TestFactory.get(TaskDispatched::class, values)
 
 class EngineResults {
-    lateinit var taskDispatcher: TaskDispatcher
+    lateinit var taskDispatcher: PulsarTaskDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcher
     lateinit var stater: TaskStater
-    lateinit var logger: TaskLogger
+    lateinit var logger: PulsarTaskLogger
     var state: TaskState? = null
     var runTask: RunTask? = null
     var retryTaskAttempt: RetryTaskAttempt? = null
@@ -76,10 +76,10 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     // avoid deep updates of stateIn
     val state = stateIn?.copy()
     // mocking
-    val taskDispatcher = mockk<TaskDispatcher>()
+    val taskDispatcher = mockk<PulsarTaskDispatcher>()
     val workflowDispatcher = mockk<WorkflowDispatcher>()
     val stater = mockk<TaskStater>()
-    val logger = mockk<TaskLogger>()
+    val logger = mockk<PulsarTaskLogger>()
     val stateSlot = slot<TaskState>()
     val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
     val taskAttemptDispatchedSlot = slot<TaskAttemptDispatched>()
@@ -111,12 +111,13 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     every { taskDispatcher.dispatch(capture(taskStatusUpdatedSlot)) } just Runs
     every { workflowDispatcher.dispatch(capture(taskCompletedInWorkflowSlot)) } just Runs
     // given
-    TaskEngine.taskDispatcher = taskDispatcher
-    TaskEngine.workflowDispatcher = workflowDispatcher
-    TaskEngine.stater = stater
-    TaskEngine.logger = logger
+    val engine = TaskEngine()
+    engine.taskDispatcher = taskDispatcher
+    engine.workflowDispatcher = workflowDispatcher
+    engine.stater = stater
+    engine.logger = logger
     // when
-    TaskEngine.handle(msg = msgIn)
+    engine.handle(msg = msgIn)
     // then
     val o = EngineResults()
     o.taskDispatcher = taskDispatcher
@@ -429,13 +430,13 @@ private fun shouldErrorIfStateAndMessageHaveInconsistentTaskId(msgIn: TaskEngine
     checkShouldErrorAndDoNothingMore(stateIn, msgIn, o)
 }
 
-private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: TaskAttemptMessageInterface) = stringSpec {
+private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: TaskAttemptMessage) = stringSpec {
     val stateIn = state(mapOf("taskId" to msgIn.taskId))
     val o = engineHandle(stateIn, msgIn as TaskEngineMessage)
     checkShouldWarnAndDoNothingMore(stateIn, msgIn as TaskEngineMessage, o)
 }
 
-private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: TaskAttemptMessageInterface) = stringSpec {
+private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: TaskAttemptMessage) = stringSpec {
     val stateIn = state(mapOf(
         "taskId" to msgIn.taskId,
         "taskAttemptId" to msgIn.taskAttemptId

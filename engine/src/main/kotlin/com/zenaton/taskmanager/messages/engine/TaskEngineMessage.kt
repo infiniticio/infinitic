@@ -8,15 +8,15 @@ import com.zenaton.taskmanager.data.TaskData
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskName
 import com.zenaton.taskmanager.data.TaskOutput
-import com.zenaton.taskmanager.messages.interfaces.FailingTaskAttemptMessageInterface
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
-import com.zenaton.taskmanager.messages.interfaces.TaskMessageInterface
+import com.zenaton.taskmanager.messages.interfaces.FailingTaskAttemptMessage
+import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
+import com.zenaton.taskmanager.messages.interfaces.TaskMessage
 import com.zenaton.workflowengine.data.WorkflowId
 
 sealed class TaskEngineMessage(
     override val taskId: TaskId,
     override val sentAt: DateTime
-) : TaskMessageInterface {
+) : TaskMessage {
     @JsonIgnore fun getStateId() = taskId.id
 }
 
@@ -43,7 +43,7 @@ data class RetryTaskAttempt(
     override val sentAt: DateTime = DateTime(),
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int
-) : TaskEngineMessage(taskId, sentAt), TaskAttemptMessageInterface
+) : TaskEngineMessage(taskId, sentAt), TaskAttemptMessage
 
 data class TaskAttemptCompleted(
     override val taskId: TaskId,
@@ -51,14 +51,14 @@ data class TaskAttemptCompleted(
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int,
     val taskOutput: TaskOutput?
-) : TaskEngineMessage(taskId, sentAt), TaskAttemptMessageInterface
+) : TaskEngineMessage(taskId, sentAt), TaskAttemptMessage
 
 data class TaskAttemptDispatched(
     override val taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int,
     override val sentAt: DateTime = DateTime()
-) : TaskEngineMessage(taskId, sentAt), TaskAttemptMessageInterface
+) : TaskEngineMessage(taskId, sentAt), TaskAttemptMessage
 
 data class TaskAttemptFailed(
     override val taskId: TaskId,
@@ -67,27 +67,27 @@ data class TaskAttemptFailed(
     override val taskAttemptIndex: Int,
     override val taskAttemptDelayBeforeRetry: Float?,
     val taskAttemptError: TaskAttemptError
-) : TaskEngineMessage(taskId, sentAt), FailingTaskAttemptMessageInterface
+) : TaskEngineMessage(taskId, sentAt), FailingTaskAttemptMessage
 
 data class TaskAttemptStarted(
     override val taskId: TaskId,
     override val sentAt: DateTime = DateTime(),
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int
-) : TaskEngineMessage(taskId, sentAt), TaskAttemptMessageInterface
+) : TaskEngineMessage(taskId, sentAt), TaskAttemptMessage
 
 data class TaskCanceled(
     override val taskId: TaskId,
     override val sentAt: DateTime = DateTime()
-) : TaskEngineMessage(taskId, sentAt), TaskMessageInterface
+) : TaskEngineMessage(taskId, sentAt), TaskMessage
 
 data class TaskCompleted(
     override val taskId: TaskId,
     override val sentAt: DateTime = DateTime(),
     val taskOutput: TaskOutput?
-) : TaskEngineMessage(taskId, sentAt), TaskMessageInterface
+) : TaskEngineMessage(taskId, sentAt), TaskMessage
 
 data class TaskDispatched(
     override val taskId: TaskId,
     override val sentAt: DateTime = DateTime()
-) : TaskEngineMessage(taskId, sentAt), TaskMessageInterface
+) : TaskEngineMessage(taskId, sentAt), TaskMessage
