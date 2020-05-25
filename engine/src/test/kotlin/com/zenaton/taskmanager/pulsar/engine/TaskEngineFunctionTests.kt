@@ -6,6 +6,7 @@ import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
 import com.zenaton.taskmanager.pulsar.logger.PulsarTaskLogger
+import com.zenaton.taskmanager.pulsar.state.PulsarTaskEngineStateStorage
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -38,6 +39,8 @@ class TaskEngineFunctionTests : StringSpec({
         // then
         (taskEngine.taskDispatcher as PulsarTaskDispatcher).context shouldBe context
         (taskEngine.workflowDispatcher as WorkflowDispatcher).context shouldBe context
+        (taskEngine.logger as PulsarTaskLogger).context shouldBe context
+        (taskEngine.stateStorage as PulsarTaskEngineStateStorage).context shouldBe context
         verify(exactly = 1) { taskEngine.handle(msg) }
     }
 
