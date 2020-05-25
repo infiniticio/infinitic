@@ -7,7 +7,7 @@ import com.zenaton.taskmanager.state.StateStorage
 import com.zenaton.taskmanager.states.AvroTaskState
 import org.apache.pulsar.functions.api.Context
 
-class PulsarStateStorage(private val context: Context) : StateStorage {
+class PulsarTaskEngineStateStorage(private val context: Context) : StateStorage {
     var avroSerDe = AvroSerDe
     var avroConverter = TaskAvroConverter
 

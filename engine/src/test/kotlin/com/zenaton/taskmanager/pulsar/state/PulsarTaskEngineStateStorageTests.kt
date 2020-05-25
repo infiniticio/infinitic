@@ -12,13 +12,13 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 
-class PulsarStateStorageTests : StringSpec({
+class PulsarTaskEngineStateStorageTests : StringSpec({
     "PulsarFunctionStateStorageTests.getState with no state should return null" {
         // mocking
         val context = mockk<Context>()
         every { context.getState(any()) } returns null
         // given
-        val stateStorage = PulsarStateStorage(context)
+        val stateStorage = PulsarTaskEngineStateStorage(context)
         // when
         val state = stateStorage.getState("key")
         // then
@@ -31,7 +31,7 @@ class PulsarStateStorageTests : StringSpec({
         val stateIn = TestFactory.get(TaskState::class)
         every { context.getState(any()) } returns AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))
         // given
-        val stateStorage = PulsarStateStorage(context)
+        val stateStorage = PulsarTaskEngineStateStorage(context)
         // when
         val stateOut = stateStorage.getState("key")
         // then
@@ -44,7 +44,7 @@ class PulsarStateStorageTests : StringSpec({
         val stateIn = TestFactory.get(TaskState::class)
         every { context.putState(any(), any()) } returns Unit
         // given
-        val stateStorage = PulsarStateStorage(context)
+        val stateStorage = PulsarTaskEngineStateStorage(context)
         // when
         val key = TestFactory.get(String::class)
         stateStorage.createState(key, stateIn)
@@ -59,7 +59,7 @@ class PulsarStateStorageTests : StringSpec({
         val stateIn = TestFactory.get(TaskState::class)
         every { context.putState(any(), any()) } returns Unit
         // given
-        val stateStorage = PulsarStateStorage(context)
+        val stateStorage = PulsarTaskEngineStateStorage(context)
         // when
         val key = TestFactory.get(String::class)
         stateStorage.updateState(key, stateIn)
@@ -73,7 +73,7 @@ class PulsarStateStorageTests : StringSpec({
         val context = mockk<Context>()
         every { context.deleteState(any()) } returns Unit
         // given
-        val stageStorage = PulsarStateStorage(context)
+        val stageStorage = PulsarTaskEngineStateStorage(context)
         // when
         val key = TestFactory.get(String::class)
         stageStorage.deleteState(key)
