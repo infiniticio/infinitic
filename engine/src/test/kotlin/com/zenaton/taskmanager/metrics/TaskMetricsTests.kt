@@ -4,7 +4,7 @@ import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.data.TaskName
 import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
-import com.zenaton.taskmanager.pulsar.state.PulsarTaskEngineStateStorage
+import com.zenaton.taskmanager.state.StateStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.data.forAll
 import io.kotest.data.headers
@@ -15,7 +15,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verifyAll
-import org.apache.pulsar.functions.api.Context
 
 class TaskMetricsTests : ShouldSpec({
     context("TaskMetrics.handle") {
@@ -38,16 +37,16 @@ class TaskMetricsTests : ShouldSpec({
                     "metrics.rt.counter.task.othertask.warning"
                 )
             ).forAll { taskStatusUpdated, decrementedCounter, incrementedCounter ->
-                val context = mockk<Context>()
-                every { context.incrCounter(any(), any()) } just Runs
+                val stateStorage = mockk<StateStorage>()
+                every { stateStorage.incrCounter(any(), any()) } just Runs
 
                 val metrics = TaskMetrics()
-                metrics.stateStorage = PulsarTaskEngineStateStorage(context)
+                metrics.stateStorage = stateStorage
                 metrics.handle(taskStatusUpdated)
 
                 verifyAll {
-                    context.incrCounter(decrementedCounter, -1)
-                    context.incrCounter(incrementedCounter, 1)
+                    stateStorage.incrCounter(decrementedCounter, -1)
+                    stateStorage.incrCounter(incrementedCounter, 1)
                 }
             }
         }
