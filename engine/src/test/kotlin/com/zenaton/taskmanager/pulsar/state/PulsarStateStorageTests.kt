@@ -12,39 +12,39 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 
-class StateStorageImplTests : StringSpec({
-    "StateStorageImplTests.getState with no state should return null" {
+class PulsarStateStorageTests : StringSpec({
+    "PulsarFunctionStateStorageTests.getState with no state should return null" {
         // mocking
         val context = mockk<Context>()
         every { context.getState(any()) } returns null
         // given
-        val stateStorage = StateStorageImpl(context)
+        val stateStorage = PulsarStateStorage(context)
         // when
         val state = stateStorage.getState("key")
         // then
         state shouldBe null
     }
 
-    "StateStorageImplTests.getState state should return deserialize state" {
+    "PulsarFunctionStateStorageTests.getState state should return deserialize state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
         every { context.getState(any()) } returns AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))
         // given
-        val stateStorage = StateStorageImpl(context)
+        val stateStorage = PulsarStateStorage(context)
         // when
         val stateOut = stateStorage.getState("key")
         // then
         stateOut shouldBe stateIn
     }
 
-    "StateStorageImplTests.createState should record serialized state" {
+    "PulsarFunctionStateStorageTests.createState should record serialized state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
         every { context.putState(any(), any()) } returns Unit
         // given
-        val stateStorage = StateStorageImpl(context)
+        val stateStorage = PulsarStateStorage(context)
         // when
         val key = TestFactory.get(String::class)
         stateStorage.createState(key, stateIn)
@@ -53,13 +53,13 @@ class StateStorageImplTests : StringSpec({
         confirmVerified(context)
     }
 
-    "StateStorageImplTests.updateState should record serialized state" {
+    "PulsarFunctionStateStorageTests.updateState should record serialized state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
         every { context.putState(any(), any()) } returns Unit
         // given
-        val stateStorage = StateStorageImpl(context)
+        val stateStorage = PulsarStateStorage(context)
         // when
         val key = TestFactory.get(String::class)
         stateStorage.updateState(key, stateIn)
@@ -68,12 +68,12 @@ class StateStorageImplTests : StringSpec({
         confirmVerified(context)
     }
 
-    "StateStorageImplTests.deleteState should delete state" {
+    "PulsarFunctionStateStorageTests.deleteState should delete state" {
         // mocking
         val context = mockk<Context>()
         every { context.deleteState(any()) } returns Unit
         // given
-        val stageStorage = StateStorageImpl(context)
+        val stageStorage = PulsarStateStorage(context)
         // when
         val key = TestFactory.get(String::class)
         stageStorage.deleteState(key)

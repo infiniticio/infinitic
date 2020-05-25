@@ -6,7 +6,7 @@ import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.state.StateStorage
 
-class TaskMetrics() {
+class TaskMetrics {
     lateinit var stateStorage: StateStorage
 
     fun handle(message: TaskMetricMessage) {

@@ -4,7 +4,7 @@ import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.data.TaskName
 import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
-import com.zenaton.taskmanager.pulsar.state.StateStorageImpl
+import com.zenaton.taskmanager.pulsar.state.PulsarStateStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.data.forAll
 import io.kotest.data.headers
@@ -42,7 +42,7 @@ class TaskMetricsTests : ShouldSpec({
                 every { context.incrCounter(any(), any()) } just Runs
 
                 val metrics = TaskMetrics()
-                metrics.stateStorage = StateStorageImpl(context)
+                metrics.stateStorage = PulsarStateStorage(context)
                 metrics.handle(taskStatusUpdated)
 
                 verifyAll {
