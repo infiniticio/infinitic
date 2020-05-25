@@ -4,8 +4,8 @@ import com.zenaton.taskmanager.engine.TaskEngine
 import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
-import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
-import com.zenaton.taskmanager.pulsar.logger.TaskLogger
+import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
+import com.zenaton.taskmanager.pulsar.logger.PulsarTaskLogger
 import com.zenaton.taskmanager.pulsar.stater.TaskStater
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import io.kotest.assertions.throwables.shouldThrowAny
@@ -24,7 +24,7 @@ class TaskEngineFunctionTests : StringSpec({
         // mocking
         val context = mockk<Context>()
         every { context.logger } returns mockk<org.slf4j.Logger>()
-        val taskEngine = spyk(TaskEngine)
+        val taskEngine = spyk(TaskEngine())
         every { taskEngine.handle(any()) } just Runs
         val avroConverter = mockk<TaskAvroConverter>()
         val msg = mockk<TaskEngineMessage>()
@@ -37,9 +37,9 @@ class TaskEngineFunctionTests : StringSpec({
         // when
         fct.process(avroMsg, context)
         // then
-        (taskEngine.taskDispatcher as TaskDispatcher).context shouldBe context
+        (taskEngine.taskDispatcher as PulsarTaskDispatcher).context shouldBe context
         (taskEngine.workflowDispatcher as WorkflowDispatcher).context shouldBe context
-        (taskEngine.logger as TaskLogger).context shouldBe context
+        (taskEngine.logger as PulsarTaskLogger).context shouldBe context
         (taskEngine.stater as TaskStater).context shouldBe context
         verify(exactly = 1) { taskEngine.handle(msg) }
     }

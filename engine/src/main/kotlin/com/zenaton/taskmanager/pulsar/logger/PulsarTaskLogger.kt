@@ -1,14 +1,14 @@
 package com.zenaton.taskmanager.pulsar.logger
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.taskmanager.logger.TaskLoggerInterface
+import com.zenaton.taskmanager.logger.TaskLogger
 import com.zenaton.taskmanager.pulsar.Topic
 import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
 
-class TaskLogger(val context: Context) : TaskLoggerInterface {
+class PulsarTaskLogger(val context: Context) : TaskLogger {
     // Json injection
     private var json = Json
     // Logger injection

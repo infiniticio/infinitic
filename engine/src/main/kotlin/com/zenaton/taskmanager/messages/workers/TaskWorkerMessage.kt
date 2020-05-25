@@ -5,7 +5,7 @@ import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskData
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskName
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
+import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 
 sealed class TaskWorkerMessage(
     open val taskName: TaskName,
@@ -19,4 +19,4 @@ data class RunTask(
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptIndex: Int,
     val taskData: TaskData?
-) : TaskWorkerMessage(taskName, sentAt), TaskAttemptMessageInterface
+) : TaskWorkerMessage(taskName, sentAt), TaskAttemptMessage

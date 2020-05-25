@@ -1,6 +1,6 @@
 package com.zenaton.taskmanager.pulsar.dispatcher
 
-import com.zenaton.taskmanager.dispatcher.TaskDispatcherInterface
+import com.zenaton.taskmanager.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessage
@@ -16,7 +16,7 @@ import org.apache.pulsar.functions.api.Context
 /**
  * This object provides a 'dispatch' method to send a task message into the tasks topic
  */
-class TaskDispatcher(val context: Context) : TaskDispatcherInterface {
+class PulsarTaskDispatcher(val context: Context) : TaskDispatcher {
 
     /**
      *  Workers message

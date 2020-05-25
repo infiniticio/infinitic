@@ -3,6 +3,8 @@ package com.zenaton.taskmanager.engine
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.data.TaskStatus
+import com.zenaton.taskmanager.dispatcher.TaskDispatcher
+import com.zenaton.taskmanager.logger.TaskLogger
 import com.zenaton.taskmanager.messages.engine.CancelTask
 import com.zenaton.taskmanager.messages.engine.DispatchTask
 import com.zenaton.taskmanager.messages.engine.RetryTask
@@ -15,12 +17,10 @@ import com.zenaton.taskmanager.messages.engine.TaskCanceled
 import com.zenaton.taskmanager.messages.engine.TaskCompleted
 import com.zenaton.taskmanager.messages.engine.TaskDispatched
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
+import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
-import com.zenaton.taskmanager.pulsar.dispatcher.TaskDispatcher
-import com.zenaton.taskmanager.pulsar.logger.TaskLogger
-import com.zenaton.taskmanager.pulsar.stater.TaskStater
+import com.zenaton.taskmanager.stater.TaskStaterInterface
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
@@ -55,7 +55,7 @@ fun taskDispatched(values: Map<String, Any?>? = null) = TestFactory.get(TaskDisp
 class EngineResults {
     lateinit var taskDispatcher: TaskDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcher
-    lateinit var stater: TaskStater
+    lateinit var stater: TaskStaterInterface
     lateinit var logger: TaskLogger
     var state: TaskState? = null
     var runTask: RunTask? = null
@@ -78,7 +78,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     // mocking
     val taskDispatcher = mockk<TaskDispatcher>()
     val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stater = mockk<TaskStater>()
+    val stater = mockk<TaskStaterInterface>()
     val logger = mockk<TaskLogger>()
     val stateSlot = slot<TaskState>()
     val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
@@ -111,12 +111,13 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     every { taskDispatcher.dispatch(capture(taskStatusUpdatedSlot)) } just Runs
     every { workflowDispatcher.dispatch(capture(taskCompletedInWorkflowSlot)) } just Runs
     // given
-    TaskEngine.taskDispatcher = taskDispatcher
-    TaskEngine.workflowDispatcher = workflowDispatcher
-    TaskEngine.stater = stater
-    TaskEngine.logger = logger
+    val engine = TaskEngine()
+    engine.taskDispatcher = taskDispatcher
+    engine.workflowDispatcher = workflowDispatcher
+    engine.stater = stater
+    engine.logger = logger
     // when
-    TaskEngine.handle(msg = msgIn)
+    engine.handle(msg = msgIn)
     // then
     val o = EngineResults()
     o.taskDispatcher = taskDispatcher
@@ -429,13 +430,13 @@ private fun shouldErrorIfStateAndMessageHaveInconsistentTaskId(msgIn: TaskEngine
     checkShouldErrorAndDoNothingMore(stateIn, msgIn, o)
 }
 
-private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: TaskAttemptMessageInterface) = stringSpec {
+private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: TaskAttemptMessage) = stringSpec {
     val stateIn = state(mapOf("taskId" to msgIn.taskId))
     val o = engineHandle(stateIn, msgIn as TaskEngineMessage)
     checkShouldWarnAndDoNothingMore(stateIn, msgIn as TaskEngineMessage, o)
 }
 
-private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: TaskAttemptMessageInterface) = stringSpec {
+private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: TaskAttemptMessage) = stringSpec {
     val stateIn = state(mapOf(
         "taskId" to msgIn.taskId,
         "taskAttemptId" to msgIn.taskAttemptId

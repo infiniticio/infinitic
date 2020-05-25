@@ -3,8 +3,8 @@ package com.zenaton.taskmanager.engine
 import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.data.TaskStatus
-import com.zenaton.taskmanager.dispatcher.TaskDispatcherInterface
-import com.zenaton.taskmanager.logger.TaskLoggerInterface
+import com.zenaton.taskmanager.dispatcher.TaskDispatcher
+import com.zenaton.taskmanager.logger.TaskLogger
 import com.zenaton.taskmanager.messages.engine.CancelTask
 import com.zenaton.taskmanager.messages.engine.DispatchTask
 import com.zenaton.taskmanager.messages.engine.RetryTask
@@ -17,18 +17,18 @@ import com.zenaton.taskmanager.messages.engine.TaskCanceled
 import com.zenaton.taskmanager.messages.engine.TaskCompleted
 import com.zenaton.taskmanager.messages.engine.TaskDispatched
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessageInterface
+import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
 import com.zenaton.taskmanager.stater.TaskStaterInterface
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 
-object TaskEngine {
-    lateinit var taskDispatcher: TaskDispatcherInterface
+class TaskEngine {
+    lateinit var taskDispatcher: TaskDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcherInterface
     lateinit var stater: TaskStaterInterface
-    lateinit var logger: TaskLoggerInterface
+    lateinit var logger: TaskLogger
 
     fun handle(msg: TaskEngineMessage) {
         var oldStatus: TaskStatus? = null
@@ -63,7 +63,7 @@ object TaskEngine {
                 return
             }
             // check taskAttemptId and taskAttemptIndex consistency
-            if (msg is TaskAttemptMessageInterface && msg !is TaskAttemptCompleted) {
+            if (msg is TaskAttemptMessage && msg !is TaskAttemptCompleted) {
                 if (state.taskAttemptId != msg.taskAttemptId) {
                     logger.warn("Inconsistent taskAttemptId in message: (Can happen if the task has been manually retried)%s and State:%s", msg, state)
                     return
