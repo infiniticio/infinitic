@@ -5,7 +5,7 @@ import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.workflowengine.interfaces.StaterInterface
 import org.apache.pulsar.functions.api.Context
 
-class Stater<T : StateInterface>(private val context: Context) :
+class StateStorage<T : StateInterface>(private val context: Context) :
     StaterInterface<T> {
 
     // serializer injection
