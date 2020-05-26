@@ -1,0 +1,26 @@
+{
+    "type" : "record",
+    "name" : "AvroTaskMetricsState",
+    "namespace" : "com.zenaton.taskmanager.states",
+    "fields" : [
+        {
+            "name" : "taskName",
+            "type" : "string"
+        }, {
+            "name" : "okCount",
+            "type" : "long"
+        }, {
+            "name" : "warningCount",
+            "type" : "long"
+        }, {
+            "name" : "errorCount",
+            "type" : "long"
+        }, {
+            "name" : "terminatedCompletedCount",
+            "type" : "long"
+        }, {
+            "name" : "terminatedCanceledCount",
+            "type" : "long"
+        }
+    ]
+}

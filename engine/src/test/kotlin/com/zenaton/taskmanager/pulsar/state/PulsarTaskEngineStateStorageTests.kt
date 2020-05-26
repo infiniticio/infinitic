@@ -14,7 +14,7 @@ import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 
 class PulsarTaskEngineStateStorageTests : StringSpec({
-    "PulsarFunctionStateStorageTests.getState with no state should return null" {
+    "PulsarTaskEngineStateStorageTests.getState with no state should return null" {
         val taskId = TestFactory.get(TaskId::class)
         // mocking
         val context = mockk<Context>()
@@ -27,7 +27,7 @@ class PulsarTaskEngineStateStorageTests : StringSpec({
         state shouldBe null
     }
 
-    "PulsarFunctionStateStorageTests.getState state should return deserialize state" {
+    "PulsarTaskEngineStateStorageTests.getState state should return deserialize state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
@@ -40,7 +40,7 @@ class PulsarTaskEngineStateStorageTests : StringSpec({
         stateOut shouldBe stateIn
     }
 
-    "PulsarFunctionStateStorageTests.createState should record serialized state" {
+    "PulsarTaskEngineStateStorageTests.createState should record serialized state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
@@ -54,7 +54,7 @@ class PulsarTaskEngineStateStorageTests : StringSpec({
         confirmVerified(context)
     }
 
-    "PulsarFunctionStateStorageTests.updateState should record serialized state" {
+    "PulsarTaskEngineStateStorageTests.updateState should record serialized state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
@@ -69,7 +69,7 @@ class PulsarTaskEngineStateStorageTests : StringSpec({
         confirmVerified(context)
     }
 
-    "PulsarFunctionStateStorageTests.deleteState should delete state" {
+    "PulsarTaskEngineStateStorageTests.deleteState should delete state" {
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
