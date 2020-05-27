@@ -11,7 +11,6 @@ import io.kotest.data.headers
 import io.kotest.data.row
 import io.kotest.data.table
 import io.mockk.Runs
-import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk

@@ -2,20 +2,20 @@ package com.zenaton.taskmanager.data
 
 enum class TaskStatus {
     RUNNING_OK {
-        override fun isTerminated() = false
+        override val isTerminated: Boolean get() = false
     },
     RUNNING_WARNING {
-        override fun isTerminated() = false
+        override val isTerminated: Boolean get() = false
     },
     RUNNING_ERROR {
-        override fun isTerminated() = false
+        override val isTerminated: Boolean get() = false
     },
     TERMINATED_COMPLETED {
-        override fun isTerminated() = true
+        override val isTerminated: Boolean get() = true
     },
     TERMINATED_CANCELED {
-        override fun isTerminated() = true
+        override val isTerminated: Boolean get() = true
     };
 
-    abstract fun isTerminated(): Boolean
+    abstract val isTerminated: Boolean
 }
