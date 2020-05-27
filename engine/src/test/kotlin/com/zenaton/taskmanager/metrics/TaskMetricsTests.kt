@@ -11,7 +11,6 @@ import io.kotest.data.headers
 import io.kotest.data.row
 import io.kotest.data.table
 import io.mockk.Runs
-import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -23,19 +22,19 @@ class TaskMetricsTests : ShouldSpec({
             table(
                 headers("message", "decrementedCounter", "incrementedCounter"),
                 row(
-                    TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("MyTask"), "oldStatus" to TaskStatus.OK, "newStatus" to TaskStatus.ERROR)),
-                    "metrics.rt.counter.task.mytask.ok",
-                    "metrics.rt.counter.task.mytask.error"
+                    TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("MyTask"), "oldStatus" to TaskStatus.RUNNING_OK, "newStatus" to TaskStatus.RUNNING_ERROR)),
+                    "metrics.rt.counter.task.mytask.running_ok",
+                    "metrics.rt.counter.task.mytask.running_error"
                 ),
                 row(
-                    TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("MyTask"), "oldStatus" to TaskStatus.WARNING, "newStatus" to TaskStatus.ERROR)),
-                    "metrics.rt.counter.task.mytask.warning",
-                    "metrics.rt.counter.task.mytask.error"
+                    TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("MyTask"), "oldStatus" to TaskStatus.RUNNING_WARNING, "newStatus" to TaskStatus.RUNNING_ERROR)),
+                    "metrics.rt.counter.task.mytask.running_warning",
+                    "metrics.rt.counter.task.mytask.running_error"
                 ),
                 row(
-                    TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to TaskStatus.ERROR, "newStatus" to TaskStatus.WARNING)),
-                    "metrics.rt.counter.task.othertask.error",
-                    "metrics.rt.counter.task.othertask.warning"
+                    TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to TaskStatus.RUNNING_ERROR, "newStatus" to TaskStatus.RUNNING_WARNING)),
+                    "metrics.rt.counter.task.othertask.running_error",
+                    "metrics.rt.counter.task.othertask.running_warning"
                 )
             ).forAll { taskStatusUpdated, decrementedCounter, incrementedCounter ->
                 val stateStorage = mockk<StateStorage>()
@@ -56,42 +55,31 @@ class TaskMetricsTests : ShouldSpec({
             val stateStorage = mockk<StateStorage>()
             every { stateStorage.incrCounter(any(), any()) } just Runs
 
-            val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to null, "newStatus" to TaskStatus.OK))
+            val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to null, "newStatus" to TaskStatus.RUNNING_OK))
 
             val metrics = TaskMetrics()
             metrics.stateStorage = stateStorage
             metrics.handle(message)
 
             verifyAll {
-                stateStorage.incrCounter("metrics.rt.counter.task.othertask.ok", 1)
+                stateStorage.incrCounter("metrics.rt.counter.task.othertask.running_ok", 1)
             }
         }
 
-        should("only decrement old counter when new status is null") {
+        should("only decrement old counter when new status is completed") {
             val stateStorage = mockk<StateStorage>()
             every { stateStorage.incrCounter(any(), any()) } just Runs
 
-            val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to TaskStatus.OK, "newStatus" to null))
+            val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to TaskStatus.RUNNING_OK, "newStatus" to TaskStatus.TERMINATED_COMPLETED))
 
             val metrics = TaskMetrics()
             metrics.stateStorage = stateStorage
             metrics.handle(message)
 
             verifyAll {
-                stateStorage.incrCounter("metrics.rt.counter.task.othertask.ok", -1)
+                stateStorage.incrCounter("metrics.rt.counter.task.othertask.running_ok", -1)
+                stateStorage.incrCounter("metrics.rt.counter.task.othertask.terminated_completed", 1)
             }
-        }
-
-        should("do nothing when both statuses are null") {
-            val stateStorage = mockk<StateStorage>()
-
-            val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to null, "newStatus" to null))
-
-            val metrics = TaskMetrics()
-            metrics.stateStorage = stateStorage
-            metrics.handle(message)
-
-            confirmVerified(stateStorage)
         }
     }
 })

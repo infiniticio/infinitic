@@ -31,103 +31,105 @@ class TaskEngine {
     lateinit var logger: TaskLogger
 
     fun handle(msg: TaskEngineMessage) {
-        var oldStatus: TaskStatus? = null
-
         // get associated state
-        var state = stateStorage.getState(msg.getStateId())
-        if (state == null) {
+        val oldState = stateStorage.getState(msg.taskId)
+        var newState = oldState?.copy()
+
+        if (newState == null) {
             // a null state should mean that this task is already terminated => all messages others than TaskDispatched are ignored
             if (msg !is DispatchTask) {
                 logger.warn("No state found for message: (It's normal if this task is already terminated)%s", msg, null)
                 return
             }
             // init a state
-            state = TaskState(
+            newState = TaskState(
                 taskId = msg.taskId,
                 taskName = msg.taskName,
                 taskData = msg.taskData,
                 workflowId = msg.workflowId,
                 taskAttemptId = TaskAttemptId(),
                 taskAttemptIndex = 0,
-                taskStatus = TaskStatus.OK
+                taskStatus = TaskStatus.RUNNING_OK
             )
         } else {
             // this should never happen
-            if (state.taskId != msg.taskId) {
-                logger.error("Inconsistent taskId in message:%s and State:%s)", msg, state)
+            if (newState.taskId != msg.taskId) {
+                logger.error("Inconsistent taskId in message:%s and State:%s)", msg, newState)
                 return
             }
             // a non-null state with TaskDispatched should mean that this message has been replicated
             if (msg is DispatchTask) {
-                logger.error("Already existing state:%s for message:%s", msg, state)
+                logger.error("Already existing state:%s for message:%s", msg, newState)
                 return
             }
             // check taskAttemptId and taskAttemptIndex consistency
             if (msg is TaskAttemptMessage && msg !is TaskAttemptCompleted) {
-                if (state.taskAttemptId != msg.taskAttemptId) {
-                    logger.warn("Inconsistent taskAttemptId in message: (Can happen if the task has been manually retried)%s and State:%s", msg, state)
+                if (newState.taskAttemptId != msg.taskAttemptId) {
+                    logger.warn("Inconsistent taskAttemptId in message: (Can happen if the task has been manually retried)%s and State:%s", msg, newState)
                     return
                 }
-                if (state.taskAttemptIndex != msg.taskAttemptIndex) {
-                    logger.warn("Inconsistent taskAttemptIndex in message: (Can happen if this task has had timeout)%s and State:%s", msg, state)
+                if (newState.taskAttemptIndex != msg.taskAttemptIndex) {
+                    logger.warn("Inconsistent taskAttemptIndex in message: (Can happen if this task has had timeout)%s and State:%s", msg, newState)
                     return
                 }
             }
-            // set current status
-            oldStatus = state.taskStatus
         }
 
         when (msg) {
-            is CancelTask -> cancelTask(msg)
-            is DispatchTask -> dispatchTask(state, msg)
-            is RetryTask -> retryTask(state, msg)
-            is RetryTaskAttempt -> retryTaskAttempt(state, msg)
-            is TaskAttemptCompleted -> taskAttemptCompleted(state, msg)
+            is CancelTask -> cancelTask(newState, msg)
+            is DispatchTask -> dispatchTask(newState, msg)
+            is RetryTask -> retryTask(newState, msg)
+            is RetryTaskAttempt -> retryTaskAttempt(newState, msg)
+            is TaskAttemptCompleted -> taskAttemptCompleted(newState, msg)
             is TaskAttemptDispatched -> Unit
-            is TaskAttemptFailed -> taskAttemptFailed(state, msg)
+            is TaskAttemptFailed -> taskAttemptFailed(newState, msg)
             is TaskAttemptStarted -> Unit
             is TaskCanceled -> Unit
             is TaskCompleted -> Unit
             is TaskDispatched -> Unit
         }
 
-        // capture the new state of the task and notify change of status
-        val newStatus = when (msg) {
-            is CancelTask, is TaskAttemptCompleted -> null
-            else -> state.taskStatus
+        // Update stored state if needed and existing
+        if (newState != oldState && !newState.taskStatus.isTerminated) {
+            stateStorage.updateState(msg.taskId, newState, oldState)
         }
 
-        if (oldStatus != newStatus) {
+        // Send TaskStatusUpdated if needed
+        if (oldState?.taskStatus != newState.taskStatus) {
             val tsc = TaskStatusUpdated(
-                taskId = state.taskId,
-                taskName = state.taskName,
-                oldStatus = oldStatus,
-                newStatus = newStatus
+                taskId = newState.taskId,
+                taskName = newState.taskName,
+                oldStatus = oldState?.taskStatus,
+                newStatus = newState.taskStatus
             )
 
             taskDispatcher.dispatch(tsc)
         }
     }
 
-    private fun cancelTask(msg: CancelTask) {
-        // update and save state
-        stateStorage.deleteState(msg.getStateId())
+    private fun cancelTask(state: TaskState, msg: CancelTask) {
+        state.taskStatus = TaskStatus.TERMINATED_CANCELED
 
         // log event
         val tad = TaskCanceled(
             taskId = msg.taskId
         )
         taskDispatcher.dispatch(tad)
+
+        // Delete stored state
+        stateStorage.deleteState(state.taskId)
     }
 
     private fun dispatchTask(state: TaskState, msg: DispatchTask) {
+        state.taskStatus = TaskStatus.RUNNING_OK
+
         // send task to workers
         val rt = RunTask(
-                taskId = state.taskId,
-                taskAttemptId = state.taskAttemptId,
-                taskAttemptIndex = state.taskAttemptIndex,
-                taskName = state.taskName,
-                taskData = state.taskData
+            taskId = state.taskId,
+            taskAttemptId = state.taskAttemptId,
+            taskAttemptIndex = state.taskAttemptIndex,
+            taskName = state.taskName,
+            taskData = state.taskData
         )
         taskDispatcher.dispatch(rt)
 
@@ -143,15 +145,12 @@ class TaskEngine {
             taskAttemptIndex = state.taskAttemptIndex
         )
         taskDispatcher.dispatch(tad)
-
-        // update and save state
-        stateStorage.createState(msg.getStateId(), state)
     }
 
     private fun retryTask(state: TaskState, msg: RetryTask) {
+        state.taskStatus = TaskStatus.RUNNING_WARNING
         state.taskAttemptId = TaskAttemptId()
         state.taskAttemptIndex = 0
-        state.taskStatus = TaskStatus.WARNING
 
         // send task to workers
         val rt = RunTask(
@@ -170,14 +169,11 @@ class TaskEngine {
             taskAttemptIndex = state.taskAttemptIndex
         )
         taskDispatcher.dispatch(tad)
-
-        // update state
-        stateStorage.updateState(msg.getStateId(), state)
     }
 
     private fun retryTaskAttempt(state: TaskState, msg: TaskEngineMessage) {
+        state.taskStatus = TaskStatus.RUNNING_WARNING
         state.taskAttemptIndex = state.taskAttemptIndex + 1
-        state.taskStatus = TaskStatus.WARNING
 
         // send task to workers
         val rt = RunTask(
@@ -196,12 +192,11 @@ class TaskEngine {
             taskAttemptIndex = state.taskAttemptIndex
         )
         taskDispatcher.dispatch(tar)
-
-        // update state
-        stateStorage.updateState(msg.getStateId(), state)
     }
 
     private fun taskAttemptCompleted(state: TaskState, msg: TaskAttemptCompleted) {
+        state.taskStatus = TaskStatus.TERMINATED_COMPLETED
+
         // if this task belongs to a workflow
         if (state.workflowId != null) {
             val tciw = TaskCompletedInWorkflow(
@@ -219,12 +214,12 @@ class TaskEngine {
         )
         taskDispatcher.dispatch(tc)
 
-        // delete state
-        stateStorage.deleteState(msg.getStateId())
+        // Delete stored state
+        stateStorage.deleteState(state.taskId)
     }
 
     private fun taskAttemptFailed(state: TaskState, msg: TaskAttemptFailed) {
-        state.taskStatus = TaskStatus.ERROR
+        state.taskStatus = TaskStatus.RUNNING_ERROR
 
         delayRetryTaskAttempt(state = state, msg = msg, delay = msg.taskAttemptDelayBeforeRetry)
     }
@@ -236,6 +231,8 @@ class TaskEngine {
         if (delay <= 0f) return retryTaskAttempt(state, msg)
         // delayed retry
         if (delay > 0f) {
+            state.taskStatus = TaskStatus.RUNNING_WARNING
+
             // schedule next attempt
             val tar = RetryTaskAttempt(
                 taskId = state.taskId,
@@ -243,9 +240,6 @@ class TaskEngine {
                 taskAttemptIndex = state.taskAttemptIndex
             )
             taskDispatcher.dispatch(tar, after = delay)
-
-            state.taskStatus = TaskStatus.WARNING
-            stateStorage.updateState(msg.getStateId(), state)
         }
     }
 }

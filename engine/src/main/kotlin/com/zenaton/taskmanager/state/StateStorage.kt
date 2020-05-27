@@ -1,11 +1,12 @@
 package com.zenaton.taskmanager.state
 
+import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskState
 
 interface StateStorage {
-    fun getState(key: String): TaskState?
-    fun createState(key: String, state: TaskState)
-    fun updateState(key: String, state: TaskState)
-    fun deleteState(key: String)
+    fun getState(taskId: TaskId): TaskState?
+    fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?)
+    fun deleteState(taskId: TaskId)
+
     fun incrCounter(key: String, amount: Long)
 }

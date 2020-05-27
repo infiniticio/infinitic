@@ -22,9 +22,7 @@ class TaskMetrics {
         }
 
     private fun incrementNewCounter(message: TaskStatusUpdated) =
-        message.newStatus?.let {
-            stateStorage.incrCounter(getCounterKey(message.taskName, it), 1)
-        }
+        stateStorage.incrCounter(getCounterKey(message.taskName, message.newStatus), 1)
 
     private fun getCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "metrics.rt.counter.task.${taskName.name.toLowerCase()}.${taskStatus.toString().toLowerCase()}"
 }

@@ -20,5 +20,5 @@ data class TaskStatusUpdated(
     override val sentAt: DateTime = DateTime(),
     override val taskName: TaskName,
     val oldStatus: TaskStatus?,
-    val newStatus: TaskStatus?
+    val newStatus: TaskStatus
 ) : TaskMetricMessage(taskId, sentAt, taskName)
