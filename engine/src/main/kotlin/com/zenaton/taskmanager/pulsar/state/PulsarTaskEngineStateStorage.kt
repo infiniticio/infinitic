@@ -29,4 +29,6 @@ class PulsarTaskEngineStateStorage(val context: Context) : StateStorage {
     override fun deleteState(taskId: TaskId) {
         context.deleteState(taskId.id)
     }
+
+    override fun incrCounter(key: String, amount: Long) = context.incrCounter(key, amount)
 }

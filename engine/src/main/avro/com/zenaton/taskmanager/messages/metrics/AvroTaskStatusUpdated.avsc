@@ -26,10 +26,7 @@
         },
         {
             "name": "newStatus",
-            "type": [
-                "null",
-                "com.zenaton.taskmanager.data.AvroTaskStatus"
-            ]
+            "type": "com.zenaton.taskmanager.data.AvroTaskStatus"
         }
     ]
 }

@@ -12,21 +12,21 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 
-class StaterTests : StringSpec({
-    "Stater.getState with no state should return null" {
+class StateStorageTests : StringSpec({
+    "StateStorage.getState with no state should return null" {
         // mocking
         val context = mockk<Context>()
         // given
         val key = Arb.string(1).toString()
         every { context.getState(key) } returns null
-        val dispatcher = Stater<WorkflowState>(context)
+        val dispatcher = StateStorage<WorkflowState>(context)
         // when
         val state = dispatcher.getState(key)
         // then
         state shouldBe null
     }
 
-    "Stater.getState state should return deserialize state" {
+    "StateStorage.getState state should return deserialize state" {
         // mocking
 //        val context = mockk<Context>()
 //        val serializeState = ByteBuffer.wrap(Arb.string(1).toString().toByteArray())
@@ -48,7 +48,7 @@ class StaterTests : StringSpec({
 //        state shouldBe mockState
     }
 
-    "Stater.createState should record serialized state" {
+    "StateStorage.createState should record serialized state" {
         // mocking
 //        val context = mockk<Context>()
 //        every { context.putState(any(), any()) } returns Unit
@@ -67,7 +67,7 @@ class StaterTests : StringSpec({
 //        confirmVerified(context)
     }
 
-    "Stater.updateState should record serialized state" {
+    "StateStorage.updateState should record serialized state" {
         // mocking
 //        val context = mockk<Context>()
 //        every { context.putState(any(), any()) } returns Unit
@@ -86,15 +86,15 @@ class StaterTests : StringSpec({
 //        confirmVerified(context)
     }
 
-    "f Stater.deleteState should delete state" {
+    "f StateStorage.deleteState should delete state" {
         // mocking
         val context = mockk<Context>()
         every { context.deleteState(any()) } returns Unit
         // given
-        val stater = Stater<StateInterface>(context)
+        val stateStorage = StateStorage<StateInterface>(context)
         // when
         val key = Arb.string(1).toString()
-        stater.deleteState(key)
+        stateStorage.deleteState(key)
         // then
         verify(exactly = 1) { context.deleteState(key) }
         confirmVerified(context)

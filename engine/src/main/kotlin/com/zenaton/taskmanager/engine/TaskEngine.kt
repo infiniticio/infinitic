@@ -90,7 +90,7 @@ class TaskEngine {
         }
 
         // Update stored state if needed and existing
-        if (newState != oldState && !setOf(TaskStatus.TERMINATED_COMPLETED, TaskStatus.TERMINATED_CANCELED).contains(newState.taskStatus)) {
+        if (newState != oldState && !newState.taskStatus.isTerminated()) {
             stateStorage.updateState(msg.taskId, newState, oldState)
         }
 
