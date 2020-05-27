@@ -4,7 +4,6 @@ import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessage
 import com.zenaton.taskmanager.metrics.TaskMetrics
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
-import com.zenaton.taskmanager.pulsar.state.PulsarTaskEngineStateStorage
 import com.zenaton.taskmanager.pulsar.state.PulsarTaskMetricsStateStorage
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function

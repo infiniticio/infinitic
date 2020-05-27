@@ -1,6 +1,5 @@
 package com.zenaton.taskmanager.pulsar.avro
 
-import com.zenaton.commons.data.interfaces.StateInterface
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.messages.engine.AvroCancelTask

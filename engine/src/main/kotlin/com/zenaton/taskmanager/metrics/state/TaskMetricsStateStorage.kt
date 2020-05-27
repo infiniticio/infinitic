@@ -1,9 +1,8 @@
 package com.zenaton.taskmanager.metrics.state
 
+import com.zenaton.taskmanager.data.TaskName
+import com.zenaton.taskmanager.data.TaskStatus
+
 interface TaskMetricsStateStorage {
-    fun getState(key: String): TaskMetricsState?
-    fun putState(key: String, state: TaskMetricsState)
-    fun deleteState(key: String)
-    fun incrCounter(key: String, amount: Long)
-    fun getCounter(key: String): Long
+    fun updateTaskStatusCountersByName(taskName: TaskName, oldStatus: TaskStatus?, newStatus: TaskStatus)
 }
