@@ -47,11 +47,11 @@ class PulsarTaskMetricsStateStorageTests : ShouldSpec({
 
         should("increment and decrement correct counters for state transition") {
             table(
-                headers("taskName", "oldStatus", "newStatus", "expectedOkChange", "expectedWarningChange", "expectedErrorChange"),
-                row("MyTask", TaskStatus.RUNNING_OK, TaskStatus.RUNNING_ERROR, -1L, 0L, 1L),
-                row("MyTask", TaskStatus.RUNNING_WARNING, TaskStatus.RUNNING_ERROR, 0L, -1L, 1L),
-                row("MyTask", TaskStatus.RUNNING_ERROR, TaskStatus.RUNNING_WARNING, 0L, 1L, -1L)
-            ).forAll { taskName, oldStatus, newStatus, expectedOkChange, expectedWarningChange, expectedErrorChange ->
+                headers("taskName", "oldStatus", "newStatus"),
+                row("MyTask", TaskStatus.RUNNING_OK, TaskStatus.RUNNING_ERROR),
+                row("MyTask", TaskStatus.RUNNING_WARNING, TaskStatus.RUNNING_ERROR),
+                row("MyTask", TaskStatus.RUNNING_ERROR, TaskStatus.RUNNING_WARNING)
+            ).forAll { taskName, oldStatus, newStatus ->
                 val context = mockk<Context>()
                 every { context.incrCounter(any(), any()) } just runs
                 every { context.getCounter(any()) } returnsMany listOf(28L, 3L, 6L, 30L, 100L)
