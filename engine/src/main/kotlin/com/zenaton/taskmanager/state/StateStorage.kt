@@ -1,9 +1,9 @@
-package com.zenaton.taskmanager.engine
+package com.zenaton.taskmanager.state
 
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskState
 
-interface TaskEngineStateStorage {
+interface StateStorage {
     fun getState(taskId: TaskId): TaskState?
 
     fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?)

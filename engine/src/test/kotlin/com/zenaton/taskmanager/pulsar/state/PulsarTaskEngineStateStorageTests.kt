@@ -7,7 +7,7 @@ import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
-import com.zenaton.taskmanager.pulsar.engine.PulsarTaskEngineStateStorage
+import com.zenaton.taskmanager.pulsar.state.PulsarTaskEngineStateStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified

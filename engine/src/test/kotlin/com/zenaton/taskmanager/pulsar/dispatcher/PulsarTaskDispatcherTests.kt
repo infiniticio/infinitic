@@ -1,4 +1,4 @@
-package com.zenaton.taskmanager.pulsar.engine
+package com.zenaton.taskmanager.pulsar.dispatcher
 
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
@@ -36,7 +36,7 @@ import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 
-class PulsarTaskEngineDispatcherTests : StringSpec({
+class PulsarTaskDispatcherTests : StringSpec({
     include(shouldSendTaskMetricMessageToMetricsTopic(TaskStatusUpdated::class))
 
     include(shouldSendTaskWorkerMessageToTaskAttemptsTopic(RunTask::class))
@@ -67,7 +67,7 @@ fun <T : TaskEngineMessage> shouldSendTaskEngineMessageToTasksTopic(klass: KClas
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarTaskEngineDispatcher(context).dispatch(msg)
+    PulsarTaskDispatcher(context).dispatch(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.ENGINE.get()
@@ -91,7 +91,7 @@ fun <T : TaskMetricMessage> shouldSendTaskMetricMessageToMetricsTopic(klass: KCl
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarTaskEngineDispatcher(context).dispatch(msg)
+    PulsarTaskDispatcher(context).dispatch(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.METRICS.get()
@@ -115,7 +115,7 @@ fun <T : TaskWorkerMessage> shouldSendTaskWorkerMessageToTaskAttemptsTopic(klass
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarTaskEngineDispatcher(context).dispatch(msg)
+    PulsarTaskDispatcher(context).dispatch(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.WORKERS.get(msg.taskName.name)

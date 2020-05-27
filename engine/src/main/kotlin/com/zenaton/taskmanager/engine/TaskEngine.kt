@@ -3,6 +3,7 @@ package com.zenaton.taskmanager.engine
 import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.data.TaskStatus
+import com.zenaton.taskmanager.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.logger.TaskLogger
 import com.zenaton.taskmanager.messages.engine.CancelTask
 import com.zenaton.taskmanager.messages.engine.DispatchTask
@@ -19,13 +20,14 @@ import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
+import com.zenaton.taskmanager.state.StateStorage
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine {
-    lateinit var taskDispatcher: TaskEngineDispatcher
+    lateinit var taskDispatcher: TaskDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcherInterface
-    lateinit var stateStorage: TaskEngineStateStorage
+    lateinit var stateStorage: StateStorage
     lateinit var logger: TaskLogger
 
     fun handle(msg: TaskEngineMessage) {

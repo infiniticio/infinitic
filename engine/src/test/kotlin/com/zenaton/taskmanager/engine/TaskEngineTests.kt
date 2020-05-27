@@ -3,6 +3,7 @@ package com.zenaton.taskmanager.engine
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.data.TaskStatus
+import com.zenaton.taskmanager.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.logger.TaskLogger
 import com.zenaton.taskmanager.messages.engine.CancelTask
 import com.zenaton.taskmanager.messages.engine.DispatchTask
@@ -19,6 +20,7 @@ import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
+import com.zenaton.taskmanager.state.StateStorage
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
@@ -51,9 +53,9 @@ fun taskCompleted(values: Map<String, Any?>? = null) = TestFactory.get(TaskCompl
 fun taskDispatched(values: Map<String, Any?>? = null) = TestFactory.get(TaskDispatched::class, values)
 
 class EngineResults {
-    lateinit var taskDispatcher: TaskEngineDispatcher
+    lateinit var taskDispatcher: TaskDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcher
-    lateinit var stater: TaskEngineStateStorage
+    lateinit var stater: StateStorage
     lateinit var logger: TaskLogger
     var state: TaskState? = null
     var runTask: RunTask? = null
@@ -74,9 +76,9 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     // avoid deep updates of stateIn
     val state = stateIn?.copy()
     // mocking
-    val taskDispatcher = mockk<TaskEngineDispatcher>()
+    val taskDispatcher = mockk<TaskDispatcher>()
     val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stater = mockk<TaskEngineStateStorage>()
+    val stater = mockk<StateStorage>()
     val logger = mockk<TaskLogger>()
     val stateSlot = slot<TaskState>()
     val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
