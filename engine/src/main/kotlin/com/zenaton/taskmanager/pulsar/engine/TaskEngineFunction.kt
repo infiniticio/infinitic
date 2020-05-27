@@ -25,7 +25,7 @@ class TaskEngineFunction : Function<AvroTaskEngineMessage, Void> {
         try {
             taskEngine.taskDispatcher = PulsarTaskEngineDispatcher(ctx)
             taskEngine.workflowDispatcher = WorkflowDispatcher(ctx)
-            taskEngine.stater = PulsarTaskEngineStateStorage(ctx)
+            taskEngine.stateStorage = PulsarTaskEngineStateStorage(ctx)
             taskEngine.logger = PulsarTaskLogger(ctx)
 
             taskEngine.handle(avroConverter.fromAvro(input))

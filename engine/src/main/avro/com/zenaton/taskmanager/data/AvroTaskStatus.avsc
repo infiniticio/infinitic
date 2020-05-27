@@ -2,5 +2,11 @@
     "type": "enum",
     "name": "AvroTaskStatus",
     "namespace": "com.zenaton.taskmanager.data",
-    "symbols": ["OK", "WARNING", "ERROR"]
+    "symbols": [
+        "RUNNING_OK",
+        "RUNNING_WARNING",
+        "RUNNING_ERROR",
+        "TERMINATED_COMPLETED",
+        "TERMINATED_CANCELED"
+    ]
 }

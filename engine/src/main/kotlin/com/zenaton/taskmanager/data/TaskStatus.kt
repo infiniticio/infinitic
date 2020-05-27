@@ -1,7 +1,9 @@
 package com.zenaton.taskmanager.data
 
 enum class TaskStatus {
-    OK,
-    WARNING,
-    ERROR
+    RUNNING_OK,
+    RUNNING_WARNING,
+    RUNNING_ERROR,
+    TERMINATED_COMPLETED,
+    TERMINATED_CANCELED
 }

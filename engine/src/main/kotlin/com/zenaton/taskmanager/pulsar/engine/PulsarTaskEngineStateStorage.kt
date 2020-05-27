@@ -22,12 +22,8 @@ class PulsarTaskEngineStateStorage(val context: Context) : TaskEngineStateStorag
         return context.getState(taskId.id)?.let { avroConverter.fromAvro(avroSerDe.deserialize<AvroTaskState>(it)) }
     }
 
-    override fun createState(taskId: TaskId, state: TaskState) {
-        context.putState(taskId.id, avroSerDe.serialize(avroConverter.toAvro(state)))
-    }
-
-    override fun updateState(taskId: TaskId, state: TaskState) {
-        context.putState(taskId.id, avroSerDe.serialize(avroConverter.toAvro(state)))
+    override fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?) {
+        context.putState(taskId.id, avroSerDe.serialize(avroConverter.toAvro(newState)))
     }
 
     override fun deleteState(taskId: TaskId) {

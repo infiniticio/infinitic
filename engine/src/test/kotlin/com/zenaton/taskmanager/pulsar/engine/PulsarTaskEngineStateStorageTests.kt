@@ -51,7 +51,7 @@ class PulsarTaskEngineStateStorageTests : StringSpec({
         // given
         val storage = PulsarTaskEngineStateStorage(context)
         // when
-        storage.createState(stateIn.taskId, stateIn)
+        storage.updateState(stateIn.taskId, stateIn, null)
         // then
         verify(exactly = 1) { context.putState(stateIn.taskId.id, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))) }
         confirmVerified(context)
@@ -61,13 +61,14 @@ class PulsarTaskEngineStateStorageTests : StringSpec({
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
+        val stateOut = TestFactory.get(TaskState::class)
         every { context.putState(any(), any()) } returns Unit
         // given
         val storage = PulsarTaskEngineStateStorage(context)
         // when
-        storage.updateState(stateIn.taskId, stateIn)
+        storage.updateState(stateIn.taskId, stateOut, stateIn)
         // then
-        verify(exactly = 1) { context.putState(stateIn.taskId.id, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))) }
+        verify(exactly = 1) { context.putState(stateIn.taskId.id, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateOut))) }
         confirmVerified(context)
     }
 

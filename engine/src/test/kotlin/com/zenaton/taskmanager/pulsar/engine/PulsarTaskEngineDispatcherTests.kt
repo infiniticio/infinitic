@@ -1,4 +1,4 @@
-package com.zenaton.taskmanager.pulsar.dispatcher
+package com.zenaton.taskmanager.pulsar.engine
 
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
@@ -22,7 +22,6 @@ import com.zenaton.taskmanager.messages.workers.RunTask
 import com.zenaton.taskmanager.messages.workers.TaskWorkerMessage
 import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
-import com.zenaton.taskmanager.pulsar.engine.PulsarTaskEngineDispatcher
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe

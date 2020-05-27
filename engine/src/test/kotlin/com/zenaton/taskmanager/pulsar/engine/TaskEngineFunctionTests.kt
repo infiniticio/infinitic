@@ -38,7 +38,7 @@ class TaskEngineFunctionTests : StringSpec({
         (taskEngine.taskDispatcher as PulsarTaskEngineDispatcher).context shouldBe context
         (taskEngine.workflowDispatcher as WorkflowDispatcher).context shouldBe context
         (taskEngine.logger as PulsarTaskLogger).context shouldBe context
-        (taskEngine.stater as PulsarTaskEngineStateStorage).context shouldBe context
+        (taskEngine.stateStorage as PulsarTaskEngineStateStorage).context shouldBe context
         verify(exactly = 1) { taskEngine.handle(msg) }
     }
 

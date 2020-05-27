@@ -5,9 +5,8 @@ import com.zenaton.taskmanager.data.TaskState
 
 interface TaskEngineStateStorage {
     fun getState(taskId: TaskId): TaskState?
-    fun createState(taskId: TaskId, state: TaskState)
-    fun updateState(taskId: TaskId, state: TaskState)
-    fun deleteState(taskId: TaskId)
 
-//    fun updateState(taskId: TaskId, oldState: TaskState?, newState: TaskState?)
+    fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?)
+
+    fun deleteState(taskId: TaskId)
 }
