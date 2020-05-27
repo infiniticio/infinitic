@@ -3,7 +3,6 @@ package com.zenaton.taskmanager.engine
 import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.data.TaskStatus
-import com.zenaton.taskmanager.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.logger.TaskLogger
 import com.zenaton.taskmanager.messages.engine.CancelTask
 import com.zenaton.taskmanager.messages.engine.DispatchTask
@@ -20,21 +19,21 @@ import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
-import com.zenaton.taskmanager.stater.TaskStaterInterface
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine {
-    lateinit var taskDispatcher: TaskDispatcher
+    lateinit var taskDispatcher: TaskEngineDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcherInterface
-    lateinit var stater: TaskStaterInterface
+    lateinit var stater: TaskEngineStateStorage
     lateinit var logger: TaskLogger
 
     fun handle(msg: TaskEngineMessage) {
         var oldStatus: TaskStatus? = null
 
         // get associated state
-        var state = stater.getState(msg.getStateId())
+        var state = stater.getState(msg.taskId)
+
         if (state == null) {
             // a null state should mean that this task is already terminated => all messages others than TaskDispatched are ignored
             if (msg !is DispatchTask) {
@@ -111,7 +110,7 @@ class TaskEngine {
 
     private fun cancelTask(msg: CancelTask) {
         // update and save state
-        stater.deleteState(msg.getStateId())
+        stater.deleteState(msg.taskId)
 
         // log event
         val tad = TaskCanceled(
@@ -145,7 +144,7 @@ class TaskEngine {
         taskDispatcher.dispatch(tad)
 
         // update and save state
-        stater.createState(msg.getStateId(), state)
+        stater.createState(state.taskId, state)
     }
 
     private fun retryTask(state: TaskState, msg: RetryTask) {
@@ -172,7 +171,7 @@ class TaskEngine {
         taskDispatcher.dispatch(tad)
 
         // update state
-        stater.updateState(msg.getStateId(), state)
+        stater.updateState(state.taskId, state)
     }
 
     private fun retryTaskAttempt(state: TaskState, msg: TaskEngineMessage) {
@@ -198,7 +197,7 @@ class TaskEngine {
         taskDispatcher.dispatch(tar)
 
         // update state
-        stater.updateState(msg.getStateId(), state)
+        stater.updateState(state.taskId, state)
     }
 
     private fun taskAttemptCompleted(state: TaskState, msg: TaskAttemptCompleted) {
@@ -220,7 +219,7 @@ class TaskEngine {
         taskDispatcher.dispatch(tc)
 
         // delete state
-        stater.deleteState(msg.getStateId())
+        stater.deleteState(state.taskId)
     }
 
     private fun taskAttemptFailed(state: TaskState, msg: TaskAttemptFailed) {
@@ -245,7 +244,7 @@ class TaskEngine {
             taskDispatcher.dispatch(tar, after = delay)
 
             state.taskStatus = TaskStatus.WARNING
-            stater.updateState(msg.getStateId(), state)
+            stater.updateState(state.taskId, state)
         }
     }
 }

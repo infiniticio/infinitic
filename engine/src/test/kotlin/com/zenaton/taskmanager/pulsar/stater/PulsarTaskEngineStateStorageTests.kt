@@ -1,11 +1,13 @@
-package com.zenaton.taskmanager.pulsar.stater
+package com.zenaton.taskmanager.pulsar.storage
 
 import com.zenaton.commons.data.interfaces.StateInterface
 import com.zenaton.commons.pulsar.utils.Stater
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.commons.utils.avro.AvroSerDe
+import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
+import com.zenaton.taskmanager.pulsar.engine.PulsarTaskEngineStateStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified
@@ -14,15 +16,16 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 
-class TaskStaterTests : StringSpec({
+class PulsarTaskEngineStateStorageTests : StringSpec({
     "TaskStater.getState with no state should return null" {
+        val taskId = TestFactory.get(TaskId::class)
         // mocking
         val context = mockk<Context>()
         every { context.getState(any()) } returns null
         // given
-        val stater = TaskStater(context)
+        val storage = PulsarTaskEngineStateStorage(context)
         // when
-        val state = stater.getState("key")
+        val state = storage.getState(taskId)
         // then
         state shouldBe null
     }
@@ -31,11 +34,11 @@ class TaskStaterTests : StringSpec({
         // mocking
         val context = mockk<Context>()
         val stateIn = TestFactory.get(TaskState::class)
-        every { context.getState(any()) } returns AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))
+        every { context.getState(stateIn.taskId.id) } returns AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))
         // given
-        val stater = TaskStater(context)
+        val storage = PulsarTaskEngineStateStorage(context)
         // when
-        val stateOut = stater.getState("key")
+        val stateOut = storage.getState(stateIn.taskId)
         // then
         stateOut shouldBe stateIn
     }
@@ -46,12 +49,11 @@ class TaskStaterTests : StringSpec({
         val stateIn = TestFactory.get(TaskState::class)
         every { context.putState(any(), any()) } returns Unit
         // given
-        val stater = TaskStater(context)
+        val storage = PulsarTaskEngineStateStorage(context)
         // when
-        val key = TestFactory.get(String::class)
-        stater.createState(key, stateIn)
+        storage.createState(stateIn.taskId, stateIn)
         // then
-        verify(exactly = 1) { context.putState(key, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))) }
+        verify(exactly = 1) { context.putState(stateIn.taskId.id, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))) }
         confirmVerified(context)
     }
 
@@ -61,12 +63,11 @@ class TaskStaterTests : StringSpec({
         val stateIn = TestFactory.get(TaskState::class)
         every { context.putState(any(), any()) } returns Unit
         // given
-        val stater = TaskStater(context)
+        val storage = PulsarTaskEngineStateStorage(context)
         // when
-        val key = TestFactory.get(String::class)
-        stater.updateState(key, stateIn)
+        storage.updateState(stateIn.taskId, stateIn)
         // then
-        verify(exactly = 1) { context.putState(key, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))) }
+        verify(exactly = 1) { context.putState(stateIn.taskId.id, AvroSerDe.serialize(TaskAvroConverter.toAvro(stateIn))) }
         confirmVerified(context)
     }
 
@@ -75,10 +76,10 @@ class TaskStaterTests : StringSpec({
         val context = mockk<Context>()
         every { context.deleteState(any()) } returns Unit
         // given
-        val stater = Stater<StateInterface>(context)
+        val storage = Stater<StateInterface>(context)
         // when
         val key = TestFactory.get(String::class)
-        stater.deleteState(key)
+        storage.deleteState(key)
         // then
         verify(exactly = 1) { context.deleteState(key) }
         confirmVerified(context)

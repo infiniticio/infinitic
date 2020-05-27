@@ -3,7 +3,6 @@ package com.zenaton.taskmanager.engine
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.data.TaskStatus
-import com.zenaton.taskmanager.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.logger.TaskLogger
 import com.zenaton.taskmanager.messages.engine.CancelTask
 import com.zenaton.taskmanager.messages.engine.DispatchTask
@@ -20,7 +19,6 @@ import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
-import com.zenaton.taskmanager.stater.TaskStaterInterface
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
@@ -53,9 +51,9 @@ fun taskCompleted(values: Map<String, Any?>? = null) = TestFactory.get(TaskCompl
 fun taskDispatched(values: Map<String, Any?>? = null) = TestFactory.get(TaskDispatched::class, values)
 
 class EngineResults {
-    lateinit var taskDispatcher: TaskDispatcher
+    lateinit var taskDispatcher: TaskEngineDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcher
-    lateinit var stater: TaskStaterInterface
+    lateinit var stater: TaskEngineStateStorage
     lateinit var logger: TaskLogger
     var state: TaskState? = null
     var runTask: RunTask? = null
@@ -76,9 +74,9 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     // avoid deep updates of stateIn
     val state = stateIn?.copy()
     // mocking
-    val taskDispatcher = mockk<TaskDispatcher>()
+    val taskDispatcher = mockk<TaskEngineDispatcher>()
     val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stater = mockk<TaskStaterInterface>()
+    val stater = mockk<TaskEngineStateStorage>()
     val logger = mockk<TaskLogger>()
     val stateSlot = slot<TaskState>()
     val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
@@ -95,7 +93,7 @@ fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
     val taskStatusUpdatedSlot = slot<TaskStatusUpdated>()
     every { logger.error(any(), msgIn, stateIn) } returns "error!"
     every { logger.warn(any(), msgIn, stateIn) } returns "warn!"
-    every { stater.getState(msgIn.getStateId()) } returns state
+    every { stater.getState(msgIn.taskId) } returns state
     every { stater.createState(any(), capture(stateSlot)) } just Runs
     every { stater.updateState(any(), capture(stateSlot)) } just Runs
     every { stater.deleteState(any()) } just Runs
@@ -182,7 +180,7 @@ class TaskEngineTests : StringSpec({
         val msgIn = dispatchTask(mapOf("taskId" to stateIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.stater.getState(msgIn.getStateId())
+            o.stater.getState(msgIn.taskId)
             o.logger.error(any(), msgIn, stateIn)
         }
         checkConfirmVerified(o)
@@ -195,8 +193,8 @@ class TaskEngineTests : StringSpec({
         val msgIn = cancelTask(mapOf("taskId" to stateIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.stater.getState(msgIn.getStateId())
-            o.stater.deleteState(msgIn.getStateId())
+            o.stater.getState(msgIn.taskId)
+            o.stater.deleteState(msgIn.taskId)
             o.taskDispatcher.dispatch(o.taskCanceled!!)
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
@@ -210,11 +208,11 @@ class TaskEngineTests : StringSpec({
         val msgIn = dispatchTask()
         val o = engineHandle(null, msgIn)
         verifyOrder {
-            o.stater.getState(msgIn.getStateId())
+            o.stater.getState(msgIn.taskId)
             o.taskDispatcher.dispatch(o.runTask!!)
             o.taskDispatcher.dispatch(o.taskDispatched!!)
             o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
-            o.stater.createState(msgIn.getStateId(), o.state!!)
+            o.stater.createState(msgIn.taskId, o.state!!)
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -242,10 +240,10 @@ class TaskEngineTests : StringSpec({
         val msgIn = retryTask(mapOf("taskId" to stateIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.stater.getState(msgIn.getStateId())
+            o.stater.getState(msgIn.taskId)
             o.taskDispatcher.dispatch(o.runTask!!)
             o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
-            o.stater.updateState(msgIn.getStateId(), o.state!!)
+            o.stater.updateState(msgIn.taskId, o.state!!)
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -290,10 +288,10 @@ class TaskEngineTests : StringSpec({
         ))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.stater.getState(msgIn.getStateId())
+            o.stater.getState(msgIn.taskId)
             o.workflowDispatcher.dispatch(o.taskCompletedInWorkflow!!)
             o.taskDispatcher.dispatch(o.taskCompleted!!)
-            o.stater.deleteState(msgIn.getStateId())
+            o.stater.deleteState(msgIn.taskId)
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -316,7 +314,7 @@ class TaskEngineTests : StringSpec({
         ))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.stater.getState(msgIn.getStateId())
+            o.stater.getState(msgIn.taskId)
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -334,9 +332,9 @@ class TaskEngineTests : StringSpec({
         ))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.stater.getState(msgIn.getStateId())
+            o.stater.getState(msgIn.taskId)
             o.taskDispatcher.dispatch(o.retryTaskAttempt!!, o.retryTaskAttemptDelay!!)
-            o.stater.updateState(msgIn.getStateId(), o.state!!)
+            o.stater.updateState(msgIn.taskId, o.state!!)
             o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -447,17 +445,17 @@ private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn
 
 private fun checkShouldDoNothing(msgIn: TaskEngineMessage, o: EngineResults) {
     verifyOrder {
-        o.stater.getState(msgIn.getStateId())
+        o.stater.getState(msgIn.taskId)
     }
     checkConfirmVerified(o)
 }
 
 private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskState, o: EngineResults) {
     verifyOrder {
-        o.stater.getState(msgIn.getStateId())
+        o.stater.getState(msgIn.taskId)
         o.taskDispatcher.dispatch(o.runTask!!)
         o.taskDispatcher.dispatch(o.taskAttemptDispatched!!)
-        o.stater.updateState(msgIn.getStateId(), o.state!!)
+        o.stater.updateState(msgIn.taskId, o.state!!)
         o.taskDispatcher.dispatch(o.taskStatusUpdated!!)
     }
     checkConfirmVerified(o)
@@ -481,7 +479,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
 
 private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskEngineMessage, o: EngineResults) {
     verifyOrder {
-        o.stater.getState(msgIn.getStateId())
+        o.stater.getState(msgIn.taskId)
         o.logger.warn(any(), msgIn, stateIn)
     }
     checkConfirmVerified(o)
@@ -489,7 +487,7 @@ private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskEngi
 
 private fun checkShouldErrorAndDoNothingMore(stateIn: TaskState?, msgIn: TaskEngineMessage, o: EngineResults) {
     verifyOrder {
-        o.stater.getState(msgIn.getStateId())
+        o.stater.getState(msgIn.taskId)
         o.logger.error(any(), msgIn, stateIn)
     }
     checkConfirmVerified(o)

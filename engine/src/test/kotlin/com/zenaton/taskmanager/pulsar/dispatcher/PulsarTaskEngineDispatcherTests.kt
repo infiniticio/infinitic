@@ -22,6 +22,7 @@ import com.zenaton.taskmanager.messages.workers.RunTask
 import com.zenaton.taskmanager.messages.workers.TaskWorkerMessage
 import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
+import com.zenaton.taskmanager.pulsar.engine.PulsarTaskEngineDispatcher
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -36,7 +37,7 @@ import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 
-class PulsarTaskDispatcherTests : StringSpec({
+class PulsarTaskEngineDispatcherTests : StringSpec({
     include(shouldSendTaskMetricMessageToMetricsTopic(TaskStatusUpdated::class))
 
     include(shouldSendTaskWorkerMessageToTaskAttemptsTopic(RunTask::class))
@@ -67,7 +68,7 @@ fun <T : TaskEngineMessage> shouldSendTaskEngineMessageToTasksTopic(klass: KClas
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarTaskDispatcher(context).dispatch(msg)
+    PulsarTaskEngineDispatcher(context).dispatch(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.ENGINE.get()
@@ -91,7 +92,7 @@ fun <T : TaskMetricMessage> shouldSendTaskMetricMessageToMetricsTopic(klass: KCl
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarTaskDispatcher(context).dispatch(msg)
+    PulsarTaskEngineDispatcher(context).dispatch(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.METRICS.get()
@@ -115,7 +116,7 @@ fun <T : TaskWorkerMessage> shouldSendTaskWorkerMessageToTaskAttemptsTopic(klass
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarTaskDispatcher(context).dispatch(msg)
+    PulsarTaskEngineDispatcher(context).dispatch(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.WORKERS.get(msg.taskName.name)
