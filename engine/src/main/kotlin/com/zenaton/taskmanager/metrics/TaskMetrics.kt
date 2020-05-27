@@ -29,9 +29,9 @@ class TaskMetrics {
     private fun persistCountersInState(taskName: TaskName) {
         val state = stateStorage.getState(getStateKey(taskName)) ?: TaskMetricsState(taskName)
 
-        state.okCount = stateStorage.getCounter(getCounterKey(taskName, TaskStatus.RUNNING_OK))
-        state.warningCount = stateStorage.getCounter(getCounterKey(taskName, TaskStatus.RUNNING_WARNING))
-        state.errorCount = stateStorage.getCounter(getCounterKey(taskName, TaskStatus.RUNNING_ERROR))
+        state.runningOkCount = stateStorage.getCounter(getCounterKey(taskName, TaskStatus.RUNNING_OK))
+        state.runningWarningCount = stateStorage.getCounter(getCounterKey(taskName, TaskStatus.RUNNING_WARNING))
+        state.runningErrorCount = stateStorage.getCounter(getCounterKey(taskName, TaskStatus.RUNNING_ERROR))
         state.terminatedCompletedCount = stateStorage.getCounter(getCounterKey(taskName, TaskStatus.TERMINATED_COMPLETED))
         state.terminatedCanceledCount = stateStorage.getCounter(getCounterKey(taskName, TaskStatus.TERMINATED_CANCELED))
 

@@ -6,19 +6,24 @@
         {
             "name" : "taskName",
             "type" : "string"
-        }, {
-            "name" : "okCount",
+        },
+        {
+            "name" : "runningOkCount",
             "type" : "long"
-        }, {
-            "name" : "warningCount",
+        },
+        {
+            "name" : "runningWarningCount",
             "type" : "long"
-        }, {
-            "name" : "errorCount",
+        },
+        {
+            "name" : "runningErrorCount",
             "type" : "long"
-        }, {
+        },
+        {
             "name" : "terminatedCompletedCount",
             "type" : "long"
-        }, {
+        },
+        {
             "name" : "terminatedCanceledCount",
             "type" : "long"
         }

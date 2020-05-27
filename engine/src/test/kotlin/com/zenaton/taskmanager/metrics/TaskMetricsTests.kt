@@ -34,7 +34,7 @@ class TaskMetricsTests : ShouldSpec({
                 val stateStorage = mockk<TaskMetricsStateStorage>()
                 every { stateStorage.incrCounter(any(), any()) } just runs
                 every { stateStorage.getState(any()) } returns previousState
-                every { stateStorage.getCounter(any()) } returnsMany listOf(previousState.okCount + expectedOkChange, previousState.warningCount + expectedWarningChange, previousState.errorCount + expectedErrorChange, previousState.terminatedCompletedCount, previousState.terminatedCanceledCount)
+                every { stateStorage.getCounter(any()) } returnsMany listOf(initialState.runningOkCount + expectedOkChange, initialState.runningWarningCount + expectedWarningChange, initialState.runningErrorCount + expectedErrorChange, initialState.terminatedCompletedCount, initialState.terminatedCanceledCount)
                 every { stateStorage.putState(any(), any()) } just runs
 
                 val metrics = TaskMetrics()
@@ -43,9 +43,9 @@ class TaskMetricsTests : ShouldSpec({
 
                 val expectedState = TaskMetricsState(
                     TaskName(taskName),
-                    initialState.okCount + expectedOkChange,
-                    initialState.warningCount + expectedWarningChange,
-                    initialState.errorCount + expectedErrorChange,
+                    initialState.runningOkCount + expectedOkChange,
+                    initialState.runningWarningCount + expectedWarningChange,
+                    initialState.runningErrorCount + expectedErrorChange,
                     initialState.terminatedCompletedCount,
                     initialState.terminatedCanceledCount
                 )
@@ -70,7 +70,7 @@ class TaskMetricsTests : ShouldSpec({
             val stateStorage = mockk<TaskMetricsStateStorage>()
             every { stateStorage.incrCounter(any(), any()) } just runs
             every { stateStorage.getState(any()) } returns previousState
-            every { stateStorage.getCounter(any()) } returnsMany listOf(previousState.okCount + 1L, previousState.warningCount, previousState.errorCount, previousState.terminatedCompletedCount, previousState.terminatedCanceledCount)
+            every { stateStorage.getCounter(any()) } returnsMany listOf(initialState.runningOkCount + 1L, initialState.runningWarningCount, initialState.runningErrorCount, initialState.terminatedCompletedCount, initialState.terminatedCanceledCount)
             every { stateStorage.putState(any(), any()) } just runs
 
             val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to null, "newStatus" to TaskStatus.RUNNING_OK))
@@ -87,7 +87,7 @@ class TaskMetricsTests : ShouldSpec({
                 stateStorage.getCounter("metrics.rt.counter.task.othertask.running_error")
                 stateStorage.getCounter("metrics.rt.counter.task.othertask.terminated_completed")
                 stateStorage.getCounter("metrics.rt.counter.task.othertask.terminated_canceled")
-                stateStorage.putState("metrics.task.othertask.counters", TaskMetricsState(TaskName("OtherTask"), initialState.okCount + 1L, initialState.warningCount, initialState.errorCount, initialState.terminatedCompletedCount, initialState.terminatedCanceledCount))
+                stateStorage.putState("metrics.task.othertask.counters", TaskMetricsState(TaskName("OtherTask"), initialState.runningOkCount + 1L, initialState.runningWarningCount, initialState.runningErrorCount, initialState.terminatedCompletedCount, initialState.terminatedCanceledCount))
             }
         }
 
@@ -97,7 +97,7 @@ class TaskMetricsTests : ShouldSpec({
             val stateStorage = mockk<TaskMetricsStateStorage>()
             every { stateStorage.incrCounter(any(), any()) } just runs
             every { stateStorage.getState(any()) } returns previousState
-            every { stateStorage.getCounter(any()) } returnsMany listOf(initialState.okCount - 1L, initialState.warningCount, initialState.errorCount, initialState.terminatedCompletedCount + 1L, initialState.terminatedCanceledCount)
+            every { stateStorage.getCounter(any()) } returnsMany listOf(initialState.runningOkCount - 1L, initialState.runningWarningCount, initialState.runningErrorCount, initialState.terminatedCompletedCount + 1L, initialState.terminatedCanceledCount)
             every { stateStorage.putState(any(), any()) } just runs
 
             val message = TestFactory.get(TaskStatusUpdated::class, mapOf("taskName" to TaskName("OtherTask"), "oldStatus" to TaskStatus.RUNNING_OK, "newStatus" to TaskStatus.TERMINATED_COMPLETED))
@@ -117,9 +117,9 @@ class TaskMetricsTests : ShouldSpec({
                 stateStorage.getCounter("metrics.rt.counter.task.othertask.terminated_canceled")
                 stateStorage.putState("metrics.task.othertask.counters", TaskMetricsState(
                     TaskName("OtherTask"),
-                    initialState.okCount - 1L,
-                    initialState.warningCount,
-                    initialState.errorCount,
+                    initialState.runningOkCount - 1L,
+                    initialState.runningWarningCount,
+                    initialState.runningErrorCount,
                     initialState.terminatedCompletedCount + 1L,
                     initialState.terminatedCanceledCount
                 ))

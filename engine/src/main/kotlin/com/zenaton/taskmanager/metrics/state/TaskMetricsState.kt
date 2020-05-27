@@ -5,9 +5,9 @@ import com.zenaton.taskmanager.data.TaskName
 
 data class TaskMetricsState(
     val taskName: TaskName,
-    var okCount: Long = 0,
-    var warningCount: Long = 0,
-    var errorCount: Long = 0,
+    var runningOkCount: Long = 0,
+    var runningWarningCount: Long = 0,
+    var runningErrorCount: Long = 0,
     var terminatedCompletedCount: Long = 0,
     var terminatedCanceledCount: Long = 0
 ) : StateInterface
