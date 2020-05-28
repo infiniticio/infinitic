@@ -8,7 +8,7 @@ enum class Topic {
         override fun get(name: String?) = "tasks-$name"
     },
     METRICS {
-        override fun get(name: String?) = "tasks-status-updated"
+        override fun get(name: String?) = "tasks-metrics"
     },
     LOGS {
         override fun get(name: String?) = "logs"
