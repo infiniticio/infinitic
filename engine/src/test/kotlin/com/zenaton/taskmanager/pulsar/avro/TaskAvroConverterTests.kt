@@ -25,7 +25,9 @@ import com.zenaton.taskmanager.messages.engine.TaskCanceled
 import com.zenaton.taskmanager.messages.engine.TaskCompleted
 import com.zenaton.taskmanager.messages.engine.TaskDispatched
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
+import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricCreated
 import com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated
+import com.zenaton.taskmanager.messages.metrics.TaskMetricCreated
 import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.AvroRunTask
@@ -43,6 +45,7 @@ class TaskAvroConverterTests : StringSpec({
     include(workerMessageShouldBeAvroReversible(RunTask::class, AvroRunTask::class))
 
     include(metricMessageShouldBeAvroReversible(TaskStatusUpdated::class, AvroTaskStatusUpdated::class))
+    include(metricMessageShouldBeAvroReversible(TaskMetricCreated::class, AvroTaskMetricCreated::class))
 
     include(engineMessageShouldBeAvroReversible(CancelTask::class, AvroCancelTask::class))
     include(engineMessageShouldBeAvroReversible(DispatchTask::class, AvroDispatchTask::class))

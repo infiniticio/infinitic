@@ -7,9 +7,13 @@
             "name": "type",
             "type": "com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessageType"
         }, {
-             "name": "TaskStatusUpdated",
-             "type": ["null", "com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated"],
-             "default": null
+            "name": "TaskStatusUpdated",
+            "type": ["null", "com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated"],
+            "default": null
+        }, {
+            "name": "TaskMetricCreated",
+            "type": ["null", "com.zenaton.taskmanager.messages.metrics.AvroTaskMetricCreated"],
+            "default": null
         }
     ]
 }

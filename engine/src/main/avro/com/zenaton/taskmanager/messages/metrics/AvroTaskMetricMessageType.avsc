@@ -3,6 +3,7 @@
     "name": "AvroTaskMetricMessageType",
     "namespace": "com.zenaton.taskmanager.messages.metrics",
     "symbols": [
+        "TaskMetricCreated",
         "TaskStatusUpdated"
     ]
 }

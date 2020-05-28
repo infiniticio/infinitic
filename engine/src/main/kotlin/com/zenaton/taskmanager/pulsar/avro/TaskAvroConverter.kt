@@ -29,7 +29,7 @@ import com.zenaton.taskmanager.messages.engine.TaskDispatched
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessage
 import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessageType
-import com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated
+import com.zenaton.taskmanager.messages.metrics.TaskMetricCreated
 import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.AvroRunTask
@@ -84,8 +84,12 @@ object TaskAvroConverter {
         val builder = AvroTaskMetricMessage.newBuilder()
         when (msg) {
             is TaskStatusUpdated -> builder.apply {
-                taskStatusUpdated = convert<AvroTaskStatusUpdated>(msg)
+                taskStatusUpdated = convert(msg)
                 type = AvroTaskMetricMessageType.TaskStatusUpdated
+            }
+            is TaskMetricCreated -> builder.apply {
+                taskMetricCreated = convert(msg)
+                type = AvroTaskMetricMessageType.TaskMetricCreated
             }
         }
         return builder.build()
@@ -94,6 +98,7 @@ object TaskAvroConverter {
     fun fromAvro(input: AvroTaskMetricMessage): TaskMetricMessage {
         return when (val type = input.getType()) {
             AvroTaskMetricMessageType.TaskStatusUpdated -> convert<TaskStatusUpdated>(input.taskStatusUpdated)
+            AvroTaskMetricMessageType.TaskMetricCreated -> convert<TaskMetricCreated>(input.taskMetricCreated)
         }
     }
 
