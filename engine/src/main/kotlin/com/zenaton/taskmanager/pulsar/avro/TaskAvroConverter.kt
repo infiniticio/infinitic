@@ -37,6 +37,8 @@ import com.zenaton.taskmanager.messages.workers.AvroTaskWorkerMessage
 import com.zenaton.taskmanager.messages.workers.AvroTaskWorkerMessageType
 import com.zenaton.taskmanager.messages.workers.RunTask
 import com.zenaton.taskmanager.messages.workers.TaskWorkerMessage
+import com.zenaton.taskmanager.metrics.state.TaskMetricsState
+import com.zenaton.taskmanager.states.AvroTaskMetricsState
 import com.zenaton.taskmanager.states.AvroTaskState
 
 /**
@@ -68,6 +70,12 @@ object TaskAvroConverter {
             AvroTaskWorkerMessageType.RunTask -> convert<RunTask>(input.runTask)
         }
     }
+
+    /**
+     * Metrics state
+     */
+    fun toAvro(obj: TaskMetricsState) = convert<AvroTaskMetricsState>(obj)
+    fun fromAvro(obj: AvroTaskMetricsState) = convert<TaskMetricsState>(obj)
 
     /**
      * Metrics messages

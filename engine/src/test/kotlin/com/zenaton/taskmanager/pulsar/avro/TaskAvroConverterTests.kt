@@ -31,6 +31,7 @@ import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.AvroRunTask
 import com.zenaton.taskmanager.messages.workers.RunTask
 import com.zenaton.taskmanager.messages.workers.TaskWorkerMessage
+import com.zenaton.taskmanager.metrics.state.TaskMetricsState
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -58,6 +59,18 @@ class TaskAvroConverterTests : StringSpec({
     "task state should be avroReversible" {
         // given
         val state = TestFactory.get(TaskState::class)
+        // when
+        val avroState = TaskAvroConverter.toAvro(state)
+        val state2 = TaskAvroConverter.fromAvro(avroState)
+        val avroState2 = TaskAvroConverter.toAvro(state2)
+        // then
+        state2 shouldBe state
+        avroState2 shouldBe avroState
+    }
+
+    "task metrics state should be avroReversible" {
+        // given
+        val state = TestFactory.get(TaskMetricsState::class)
         // when
         val avroState = TaskAvroConverter.toAvro(state)
         val state2 = TaskAvroConverter.fromAvro(avroState)
