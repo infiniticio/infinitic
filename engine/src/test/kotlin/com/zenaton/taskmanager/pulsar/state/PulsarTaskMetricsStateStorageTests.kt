@@ -50,7 +50,10 @@ class PulsarTaskMetricsStateStorageTests : ShouldSpec({
                 headers("taskName", "oldStatus", "newStatus"),
                 row("MyTask", TaskStatus.RUNNING_OK, TaskStatus.RUNNING_ERROR),
                 row("MyTask", TaskStatus.RUNNING_WARNING, TaskStatus.RUNNING_ERROR),
-                row("MyTask", TaskStatus.RUNNING_ERROR, TaskStatus.RUNNING_WARNING)
+                row("MyTask", TaskStatus.RUNNING_ERROR, TaskStatus.RUNNING_WARNING),
+                row("MyTask", TaskStatus.RUNNING_OK, TaskStatus.TERMINATED_COMPLETED),
+                row("MyTask", TaskStatus.RUNNING_WARNING, TaskStatus.TERMINATED_COMPLETED),
+                row("MyTask", TaskStatus.RUNNING_ERROR, TaskStatus.TERMINATED_CANCELED)
             ).forAll { taskName, oldStatus, newStatus ->
                 val context = mockk<Context>()
                 every { context.incrCounter(any(), any()) } just runs

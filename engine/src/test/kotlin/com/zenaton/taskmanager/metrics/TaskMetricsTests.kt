@@ -6,12 +6,11 @@ import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.metrics.state.TaskMetricsStateStorage
 import io.kotest.core.spec.style.ShouldSpec
-import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
-import io.mockk.verify
+import io.mockk.verifyAll
 
 class TaskMetricsTests : ShouldSpec({
     context("TaskMetrics.handle") {
@@ -29,7 +28,7 @@ class TaskMetricsTests : ShouldSpec({
                 newStatus = TaskStatus.RUNNING_ERROR
             ))
 
-            verify {
+            verifyAll {
                 stateStorage.updateTaskStatusCountersByName(TaskName("SomeTask"), TaskStatus.RUNNING_OK, TaskStatus.RUNNING_ERROR)
             }
         }
