@@ -1,9 +1,10 @@
-package com.zenaton.taskmanager.data
+package com.zenaton.taskmanager.engine.state
 
 import com.zenaton.commons.data.interfaces.StateInterface
+import com.zenaton.taskmanager.data.*
 import com.zenaton.workflowengine.data.WorkflowId
 
-data class TaskState(
+data class TaskEngineState(
     val taskId: TaskId,
     val taskName: TaskName,
     var taskStatus: TaskStatus,

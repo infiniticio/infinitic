@@ -1,4 +1,4 @@
-package com.zenaton.taskmanager.pulsar.state
+package com.zenaton.taskmanager.pulsar.metrics.state
 
 import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.taskmanager.data.TaskName

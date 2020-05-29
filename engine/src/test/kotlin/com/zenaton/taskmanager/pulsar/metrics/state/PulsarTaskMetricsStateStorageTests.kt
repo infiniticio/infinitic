@@ -1,13 +1,10 @@
-package com.zenaton.taskmanager.pulsar.state
+package com.zenaton.taskmanager.pulsar.metrics.state
 
 import com.zenaton.taskmanager.data.TaskName
 import com.zenaton.taskmanager.data.TaskStatus
-import com.zenaton.taskmanager.dispatcher.TaskDispatcher
-import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessage
 import com.zenaton.taskmanager.messages.metrics.TaskMetricCreated
 import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
 import com.zenaton.taskmanager.metrics.state.TaskMetricsState
-import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
 import io.kotest.core.spec.style.ShouldSpec
@@ -21,11 +18,8 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.runs
 import io.mockk.unmockkAll
-import io.mockk.verify
 import io.mockk.verifyAll
-import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
-import java.nio.ByteBuffer
 
 class PulsarTaskMetricsStateStorageTests : ShouldSpec({
     context("PulsarTaskMetricsStateStorage.updateTaskStatusCountersByName") {
@@ -38,7 +32,8 @@ class PulsarTaskMetricsStateStorageTests : ShouldSpec({
 
             mockkObject(TaskAvroConverter)
 
-            val stateStorage = PulsarTaskMetricsStateStorage(context)
+            val stateStorage =
+                PulsarTaskMetricsStateStorage(context)
             stateStorage.updateTaskStatusCountersByName(TaskName("SomeTask"), null, TaskStatus.RUNNING_OK)
 
             verifyAll {
@@ -74,12 +69,19 @@ class PulsarTaskMetricsStateStorageTests : ShouldSpec({
 
                 mockkObject(TaskAvroConverter)
 
-                val stateStorage = PulsarTaskMetricsStateStorage(context)
+                val stateStorage =
+                    PulsarTaskMetricsStateStorage(
+                        context
+                    )
                 stateStorage.updateTaskStatusCountersByName(TaskName(taskName), oldStatus, newStatus)
 
                 verifyAll {
-                    context.incrCounter("metrics.rt.counter.task.${taskName.toLowerCase()}.${oldStatus.toString().toLowerCase()}", -1L)
-                    context.incrCounter("metrics.rt.counter.task.${taskName.toLowerCase()}.${newStatus.toString().toLowerCase()}", 1L)
+                    context.incrCounter(
+                        "metrics.rt.counter.task.${taskName.toLowerCase()}.${oldStatus.toString().toLowerCase()}", -1L
+                    )
+                    context.incrCounter(
+                        "metrics.rt.counter.task.${taskName.toLowerCase()}.${newStatus.toString().toLowerCase()}", 1L
+                    )
                     context.getState("metrics.task.${taskName.toLowerCase()}.counters")
                     context.getCounter("metrics.rt.counter.task.${taskName.toLowerCase()}.running_ok")
                     context.getCounter("metrics.rt.counter.task.${taskName.toLowerCase()}.running_warning")
@@ -106,7 +108,8 @@ class PulsarTaskMetricsStateStorageTests : ShouldSpec({
 
             mockkObject(TaskAvroConverter)
 
-            val stateStorage = PulsarTaskMetricsStateStorage(context)
+            val stateStorage =
+                PulsarTaskMetricsStateStorage(context)
             stateStorage.taskDispatcher = dispatcher
             stateStorage.updateTaskStatusCountersByName(TaskName("SomeTask"), null, TaskStatus.RUNNING_OK)
 

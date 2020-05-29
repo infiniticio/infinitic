@@ -1,7 +1,7 @@
 package com.zenaton.taskmanager.pulsar.avro
 
 import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskmanager.data.TaskState
+import com.zenaton.taskmanager.engine.state.TaskEngineState
 import com.zenaton.taskmanager.messages.engine.AvroCancelTask
 import com.zenaton.taskmanager.messages.engine.AvroDispatchTask
 import com.zenaton.taskmanager.messages.engine.AvroRetryTask
@@ -61,7 +61,7 @@ class TaskAvroConverterTests : StringSpec({
 
     "task state should be avroReversible" {
         // given
-        val state = TestFactory.get(TaskState::class)
+        val state = TestFactory.get(TaskEngineState::class)
         // when
         val avroState = TaskAvroConverter.toAvro(state)
         val state2 = TaskAvroConverter.fromAvro(avroState)

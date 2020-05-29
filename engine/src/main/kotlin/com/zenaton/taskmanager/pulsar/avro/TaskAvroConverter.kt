@@ -1,7 +1,7 @@
 package com.zenaton.taskmanager.pulsar.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.taskmanager.data.TaskState
+import com.zenaton.taskmanager.engine.state.TaskEngineState
 import com.zenaton.taskmanager.messages.engine.AvroCancelTask
 import com.zenaton.taskmanager.messages.engine.AvroDispatchTask
 import com.zenaton.taskmanager.messages.engine.AvroRetryTask
@@ -48,8 +48,8 @@ object TaskAvroConverter {
     /**
      *  Task State
      */
-    fun toAvro(obj: TaskState) = convert<AvroTaskState>(obj)
-    fun fromAvro(obj: AvroTaskState) = convert<TaskState>(obj)
+    fun toAvro(obj: TaskEngineState) = convert<AvroTaskState>(obj)
+    fun fromAvro(obj: AvroTaskState) = convert<TaskEngineState>(obj)
 
     /**
      *  Worker messages

@@ -6,7 +6,7 @@ import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
 import com.zenaton.taskmanager.pulsar.logger.PulsarTaskLogger
-import com.zenaton.taskmanager.pulsar.state.PulsarTaskEngineStateStorage
+import com.zenaton.taskmanager.pulsar.engine.state.PulsarTaskEngineStateStorage
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -27,7 +27,8 @@ class TaskEngineFunction : Function<AvroTaskEngineMessage, Void> {
         try {
             taskEngine.taskDispatcher = PulsarTaskDispatcher(ctx)
             taskEngine.workflowDispatcher = WorkflowDispatcher(ctx)
-            taskEngine.stateStorage = PulsarTaskEngineStateStorage(ctx)
+            taskEngine.stateStorage =
+                PulsarTaskEngineStateStorage(ctx)
             taskEngine.logger = PulsarTaskLogger(ctx)
 
             taskEngine.handle(avroConverter.fromAvro(input))
