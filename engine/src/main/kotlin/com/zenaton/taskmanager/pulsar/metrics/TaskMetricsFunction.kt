@@ -1,25 +1,31 @@
 package com.zenaton.taskmanager.pulsar.metrics
 
-import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessage
 import com.zenaton.taskmanager.metrics.TaskMetrics
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
+import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
+import com.zenaton.taskmanager.pulsar.logger.PulsarTaskLogger
 import com.zenaton.taskmanager.pulsar.metrics.state.PulsarTaskMetricsStateStorage
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
 class TaskMetricsFunction : Function<AvroTaskMetricMessage, Void> {
+    // task metrics injection
     var taskMetrics = TaskMetrics()
+    // avro converter injection
+    var avroConverter = TaskAvroConverter
 
     override fun process(input: AvroTaskMetricMessage, context: Context?): Void? {
-        val ctx = context ?: throw NullPointerException("Null Context received in TaskMetricsFunction::process method.")
+        val ctx = context ?: throw NullPointerException("Null Context received")
+
+        taskMetrics.logger = PulsarTaskLogger(ctx)
+        taskMetrics.storage = PulsarTaskMetricsStateStorage(ctx)
+        taskMetrics.dispatcher = PulsarTaskDispatcher(ctx)
 
         try {
-            taskMetrics.stateStorage =
-                PulsarTaskMetricsStateStorage(context)
-            taskMetrics.handle(TaskAvroConverter.fromAvro(input))
+            taskMetrics.handle(avroConverter.fromAvro(input))
         } catch (e: Exception) {
-            Logger(ctx).error("Error:%s for message:%s", e, input)
+            taskMetrics.logger.error("Error:%s for message:%s", e, input)
             throw e
         }
 

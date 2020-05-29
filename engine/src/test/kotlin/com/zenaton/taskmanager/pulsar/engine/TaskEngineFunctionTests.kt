@@ -5,8 +5,8 @@ import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
 import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
-import com.zenaton.taskmanager.pulsar.logger.PulsarTaskLogger
 import com.zenaton.taskmanager.pulsar.engine.state.PulsarTaskEngineStateStorage
+import com.zenaton.taskmanager.pulsar.logger.PulsarTaskLogger
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec

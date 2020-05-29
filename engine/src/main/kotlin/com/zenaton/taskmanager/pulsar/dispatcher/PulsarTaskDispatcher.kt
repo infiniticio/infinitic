@@ -34,7 +34,7 @@ class PulsarTaskDispatcher(val context: Context) : TaskDispatcher {
     override fun dispatch(msg: TaskMetricMessage) {
         context
             .newOutputMessage(Topic.METRICS.get(), AvroSchema.of(AvroTaskMetricMessage::class.java))
-            .key(msg.getStateId())
+            .key(msg.taskName.name)
             .value(TaskAvroConverter.toAvro(msg))
             .send()
     }
@@ -46,7 +46,7 @@ class PulsarTaskDispatcher(val context: Context) : TaskDispatcher {
 
         val msgBuilder = context
             .newOutputMessage(Topic.ENGINE.get(), AvroSchema.of(AvroTaskEngineMessage::class.java))
-            .key(msg.getStateId())
+            .key(msg.taskId.id)
             .value(TaskAvroConverter.toAvro(msg))
 
         if (after > 0F) {

@@ -3,8 +3,8 @@ package com.zenaton.taskmanager.pulsar.engine.state
 import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.engine.state.TaskEngineState
-import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.engine.state.TaskEngineStateStorage
+import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.states.AvroTaskState
 import org.apache.pulsar.functions.api.Context
 

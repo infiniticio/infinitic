@@ -15,41 +15,41 @@ class PulsarTaskLogger(val context: Context) : TaskLogger {
     private var logger: Logger = context.logger
 
     override fun debug(txt: String, obj1: Any?, obj2: Any?): String {
-        val message = getMessage(txt, obj1, obj2)
-        if (logger.isDebugEnabled) { logger.debug(message) }
-        dispatch(context, message, "DEBUG")
-        return message
+        val text = getText(txt, obj1, obj2)
+        if (logger.isDebugEnabled) { logger.debug(text) }
+        dispatch(context, text, "DEBUG")
+        return text
     }
 
     override fun error(txt: String, obj1: Any?, obj2: Any?): String {
-        val message = getMessage(txt, obj1, obj2)
-        if (logger.isErrorEnabled) { logger.error(message) }
-        dispatch(context, message, "ERROR")
-        return message
+        val text = getText(txt, obj1, obj2)
+        if (logger.isErrorEnabled) { logger.error(text) }
+        dispatch(context, text, "ERROR")
+        return text
     }
 
     override fun info(txt: String, obj1: Any?, obj2: Any?): String {
-        val message = getMessage(txt, obj1, obj2)
-        if (logger.isInfoEnabled) { logger.info(message) }
-        dispatch(context, message, "INFO")
-        return message
+        val text = getText(txt, obj1, obj2)
+        if (logger.isInfoEnabled) { logger.info(text) }
+        dispatch(context, text, "INFO")
+        return text
     }
 
     override fun warn(txt: String, obj1: Any?, obj2: Any?): String {
-        val message = getMessage(txt, obj1, obj2)
-        if (logger.isWarnEnabled) { logger.warn(message) }
-        dispatch(context, message, "WARN")
-        return message
+        val text = getText(txt, obj1, obj2)
+        if (logger.isWarnEnabled) { logger.warn(text) }
+        dispatch(context, text, "WARN")
+        return text
     }
 
     override fun trace(txt: String, obj1: Any?, obj2: Any?): String {
-        val message = getMessage(txt, obj1, obj2)
-        if (logger.isTraceEnabled) { logger.trace(message) }
-        dispatch(context, message, "TRACE")
-        return message
+        val text = getText(txt, obj1, obj2)
+        if (logger.isTraceEnabled) { logger.trace(text) }
+        dispatch(context, text, "TRACE")
+        return text
     }
 
-    private fun getMessage(txt: String, obj1: Any?, obj2: Any?): String {
+    private fun getText(txt: String, obj1: Any?, obj2: Any?): String {
         val var1 = if (obj1 == null) "" else "\n${json.stringify(obj1, pretty = true)}\n"
         val var2 = if (obj2 == null) "" else "\n${json.stringify(obj2, pretty = true)}\n"
 

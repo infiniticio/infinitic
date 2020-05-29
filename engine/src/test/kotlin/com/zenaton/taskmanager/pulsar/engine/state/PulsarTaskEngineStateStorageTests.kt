@@ -5,7 +5,6 @@ import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.engine.state.TaskEngineState
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
-import com.zenaton.taskmanager.pulsar.engine.state.PulsarTaskEngineStateStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified

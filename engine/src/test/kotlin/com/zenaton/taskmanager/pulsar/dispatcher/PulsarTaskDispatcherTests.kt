@@ -73,7 +73,7 @@ fun <T : TaskEngineMessage> shouldSendTaskEngineMessageToTasksTopic(klass: KClas
     slotTopic.captured shouldBe Topic.ENGINE.get()
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroTaskEngineMessage::class.java).avroSchema
     verify(exactly = 1) { builder.value(TaskAvroConverter.toAvro(msg)) }
-    verify(exactly = 1) { builder.key(msg.getStateId()) }
+    verify(exactly = 1) { builder.key(msg.taskId.id) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)
     confirmVerified(builder)
@@ -97,7 +97,7 @@ fun <T : TaskMetricMessage> shouldSendTaskMetricMessageToMetricsTopic(klass: KCl
     slotTopic.captured shouldBe Topic.METRICS.get()
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroTaskMetricMessage::class.java).avroSchema
     verify(exactly = 1) { builder.value(TaskAvroConverter.toAvro(msg)) }
-    verify(exactly = 1) { builder.key(msg.getStateId()) }
+    verify(exactly = 1) { builder.key(msg.taskName.name) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)
     confirmVerified(builder)

@@ -1,9 +1,10 @@
 package com.zenaton.taskmanager.engine
 
 import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskmanager.engine.state.TaskEngineState
 import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.dispatcher.TaskDispatcher
+import com.zenaton.taskmanager.engine.state.TaskEngineState
+import com.zenaton.taskmanager.engine.state.TaskEngineStateStorage
 import com.zenaton.taskmanager.logger.TaskLogger
 import com.zenaton.taskmanager.messages.engine.CancelTask
 import com.zenaton.taskmanager.messages.engine.DispatchTask
@@ -20,7 +21,6 @@ import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
 import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
 import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
 import com.zenaton.taskmanager.messages.workers.RunTask
-import com.zenaton.taskmanager.engine.state.TaskEngineStateStorage
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
