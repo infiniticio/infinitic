@@ -80,3 +80,19 @@ export const AvroTaskEngineMessage = loadDefinition(
     '/../resources/avro/taskmanager/messages/engine/AvroTaskEngineMessage.avsc',
   registry
 );
+
+export const AvroTaskWorkerMessageType = loadDefinition(
+  __dirname +
+    '/../resources/avro/taskmanager/messages/workers/AvroTaskworkerMessageType.avsc',
+  registry
+);
+export const AvroRunTask = loadDefinition(
+  __dirname +
+    '/../resources/avro/taskmanager/messages/workers/AvroRunTask.avsc',
+  registry
+);
+export const AvroTaskWorkerMessage = loadDefinition(
+  __dirname +
+    '/../resources/avro/taskmanager/messages/workers/AvroTaskWorkerMessage.avsc',
+  registry
+);
