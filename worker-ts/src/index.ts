@@ -16,7 +16,32 @@ export async function runTaskConsumer() {
 
   for (let i = 0; i < 1000; i += 1) {
     const msg = await consumer.receive();
-    console.log(AvroTaskEngineMessage.fromBuffer(msg.getData()));
+    const decodedMessage = AvroTaskEngineMessage.fromBuffer(msg.getData());
+    switch (decodedMessage.type) {
+      case 'DispatchTask':
+        console.log(`
+        TASK DISPATCH
+        id=${decodedMessage.DispatchTask.taskId}
+        name=${decodedMessage.DispatchTask.taskName}
+
+        `);
+        break;
+
+      case 'TaskAttemptDispatched':
+        console.log(`
+        TASK DISPATCH
+        task-id=${decodedMessage.TaskAttemptDispatched.taskId}
+        id=${decodedMessage.TaskAttemptDispatched.taskAttemptId}
+        index=${decodedMessage.TaskAttemptDispatched.taskAttemptIndex}
+
+        `);
+        break;
+
+      default:
+        console.log(decodedMessage);
+        break;
+    }
+
     consumer.acknowledge(msg);
   }
 
