@@ -1,8 +1,7 @@
 package com.zenaton.taskmanager.pulsar.metrics
 
-import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessage
 import com.zenaton.taskmanager.metrics.TaskMetrics
+import com.zenaton.taskmanager.metrics.messages.AvroTaskMetricMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec

@@ -1,4 +1,4 @@
-package com.zenaton.taskmanager.messages.metrics
+package com.zenaton.taskmanager.metrics.messages
 
 import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskId
@@ -16,9 +16,4 @@ data class TaskStatusUpdated constructor(
     val taskId: TaskId,
     val oldStatus: TaskStatus?,
     val newStatus: TaskStatus
-) : TaskMetricMessage()
-
-data class TaskMetricCreated(
-    override val sentAt: DateTime = DateTime(),
-    override val taskName: TaskName
 ) : TaskMetricMessage()

@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroTaskAttemptDispatched",
-    "namespace": "com.zenaton.taskmanager.messages.engine",
+    "namespace": "com.zenaton.taskmanager.engine.messages",
     "fields": [
         {
             "name": "taskId",

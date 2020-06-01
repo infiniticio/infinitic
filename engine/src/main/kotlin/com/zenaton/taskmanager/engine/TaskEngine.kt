@@ -3,24 +3,24 @@ package com.zenaton.taskmanager.engine
 import com.zenaton.taskmanager.data.TaskAttemptId
 import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.dispatcher.TaskDispatcher
+import com.zenaton.taskmanager.engine.messages.CancelTask
+import com.zenaton.taskmanager.engine.messages.DispatchTask
+import com.zenaton.taskmanager.engine.messages.RetryTask
+import com.zenaton.taskmanager.engine.messages.RetryTaskAttempt
+import com.zenaton.taskmanager.engine.messages.TaskAttemptCompleted
+import com.zenaton.taskmanager.engine.messages.TaskAttemptDispatched
+import com.zenaton.taskmanager.engine.messages.TaskAttemptFailed
+import com.zenaton.taskmanager.engine.messages.TaskAttemptStarted
+import com.zenaton.taskmanager.engine.messages.TaskCanceled
+import com.zenaton.taskmanager.engine.messages.TaskCompleted
+import com.zenaton.taskmanager.engine.messages.TaskDispatched
+import com.zenaton.taskmanager.engine.messages.TaskEngineMessage
 import com.zenaton.taskmanager.engine.state.TaskEngineState
 import com.zenaton.taskmanager.engine.state.TaskEngineStateStorage
 import com.zenaton.taskmanager.logger.TaskLogger
-import com.zenaton.taskmanager.messages.engine.CancelTask
-import com.zenaton.taskmanager.messages.engine.DispatchTask
-import com.zenaton.taskmanager.messages.engine.RetryTask
-import com.zenaton.taskmanager.messages.engine.RetryTaskAttempt
-import com.zenaton.taskmanager.messages.engine.TaskAttemptCompleted
-import com.zenaton.taskmanager.messages.engine.TaskAttemptDispatched
-import com.zenaton.taskmanager.messages.engine.TaskAttemptFailed
-import com.zenaton.taskmanager.messages.engine.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.engine.TaskCanceled
-import com.zenaton.taskmanager.messages.engine.TaskCompleted
-import com.zenaton.taskmanager.messages.engine.TaskDispatched
-import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
-import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
-import com.zenaton.taskmanager.messages.workers.RunTask
+import com.zenaton.taskmanager.messages.TaskAttemptMessage
+import com.zenaton.taskmanager.metrics.messages.TaskStatusUpdated
+import com.zenaton.taskmanager.workers.messages.RunTask
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 
@@ -158,7 +158,7 @@ class TaskEngine {
             taskAttemptId = state.taskAttemptId,
             taskAttemptIndex = state.taskAttemptIndex,
             taskName = state.taskName,
-                taskData = state.taskData
+            taskData = state.taskData
         )
         taskDispatcher.dispatch(rt)
 

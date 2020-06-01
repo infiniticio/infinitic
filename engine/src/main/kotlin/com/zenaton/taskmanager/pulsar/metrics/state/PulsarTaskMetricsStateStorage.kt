@@ -19,33 +19,33 @@ class PulsarTaskMetricsStateStorage(val context: Context) : TaskMetricsStateStor
         context.getState(getStateKey(taskName))?.let { avroConverter.fromAvro(avroSerDe.deserialize<AvroTaskMetricsState>(it)) }
 
     override fun updateState(taskName: TaskName, newState: TaskMetricsState, oldState: TaskMetricsState?) {
-        val counterOk = getCounterKey(taskName, TaskStatus.RUNNING_OK)
-        val counterWarning = getCounterKey(taskName, TaskStatus.RUNNING_WARNING)
-        val counterError = getCounterKey(taskName, TaskStatus.RUNNING_ERROR)
-        val counterCompleted = getCounterKey(taskName, TaskStatus.TERMINATED_COMPLETED)
-        val counterCanceled = getCounterKey(taskName, TaskStatus.TERMINATED_CANCELED)
+        val counterOkKey = getCounterKey(taskName, TaskStatus.RUNNING_OK)
+        val counterWarningKey = getCounterKey(taskName, TaskStatus.RUNNING_WARNING)
+        val counterErrorKey = getCounterKey(taskName, TaskStatus.RUNNING_ERROR)
+        val counterCompletedKey = getCounterKey(taskName, TaskStatus.TERMINATED_COMPLETED)
+        val counterCanceledKey = getCounterKey(taskName, TaskStatus.TERMINATED_CANCELED)
 
         // use counters to save state, to avoid race conditions
         val incrOk = newState.runningOkCount - (oldState?.runningOkCount ?: 0L)
         val incrWarning = newState.runningWarningCount - (oldState?.runningWarningCount ?: 0L)
-        val incrError = newState.runningErrorCount - (oldState?.runningErrorCount ?: 0)
-        val incrCompleted = newState.terminatedCompletedCount - (oldState?.terminatedCompletedCount ?: 0)
-        val incrCanceled = newState.terminatedCanceledCount - (oldState?.terminatedCanceledCount ?: 0)
+        val incrError = newState.runningErrorCount - (oldState?.runningErrorCount ?: 0L)
+        val incrCompleted = newState.terminatedCompletedCount - (oldState?.terminatedCompletedCount ?: 0L)
+        val incrCanceled = newState.terminatedCanceledCount - (oldState?.terminatedCanceledCount ?: 0L)
 
-        if (incrOk != 0L) incrCounter(counterOk, incrOk)
-        if (incrWarning != 0L) incrCounter(counterWarning, incrWarning)
-        if (incrError != 0L) incrCounter(counterError, incrError)
-        if (incrCompleted != 0L) incrCounter(counterCompleted, incrCompleted)
-        if (incrCanceled != 0L) incrCounter(counterCanceled, incrCanceled)
+        if (incrOk != 0L) incrCounter(counterOkKey, incrOk)
+        if (incrWarning != 0L) incrCounter(counterWarningKey, incrWarning)
+        if (incrError != 0L) incrCounter(counterErrorKey, incrError)
+        if (incrCompleted != 0L) incrCounter(counterCompletedKey, incrCompleted)
+        if (incrCanceled != 0L) incrCounter(counterCanceledKey, incrCanceled)
 
         // save state retrieved from counters
         val state = TaskMetricsState(
             taskName = taskName,
-            runningOkCount = getCounter(counterOk),
-            runningWarningCount = getCounter(counterWarning),
-            runningErrorCount = getCounter(counterError),
-            terminatedCompletedCount = getCounter(counterCompleted),
-            terminatedCanceledCount = getCounter(counterCanceled)
+            runningOkCount = getCounter(counterOkKey),
+            runningWarningCount = getCounter(counterWarningKey),
+            runningErrorCount = getCounter(counterErrorKey),
+            terminatedCompletedCount = getCounter(counterCompletedKey),
+            terminatedCanceledCount = getCounter(counterCanceledKey)
         )
         context.putState(getStateKey(taskName), avroSerDe.serialize(avroConverter.toAvro(state)))
     }

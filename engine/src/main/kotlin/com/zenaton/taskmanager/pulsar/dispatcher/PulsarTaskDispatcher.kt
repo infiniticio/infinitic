@@ -1,14 +1,16 @@
 package com.zenaton.taskmanager.pulsar.dispatcher
 
+import com.zenaton.taskmanager.admin.messages.AvroTaskAdminMessage
+import com.zenaton.taskmanager.admin.messages.TaskAdminMessage
 import com.zenaton.taskmanager.dispatcher.TaskDispatcher
-import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
-import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessage
-import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
-import com.zenaton.taskmanager.messages.workers.AvroTaskWorkerMessage
-import com.zenaton.taskmanager.messages.workers.TaskWorkerMessage
+import com.zenaton.taskmanager.engine.messages.AvroTaskEngineMessage
+import com.zenaton.taskmanager.engine.messages.TaskEngineMessage
+import com.zenaton.taskmanager.metrics.messages.AvroTaskMetricMessage
+import com.zenaton.taskmanager.metrics.messages.TaskMetricMessage
 import com.zenaton.taskmanager.pulsar.Topic
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
+import com.zenaton.taskmanager.workers.AvroTaskWorkerMessage
+import com.zenaton.taskmanager.workers.messages.TaskWorkerMessage
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
@@ -24,6 +26,16 @@ class PulsarTaskDispatcher(val context: Context) : TaskDispatcher {
     override fun dispatch(msg: TaskWorkerMessage) {
         context
             .newOutputMessage(Topic.WORKERS.get(msg.taskName.name), AvroSchema.of(AvroTaskWorkerMessage::class.java))
+            .value(TaskAvroConverter.toAvro(msg))
+            .send()
+    }
+
+    /**
+     *  Admin message
+     */
+    override fun dispatch(msg: TaskAdminMessage) {
+        context
+            .newOutputMessage(Topic.ADMIN.get(), AvroSchema.of(AvroTaskAdminMessage::class.java))
             .value(TaskAvroConverter.toAvro(msg))
             .send()
     }

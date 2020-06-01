@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroTaskMetricCreated",
-    "namespace": "com.zenaton.taskmanager.messages.metrics",
+    "name": "AvroTaskTypeCreated",
+    "namespace": "com.zenaton.taskmanager.admin.messages",
     "fields": [
         {
             "name": "sentAt",

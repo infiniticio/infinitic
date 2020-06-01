@@ -1,7 +1,7 @@
 package com.zenaton.taskmanager.pulsar.engine
 
 import com.zenaton.taskmanager.engine.TaskEngine
-import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
+import com.zenaton.taskmanager.engine.messages.AvroTaskEngineMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
 import com.zenaton.taskmanager.pulsar.engine.state.PulsarTaskEngineStateStorage

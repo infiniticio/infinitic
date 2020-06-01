@@ -1,4 +1,4 @@
-package com.zenaton.taskmanager.messages.interfaces
+package com.zenaton.taskmanager.messages
 
 import com.zenaton.taskmanager.data.TaskAttemptId
 

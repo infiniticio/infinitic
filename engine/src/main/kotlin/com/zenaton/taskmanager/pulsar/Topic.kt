@@ -10,6 +10,9 @@ enum class Topic {
     METRICS {
         override fun get(name: String?) = "tasks-metrics"
     },
+    ADMIN {
+        override fun get(name: String?) = "tasks-admin"
+    },
     LOGS {
         override fun get(name: String?) = "logs"
     };

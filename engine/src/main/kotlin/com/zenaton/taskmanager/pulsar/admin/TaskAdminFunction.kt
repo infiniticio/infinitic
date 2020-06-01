@@ -1,4 +1,4 @@
-package com.zenaton.taskmanager.pulsar.metrics
+package com.zenaton.taskmanager.pulsar.admin
 
 import com.zenaton.taskmanager.metrics.TaskMetrics
 import com.zenaton.taskmanager.metrics.messages.AvroTaskMetricMessage
@@ -9,7 +9,7 @@ import com.zenaton.taskmanager.pulsar.metrics.state.PulsarTaskMetricsStateStorag
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class TaskMetricsFunction : Function<AvroTaskMetricMessage, Void> {
+class TaskAdminFunction : Function<AvroTaskMetricMessage, Void> {
     // task metrics injection
     var taskMetrics = TaskMetrics()
     // avro converter injection

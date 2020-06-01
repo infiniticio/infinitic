@@ -1,11 +1,11 @@
 package com.zenaton.taskmanager.metrics
 
 import com.zenaton.commons.utils.TestFactory
+import com.zenaton.taskmanager.admin.messages.TaskTypeCreated
 import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.dispatcher.TaskDispatcher
 import com.zenaton.taskmanager.logger.TaskLogger
-import com.zenaton.taskmanager.messages.metrics.TaskMetricCreated
-import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
+import com.zenaton.taskmanager.metrics.messages.TaskStatusUpdated
 import com.zenaton.taskmanager.metrics.state.TaskMetricsState
 import com.zenaton.taskmanager.metrics.state.TaskMetricsStateStorage
 import io.kotest.core.spec.style.ShouldSpec
@@ -59,7 +59,7 @@ class TaskMetricsTests : ShouldSpec({
             val stateOutSlot = slot<TaskMetricsState>()
             every { storage.getState(msg.taskName) } returns null
             every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
-            every { dispatcher.dispatch(any<TaskMetricCreated>()) } just runs
+            every { dispatcher.dispatch(any<TaskTypeCreated>()) } just runs
 
             val taskMetrics = TaskMetrics()
             taskMetrics.storage = storage
@@ -72,7 +72,7 @@ class TaskMetricsTests : ShouldSpec({
             verifyAll {
                 storage.getState(msg.taskName)
                 storage.updateState(msg.taskName, stateOut, null)
-                dispatcher.dispatch(ofType<TaskMetricCreated>())
+                dispatcher.dispatch(ofType<TaskTypeCreated>())
             }
         }
     }

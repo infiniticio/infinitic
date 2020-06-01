@@ -2,21 +2,11 @@ package com.zenaton.taskmanager.pulsar.metrics.state
 
 import com.zenaton.commons.utils.TestFactory
 import com.zenaton.commons.utils.avro.AvroSerDe
-import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskName
 import com.zenaton.taskmanager.data.TaskStatus
-import com.zenaton.taskmanager.engine.state.TaskEngineState
-import com.zenaton.taskmanager.messages.metrics.TaskMetricCreated
-import com.zenaton.taskmanager.messages.metrics.TaskMetricMessage
 import com.zenaton.taskmanager.metrics.state.TaskMetricsState
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
-import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
-import com.zenaton.taskmanager.pulsar.engine.state.PulsarTaskEngineStateStorage
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.data.forAll
-import io.kotest.data.headers
-import io.kotest.data.row
-import io.kotest.data.table
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified
 import io.mockk.every
