@@ -1,7 +1,7 @@
 package com.zenaton.workflowengine.topics.workflows.interfaces
 
 import com.zenaton.decisionmanager.messages.DecisionDispatched
-import com.zenaton.taskManager.engine.DispatchJob
+import com.zenaton.jobManager.engine.DispatchJob
 import com.zenaton.workflowengine.topics.delays.messages.DelayDispatched
 import com.zenaton.workflowengine.topics.workflows.messages.WorkflowDispatched
 

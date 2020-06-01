@@ -1,7 +1,7 @@
 package com.zenaton.workflowengine.topics.delays.messages
 
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskManager.data.JobId
+import com.zenaton.jobManager.data.JobId
 import com.zenaton.workflowengine.data.DelayId
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.topics.delays.interfaces.DelayMessageInterface

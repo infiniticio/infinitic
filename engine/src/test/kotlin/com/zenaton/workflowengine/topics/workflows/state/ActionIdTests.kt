@@ -1,6 +1,6 @@
 package com.zenaton.workflowengine.topics.workflows.state
 
-import com.zenaton.taskManager.data.JobId
+import com.zenaton.jobManager.data.JobId
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldNotBe

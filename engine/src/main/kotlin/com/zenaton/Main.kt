@@ -1,6 +1,6 @@
 package com.zenaton
 
-import com.zenaton.taskManager.monitoring.global.MonitoringGlobalState
+import com.zenaton.jobManager.monitoring.global.MonitoringGlobalState
 import org.apache.pulsar.client.impl.schema.AvroSchema
 
 fun main() {

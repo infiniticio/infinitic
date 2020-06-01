@@ -1,8 +1,8 @@
 package com.zenaton.workflowengine.topics.workflows.messages
 
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskManager.data.JobId
-import com.zenaton.taskManager.data.JobOutput
+import com.zenaton.jobManager.data.JobId
+import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.topics.workflows.interfaces.WorkflowMessageInterface
 

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskManager.data.JobId
-import com.zenaton.taskManager.data.JobOutput
+import com.zenaton.jobManager.data.JobId
+import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.workflowengine.data.DelayId
 import com.zenaton.workflowengine.data.EventData
 import com.zenaton.workflowengine.data.EventName
