@@ -1,33 +1,33 @@
 package com.zenaton.taskmanager.engine
 
 import com.zenaton.taskmanager.data.TaskAttemptId
-import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.dispatcher.TaskDispatcher
+import com.zenaton.taskmanager.engine.messages.CancelTask
+import com.zenaton.taskmanager.engine.messages.DispatchTask
+import com.zenaton.taskmanager.engine.messages.RetryTask
+import com.zenaton.taskmanager.engine.messages.RetryTaskAttempt
+import com.zenaton.taskmanager.engine.messages.TaskAttemptCompleted
+import com.zenaton.taskmanager.engine.messages.TaskAttemptDispatched
+import com.zenaton.taskmanager.engine.messages.TaskAttemptFailed
+import com.zenaton.taskmanager.engine.messages.TaskAttemptStarted
+import com.zenaton.taskmanager.engine.messages.TaskCanceled
+import com.zenaton.taskmanager.engine.messages.TaskCompleted
+import com.zenaton.taskmanager.engine.messages.TaskDispatched
+import com.zenaton.taskmanager.engine.messages.TaskEngineMessage
+import com.zenaton.taskmanager.engine.state.TaskEngineState
+import com.zenaton.taskmanager.engine.state.TaskEngineStateStorage
 import com.zenaton.taskmanager.logger.TaskLogger
-import com.zenaton.taskmanager.messages.engine.CancelTask
-import com.zenaton.taskmanager.messages.engine.DispatchTask
-import com.zenaton.taskmanager.messages.engine.RetryTask
-import com.zenaton.taskmanager.messages.engine.RetryTaskAttempt
-import com.zenaton.taskmanager.messages.engine.TaskAttemptCompleted
-import com.zenaton.taskmanager.messages.engine.TaskAttemptDispatched
-import com.zenaton.taskmanager.messages.engine.TaskAttemptFailed
-import com.zenaton.taskmanager.messages.engine.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.engine.TaskCanceled
-import com.zenaton.taskmanager.messages.engine.TaskCompleted
-import com.zenaton.taskmanager.messages.engine.TaskDispatched
-import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
-import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
-import com.zenaton.taskmanager.messages.workers.RunTask
-import com.zenaton.taskmanager.state.StateStorage
+import com.zenaton.taskmanager.messages.TaskAttemptMessage
+import com.zenaton.taskmanager.metrics.messages.TaskStatusUpdated
+import com.zenaton.taskmanager.workers.messages.RunTask
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine {
     lateinit var taskDispatcher: TaskDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcherInterface
-    lateinit var stateStorage: StateStorage
+    lateinit var stateStorage: TaskEngineStateStorage
     lateinit var logger: TaskLogger
 
     fun handle(msg: TaskEngineMessage) {
@@ -42,7 +42,7 @@ class TaskEngine {
                 return
             }
             // init a state
-            newState = TaskState(
+            newState = TaskEngineState(
                 taskId = msg.taskId,
                 taskName = msg.taskName,
                 taskData = msg.taskData,
@@ -107,7 +107,7 @@ class TaskEngine {
         }
     }
 
-    private fun cancelTask(state: TaskState, msg: CancelTask) {
+    private fun cancelTask(state: TaskEngineState, msg: CancelTask) {
         state.taskStatus = TaskStatus.TERMINATED_CANCELED
 
         // log event
@@ -120,7 +120,7 @@ class TaskEngine {
         stateStorage.deleteState(state.taskId)
     }
 
-    private fun dispatchTask(state: TaskState, msg: DispatchTask) {
+    private fun dispatchTask(state: TaskEngineState, msg: DispatchTask) {
         state.taskStatus = TaskStatus.RUNNING_OK
 
         // send task to workers
@@ -147,18 +147,18 @@ class TaskEngine {
         taskDispatcher.dispatch(tad)
     }
 
-    private fun retryTask(state: TaskState, msg: RetryTask) {
+    private fun retryTask(state: TaskEngineState, msg: RetryTask) {
         state.taskStatus = TaskStatus.RUNNING_WARNING
         state.taskAttemptId = TaskAttemptId()
         state.taskAttemptIndex = 0
 
         // send task to workers
         val rt = RunTask(
-                taskId = state.taskId,
-                taskAttemptId = state.taskAttemptId,
-                taskAttemptIndex = state.taskAttemptIndex,
-                taskName = state.taskName,
-                taskData = state.taskData
+            taskId = state.taskId,
+            taskAttemptId = state.taskAttemptId,
+            taskAttemptIndex = state.taskAttemptIndex,
+            taskName = state.taskName,
+            taskData = state.taskData
         )
         taskDispatcher.dispatch(rt)
 
@@ -171,17 +171,17 @@ class TaskEngine {
         taskDispatcher.dispatch(tad)
     }
 
-    private fun retryTaskAttempt(state: TaskState, msg: TaskEngineMessage) {
+    private fun retryTaskAttempt(state: TaskEngineState, msg: TaskEngineMessage) {
         state.taskStatus = TaskStatus.RUNNING_WARNING
         state.taskAttemptIndex = state.taskAttemptIndex + 1
 
         // send task to workers
         val rt = RunTask(
-                taskId = state.taskId,
-                taskAttemptId = state.taskAttemptId,
-                taskAttemptIndex = state.taskAttemptIndex,
-                taskName = state.taskName,
-                taskData = state.taskData
+            taskId = state.taskId,
+            taskAttemptId = state.taskAttemptId,
+            taskAttemptIndex = state.taskAttemptIndex,
+            taskName = state.taskName,
+            taskData = state.taskData
         )
         taskDispatcher.dispatch(rt)
 
@@ -194,7 +194,7 @@ class TaskEngine {
         taskDispatcher.dispatch(tar)
     }
 
-    private fun taskAttemptCompleted(state: TaskState, msg: TaskAttemptCompleted) {
+    private fun taskAttemptCompleted(state: TaskEngineState, msg: TaskAttemptCompleted) {
         state.taskStatus = TaskStatus.TERMINATED_COMPLETED
 
         // if this task belongs to a workflow
@@ -218,13 +218,13 @@ class TaskEngine {
         stateStorage.deleteState(state.taskId)
     }
 
-    private fun taskAttemptFailed(state: TaskState, msg: TaskAttemptFailed) {
+    private fun taskAttemptFailed(state: TaskEngineState, msg: TaskAttemptFailed) {
         state.taskStatus = TaskStatus.RUNNING_ERROR
 
         delayRetryTaskAttempt(state = state, msg = msg, delay = msg.taskAttemptDelayBeforeRetry)
     }
 
-    private fun delayRetryTaskAttempt(state: TaskState, msg: TaskEngineMessage, delay: Float?) {
+    private fun delayRetryTaskAttempt(state: TaskEngineState, msg: TaskEngineMessage, delay: Float?) {
         // no retry
         if (delay == null) return
         // immediate retry

@@ -1,12 +1,11 @@
 package com.zenaton.taskmanager.pulsar.engine
 
-import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.taskmanager.engine.TaskEngine
-import com.zenaton.taskmanager.messages.engine.AvroTaskEngineMessage
+import com.zenaton.taskmanager.engine.messages.AvroTaskEngineMessage
 import com.zenaton.taskmanager.pulsar.avro.TaskAvroConverter
 import com.zenaton.taskmanager.pulsar.dispatcher.PulsarTaskDispatcher
+import com.zenaton.taskmanager.pulsar.engine.state.PulsarTaskEngineStateStorage
 import com.zenaton.taskmanager.pulsar.logger.PulsarTaskLogger
-import com.zenaton.taskmanager.pulsar.state.PulsarTaskEngineStateStorage
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -22,17 +21,17 @@ class TaskEngineFunction : Function<AvroTaskEngineMessage, Void> {
     var avroConverter = TaskAvroConverter
 
     override fun process(input: AvroTaskEngineMessage, context: Context?): Void? {
-        val ctx = context ?: throw NullPointerException("Null Context received from tasks.StateFunction")
+        val ctx = context ?: throw NullPointerException("Null Context received")
+
+        taskEngine.logger = PulsarTaskLogger(ctx)
+        taskEngine.taskDispatcher = PulsarTaskDispatcher(ctx)
+        taskEngine.workflowDispatcher = WorkflowDispatcher(ctx)
+        taskEngine.stateStorage = PulsarTaskEngineStateStorage(ctx)
 
         try {
-            taskEngine.taskDispatcher = PulsarTaskDispatcher(ctx)
-            taskEngine.workflowDispatcher = WorkflowDispatcher(ctx)
-            taskEngine.stateStorage = PulsarTaskEngineStateStorage(ctx)
-            taskEngine.logger = PulsarTaskLogger(ctx)
-
             taskEngine.handle(avroConverter.fromAvro(input))
         } catch (e: Exception) {
-            Logger(ctx).error("Error:%s for message:%s", e, input)
+            taskEngine.logger.error("Error:%s for message:%s", e, input)
             throw e
         }
 

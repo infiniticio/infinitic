@@ -1,15 +1,15 @@
 {
     "type": "record",
     "name": "AvroTaskMetricMessage",
-    "namespace": "com.zenaton.taskmanager.messages.metrics",
+    "namespace": "com.zenaton.taskmanager.metrics.messages",
     "fields": [
         {
             "name": "type",
-            "type": "com.zenaton.taskmanager.messages.metrics.AvroTaskMetricMessageType"
+            "type": "com.zenaton.taskmanager.metrics.messages.AvroTaskMetricMessageType"
         }, {
-             "name": "TaskStatusUpdated",
-             "type": ["null", "com.zenaton.taskmanager.messages.metrics.AvroTaskStatusUpdated"],
-             "default": null
+            "name": "TaskStatusUpdated",
+            "type": ["null", "com.zenaton.taskmanager.metrics.messages.AvroTaskStatusUpdated"],
+            "default": null
         }
     ]
 }

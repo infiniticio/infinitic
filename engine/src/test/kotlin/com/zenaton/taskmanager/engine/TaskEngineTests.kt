@@ -1,26 +1,26 @@
 package com.zenaton.taskmanager.engine
 
 import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskmanager.data.TaskState
 import com.zenaton.taskmanager.data.TaskStatus
 import com.zenaton.taskmanager.dispatcher.TaskDispatcher
+import com.zenaton.taskmanager.engine.messages.CancelTask
+import com.zenaton.taskmanager.engine.messages.DispatchTask
+import com.zenaton.taskmanager.engine.messages.RetryTask
+import com.zenaton.taskmanager.engine.messages.RetryTaskAttempt
+import com.zenaton.taskmanager.engine.messages.TaskAttemptCompleted
+import com.zenaton.taskmanager.engine.messages.TaskAttemptDispatched
+import com.zenaton.taskmanager.engine.messages.TaskAttemptFailed
+import com.zenaton.taskmanager.engine.messages.TaskAttemptStarted
+import com.zenaton.taskmanager.engine.messages.TaskCanceled
+import com.zenaton.taskmanager.engine.messages.TaskCompleted
+import com.zenaton.taskmanager.engine.messages.TaskDispatched
+import com.zenaton.taskmanager.engine.messages.TaskEngineMessage
+import com.zenaton.taskmanager.engine.state.TaskEngineState
+import com.zenaton.taskmanager.engine.state.TaskEngineStateStorage
 import com.zenaton.taskmanager.logger.TaskLogger
-import com.zenaton.taskmanager.messages.engine.CancelTask
-import com.zenaton.taskmanager.messages.engine.DispatchTask
-import com.zenaton.taskmanager.messages.engine.RetryTask
-import com.zenaton.taskmanager.messages.engine.RetryTaskAttempt
-import com.zenaton.taskmanager.messages.engine.TaskAttemptCompleted
-import com.zenaton.taskmanager.messages.engine.TaskAttemptDispatched
-import com.zenaton.taskmanager.messages.engine.TaskAttemptFailed
-import com.zenaton.taskmanager.messages.engine.TaskAttemptStarted
-import com.zenaton.taskmanager.messages.engine.TaskCanceled
-import com.zenaton.taskmanager.messages.engine.TaskCompleted
-import com.zenaton.taskmanager.messages.engine.TaskDispatched
-import com.zenaton.taskmanager.messages.engine.TaskEngineMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
-import com.zenaton.taskmanager.messages.metrics.TaskStatusUpdated
-import com.zenaton.taskmanager.messages.workers.RunTask
-import com.zenaton.taskmanager.state.StateStorage
+import com.zenaton.taskmanager.messages.TaskAttemptMessage
+import com.zenaton.taskmanager.metrics.messages.TaskStatusUpdated
+import com.zenaton.taskmanager.workers.messages.RunTask
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
@@ -36,7 +36,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verifyOrder
 
-fun state(values: Map<String, Any?>? = null) = TestFactory.get(TaskState::class, values)
+fun state(values: Map<String, Any?>? = null) = TestFactory.get(TaskEngineState::class, values)
 
 fun cancelTask(values: Map<String, Any?>? = null) = TestFactory.get(CancelTask::class, values)
 fun dispatchTask(values: Map<String, Any?>? = null) = TestFactory.get(DispatchTask::class, values)
@@ -55,9 +55,9 @@ fun taskDispatched(values: Map<String, Any?>? = null) = TestFactory.get(TaskDisp
 class EngineResults {
     lateinit var taskDispatcher: TaskDispatcher
     lateinit var workflowDispatcher: WorkflowDispatcher
-    lateinit var stateStorage: StateStorage
+    lateinit var stateStorage: TaskEngineStateStorage
     lateinit var logger: TaskLogger
-    var state: TaskState? = null
+    var state: TaskEngineState? = null
     var runTask: RunTask? = null
     var retryTaskAttempt: RetryTaskAttempt? = null
     var retryTaskAttemptDelay: Float? = null
@@ -72,15 +72,15 @@ class EngineResults {
     var taskStatusUpdated: TaskStatusUpdated? = null
 }
 
-fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): EngineResults {
+fun engineHandle(stateIn: TaskEngineState?, msgIn: TaskEngineMessage): EngineResults {
     // avoid deep updates of stateIn
     val state = stateIn?.copy()
     // mocking
     val taskDispatcher = mockk<TaskDispatcher>()
     val workflowDispatcher = mockk<WorkflowDispatcher>()
-    val stateStorage = mockk<StateStorage>()
+    val stateStorage = mockk<TaskEngineStateStorage>()
     val logger = mockk<TaskLogger>()
-    val stateSlot = slot<TaskState>()
+    val stateSlot = slot<TaskEngineState>()
     val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
     val taskAttemptDispatchedSlot = slot<TaskAttemptDispatched>()
     val taskAttemptFailedSlot = slot<TaskAttemptFailed>()
@@ -471,7 +471,7 @@ private fun checkShouldDoNothing(msgIn: TaskEngineMessage, o: EngineResults) {
     checkConfirmVerified(o)
 }
 
-private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskState, o: EngineResults) {
+private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskEngineState, o: EngineResults) {
     verifyOrder {
         o.stateStorage.getState(msgIn.taskId)
         o.taskDispatcher.dispatch(o.runTask!!)
@@ -498,7 +498,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
     o.taskStatusUpdated!!.newStatus shouldBe TaskStatus.RUNNING_WARNING
 }
 
-private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskEngineMessage, o: EngineResults) {
+private fun checkShouldWarnAndDoNothingMore(stateIn: TaskEngineState?, msgIn: TaskEngineMessage, o: EngineResults) {
     verifyOrder {
         o.stateStorage.getState(msgIn.taskId)
         o.logger.warn(any(), msgIn, stateIn)
@@ -506,7 +506,7 @@ private fun checkShouldWarnAndDoNothingMore(stateIn: TaskState?, msgIn: TaskEngi
     checkConfirmVerified(o)
 }
 
-private fun checkShouldErrorAndDoNothingMore(stateIn: TaskState?, msgIn: TaskEngineMessage, o: EngineResults) {
+private fun checkShouldErrorAndDoNothingMore(stateIn: TaskEngineState?, msgIn: TaskEngineMessage, o: EngineResults) {
     verifyOrder {
         o.stateStorage.getState(msgIn.taskId)
         o.logger.error(any(), msgIn, stateIn)

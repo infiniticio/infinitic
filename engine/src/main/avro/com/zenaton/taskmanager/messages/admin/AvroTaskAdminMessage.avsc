@@ -1,0 +1,15 @@
+{
+    "type": "record",
+    "name": "AvroTaskAdminMessage",
+    "namespace": "com.zenaton.taskmanager.admin.messages",
+    "fields": [
+        {
+            "name": "type",
+            "type": "com.zenaton.taskmanager.admin.messages.AvroTaskAdminMessageType"
+        }, {
+            "name": "TaskTypeCreated",
+            "type": ["null", "com.zenaton.taskmanager.admin.messages.AvroTaskTypeCreated"],
+            "default": null
+        }
+    ]
+}

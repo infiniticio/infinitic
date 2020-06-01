@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroTaskStatusUpdated",
-    "namespace": "com.zenaton.taskmanager.messages.metrics",
+    "namespace": "com.zenaton.taskmanager.metrics.messages",
     "fields": [
         {
             "name": "taskId",

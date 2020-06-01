@@ -1,6 +1,10 @@
 package com.zenaton
 
+import com.zenaton.taskmanager.admin.state.TaskAdminState
+import org.apache.pulsar.client.impl.schema.AvroSchema
+
 fun main() {
+    println(AvroSchema.of(TaskAdminState::class.java).schemaInfo)
 //    val client = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
 //    val producer = client.newProducer(AvroSchema.of(AvroTaskEngineMessage::class.java)).topic("persistent://public/default/tasks").create()
 //

@@ -89,8 +89,8 @@ tasks.register("install") {
             topic = "tasks"
         )
         uploadSchemaToTopic(
-                name = "AvroTaskMetricMessage",
-                topic = "tasks-status-updated"
+            name = "AvroTaskMetricMessage",
+            topic = "tasks-metrics"
         )
         setZenatonFunction(
             className = "com.zenaton.taskmanager.pulsar.engine.TaskEngineFunction",
@@ -127,7 +127,7 @@ tasks.register("update") {
         )
         uploadSchemaToTopic(
             name = "AvroTaskMetricMessage",
-            topic = "tasks-status-updated"
+            topic = "tasks-metrics"
         )
         setZenatonFunction(
             className = "com.zenaton.taskmanager.pulsar.engine.TaskEngineFunction",
@@ -159,7 +159,7 @@ tasks.register("delete") {
         forceDeleteTopic("workflows")
         forceDeleteTopic("decisions")
         forceDeleteTopic("tasks")
-        forceDeleteTopic("tasks-status-updated")
+        forceDeleteTopic("tasks-metrics")
         forceDeleteTopic("delays")
         forceDeleteTopic("logs")
     }

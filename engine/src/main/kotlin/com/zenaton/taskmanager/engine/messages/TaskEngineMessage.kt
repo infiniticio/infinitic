@@ -1,6 +1,5 @@
-package com.zenaton.taskmanager.messages.engine
+package com.zenaton.taskmanager.engine.messages
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.zenaton.commons.data.DateTime
 import com.zenaton.taskmanager.data.TaskAttemptError
 import com.zenaton.taskmanager.data.TaskAttemptId
@@ -8,17 +7,15 @@ import com.zenaton.taskmanager.data.TaskData
 import com.zenaton.taskmanager.data.TaskId
 import com.zenaton.taskmanager.data.TaskName
 import com.zenaton.taskmanager.data.TaskOutput
-import com.zenaton.taskmanager.messages.interfaces.FailingTaskAttemptMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskAttemptMessage
-import com.zenaton.taskmanager.messages.interfaces.TaskMessage
+import com.zenaton.taskmanager.messages.FailingTaskAttemptMessage
+import com.zenaton.taskmanager.messages.TaskAttemptMessage
+import com.zenaton.taskmanager.messages.TaskMessage
 import com.zenaton.workflowengine.data.WorkflowId
 
 sealed class TaskEngineMessage(
     override val taskId: TaskId,
     override val sentAt: DateTime
-) : TaskMessage {
-    @JsonIgnore fun getStateId() = taskId.id
-}
+) : TaskMessage
 
 data class CancelTask(
     override val taskId: TaskId,
