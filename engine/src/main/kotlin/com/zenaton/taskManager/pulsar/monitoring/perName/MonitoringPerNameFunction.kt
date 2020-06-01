@@ -1,6 +1,6 @@
 package com.zenaton.taskManager.pulsar.monitoring.perName
 
-import com.zenaton.taskManager.metrics.messages.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.metrics.messages.AvroMonitoringPerNameMessage
 import com.zenaton.taskManager.monitoring.perName.MonitoringPerNameEngine
 import com.zenaton.taskManager.pulsar.avro.AvroConverter
 import com.zenaton.taskManager.pulsar.dispatcher.PulsarDispatcher

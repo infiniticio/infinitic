@@ -1,7 +1,7 @@
 package com.zenaton.taskManager.dispatcher
 
-import com.zenaton.taskManager.monitoring.global.MonitoringGlobalMessage
 import com.zenaton.taskManager.engine.EngineMessage
+import com.zenaton.taskManager.monitoring.global.MonitoringGlobalMessage
 import com.zenaton.taskManager.monitoring.perName.MonitoringPerNameMessage
 import com.zenaton.taskManager.workers.WorkerMessage
 

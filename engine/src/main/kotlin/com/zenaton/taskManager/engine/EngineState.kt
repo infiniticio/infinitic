@@ -1,19 +1,19 @@
 package com.zenaton.taskManager.engine
 
 import com.zenaton.commons.data.interfaces.StateInterface
-import com.zenaton.taskManager.data.TaskAttemptId
-import com.zenaton.taskManager.data.TaskData
-import com.zenaton.taskManager.data.TaskId
-import com.zenaton.taskManager.data.TaskName
-import com.zenaton.taskManager.data.TaskStatus
+import com.zenaton.taskManager.data.JobAttemptId
+import com.zenaton.taskManager.data.JobData
+import com.zenaton.taskManager.data.JobId
+import com.zenaton.taskManager.data.JobName
+import com.zenaton.taskManager.data.JobStatus
 import com.zenaton.workflowengine.data.WorkflowId
 
 data class EngineState(
-    val taskId: TaskId,
-    val taskName: TaskName,
-    var taskStatus: TaskStatus,
-    val taskData: TaskData?,
-    var taskAttemptId: TaskAttemptId,
-    var taskAttemptIndex: Int,
+    val jobId: JobId,
+    val jobName: JobName,
+    var jobStatus: JobStatus,
+    val jobData: JobData?,
+    var jobAttemptId: JobAttemptId,
+    var jobAttemptIndex: Int,
     val workflowId: WorkflowId? = null
 ) : StateInterface

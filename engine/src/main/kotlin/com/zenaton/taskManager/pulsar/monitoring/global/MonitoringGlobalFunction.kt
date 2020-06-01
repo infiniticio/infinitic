@@ -1,6 +1,6 @@
 package com.zenaton.taskManager.pulsar.monitoring.global
 
-import com.zenaton.taskManager.admin.messages.AvroMonitoringGlobalMessage
+import com.zenaton.jobManager.admin.messages.AvroMonitoringGlobalMessage
 import com.zenaton.taskManager.monitoring.global.MonitoringGlobalEngine
 import com.zenaton.taskManager.pulsar.avro.AvroConverter
 import com.zenaton.taskManager.pulsar.dispatcher.PulsarDispatcher

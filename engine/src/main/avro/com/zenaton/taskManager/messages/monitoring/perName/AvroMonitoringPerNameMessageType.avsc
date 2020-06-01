@@ -1,8 +1,8 @@
 {
     "type": "enum",
     "name": "AvroMonitoringPerNameMessageType",
-    "namespace": "com.zenaton.taskManager.metrics.messages",
+    "namespace": "com.zenaton.jobManager.metrics.messages",
     "symbols": [
-        "TaskStatusUpdated"
+        "JobStatusUpdated"
     ]
 }

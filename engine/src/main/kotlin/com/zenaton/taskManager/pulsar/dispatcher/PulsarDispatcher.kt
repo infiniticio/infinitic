@@ -1,15 +1,15 @@
 package com.zenaton.taskManager.pulsar.dispatcher
 
-import com.zenaton.taskManager.admin.messages.AvroMonitoringGlobalMessage
-import com.zenaton.taskManager.monitoring.global.MonitoringGlobalMessage
+import com.zenaton.jobManager.admin.messages.AvroMonitoringGlobalMessage
+import com.zenaton.jobManager.engine.messages.AvroEngineMessage
+import com.zenaton.jobManager.metrics.messages.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.workers.AvroWorkerMessage
 import com.zenaton.taskManager.dispatcher.Dispatcher
-import com.zenaton.taskManager.engine.messages.AvroTaskEngineMessage
 import com.zenaton.taskManager.engine.EngineMessage
-import com.zenaton.taskManager.metrics.messages.AvroMonitoringPerNameMessage
+import com.zenaton.taskManager.monitoring.global.MonitoringGlobalMessage
 import com.zenaton.taskManager.monitoring.perName.MonitoringPerNameMessage
 import com.zenaton.taskManager.pulsar.Topic
 import com.zenaton.taskManager.pulsar.avro.AvroConverter
-import com.zenaton.taskManager.workers.AvroTaskWorkerMessage
 import com.zenaton.taskManager.workers.WorkerMessage
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.impl.schema.AvroSchema
@@ -25,7 +25,7 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
      */
     override fun dispatch(msg: WorkerMessage) {
         context
-            .newOutputMessage(Topic.WORKERS.get(msg.taskName.name), AvroSchema.of(AvroTaskWorkerMessage::class.java))
+            .newOutputMessage(Topic.WORKERS.get(msg.jobName.name), AvroSchema.of(AvroWorkerMessage::class.java))
             .value(AvroConverter.toAvro(msg))
             .send()
     }
@@ -46,7 +46,7 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     override fun dispatch(msg: MonitoringPerNameMessage) {
         context
             .newOutputMessage(Topic.MONITORING_PER_NAME.get(), AvroSchema.of(AvroMonitoringPerNameMessage::class.java))
-            .key(msg.taskName.name)
+            .key(msg.jobName.name)
             .value(AvroConverter.toAvro(msg))
             .send()
     }
@@ -57,8 +57,8 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     override fun dispatch(msg: EngineMessage, after: Float) {
 
         val msgBuilder = context
-            .newOutputMessage(Topic.ENGINE.get(), AvroSchema.of(AvroTaskEngineMessage::class.java))
-            .key(msg.taskId.id)
+            .newOutputMessage(Topic.ENGINE.get(), AvroSchema.of(AvroEngineMessage::class.java))
+            .key(msg.jobId.id)
             .value(AvroConverter.toAvro(msg))
 
         if (after > 0F) {

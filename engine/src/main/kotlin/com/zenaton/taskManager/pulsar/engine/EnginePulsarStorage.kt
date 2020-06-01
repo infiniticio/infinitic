@@ -1,11 +1,11 @@
 package com.zenaton.taskManager.pulsar.engine
 
 import com.zenaton.commons.utils.avro.AvroSerDe
-import com.zenaton.taskManager.data.TaskId
+import com.zenaton.jobManager.states.AvroEngineState
+import com.zenaton.taskManager.data.JobId
 import com.zenaton.taskManager.engine.EngineState
 import com.zenaton.taskManager.engine.EngineStorage
 import com.zenaton.taskManager.pulsar.avro.AvroConverter
-import com.zenaton.taskManager.states.AvroTaskState
 import org.apache.pulsar.functions.api.Context
 
 /**
@@ -18,15 +18,15 @@ class EnginePulsarStorage(val context: Context) : EngineStorage {
     // converter injection
     var avroConverter = AvroConverter
 
-    override fun getState(taskId: TaskId): EngineState? {
-        return context.getState(taskId.id)?.let { avroConverter.fromAvro(avroSerDe.deserialize<AvroTaskState>(it)) }
+    override fun getState(jobId: JobId): EngineState? {
+        return context.getState(jobId.id)?.let { avroConverter.fromAvro(avroSerDe.deserialize<AvroEngineState>(it)) }
     }
 
-    override fun updateState(taskId: TaskId, newState: EngineState, oldState: EngineState?) {
-        context.putState(taskId.id, avroSerDe.serialize(avroConverter.toAvro(newState)))
+    override fun updateState(jobId: JobId, newState: EngineState, oldState: EngineState?) {
+        context.putState(jobId.id, avroSerDe.serialize(avroConverter.toAvro(newState)))
     }
 
-    override fun deleteState(taskId: TaskId) {
-        context.deleteState(taskId.id)
+    override fun deleteState(jobId: JobId) {
+        context.deleteState(jobId.id)
     }
 }

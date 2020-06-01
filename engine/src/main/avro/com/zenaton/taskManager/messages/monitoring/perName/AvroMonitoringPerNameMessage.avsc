@@ -1,14 +1,14 @@
 {
     "type": "record",
     "name": "AvroMonitoringPerNameMessage",
-    "namespace": "com.zenaton.taskManager.metrics.messages",
+    "namespace": "com.zenaton.jobManager.metrics.messages",
     "fields": [
         {
             "name": "type",
-            "type": "com.zenaton.taskManager.metrics.messages.AvroMonitoringPerNameMessageType"
+            "type": "com.zenaton.jobManager.metrics.messages.AvroMonitoringPerNameMessageType"
         }, {
-            "name": "TaskStatusUpdated",
-            "type": ["null", "com.zenaton.taskManager.metrics.messages.AvroTaskStatusUpdated"],
+            "name": "JobStatusUpdated",
+            "type": ["null", "com.zenaton.jobManager.metrics.messages.AvroJobStatusUpdated"],
             "default": null
         }
     ]

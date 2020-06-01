@@ -1,22 +1,22 @@
 package com.zenaton.taskManager.workers
 
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskManager.data.TaskAttemptId
-import com.zenaton.taskManager.data.TaskData
-import com.zenaton.taskManager.data.TaskId
-import com.zenaton.taskManager.data.TaskName
-import com.zenaton.taskManager.messages.TaskAttemptMessage
+import com.zenaton.taskManager.data.JobAttemptId
+import com.zenaton.taskManager.data.JobData
+import com.zenaton.taskManager.data.JobId
+import com.zenaton.taskManager.data.JobName
+import com.zenaton.taskManager.messages.JobAttemptMessage
 
 sealed class WorkerMessage {
-    abstract val taskName: TaskName
+    abstract val jobName: JobName
     abstract val sentAt: DateTime
 }
 
-data class RunTask(
-    override val taskName: TaskName,
+data class RunJob(
+    override val jobName: JobName,
     override val sentAt: DateTime = DateTime(),
-    override val taskId: TaskId,
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptIndex: Int,
-    val taskData: TaskData?
-) : WorkerMessage(), TaskAttemptMessage
+    override val jobId: JobId,
+    override val jobAttemptId: JobAttemptId,
+    override val jobAttemptIndex: Int,
+    val jobData: JobData?
+) : WorkerMessage(), JobAttemptMessage

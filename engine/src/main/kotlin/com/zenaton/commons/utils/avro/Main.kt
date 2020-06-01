@@ -1,9 +1,9 @@
 package com.zenaton.commons.utils.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.taskManager.engine.messages.AvroTaskEngineMessage
-import com.zenaton.taskManager.metrics.messages.AvroMonitoringPerNameMessage
-import com.zenaton.taskManager.workers.AvroTaskWorkerMessage
+import com.zenaton.jobManager.engine.messages.AvroEngineMessage
+import com.zenaton.jobManager.metrics.messages.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.workers.AvroWorkerMessage
 import java.io.File
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
@@ -23,8 +23,8 @@ fun main() {
     }
 
     listOf(
-        AvroTaskEngineMessage::class,
-        AvroTaskWorkerMessage::class,
+        AvroEngineMessage::class,
+        AvroWorkerMessage::class,
         AvroMonitoringPerNameMessage::class
     ).map { klass ->
         File(System.getProperty("user.dir") + "/build/schemas/${klass.simpleName}.schema")

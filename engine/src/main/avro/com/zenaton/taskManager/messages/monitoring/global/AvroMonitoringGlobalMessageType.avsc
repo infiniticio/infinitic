@@ -1,8 +1,8 @@
 {
     "type": "enum",
     "name": "AvroMonitoringGlobalMessageType",
-    "namespace": "com.zenaton.taskManager.admin.messages",
+    "namespace": "com.zenaton.jobManager.admin.messages",
     "symbols": [
-        "TaskCreated"
+        "JobCreated"
     ]
 }

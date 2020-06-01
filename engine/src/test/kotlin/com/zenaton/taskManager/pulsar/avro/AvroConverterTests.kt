@@ -1,39 +1,39 @@
 package com.zenaton.taskManager.pulsar.avro
 
 import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskManager.admin.messages.AvroTaskCreated
-import com.zenaton.taskManager.monitoring.global.MonitoringGlobalMessage
-import com.zenaton.taskManager.monitoring.global.TaskCreated
-import com.zenaton.taskManager.engine.messages.AvroCancelTask
-import com.zenaton.taskManager.engine.messages.AvroDispatchTask
-import com.zenaton.taskManager.engine.messages.AvroRetryTask
-import com.zenaton.taskManager.engine.messages.AvroRetryTaskAttempt
-import com.zenaton.taskManager.engine.messages.AvroTaskAttemptCompleted
-import com.zenaton.taskManager.engine.messages.AvroTaskAttemptDispatched
-import com.zenaton.taskManager.engine.messages.AvroTaskAttemptFailed
-import com.zenaton.taskManager.engine.messages.AvroTaskAttemptStarted
-import com.zenaton.taskManager.engine.messages.AvroTaskCanceled
-import com.zenaton.taskManager.engine.messages.AvroTaskCompleted
-import com.zenaton.taskManager.engine.messages.AvroTaskDispatched
-import com.zenaton.taskManager.engine.CancelTask
-import com.zenaton.taskManager.engine.DispatchTask
-import com.zenaton.taskManager.engine.RetryTask
-import com.zenaton.taskManager.engine.RetryTaskAttempt
-import com.zenaton.taskManager.engine.TaskAttemptCompleted
-import com.zenaton.taskManager.engine.TaskAttemptDispatched
-import com.zenaton.taskManager.engine.TaskAttemptFailed
-import com.zenaton.taskManager.engine.TaskAttemptStarted
-import com.zenaton.taskManager.engine.TaskCanceled
-import com.zenaton.taskManager.engine.TaskCompleted
-import com.zenaton.taskManager.engine.TaskDispatched
+import com.zenaton.jobManager.admin.messages.AvroJobCreated
+import com.zenaton.jobManager.engine.messages.AvroCancelJob
+import com.zenaton.jobManager.engine.messages.AvroDispatchJob
+import com.zenaton.jobManager.engine.messages.AvroJobAttemptCompleted
+import com.zenaton.jobManager.engine.messages.AvroJobAttemptDispatched
+import com.zenaton.jobManager.engine.messages.AvroJobAttemptFailed
+import com.zenaton.jobManager.engine.messages.AvroJobAttemptStarted
+import com.zenaton.jobManager.engine.messages.AvroJobCanceled
+import com.zenaton.jobManager.engine.messages.AvroJobCompleted
+import com.zenaton.jobManager.engine.messages.AvroJobDispatched
+import com.zenaton.jobManager.engine.messages.AvroRetryJob
+import com.zenaton.jobManager.engine.messages.AvroRetryJobAttempt
+import com.zenaton.jobManager.metrics.messages.AvroJobStatusUpdated
+import com.zenaton.jobManager.workers.AvroRunJob
+import com.zenaton.taskManager.engine.CancelJob
+import com.zenaton.taskManager.engine.DispatchJob
 import com.zenaton.taskManager.engine.EngineMessage
 import com.zenaton.taskManager.engine.EngineState
-import com.zenaton.taskManager.metrics.messages.AvroTaskStatusUpdated
+import com.zenaton.taskManager.engine.JobAttemptCompleted
+import com.zenaton.taskManager.engine.JobAttemptDispatched
+import com.zenaton.taskManager.engine.JobAttemptFailed
+import com.zenaton.taskManager.engine.JobAttemptStarted
+import com.zenaton.taskManager.engine.JobCanceled
+import com.zenaton.taskManager.engine.JobCompleted
+import com.zenaton.taskManager.engine.JobDispatched
+import com.zenaton.taskManager.engine.RetryJob
+import com.zenaton.taskManager.engine.RetryJobAttempt
+import com.zenaton.taskManager.monitoring.global.JobCreated
+import com.zenaton.taskManager.monitoring.global.MonitoringGlobalMessage
+import com.zenaton.taskManager.monitoring.perName.JobStatusUpdated
 import com.zenaton.taskManager.monitoring.perName.MonitoringPerNameMessage
-import com.zenaton.taskManager.monitoring.perName.TaskStatusUpdated
 import com.zenaton.taskManager.monitoring.perName.MonitoringPerNameState
-import com.zenaton.taskManager.workers.AvroRunTask
-import com.zenaton.taskManager.workers.RunTask
+import com.zenaton.taskManager.workers.RunJob
 import com.zenaton.taskManager.workers.WorkerMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
@@ -43,23 +43,23 @@ import org.apache.avro.specific.SpecificRecordBase
 
 class AvroConverterTests : StringSpec({
 
-    include(workerMessageShouldBeAvroReversible(RunTask::class, AvroRunTask::class))
+    include(workerMessageShouldBeAvroReversible(RunJob::class, AvroRunJob::class))
 
-    include(metricMessageShouldBeAvroReversible(TaskStatusUpdated::class, AvroTaskStatusUpdated::class))
+    include(metricMessageShouldBeAvroReversible(JobStatusUpdated::class, AvroJobStatusUpdated::class))
 
-    include(adminMessageShouldBeAvroReversible(TaskCreated::class, AvroTaskCreated::class))
+    include(adminMessageShouldBeAvroReversible(JobCreated::class, AvroJobCreated::class))
 
-    include(engineMessageShouldBeAvroReversible(CancelTask::class, AvroCancelTask::class))
-    include(engineMessageShouldBeAvroReversible(DispatchTask::class, AvroDispatchTask::class))
-    include(engineMessageShouldBeAvroReversible(RetryTask::class, AvroRetryTask::class))
-    include(engineMessageShouldBeAvroReversible(RetryTaskAttempt::class, AvroRetryTaskAttempt::class))
-    include(engineMessageShouldBeAvroReversible(TaskAttemptCompleted::class, AvroTaskAttemptCompleted::class))
-    include(engineMessageShouldBeAvroReversible(TaskAttemptDispatched::class, AvroTaskAttemptDispatched::class))
-    include(engineMessageShouldBeAvroReversible(TaskAttemptFailed::class, AvroTaskAttemptFailed::class))
-    include(engineMessageShouldBeAvroReversible(TaskAttemptStarted::class, AvroTaskAttemptStarted::class))
-    include(engineMessageShouldBeAvroReversible(TaskCanceled::class, AvroTaskCanceled::class))
-    include(engineMessageShouldBeAvroReversible(TaskCompleted::class, AvroTaskCompleted::class))
-    include(engineMessageShouldBeAvroReversible(TaskDispatched::class, AvroTaskDispatched::class))
+    include(engineMessageShouldBeAvroReversible(CancelJob::class, AvroCancelJob::class))
+    include(engineMessageShouldBeAvroReversible(DispatchJob::class, AvroDispatchJob::class))
+    include(engineMessageShouldBeAvroReversible(RetryJob::class, AvroRetryJob::class))
+    include(engineMessageShouldBeAvroReversible(RetryJobAttempt::class, AvroRetryJobAttempt::class))
+    include(engineMessageShouldBeAvroReversible(JobAttemptCompleted::class, AvroJobAttemptCompleted::class))
+    include(engineMessageShouldBeAvroReversible(JobAttemptDispatched::class, AvroJobAttemptDispatched::class))
+    include(engineMessageShouldBeAvroReversible(JobAttemptFailed::class, AvroJobAttemptFailed::class))
+    include(engineMessageShouldBeAvroReversible(JobAttemptStarted::class, AvroJobAttemptStarted::class))
+    include(engineMessageShouldBeAvroReversible(JobCanceled::class, AvroJobCanceled::class))
+    include(engineMessageShouldBeAvroReversible(JobCompleted::class, AvroJobCompleted::class))
+    include(engineMessageShouldBeAvroReversible(JobDispatched::class, AvroJobDispatched::class))
 
     "task state should be avroReversible" {
         // given

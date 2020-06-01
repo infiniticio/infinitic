@@ -1,14 +1,14 @@
 {
     "type": "record",
     "name": "AvroMonitoringGlobalMessage",
-    "namespace": "com.zenaton.taskManager.admin.messages",
+    "namespace": "com.zenaton.jobManager.admin.messages",
     "fields": [
         {
             "name": "type",
-            "type": "com.zenaton.taskManager.admin.messages.AvroMonitoringGlobalMessageType"
+            "type": "com.zenaton.jobManager.admin.messages.AvroMonitoringGlobalMessageType"
         }, {
-            "name": "TaskCreated",
-            "type": ["null", "com.zenaton.taskManager.admin.messages.AvroTaskCreated"],
+            "name": "JobCreated",
+            "type": ["null", "com.zenaton.jobManager.admin.messages.AvroJobCreated"],
             "default": null
         }
     ]

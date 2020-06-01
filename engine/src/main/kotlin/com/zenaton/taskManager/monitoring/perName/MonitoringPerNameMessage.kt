@@ -1,19 +1,19 @@
 package com.zenaton.taskManager.monitoring.perName
 
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskManager.data.TaskId
-import com.zenaton.taskManager.data.TaskName
-import com.zenaton.taskManager.data.TaskStatus
+import com.zenaton.taskManager.data.JobId
+import com.zenaton.taskManager.data.JobName
+import com.zenaton.taskManager.data.JobStatus
 
 sealed class MonitoringPerNameMessage {
     abstract val sentAt: DateTime
-    abstract val taskName: TaskName
+    abstract val jobName: JobName
 }
 
-data class TaskStatusUpdated constructor(
+data class JobStatusUpdated constructor(
     override val sentAt: DateTime = DateTime(),
-    override val taskName: TaskName,
-    val taskId: TaskId,
-    val oldStatus: TaskStatus?,
-    val newStatus: TaskStatus
+    override val jobName: JobName,
+    val jobId: JobId,
+    val oldStatus: JobStatus?,
+    val newStatus: JobStatus
 ) : MonitoringPerNameMessage()

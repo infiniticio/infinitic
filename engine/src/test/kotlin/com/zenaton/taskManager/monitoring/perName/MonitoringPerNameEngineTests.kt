@@ -1,10 +1,10 @@
 package com.zenaton.taskManager.monitoring.perName
 
 import com.zenaton.commons.utils.TestFactory
-import com.zenaton.taskManager.monitoring.global.TaskCreated
-import com.zenaton.taskManager.data.TaskStatus
+import com.zenaton.taskManager.data.JobStatus
 import com.zenaton.taskManager.dispatcher.Dispatcher
 import com.zenaton.taskManager.logger.Logger
+import com.zenaton.taskManager.monitoring.global.JobCreated
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -21,14 +21,14 @@ class MonitoringPerNameEngineTests : ShouldSpec({
             val dispatcher = mockk<Dispatcher>()
             val logger = mockk<Logger>()
             val msg = TestFactory.get(
-                TaskStatusUpdated::class, mapOf(
-                "oldStatus" to TaskStatus.RUNNING_OK,
-                "newStatus" to TaskStatus.RUNNING_ERROR
+                JobStatusUpdated::class, mapOf(
+                "oldStatus" to JobStatus.RUNNING_OK,
+                "newStatus" to JobStatus.RUNNING_ERROR
             ))
-            val stateIn = TestFactory.get(MonitoringPerNameState::class, mapOf("taskName" to msg.taskName))
+            val stateIn = TestFactory.get(MonitoringPerNameState::class, mapOf("taskName" to msg.jobName))
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getState(msg.taskName) } returns stateIn
-            every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
+            every { storage.getState(msg.jobName) } returns stateIn
+            every { storage.updateState(msg.jobName, capture(stateOutSlot), any()) } just runs
 
             val taskMetrics = MonitoringPerNameEngine()
             taskMetrics.storage = storage
@@ -39,8 +39,8 @@ class MonitoringPerNameEngineTests : ShouldSpec({
 
             val stateOut = stateOutSlot.captured
             verifyAll {
-                storage.getState(msg.taskName)
-                storage.updateState(msg.taskName, stateOut, stateIn)
+                storage.getState(msg.jobName)
+                storage.updateState(msg.jobName, stateOut, stateIn)
             }
             stateOut.runningErrorCount shouldBe stateIn.runningErrorCount + 1
             stateOut.runningOkCount shouldBe stateIn.runningOkCount - 1
@@ -51,14 +51,14 @@ class MonitoringPerNameEngineTests : ShouldSpec({
             val dispatcher = mockk<Dispatcher>()
             val logger = mockk<Logger>()
             val msg = TestFactory.get(
-                TaskStatusUpdated::class, mapOf(
+                JobStatusUpdated::class, mapOf(
                 "oldStatus" to null,
-                "newStatus" to TaskStatus.RUNNING_OK
+                "newStatus" to JobStatus.RUNNING_OK
             ))
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getState(msg.taskName) } returns null
-            every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
-            every { dispatcher.dispatch(any<TaskCreated>()) } just runs
+            every { storage.getState(msg.jobName) } returns null
+            every { storage.updateState(msg.jobName, capture(stateOutSlot), any()) } just runs
+            every { dispatcher.dispatch(any<JobCreated>()) } just runs
 
             val taskMetrics = MonitoringPerNameEngine()
             taskMetrics.storage = storage
@@ -69,9 +69,9 @@ class MonitoringPerNameEngineTests : ShouldSpec({
             // then
             val stateOut = stateOutSlot.captured
             verifyAll {
-                storage.getState(msg.taskName)
-                storage.updateState(msg.taskName, stateOut, null)
-                dispatcher.dispatch(ofType<TaskCreated>())
+                storage.getState(msg.jobName)
+                storage.updateState(msg.jobName, stateOut, null)
+                dispatcher.dispatch(ofType<JobCreated>())
             }
         }
     }

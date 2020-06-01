@@ -1,11 +1,11 @@
 package com.zenaton.taskManager.monitoring.perName
 
-import com.zenaton.taskManager.data.TaskName
+import com.zenaton.taskManager.data.JobName
 
 interface MonitoringPerNameStorage {
-    fun getState(taskName: TaskName): MonitoringPerNameState?
+    fun getState(jobName: JobName): MonitoringPerNameState?
 
-    fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?)
+    fun updateState(jobName: JobName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?)
 
-    fun deleteState(taskName: TaskName)
+    fun deleteState(jobName: JobName)
 }

@@ -1,7 +1,7 @@
 package com.zenaton.taskManager.pulsar.engine
 
+import com.zenaton.jobManager.engine.messages.AvroEngineMessage
 import com.zenaton.taskManager.engine.Engine
-import com.zenaton.taskManager.engine.messages.AvroTaskEngineMessage
 import com.zenaton.taskManager.engine.EngineMessage
 import com.zenaton.taskManager.pulsar.avro.AvroConverter
 import com.zenaton.taskManager.pulsar.dispatcher.PulsarDispatcher
@@ -27,7 +27,7 @@ class EngineFunctionTests : StringSpec({
         every { taskEngine.handle(any()) } just Runs
         val avroConverter = mockk<AvroConverter>()
         val msg = mockk<EngineMessage>()
-        val avroMsg = mockk<AvroTaskEngineMessage>()
+        val avroMsg = mockk<AvroEngineMessage>()
         every { avroConverter.fromAvro(avroMsg) } returns msg
         // given
         val fct = EngineFunction()
@@ -48,7 +48,7 @@ class EngineFunctionTests : StringSpec({
         val engine = EngineFunction()
         // then
         shouldThrowAny {
-            engine.process(mockk<AvroTaskEngineMessage>(), null)
+            engine.process(mockk<AvroEngineMessage>(), null)
         }
     }
 })

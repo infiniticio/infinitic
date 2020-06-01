@@ -1,14 +1,14 @@
 package com.zenaton.taskManager.monitoring.global
 
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskManager.data.TaskName
+import com.zenaton.taskManager.data.JobName
 
 sealed class MonitoringGlobalMessage {
     abstract val sentAt: DateTime
-    abstract val taskName: TaskName
+    abstract val jobName: JobName
 }
 
-data class TaskCreated(
+data class JobCreated(
     override val sentAt: DateTime = DateTime(),
-    override val taskName: TaskName
+    override val jobName: JobName
 ) : MonitoringGlobalMessage()

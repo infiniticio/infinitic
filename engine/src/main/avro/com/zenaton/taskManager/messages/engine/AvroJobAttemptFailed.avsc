@@ -1,0 +1,35 @@
+{
+    "type": "record",
+    "name": "AvroJobAttemptFailed",
+    "namespace": "com.zenaton.jobManager.engine.messages",
+    "fields": [
+        {
+            "name": "jobId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "jobAttemptId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "jobAttemptIndex",
+            "type": "int"
+        },
+        {
+            "name": "jobAttemptError",
+            "type": "bytes"
+        },
+        {
+            "name": "jobAttemptDelayBeforeRetry",
+            "type": ["null", "float"],
+            "default": null
+        }
+    ]
+}

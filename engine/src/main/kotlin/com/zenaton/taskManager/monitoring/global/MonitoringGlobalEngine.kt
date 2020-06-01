@@ -14,7 +14,7 @@ class MonitoringGlobalEngine {
         val newState = oldState?.copy() ?: MonitoringGlobalState()
 
         when (message) {
-            is TaskCreated -> handleTaskTypeCreated(message, newState)
+            is JobCreated -> handleTaskTypeCreated(message, newState)
         }
 
         // Update stored state if needed and existing
@@ -23,9 +23,9 @@ class MonitoringGlobalEngine {
         }
     }
 
-    private fun handleTaskTypeCreated(message: TaskCreated, state: MonitoringGlobalState) {
-        val added = state.taskNames.add(message.taskName)
+    private fun handleTaskTypeCreated(message: JobCreated, state: MonitoringGlobalState) {
+        val added = state.jobNames.add(message.jobName)
 
-        if (!added) logger.warn("Trying to add a task %s already known in state %s", message.taskName, state)
+        if (!added) logger.warn("Trying to add a task %s already known in state %s", message.jobName, state)
     }
 }

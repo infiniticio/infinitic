@@ -1,10 +1,10 @@
 package com.zenaton.taskManager.pulsar.monitoring.global
 
 import com.zenaton.commons.utils.avro.AvroSerDe
-import com.zenaton.taskManager.monitoring.global.MonitoringGlobalStorage
+import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.taskManager.monitoring.global.MonitoringGlobalState
+import com.zenaton.taskManager.monitoring.global.MonitoringGlobalStorage
 import com.zenaton.taskManager.pulsar.avro.AvroConverter
-import com.zenaton.taskManager.states.AvroTaskAdminState
 import org.apache.pulsar.functions.api.Context
 
 class MonitoringGlobalPulsarStorage(val context: Context) : MonitoringGlobalStorage {
@@ -15,7 +15,7 @@ class MonitoringGlobalPulsarStorage(val context: Context) : MonitoringGlobalStor
     var avroConverter = AvroConverter
 
     override fun getState(): MonitoringGlobalState? {
-        return context.getState(getStateKey())?.let { avroConverter.fromAvro(avroSerDe.deserialize<AvroTaskAdminState>(it)) }
+        return context.getState(getStateKey())?.let { avroConverter.fromAvro(avroSerDe.deserialize<AvroMonitoringGlobalState>(it)) }
     }
 
     override fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {

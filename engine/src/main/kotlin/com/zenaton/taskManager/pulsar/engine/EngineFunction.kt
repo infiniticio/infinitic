@@ -1,7 +1,7 @@
 package com.zenaton.taskManager.pulsar.engine
 
+import com.zenaton.jobManager.engine.messages.AvroEngineMessage
 import com.zenaton.taskManager.engine.Engine
-import com.zenaton.taskManager.engine.messages.AvroTaskEngineMessage
 import com.zenaton.taskManager.pulsar.avro.AvroConverter
 import com.zenaton.taskManager.pulsar.dispatcher.PulsarDispatcher
 import com.zenaton.taskManager.pulsar.logger.PulsarLogger
@@ -12,14 +12,14 @@ import org.apache.pulsar.functions.api.Function
 /**
  * This class provides the function used to trigger TaskEngine from the tasks topic
  */
-class EngineFunction : Function<AvroTaskEngineMessage, Void> {
+class EngineFunction : Function<AvroEngineMessage, Void> {
 
     // task engine injection
     var taskEngine = Engine()
     // avro converter injection
     var avroConverter = AvroConverter
 
-    override fun process(input: AvroTaskEngineMessage, context: Context?): Void? {
+    override fun process(input: AvroEngineMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         taskEngine.logger = PulsarLogger(ctx)

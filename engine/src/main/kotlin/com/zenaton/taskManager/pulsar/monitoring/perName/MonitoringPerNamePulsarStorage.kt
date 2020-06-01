@@ -1,13 +1,13 @@
 package com.zenaton.taskManager.pulsar.monitoring.perName
 
 import com.zenaton.commons.utils.avro.AvroSerDe
-import com.zenaton.taskManager.data.TaskName
-import com.zenaton.taskManager.data.TaskStatus
+import com.zenaton.jobManager.states.AvroMonitoringPerNameState
+import com.zenaton.taskManager.data.JobName
+import com.zenaton.taskManager.data.JobStatus
 import com.zenaton.taskManager.monitoring.perName.MonitoringPerNameState
 import com.zenaton.taskManager.monitoring.perName.MonitoringPerNameStorage
 import com.zenaton.taskManager.pulsar.avro.AvroConverter
 import com.zenaton.taskManager.pulsar.dispatcher.PulsarDispatcher
-import com.zenaton.taskManager.states.AvroTaskMetricsState
 import org.apache.pulsar.functions.api.Context
 
 class MonitoringPerNamePulsarStorage(val context: Context) : MonitoringPerNameStorage {
@@ -15,15 +15,15 @@ class MonitoringPerNamePulsarStorage(val context: Context) : MonitoringPerNameSt
     var avroConverter = AvroConverter
     var taskDispatcher = PulsarDispatcher(context)
 
-    override fun getState(taskName: TaskName): MonitoringPerNameState? =
-        context.getState(getStateKey(taskName))?.let { avroConverter.fromAvro(avroSerDe.deserialize<AvroTaskMetricsState>(it)) }
+    override fun getState(jobName: JobName): MonitoringPerNameState? =
+        context.getState(getStateKey(jobName))?.let { avroConverter.fromAvro(avroSerDe.deserialize<AvroMonitoringPerNameState>(it)) }
 
-    override fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
-        val counterOkKey = getCounterKey(taskName, TaskStatus.RUNNING_OK)
-        val counterWarningKey = getCounterKey(taskName, TaskStatus.RUNNING_WARNING)
-        val counterErrorKey = getCounterKey(taskName, TaskStatus.RUNNING_ERROR)
-        val counterCompletedKey = getCounterKey(taskName, TaskStatus.TERMINATED_COMPLETED)
-        val counterCanceledKey = getCounterKey(taskName, TaskStatus.TERMINATED_CANCELED)
+    override fun updateState(jobName: JobName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
+        val counterOkKey = getCounterKey(jobName, JobStatus.RUNNING_OK)
+        val counterWarningKey = getCounterKey(jobName, JobStatus.RUNNING_WARNING)
+        val counterErrorKey = getCounterKey(jobName, JobStatus.RUNNING_ERROR)
+        val counterCompletedKey = getCounterKey(jobName, JobStatus.TERMINATED_COMPLETED)
+        val counterCanceledKey = getCounterKey(jobName, JobStatus.TERMINATED_CANCELED)
 
         // use counters to save state, to avoid race conditions
         val incrOk = newState.runningOkCount - (oldState?.runningOkCount ?: 0L)
@@ -40,23 +40,23 @@ class MonitoringPerNamePulsarStorage(val context: Context) : MonitoringPerNameSt
 
         // save state retrieved from counters
         val state = MonitoringPerNameState(
-            taskName = taskName,
+            jobName = jobName,
             runningOkCount = getCounter(counterOkKey),
             runningWarningCount = getCounter(counterWarningKey),
             runningErrorCount = getCounter(counterErrorKey),
             terminatedCompletedCount = getCounter(counterCompletedKey),
             terminatedCanceledCount = getCounter(counterCanceledKey)
         )
-        context.putState(getStateKey(taskName), avroSerDe.serialize(avroConverter.toAvro(state)))
+        context.putState(getStateKey(jobName), avroSerDe.serialize(avroConverter.toAvro(state)))
     }
 
-    override fun deleteState(taskName: TaskName) {
-        context.deleteState(getStateKey(taskName))
+    override fun deleteState(jobName: JobName) {
+        context.deleteState(getStateKey(jobName))
     }
 
-    fun getStateKey(taskName: TaskName) = "metrics.task.${taskName.name.toLowerCase()}.counters"
+    fun getStateKey(jobName: JobName) = "metrics.task.${jobName.name.toLowerCase()}.counters"
 
-    fun getCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "metrics.rt.counter.task.${taskName.name.toLowerCase()}.${taskStatus.toString().toLowerCase()}"
+    fun getCounterKey(jobName: JobName, jobStatus: JobStatus) = "metrics.rt.counter.task.${jobName.name.toLowerCase()}.${jobStatus.toString().toLowerCase()}"
 
     private fun incrCounter(key: String, amount: Long) = context.incrCounter(key, amount)
 

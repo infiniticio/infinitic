@@ -1,0 +1,15 @@
+{
+    "type": "record",
+    "name": "AvroWorkerMessage",
+    "namespace": "com.zenaton.jobManager.workers",
+    "fields": [
+        {
+            "name": "type",
+            "type": "com.zenaton.jobManager.workers.AvroWorkerMessageType"
+        }, {
+             "name": "RunJob",
+             "type": ["null", "com.zenaton.jobManager.workers.AvroRunJob"],
+             "default": null
+        }
+    ]
+}

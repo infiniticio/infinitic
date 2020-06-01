@@ -1,90 +1,90 @@
 package com.zenaton.taskManager.engine
 
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskManager.data.TaskAttemptError
-import com.zenaton.taskManager.data.TaskAttemptId
-import com.zenaton.taskManager.data.TaskData
-import com.zenaton.taskManager.data.TaskId
-import com.zenaton.taskManager.data.TaskName
-import com.zenaton.taskManager.data.TaskOutput
-import com.zenaton.taskManager.messages.FailingTaskAttemptMessage
-import com.zenaton.taskManager.messages.TaskAttemptMessage
-import com.zenaton.taskManager.messages.TaskMessage
+import com.zenaton.taskManager.data.JobAttemptError
+import com.zenaton.taskManager.data.JobAttemptId
+import com.zenaton.taskManager.data.JobData
+import com.zenaton.taskManager.data.JobId
+import com.zenaton.taskManager.data.JobName
+import com.zenaton.taskManager.data.JobOutput
+import com.zenaton.taskManager.messages.FailingJobAttemptMessage
+import com.zenaton.taskManager.messages.JobAttemptMessage
+import com.zenaton.taskManager.messages.JobMessage
 import com.zenaton.workflowengine.data.WorkflowId
 
 sealed class EngineMessage(
-    override val taskId: TaskId,
+    override val jobId: JobId,
     override val sentAt: DateTime
-) : TaskMessage
+) : JobMessage
 
-data class CancelTask(
-    override val taskId: TaskId,
+data class CancelJob(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime()
-) : EngineMessage(taskId, sentAt)
+) : EngineMessage(jobId, sentAt)
 
-data class DispatchTask(
-    override val taskId: TaskId,
+data class DispatchJob(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime(),
-    val taskName: TaskName,
-    val taskData: TaskData?,
+    val jobName: JobName,
+    val jobData: JobData?,
     val workflowId: WorkflowId? = null
-) : EngineMessage(taskId, sentAt)
+) : EngineMessage(jobId, sentAt)
 
-data class RetryTask(
-    override val taskId: TaskId,
+data class RetryJob(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime()
-) : EngineMessage(taskId, sentAt)
+) : EngineMessage(jobId, sentAt)
 
-data class RetryTaskAttempt(
-    override val taskId: TaskId,
+data class RetryJobAttempt(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime(),
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptIndex: Int
-) : EngineMessage(taskId, sentAt), TaskAttemptMessage
+    override val jobAttemptId: JobAttemptId,
+    override val jobAttemptIndex: Int
+) : EngineMessage(jobId, sentAt), JobAttemptMessage
 
-data class TaskAttemptCompleted(
-    override val taskId: TaskId,
+data class JobAttemptCompleted(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime(),
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptIndex: Int,
-    val taskOutput: TaskOutput?
-) : EngineMessage(taskId, sentAt), TaskAttemptMessage
+    override val jobAttemptId: JobAttemptId,
+    override val jobAttemptIndex: Int,
+    val jobOutput: JobOutput?
+) : EngineMessage(jobId, sentAt), JobAttemptMessage
 
-data class TaskAttemptDispatched(
-    override val taskId: TaskId,
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptIndex: Int,
+data class JobAttemptDispatched(
+    override val jobId: JobId,
+    override val jobAttemptId: JobAttemptId,
+    override val jobAttemptIndex: Int,
     override val sentAt: DateTime = DateTime()
-) : EngineMessage(taskId, sentAt), TaskAttemptMessage
+) : EngineMessage(jobId, sentAt), JobAttemptMessage
 
-data class TaskAttemptFailed(
-    override val taskId: TaskId,
+data class JobAttemptFailed(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime(),
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptIndex: Int,
-    override val taskAttemptDelayBeforeRetry: Float?,
-    val taskAttemptError: TaskAttemptError
-) : EngineMessage(taskId, sentAt), FailingTaskAttemptMessage
+    override val jobAttemptId: JobAttemptId,
+    override val jobAttemptIndex: Int,
+    override val jobAttemptDelayBeforeRetry: Float?,
+    val jobAttemptError: JobAttemptError
+) : EngineMessage(jobId, sentAt), FailingJobAttemptMessage
 
-data class TaskAttemptStarted(
-    override val taskId: TaskId,
+data class JobAttemptStarted(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime(),
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptIndex: Int
-) : EngineMessage(taskId, sentAt), TaskAttemptMessage
+    override val jobAttemptId: JobAttemptId,
+    override val jobAttemptIndex: Int
+) : EngineMessage(jobId, sentAt), JobAttemptMessage
 
-data class TaskCanceled(
-    override val taskId: TaskId,
+data class JobCanceled(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime()
-) : EngineMessage(taskId, sentAt), TaskMessage
+) : EngineMessage(jobId, sentAt), JobMessage
 
-data class TaskCompleted(
-    override val taskId: TaskId,
+data class JobCompleted(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime(),
-    val taskOutput: TaskOutput?
-) : EngineMessage(taskId, sentAt), TaskMessage
+    val jobOutput: JobOutput?
+) : EngineMessage(jobId, sentAt), JobMessage
 
-data class TaskDispatched(
-    override val taskId: TaskId,
+data class JobDispatched(
+    override val jobId: JobId,
     override val sentAt: DateTime = DateTime()
-) : EngineMessage(taskId, sentAt), TaskMessage
+) : EngineMessage(jobId, sentAt), JobMessage
