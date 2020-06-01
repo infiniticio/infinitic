@@ -1,0 +1,33 @@
+{
+    "type" : "record",
+    "name" : "AvroTaskState",
+    "namespace" : "com.zenaton.taskManager.states",
+    "fields" : [
+        {
+            "name" : "taskAttemptId",
+            "type" : "string",
+            "logicalType": "uuid"
+        }, {
+            "name" : "taskAttemptIndex",
+            "type" : "int"
+        }, {
+            "name" : "taskData",
+            "type" : [ "null", "bytes" ],
+            "default": null
+        }, {
+            "name" : "taskId",
+            "type" : "string",
+            "logicalType": "uuid"
+        }, {
+            "name" : "taskName",
+            "type" : "string"
+        }, {
+             "name" : "taskStatus",
+             "type" : "com.zenaton.taskManager.data.AvroTaskStatus"
+        }, {
+            "name" : "workflowId",
+            "type" : [ "null", {"type": "string", "logicalType": "uuid"} ],
+            "default": null
+        }
+    ]
+}

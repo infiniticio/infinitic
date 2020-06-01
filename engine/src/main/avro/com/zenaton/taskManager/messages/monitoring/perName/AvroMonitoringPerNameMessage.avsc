@@ -1,0 +1,15 @@
+{
+    "type": "record",
+    "name": "AvroMonitoringPerNameMessage",
+    "namespace": "com.zenaton.taskManager.metrics.messages",
+    "fields": [
+        {
+            "name": "type",
+            "type": "com.zenaton.taskManager.metrics.messages.AvroMonitoringPerNameMessageType"
+        }, {
+            "name": "TaskStatusUpdated",
+            "type": ["null", "com.zenaton.taskManager.metrics.messages.AvroTaskStatusUpdated"],
+            "default": null
+        }
+    ]
+}

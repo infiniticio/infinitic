@@ -1,0 +1,16 @@
+{
+    "type": "record",
+    "name": "AvroTaskCreated",
+    "namespace": "com.zenaton.taskManager.admin.messages",
+    "fields": [
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "taskName",
+            "type": "string"
+        }
+    ]
+}

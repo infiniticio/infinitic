@@ -1,0 +1,15 @@
+{
+    "type": "record",
+    "name": "AvroTaskWorkerMessage",
+    "namespace": "com.zenaton.taskManager.workers",
+    "fields": [
+        {
+            "name": "type",
+            "type": "com.zenaton.taskManager.workers.AvroTaskWorkerMessageType"
+        }, {
+             "name": "RunTask",
+             "type": ["null", "com.zenaton.taskManager.workers.AvroRunTask"],
+             "default": null
+        }
+    ]
+}

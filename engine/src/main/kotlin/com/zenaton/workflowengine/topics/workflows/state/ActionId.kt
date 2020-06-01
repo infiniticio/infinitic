@@ -1,7 +1,7 @@
 package com.zenaton.workflowengine.topics.workflows.state
 
 import com.zenaton.commons.data.interfaces.IdInterface
-import com.zenaton.taskmanager.data.TaskId
+import com.zenaton.taskManager.data.TaskId
 import com.zenaton.workflowengine.data.DelayId
 import com.zenaton.workflowengine.data.EventId
 import com.zenaton.workflowengine.data.WorkflowId

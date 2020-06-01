@@ -1,0 +1,15 @@
+{
+    "type": "record",
+    "name": "AvroMonitoringGlobalMessage",
+    "namespace": "com.zenaton.taskManager.admin.messages",
+    "fields": [
+        {
+            "name": "type",
+            "type": "com.zenaton.taskManager.admin.messages.AvroMonitoringGlobalMessageType"
+        }, {
+            "name": "TaskCreated",
+            "type": ["null", "com.zenaton.taskManager.admin.messages.AvroTaskCreated"],
+            "default": null
+        }
+    ]
+}

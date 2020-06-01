@@ -3,8 +3,8 @@ package com.zenaton.workflowengine.topics.workflows.state
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskmanager.data.TaskId
-import com.zenaton.taskmanager.data.TaskOutput
+import com.zenaton.taskManager.data.TaskId
+import com.zenaton.taskManager.data.TaskOutput
 import com.zenaton.workflowengine.data.DelayId
 import com.zenaton.workflowengine.data.EventData
 import com.zenaton.workflowengine.data.EventId

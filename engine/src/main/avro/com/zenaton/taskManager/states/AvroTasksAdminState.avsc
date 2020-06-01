@@ -1,0 +1,15 @@
+{
+    "type": "record",
+    "name": "AvroTaskAdminState",
+    "namespace" : "com.zenaton.taskManager.states",
+    "fields": [
+        {
+            "name" : "taskNames",
+            "type": {
+                "type": "array",
+                "items": "string"
+            }
+        }
+    ]
+}
+

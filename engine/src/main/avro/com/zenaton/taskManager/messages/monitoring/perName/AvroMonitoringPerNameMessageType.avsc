@@ -1,0 +1,8 @@
+{
+    "type": "enum",
+    "name": "AvroMonitoringPerNameMessageType",
+    "namespace": "com.zenaton.taskManager.metrics.messages",
+    "symbols": [
+        "TaskStatusUpdated"
+    ]
+}
