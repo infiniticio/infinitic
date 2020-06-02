@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.workers
+package com.zenaton.jobManager.messages
 
 import com.zenaton.commons.data.DateTime
 import com.zenaton.jobManager.data.JobAttemptId
@@ -6,11 +6,7 @@ import com.zenaton.jobManager.data.JobData
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
-
-sealed class WorkerMessage {
-    abstract val jobName: JobName
-    abstract val sentAt: DateTime
-}
+import com.zenaton.jobManager.messages.interfaces.WorkerMessage
 
 data class RunJob(
     override val jobName: JobName,
@@ -19,4 +15,4 @@ data class RunJob(
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptIndex: Int,
     val jobData: JobData?
-) : WorkerMessage(), JobAttemptMessage
+) : JobAttemptMessage, WorkerMessage

@@ -4,7 +4,7 @@ import com.zenaton.jobManager.data.JobAttemptId
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
-import com.zenaton.jobManager.messages.JobAttemptMessage
+import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import com.zenaton.jobManager.monitoring.perInstance.JobAttemptDispatched
 import com.zenaton.jobManager.monitoring.perInstance.JobCanceled
 import com.zenaton.jobManager.monitoring.perInstance.JobCompleted
