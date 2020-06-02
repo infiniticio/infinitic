@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroJobCanceled",
-    "namespace": "com.zenaton.jobManager.engine.messages",
+    "namespace": "com.zenaton.jobManager.messages.monitoring.perInstance",
     "fields": [
         {
             "name": "jobId",

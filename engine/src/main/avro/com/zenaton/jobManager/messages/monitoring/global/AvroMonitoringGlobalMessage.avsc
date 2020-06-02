@@ -1,14 +1,14 @@
 {
     "type": "record",
     "name": "AvroMonitoringGlobalMessage",
-    "namespace": "com.zenaton.jobManager.admin.messages",
+    "namespace": "com.zenaton.jobManager.messages.monitoring.global",
     "fields": [
         {
             "name": "type",
-            "type": "com.zenaton.jobManager.admin.messages.AvroMonitoringGlobalMessageType"
+            "type": "com.zenaton.jobManager.messages.monitoring.global.AvroMonitoringGlobalMessageType"
         }, {
             "name": "JobCreated",
-            "type": ["null", "com.zenaton.jobManager.admin.messages.AvroJobCreated"],
+            "type": ["null", "com.zenaton.jobManager.messages.monitoring.global.AvroJobCreated"],
             "default": null
         }
     ]

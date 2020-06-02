@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroJobCreated",
-    "namespace": "com.zenaton.jobManager.admin.messages",
+    "namespace": "com.zenaton.jobManager.messages.monitoring.global",
     "fields": [
         {
             "name": "sentAt",

@@ -58,7 +58,7 @@ class MonitoringPerNameEngineTests : ShouldSpec({
             val stateOutSlot = slot<MonitoringPerNameState>()
             every { storage.getState(msg.jobName) } returns null
             every { storage.updateState(msg.jobName, capture(stateOutSlot), any()) } just runs
-            every { dispatcher.dispatch(any<JobCreated>()) } just runs
+            every { dispatcher.toMonitoringGlobal(any<JobCreated>()) } just runs
 
             val taskMetrics = MonitoringPerNameEngine()
             taskMetrics.storage = storage
@@ -71,7 +71,7 @@ class MonitoringPerNameEngineTests : ShouldSpec({
             verifyAll {
                 storage.getState(msg.jobName)
                 storage.updateState(msg.jobName, stateOut, null)
-                dispatcher.dispatch(ofType<JobCreated>())
+                dispatcher.toMonitoringGlobal(ofType<JobCreated>())
             }
         }
     }

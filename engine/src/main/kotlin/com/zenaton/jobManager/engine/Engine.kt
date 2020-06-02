@@ -5,13 +5,17 @@ import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
 import com.zenaton.jobManager.messages.JobAttemptMessage
+import com.zenaton.jobManager.monitoring.perInstance.JobAttemptDispatched
+import com.zenaton.jobManager.monitoring.perInstance.JobCanceled
+import com.zenaton.jobManager.monitoring.perInstance.JobCompleted
+import com.zenaton.jobManager.monitoring.perInstance.JobDispatched
 import com.zenaton.jobManager.monitoring.perName.JobStatusUpdated
 import com.zenaton.jobManager.workers.RunJob
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class Engine {
-    lateinit var taskDispatcher: Dispatcher
+    lateinit var dispatch: Dispatcher
     lateinit var workflowDispatcher: WorkflowDispatcherInterface
     lateinit var storage: EngineStorage
     lateinit var logger: Logger
@@ -67,12 +71,8 @@ class Engine {
             is RetryJob -> retryTask(newState, msg)
             is RetryJobAttempt -> retryTaskAttempt(newState, msg)
             is JobAttemptCompleted -> taskAttemptCompleted(newState, msg)
-            is JobAttemptDispatched -> Unit
             is JobAttemptFailed -> taskAttemptFailed(newState, msg)
             is JobAttemptStarted -> Unit
-            is JobCanceled -> Unit
-            is JobCompleted -> Unit
-            is JobDispatched -> Unit
         }
 
         // Update stored state if needed and existing
@@ -89,7 +89,7 @@ class Engine {
                 newStatus = newState.jobStatus
             )
 
-            taskDispatcher.dispatch(tsc)
+            dispatch.toMonitoringPerName(tsc)
         }
     }
 
@@ -100,7 +100,7 @@ class Engine {
         val tad = JobCanceled(
             jobId = msg.jobId
         )
-        taskDispatcher.dispatch(tad)
+        dispatch.toMonitoringPerInstance(tad)
 
         // Delete stored state
         storage.deleteState(state.jobId)
@@ -117,20 +117,20 @@ class Engine {
             jobName = state.jobName,
             jobData = state.jobData
         )
-        taskDispatcher.dispatch(rt)
+        dispatch.toWorkers(rt)
 
         // log events
         val td = JobDispatched(
             jobId = state.jobId
         )
-        taskDispatcher.dispatch(td)
+        dispatch.toMonitoringPerInstance(td)
 
         val tad = JobAttemptDispatched(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
             jobAttemptIndex = state.jobAttemptIndex
         )
-        taskDispatcher.dispatch(tad)
+        dispatch.toMonitoringPerInstance(tad)
     }
 
     private fun retryTask(state: EngineState, msg: RetryJob) {
@@ -146,7 +146,7 @@ class Engine {
             jobName = state.jobName,
             jobData = state.jobData
         )
-        taskDispatcher.dispatch(rt)
+        dispatch.toWorkers(rt)
 
         // log event
         val tad = JobAttemptDispatched(
@@ -154,7 +154,7 @@ class Engine {
             jobAttemptId = state.jobAttemptId,
             jobAttemptIndex = state.jobAttemptIndex
         )
-        taskDispatcher.dispatch(tad)
+        dispatch.toMonitoringPerInstance(tad)
     }
 
     private fun retryTaskAttempt(state: EngineState, msg: EngineMessage) {
@@ -169,7 +169,7 @@ class Engine {
             jobName = state.jobName,
             jobData = state.jobData
         )
-        taskDispatcher.dispatch(rt)
+        dispatch.toWorkers(rt)
 
         // log event
         val tar = JobAttemptDispatched(
@@ -177,7 +177,7 @@ class Engine {
             jobAttemptId = state.jobAttemptId,
             jobAttemptIndex = state.jobAttemptIndex
         )
-        taskDispatcher.dispatch(tar)
+        dispatch.toMonitoringPerInstance(tar)
     }
 
     private fun taskAttemptCompleted(state: EngineState, msg: JobAttemptCompleted) {
@@ -198,7 +198,7 @@ class Engine {
             jobId = state.jobId,
             jobOutput = msg.jobOutput
         )
-        taskDispatcher.dispatch(tc)
+        dispatch.toMonitoringPerInstance(tc)
 
         // Delete stored state
         storage.deleteState(state.jobId)
@@ -225,7 +225,7 @@ class Engine {
                 jobAttemptId = state.jobAttemptId,
                 jobAttemptIndex = state.jobAttemptIndex
             )
-            taskDispatcher.dispatch(tar, after = delay)
+            dispatch.toEngine(tar, after = delay)
         }
     }
 }

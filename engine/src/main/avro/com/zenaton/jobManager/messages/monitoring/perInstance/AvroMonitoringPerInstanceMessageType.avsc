@@ -1,0 +1,18 @@
+{
+    "type": "enum",
+    "name": "AvroMonitoringPerInstanceMessageType",
+    "namespace": "com.zenaton.jobManager.messages.monitoring.perInstance",
+    "symbols": [
+        "JobAttemptDispatched",
+        "JobCanceled",
+        "JobCompleted",
+        "JobDispatched",
+                "CancelJob",
+                "DispatchJob",
+                "RetryJob",
+                "RetryJobAttempt",
+                "JobAttemptCompleted",
+                "JobAttemptFailed",
+                "JobAttemptStarted"
+    ]
+}

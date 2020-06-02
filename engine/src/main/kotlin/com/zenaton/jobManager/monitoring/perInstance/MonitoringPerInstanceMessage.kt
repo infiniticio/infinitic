@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.engine
+package com.zenaton.jobManager.monitoring.perInstance
 
 import com.zenaton.commons.data.DateTime
 import com.zenaton.jobManager.data.JobAttemptError
@@ -12,7 +12,7 @@ import com.zenaton.jobManager.messages.JobAttemptMessage
 import com.zenaton.jobManager.messages.JobMessage
 import com.zenaton.workflowengine.data.WorkflowId
 
-sealed class EngineMessage(
+sealed class MonitoringPerInstanceMessage(
     override val jobId: JobId,
     override val sentAt: DateTime
 ) : JobMessage
@@ -20,7 +20,7 @@ sealed class EngineMessage(
 data class CancelJob(
     override val jobId: JobId,
     override val sentAt: DateTime = DateTime()
-) : EngineMessage(jobId, sentAt)
+) : MonitoringPerInstanceMessage(jobId, sentAt)
 
 data class DispatchJob(
     override val jobId: JobId,
@@ -28,19 +28,19 @@ data class DispatchJob(
     val jobName: JobName,
     val jobData: JobData?,
     val workflowId: WorkflowId? = null
-) : EngineMessage(jobId, sentAt)
+) : MonitoringPerInstanceMessage(jobId, sentAt)
 
 data class RetryJob(
     override val jobId: JobId,
     override val sentAt: DateTime = DateTime()
-) : EngineMessage(jobId, sentAt)
+) : MonitoringPerInstanceMessage(jobId, sentAt)
 
 data class RetryJobAttempt(
     override val jobId: JobId,
     override val sentAt: DateTime = DateTime(),
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptIndex: Int
-) : EngineMessage(jobId, sentAt), JobAttemptMessage
+) : MonitoringPerInstanceMessage(jobId, sentAt), JobAttemptMessage
 
 data class JobAttemptCompleted(
     override val jobId: JobId,
@@ -48,7 +48,7 @@ data class JobAttemptCompleted(
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptIndex: Int,
     val jobOutput: JobOutput?
-) : EngineMessage(jobId, sentAt), JobAttemptMessage
+) : MonitoringPerInstanceMessage(jobId, sentAt), JobAttemptMessage
 
 
 data class JobAttemptFailed(
@@ -58,12 +58,34 @@ data class JobAttemptFailed(
     override val jobAttemptIndex: Int,
     override val jobAttemptDelayBeforeRetry: Float?,
     val jobAttemptError: JobAttemptError
-) : EngineMessage(jobId, sentAt), FailingJobAttemptMessage
+) : MonitoringPerInstanceMessage(jobId, sentAt), FailingJobAttemptMessage
 
 data class JobAttemptStarted(
     override val jobId: JobId,
     override val sentAt: DateTime = DateTime(),
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptIndex: Int
-) : EngineMessage(jobId, sentAt), JobAttemptMessage
+) : MonitoringPerInstanceMessage(jobId, sentAt), JobAttemptMessage
 
+data class JobAttemptDispatched(
+    override val jobId: JobId,
+    override val jobAttemptId: JobAttemptId,
+    override val jobAttemptIndex: Int,
+    override val sentAt: DateTime = DateTime()
+) : MonitoringPerInstanceMessage(jobId, sentAt), JobAttemptMessage
+
+data class JobCanceled(
+    override val jobId: JobId,
+    override val sentAt: DateTime = DateTime()
+) : MonitoringPerInstanceMessage(jobId, sentAt), JobMessage
+
+data class JobCompleted(
+    override val jobId: JobId,
+    override val sentAt: DateTime = DateTime(),
+    val jobOutput: JobOutput?
+) : MonitoringPerInstanceMessage(jobId, sentAt), JobMessage
+
+data class JobDispatched(
+    override val jobId: JobId,
+    override val sentAt: DateTime = DateTime()
+) : MonitoringPerInstanceMessage(jobId, sentAt), JobMessage

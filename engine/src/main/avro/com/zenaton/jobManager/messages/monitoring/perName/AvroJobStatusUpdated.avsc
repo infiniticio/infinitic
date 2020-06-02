@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroJobStatusUpdated",
-    "namespace": "com.zenaton.jobManager.metrics.messages",
+    "namespace": "com.zenaton.jobManager.messages.monitoring.perName",
     "fields": [
         {
             "name": "jobId",

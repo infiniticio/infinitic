@@ -1,8 +1,8 @@
 package com.zenaton.commons.utils.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.jobManager.engine.messages.AvroEngineMessage
-import com.zenaton.jobManager.metrics.messages.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.engine.AvroEngineMessage
+import com.zenaton.jobManager.messages.monitoring.perName.AvroMonitoringPerNameMessage
 import com.zenaton.jobManager.workers.AvroWorkerMessage
 import java.io.File
 import kotlin.reflect.KClass

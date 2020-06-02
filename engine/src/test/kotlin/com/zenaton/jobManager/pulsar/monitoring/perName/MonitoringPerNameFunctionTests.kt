@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.pulsar.monitoring.perName
 
-import com.zenaton.jobManager.metrics.messages.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.monitoring.perName.AvroMonitoringPerNameMessage
 import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameEngine
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import io.kotest.assertions.throwables.shouldThrow

@@ -14,7 +14,7 @@ import org.apache.pulsar.functions.api.Context
 class WorkflowEngineDispatcher(private val context: Context) : WorkflowEngineDispatcherInterface {
 
     override fun dispatch(msg: DispatchJob, after: Float) {
-        PulsarDispatcher(context).dispatch(msg, after)
+        PulsarDispatcher(context).toEngine(msg, after)
     }
 
     override fun dispatch(msg: WorkflowDispatched, after: Float) {

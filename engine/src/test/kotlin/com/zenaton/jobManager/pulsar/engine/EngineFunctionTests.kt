@@ -2,7 +2,7 @@ package com.zenaton.jobManager.pulsar.engine
 
 import com.zenaton.jobManager.engine.Engine
 import com.zenaton.jobManager.engine.EngineMessage
-import com.zenaton.jobManager.engine.messages.AvroEngineMessage
+import com.zenaton.jobManager.messages.engine.AvroEngineMessage
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarDispatcher
 import com.zenaton.jobManager.pulsar.logger.PulsarLogger
@@ -36,7 +36,7 @@ class EngineFunctionTests : StringSpec({
         // when
         fct.process(avroMsg, context)
         // then
-        (taskEngine.taskDispatcher as PulsarDispatcher).context shouldBe context
+        (taskEngine.dispatch as PulsarDispatcher).context shouldBe context
         (taskEngine.workflowDispatcher as WorkflowDispatcher).context shouldBe context
         (taskEngine.logger as PulsarLogger).context shouldBe context
         (taskEngine.storage as EnginePulsarStorage).context shouldBe context

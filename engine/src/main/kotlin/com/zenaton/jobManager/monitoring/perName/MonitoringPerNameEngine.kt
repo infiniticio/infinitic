@@ -28,7 +28,7 @@ class MonitoringPerNameEngine {
         if (oldState == null) {
             val tsc = JobCreated(jobName = message.jobName)
 
-            dispatcher.dispatch(tsc)
+            dispatcher.toMonitoringGlobal(tsc)
         }
     }
 

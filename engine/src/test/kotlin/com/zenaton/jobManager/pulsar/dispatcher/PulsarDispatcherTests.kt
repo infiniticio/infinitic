@@ -5,16 +5,18 @@ import com.zenaton.jobManager.engine.CancelJob
 import com.zenaton.jobManager.engine.DispatchJob
 import com.zenaton.jobManager.engine.EngineMessage
 import com.zenaton.jobManager.engine.JobAttemptCompleted
-import com.zenaton.jobManager.engine.JobAttemptDispatched
 import com.zenaton.jobManager.engine.JobAttemptFailed
 import com.zenaton.jobManager.engine.JobAttemptStarted
-import com.zenaton.jobManager.engine.JobCanceled
-import com.zenaton.jobManager.engine.JobCompleted
-import com.zenaton.jobManager.engine.JobDispatched
 import com.zenaton.jobManager.engine.RetryJob
 import com.zenaton.jobManager.engine.RetryJobAttempt
-import com.zenaton.jobManager.engine.messages.AvroEngineMessage
-import com.zenaton.jobManager.metrics.messages.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.engine.AvroEngineMessage
+import com.zenaton.jobManager.messages.monitoring.perInstance.AvroMonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.monitoring.perName.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.monitoring.perInstance.JobAttemptDispatched
+import com.zenaton.jobManager.monitoring.perInstance.JobCanceled
+import com.zenaton.jobManager.monitoring.perInstance.JobCompleted
+import com.zenaton.jobManager.monitoring.perInstance.JobDispatched
+import com.zenaton.jobManager.monitoring.perInstance.MonitoringPerInstanceMessage
 import com.zenaton.jobManager.monitoring.perName.JobStatusUpdated
 import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameMessage
 import com.zenaton.jobManager.pulsar.Topic
@@ -36,25 +38,26 @@ import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 
-class PulsarTaskDispatcherTests : StringSpec({
-    include(shouldSendTaskMetricMessageToMetricsTopic(JobStatusUpdated::class))
+class PulsarDispatcherTests : StringSpec({
+    include(shouldSendMessageToMonitoringPerNameTopic(JobStatusUpdated::class))
 
-    include(shouldSendTaskWorkerMessageToTaskAttemptsTopic(RunJob::class))
+    include(shouldSendMessageToMonitoringPerInstanceTopic(JobAttemptDispatched::class))
+    include(shouldSendMessageToMonitoringPerInstanceTopic(JobCanceled::class))
+    include(shouldSendMessageToMonitoringPerInstanceTopic(JobCompleted::class))
+    include(shouldSendMessageToMonitoringPerInstanceTopic(JobDispatched::class))
 
-    include(shouldSendTaskEngineMessageToTasksTopic(CancelJob::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(DispatchJob::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(RetryJob::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(RetryJobAttempt::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(JobAttemptCompleted::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(JobAttemptDispatched::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(JobAttemptFailed::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(JobAttemptStarted::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(JobCanceled::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(JobCompleted::class))
-    include(shouldSendTaskEngineMessageToTasksTopic(JobDispatched::class))
+    include(shouldSendMessageToWorkersTopic(RunJob::class))
+
+    include(shouldSendMessageToEngineTopic(CancelJob::class))
+    include(shouldSendMessageToEngineTopic(DispatchJob::class))
+    include(shouldSendMessageToEngineTopic(RetryJob::class))
+    include(shouldSendMessageToEngineTopic(RetryJobAttempt::class))
+    include(shouldSendMessageToEngineTopic(JobAttemptCompleted::class))
+    include(shouldSendMessageToEngineTopic(JobAttemptFailed::class))
+    include(shouldSendMessageToEngineTopic(JobAttemptStarted::class))
 })
 
-fun <T : EngineMessage> shouldSendTaskEngineMessageToTasksTopic(klass: KClass<T>) = stringSpec {
+fun <T : EngineMessage> shouldSendMessageToEngineTopic(klass: KClass<T>) = stringSpec {
     // mocking
     val context = mockk<Context>()
     val builder = mockk<TypedMessageBuilder<AvroEngineMessage>>()
@@ -67,7 +70,7 @@ fun <T : EngineMessage> shouldSendTaskEngineMessageToTasksTopic(klass: KClass<T>
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarDispatcher(context).dispatch(msg)
+    PulsarDispatcher(context).toEngine(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.ENGINE.get()
@@ -78,7 +81,7 @@ fun <T : EngineMessage> shouldSendTaskEngineMessageToTasksTopic(klass: KClass<T>
     confirmVerified(context)
     confirmVerified(builder)
 }
-fun <T : MonitoringPerNameMessage> shouldSendTaskMetricMessageToMetricsTopic(klass: KClass<T>) = stringSpec {
+fun <T : MonitoringPerNameMessage> shouldSendMessageToMonitoringPerNameTopic(klass: KClass<T>) = stringSpec {
     // mocking
     val context = mockk<Context>()
     val builder = mockk<TypedMessageBuilder<AvroMonitoringPerNameMessage>>()
@@ -91,7 +94,7 @@ fun <T : MonitoringPerNameMessage> shouldSendTaskMetricMessageToMetricsTopic(kla
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarDispatcher(context).dispatch(msg)
+    PulsarDispatcher(context).toMonitoringPerName(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.MONITORING_PER_NAME.get()
@@ -103,7 +106,32 @@ fun <T : MonitoringPerNameMessage> shouldSendTaskMetricMessageToMetricsTopic(kla
     confirmVerified(builder)
 }
 
-fun <T : WorkerMessage> shouldSendTaskWorkerMessageToTaskAttemptsTopic(klass: KClass<T>) = stringSpec {
+fun <T : MonitoringPerInstanceMessage> shouldSendMessageToMonitoringPerInstanceTopic(klass: KClass<T>) = stringSpec {
+    // mocking
+    val context = mockk<Context>()
+    val builder = mockk<TypedMessageBuilder<AvroMonitoringPerInstanceMessage>>()
+    val slotSchema = slot<AvroSchema<AvroMonitoringPerInstanceMessage>>()
+    val slotTopic = slot<String>()
+    every { context.newOutputMessage<AvroMonitoringPerInstanceMessage>(capture(slotTopic), capture(slotSchema)) } returns builder
+    every { builder.value(any()) } returns builder
+    every { builder.key(any()) } returns builder
+    every { builder.send() } returns mockk<MessageId>()
+    // given
+    val msg = TestFactory.get(klass)
+    // when
+    PulsarDispatcher(context).toMonitoringPerInstance(msg)
+    // then
+    verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
+    slotTopic.captured shouldBe Topic.MONITORING_PER_INSTANCE.get()
+    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroMonitoringPerInstanceMessage::class.java).avroSchema
+    verify(exactly = 1) { builder.value(AvroConverter.toAvro(msg)) }
+    verify(exactly = 1) { builder.key(msg.jobId.id) }
+    verify(exactly = 1) { builder.send() }
+    confirmVerified(context)
+    confirmVerified(builder)
+}
+
+fun <T : WorkerMessage> shouldSendMessageToWorkersTopic(klass: KClass<T>) = stringSpec {
     // mocking
     val context = mockk<Context>()
     val builder = mockk<TypedMessageBuilder<AvroWorkerMessage>>()
@@ -115,7 +143,7 @@ fun <T : WorkerMessage> shouldSendTaskWorkerMessageToTaskAttemptsTopic(klass: KC
     // given
     val msg = TestFactory.get(klass)
     // when
-    PulsarDispatcher(context).dispatch(msg)
+    PulsarDispatcher(context).toWorkers(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.WORKERS.get(msg.jobName.name)

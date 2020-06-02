@@ -1,14 +1,14 @@
 {
     "type": "record",
     "name": "AvroMonitoringPerNameMessage",
-    "namespace": "com.zenaton.jobManager.metrics.messages",
+    "namespace": "com.zenaton.jobManager.messages.monitoring.perName",
     "fields": [
         {
             "name": "type",
-            "type": "com.zenaton.jobManager.metrics.messages.AvroMonitoringPerNameMessageType"
+            "type": "com.zenaton.jobManager.messages.monitoring.perName.AvroMonitoringPerNameMessageType"
         }, {
             "name": "JobStatusUpdated",
-            "type": ["null", "com.zenaton.jobManager.metrics.messages.AvroJobStatusUpdated"],
+            "type": ["null", "com.zenaton.jobManager.messages.monitoring.perName.AvroJobStatusUpdated"],
             "default": null
         }
     ]

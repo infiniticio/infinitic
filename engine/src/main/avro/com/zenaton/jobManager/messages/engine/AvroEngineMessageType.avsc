@@ -1,18 +1,14 @@
 {
     "type": "enum",
     "name": "AvroEngineMessageType",
-    "namespace": "com.zenaton.jobManager.engine.messages",
+    "namespace": "com.zenaton.jobManager.messages.engine",
     "symbols": [
         "CancelJob",
         "DispatchJob",
         "RetryJob",
         "RetryJobAttempt",
         "JobAttemptCompleted",
-        "JobAttemptDispatched",
         "JobAttemptFailed",
-        "JobAttemptStarted",
-        "JobCanceled",
-        "JobCompleted",
-        "JobDispatched"
+        "JobAttemptStarted"
     ]
 }

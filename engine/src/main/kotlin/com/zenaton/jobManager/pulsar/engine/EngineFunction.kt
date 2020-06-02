@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.pulsar.engine
 
 import com.zenaton.jobManager.engine.Engine
-import com.zenaton.jobManager.engine.messages.AvroEngineMessage
+import com.zenaton.jobManager.messages.engine.AvroEngineMessage
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarDispatcher
 import com.zenaton.jobManager.pulsar.logger.PulsarLogger
@@ -23,7 +23,7 @@ class EngineFunction : Function<AvroEngineMessage, Void> {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         taskEngine.logger = PulsarLogger(ctx)
-        taskEngine.taskDispatcher = PulsarDispatcher(ctx)
+        taskEngine.dispatch = PulsarDispatcher(ctx)
         taskEngine.workflowDispatcher = WorkflowDispatcher(ctx)
         taskEngine.storage = EnginePulsarStorage(ctx)
 
