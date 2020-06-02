@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroRetryJob",
-    "namespace": "com.zenaton.jobManager.messages.engine",
+    "name": "AvroCancelJob",
+    "namespace": "com.zenaton.jobManager.messages",
     "fields": [
         {
             "name": "jobId",

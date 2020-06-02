@@ -9,9 +9,9 @@ import com.zenaton.jobManager.engine.JobAttemptFailed
 import com.zenaton.jobManager.engine.JobAttemptStarted
 import com.zenaton.jobManager.engine.RetryJob
 import com.zenaton.jobManager.engine.RetryJobAttempt
-import com.zenaton.jobManager.messages.engine.AvroEngineMessage
-import com.zenaton.jobManager.messages.monitoring.perInstance.AvroMonitoringPerInstanceMessage
-import com.zenaton.jobManager.messages.monitoring.perName.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.AvroEngineMessage
+import com.zenaton.jobManager.messages.AvroMonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessage
 import com.zenaton.jobManager.monitoring.perInstance.JobAttemptDispatched
 import com.zenaton.jobManager.monitoring.perInstance.JobCanceled
 import com.zenaton.jobManager.monitoring.perInstance.JobCompleted

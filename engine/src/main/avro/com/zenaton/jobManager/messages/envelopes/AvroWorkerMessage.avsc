@@ -5,7 +5,14 @@
     "fields": [
         {
             "name": "type",
-            "type": "com.zenaton.jobManager.workers.AvroWorkerMessageType"
+            "type": {
+                "type": "enum",
+                "name": "AvroWorkerMessageType",
+                "namespace": "com.zenaton.jobManager.workers",
+                "symbols": [
+                    "RunJob"
+                ]
+            }
         }, {
              "name": "RunJob",
              "type": ["null", "com.zenaton.jobManager.workers.AvroRunJob"],

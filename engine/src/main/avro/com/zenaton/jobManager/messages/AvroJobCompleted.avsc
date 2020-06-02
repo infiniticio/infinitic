@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroJobAttemptDispatched",
-    "namespace": "com.zenaton.jobManager.messages.monitoring.perInstance",
+    "name": "AvroJobCompleted",
+    "namespace": "com.zenaton.jobManager.messages",
     "fields": [
         {
             "name": "jobId",
@@ -9,13 +9,9 @@
             "logicalType": "uuid"
         },
         {
-          "name": "jobAttemptId",
-          "type": "string",
-          "logicalType": "uuid"
-        },
-        {
-          "name": "jobAttemptIndex",
-          "type": "int"
+            "name": "jobOutput",
+            "type": ["null", "bytes"],
+            "default": null
         },
         {
             "name": "sentAt",

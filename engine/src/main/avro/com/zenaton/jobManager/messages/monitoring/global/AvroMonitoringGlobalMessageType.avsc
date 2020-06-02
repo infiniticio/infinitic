@@ -1,8 +1,0 @@
-{
-    "type": "enum",
-    "name": "AvroMonitoringGlobalMessageType",
-    "namespace": "com.zenaton.jobManager.messages.monitoring.global",
-    "symbols": [
-        "JobCreated"
-    ]
-}

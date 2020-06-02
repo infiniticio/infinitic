@@ -1,8 +1,8 @@
 package com.zenaton.jobManager.pulsar.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.jobManager.messages.monitoring.global.AvroMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.monitoring.global.AvroMonitoringGlobalMessageType
+import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessageType
 import com.zenaton.jobManager.engine.CancelJob
 import com.zenaton.jobManager.engine.DispatchJob
 import com.zenaton.jobManager.engine.EngineMessage
@@ -12,23 +12,23 @@ import com.zenaton.jobManager.engine.JobAttemptFailed
 import com.zenaton.jobManager.engine.JobAttemptStarted
 import com.zenaton.jobManager.engine.RetryJob
 import com.zenaton.jobManager.engine.RetryJobAttempt
-import com.zenaton.jobManager.messages.engine.AvroCancelJob
-import com.zenaton.jobManager.messages.engine.AvroDispatchJob
-import com.zenaton.jobManager.messages.engine.AvroEngineMessage
-import com.zenaton.jobManager.messages.engine.AvroEngineMessageType
-import com.zenaton.jobManager.messages.engine.AvroJobAttemptCompleted
-import com.zenaton.jobManager.messages.engine.AvroJobAttemptFailed
-import com.zenaton.jobManager.messages.engine.AvroJobAttemptStarted
-import com.zenaton.jobManager.messages.engine.AvroRetryJob
-import com.zenaton.jobManager.messages.engine.AvroRetryJobAttempt
-import com.zenaton.jobManager.messages.monitoring.perInstance.AvroJobAttemptDispatched
-import com.zenaton.jobManager.messages.monitoring.perInstance.AvroJobCanceled
-import com.zenaton.jobManager.messages.monitoring.perInstance.AvroJobCompleted
-import com.zenaton.jobManager.messages.monitoring.perInstance.AvroJobDispatched
-import com.zenaton.jobManager.messages.monitoring.perInstance.AvroMonitoringPerInstanceMessage
-import com.zenaton.jobManager.messages.monitoring.perInstance.AvroMonitoringPerInstanceMessageType
-import com.zenaton.jobManager.messages.monitoring.perName.AvroMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.monitoring.perName.AvroMonitoringPerNameMessageType
+import com.zenaton.jobManager.messages.AvroCancelJob
+import com.zenaton.jobManager.messages.AvroDispatchJob
+import com.zenaton.jobManager.messages.AvroEngineMessage
+import com.zenaton.jobManager.messages.AvroEngineMessageType
+import com.zenaton.jobManager.messages.AvroJobAttemptCompleted
+import com.zenaton.jobManager.messages.AvroJobAttemptFailed
+import com.zenaton.jobManager.messages.AvroJobAttemptStarted
+import com.zenaton.jobManager.messages.AvroRetryJob
+import com.zenaton.jobManager.messages.AvroRetryJobAttempt
+import com.zenaton.jobManager.messages.AvroJobAttemptDispatched
+import com.zenaton.jobManager.messages.AvroJobCanceled
+import com.zenaton.jobManager.messages.AvroJobCompleted
+import com.zenaton.jobManager.messages.AvroJobDispatched
+import com.zenaton.jobManager.messages.AvroMonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.AvroMonitoringPerInstanceMessageType
+import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessageType
 import com.zenaton.jobManager.monitoring.global.JobCreated
 import com.zenaton.jobManager.monitoring.global.MonitoringGlobalMessage
 import com.zenaton.jobManager.monitoring.global.MonitoringGlobalState
@@ -174,7 +174,7 @@ object AvroConverter {
     }
 
 
-    fun toMonitoringPerInstanceAvro(msg: EngineMessage): AvroMonitoringPerInstanceMessage {
+    fun toAvroMonitoringPerInstanceMessage(msg: EngineMessage): AvroMonitoringPerInstanceMessage {
         val builder = AvroMonitoringPerInstanceMessage.newBuilder()
         builder.jobId = msg.jobId.id
         when (msg) {

@@ -10,6 +10,7 @@ import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.jobManager.messages.FailingJobAttemptMessage
 import com.zenaton.jobManager.messages.JobAttemptMessage
 import com.zenaton.jobManager.messages.JobMessage
+import com.zenaton.jobManager.monitoring.perInstance.MonitoringPerInstanceMessage
 import com.zenaton.workflowengine.data.WorkflowId
 
 sealed class EngineMessage(

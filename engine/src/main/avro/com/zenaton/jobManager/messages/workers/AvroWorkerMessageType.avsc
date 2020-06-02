@@ -1,8 +1,0 @@
-{
-    "type": "enum",
-    "name": "AvroWorkerMessageType",
-    "namespace": "com.zenaton.jobManager.workers",
-    "symbols": [
-        "RunJob"
-    ]
-}

@@ -1,8 +1,0 @@
-{
-    "type": "enum",
-    "name": "AvroMonitoringPerNameMessageType",
-    "namespace": "com.zenaton.jobManager.messages.monitoring.perName",
-    "symbols": [
-        "JobStatusUpdated"
-    ]
-}

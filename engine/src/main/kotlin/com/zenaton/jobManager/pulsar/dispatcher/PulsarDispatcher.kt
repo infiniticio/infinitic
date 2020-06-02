@@ -1,11 +1,11 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
-import com.zenaton.jobManager.messages.monitoring.global.AvroMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessage
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.engine.EngineMessage
-import com.zenaton.jobManager.messages.engine.AvroEngineMessage
-import com.zenaton.jobManager.messages.monitoring.perInstance.AvroMonitoringPerInstanceMessage
-import com.zenaton.jobManager.messages.monitoring.perName.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.AvroEngineMessage
+import com.zenaton.jobManager.messages.AvroMonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessage
 import com.zenaton.jobManager.monitoring.global.MonitoringGlobalMessage
 import com.zenaton.jobManager.monitoring.perInstance.MonitoringPerInstanceMessage
 import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameMessage
@@ -68,7 +68,7 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
         context
             .newOutputMessage(Topic.MONITORING_PER_INSTANCE.get(), AvroSchema.of(AvroMonitoringPerInstanceMessage::class.java))
             .key(msg.jobId.id)
-            .value(AvroConverter.toMonitoringPerInstanceAvro(msg))
+            .value(AvroConverter.toAvroMonitoringPerInstanceMessage(msg))
             .send()
     }
 
