@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.pulsar.monitoring.perName
 
-import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameEngine
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import io.kotest.assertions.throwables.shouldThrow
@@ -21,7 +21,7 @@ class MonitoringPerNameFunctionTests : ShouldSpec({
             val function = MonitoringPerNameFunction()
 
             shouldThrow<NullPointerException> {
-                function.process(mockk<AvroMonitoringPerNameMessage>(), null)
+                function.process(mockk<AvroForMonitoringPerNameMessage>(), null)
             }
         }
 
@@ -35,11 +35,11 @@ class MonitoringPerNameFunctionTests : ShouldSpec({
             every { taskMetrics.logger = any() } just Runs
             every { taskMetrics.dispatcher = any() } just Runs
             mockkObject(AvroConverter)
-            every { AvroConverter.fromAvro(ofType<AvroMonitoringPerNameMessage>()) } returns mockk()
+            every { AvroConverter.fromAvro(ofType<AvroForMonitoringPerNameMessage>()) } returns mockk()
 
             val function = MonitoringPerNameFunction()
             function.taskMetrics = taskMetrics
-            function.process(mockk<AvroMonitoringPerNameMessage>(), context)
+            function.process(mockk<AvroForMonitoringPerNameMessage>(), context)
 
             verifyAll {
                 taskMetrics.storage = ofType()

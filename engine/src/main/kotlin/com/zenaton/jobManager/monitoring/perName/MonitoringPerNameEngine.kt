@@ -5,14 +5,14 @@ import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobStatusUpdated
-import com.zenaton.jobManager.messages.interfaces.MonitoringPerNameMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
 
 class MonitoringPerNameEngine {
     lateinit var storage: MonitoringPerNameStorage
     lateinit var dispatcher: Dispatcher
     lateinit var logger: Logger
 
-    fun handle(message: MonitoringPerNameMessage) {
+    fun handle(message: ForMonitoringPerNameMessage) {
         // get associated state
         val oldState = storage.getState(message.jobName)
         val newState = oldState?.copy() ?: MonitoringPerNameState(message.jobName)

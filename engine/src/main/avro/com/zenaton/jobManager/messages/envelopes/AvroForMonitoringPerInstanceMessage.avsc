@@ -1,14 +1,18 @@
 {
     "type": "record",
-    "name": "AvroEngineMessage",
+    "name": "AvroForMonitoringPerInstanceMessage",
     "namespace": "com.zenaton.jobManager.messages",
     "fields": [
         {
             "name": "type",
             "type": {
                 "type": "enum",
-                "name": "AvroEngineMessageType",
+                "name": "AvroForMonitoringPerInstanceMessageType",
                 "symbols": [
+                    "JobAttemptDispatched",
+                    "JobCanceled",
+                    "JobCompleted",
+                    "JobDispatched",
                     "CancelJob",
                     "DispatchJob",
                     "RetryJob",
@@ -17,7 +21,7 @@
                     "JobAttemptFailed",
                     "JobAttemptStarted"
                 ]
-             }
+            }
         }, {
             "name": "jobId",
             "type": "string",
@@ -26,7 +30,7 @@
              "name": "CancelJob",
              "type": ["null", "com.zenaton.jobManager.messages.AvroCancelJob"],
              "default": null
-        }, {
+         }, {
             "name": "DispatchJob",
             "type": ["null", "com.zenaton.jobManager.messages.AvroDispatchJob"],
             "default": null
@@ -43,6 +47,10 @@
             "type": ["null", "com.zenaton.jobManager.messages.AvroJobAttemptCompleted"],
             "default": null
         }, {
+            "name": "JobAttemptDispatched",
+            "type": ["null", "com.zenaton.jobManager.messages.AvroJobAttemptDispatched"],
+            "default": null
+        }, {
             "name": "JobAttemptFailed",
             "type": ["null", "com.zenaton.jobManager.messages.AvroJobAttemptFailed"],
             "default": null
@@ -50,6 +58,18 @@
             "name": "JobAttemptStarted",
             "type": ["null", "com.zenaton.jobManager.messages.AvroJobAttemptStarted"],
             "default": null
-        }
+        }, {
+            "name": "JobCanceled",
+            "type": ["null", "com.zenaton.jobManager.messages.AvroJobCanceled"],
+            "default": null
+        }, {
+             "name": "JobCompleted",
+             "type": ["null", "com.zenaton.jobManager.messages.AvroJobCompleted"],
+             "default": null
+         }, {
+             "name": "JobDispatched",
+             "type": ["null", "com.zenaton.jobManager.messages.AvroJobDispatched"],
+             "default": null
+         }
     ]
 }

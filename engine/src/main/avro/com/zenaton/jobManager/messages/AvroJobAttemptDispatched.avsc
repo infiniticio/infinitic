@@ -14,8 +14,12 @@
           "logicalType": "uuid"
         },
         {
-          "name": "jobAttemptIndex",
-          "type": "int"
+            "name": "jobAttemptRetry",
+            "type": "int"
+        },
+        {
+            "name": "jobAttemptIndex",
+            "type": "int"
         },
         {
             "name": "sentAt",

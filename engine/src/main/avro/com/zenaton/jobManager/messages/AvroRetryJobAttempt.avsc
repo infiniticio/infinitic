@@ -19,6 +19,10 @@
             "logicalType": "uuid"
         },
         {
+            "name": "jobAttemptRetry",
+            "type": "int"
+        },
+        {
             "name": "jobAttemptIndex",
             "type": "int"
         }

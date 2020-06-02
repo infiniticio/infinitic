@@ -1,16 +1,16 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.messages.AvroEngineMessage
-import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.AvroMonitoringPerInstanceMessage
-import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.AvroWorkerMessage
-import com.zenaton.jobManager.messages.interfaces.EngineMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringGlobalMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringPerInstanceMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringPerNameMessage
-import com.zenaton.jobManager.messages.interfaces.WorkerMessage
+import com.zenaton.jobManager.messages.AvroForEngineMessage
+import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.AvroForMonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
 import com.zenaton.jobManager.pulsar.Topic
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import java.util.concurrent.TimeUnit
@@ -25,9 +25,9 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     /**
      *  Workers message
      */
-    override fun toWorkers(msg: WorkerMessage) {
+    override fun toWorkers(msg: ForWorkerMessage) {
         context
-            .newOutputMessage(Topic.WORKERS.get(msg.jobName.name), AvroSchema.of(AvroWorkerMessage::class.java))
+            .newOutputMessage(Topic.WORKERS.get(msg.jobName.name), AvroSchema.of(AvroForWorkerMessage::class.java))
             .value(AvroConverter.toAvro(msg))
             .send()
     }
@@ -35,9 +35,9 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     /**
      *  Admin message
      */
-    override fun toMonitoringGlobal(msg: MonitoringGlobalMessage) {
+    override fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
         context
-            .newOutputMessage(Topic.MONITORING_GLOBAL.get(), AvroSchema.of(AvroMonitoringGlobalMessage::class.java))
+            .newOutputMessage(Topic.MONITORING_GLOBAL.get(), AvroSchema.of(AvroForMonitoringGlobalMessage::class.java))
             .value(AvroConverter.toAvro(msg))
             .send()
     }
@@ -45,9 +45,9 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     /**
      *  Metrics message
      */
-    override fun toMonitoringPerName(msg: MonitoringPerNameMessage) {
+    override fun toMonitoringPerName(msg: ForMonitoringPerNameMessage) {
         context
-            .newOutputMessage(Topic.MONITORING_PER_NAME.get(), AvroSchema.of(AvroMonitoringPerNameMessage::class.java))
+            .newOutputMessage(Topic.MONITORING_PER_NAME.get(), AvroSchema.of(AvroForMonitoringPerNameMessage::class.java))
             .key(msg.jobName.name)
             .value(AvroConverter.toAvro(msg))
             .send()
@@ -56,9 +56,9 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     /**
      *  Metrics message
      */
-    override fun toMonitoringPerInstance(msg: MonitoringPerInstanceMessage) {
+    override fun toMonitoringPerInstance(msg: ForMonitoringPerInstanceMessage) {
         context
-            .newOutputMessage(Topic.MONITORING_PER_INSTANCE.get(), AvroSchema.of(AvroMonitoringPerInstanceMessage::class.java))
+            .newOutputMessage(Topic.MONITORING_PER_INSTANCE.get(), AvroSchema.of(AvroForMonitoringPerInstanceMessage::class.java))
             .key(msg.jobId.id)
             .value(AvroConverter.toAvro(msg))
             .send()
@@ -67,10 +67,10 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     /**
      *  Engine messages
      */
-    override fun toEngine(msg: EngineMessage, after: Float) {
+    override fun toEngine(msg: ForEngineMessage, after: Float) {
 
         val msgBuilder = context
-            .newOutputMessage(Topic.ENGINE.get(), AvroSchema.of(AvroEngineMessage::class.java))
+            .newOutputMessage(Topic.ENGINE.get(), AvroSchema.of(AvroForEngineMessage::class.java))
             .key(msg.jobId.id)
             .value(AvroConverter.toAvro(msg))
 

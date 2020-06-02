@@ -1,15 +1,15 @@
 package com.zenaton.jobManager.dispatcher
 
-import com.zenaton.jobManager.messages.interfaces.EngineMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringGlobalMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringPerInstanceMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringPerNameMessage
-import com.zenaton.jobManager.messages.interfaces.WorkerMessage
+import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
 
 interface Dispatcher {
-    fun toWorkers(msg: WorkerMessage)
-    fun toEngine(msg: EngineMessage, after: Float = 0f)
-    fun toMonitoringPerInstance(msg: MonitoringPerInstanceMessage)
-    fun toMonitoringGlobal(msg: MonitoringGlobalMessage)
-    fun toMonitoringPerName(msg: MonitoringPerNameMessage)
+    fun toWorkers(msg: ForWorkerMessage)
+    fun toEngine(msg: ForEngineMessage, after: Float = 0f)
+    fun toMonitoringPerInstance(msg: ForMonitoringPerInstanceMessage)
+    fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage)
+    fun toMonitoringPerName(msg: ForMonitoringPerNameMessage)
 }

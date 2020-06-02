@@ -1,8 +1,8 @@
 package com.zenaton.jobManager.pulsar.engine
 
 import com.zenaton.jobManager.engine.Engine
-import com.zenaton.jobManager.messages.AvroEngineMessage
-import com.zenaton.jobManager.messages.interfaces.EngineMessage
+import com.zenaton.jobManager.messages.AvroForEngineMessage
+import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarDispatcher
 import com.zenaton.jobManager.pulsar.logger.PulsarLogger
@@ -26,8 +26,8 @@ class EngineFunctionTests : StringSpec({
         val taskEngine = spyk(Engine())
         every { taskEngine.handle(any()) } just Runs
         val avroConverter = mockk<AvroConverter>()
-        val msg = mockk<EngineMessage>()
-        val avroMsg = mockk<AvroEngineMessage>()
+        val msg = mockk<ForEngineMessage>()
+        val avroMsg = mockk<AvroForEngineMessage>()
         every { avroConverter.fromAvro(avroMsg) } returns msg
         // given
         val fct = EngineFunction()
@@ -48,7 +48,7 @@ class EngineFunctionTests : StringSpec({
         val engine = EngineFunction()
         // then
         shouldThrowAny {
-            engine.process(mockk<AvroEngineMessage>(), null)
+            engine.process(mockk<AvroForEngineMessage>(), null)
         }
     }
 })

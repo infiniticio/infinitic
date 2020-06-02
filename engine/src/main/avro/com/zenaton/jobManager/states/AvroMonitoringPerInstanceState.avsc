@@ -8,7 +8,7 @@
             "type" : "string",
             "logicalType": "uuid"
         }, {
-            "name" : "jobAttemptIndex",
+            "name" : "jobAttemptRetry",
             "type" : "int"
         }, {
             "name" : "jobData",

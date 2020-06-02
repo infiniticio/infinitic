@@ -1,20 +1,20 @@
 {
     "type": "record",
-    "name": "AvroMonitoringPerNameMessage",
+    "name": "AvroForMonitoringGlobalMessage",
     "namespace": "com.zenaton.jobManager.messages",
     "fields": [
         {
             "name": "type",
             "type": {
                 "type": "enum",
-                "name": "AvroMonitoringPerNameMessageType",
+                "name": "AvroForMonitoringGlobalMessageType",
                 "symbols": [
-                    "JobStatusUpdated"
+                    "JobCreated"
                 ]
             }
         }, {
-            "name": "JobStatusUpdated",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroJobStatusUpdated"],
+            "name": "JobCreated",
+            "type": ["null", "com.zenaton.jobManager.messages.AvroJobCreated"],
             "default": null
         }
     ]

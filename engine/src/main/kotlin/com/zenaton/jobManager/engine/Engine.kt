@@ -17,7 +17,7 @@ import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
-import com.zenaton.jobManager.messages.interfaces.EngineMessage
+import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
@@ -28,7 +28,7 @@ class Engine {
     lateinit var storage: EngineStorage
     lateinit var logger: Logger
 
-    fun handle(message: EngineMessage) {
+    fun handle(message: ForEngineMessage) {
         // get associated state
         val oldState = storage.getState(message.jobId)
         var newState = oldState?.copy()
@@ -47,6 +47,7 @@ class Engine {
                 workflowId = message.workflowId,
                 jobAttemptId = JobAttemptId(),
                 jobAttemptIndex = 0,
+                jobAttemptRetry = 0,
                 jobStatus = JobStatus.RUNNING_OK
             )
         } else {
@@ -66,7 +67,7 @@ class Engine {
                     logger.warn("Inconsistent jobAttemptId in message: (Can happen if the job has been manually retried)%s and State:%s", message, newState)
                     return
                 }
-                if (newState.jobAttemptIndex != message.jobAttemptIndex) {
+                if (newState.jobAttemptRetry != message.jobAttemptRetry) {
                     logger.warn("Inconsistent jobAttemptIndex in message: (Can happen if this job has had timeout)%s and State:%s", message, newState)
                     return
                 }
@@ -122,7 +123,8 @@ class Engine {
         val rt = RunJob(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
-            jobAttemptIndex = state.jobAttemptIndex,
+            jobAttemptRetry = state.jobAttemptIndex,
+            jobAttemptIndex = state.jobAttemptRetry,
             jobName = state.jobName,
             jobData = state.jobData
         )
@@ -137,7 +139,8 @@ class Engine {
         val tad = JobAttemptDispatched(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
-            jobAttemptIndex = state.jobAttemptIndex
+            jobAttemptRetry = state.jobAttemptRetry,
+            jobAttemptIndex = state.jobAttemptRetry
         )
         dispatch.toMonitoringPerInstance(tad)
     }
@@ -145,12 +148,14 @@ class Engine {
     private fun retryTask(state: EngineState, msg: RetryJob) {
         state.jobStatus = JobStatus.RUNNING_WARNING
         state.jobAttemptId = JobAttemptId()
-        state.jobAttemptIndex = 0
+        state.jobAttemptRetry = 0
+        state.jobAttemptIndex++
 
         // send task to workers
         val rt = RunJob(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
+            jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
             jobData = state.jobData
@@ -161,19 +166,21 @@ class Engine {
         val tad = JobAttemptDispatched(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
+            jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex
         )
         dispatch.toMonitoringPerInstance(tad)
     }
 
-    private fun retryTaskAttempt(state: EngineState, msg: EngineMessage) {
+    private fun retryTaskAttempt(state: EngineState, msg: ForEngineMessage) {
         state.jobStatus = JobStatus.RUNNING_WARNING
-        state.jobAttemptIndex = state.jobAttemptIndex + 1
+        state.jobAttemptRetry++
 
         // send task to workers
         val rt = RunJob(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
+            jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
             jobData = state.jobData
@@ -184,7 +191,8 @@ class Engine {
         val tar = JobAttemptDispatched(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
-            jobAttemptIndex = state.jobAttemptIndex
+            jobAttemptIndex = state.jobAttemptIndex,
+            jobAttemptRetry = state.jobAttemptRetry
         )
         dispatch.toMonitoringPerInstance(tar)
     }
@@ -219,7 +227,7 @@ class Engine {
         delayRetryTaskAttempt(state = state, msg = msg, delay = msg.jobAttemptDelayBeforeRetry)
     }
 
-    private fun delayRetryTaskAttempt(state: EngineState, msg: EngineMessage, delay: Float?) {
+    private fun delayRetryTaskAttempt(state: EngineState, msg: ForEngineMessage, delay: Float?) {
         // no retry
         if (delay == null) return
         // immediate retry
@@ -232,6 +240,7 @@ class Engine {
             val tar = RetryJobAttempt(
                 jobId = state.jobId,
                 jobAttemptId = state.jobAttemptId,
+                jobAttemptRetry = state.jobAttemptRetry,
                 jobAttemptIndex = state.jobAttemptIndex
             )
             dispatch.toEngine(tar, after = delay)

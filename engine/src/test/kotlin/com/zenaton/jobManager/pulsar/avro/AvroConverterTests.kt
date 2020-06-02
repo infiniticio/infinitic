@@ -29,11 +29,11 @@ import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
-import com.zenaton.jobManager.messages.interfaces.EngineMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringGlobalMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringPerInstanceMessage
-import com.zenaton.jobManager.messages.interfaces.MonitoringPerNameMessage
-import com.zenaton.jobManager.messages.interfaces.WorkerMessage
+import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
 import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameState
 import com.zenaton.jobManager.workers.AvroRunJob
 import io.kotest.core.spec.style.StringSpec
@@ -88,7 +88,7 @@ class AvroConverterTests : StringSpec({
     }
 })
 
-inline fun <reified T : EngineMessage, P : SpecificRecordBase> engineMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+inline fun <reified T : ForEngineMessage, P : SpecificRecordBase> engineMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
     // given
     val msg = TestFactory.get(from)
     // when
@@ -100,7 +100,7 @@ inline fun <reified T : EngineMessage, P : SpecificRecordBase> engineMessageShou
     avroMsg shouldBe avroMsg2
 }
 
-inline fun <reified T : MonitoringGlobalMessage, P : SpecificRecordBase> monitoringGlobalMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+inline fun <reified T : ForMonitoringGlobalMessage, P : SpecificRecordBase> monitoringGlobalMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
     // given
     val msg = TestFactory.get(from)
     // when
@@ -112,7 +112,7 @@ inline fun <reified T : MonitoringGlobalMessage, P : SpecificRecordBase> monitor
     avroMsg shouldBe avroMsg2
 }
 
-inline fun <reified T : MonitoringPerNameMessage, P : SpecificRecordBase> monitoringPerNameMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+inline fun <reified T : ForMonitoringPerNameMessage, P : SpecificRecordBase> monitoringPerNameMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
     // given
     val msg = TestFactory.get(from)
     // when
@@ -124,7 +124,7 @@ inline fun <reified T : MonitoringPerNameMessage, P : SpecificRecordBase> monito
     avroMsg shouldBe avroMsg2
 }
 
-inline fun <reified T : MonitoringPerInstanceMessage, P : SpecificRecordBase> monitoringPerInstanceMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+inline fun <reified T : ForMonitoringPerInstanceMessage, P : SpecificRecordBase> monitoringPerInstanceMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
     // given
     val msg = TestFactory.get(from)
     // when
@@ -136,7 +136,7 @@ inline fun <reified T : MonitoringPerInstanceMessage, P : SpecificRecordBase> mo
     avroMsg shouldBe avroMsg2
 }
 
-inline fun <reified T : WorkerMessage, P : SpecificRecordBase> workerMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
+inline fun <reified T : ForWorkerMessage, P : SpecificRecordBase> workerMessageShouldBeAvroReversible(from: KClass<T>, to: KClass<P>) = stringSpec {
     // given
     val msg = TestFactory.get(from)
     // when

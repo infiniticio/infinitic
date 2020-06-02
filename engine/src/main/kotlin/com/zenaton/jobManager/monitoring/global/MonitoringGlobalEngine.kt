@@ -3,14 +3,14 @@ package com.zenaton.jobManager.monitoring.global
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
 import com.zenaton.jobManager.messages.JobCreated
-import com.zenaton.jobManager.messages.interfaces.MonitoringGlobalMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
 
 class MonitoringGlobalEngine {
     lateinit var storage: MonitoringGlobalStorage
     lateinit var dispatcher: Dispatcher
     lateinit var logger: Logger
 
-    fun handle(message: MonitoringGlobalMessage) {
+    fun handle(message: ForMonitoringGlobalMessage) {
         // get associated state
         val oldState = storage.getState()
         val newState = oldState?.copy() ?: MonitoringGlobalState()

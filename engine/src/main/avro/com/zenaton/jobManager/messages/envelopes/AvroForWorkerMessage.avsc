@@ -1,13 +1,13 @@
 {
     "type": "record",
-    "name": "AvroWorkerMessage",
+    "name": "AvroForWorkerMessage",
     "namespace": "com.zenaton.jobManager.messages",
     "fields": [
         {
             "name": "type",
             "type": {
                 "type": "enum",
-                "name": "AvroWorkerMessageType",
+                "name": "AvroForWorkerMessageType",
                 "namespace": "com.zenaton.jobManager.workers",
                 "symbols": [
                     "RunJob"
