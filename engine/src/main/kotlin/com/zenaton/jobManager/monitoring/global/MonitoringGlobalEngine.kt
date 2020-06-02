@@ -2,6 +2,8 @@ package com.zenaton.jobManager.monitoring.global
 
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
+import com.zenaton.jobManager.messages.JobCreated
+import com.zenaton.jobManager.messages.interfaces.MonitoringGlobalMessage
 
 class MonitoringGlobalEngine {
     lateinit var storage: MonitoringGlobalStorage
@@ -15,6 +17,7 @@ class MonitoringGlobalEngine {
 
         when (message) {
             is JobCreated -> handleTaskTypeCreated(message, newState)
+            else -> throw Exception("Unknown MonitoringGlobalMessage: $message")
         }
 
         // Update stored state if needed and existing

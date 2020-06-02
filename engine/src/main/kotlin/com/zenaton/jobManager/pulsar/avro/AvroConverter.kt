@@ -1,83 +1,86 @@
 package com.zenaton.jobManager.pulsar.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessageType
-import com.zenaton.jobManager.engine.CancelJob
-import com.zenaton.jobManager.engine.DispatchJob
-import com.zenaton.jobManager.engine.EngineMessage
 import com.zenaton.jobManager.engine.EngineState
-import com.zenaton.jobManager.engine.JobAttemptCompleted
-import com.zenaton.jobManager.engine.JobAttemptFailed
-import com.zenaton.jobManager.engine.JobAttemptStarted
-import com.zenaton.jobManager.engine.RetryJob
-import com.zenaton.jobManager.engine.RetryJobAttempt
 import com.zenaton.jobManager.messages.AvroCancelJob
 import com.zenaton.jobManager.messages.AvroDispatchJob
 import com.zenaton.jobManager.messages.AvroEngineMessage
 import com.zenaton.jobManager.messages.AvroEngineMessageType
 import com.zenaton.jobManager.messages.AvroJobAttemptCompleted
+import com.zenaton.jobManager.messages.AvroJobAttemptDispatched
 import com.zenaton.jobManager.messages.AvroJobAttemptFailed
 import com.zenaton.jobManager.messages.AvroJobAttemptStarted
-import com.zenaton.jobManager.messages.AvroRetryJob
-import com.zenaton.jobManager.messages.AvroRetryJobAttempt
-import com.zenaton.jobManager.messages.AvroJobAttemptDispatched
 import com.zenaton.jobManager.messages.AvroJobCanceled
 import com.zenaton.jobManager.messages.AvroJobCompleted
 import com.zenaton.jobManager.messages.AvroJobDispatched
+import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessageType
 import com.zenaton.jobManager.messages.AvroMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.AvroMonitoringPerInstanceMessageType
 import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessageType
-import com.zenaton.jobManager.monitoring.global.JobCreated
-import com.zenaton.jobManager.monitoring.global.MonitoringGlobalMessage
+import com.zenaton.jobManager.messages.AvroRetryJob
+import com.zenaton.jobManager.messages.AvroRetryJobAttempt
+import com.zenaton.jobManager.messages.AvroWorkerMessage
+import com.zenaton.jobManager.messages.CancelJob
+import com.zenaton.jobManager.messages.DispatchJob
+import com.zenaton.jobManager.messages.JobAttemptCompleted
+import com.zenaton.jobManager.messages.JobAttemptDispatched
+import com.zenaton.jobManager.messages.JobAttemptFailed
+import com.zenaton.jobManager.messages.JobAttemptStarted
+import com.zenaton.jobManager.messages.JobCanceled
+import com.zenaton.jobManager.messages.JobCompleted
+import com.zenaton.jobManager.messages.JobCreated
+import com.zenaton.jobManager.messages.JobDispatched
+import com.zenaton.jobManager.messages.JobStatusUpdated
+import com.zenaton.jobManager.messages.RetryJob
+import com.zenaton.jobManager.messages.RetryJobAttempt
+import com.zenaton.jobManager.messages.RunJob
+import com.zenaton.jobManager.messages.interfaces.EngineMessage
+import com.zenaton.jobManager.messages.interfaces.MonitoringGlobalMessage
+import com.zenaton.jobManager.messages.interfaces.MonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.interfaces.MonitoringPerNameMessage
+import com.zenaton.jobManager.messages.interfaces.WorkerMessage
 import com.zenaton.jobManager.monitoring.global.MonitoringGlobalState
-import com.zenaton.jobManager.monitoring.perInstance.CancelJob as MonitoringCancelJob
-import com.zenaton.jobManager.monitoring.perInstance.DispatchJob as MonitoringDispatchJob
-import com.zenaton.jobManager.monitoring.perInstance.JobAttemptCompleted as MonitoringJobAttemptCompleted
-import com.zenaton.jobManager.monitoring.perInstance.JobAttemptFailed as MonitoringJobAttemptFailed
-import com.zenaton.jobManager.monitoring.perInstance.JobAttemptStarted as MonitoringJobAttemptStarted
-import com.zenaton.jobManager.monitoring.perInstance.RetryJob as MonitoringRetryJob
-import com.zenaton.jobManager.monitoring.perInstance.RetryJobAttempt as MonitoringRetryJobAttempt
-import com.zenaton.jobManager.monitoring.perInstance.JobAttemptDispatched
-import com.zenaton.jobManager.monitoring.perInstance.JobCanceled
-import com.zenaton.jobManager.monitoring.perInstance.JobCompleted
-import com.zenaton.jobManager.monitoring.perInstance.JobDispatched
-import com.zenaton.jobManager.monitoring.perInstance.MonitoringPerInstanceMessage
 import com.zenaton.jobManager.monitoring.perInstance.MonitoringPerInstanceState
-import com.zenaton.jobManager.monitoring.perName.JobStatusUpdated
-import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameMessage
 import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameState
 import com.zenaton.jobManager.states.AvroEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerInstanceState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 import com.zenaton.jobManager.workers.AvroRunJob
-import com.zenaton.jobManager.workers.AvroWorkerMessage
 import com.zenaton.jobManager.workers.AvroWorkerMessageType
-import com.zenaton.jobManager.workers.RunJob
-import com.zenaton.jobManager.workers.WorkerMessage
 
 /**
  * This class does the mapping between avro-generated classes and classes actually used by our code
  */
 object AvroConverter {
     /**
-     *  Worker State
+     *  States
      */
-    fun toAvro(obj: EngineState) = convert<AvroEngineState>(obj)
-    fun fromAvro(obj: AvroEngineState) = convert<EngineState>(obj)
+    fun toAvro(state: EngineState) = convert<AvroEngineState>(state)
+    fun fromAvro(avroState: AvroEngineState) = convert<EngineState>(avroState)
+
+    fun toAvro(state: MonitoringGlobalState) = convert<AvroMonitoringGlobalState>(state)
+    fun fromAvro(avroState: AvroMonitoringGlobalState) = convert<MonitoringGlobalState>(avroState)
+
+    fun toAvro(state: MonitoringPerNameState) = convert<AvroMonitoringPerNameState>(state)
+    fun fromAvro(avroState: AvroMonitoringPerNameState) = convert<MonitoringPerNameState>(avroState)
+
+    fun toAvro(state: MonitoringPerInstanceState) = convert<AvroMonitoringPerInstanceState>(state)
+    fun fromAvro(avroState: AvroMonitoringPerInstanceState) = convert<MonitoringPerInstanceState>(avroState)
 
     /**
-     *  Worker messages
+     *  Messages
      */
-    fun toAvro(msg: WorkerMessage): AvroWorkerMessage {
+    fun toAvro(message: WorkerMessage): AvroWorkerMessage {
         val builder = AvroWorkerMessage.newBuilder()
-        when (msg) {
+        when (message) {
             is RunJob -> builder.apply {
-                runJob = convert<AvroRunJob>(msg)
+                runJob = convert<AvroRunJob>(message)
                 type = AvroWorkerMessageType.RunJob
             }
+            else -> throw Exception("Unknown WorkerMessage: $message")
         }
         return builder.build()
     }
@@ -85,25 +88,18 @@ object AvroConverter {
     fun fromAvro(input: AvroWorkerMessage): WorkerMessage {
         return when (val type = input.getType()) {
             AvroWorkerMessageType.RunJob -> convert<RunJob>(input.runJob)
+            else -> throw Exception("Unknown AvroWorkerMessage: $input")
         }
     }
 
-    /**
-     * Monitoring Global state
-     */
-    fun toAvro(obj: MonitoringGlobalState) = convert<AvroMonitoringGlobalState>(obj)
-    fun fromAvro(obj: AvroMonitoringGlobalState) = convert<MonitoringGlobalState>(obj)
-
-    /**
-     * Monitoring Global messages
-     */
-    fun toAvro(msg: MonitoringGlobalMessage): AvroMonitoringGlobalMessage {
+    fun toAvro(message: MonitoringGlobalMessage): AvroMonitoringGlobalMessage {
         val builder = AvroMonitoringGlobalMessage.newBuilder()
-        when (msg) {
+        when (message) {
             is JobCreated -> builder.apply {
-                jobCreated = convert(msg)
+                jobCreated = convert(message)
                 type = AvroMonitoringGlobalMessageType.JobCreated
             }
+            else -> throw Exception("Unknown MonitoringGlobalMessage: $message")
         }
         return builder.build()
     }
@@ -111,25 +107,18 @@ object AvroConverter {
     fun fromAvro(input: AvroMonitoringGlobalMessage): MonitoringGlobalMessage {
         return when (val type = input.getType()) {
             AvroMonitoringGlobalMessageType.JobCreated -> convert<JobCreated>(input.jobCreated)
+            else -> throw Exception("Unknown AvroMonitoringGlobalMessage: $input")
         }
     }
 
-    /**
-     * Monitoring Per Name state
-     */
-    fun toAvro(obj: MonitoringPerNameState) = convert<AvroMonitoringPerNameState>(obj)
-    fun fromAvro(obj: AvroMonitoringPerNameState) = convert<MonitoringPerNameState>(obj)
-
-    /**
-     * Monitoring Per Name messages
-     */
-    fun toAvro(msg: MonitoringPerNameMessage): AvroMonitoringPerNameMessage {
+    fun toAvro(message: MonitoringPerNameMessage): AvroMonitoringPerNameMessage {
         val builder = AvroMonitoringPerNameMessage.newBuilder()
-        when (msg) {
+        when (message) {
             is JobStatusUpdated -> builder.apply {
-                jobStatusUpdated = convert(msg)
+                jobStatusUpdated = convert(message)
                 type = AvroMonitoringPerNameMessageType.JobStatusUpdated
             }
+            else -> throw Exception("Unknown MonitoringPerNameMessage: $message")
         }
         return builder.build()
     }
@@ -137,75 +126,59 @@ object AvroConverter {
     fun fromAvro(input: AvroMonitoringPerNameMessage): MonitoringPerNameMessage {
         return when (val type = input.getType()) {
             AvroMonitoringPerNameMessageType.JobStatusUpdated -> convert<JobStatusUpdated>(input.jobStatusUpdated)
+            else -> throw Exception("Unknown AvroMonitoringPerNameMessage: $input")
         }
     }
 
-    /**
-     * Monitoring Per Instance state
-     */
-    fun toAvro(obj: MonitoringPerInstanceState) = convert<AvroMonitoringPerInstanceState>(obj)
-    fun fromAvro(obj: AvroMonitoringPerInstanceState) = convert<MonitoringPerInstanceState>(obj)
-
-    /**
-     * Monitoring Per Name messages
-     */
-    fun toAvro(msg: MonitoringPerInstanceMessage): AvroMonitoringPerInstanceMessage {
+    fun toAvro(message: MonitoringPerInstanceMessage): AvroMonitoringPerInstanceMessage {
         val builder = AvroMonitoringPerInstanceMessage.newBuilder()
-        builder.jobId = msg.jobId.id
-        when (msg) {
-            is JobAttemptDispatched -> builder.apply {
-                jobAttemptDispatched = convert<AvroJobAttemptDispatched>(msg)
-                type = AvroMonitoringPerInstanceMessageType.JobAttemptDispatched
-            }
-            is JobCanceled -> builder.apply {
-                jobCanceled = convert<AvroJobCanceled>(msg)
-                type = AvroMonitoringPerInstanceMessageType.JobCanceled
-            }
-            is JobCompleted -> builder.apply {
-                jobCompleted = convert<AvroJobCompleted>(msg)
-                type = AvroMonitoringPerInstanceMessageType.JobCompleted
-            }
-            is JobDispatched -> builder.apply {
-                jobDispatched = convert<AvroJobDispatched>(msg)
-                type = AvroMonitoringPerInstanceMessageType.JobDispatched
-            }
-        }
-        return builder.build()
-    }
-
-
-    fun toAvroMonitoringPerInstanceMessage(msg: EngineMessage): AvroMonitoringPerInstanceMessage {
-        val builder = AvroMonitoringPerInstanceMessage.newBuilder()
-        builder.jobId = msg.jobId.id
-        when (msg) {
+        builder.jobId = message.jobId.id
+        when (message) {
             is CancelJob -> builder.apply {
-                cancelJob = convert<AvroCancelJob>(msg)
+                cancelJob = convert<AvroCancelJob>(message)
                 type = AvroMonitoringPerInstanceMessageType.CancelJob
             }
             is DispatchJob -> builder.apply {
-                dispatchJob = convert<AvroDispatchJob>(msg)
+                dispatchJob = convert<AvroDispatchJob>(message)
                 type = AvroMonitoringPerInstanceMessageType.DispatchJob
             }
             is RetryJob -> builder.apply {
-                retryJob = convert<AvroRetryJob>(msg)
+                retryJob = convert<AvroRetryJob>(message)
                 type = AvroMonitoringPerInstanceMessageType.RetryJob
             }
             is RetryJobAttempt -> builder.apply {
-                retryJobAttempt = convert<AvroRetryJobAttempt>(msg)
+                retryJobAttempt = convert<AvroRetryJobAttempt>(message)
                 type = AvroMonitoringPerInstanceMessageType.RetryJobAttempt
             }
             is JobAttemptCompleted -> builder.apply {
-                jobAttemptCompleted = convert<AvroJobAttemptCompleted>(msg)
+                jobAttemptCompleted = convert<AvroJobAttemptCompleted>(message)
                 type = AvroMonitoringPerInstanceMessageType.JobAttemptCompleted
             }
             is JobAttemptFailed -> builder.apply {
-                jobAttemptFailed = convert<AvroJobAttemptFailed>(msg)
+                jobAttemptFailed = convert<AvroJobAttemptFailed>(message)
                 type = AvroMonitoringPerInstanceMessageType.JobAttemptFailed
             }
             is JobAttemptStarted -> builder.apply {
-                jobAttemptStarted = convert<AvroJobAttemptStarted>(msg)
+                jobAttemptStarted = convert<AvroJobAttemptStarted>(message)
                 type = AvroMonitoringPerInstanceMessageType.JobAttemptStarted
             }
+            is JobAttemptDispatched -> builder.apply {
+                jobAttemptDispatched = convert<AvroJobAttemptDispatched>(message)
+                type = AvroMonitoringPerInstanceMessageType.JobAttemptDispatched
+            }
+            is JobCanceled -> builder.apply {
+                jobCanceled = convert<AvroJobCanceled>(message)
+                type = AvroMonitoringPerInstanceMessageType.JobCanceled
+            }
+            is JobCompleted -> builder.apply {
+                jobCompleted = convert<AvroJobCompleted>(message)
+                type = AvroMonitoringPerInstanceMessageType.JobCompleted
+            }
+            is JobDispatched -> builder.apply {
+                jobDispatched = convert<AvroJobDispatched>(message)
+                type = AvroMonitoringPerInstanceMessageType.JobDispatched
+            }
+            else -> throw Exception("Unknown MonitoringPerInstanceMessage: $message")
         }
         return builder.build()
     }
@@ -216,51 +189,53 @@ object AvroConverter {
             AvroMonitoringPerInstanceMessageType.JobCanceled -> convert<JobCanceled>(input.jobCanceled)
             AvroMonitoringPerInstanceMessageType.JobCompleted -> convert<JobCompleted>(input.jobCompleted)
             AvroMonitoringPerInstanceMessageType.JobDispatched -> convert<JobDispatched>(input.jobDispatched)
-            AvroMonitoringPerInstanceMessageType.CancelJob -> convert<MonitoringCancelJob>(input.cancelJob)
-            AvroMonitoringPerInstanceMessageType.DispatchJob -> convert<MonitoringDispatchJob>(input.dispatchJob)
-            AvroMonitoringPerInstanceMessageType.RetryJob -> convert<MonitoringRetryJob>(input.retryJob)
-            AvroMonitoringPerInstanceMessageType.RetryJobAttempt -> convert<MonitoringRetryJobAttempt>(input.retryJobAttempt)
-            AvroMonitoringPerInstanceMessageType.JobAttemptCompleted -> convert<MonitoringJobAttemptCompleted>(input.jobAttemptCompleted)
-            AvroMonitoringPerInstanceMessageType.JobAttemptFailed -> convert<MonitoringJobAttemptFailed>(input.jobAttemptFailed)
-            AvroMonitoringPerInstanceMessageType.JobAttemptStarted -> convert<MonitoringJobAttemptStarted>(input.jobAttemptStarted)
+            AvroMonitoringPerInstanceMessageType.CancelJob -> convert<CancelJob>(input.cancelJob)
+            AvroMonitoringPerInstanceMessageType.DispatchJob -> convert<DispatchJob>(input.dispatchJob)
+            AvroMonitoringPerInstanceMessageType.RetryJob -> convert<RetryJob>(input.retryJob)
+            AvroMonitoringPerInstanceMessageType.RetryJobAttempt -> convert<RetryJobAttempt>(input.retryJobAttempt)
+            AvroMonitoringPerInstanceMessageType.JobAttemptCompleted -> convert<JobAttemptCompleted>(input.jobAttemptCompleted)
+            AvroMonitoringPerInstanceMessageType.JobAttemptFailed -> convert<JobAttemptFailed>(input.jobAttemptFailed)
+            AvroMonitoringPerInstanceMessageType.JobAttemptStarted -> convert<JobAttemptStarted>(input.jobAttemptStarted)
+            else -> throw Exception("Unknown AvroMonitoringPerInstanceMessage: $input")
         }
     }
 
     /**
      * Engine messages
      */
-    fun toAvro(msg: EngineMessage): AvroEngineMessage {
+    fun toAvro(message: EngineMessage): AvroEngineMessage {
         val builder = AvroEngineMessage.newBuilder()
-        builder.jobId = msg.jobId.id
-        when (msg) {
+        builder.jobId = message.jobId.id
+        when (message) {
             is CancelJob -> builder.apply {
-                cancelJob = convert<AvroCancelJob>(msg)
+                cancelJob = convert<AvroCancelJob>(message)
                 type = AvroEngineMessageType.CancelJob
             }
             is DispatchJob -> builder.apply {
-                dispatchJob = convert<AvroDispatchJob>(msg)
+                dispatchJob = convert<AvroDispatchJob>(message)
                 type = AvroEngineMessageType.DispatchJob
             }
             is RetryJob -> builder.apply {
-                retryJob = convert<AvroRetryJob>(msg)
+                retryJob = convert<AvroRetryJob>(message)
                 type = AvroEngineMessageType.RetryJob
             }
             is RetryJobAttempt -> builder.apply {
-                retryJobAttempt = convert<AvroRetryJobAttempt>(msg)
+                retryJobAttempt = convert<AvroRetryJobAttempt>(message)
                 type = AvroEngineMessageType.RetryJobAttempt
             }
             is JobAttemptCompleted -> builder.apply {
-                jobAttemptCompleted = convert<AvroJobAttemptCompleted>(msg)
+                jobAttemptCompleted = convert<AvroJobAttemptCompleted>(message)
                 type = AvroEngineMessageType.JobAttemptCompleted
             }
             is JobAttemptFailed -> builder.apply {
-                jobAttemptFailed = convert<AvroJobAttemptFailed>(msg)
+                jobAttemptFailed = convert<AvroJobAttemptFailed>(message)
                 type = AvroEngineMessageType.JobAttemptFailed
             }
             is JobAttemptStarted -> builder.apply {
-                jobAttemptStarted = convert<AvroJobAttemptStarted>(msg)
+                jobAttemptStarted = convert<AvroJobAttemptStarted>(message)
                 type = AvroEngineMessageType.JobAttemptStarted
             }
+            else -> throw Exception("Unknown AvroMonitoringPerInstanceMessage: $message")
         }
         return builder.build()
     }
@@ -274,6 +249,7 @@ object AvroConverter {
             AvroEngineMessageType.JobAttemptCompleted -> convert<JobAttemptCompleted>(input.jobAttemptCompleted)
             AvroEngineMessageType.JobAttemptFailed -> convert<JobAttemptFailed>(input.jobAttemptFailed)
             AvroEngineMessageType.JobAttemptStarted -> convert<JobAttemptStarted>(input.jobAttemptStarted)
+            else -> throw Exception("Unknown AvroEngineMessage: $input")
         }
     }
 

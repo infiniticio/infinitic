@@ -8,4 +8,4 @@ import com.zenaton.jobManager.messages.interfaces.MonitoringPerInstanceMessage
 data class RetryJob(
     override val jobId: JobId,
     override val sentAt: DateTime = DateTime()
-) : EngineMessage,  MonitoringPerInstanceMessage
+) : EngineMessage, MonitoringPerInstanceMessage

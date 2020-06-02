@@ -4,13 +4,21 @@ import com.zenaton.jobManager.data.JobAttemptId
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
+import com.zenaton.jobManager.messages.CancelJob
+import com.zenaton.jobManager.messages.DispatchJob
+import com.zenaton.jobManager.messages.JobAttemptCompleted
+import com.zenaton.jobManager.messages.JobAttemptDispatched
+import com.zenaton.jobManager.messages.JobAttemptFailed
+import com.zenaton.jobManager.messages.JobAttemptStarted
+import com.zenaton.jobManager.messages.JobCanceled
+import com.zenaton.jobManager.messages.JobCompleted
+import com.zenaton.jobManager.messages.JobDispatched
+import com.zenaton.jobManager.messages.JobStatusUpdated
+import com.zenaton.jobManager.messages.RetryJob
+import com.zenaton.jobManager.messages.RetryJobAttempt
+import com.zenaton.jobManager.messages.RunJob
+import com.zenaton.jobManager.messages.interfaces.EngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
-import com.zenaton.jobManager.monitoring.perInstance.JobAttemptDispatched
-import com.zenaton.jobManager.monitoring.perInstance.JobCanceled
-import com.zenaton.jobManager.monitoring.perInstance.JobCompleted
-import com.zenaton.jobManager.monitoring.perInstance.JobDispatched
-import com.zenaton.jobManager.monitoring.perName.JobStatusUpdated
-import com.zenaton.jobManager.workers.RunJob
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 
@@ -20,64 +28,65 @@ class Engine {
     lateinit var storage: EngineStorage
     lateinit var logger: Logger
 
-    fun handle(msg: EngineMessage) {
+    fun handle(message: EngineMessage) {
         // get associated state
-        val oldState = storage.getState(msg.jobId)
+        val oldState = storage.getState(message.jobId)
         var newState = oldState?.copy()
 
         if (newState == null) {
             // a null state should mean that this task is already terminated => all messages others than TaskDispatched are ignored
-            if (msg !is DispatchJob) {
-                logger.warn("No state found for message: (It's normal if this task is already terminated)%s", msg, null)
+            if (message !is DispatchJob) {
+                logger.warn("No state found for message: (It's normal if this task is already terminated)%s", message, null)
                 return
             }
             // init a state
             newState = EngineState(
-                jobId = msg.jobId,
-                jobName = msg.jobName,
-                jobData = msg.jobData,
-                workflowId = msg.workflowId,
+                jobId = message.jobId,
+                jobName = message.jobName,
+                jobData = message.jobData,
+                workflowId = message.workflowId,
                 jobAttemptId = JobAttemptId(),
                 jobAttemptIndex = 0,
                 jobStatus = JobStatus.RUNNING_OK
             )
         } else {
             // this should never happen
-            if (newState.jobId != msg.jobId) {
-                logger.error("Inconsistent taskId in message:%s and State:%s)", msg, newState)
+            if (newState.jobId != message.jobId) {
+                logger.error("Inconsistent taskId in message:%s and State:%s)", message, newState)
                 return
             }
             // a non-null state with TaskDispatched should mean that this message has been replicated
-            if (msg is DispatchJob) {
-                logger.error("Already existing state:%s for message:%s", msg, newState)
+            if (message is DispatchJob) {
+                logger.error("Already existing state:%s for message:%s", message, newState)
                 return
             }
             // check taskAttemptId and taskAttemptIndex consistency
-            if (msg is JobAttemptMessage && msg !is JobAttemptCompleted) {
-                if (newState.jobAttemptId != msg.jobAttemptId) {
-                    logger.warn("Inconsistent jobAttemptId in message: (Can happen if the job has been manually retried)%s and State:%s", msg, newState)
+            if (message is JobAttemptMessage && message !is JobAttemptCompleted) {
+                if (newState.jobAttemptId != message.jobAttemptId) {
+                    logger.warn("Inconsistent jobAttemptId in message: (Can happen if the job has been manually retried)%s and State:%s", message, newState)
                     return
                 }
-                if (newState.jobAttemptIndex != msg.jobAttemptIndex) {
-                    logger.warn("Inconsistent jobAttemptIndex in message: (Can happen if this job has had timeout)%s and State:%s", msg, newState)
+                if (newState.jobAttemptIndex != message.jobAttemptIndex) {
+                    logger.warn("Inconsistent jobAttemptIndex in message: (Can happen if this job has had timeout)%s and State:%s", message, newState)
                     return
                 }
             }
         }
 
-        when (msg) {
-            is CancelJob -> cancelTask(newState, msg)
-            is DispatchJob -> dispatchTask(newState, msg)
-            is RetryJob -> retryTask(newState, msg)
-            is RetryJobAttempt -> retryTaskAttempt(newState, msg)
-            is JobAttemptCompleted -> taskAttemptCompleted(newState, msg)
-            is JobAttemptFailed -> taskAttemptFailed(newState, msg)
+        when (message) {
+            is CancelJob -> cancelTask(newState, message)
+            is DispatchJob -> dispatchTask(newState, message)
+            is RetryJob -> retryTask(newState, message)
+            is RetryJobAttempt -> retryTaskAttempt(newState, message)
+            is JobAttemptCompleted -> taskAttemptCompleted(newState, message)
+            is JobAttemptFailed -> taskAttemptFailed(newState, message)
             is JobAttemptStarted -> Unit
+            else -> throw Exception("Unknown EngineMessage: $message")
         }
 
         // Update stored state if needed and existing
         if (newState != oldState && !newState.jobStatus.isTerminated) {
-            storage.updateState(msg.jobId, newState, oldState)
+            storage.updateState(message.jobId, newState, oldState)
         }
 
         // Send TaskStatusUpdated if needed

@@ -4,7 +4,8 @@ import com.zenaton.commons.utils.TestFactory
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
-import com.zenaton.jobManager.monitoring.global.JobCreated
+import com.zenaton.jobManager.messages.JobCreated
+import com.zenaton.jobManager.messages.JobStatusUpdated
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every

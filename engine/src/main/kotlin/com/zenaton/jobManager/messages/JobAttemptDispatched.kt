@@ -3,7 +3,6 @@ package com.zenaton.jobManager.messages
 import com.zenaton.commons.data.DateTime
 import com.zenaton.jobManager.data.JobAttemptId
 import com.zenaton.jobManager.data.JobId
-import com.zenaton.jobManager.messages.interfaces.EngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import com.zenaton.jobManager.messages.interfaces.MonitoringPerInstanceMessage
 

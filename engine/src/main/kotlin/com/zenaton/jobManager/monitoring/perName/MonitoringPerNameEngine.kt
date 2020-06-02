@@ -3,7 +3,9 @@ package com.zenaton.jobManager.monitoring.perName
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
-import com.zenaton.jobManager.monitoring.global.JobCreated
+import com.zenaton.jobManager.messages.JobCreated
+import com.zenaton.jobManager.messages.JobStatusUpdated
+import com.zenaton.jobManager.messages.interfaces.MonitoringPerNameMessage
 
 class MonitoringPerNameEngine {
     lateinit var storage: MonitoringPerNameStorage
@@ -17,6 +19,7 @@ class MonitoringPerNameEngine {
 
         when (message) {
             is JobStatusUpdated -> handleTaskStatusUpdated(message, newState)
+            else -> throw Exception("Unknown MonitoringPerNameMessage: $message")
         }
 
         // Update stored state if needed and existing
@@ -39,7 +42,7 @@ class MonitoringPerNameEngine {
             JobStatus.RUNNING_ERROR -> state.runningErrorCount--
             JobStatus.TERMINATED_COMPLETED -> state.terminatedCompletedCount--
             JobStatus.TERMINATED_CANCELED -> state.terminatedCanceledCount--
-            null -> Unit
+            else -> Unit
         }
 
         when (message.newStatus) {

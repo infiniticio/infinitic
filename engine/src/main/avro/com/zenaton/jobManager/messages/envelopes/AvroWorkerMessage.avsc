@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroWorkerMessage",
-    "namespace": "com.zenaton.jobManager.workers",
+    "namespace": "com.zenaton.jobManager.messages",
     "fields": [
         {
             "name": "type",

@@ -1,8 +1,8 @@
 package com.zenaton.jobManager.pulsar.engine
 
 import com.zenaton.jobManager.engine.Engine
-import com.zenaton.jobManager.engine.EngineMessage
 import com.zenaton.jobManager.messages.AvroEngineMessage
+import com.zenaton.jobManager.messages.interfaces.EngineMessage
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarDispatcher
 import com.zenaton.jobManager.pulsar.logger.PulsarLogger

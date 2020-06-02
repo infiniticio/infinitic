@@ -1,18 +1,18 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
-import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessage
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.engine.EngineMessage
 import com.zenaton.jobManager.messages.AvroEngineMessage
+import com.zenaton.jobManager.messages.AvroMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.AvroMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessage
-import com.zenaton.jobManager.monitoring.global.MonitoringGlobalMessage
-import com.zenaton.jobManager.monitoring.perInstance.MonitoringPerInstanceMessage
-import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameMessage
+import com.zenaton.jobManager.messages.AvroWorkerMessage
+import com.zenaton.jobManager.messages.interfaces.EngineMessage
+import com.zenaton.jobManager.messages.interfaces.MonitoringGlobalMessage
+import com.zenaton.jobManager.messages.interfaces.MonitoringPerInstanceMessage
+import com.zenaton.jobManager.messages.interfaces.MonitoringPerNameMessage
+import com.zenaton.jobManager.messages.interfaces.WorkerMessage
 import com.zenaton.jobManager.pulsar.Topic
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
-import com.zenaton.jobManager.workers.AvroWorkerMessage
-import com.zenaton.jobManager.workers.WorkerMessage
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
@@ -61,14 +61,6 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
             .newOutputMessage(Topic.MONITORING_PER_INSTANCE.get(), AvroSchema.of(AvroMonitoringPerInstanceMessage::class.java))
             .key(msg.jobId.id)
             .value(AvroConverter.toAvro(msg))
-            .send()
-    }
-
-    override fun toMonitoringPerInstance(msg: EngineMessage) {
-        context
-            .newOutputMessage(Topic.MONITORING_PER_INSTANCE.get(), AvroSchema.of(AvroMonitoringPerInstanceMessage::class.java))
-            .key(msg.jobId.id)
-            .value(AvroConverter.toAvroMonitoringPerInstanceMessage(msg))
             .send()
     }
 

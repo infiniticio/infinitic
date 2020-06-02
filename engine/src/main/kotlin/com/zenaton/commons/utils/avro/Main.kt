@@ -3,7 +3,7 @@ package com.zenaton.commons.utils.avro
 import com.zenaton.commons.utils.json.Json
 import com.zenaton.jobManager.messages.AvroEngineMessage
 import com.zenaton.jobManager.messages.AvroMonitoringPerNameMessage
-import com.zenaton.jobManager.workers.AvroWorkerMessage
+import com.zenaton.jobManager.messages.AvroWorkerMessage
 import java.io.File
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
