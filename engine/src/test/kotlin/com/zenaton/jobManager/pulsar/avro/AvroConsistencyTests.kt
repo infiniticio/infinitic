@@ -60,7 +60,9 @@ private inline fun <reified T> `Avro messages in AvroFor*Message should implemen
         schema.types[0].isNullable shouldBe true
         // get class name
         val klass = Class.forName("${schema.types[1].namespace}.${schema.types[1].name}").kotlin as KClass<SpecificRecordBase>
-        // check that it implements For*Message after conversion
-        (AvroConverter.convertFromAvro(TestFactory.get(klass)) is T) shouldBe true
+        // check that it implements Message and For*Message after conversion
+        val msg = AvroConverter.convertFromAvro(TestFactory.get(klass))
+        (msg is T) shouldBe true
+        (msg is Message) shouldBe true
     }
 }
