@@ -15,5 +15,6 @@ data class MonitoringPerInstanceState(
     val jobData: JobData?,
     var jobAttemptId: JobAttemptId,
     var jobAttemptIndex: Int,
+    var jobAttemptRetry: Int,
     val workflowId: WorkflowId? = null
 ) : StateInterface

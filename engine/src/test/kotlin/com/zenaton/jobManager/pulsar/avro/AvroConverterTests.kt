@@ -84,17 +84,17 @@ class AvroConverterTests : StringSpec({
         avroState2 shouldBe avroState
     }
 
-//    "MonitoringPerInstance state state should be avro-reversible" {
-//        // given
-//        val state = TestFactory.get(MonitoringPerInstanceState::class)
-//        // when
-//        val avroState = AvroConverter.toAvro(state)
-//        val state2 = AvroConverter.fromAvro(avroState)
-//        val avroState2 = AvroConverter.toAvro(state2)
-//        // then
-//        state2 shouldBe state
-//        avroState2 shouldBe avroState
-//    }
+    "MonitoringPerInstance state state should be avro-reversible" {
+        // given
+        val state = TestFactory.get(MonitoringPerInstanceState::class)
+        // when
+        val avroState = AvroConverter.toAvro(state)
+        val state2 = AvroConverter.fromAvro(avroState)
+        val avroState2 = AvroConverter.toAvro(state2)
+        // then
+        state2 shouldBe state
+        avroState2 shouldBe avroState
+    }
 
     "MonitoringGlobal state state should be avro-reversible" {
         // given

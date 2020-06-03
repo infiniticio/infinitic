@@ -37,6 +37,7 @@ import com.zenaton.jobManager.messages.JobCompleted
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobDispatched
 import com.zenaton.jobManager.messages.JobStatusUpdated
+import com.zenaton.jobManager.messages.Message
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
@@ -207,8 +208,7 @@ object AvroConverter {
      */
     fun toAvroForEngineMessage(message: ForEngineMessage): AvroForEngineMessage {
         val builder = AvroForEngineMessage.newBuilder()
-        builder.jobId =
-            message.jobId.id
+        builder.jobId = message.jobId.id
         when (message) {
             is CancelJob -> builder.apply {
                 cancelJob = convertToAvro(message)
@@ -291,7 +291,7 @@ object AvroConverter {
     private fun convertToAvro(message: RunJob) = convertJson<AvroRunJob>(message)
 
     /**
-     *  Undefined
+     *  Undefined type
      */
 
     fun convertFromAvro(avro: SpecificRecordBase): Any = when (avro) {
@@ -312,7 +312,7 @@ object AvroConverter {
         else -> throw Exception("Unknown SpecificRecordBase: $avro")
     }
 
-    fun convertToAvro(message: Any): SpecificRecordBase = when (message) {
+    fun convertToAvro(message: Message): SpecificRecordBase = when (message) {
         is CancelJob -> convertToAvro(message)
         is DispatchJob -> convertToAvro(message)
         is JobAttemptCompleted -> convertToAvro(message)
@@ -327,7 +327,6 @@ object AvroConverter {
         is RetryJob -> convertToAvro(message)
         is RetryJobAttempt -> convertToAvro(message)
         is RunJob -> convertToAvro(message)
-        else -> throw Exception("Unknown Message: $message")
     }
 
     /**
