@@ -22,7 +22,7 @@ class MonitoringPerNameFunction : Function<AvroForMonitoringPerNameMessage, Void
         taskMetrics.dispatcher = PulsarDispatcher(ctx)
 
         try {
-            taskMetrics.handle(avroConverter.fromAvro(input))
+            taskMetrics.handle(avroConverter.fromAvroForMonitoringPerNameMessage(input))
         } catch (e: Exception) {
             taskMetrics.logger.error("Error:%s for message:%s", e, input)
             throw e

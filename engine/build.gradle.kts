@@ -7,7 +7,7 @@ version = "1.0-SNAPSHOT"
 
 plugins {
     application
-    kotlin("jvm") version "1.3.70"
+    kotlin("jvm") version "1.3.72"
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
     id("com.commercehub.gradle.plugin.avro") version "0.19.1"
@@ -28,6 +28,7 @@ dependencies {
     implementation("org.apache.avro:avro:1.9.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
+
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")

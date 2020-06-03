@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
-import com.zenaton.commons.utils.TestFactory
 import com.zenaton.jobManager.messages.AvroForEngineMessage
+import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.AvroForMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.AvroForWorkerMessage
@@ -15,15 +15,19 @@ import com.zenaton.jobManager.messages.JobCanceled
 import com.zenaton.jobManager.messages.JobCompleted
 import com.zenaton.jobManager.messages.JobDispatched
 import com.zenaton.jobManager.messages.JobStatusUpdated
+import com.zenaton.jobManager.messages.Message
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
+import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
 import com.zenaton.jobManager.pulsar.Topic
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
+import com.zenaton.jobManager.utils.TestFactory
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -39,26 +43,33 @@ import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 
 class PulsarDispatcherTests : StringSpec({
-    include(shouldSendMessageToMonitoringPerNameTopic(JobStatusUpdated::class))
 
-    include(shouldSendMessageToMonitoringPerInstanceTopic(JobAttemptDispatched::class))
-    include(shouldSendMessageToMonitoringPerInstanceTopic(JobCanceled::class))
-    include(shouldSendMessageToMonitoringPerInstanceTopic(JobCompleted::class))
-    include(shouldSendMessageToMonitoringPerInstanceTopic(JobDispatched::class))
-
-    include(shouldSendMessageToWorkersTopic(RunJob::class))
-
-    include(shouldSendMessageToEngineTopic(CancelJob::class))
-    include(shouldSendMessageToEngineTopic(DispatchJob::class))
-    include(shouldSendMessageToEngineTopic(RetryJob::class))
-    include(shouldSendMessageToEngineTopic(RetryJobAttempt::class))
-    include(shouldSendMessageToEngineTopic(JobAttemptCompleted::class))
-    include(shouldSendMessageToEngineTopic(JobAttemptFailed::class))
-    include(shouldSendMessageToEngineTopic(JobAttemptStarted::class))
+    "it should be possible to dispatch messages" {
+        Message::class.sealedSubclasses.forEach {
+            shouldNotThrowAny {
+                val msg = TestFactory.get(it)
+                if (msg is ForWorkerMessage) {
+                    shouldSendMessageToWorkersTopic(msg)
+                }
+                if (msg is ForEngineMessage) {
+                    shouldSendMessageToEngineTopic(msg)
+                }
+                if (msg is ForMonitoringPerInstanceMessage) {
+                    shouldSendMessageToMonitoringPerInstanceTopic(msg)
+                }
+                if (msg is ForMonitoringPerNameMessage) {
+                    shouldSendMessageToMonitoringPerNameTopic(msg)
+                }
+                if (msg is ForMonitoringGlobalMessage) {
+                    shouldSendMessageToMonitoringGlobalTopic(msg)
+                }
+            }
+        }
+    }
 })
 
-fun <T : ForEngineMessage> shouldSendMessageToEngineTopic(klass: KClass<T>) = stringSpec {
-    // mocking
+fun shouldSendMessageToEngineTopic(msg: ForEngineMessage) = stringSpec {
+    // given
     val context = mockk<Context>()
     val builder = mockk<TypedMessageBuilder<AvroForEngineMessage>>()
     val slotSchema = slot<AvroSchema<AvroForEngineMessage>>()
@@ -67,22 +78,20 @@ fun <T : ForEngineMessage> shouldSendMessageToEngineTopic(klass: KClass<T>) = st
     every { builder.value(any()) } returns builder
     every { builder.key(any()) } returns builder
     every { builder.send() } returns mockk<MessageId>()
-    // given
-    val msg = TestFactory.get(klass)
     // when
     PulsarDispatcher(context).toEngine(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.ENGINE.get()
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForEngineMessage::class.java).avroSchema
-    verify(exactly = 1) { builder.value(AvroConverter.toAvro(msg)) }
+    verify(exactly = 1) { builder.value(AvroConverter.toAvroForEngineMessage(msg)) }
     verify(exactly = 1) { builder.key(msg.jobId.id) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)
     confirmVerified(builder)
 }
-fun <T : ForMonitoringPerNameMessage> shouldSendMessageToMonitoringPerNameTopic(klass: KClass<T>) = stringSpec {
-    // mocking
+fun shouldSendMessageToMonitoringPerNameTopic(msg: ForMonitoringPerNameMessage) = stringSpec {
+    // given
     val context = mockk<Context>()
     val builder = mockk<TypedMessageBuilder<AvroForMonitoringPerNameMessage>>()
     val slotSchema = slot<AvroSchema<AvroForMonitoringPerNameMessage>>()
@@ -91,23 +100,21 @@ fun <T : ForMonitoringPerNameMessage> shouldSendMessageToMonitoringPerNameTopic(
     every { builder.value(any()) } returns builder
     every { builder.key(any()) } returns builder
     every { builder.send() } returns mockk<MessageId>()
-    // given
-    val msg = TestFactory.get(klass)
     // when
     PulsarDispatcher(context).toMonitoringPerName(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.MONITORING_PER_NAME.get()
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringPerNameMessage::class.java).avroSchema
-    verify(exactly = 1) { builder.value(AvroConverter.toAvro(msg)) }
+    verify(exactly = 1) { builder.value(AvroConverter.toAvroForMonitoringPerNameMessage(msg)) }
     verify(exactly = 1) { builder.key(msg.jobName.name) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)
     confirmVerified(builder)
 }
 
-fun <T : ForMonitoringPerInstanceMessage> shouldSendMessageToMonitoringPerInstanceTopic(klass: KClass<T>) = stringSpec {
-    // mocking
+fun shouldSendMessageToMonitoringPerInstanceTopic(msg: ForMonitoringPerInstanceMessage) = stringSpec {
+    // given
     val context = mockk<Context>()
     val builder = mockk<TypedMessageBuilder<AvroForMonitoringPerInstanceMessage>>()
     val slotSchema = slot<AvroSchema<AvroForMonitoringPerInstanceMessage>>()
@@ -116,23 +123,43 @@ fun <T : ForMonitoringPerInstanceMessage> shouldSendMessageToMonitoringPerInstan
     every { builder.value(any()) } returns builder
     every { builder.key(any()) } returns builder
     every { builder.send() } returns mockk<MessageId>()
-    // given
-    val msg = TestFactory.get(klass)
     // when
     PulsarDispatcher(context).toMonitoringPerInstance(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.MONITORING_PER_INSTANCE.get()
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringPerInstanceMessage::class.java).avroSchema
-    verify(exactly = 1) { builder.value(AvroConverter.toAvro(msg)) }
+    verify(exactly = 1) { builder.value(AvroConverter.toAvroForMonitoringPerInstanceMessage(msg)) }
     verify(exactly = 1) { builder.key(msg.jobId.id) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)
     confirmVerified(builder)
 }
 
-fun <T : ForWorkerMessage> shouldSendMessageToWorkersTopic(klass: KClass<T>) = stringSpec {
-    // mocking
+fun shouldSendMessageToMonitoringGlobalTopic(msg: ForMonitoringGlobalMessage) = stringSpec {
+    // given
+    val context = mockk<Context>()
+    val builder = mockk<TypedMessageBuilder<AvroForMonitoringGlobalMessage>>()
+    val slotSchema = slot<AvroSchema<AvroForMonitoringGlobalMessage>>()
+    val slotTopic = slot<String>()
+    every { context.newOutputMessage<AvroForMonitoringGlobalMessage>(capture(slotTopic), capture(slotSchema)) } returns builder
+    every { builder.value(any()) } returns builder
+    every { builder.key(any()) } returns builder
+    every { builder.send() } returns mockk<MessageId>()
+    // when
+    PulsarDispatcher(context).toMonitoringGlobal(msg)
+    // then
+    verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
+    slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get()
+    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringGlobalMessage::class.java).avroSchema
+    verify(exactly = 1) { builder.value(AvroConverter.toAvroForMonitoringGlobalMessage(msg)) }
+    verify(exactly = 1) { builder.send() }
+    confirmVerified(context)
+    confirmVerified(builder)
+}
+
+fun shouldSendMessageToWorkersTopic(msg: ForWorkerMessage) = stringSpec {
+    // given
     val context = mockk<Context>()
     val builder = mockk<TypedMessageBuilder<AvroForWorkerMessage>>()
     val slotSchema = slot<AvroSchema<AvroForWorkerMessage>>()
@@ -140,15 +167,13 @@ fun <T : ForWorkerMessage> shouldSendMessageToWorkersTopic(klass: KClass<T>) = s
     every { context.newOutputMessage<AvroForWorkerMessage>(capture(slotTopic), capture(slotSchema)) } returns builder
     every { builder.value(any()) } returns builder
     every { builder.send() } returns mockk<MessageId>()
-    // given
-    val msg = TestFactory.get(klass)
     // when
     PulsarDispatcher(context).toWorkers(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.WORKERS.get(msg.jobName.name)
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForWorkerMessage::class.java).avroSchema
-    verify(exactly = 1) { builder.value(AvroConverter.toAvro(msg)) }
+    verify(exactly = 1) { builder.value(AvroConverter.toAvroForWorkerMessage(msg)) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)
     confirmVerified(builder)

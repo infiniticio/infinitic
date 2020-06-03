@@ -28,7 +28,7 @@ class EngineFunctionTests : StringSpec({
         val avroConverter = mockk<AvroConverter>()
         val msg = mockk<ForEngineMessage>()
         val avroMsg = mockk<AvroForEngineMessage>()
-        every { avroConverter.fromAvro(avroMsg) } returns msg
+        every { avroConverter.fromAvroForEngineMessage(avroMsg) } returns msg
         // given
         val fct = EngineFunction()
         fct.taskEngine = taskEngine

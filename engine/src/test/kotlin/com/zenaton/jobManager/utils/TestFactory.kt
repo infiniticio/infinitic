@@ -1,4 +1,4 @@
-package com.zenaton.commons.utils
+package com.zenaton.jobManager.utils
 
 import java.nio.ByteBuffer
 import kotlin.random.Random
@@ -12,7 +12,7 @@ object TestFactory {
     private var seed = 0L
 
     private fun seed(seed: Long): TestFactory {
-        this.seed = seed
+        TestFactory.seed = seed
         return this
     }
 

@@ -21,14 +21,14 @@ class EngineFunction : Function<AvroForEngineMessage, Void> {
 
     override fun process(input: AvroForEngineMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
-val id = input.jobAttemptFailed!!.jobId
+
         taskEngine.logger = PulsarLogger(ctx)
         taskEngine.dispatch = PulsarDispatcher(ctx)
         taskEngine.workflowDispatcher = WorkflowDispatcher(ctx)
         taskEngine.storage = EnginePulsarStorage(ctx)
 
         try {
-            taskEngine.handle(avroConverter.fromAvro(input))
+            taskEngine.handle(avroConverter.fromAvroForEngineMessage(input))
         } catch (e: Exception) {
             taskEngine.logger.error("Error:%s for message:%s", e, input)
             throw e

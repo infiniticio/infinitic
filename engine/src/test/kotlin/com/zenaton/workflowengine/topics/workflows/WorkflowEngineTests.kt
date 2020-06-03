@@ -2,10 +2,10 @@ package com.zenaton.workflowengine.topics.workflows
 
 import com.zenaton.commons.pulsar.utils.Logger
 import com.zenaton.commons.pulsar.utils.StateStorage
-import com.zenaton.commons.utils.TestFactory
 import com.zenaton.decisionmanager.data.DecisionId
 import com.zenaton.decisionmanager.data.DecisionName
 import com.zenaton.decisionmanager.messages.DecisionDispatched
+import com.zenaton.jobManager.utils.TestFactory
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.functions.WorkflowEngineDispatcher
 import com.zenaton.workflowengine.topics.workflows.engine.WorkflowEngine

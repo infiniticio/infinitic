@@ -35,7 +35,7 @@ class MonitoringPerNameFunctionTests : ShouldSpec({
             every { taskMetrics.logger = any() } just Runs
             every { taskMetrics.dispatcher = any() } just Runs
             mockkObject(AvroConverter)
-            every { AvroConverter.fromAvro(ofType<AvroForMonitoringPerNameMessage>()) } returns mockk()
+            every { AvroConverter.fromAvroForMonitoringPerNameMessage(ofType<AvroForMonitoringPerNameMessage>()) } returns mockk()
 
             val function = MonitoringPerNameFunction()
             function.taskMetrics = taskMetrics

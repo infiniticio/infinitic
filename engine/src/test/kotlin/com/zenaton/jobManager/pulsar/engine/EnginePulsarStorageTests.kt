@@ -1,10 +1,10 @@
 package com.zenaton.jobManager.pulsar.engine
 
-import com.zenaton.commons.utils.TestFactory
 import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.engine.EngineState
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
+import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified

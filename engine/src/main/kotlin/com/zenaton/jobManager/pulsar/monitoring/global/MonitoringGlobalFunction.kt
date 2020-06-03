@@ -22,7 +22,7 @@ class MonitoringGlobalFunction : Function<AvroForMonitoringGlobalMessage, Void> 
         taskAdmin.dispatcher = PulsarDispatcher(ctx)
 
         try {
-            taskAdmin.handle(avroConverter.fromAvro(input))
+            taskAdmin.handle(avroConverter.fromAvroForMonitoringGlobalMessage(input))
         } catch (e: Exception) {
             taskAdmin.logger.error("Error:%s for message:%s", e, input)
             throw e

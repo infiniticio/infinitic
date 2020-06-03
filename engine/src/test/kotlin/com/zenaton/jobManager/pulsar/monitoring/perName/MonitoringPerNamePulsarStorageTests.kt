@@ -1,11 +1,11 @@
 package com.zenaton.jobManager.pulsar.monitoring.perName
 
-import com.zenaton.commons.utils.TestFactory
 import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameState
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
+import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified

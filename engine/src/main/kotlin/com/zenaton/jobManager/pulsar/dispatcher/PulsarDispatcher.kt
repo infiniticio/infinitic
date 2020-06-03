@@ -28,7 +28,7 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     override fun toWorkers(msg: ForWorkerMessage) {
         context
             .newOutputMessage(Topic.WORKERS.get(msg.jobName.name), AvroSchema.of(AvroForWorkerMessage::class.java))
-            .value(AvroConverter.toAvro(msg))
+            .value(AvroConverter.toAvroForWorkerMessage(msg))
             .send()
     }
 
@@ -38,7 +38,7 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
     override fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
         context
             .newOutputMessage(Topic.MONITORING_GLOBAL.get(), AvroSchema.of(AvroForMonitoringGlobalMessage::class.java))
-            .value(AvroConverter.toAvro(msg))
+            .value(AvroConverter.toAvroForMonitoringGlobalMessage(msg))
             .send()
     }
 
@@ -49,7 +49,7 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
         context
             .newOutputMessage(Topic.MONITORING_PER_NAME.get(), AvroSchema.of(AvroForMonitoringPerNameMessage::class.java))
             .key(msg.jobName.name)
-            .value(AvroConverter.toAvro(msg))
+            .value(AvroConverter.toAvroForMonitoringPerNameMessage(msg))
             .send()
     }
 
@@ -60,7 +60,7 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
         context
             .newOutputMessage(Topic.MONITORING_PER_INSTANCE.get(), AvroSchema.of(AvroForMonitoringPerInstanceMessage::class.java))
             .key(msg.jobId.id)
-            .value(AvroConverter.toAvro(msg))
+            .value(AvroConverter.toAvroForMonitoringPerInstanceMessage(msg))
             .send()
     }
 
@@ -72,7 +72,7 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
         val msgBuilder = context
             .newOutputMessage(Topic.ENGINE.get(), AvroSchema.of(AvroForEngineMessage::class.java))
             .key(msg.jobId.id)
-            .value(AvroConverter.toAvro(msg))
+            .value(AvroConverter.toAvroForEngineMessage(msg))
 
         if (after > 0F) {
             msgBuilder.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)

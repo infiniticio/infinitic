@@ -8,14 +8,13 @@
             "type": {
                 "type": "enum",
                 "name": "AvroForWorkerMessageType",
-                "namespace": "com.zenaton.jobManager.workers",
                 "symbols": [
                     "RunJob"
                 ]
             }
         }, {
              "name": "RunJob",
-             "type": ["null", "com.zenaton.jobManager.workers.AvroRunJob"],
+             "type": ["null", "com.zenaton.jobManager.messages.AvroRunJob"],
              "default": null
         }
     ]
