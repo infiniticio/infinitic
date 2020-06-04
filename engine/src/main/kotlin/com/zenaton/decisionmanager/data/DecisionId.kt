@@ -7,5 +7,5 @@ import java.util.UUID
 
 data class DecisionId
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    constructor(@get:JsonValue override val id: String = UUID.randomUUID().toString()) :
+    constructor(@get:JsonValue override var id: String = UUID.randomUUID().toString()) :
     IdInterface

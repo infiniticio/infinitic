@@ -3,12 +3,10 @@ package com.zenaton.jobManager.pulsar.dispatcher
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.messages.AvroForEngineMessage
 import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.AvroForWorkerMessage
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
 import com.zenaton.jobManager.pulsar.Topic
@@ -50,17 +48,6 @@ class PulsarDispatcher(val context: Context) : Dispatcher {
             .newOutputMessage(Topic.MONITORING_PER_NAME.get(), AvroSchema.of(AvroForMonitoringPerNameMessage::class.java))
             .key(msg.jobName.name)
             .value(AvroConverter.toAvroForMonitoringPerNameMessage(msg))
-            .send()
-    }
-
-    /**
-     *  Metrics message
-     */
-    override fun toMonitoringPerInstance(msg: ForMonitoringPerInstanceMessage) {
-        context
-            .newOutputMessage(Topic.MONITORING_PER_INSTANCE.get(), AvroSchema.of(AvroForMonitoringPerInstanceMessage::class.java))
-            .key(msg.jobId.id)
-            .value(AvroConverter.toAvroForMonitoringPerInstanceMessage(msg))
             .send()
     }
 

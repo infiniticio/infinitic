@@ -1,5 +1,6 @@
 package com.zenaton.jobManager.monitoring.perName
 
+import com.zenaton.commons.data.interfaces.deepCopy
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
@@ -15,7 +16,7 @@ class MonitoringPerNameEngine {
     fun handle(message: ForMonitoringPerNameMessage) {
         // get associated state
         val oldState = storage.getState(message.jobName)
-        val newState = oldState?.copy() ?: MonitoringPerNameState(message.jobName)
+        val newState = oldState?.deepCopy() ?: MonitoringPerNameState(message.jobName)
 
         when (message) {
             is JobStatusUpdated -> handleTaskStatusUpdated(message, newState)

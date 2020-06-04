@@ -2,13 +2,11 @@ package com.zenaton.jobManager.pulsar.dispatcher
 
 import com.zenaton.jobManager.messages.AvroForEngineMessage
 import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.AvroForWorkerMessage
 import com.zenaton.jobManager.messages.Message
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
 import com.zenaton.jobManager.pulsar.Topic
@@ -39,9 +37,6 @@ class PulsarDispatcherTests : StringSpec({
                 }
                 if (msg is ForEngineMessage) {
                     shouldSendMessageToEngineTopic(msg)
-                }
-                if (msg is ForMonitoringPerInstanceMessage) {
-                    shouldSendMessageToMonitoringPerInstanceTopic(msg)
                 }
                 if (msg is ForMonitoringPerNameMessage) {
                     shouldSendMessageToMonitoringPerNameTopic(msg)
@@ -94,29 +89,6 @@ fun shouldSendMessageToMonitoringPerNameTopic(msg: ForMonitoringPerNameMessage) 
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringPerNameMessage::class.java).avroSchema
     verify(exactly = 1) { builder.value(AvroConverter.toAvroForMonitoringPerNameMessage(msg)) }
     verify(exactly = 1) { builder.key(msg.jobName.name) }
-    verify(exactly = 1) { builder.send() }
-    confirmVerified(context)
-    confirmVerified(builder)
-}
-
-fun shouldSendMessageToMonitoringPerInstanceTopic(msg: ForMonitoringPerInstanceMessage) = stringSpec {
-    // given
-    val context = mockk<Context>()
-    val builder = mockk<TypedMessageBuilder<AvroForMonitoringPerInstanceMessage>>()
-    val slotSchema = slot<AvroSchema<AvroForMonitoringPerInstanceMessage>>()
-    val slotTopic = slot<String>()
-    every { context.newOutputMessage<AvroForMonitoringPerInstanceMessage>(capture(slotTopic), capture(slotSchema)) } returns builder
-    every { builder.value(any()) } returns builder
-    every { builder.key(any()) } returns builder
-    every { builder.send() } returns mockk<MessageId>()
-    // when
-    PulsarDispatcher(context).toMonitoringPerInstance(msg)
-    // then
-    verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-    slotTopic.captured shouldBe Topic.MONITORING_PER_INSTANCE.get()
-    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringPerInstanceMessage::class.java).avroSchema
-    verify(exactly = 1) { builder.value(AvroConverter.toAvroForMonitoringPerInstanceMessage(msg)) }
-    verify(exactly = 1) { builder.key(msg.jobId.id) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)
     confirmVerified(builder)

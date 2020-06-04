@@ -90,10 +90,6 @@ tasks.register("set schemas") {
             topic = "engine"
         )
         uploadSchemaToTopic(
-            name = "AvroForMonitoringPerInstanceMessage",
-            topic = "monitoring-per-instance"
-        )
-        uploadSchemaToTopic(
             name = "AvroForMonitoringPerNameMessage",
             topic = "monitoring-per-name"
         )

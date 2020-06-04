@@ -3,7 +3,6 @@ package com.zenaton.commons.utils.avro
 import com.zenaton.commons.utils.json.Json
 import com.zenaton.jobManager.messages.AvroForEngineMessage
 import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringPerInstanceMessage
 import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.AvroForWorkerMessage
 import java.io.File
@@ -27,7 +26,6 @@ fun main() {
     listOf(
         AvroForEngineMessage::class,
         AvroForWorkerMessage::class,
-        AvroForMonitoringPerInstanceMessage::class,
         AvroForMonitoringPerNameMessage::class,
         AvroForMonitoringGlobalMessage::class
     ).map { klass ->

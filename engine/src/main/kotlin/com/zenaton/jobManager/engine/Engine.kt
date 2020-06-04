@@ -1,6 +1,8 @@
 package com.zenaton.jobManager.engine
 
+import com.zenaton.commons.data.interfaces.deepCopy
 import com.zenaton.jobManager.data.JobAttemptId
+import com.zenaton.jobManager.data.JobAttemptRetry
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.logger.Logger
@@ -12,7 +14,6 @@ import com.zenaton.jobManager.messages.JobAttemptFailed
 import com.zenaton.jobManager.messages.JobAttemptStarted
 import com.zenaton.jobManager.messages.JobCanceled
 import com.zenaton.jobManager.messages.JobCompleted
-import com.zenaton.jobManager.messages.JobDispatched
 import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
@@ -20,7 +21,7 @@ import com.zenaton.jobManager.messages.RunJob
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
-import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
+import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as JobCompletedInWorkflow
 
 class Engine {
     lateinit var dispatch: Dispatcher
@@ -31,10 +32,10 @@ class Engine {
     fun handle(message: ForEngineMessage) {
         // get associated state
         val oldState = storage.getState(message.jobId)
-        var newState = oldState?.copy()
+        var newState: EngineState? = oldState?.deepCopy()
 
         if (newState == null) {
-            // a null state should mean that this task is already terminated => all messages others than TaskDispatched are ignored
+            // a null state should mean that this task is already terminated => all messages others than JobDispatched are ignored
             if (message !is DispatchJob) {
                 logger.warn("No state found for message: (It's normal if this task is already terminated)%s", message, null)
                 return
@@ -46,8 +47,6 @@ class Engine {
                 jobData = message.jobData,
                 workflowId = message.workflowId,
                 jobAttemptId = JobAttemptId(),
-                jobAttemptIndex = 0,
-                jobAttemptRetry = 0,
                 jobStatus = JobStatus.RUNNING_OK
             )
         } else {
@@ -56,7 +55,7 @@ class Engine {
                 logger.error("Inconsistent taskId in message:%s and State:%s)", message, newState)
                 return
             }
-            // a non-null state with TaskDispatched should mean that this message has been replicated
+            // a non-null state with JobDispatched should mean that this message has been replicated
             if (message is DispatchJob) {
                 logger.error("Already existing state:%s for message:%s", message, newState)
                 return
@@ -75,13 +74,16 @@ class Engine {
         }
 
         when (message) {
-            is CancelJob -> cancelTask(newState, message)
-            is DispatchJob -> dispatchTask(newState, message)
-            is RetryJob -> retryTask(newState, message)
-            is RetryJobAttempt -> retryTaskAttempt(newState, message)
-            is JobAttemptCompleted -> taskAttemptCompleted(newState, message)
-            is JobAttemptFailed -> taskAttemptFailed(newState, message)
+            is CancelJob -> cancelJob(newState, message)
+            is DispatchJob -> dispatchJob(newState)
+            is RetryJob -> retryJob(newState)
+            is RetryJobAttempt -> retryJobAttempt(newState)
+            is JobAttemptDispatched -> Unit
             is JobAttemptStarted -> Unit
+            is JobAttemptFailed -> taskAttemptFailed(newState, message)
+            is JobAttemptCompleted -> taskAttemptCompleted(newState, message)
+            is JobCompleted -> Unit
+            is JobCanceled -> Unit
             else -> throw Exception("Unknown EngineMessage: $message")
         }
 
@@ -90,7 +92,7 @@ class Engine {
             storage.updateState(message.jobId, newState, oldState)
         }
 
-        // Send TaskStatusUpdated if needed
+        // Send JobStatusUpdated if needed
         if (oldState?.jobStatus != newState.jobStatus) {
             val tsc = JobStatusUpdated(
                 jobId = newState.jobId,
@@ -103,52 +105,47 @@ class Engine {
         }
     }
 
-    private fun cancelTask(state: EngineState, msg: CancelJob) {
+    private fun cancelJob(state: EngineState, msg: CancelJob) {
         state.jobStatus = JobStatus.TERMINATED_CANCELED
 
         // log event
         val tad = JobCanceled(
             jobId = msg.jobId
         )
-        dispatch.toMonitoringPerInstance(tad)
+        dispatch.toEngine(tad)
 
         // Delete stored state
         storage.deleteState(state.jobId)
     }
 
-    private fun dispatchTask(state: EngineState, msg: DispatchJob) {
+    private fun dispatchJob(state: EngineState) {
         state.jobStatus = JobStatus.RUNNING_OK
 
         // send task to workers
         val rt = RunJob(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
-            jobAttemptRetry = state.jobAttemptIndex,
-            jobAttemptIndex = state.jobAttemptRetry,
+            jobAttemptRetry = state.jobAttemptRetry,
+            jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
             jobData = state.jobData
         )
         dispatch.toWorkers(rt)
 
         // log events
-        val td = JobDispatched(
-            jobId = state.jobId
-        )
-        dispatch.toMonitoringPerInstance(td)
-
         val tad = JobAttemptDispatched(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
             jobAttemptRetry = state.jobAttemptRetry,
-            jobAttemptIndex = state.jobAttemptRetry
+            jobAttemptIndex = state.jobAttemptIndex
         )
-        dispatch.toMonitoringPerInstance(tad)
+        dispatch.toEngine(tad)
     }
 
-    private fun retryTask(state: EngineState, msg: RetryJob) {
+    private fun retryJob(state: EngineState) {
         state.jobStatus = JobStatus.RUNNING_WARNING
         state.jobAttemptId = JobAttemptId()
-        state.jobAttemptRetry = 0
+        state.jobAttemptRetry = JobAttemptRetry(0)
         state.jobAttemptIndex++
 
         // send task to workers
@@ -169,10 +166,10 @@ class Engine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex
         )
-        dispatch.toMonitoringPerInstance(tad)
+        dispatch.toEngine(tad)
     }
 
-    private fun retryTaskAttempt(state: EngineState, msg: ForEngineMessage) {
+    private fun retryJobAttempt(state: EngineState) {
         state.jobStatus = JobStatus.RUNNING_WARNING
         state.jobAttemptRetry++
 
@@ -194,7 +191,7 @@ class Engine {
             jobAttemptIndex = state.jobAttemptIndex,
             jobAttemptRetry = state.jobAttemptRetry
         )
-        dispatch.toMonitoringPerInstance(tar)
+        dispatch.toEngine(tar)
     }
 
     private fun taskAttemptCompleted(state: EngineState, msg: JobAttemptCompleted) {
@@ -202,7 +199,7 @@ class Engine {
 
         // if this task belongs to a workflow
         if (state.workflowId != null) {
-            val tciw = TaskCompletedInWorkflow(
+            val tciw = JobCompletedInWorkflow(
                 workflowId = state.workflowId,
                 jobId = state.jobId,
                 jobOutput = msg.jobOutput
@@ -215,7 +212,7 @@ class Engine {
             jobId = state.jobId,
             jobOutput = msg.jobOutput
         )
-        dispatch.toMonitoringPerInstance(tc)
+        dispatch.toEngine(tc)
 
         // Delete stored state
         storage.deleteState(state.jobId)
@@ -224,14 +221,14 @@ class Engine {
     private fun taskAttemptFailed(state: EngineState, msg: JobAttemptFailed) {
         state.jobStatus = JobStatus.RUNNING_ERROR
 
-        delayRetryTaskAttempt(state = state, msg = msg, delay = msg.jobAttemptDelayBeforeRetry)
+        delayRetryJobAttempt(state = state, msg = msg, delay = msg.jobAttemptDelayBeforeRetry)
     }
 
-    private fun delayRetryTaskAttempt(state: EngineState, msg: ForEngineMessage, delay: Float?) {
+    private fun delayRetryJobAttempt(state: EngineState, msg: ForEngineMessage, delay: Float?) {
         // no retry
         if (delay == null) return
         // immediate retry
-        if (delay <= 0f) return retryTaskAttempt(state, msg)
+        if (delay <= 0f) return retryJobAttempt(state)
         // delayed retry
         if (delay > 0f) {
             state.jobStatus = JobStatus.RUNNING_WARNING
