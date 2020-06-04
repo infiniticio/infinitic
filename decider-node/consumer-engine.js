@@ -5,7 +5,7 @@ const { forEngineMessage } = require('./avro');
   // Create a consumer
   const consumer = await pulsar.subscribe({
     topic: 'persistent://public/default/engine',
-    subscription: 'subEngine',
+    subscription: 'engine',
     subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });

@@ -10,21 +10,21 @@ import org.apache.pulsar.functions.api.Function
 
 class MonitoringPerNameFunction : Function<AvroForMonitoringPerNameMessage, Void> {
     // task metrics injection
-    var taskMetrics = MonitoringPerNameEngine()
+    var monitoringPerName = MonitoringPerNameEngine()
     // avro converter injection
     var avroConverter = AvroConverter
 
     override fun process(input: AvroForMonitoringPerNameMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
-        taskMetrics.logger = PulsarLogger(ctx)
-        taskMetrics.storage = MonitoringPerNamePulsarStorage(ctx)
-        taskMetrics.dispatcher = PulsarDispatcher(ctx)
+        monitoringPerName.logger = PulsarLogger(ctx)
+        monitoringPerName.storage = MonitoringPerNamePulsarStorage(ctx)
+        monitoringPerName.dispatcher = PulsarDispatcher(ctx)
 
         try {
-            taskMetrics.handle(avroConverter.fromAvroForMonitoringPerNameMessage(input))
+            monitoringPerName.handle(avroConverter.fromAvroForMonitoringPerNameMessage(input))
         } catch (e: Exception) {
-            taskMetrics.logger.error("Error:%s for message:%s", e, input)
+            monitoringPerName.logger.error("Error:%s for message:%s", e, input)
             throw e
         }
 

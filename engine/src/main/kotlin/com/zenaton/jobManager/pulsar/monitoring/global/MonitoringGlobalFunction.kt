@@ -10,21 +10,21 @@ import org.apache.pulsar.functions.api.Function
 
 class MonitoringGlobalFunction : Function<AvroForMonitoringGlobalMessage, Void> {
     // task metrics injection
-    var taskAdmin = MonitoringGlobalEngine()
+    var monitoringGlobal = MonitoringGlobalEngine()
     // avro converter injection
     var avroConverter = AvroConverter
 
     override fun process(input: AvroForMonitoringGlobalMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
-        taskAdmin.logger = PulsarLogger(ctx)
-        taskAdmin.storage = MonitoringGlobalPulsarStorage(ctx)
-        taskAdmin.dispatcher = PulsarDispatcher(ctx)
+        monitoringGlobal.logger = PulsarLogger(ctx)
+        monitoringGlobal.storage = MonitoringGlobalPulsarStorage(ctx)
+        monitoringGlobal.dispatcher = PulsarDispatcher(ctx)
 
         try {
-            taskAdmin.handle(avroConverter.fromAvroForMonitoringGlobalMessage(input))
+            monitoringGlobal.handle(avroConverter.fromAvroForMonitoringGlobalMessage(input))
         } catch (e: Exception) {
-            taskAdmin.logger.error("Error:%s for message:%s", e, input)
+            monitoringGlobal.logger.error("Error:%s for message:%s", e, input)
             throw e
         }
 

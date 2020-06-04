@@ -110,6 +110,16 @@ tasks.register("install") {
             topicsIn = setOf("engine"),
             action = "create"
         )
+        setZenatonFunction(
+            className = "com.zenaton.jobManager.pulsar.monitoring.global.MonitoringGlobalFunction",
+            topicsIn = setOf("monitoring-global"),
+            action = "create"
+        )
+        setZenatonFunction(
+            className = "com.zenaton.jobManager.pulsar.monitoring.perName.MonitoringPerNameFunction",
+            topicsIn = setOf("monitoring-per-name"),
+            action = "create"
+        )
     }
 }
 
@@ -123,6 +133,16 @@ tasks.register("update") {
             topicsIn = setOf("engine"),
             action = "update"
         )
+        setZenatonFunction(
+            className = "com.zenaton.jobManager.pulsar.monitoring.global.MonitoringGlobalFunction",
+            topicsIn = setOf("monitoring-global"),
+            action = "update"
+        )
+        setZenatonFunction(
+            className = "com.zenaton.jobManager.pulsar.monitoring.perName.MonitoringPerNameFunction",
+            topicsIn = setOf("monitoring-per-name"),
+            action = "update"
+        )
     }
 }
 
@@ -131,6 +151,8 @@ tasks.register("delete") {
     description = "Delete Zenaton from Pulsar"
     doLast {
         deleteZenatonFunction("EngineFunction")
+        deleteZenatonFunction("MonitoringGlobalFunction")
+        deleteZenatonFunction("MonitoringPerNameFunction")
         forceDeleteTopic("engine")
         forceDeleteTopic("monitoring-per-instance")
         forceDeleteTopic("monitoring-per-name")

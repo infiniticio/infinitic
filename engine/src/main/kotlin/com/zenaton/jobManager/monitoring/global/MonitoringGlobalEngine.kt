@@ -24,6 +24,7 @@ class MonitoringGlobalEngine {
         // Update stored state if needed and existing
         if (newState != oldState) {
             storage.updateState(newState, oldState)
+            logger.info("MonitoringPerNameState: from%s to%s", oldState, newState)
         }
     }
 

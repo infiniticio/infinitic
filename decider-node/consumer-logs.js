@@ -4,7 +4,7 @@ const { pulsar } = require('./pulsar');
   // Create a consumer
   const consumer = await pulsar.subscribe({
     topic: 'persistent://public/default/logs',
-    subscription: 'subLogs',
+    subscription: 'logs',
     subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });
