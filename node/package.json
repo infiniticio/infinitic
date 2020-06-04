@@ -1,0 +1,24 @@
+{
+  "name": "root",
+  "private": true,
+  "devDependencies": {
+    "@commitlint/cli": "^8.3.5",
+    "@commitlint/config-conventional": "^8.3.4",
+    "@types/node": "^14.0.9",
+    "@types/pulsar-client": "^1.0.2",
+    "cross-env": "^7.0.2",
+    "husky": "^4.2.5",
+    "lerna": "^3.22.0",
+    "rollup-plugin-copy": "^3.3.0",
+    "tsdx": "^0.13.2",
+    "tslib": "^2.0.0",
+    "typescript": "^3.9.3"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "@zenaton/messages": "file:packages/zenaton-messages",
+    "@zenaton/worker": "file:packages/zenaton-worker"
+  }
+}
