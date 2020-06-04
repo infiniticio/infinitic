@@ -2,7 +2,7 @@ package com.zenaton.jobManager.pulsar
 
 enum class Topic {
     ENGINE {
-        override fun get(name: String?) = "jobs"
+        override fun get(name: String?) = "engine"
     },
     WORKERS {
         override fun get(name: String?) = "workers-$name"

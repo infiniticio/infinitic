@@ -37,7 +37,6 @@ import com.zenaton.jobManager.messages.JobCompleted
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobDispatched
 import com.zenaton.jobManager.messages.JobStatusUpdated
-import com.zenaton.jobManager.messages.Message
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
@@ -83,7 +82,7 @@ object AvroConverter {
                 runJob = convertToAvro(message)
                 type = AvroForWorkerMessageType.RunJob
             }
-            else -> throw Exception("Unknown WorkerMessage: $message")
+            else -> throw Exception("Unknown ForWorkerMessage: $message")
         }
         return builder.build()
     }
@@ -102,7 +101,7 @@ object AvroConverter {
                 jobCreated = convertToAvro(message)
                 type = AvroForMonitoringGlobalMessageType.JobCreated
             }
-            else -> throw Exception("Unknown MonitoringGlobalMessage: $message")
+            else -> throw Exception("Unknown ForMonitoringGlobalMessage: $message")
         }
         return builder.build()
     }
@@ -121,7 +120,7 @@ object AvroConverter {
                 jobStatusUpdated = convertToAvro(message)
                 type = AvroForMonitoringPerNameMessageType.JobStatusUpdated
             }
-            else -> throw Exception("Unknown MonitoringPerNameMessage: $message")
+            else -> throw Exception("Unknown ForMonitoringPerNameMessage: $message")
         }
         return builder.build()
     }
@@ -181,7 +180,7 @@ object AvroConverter {
                 jobDispatched = convertToAvro(message)
                 type = AvroForMonitoringPerInstanceMessageType.JobDispatched
             }
-            else -> throw Exception("Unknown MonitoringPerInstanceMessage: $message")
+            else -> throw Exception("Unknown ForMonitoringPerInstanceMessage: $message")
         }
         return builder.build()
     }
@@ -203,9 +202,6 @@ object AvroConverter {
         } as ForMonitoringPerInstanceMessage
     }
 
-    /**
-     * Engine messages
-     */
     fun toAvroForEngineMessage(message: ForEngineMessage): AvroForEngineMessage {
         val builder = AvroForEngineMessage.newBuilder()
         builder.jobId = message.jobId.id
@@ -238,7 +234,7 @@ object AvroConverter {
                 jobAttemptStarted = convertToAvro(message)
                 type = AvroForEngineMessageType.JobAttemptStarted
             }
-            else -> throw Exception("Unknown AvroForMonitoringPerInstanceMessage: $message")
+            else -> throw Exception("Unknown ForJobEngineMessage: $message")
         }
         return builder.build()
     }
@@ -291,7 +287,7 @@ object AvroConverter {
     private fun convertToAvro(message: RunJob) = convertJson<AvroRunJob>(message)
 
     /**
-     *  Undefined type
+     *  Any Message
      */
 
     fun convertFromAvro(avro: SpecificRecordBase): Any = when (avro) {
@@ -312,22 +308,22 @@ object AvroConverter {
         else -> throw Exception("Unknown SpecificRecordBase: $avro")
     }
 
-    fun convertToAvro(message: Message): SpecificRecordBase = when (message) {
-        is CancelJob -> convertToAvro(message)
-        is DispatchJob -> convertToAvro(message)
-        is JobAttemptCompleted -> convertToAvro(message)
-        is JobAttemptDispatched -> convertToAvro(message)
-        is JobAttemptFailed -> convertToAvro(message)
-        is JobAttemptStarted -> convertToAvro(message)
-        is JobCanceled -> convertToAvro(message)
-        is JobCompleted -> convertToAvro(message)
-        is JobCreated -> convertToAvro(message)
-        is JobDispatched -> convertToAvro(message)
-        is JobStatusUpdated -> convertToAvro(message)
-        is RetryJob -> convertToAvro(message)
-        is RetryJobAttempt -> convertToAvro(message)
-        is RunJob -> convertToAvro(message)
-    }
+//    fun convertToAvro(message: Message): SpecificRecordBase = when (message) {
+//        is CancelJob -> convertToAvro(message)
+//        is DispatchJob -> convertToAvro(message)
+//        is JobAttemptCompleted -> convertToAvro(message)
+//        is JobAttemptDispatched -> convertToAvro(message)
+//        is JobAttemptFailed -> convertToAvro(message)
+//        is JobAttemptStarted -> convertToAvro(message)
+//        is JobCanceled -> convertToAvro(message)
+//        is JobCompleted -> convertToAvro(message)
+//        is JobCreated -> convertToAvro(message)
+//        is JobDispatched -> convertToAvro(message)
+//        is JobStatusUpdated -> convertToAvro(message)
+//        is RetryJob -> convertToAvro(message)
+//        is RetryJobAttempt -> convertToAvro(message)
+//        is RunJob -> convertToAvro(message)
+//    }
 
     /**
      *  Mapping function by Json serialization/deserialization

@@ -1,13 +1,11 @@
 const { pulsar } = require('./pulsar');
-const { taskWorkerMessageType } = require('./avro');
-
-const name = 'MyTask';
+const { forEngineMessage } = require('./avro');
 
 (async () => {
   // Create a consumer
   const consumer = await pulsar.subscribe({
-    topic: `persistent://public/default/tasks-${name}`,
-    subscription: `subTaskAttempts-${name}`,
+    topic: 'persistent://public/default/engine',
+    subscription: 'subEngine',
     subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });
@@ -15,7 +13,7 @@ const name = 'MyTask';
   // Receive messages
   for (let i = 0; i < 1000; i += 1) {
     const msg = await consumer.receive();
-    console.log(taskWorkerMessageType.fromBuffer(msg.getData()))
+    console.log(forEngineMessage.fromBuffer(msg.getData()))
     consumer.acknowledge(msg);
   }
 

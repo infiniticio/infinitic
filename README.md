@@ -17,6 +17,11 @@ To enter the docker container:
 docker exec -it zenaton_pulsar_1 /bin/bash
 ```
 
+To clean everything
+```bash
+docker-compose down --volumes
+```
+
 To install Zenaton:
 ```bash
 gradle install

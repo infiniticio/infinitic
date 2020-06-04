@@ -79,38 +79,39 @@ avro {
     dateTimeLogicalType.set("JSR310")
 }
 
-tasks.register("install") {
+tasks.register("set schemas") {
     group = "Zenaton"
-    description = "Install Zenaton into Pulsar"
+    description = "Upload Zenaton schemas into Pulsar"
     dependsOn("assemble")
     doLast {
         createSchemaFiles()
         uploadSchemaToTopic(
-            name = "AvroTaskEngineMessage",
-            topic = "tasks"
+            name = "AvroForEngineMessage",
+            topic = "engine"
         )
         uploadSchemaToTopic(
-            name = "AvroTaskMetricMessage",
-            topic = "tasks-metrics"
+            name = "AvroForMonitoringPerInstanceMessage",
+            topic = "monitoring-per-instance"
         )
-        setZenatonFunction(
-            className = "com.zenaton.taskmanager.pulsar.engine.TaskEngineFunction",
-            topicIn = "tasks",
-            action = "create"
+        uploadSchemaToTopic(
+            name = "AvroForMonitoringPerNameMessage",
+            topic = "monitoring-per-name"
         )
-        setZenatonFunction(
-            className = "com.zenaton.workflowengine.pulsar.topics.workflows.functions.WorkflowEngineFunction",
-            topicIn = "workflows",
-            action = "create"
+        uploadSchemaToTopic(
+            name = "AvroForMonitoringGlobalMessage",
+            topic = "monitoring-global"
         )
+    }
+}
+
+tasks.register("install") {
+    group = "Zenaton"
+    description = "Install Zenaton into Pulsar"
+    dependsOn("set schemas")
+    doLast {
         setZenatonFunction(
-            className = "com.zenaton.decisionmanager.pulsar.functions.DecisionEngineFunction",
-            topicIn = "decisions",
-            action = "create"
-        )
-        setZenatonFunction(
-            className = "com.zenaton.workflowengine.pulsar.topics.delays.functions.DelayEngineFunction",
-            topicIn = "delays",
+            className = "com.zenaton.jobManager.pulsar.engine.EngineFunction",
+            topicsIn = setOf("engine"),
             action = "create"
         )
     }
@@ -119,32 +120,12 @@ tasks.register("install") {
 tasks.register("update") {
     group = "Zenaton"
     description = "Update Zenaton into Pulsar"
-    dependsOn("assemble")
+    dependsOn("set schemas")
     doLast {
-        createSchemaFiles()
-        uploadSchemaToTopic(
-            name = "AvroTaskEngineMessage",
-            topic = "tasks"
-        )
-        uploadSchemaToTopic(
-            name = "AvroTaskMetricMessage",
-            topic = "tasks-metrics"
-        )
         setZenatonFunction(
-            className = "com.zenaton.taskmanager.pulsar.engine.TaskEngineFunction",
-            topicIn = "tasks"
-        )
-        setZenatonFunction(
-            className = "com.zenaton.workflowengine.pulsar.topics.workflows.functions.WorkflowEngineFunction",
-            topicIn = "workflows"
-        )
-        setZenatonFunction(
-            className = "com.zenaton.decisionmanager.pulsar.functions.DecisionEngineFunction",
-            topicIn = "decisions"
-        )
-        setZenatonFunction(
-            className = "com.zenaton.workflowengine.pulsar.topics.delays.functions.DelayEngineFunction",
-            topicIn = "delays"
+            className = "com.zenaton.jobManager.pulsar.engine.EngineFunction",
+            topicsIn = setOf("engine"),
+            action = "update"
         )
     }
 }
@@ -153,15 +134,11 @@ tasks.register("delete") {
     group = "Zenaton"
     description = "Delete Zenaton from Pulsar"
     doLast {
-        deleteZenatonFunction("WorkflowEngineFunction")
-        deleteZenatonFunction("DecisionEngineFunction")
-        deleteZenatonFunction("TaskEngineFunction")
-        deleteZenatonFunction("DelayEngineFunction")
-        forceDeleteTopic("workflows")
-        forceDeleteTopic("decisions")
-        forceDeleteTopic("tasks")
-        forceDeleteTopic("tasks-metrics")
-        forceDeleteTopic("delays")
+        deleteZenatonFunction("EngineFunction")
+        forceDeleteTopic("engine")
+        forceDeleteTopic("monitoring-per-instance")
+        forceDeleteTopic("monitoring-per-name")
+        forceDeleteTopic("monitoring-global")
         forceDeleteTopic("logs")
     }
 }
@@ -181,7 +158,8 @@ fun uploadSchemaToTopic(
 ) {
     println("Uploading $name schema to $topic topic...")
     val cmd = arrayOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin",
-        "schemas", "upload",
+        "schemas",
+        "upload",
         "persistent://$tenant/$namespace/$topic",
         "--filename", "/zenaton/engine/schemas/$name.schema"
     )
@@ -190,18 +168,22 @@ fun uploadSchemaToTopic(
 
 fun setZenatonFunction(
     className: String,
-    topicIn: String,
+    topicsIn: Set<String>,
+    action: String,
     topicOut: String? = null,
-    action: String = "update",
     tenant: String = "public",
     namespace: String = "default"
 ) {
-    println("Doing $action $className in $topicIn...")
+    val inputs = topicsIn.joinToString(
+        separator = ",",
+        transform = { "persistent://$tenant/$namespace/$it" }
+    )
+    println("$action $className for $inputs...")
     val cmd = mutableListOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin",
         "functions", action,
         "--jar", "/zenaton/engine/libs/engine-1.0-SNAPSHOT-all.jar",
         "--classname", className,
-        "--inputs", "persistent://$tenant/$namespace/$topicIn"
+        "--inputs", inputs
     )
     if (topicOut != null) {
         cmd.add("--output")
