@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskmanager.data.TaskId
-import com.zenaton.taskmanager.data.TaskOutput
+import com.zenaton.jobManager.data.JobId
+import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.workflowengine.data.DelayId
 import com.zenaton.workflowengine.data.EventData
 import com.zenaton.workflowengine.data.EventName
@@ -47,16 +47,16 @@ sealed class Branch(
         val eventData: EventData?
     ) : Branch(branchId, dispatchedAt, propertiesAtStart, steps, actions)
 
-    fun completeTask(taskId: TaskId, taskOutput: TaskOutput, properties: Properties): Boolean {
+    fun completeTask(jobId: JobId, jobOutput: JobOutput, properties: Properties): Boolean {
         // complete action if relevant
         val task = actions
             .filterIsInstance<DispatchTask>()
-            .firstOrNull { a -> a.taskId == taskId && a.actionStatus != ActionStatus.COMPLETED }
-        task ?.taskOutput = taskOutput
+            .firstOrNull { a -> a.jobId == jobId && a.actionStatus != ActionStatus.COMPLETED }
+        task ?.jobOutput = jobOutput
         task ?.actionStatus = ActionStatus.COMPLETED
 
         // does this task complete the current step?
-        return steps.last().completeTask(taskId, properties)
+        return steps.last().completeTask(jobId, properties)
     }
 
     fun completeChildWorkflow(childWorkflowId: WorkflowId, childWorkflowOutput: WorkflowOutput, properties: Properties): Boolean {

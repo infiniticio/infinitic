@@ -1,0 +1,32 @@
+{
+    "type": "record",
+    "name": "AvroJobStatusUpdated",
+    "namespace": "com.zenaton.jobManager.messages",
+    "fields": [
+        {
+            "name": "jobId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "jobName",
+            "type": "string"
+        },
+        {
+            "name": "oldStatus",
+            "type": [
+                "null",
+                "com.zenaton.jobManager.data.AvroJobStatus"
+            ]
+        },
+        {
+            "name": "newStatus",
+            "type": "com.zenaton.jobManager.data.AvroJobStatus"
+        }
+    ]
+}

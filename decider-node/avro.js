@@ -10,41 +10,51 @@ const assertValid = function assertValid(type, val) {
 
 var registry = {}
 
-avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskEngineMessageType.avsc", { registry  });
-var cancelTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroCancelTask.avsc", { registry });
-var dispatchTaskType = avro.parse(__dirname + "/avro/taskmanager/messages/engine/AvroDispatchTask.avsc", { registry });
-var retryTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroRetryTask.avsc", { registry });
-var retryTaskAttemptType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroRetryTaskAttempt.avsc", { registry });
-var taskAttemptCompletedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskAttemptCompleted.avsc", { registry });
-var taskAttemptDispatchedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskAttemptDispatched.avsc", { registry });
-var taskAttemptFailedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskAttemptFailed.avsc", { registry });
-var taskAttemptStartedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskAttemptStarted.avsc", { registry });
-var taskCanceledType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskCanceled.avsc", { registry });
-var taskCompletedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskCompleted.avsc", { registry });
-var taskDispatchedType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskDispatched.avsc", { registry });
-var taskEngineMessageType = avro.parse(__dirname +"/avro/taskmanager/messages/engine/AvroTaskEngineMessage.avsc", { registry  });
+// Engine
+var cancelJob = avro.parse(__dirname +"/avro/jobManager/messages/AvroCancelJob.avsc", { registry });
+var dispatchJob = avro.parse(__dirname + "/avro/jobManager/messages/AvroDispatchJob.avsc", { registry });
+var retryJob = avro.parse(__dirname +"/avro/jobManager/messages/AvroRetryJob.avsc", { registry });
+var retryJobAttempt = avro.parse(__dirname +"/avro/jobManager/messages/AvroRetryJobAttempt.avsc", { registry });
+var JobAttemptCompleted = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobAttemptCompleted.avsc", { registry });
+var JobAttemptDispatched = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobAttemptDispatched.avsc", { registry });
+var JobAttemptFailed = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobAttemptFailed.avsc", { registry });
+var JobAttemptStarted = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobAttemptStarted.avsc", { registry });
+var JobCanceled = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobCanceled.avsc", { registry });
+var JobCompleted = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobCompleted.avsc", { registry });
+var forEngineMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForEngineMessage.avsc", { registry  });
 
-avro.parse(__dirname +"/avro/taskmanager/messages/workers/AvroTaskworkerMessageType.avsc", { registry  });
-var runTaskType = avro.parse(__dirname +"/avro/taskmanager/messages/workers/AvroRunTask.avsc", { registry  });
-var taskWorkerMessageType = avro.parse(__dirname +"/avro/taskmanager/messages/workers/AvroTaskWorkerMessage.avsc", { registry  });
+// Workers
+var runJob = avro.parse(__dirname +"/avro/jobManager/messages/AvroRunJob.avsc", { registry });
+var forWorkerMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForWorkerMessage.avsc", { registry  });
 
+// MonitoringPerName
+avro.parse(__dirname +"/avro/jobManager/data/AvroJobStatus.avsc", { registry });
+var jobStatusUpdated = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobStatusUpdated.avsc", { registry });
+var forMonitoringPerNameMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForMonitoringPerNameMessage.avsc", { registry  });
+
+// MonitoringGlobal
+var jobCreated = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobCreated.avsc", { registry });
+var forMonitoringGlobalMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForMonitoringGlobalMessage.avsc", { registry  });
 
 module.exports = {
     assertValid,
 
-    cancelTaskType,
-    dispatchTaskType,
-    retryTaskType,
-    retryTaskAttemptType,
-    taskAttemptCompletedType,
-    taskAttemptDispatchedType,
-    taskAttemptFailedType,
-    taskAttemptStartedType,
-    taskCanceledType,
-    taskCompletedType,
-    taskDispatchedType,
-    taskEngineMessageType,
+    cancelJob,
+    dispatchJob,
+    retryJob,
+    retryJobAttempt,
+    JobAttemptCompleted,
+    JobAttemptDispatched,
+    JobAttemptFailed,
+    JobAttemptStarted,
+    forEngineMessage,
 
-    runTaskType,
-    taskWorkerMessageType,
+    runJob,
+    forWorkerMessage,
+
+    jobStatusUpdated,
+    forMonitoringPerNameMessage,
+
+    jobCreated,
+    forMonitoringGlobalMessage,
 }

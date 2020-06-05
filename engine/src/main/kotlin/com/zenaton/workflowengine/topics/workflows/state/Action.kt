@@ -3,8 +3,8 @@ package com.zenaton.workflowengine.topics.workflows.state
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.zenaton.commons.data.DateTime
-import com.zenaton.taskmanager.data.TaskId
-import com.zenaton.taskmanager.data.TaskOutput
+import com.zenaton.jobManager.data.JobId
+import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.workflowengine.data.DelayId
 import com.zenaton.workflowengine.data.EventData
 import com.zenaton.workflowengine.data.EventId
@@ -32,8 +32,8 @@ sealed class Action(
 )
 
 data class DispatchTask(
-    val taskId: TaskId,
-    var taskOutput: TaskOutput?,
+    val jobId: JobId,
+    var jobOutput: JobOutput?,
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
@@ -70,7 +70,7 @@ data class InstantTask(
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override val actionStatus: ActionStatus,
-    var taskOutput: TaskOutput?
+    var jobOutput: JobOutput?
 ) : Action(decidedAt, actionHash, actionStatus)
 
 /**
