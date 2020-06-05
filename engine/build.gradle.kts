@@ -28,6 +28,7 @@ dependencies {
     implementation("org.apache.avro:avro:1.9.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
+    implementation("org.slf4j:slf4j-api:1.7.+")
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
@@ -200,6 +201,7 @@ fun setZenatonFunction(
     val cmd = mutableListOf("docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin",
         "functions", action,
         "--jar", "/zenaton/engine/libs/engine-1.0-SNAPSHOT-all.jar",
+        "--log-topic", "persistent://$tenant/$namespace/logs",
         "--classname", className,
         "--inputs", inputs
     )

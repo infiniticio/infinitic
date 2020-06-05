@@ -2,9 +2,9 @@ package com.zenaton.jobManager.monitoring.global
 
 import com.zenaton.commons.data.interfaces.deepCopy
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.logger.Logger
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
+import org.slf4j.Logger
 
 class MonitoringGlobalEngine {
     lateinit var storage: MonitoringGlobalStorage

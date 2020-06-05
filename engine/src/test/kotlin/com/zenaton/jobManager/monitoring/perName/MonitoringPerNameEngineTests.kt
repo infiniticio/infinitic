@@ -2,7 +2,6 @@ package com.zenaton.jobManager.monitoring.perName
 
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.logger.Logger
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.utils.TestFactory
@@ -14,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verifyAll
+import org.slf4j.Logger
 
 class MonitoringPerNameEngineTests : ShouldSpec({
     context("TaskMetrics.handle") {

@@ -3,7 +3,6 @@ package com.zenaton.jobManager.engine
 import com.zenaton.commons.data.interfaces.deepCopy
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.logger.Logger
 import com.zenaton.jobManager.messages.CancelJob
 import com.zenaton.jobManager.messages.DispatchJob
 import com.zenaton.jobManager.messages.JobAttemptCompleted
@@ -35,6 +34,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verifyAll
 import io.mockk.verifyOrder
+import org.slf4j.Logger
 
 fun state(values: Map<String, Any?>? = null) = TestFactory.get(EngineState::class, values)
 
@@ -90,8 +90,8 @@ fun engineHandle(stateIn: EngineState?, msgIn: ForEngineMessage): EngineResults 
     val workerMessageSlot = slot<ForWorkerMessage>()
     val jobCompletedInWorkflowSlot = slot<JobCompletedInWorkflow>()
     val jobStatusUpdatedSlot = slot<JobStatusUpdated>()
-    every { logger.error(any(), msgIn, stateIn) } returns "error!"
-    every { logger.warn(any(), msgIn, stateIn) } returns "warn!"
+    every { logger.error(any(), msgIn, stateIn) } just Runs
+    every { logger.warn(any(), msgIn, stateIn) } just Runs
     every { stateStorage.getState(msgIn.jobId) } returns state
     every { stateStorage.updateState(any(), capture(stateSlot), any()) } just Runs
     every { stateStorage.deleteState(any()) } just Runs

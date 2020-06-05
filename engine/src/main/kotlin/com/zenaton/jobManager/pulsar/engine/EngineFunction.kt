@@ -4,7 +4,6 @@ import com.zenaton.jobManager.engine.Engine
 import com.zenaton.jobManager.messages.AvroForEngineMessage
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarDispatcher
-import com.zenaton.jobManager.pulsar.logger.PulsarLogger
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -22,7 +21,7 @@ class EngineFunction : Function<AvroForEngineMessage, Void> {
     override fun process(input: AvroForEngineMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
-        taskEngine.logger = PulsarLogger(ctx)
+        taskEngine.logger = ctx.logger
         taskEngine.dispatch = PulsarDispatcher(ctx)
         taskEngine.workflowDispatcher = WorkflowDispatcher(ctx)
         taskEngine.storage = EnginePulsarStorage(ctx)

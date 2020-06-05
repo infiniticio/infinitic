@@ -4,7 +4,6 @@ import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.monitoring.perName.MonitoringPerNameEngine
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarDispatcher
-import com.zenaton.jobManager.pulsar.logger.PulsarLogger
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
@@ -17,7 +16,7 @@ class MonitoringPerNameFunction : Function<AvroForMonitoringPerNameMessage, Void
     override fun process(input: AvroForMonitoringPerNameMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
-        monitoringPerName.logger = PulsarLogger(ctx)
+        monitoringPerName.logger = ctx.logger
         monitoringPerName.storage = MonitoringPerNamePulsarStorage(ctx)
         monitoringPerName.dispatcher = PulsarDispatcher(ctx)
 

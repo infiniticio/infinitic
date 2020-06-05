@@ -5,7 +5,6 @@ import com.zenaton.jobManager.messages.AvroForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.pulsar.avro.AvroConverter
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarDispatcher
-import com.zenaton.jobManager.pulsar.logger.PulsarLogger
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -38,7 +37,7 @@ class EngineFunctionTests : StringSpec({
         // then
         (taskEngine.dispatch as PulsarDispatcher).context shouldBe context
         (taskEngine.workflowDispatcher as WorkflowDispatcher).context shouldBe context
-        (taskEngine.logger as PulsarLogger).context shouldBe context
+        taskEngine.logger shouldBe context.logger
         (taskEngine.storage as EnginePulsarStorage).context shouldBe context
         verify(exactly = 1) { taskEngine.handle(msg) }
     }

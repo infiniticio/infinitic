@@ -5,7 +5,6 @@ import com.zenaton.jobManager.data.JobAttemptId
 import com.zenaton.jobManager.data.JobAttemptRetry
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.logger.Logger
 import com.zenaton.jobManager.messages.CancelJob
 import com.zenaton.jobManager.messages.DispatchJob
 import com.zenaton.jobManager.messages.JobAttemptCompleted
@@ -22,6 +21,7 @@ import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as JobCompletedInWorkflow
+import org.slf4j.Logger
 
 class Engine {
     lateinit var dispatch: Dispatcher
@@ -221,10 +221,10 @@ class Engine {
     private fun taskAttemptFailed(state: EngineState, msg: JobAttemptFailed) {
         state.jobStatus = JobStatus.RUNNING_ERROR
 
-        delayRetryJobAttempt(state = state, msg = msg, delay = msg.jobAttemptDelayBeforeRetry)
+        delayRetryJobAttempt(state = state, delay = msg.jobAttemptDelayBeforeRetry)
     }
 
-    private fun delayRetryJobAttempt(state: EngineState, msg: ForEngineMessage, delay: Float?) {
+    private fun delayRetryJobAttempt(state: EngineState, delay: Float?) {
         // no retry
         if (delay == null) return
         // immediate retry
