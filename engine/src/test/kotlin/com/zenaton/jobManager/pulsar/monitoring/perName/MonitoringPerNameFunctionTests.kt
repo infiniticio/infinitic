@@ -38,7 +38,7 @@ class MonitoringPerNameFunctionTests : ShouldSpec({
             every { AvroConverter.fromAvroForMonitoringPerNameMessage(ofType<AvroForMonitoringPerNameMessage>()) } returns mockk()
 
             val function = MonitoringPerNameFunction()
-            function.taskMetrics = taskMetrics
+            function.monitoringPerName = taskMetrics
             function.process(mockk<AvroForMonitoringPerNameMessage>(), context)
 
             verifyAll {
