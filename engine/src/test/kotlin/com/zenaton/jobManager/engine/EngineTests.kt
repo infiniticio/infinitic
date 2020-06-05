@@ -1,6 +1,7 @@
 package com.zenaton.jobManager.engine
 
 import com.zenaton.commons.data.interfaces.deepCopy
+import com.zenaton.commons.data.interfaces.plus
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.messages.CancelJob
