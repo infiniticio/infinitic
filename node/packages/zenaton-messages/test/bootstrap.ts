@@ -1,4 +1,5 @@
 import 'jest-extended';
+import '../types/index.d';
 
 expect.extend({
   toBeOfType(received: any, type: string) {
@@ -31,14 +32,5 @@ expect.extend({
     }
   },
 });
-
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeOfType(type: string): CustomMatcherResult;
-      toBeOfTypeOrNull(type: string): CustomMatcherResult;
-    }
-  }
-}
 
 export {};

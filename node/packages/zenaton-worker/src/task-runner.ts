@@ -1,12 +1,12 @@
 import { Consumer, Producer } from 'pulsar-client';
 import { Task } from './task';
 import {
-  AvroTaskWorkerMessage,
-  RunTask,
-  AvroTaskEngineMessage,
-  TaskAttemptStartedMessage,
-  TaskAttemptCompletedMessage,
-  TaskAttemptFailedMessage,
+  AvroForWorkerMessage,
+  RunJob,
+  AvroForEngineMessage,
+  JobAttemptStartedMessage,
+  JobAttemptCompletedMessage,
+  JobAttemptFailedMessage,
 } from '@zenaton/messages';
 
 export class TaskRunner {
@@ -21,13 +21,11 @@ export class TaskRunner {
   async run(): Promise<void> {
     while (!this.shouldStop) {
       const message = await this.pulsarConsumer.receive();
-      const decodedMessage = AvroTaskWorkerMessage.fromBuffer(
-        message.getData()
-      );
+      const decodedMessage = AvroForWorkerMessage.fromBuffer(message.getData());
 
       switch (decodedMessage.type) {
-        case 'RunTask':
-          this.runTask(decodedMessage.RunTask);
+        case 'RunJob':
+          this.runTask(decodedMessage.RunJob);
           this.pulsarConsumer.acknowledge(message);
           break;
       }
@@ -39,7 +37,7 @@ export class TaskRunner {
     await this.pulsarConsumer.close();
   }
 
-  private async runTask(message: RunTask) {
+  private async runTask(message: RunJob) {
     await this.notifyTaskAttemptStarted(message);
 
     let output: any = undefined;
@@ -57,55 +55,58 @@ export class TaskRunner {
     }
   }
 
-  private async notifyTaskAttemptStarted(message: RunTask) {
-    const toSend: TaskAttemptStartedMessage = {
-      taskId: message.taskId,
-      type: 'TaskAttemptStarted',
-      TaskAttemptStarted: {
-        taskId: message.taskId,
+  private async notifyTaskAttemptStarted(message: RunJob) {
+    const toSend: JobAttemptStartedMessage = {
+      jobId: message.jobId,
+      type: 'JobAttemptStarted',
+      JobAttemptStarted: {
+        jobId: message.jobId,
         sentAt: Date.now(),
-        taskAttemptId: message.taskAttemptId,
-        taskAttemptIndex: message.taskAttemptIndex,
+        jobAttemptId: message.jobAttemptId,
+        jobAttemptRetry: message.jobAttemptRetry,
+        jobAttemptIndex: message.jobAttemptIndex,
       },
     };
 
     this.pulsarProducer.send({
-      data: AvroTaskEngineMessage.toBuffer(toSend),
+      data: AvroForEngineMessage.toBuffer(toSend),
     });
   }
 
-  private async notifyTaskAttemptCompleted(message: RunTask, _output: unknown) {
-    const toSend: TaskAttemptCompletedMessage = {
-      taskId: message.taskId,
-      type: 'TaskAttemptCompleted',
-      TaskAttemptCompleted: {
-        taskId: message.taskId,
+  private async notifyTaskAttemptCompleted(message: RunJob, _output: unknown) {
+    const toSend: JobAttemptCompletedMessage = {
+      jobId: message.jobId,
+      type: 'JobAttemptCompleted',
+      JobAttemptCompleted: {
+        jobId: message.jobId,
         sentAt: Date.now(),
-        taskAttemptId: message.taskAttemptId,
-        taskAttemptIndex: message.taskAttemptIndex,
+        jobAttemptId: message.jobAttemptId,
+        jobAttemptRetry: message.jobAttemptRetry,
+        jobAttemptIndex: message.jobAttemptIndex,
       },
     };
 
     this.pulsarProducer.send({
-      data: AvroTaskEngineMessage.toBuffer(toSend),
+      data: AvroForEngineMessage.toBuffer(toSend),
     });
   }
 
-  private async notifyTaskAttemptFailed(message: RunTask, _error: Error) {
-    const toSend: TaskAttemptFailedMessage = {
-      taskId: message.taskId,
-      type: 'TaskAttemptFailed',
-      TaskAttemptFailed: {
-        taskId: message.taskId,
+  private async notifyTaskAttemptFailed(message: RunJob, _error: Error) {
+    const toSend: JobAttemptFailedMessage = {
+      jobId: message.jobId,
+      type: 'JobAttemptFailed',
+      JobAttemptFailed: {
+        jobId: message.jobId,
         sentAt: Date.now(),
-        taskAttemptId: message.taskAttemptId,
-        taskAttemptIndex: message.taskAttemptIndex,
-        taskAttemptDelayBeforeRetry: null,
+        jobAttemptId: message.jobAttemptId,
+        jobAttemptRetry: message.jobAttemptIndex,
+        jobAttemptIndex: message.jobAttemptIndex,
+        jobAttemptDelayBeforeRetry: null,
       },
     };
 
     this.pulsarProducer.send({
-      data: AvroTaskEngineMessage.toBuffer(toSend),
+      data: AvroForEngineMessage.toBuffer(toSend),
     });
   }
 }

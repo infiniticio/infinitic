@@ -13,7 +13,7 @@
   "scripts": {
     "start": "tsdx watch --target node",
     "build": "tsdx build --target node",
-    "test": "tsdx test --target",
+    "test": "tsdx test",
     "lint": "tsdx lint --target node",
     "prepare": "tsdx build --target node"
   },

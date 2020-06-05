@@ -8,83 +8,81 @@ function random<T>(type: Type<T>): T {
 }
 
 describe('@zenaton/messages', () => {
-  it('exports a correct AvroTaskEngineMessageType', () => {
-    const value = random(types.AvroTaskEngineMessageType);
-    expect(value).toBeOfType('string');
-  });
-
-  it('exports a correct AvroCancelTask', () => {
-    const value = random(types.AvroCancelTask);
-    expect(value.taskId).toBeOfType('string');
+  it('exports a correct AvroCancelJob', () => {
+    const value = random(types.AvroCancelJob);
+    expect(value.jobId).toBeOfType('string');
     expect(value.sentAt).toBeOfType('number');
   });
 
-  it('exports a correct AvroDispatchTask', () => {
-    const value = random(types.AvroDispatchTask);
-    expect(value.taskId).toBeOfType('string');
-    expect(value.taskName).toBeOfType('string');
+  it('exports a correct AvroDispatchJob', () => {
+    const value = random(types.AvroDispatchJob);
+    expect(value.jobId).toBeOfType('string');
+    expect(value.jobName).toBeOfType('string');
     expect(value.sentAt).toBeOfType('number');
     expect(value.workflowId).toBeOfTypeOrNull('string');
   });
 
-  it('exports a correct AvroRetryTask', () => {
-    const value = random(types.AvroRetryTask);
-    expect(value.taskId).toBeOfType('string');
+  it('exports a correct AvroJobAttemptCompleted', () => {
+    const value = random(types.AvroJobAttemptCompleted);
+    expect(value.jobId).toBeOfType('string');
+    expect(value.jobAttemptId).toBeOfType('string');
+    expect(value.jobAttemptIndex).toBeOfType('number');
+    expect(value.jobAttemptRetry).toBeOfType('number');
     expect(value.sentAt).toBeOfType('number');
   });
 
-  it('exports a correct AvroRetryTaskAttempt', () => {
-    const value = random(types.AvroRetryTaskAttempt);
-    expect(value.taskId).toBeOfType('string');
+  it('exports a correct AvroJobAttemptDispatched', () => {
+    const value = random(types.AvroJobAttemptDispatched);
+    expect(value.jobId).toBeOfType('string');
+    expect(value.sentAt).toBeOfType('number');
+    expect(value.jobAttemptId).toBeOfType('string');
+    expect(value.jobAttemptIndex).toBeOfType('number');
+    expect(value.jobAttemptRetry).toBeOfType('number');
+  });
+
+  it('exports a correct AvroJobAttemptFailed', () => {
+    const value = random(types.AvroJobAttemptFailed);
+    expect(value.jobId).toBeOfType('string');
+    expect(value.sentAt).toBeOfType('number');
+    expect(value.jobAttemptId).toBeOfType('string');
+    expect(value.jobAttemptRetry).toBeOfType('number');
+    expect(value.jobAttemptIndex).toBeOfType('number');
+    expect(value.jobAttemptDelayBeforeRetry).toBeOfTypeOrNull('number');
+  });
+
+  it('exports a correct AvroJobAttemptStarted', () => {
+    const value = random(types.AvroJobAttemptStarted);
+    expect(value.jobId).toBeOfType('string');
+    expect(value.sentAt).toBeOfType('number');
+    expect(value.jobAttemptId).toBeOfType('string');
+    expect(value.jobAttemptRetry).toBeOfType('number');
+    expect(value.jobAttemptIndex).toBeOfType('number');
+  });
+
+  it('exports a correct AvroJobCanceled', () => {
+    const value = random(types.AvroJobCanceled);
+    expect(value.jobId).toBeOfType('string');
     expect(value.sentAt).toBeOfType('number');
   });
 
-  it('exports a correct AvroTaskAttemptCompleted', () => {
-    const value = random(types.AvroTaskAttemptCompleted);
-    expect(value.taskId).toBeOfType('string');
+  it('exports a correct AvroJobCompleted', () => {
+    const value = random(types.AvroJobCompleted);
+    expect(value.jobId).toBeOfType('string');
     expect(value.sentAt).toBeOfType('number');
   });
 
-  it('exports a correct AvroTaskAttemptDispatched', () => {
-    const value = random(types.AvroTaskAttemptDispatched);
-    expect(value.taskId).toBeOfType('string');
-    expect(value.sentAt).toBeOfType('number');
-    expect(value.taskAttemptId).toBeOfType('string');
-    expect(value.taskAttemptIndex).toBeOfType('number');
-  });
-
-  it('exports a correct AvroTaskAttemptFailed', () => {
-    const value = random(types.AvroTaskAttemptFailed);
-    expect(value.taskId).toBeOfType('string');
-    expect(value.sentAt).toBeOfType('number');
-    expect(value.taskAttemptId).toBeOfType('string');
-    expect(value.taskAttemptIndex).toBeOfType('number');
-    expect(value.taskAttemptDelayBeforeRetry).toBeOfTypeOrNull('number');
-  });
-
-  it('exports a correct AvroTaskAttemptStarted', () => {
-    const value = random(types.AvroTaskAttemptStarted);
-    expect(value.taskId).toBeOfType('string');
-    expect(value.sentAt).toBeOfType('number');
-    expect(value.taskAttemptId).toBeOfType('string');
-    expect(value.taskAttemptIndex).toBeOfType('number');
-  });
-
-  it('exports a correct AvroTaskCanceled', () => {
-    const value = random(types.AvroTaskCanceled);
-    expect(value.taskId).toBeOfType('string');
+  it('exports a correct AvroRetryJob', () => {
+    const value = random(types.AvroRetryJob);
+    expect(value.jobId).toBeOfType('string');
     expect(value.sentAt).toBeOfType('number');
   });
 
-  it('exports a correct AvroTaskCompleted', () => {
-    const value = random(types.AvroTaskCompleted);
-    expect(value.taskId).toBeOfType('string');
+  it('exports a correct AvroRetryJobAttempt', () => {
+    const value = random(types.AvroRetryJobAttempt);
+    expect(value.jobId).toBeOfType('string');
     expect(value.sentAt).toBeOfType('number');
-  });
-
-  it('exports a correct AvroTaskDispatched', () => {
-    const value = random(types.AvroTaskDispatched);
-    expect(value.taskId).toBeOfType('string');
-    expect(value.sentAt).toBeOfType('number');
+    expect(value.jobAttemptId).toBeOfType('string');
+    expect(value.jobAttemptRetry).toBeOfType('number');
+    expect(value.jobAttemptIndex).toBeOfType('number');
   });
 });
