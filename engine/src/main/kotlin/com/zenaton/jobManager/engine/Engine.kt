@@ -19,19 +19,22 @@ import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
+import com.zenaton.jobManager.states.EngineState
+import com.zenaton.jobManager.storage.Storage
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as JobCompletedInWorkflow
 import org.slf4j.Logger
 
 class Engine {
-    lateinit var dispatch: Dispatcher
-    lateinit var workflowDispatcher: WorkflowDispatcherInterface
-    lateinit var storage: EngineStorage
     lateinit var logger: Logger
+    lateinit var storage: Storage
+    lateinit var dispatcher: Dispatcher
+    lateinit var workflowDispatcher: WorkflowDispatcherInterface
 
     fun handle(message: ForEngineMessage) {
+
         // get associated state
-        val oldState = storage.getState(message.jobId)
+        val oldState = storage.getEngineState(message.jobId)
         var newState: EngineState? = oldState?.deepCopy()
 
         if (newState == null) {
@@ -89,7 +92,7 @@ class Engine {
 
         // Update stored state if needed and existing
         if (newState != oldState && !newState.jobStatus.isTerminated) {
-            storage.updateState(message.jobId, newState, oldState)
+            storage.updateEngineState(message.jobId, newState, oldState)
         }
 
         // Send JobStatusUpdated if needed
@@ -101,7 +104,7 @@ class Engine {
                 newStatus = newState.jobStatus
             )
 
-            dispatch.toMonitoringPerName(tsc)
+            dispatcher.toMonitoringPerName(tsc)
         }
     }
 
@@ -112,10 +115,10 @@ class Engine {
         val tad = JobCanceled(
             jobId = msg.jobId
         )
-        dispatch.toEngine(tad)
+        dispatcher.toEngine(tad)
 
         // Delete stored state
-        storage.deleteState(state.jobId)
+        storage.deleteEngineState(state.jobId)
     }
 
     private fun dispatchJob(state: EngineState) {
@@ -130,7 +133,7 @@ class Engine {
             jobName = state.jobName,
             jobData = state.jobData
         )
-        dispatch.toWorkers(rt)
+        dispatcher.toWorkers(rt)
 
         // log events
         val tad = JobAttemptDispatched(
@@ -139,7 +142,7 @@ class Engine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex
         )
-        dispatch.toEngine(tad)
+        dispatcher.toEngine(tad)
     }
 
     private fun retryJob(state: EngineState) {
@@ -157,7 +160,7 @@ class Engine {
             jobName = state.jobName,
             jobData = state.jobData
         )
-        dispatch.toWorkers(rt)
+        dispatcher.toWorkers(rt)
 
         // log event
         val tad = JobAttemptDispatched(
@@ -166,7 +169,7 @@ class Engine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex
         )
-        dispatch.toEngine(tad)
+        dispatcher.toEngine(tad)
     }
 
     private fun retryJobAttempt(state: EngineState) {
@@ -182,7 +185,7 @@ class Engine {
             jobName = state.jobName,
             jobData = state.jobData
         )
-        dispatch.toWorkers(rt)
+        dispatcher.toWorkers(rt)
 
         // log event
         val tar = JobAttemptDispatched(
@@ -191,7 +194,7 @@ class Engine {
             jobAttemptIndex = state.jobAttemptIndex,
             jobAttemptRetry = state.jobAttemptRetry
         )
-        dispatch.toEngine(tar)
+        dispatcher.toEngine(tar)
     }
 
     private fun taskAttemptCompleted(state: EngineState, msg: JobAttemptCompleted) {
@@ -212,10 +215,10 @@ class Engine {
             jobId = state.jobId,
             jobOutput = msg.jobOutput
         )
-        dispatch.toEngine(tc)
+        dispatcher.toEngine(tc)
 
         // Delete stored state
-        storage.deleteState(state.jobId)
+        storage.deleteEngineState(state.jobId)
     }
 
     private fun taskAttemptFailed(state: EngineState, msg: JobAttemptFailed) {
@@ -240,7 +243,7 @@ class Engine {
                 jobAttemptRetry = state.jobAttemptRetry,
                 jobAttemptIndex = state.jobAttemptIndex
             )
-            dispatch.toEngine(tar, after = delay)
+            dispatcher.toEngine(tar, after = delay)
         }
     }
 }

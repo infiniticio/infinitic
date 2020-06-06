@@ -13,6 +13,9 @@
                 ]
             }
         }, {
+            "name": "jobName",
+            "type": "string"
+        },{
              "name": "RunJob",
              "type": ["null", "com.zenaton.jobManager.messages.AvroRunJob"],
              "default": null
