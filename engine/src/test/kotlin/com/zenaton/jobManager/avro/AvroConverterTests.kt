@@ -1,13 +1,13 @@
 package com.zenaton.jobManager.avro
 
+import com.zenaton.jobManager.engine.EngineState
 import com.zenaton.jobManager.messages.Message
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
-import com.zenaton.jobManager.states.EngineState
-import com.zenaton.jobManager.states.MonitoringGlobalState
-import com.zenaton.jobManager.states.MonitoringPerNameState
+import com.zenaton.jobManager.monitoringGlobal.MonitoringGlobalState
+import com.zenaton.jobManager.monitoringPerName.MonitoringPerNameState
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec

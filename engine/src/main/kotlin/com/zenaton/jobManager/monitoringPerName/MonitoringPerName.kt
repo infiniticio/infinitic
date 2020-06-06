@@ -6,19 +6,17 @@ import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
-import com.zenaton.jobManager.states.MonitoringPerNameState
-import com.zenaton.jobManager.storage.Storage
 import org.slf4j.Logger
 
 class MonitoringPerName {
     lateinit var logger: Logger
-    lateinit var storage: Storage
+    lateinit var storage: MonitoringPerNameStorage
     lateinit var dispatcher: Dispatcher
 
     fun handle(message: ForMonitoringPerNameMessage) {
 
         // get associated state
-        val oldState = storage.getMonitoringPerNameState(message.jobName)
+        val oldState = storage.getState(message.jobName)
         val newState = oldState?.deepCopy() ?: MonitoringPerNameState(message.jobName)
 
         when (message) {
@@ -28,7 +26,7 @@ class MonitoringPerName {
 
         // Update stored state if needed and existing
         if (newState != oldState) {
-            storage.updateMonitoringPerNameState(message.jobName, newState, oldState)
+            storage.updateState(message.jobName, newState, oldState)
         }
 
         // It's a new task type

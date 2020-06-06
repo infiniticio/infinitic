@@ -32,7 +32,7 @@ class PulsarAvroStorageTests : ShouldSpec({
             // when
             val state = stateStorage.getEngineState(jobId)
             // then
-            verify(exactly = 1) { context.getState("engine.state.${jobId}") }
+            verify(exactly = 1) { context.getState("engine.state.$jobId") }
             confirmVerified(context)
             state shouldBe null
         }

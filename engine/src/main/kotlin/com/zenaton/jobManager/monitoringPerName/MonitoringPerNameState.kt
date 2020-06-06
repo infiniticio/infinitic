@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.states
+package com.zenaton.jobManager.monitoringPerName
 
 import com.zenaton.commons.data.interfaces.StateInterface
 import com.zenaton.jobManager.data.JobName
