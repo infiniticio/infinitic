@@ -2,12 +2,8 @@ package com.zenaton.jobManager.monitoringPerName
 
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.interfaces.AvroStorage
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobStatusUpdated
-import com.zenaton.jobManager.states.MonitoringPerNameState
-import com.zenaton.jobManager.storage.Storage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -22,7 +18,7 @@ import org.slf4j.Logger
 class MonitoringPerNameTests : ShouldSpec({
     context("TaskMetrics.handle") {
         should("should update TaskMetricsState when receiving TaskStatusUpdate message") {
-            val storage = mockk<Storage>()
+            val storage = mockk<MonitoringPerNameStorage>()
             val dispatcher = mockk<Dispatcher>()
             val logger = mockk<Logger>()
             val msg = TestFactory.get(
@@ -32,8 +28,8 @@ class MonitoringPerNameTests : ShouldSpec({
             ))
             val stateIn = TestFactory.get(MonitoringPerNameState::class, mapOf("taskName" to msg.jobName))
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getMonitoringPerNameState(msg.jobName) } returns stateIn
-            every { storage.updateMonitoringPerNameState(msg.jobName, capture(stateOutSlot), any()) } just runs
+            every { storage.getState(msg.jobName) } returns stateIn
+            every { storage.updateState(msg.jobName, capture(stateOutSlot), any()) } just runs
 
             val monitoringPerName = MonitoringPerName()
             monitoringPerName.logger = logger
@@ -44,15 +40,15 @@ class MonitoringPerNameTests : ShouldSpec({
 
             val stateOut = stateOutSlot.captured
             verifyAll {
-                storage.getMonitoringPerNameState(msg.jobName)
-                storage.updateMonitoringPerNameState(msg.jobName, stateOut, stateIn)
+                storage.getState(msg.jobName)
+                storage.updateState(msg.jobName, stateOut, stateIn)
             }
             stateOut.runningErrorCount shouldBe stateIn.runningErrorCount + 1
             stateOut.runningOkCount shouldBe stateIn.runningOkCount - 1
         }
 
         should("dispatch message when discovering a new task type") {
-            val storage = mockk<Storage>()
+            val storage = mockk<MonitoringPerNameStorage>()
             val dispatcher = mockk<Dispatcher>()
             val logger = mockk<Logger>()
             val msg = TestFactory.get(
@@ -61,8 +57,8 @@ class MonitoringPerNameTests : ShouldSpec({
                 "newStatus" to JobStatus.RUNNING_OK
             ))
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getMonitoringPerNameState(msg.jobName) } returns null
-            every { storage.updateMonitoringPerNameState(msg.jobName, capture(stateOutSlot), any()) } just runs
+            every { storage.getState(msg.jobName) } returns null
+            every { storage.updateState(msg.jobName, capture(stateOutSlot), any()) } just runs
             every { dispatcher.toMonitoringGlobal(any<JobCreated>()) } just runs
 
             val monitoringPerName = MonitoringPerName()
@@ -74,8 +70,8 @@ class MonitoringPerNameTests : ShouldSpec({
             // then
             val stateOut = stateOutSlot.captured
             verifyAll {
-                storage.getMonitoringPerNameState(msg.jobName)
-                storage.updateMonitoringPerNameState(msg.jobName, stateOut, null)
+                storage.getState(msg.jobName)
+                storage.updateState(msg.jobName, stateOut, null)
                 dispatcher.toMonitoringGlobal(ofType<JobCreated>())
             }
         }

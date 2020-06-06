@@ -6,7 +6,7 @@ import com.zenaton.jobManager.interfaces.AvroDispatcher
 import com.zenaton.jobManager.interfaces.AvroStorage
 import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.monitoringPerName.MonitoringPerName
-import com.zenaton.jobManager.storage.Storage
+import com.zenaton.jobManager.monitoringPerName.MonitoringPerNameStorage
 import org.slf4j.Logger
 
 class MonitoringPerNameFunction {
@@ -18,7 +18,7 @@ class MonitoringPerNameFunction {
 
     fun handle(input: AvroForMonitoringPerNameMessage) {
         monitoring.logger = logger
-        monitoring.storage = Storage(avroStorage)
+        monitoring.storage = MonitoringPerNameStorage(avroStorage)
         monitoring.dispatcher = Dispatcher(avroDispatcher)
 
         monitoring.handle(AvroConverter.fromMonitoringPerName(input))

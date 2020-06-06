@@ -20,22 +20,20 @@ import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
-import com.zenaton.jobManager.states.EngineState
-import com.zenaton.jobManager.storage.Storage
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import com.zenaton.workflowengine.topics.workflows.messages.TaskCompleted as JobCompletedInWorkflow
 import org.slf4j.Logger
 
 class Engine {
     lateinit var logger: Logger
-    lateinit var storage: Storage
+    lateinit var storage: EngineStorage
     lateinit var dispatcher: Dispatcher
     lateinit var workflowDispatcher: WorkflowDispatcherInterface
 
     fun handle(message: ForEngineMessage) {
 
         // get associated state
-        val oldState = storage.getEngineState(message.jobId)
+        val oldState = storage.getState(message.jobId)
         var newState: EngineState? = oldState?.deepCopy()
 
         if (newState == null) {
@@ -93,7 +91,7 @@ class Engine {
 
         // Update stored state if needed and existing
         if (newState != oldState && !newState.jobStatus.isTerminated) {
-            storage.updateEngineState(message.jobId, newState, oldState)
+            storage.updateState(message.jobId, newState, oldState)
         }
 
         // Send JobStatusUpdated if needed
@@ -119,7 +117,7 @@ class Engine {
         dispatcher.toEngine(tad)
 
         // Delete stored state
-        storage.deleteEngineState(state.jobId)
+        storage.deleteState(state.jobId)
     }
 
     private fun dispatchJob(state: EngineState) {
@@ -219,7 +217,7 @@ class Engine {
         dispatcher.toEngine(tc)
 
         // Delete stored state
-        storage.deleteEngineState(state.jobId)
+        storage.deleteState(state.jobId)
     }
 
     private fun taskAttemptFailed(state: EngineState, msg: JobAttemptFailed) {

@@ -4,8 +4,6 @@ import com.zenaton.commons.data.interfaces.deepCopy
 import com.zenaton.commons.data.interfaces.plus
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.interfaces.AvroStorage
 import com.zenaton.jobManager.messages.CancelJob
 import com.zenaton.jobManager.messages.DispatchJob
 import com.zenaton.jobManager.messages.JobAttemptCompleted
@@ -21,8 +19,6 @@ import com.zenaton.jobManager.messages.RunJob
 import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
 import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
-import com.zenaton.jobManager.states.EngineState
-import com.zenaton.jobManager.storage.Storage
 import com.zenaton.jobManager.utils.TestFactory
 import com.zenaton.workflowengine.data.WorkflowId
 import com.zenaton.workflowengine.pulsar.topics.workflows.dispatcher.WorkflowDispatcher
@@ -59,7 +55,7 @@ fun jobCompleted(values: Map<String, Any?>? = null) = TestFactory.get(JobComplet
 class EngineResults {
     lateinit var dispatcher: Dispatcher
     lateinit var workflowDispatcher: WorkflowDispatcher
-    lateinit var storage: Storage
+    lateinit var storage: EngineStorage
     lateinit var logger: Logger
     var state: EngineState? = null
     var workerMessage: ForWorkerMessage? = null
@@ -80,7 +76,7 @@ fun engineHandle(stateIn: EngineState?, msgIn: ForEngineMessage): EngineResults 
     val state: EngineState? = stateIn?.deepCopy()
     // mocking
     val logger = mockk<Logger>()
-    val storage = mockk<Storage>()
+    val storage = mockk<EngineStorage>()
     val dispatcher = mockk<Dispatcher>()
     val workflowDispatcher = mockk<WorkflowDispatcher>()
     val stateSlot = slot<EngineState>()
@@ -97,9 +93,9 @@ fun engineHandle(stateIn: EngineState?, msgIn: ForEngineMessage): EngineResults 
     val jobStatusUpdatedSlot = slot<JobStatusUpdated>()
     every { logger.error(any(), msgIn, stateIn) } just Runs
     every { logger.warn(any(), msgIn, stateIn) } just Runs
-    every { storage.getEngineState(any()) } returns state
-    every { storage.updateEngineState(any(), capture(stateSlot), any()) } just Runs
-    every { storage.deleteEngineState(any()) } just Runs
+    every { storage.getState(any()) } returns state
+    every { storage.updateState(any(), capture(stateSlot), any()) } just Runs
+    every { storage.deleteState(any()) } just Runs
     every { dispatcher.toWorkers(capture(workerMessageSlot)) } just Runs
     every { dispatcher.toEngine(capture(retryJobAttemptSlot), capture(retryJobAttemptDelaySlot)) } just Runs
     every { dispatcher.toEngine(capture(jobAttemptCompletedSlot)) } just Runs
@@ -171,7 +167,7 @@ class EngineFunctionTests : StringSpec({
         val msgIn = dispatchJob(mapOf("jobId" to stateIn.jobId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.storage.getEngineState(msgIn.jobId)
+            o.storage.getState(msgIn.jobId)
             o.logger.error(any(), msgIn, stateIn)
         }
         checkConfirmVerified(o)
@@ -184,9 +180,9 @@ class EngineFunctionTests : StringSpec({
         val msgIn = cancelJob(mapOf("jobId" to stateIn.jobId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.storage.getEngineState(msgIn.jobId)
+            o.storage.getState(msgIn.jobId)
             o.dispatcher.toEngine(o.jobCanceled!!)
-            o.storage.deleteEngineState(msgIn.jobId)
+            o.storage.deleteState(msgIn.jobId)
             o.dispatcher.toMonitoringPerName(o.jobStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -199,10 +195,10 @@ class EngineFunctionTests : StringSpec({
         val msgIn = dispatchJob()
         val o = engineHandle(null, msgIn)
         verifyOrder {
-            o.storage.getEngineState(msgIn.jobId)
+            o.storage.getState(msgIn.jobId)
             o.dispatcher.toWorkers(o.workerMessage!!)
             o.dispatcher.toEngine(o.jobAttemptDispatched!!)
-            o.storage.updateEngineState(msgIn.jobId, o.state!!, null)
+            o.storage.updateState(msgIn.jobId, o.state!!, null)
             o.dispatcher.toMonitoringPerName(o.jobStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -232,10 +228,10 @@ class EngineFunctionTests : StringSpec({
         val msgIn = retryJob(mapOf("jobId" to stateIn.jobId))
         val o = engineHandle(stateIn, msgIn)
         verifyAll {
-            o.storage.getEngineState(msgIn.jobId)
+            o.storage.getState(msgIn.jobId)
             o.dispatcher.toWorkers(o.workerMessage!!)
             o.dispatcher.toEngine(o.jobAttemptDispatched!!)
-            o.storage.updateEngineState(msgIn.jobId, o.state!!, stateIn)
+            o.storage.updateState(msgIn.jobId, o.state!!, stateIn)
             o.dispatcher.toMonitoringPerName(o.jobStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -282,10 +278,10 @@ class EngineFunctionTests : StringSpec({
         ))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.storage.getEngineState(msgIn.jobId)
+            o.storage.getState(msgIn.jobId)
             o.workflowDispatcher.dispatch(o.jobCompletedInWorkflow!!)
             o.dispatcher.toEngine(o.jobCompleted!!)
-            o.storage.deleteEngineState(msgIn.jobId)
+            o.storage.deleteState(msgIn.jobId)
             o.dispatcher.toMonitoringPerName(o.jobStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -308,8 +304,8 @@ class EngineFunctionTests : StringSpec({
         ))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.storage.getEngineState(msgIn.jobId)
-            o.storage.updateEngineState(msgIn.jobId, o.state!!, stateIn)
+            o.storage.getState(msgIn.jobId)
+            o.storage.updateState(msgIn.jobId, o.state!!, stateIn)
             o.dispatcher.toMonitoringPerName(o.jobStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -327,9 +323,9 @@ class EngineFunctionTests : StringSpec({
         ))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
-            o.storage.getEngineState(msgIn.jobId)
+            o.storage.getState(msgIn.jobId)
             o.dispatcher.toEngine(o.retryJobAttempt!!, o.retryJobAttemptDelay!!)
-            o.storage.updateEngineState(msgIn.jobId, o.state!!, stateIn)
+            o.storage.updateState(msgIn.jobId, o.state!!, stateIn)
             o.dispatcher.toMonitoringPerName(o.jobStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -426,17 +422,17 @@ private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn
 
 private fun checkShouldDoNothing(msgIn: ForEngineMessage, o: EngineResults) {
     verifyOrder {
-        o.storage.getEngineState(msgIn.jobId)
+        o.storage.getState(msgIn.jobId)
     }
     checkConfirmVerified(o)
 }
 
 private fun checkShouldRetryJobAttempt(msgIn: ForEngineMessage, stateIn: EngineState, o: EngineResults) {
     verifyOrder {
-        o.storage.getEngineState(msgIn.jobId)
+        o.storage.getState(msgIn.jobId)
         o.dispatcher.toWorkers(o.workerMessage!!)
         o.dispatcher.toEngine(o.jobAttemptDispatched!!)
-        o.storage.updateEngineState(msgIn.jobId, o.state!!, stateIn)
+        o.storage.updateState(msgIn.jobId, o.state!!, stateIn)
         o.dispatcher.toMonitoringPerName(o.jobStatusUpdated!!)
     }
     checkConfirmVerified(o)
@@ -462,7 +458,7 @@ private fun checkShouldRetryJobAttempt(msgIn: ForEngineMessage, stateIn: EngineS
 
 private fun checkShouldWarnAndDoNothingMore(stateIn: EngineState?, msgIn: ForEngineMessage, o: EngineResults) {
     verifyOrder {
-        o.storage.getEngineState(msgIn.jobId)
+        o.storage.getState(msgIn.jobId)
         o.logger.warn(any(), msgIn, stateIn)
     }
     checkConfirmVerified(o)
@@ -470,7 +466,7 @@ private fun checkShouldWarnAndDoNothingMore(stateIn: EngineState?, msgIn: ForEng
 
 private fun checkShouldErrorAndDoNothingMore(stateIn: EngineState?, msgIn: ForEngineMessage, o: EngineResults) {
     verifyOrder {
-        o.storage.getEngineState(msgIn.jobId)
+        o.storage.getState(msgIn.jobId)
         o.logger.error(any(), msgIn, stateIn)
     }
     checkConfirmVerified(o)

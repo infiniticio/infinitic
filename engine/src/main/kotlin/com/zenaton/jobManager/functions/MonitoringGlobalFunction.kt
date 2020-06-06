@@ -4,7 +4,7 @@ import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.interfaces.AvroStorage
 import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
 import com.zenaton.jobManager.monitoringGlobal.MonitoringGlobal
-import com.zenaton.jobManager.storage.Storage
+import com.zenaton.jobManager.monitoringGlobal.MonitoringGlobalStorage
 import org.slf4j.Logger
 
 class MonitoringGlobalFunction {
@@ -15,7 +15,7 @@ class MonitoringGlobalFunction {
 
     fun handle(input: AvroForMonitoringGlobalMessage) {
         monitoring.logger = logger
-        monitoring.storage = Storage(avroStorage)
+        monitoring.storage = MonitoringGlobalStorage(avroStorage)
 
         monitoring.handle(AvroConverter.fromMonitoringGlobal(input))
     }

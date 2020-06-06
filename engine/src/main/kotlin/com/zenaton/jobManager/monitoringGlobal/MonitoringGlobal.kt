@@ -3,18 +3,16 @@ package com.zenaton.jobManager.monitoringGlobal
 import com.zenaton.commons.data.interfaces.deepCopy
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.states.MonitoringGlobalState
-import com.zenaton.jobManager.storage.Storage
 import org.slf4j.Logger
 
 class MonitoringGlobal {
     lateinit var logger: Logger
-    lateinit var storage: Storage
+    lateinit var storage: MonitoringGlobalStorage
 
     fun handle(message: ForMonitoringGlobalMessage) {
 
         // get associated state
-        val oldState = storage.getMonitoringGlobalState()
+        val oldState = storage.getState()
         val newState = oldState?.deepCopy() ?: MonitoringGlobalState()
 
         when (message) {
@@ -24,7 +22,7 @@ class MonitoringGlobal {
 
         // Update stored state if needed and existing
         if (newState != oldState) {
-            storage.updateMonitoringGlobalState(newState, oldState)
+            storage.updateState(newState, oldState)
             logger.info("MonitoringPerNameState: from%s to%s", oldState, newState)
         }
     }
