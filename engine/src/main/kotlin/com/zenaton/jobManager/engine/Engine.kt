@@ -1,6 +1,7 @@
 package com.zenaton.jobManager.engine
 
 import com.zenaton.commons.data.interfaces.deepCopy
+import com.zenaton.commons.data.interfaces.inc
 import com.zenaton.jobManager.data.JobAttemptId
 import com.zenaton.jobManager.data.JobAttemptRetry
 import com.zenaton.jobManager.data.JobStatus
