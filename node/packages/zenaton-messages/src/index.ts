@@ -62,7 +62,7 @@ export type JobAttemptFailed = {
   jobAttemptRetry: number;
   jobAttemptIndex: number;
   sentAt: number;
-  // TODO: add jobAttemptError
+  jobAttemptError: Buffer;
   jobAttemptDelayBeforeRetry: number | null;
 };
 
