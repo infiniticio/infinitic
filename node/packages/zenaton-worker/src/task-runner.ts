@@ -40,16 +40,16 @@ export class TaskRunner {
   private async runTask(message: RunJob) {
     await this.notifyTaskAttemptStarted(message);
 
-    let inputs: any[];
+    let input: any;
     if (message.jobData) {
-      inputs = JSON.parse(message.jobData.toString());
+      input = JSON.parse(message.jobData.toString());
     } else {
-      inputs = [];
+      input = undefined;
     }
     let output: any = undefined;
     let error: Error | undefined = undefined;
     try {
-      output = await this.task.handle(...inputs);
+      output = await this.task.handle(input);
     } catch (e) {
       error = e;
     }
@@ -105,7 +105,7 @@ export class TaskRunner {
     });
   }
 
-  private async notifyTaskAttemptFailed(message: RunJob, _error: Error) {
+  private async notifyTaskAttemptFailed(message: RunJob, error: Error) {
     const toSend: JobAttemptFailedMessage = {
       jobId: message.jobId,
       type: 'JobAttemptFailed',
@@ -116,6 +116,7 @@ export class TaskRunner {
         jobAttemptRetry: message.jobAttemptIndex,
         jobAttemptIndex: message.jobAttemptIndex,
         jobAttemptDelayBeforeRetry: null,
+        jobAttemptError: Buffer.from(JSON.stringify(error)),
       },
     };
 

@@ -1,4 +1,4 @@
-export interface Task {
+export interface Task<I = any, O = any> {
   name: string;
-  handle(...inputs: any[]): any;
+  handle(input: I): O;
 }
