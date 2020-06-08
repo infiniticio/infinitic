@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroForMonitoringPerNameMessage",
-    "namespace": "com.zenaton.jobManager.messages",
+    "namespace": "com.zenaton.jobManager.messages.envelopes",
     "fields": [
         {
             "name": "type",

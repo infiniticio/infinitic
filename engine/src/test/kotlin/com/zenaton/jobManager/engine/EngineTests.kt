@@ -16,8 +16,8 @@ import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
-import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
-import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import com.zenaton.jobManager.utils.TestFactory
 import com.zenaton.workflowengine.data.WorkflowId

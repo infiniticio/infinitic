@@ -6,7 +6,7 @@ import com.zenaton.jobManager.engine.Engine
 import com.zenaton.jobManager.engine.EngineStorage
 import com.zenaton.jobManager.interfaces.AvroDispatcher
 import com.zenaton.jobManager.interfaces.AvroStorage
-import com.zenaton.jobManager.messages.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
 import com.zenaton.workflowengine.topics.workflows.dispatcher.WorkflowDispatcherInterface
 import org.slf4j.Logger
 

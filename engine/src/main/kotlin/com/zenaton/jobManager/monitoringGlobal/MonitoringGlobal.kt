@@ -2,7 +2,7 @@ package com.zenaton.jobManager.monitoringGlobal
 
 import com.zenaton.commons.data.interfaces.deepCopy
 import com.zenaton.jobManager.messages.JobCreated
-import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import org.slf4j.Logger
 
 class MonitoringGlobal {
