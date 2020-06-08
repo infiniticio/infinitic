@@ -10,11 +10,11 @@ import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.jobManager.data.JobStatus
-import com.zenaton.jobManager.messages.interfaces.FailingJobAttemptMessage
 import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
+import com.zenaton.jobManager.messages.interfaces.FailingJobAttemptMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import com.zenaton.jobManager.messages.interfaces.JobMessage
 import com.zenaton.workflowengine.data.WorkflowId

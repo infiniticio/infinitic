@@ -1,11 +1,5 @@
 package com.zenaton
 
-import com.zenaton.jobManager.avro.AvroConverter
-import com.zenaton.jobManager.data.JobId
-import com.zenaton.jobManager.data.JobName
-import com.zenaton.jobManager.data.JobStatus
-import com.zenaton.jobManager.messages.JobStatusUpdated
-
 fun main() {
     //    Assert.assertTrue(SchemaCompatibility.schemaNameEquals(newSchema, oldSchema))
     //    Assert.assertNotNull(compatResult)

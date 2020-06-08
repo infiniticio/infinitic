@@ -2,9 +2,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-group = "com.zenaton.engine"
-version = "1.0-SNAPSHOT"
-
 plugins {
     application
     kotlin("jvm") version "1.3.72"

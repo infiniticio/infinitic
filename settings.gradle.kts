@@ -1,4 +1,6 @@
-rootProject.name = "engine"
+rootProject.name = "com.zenaton"
+
+include("jobManager")
 
 pluginManagement {
     repositories {
