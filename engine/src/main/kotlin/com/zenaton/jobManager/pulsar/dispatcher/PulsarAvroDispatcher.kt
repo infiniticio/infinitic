@@ -1,10 +1,10 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
 import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.messages.AvroForEngineMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
 import com.zenaton.jobManager.pulsar.Topic
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.impl.schema.AvroSchema

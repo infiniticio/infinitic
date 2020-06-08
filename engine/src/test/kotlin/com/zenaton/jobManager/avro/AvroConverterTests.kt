@@ -2,10 +2,10 @@ package com.zenaton.jobManager.avro
 
 import com.zenaton.jobManager.engine.EngineState
 import com.zenaton.jobManager.messages.Message
-import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
-import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
 import com.zenaton.jobManager.monitoringGlobal.MonitoringGlobalState
 import com.zenaton.jobManager.monitoringPerName.MonitoringPerNameState
 import com.zenaton.jobManager.utils.TestFactory

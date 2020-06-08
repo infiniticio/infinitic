@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.pulsar.functions
 
 import com.zenaton.jobManager.functions.MonitoringGlobalFunction
-import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function

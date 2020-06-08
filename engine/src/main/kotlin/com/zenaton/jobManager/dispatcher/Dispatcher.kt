@@ -2,10 +2,10 @@ package com.zenaton.jobManager.dispatcher
 
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.messages.interfaces.ForEngineMessage
-import com.zenaton.jobManager.messages.interfaces.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.interfaces.ForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
 
 class Dispatcher(private val avroDispatcher: AvroDispatcher) {
 

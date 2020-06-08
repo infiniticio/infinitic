@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.messages.interfaces
+package com.zenaton.jobManager.messages.envelopes
 
 import com.zenaton.commons.data.DateTime
 

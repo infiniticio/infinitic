@@ -5,7 +5,7 @@ import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobStatusUpdated
-import com.zenaton.jobManager.messages.interfaces.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import org.slf4j.Logger
 
 class MonitoringPerName {

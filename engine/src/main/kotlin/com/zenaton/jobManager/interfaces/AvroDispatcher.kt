@@ -1,9 +1,9 @@
 package com.zenaton.jobManager.interfaces
 
-import com.zenaton.jobManager.messages.AvroForEngineMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
 
 interface AvroDispatcher {
     fun toWorkers(msg: AvroForWorkerMessage)
