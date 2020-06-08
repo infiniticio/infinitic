@@ -45,7 +45,7 @@ export type JobAttemptCompleted = {
   jobAttemptRetry: number;
   jobAttemptIndex: number;
   sentAt: number;
-  // TODO: add jobOutput
+  jobOutput: Buffer | null;
 };
 
 export type JobAttemptDispatched = {
@@ -173,11 +173,12 @@ export type ForWorkerMessageType = 'RunJob';
 
 export type RunJob = {
   jobId: string;
+  jobName: string;
+  jobData: Buffer | null;
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
   sentAt: number;
-  jobName: string;
 };
 
 export interface RunJobMessage {
