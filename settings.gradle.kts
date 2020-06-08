@@ -1,7 +1,9 @@
 rootProject.name = "com.zenaton"
 
-include("jobManager")
-include("jobManager-pulsar")
+include("zenaton-commons")
+include("zenaton-jobManager")
+include("zenaton-jobManager-pulsar")
+include("zenaton-workflowManager")
 
 pluginManagement {
     repositories {

@@ -1,0 +1,25 @@
+{
+    "type": "record",
+    "name": "AvroForEngineMessage",
+    "namespace": "com.zenaton.workflowManager.messages.envelopes",
+    "fields": [
+        {
+            "name": "type",
+            "type": {
+                "type": "enum",
+                "name": "AvroForEngineMessageType",
+                "symbols": [
+                    "TaskCompleted"
+                ]
+             }
+        }, {
+            "name": "workflowId",
+            "type": "string",
+            "logicalType": "uuid"
+        }, {
+            "name": "TaskCompleted",
+            "type": ["null", "com.zenaton.workflowManager.messages.AvroTaskCompleted"],
+            "default": null
+        }
+    ]
+}

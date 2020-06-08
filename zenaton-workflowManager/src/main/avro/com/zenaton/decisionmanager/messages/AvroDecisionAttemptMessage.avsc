@@ -1,0 +1,35 @@
+{
+    "type": "record",
+    "name": "AvroDecisionAttemptMessage",
+    "namespace": "com.zenaton.decisionmanager.messages",
+    "fields": [
+        {
+            "name": "decisionId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+          "name": "decisionAttemptId",
+          "type": "string",
+          "logicalType": "uuid"
+        },
+        {
+          "name": "decisionAttemptIndex",
+          "type": "int"
+        },
+        {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        },
+        {
+            "name": "decisionName",
+            "type": "string"
+        },
+        {
+            "name": "decisionData",
+            "type": ["null",{"type":"bytes"}],
+            "default": null
+        }
+    ]
+}
