@@ -1,10 +1,10 @@
 package com.zenaton.commons.utils.avro
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.jobManager.messages.AvroForEngineMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
 import java.io.File
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
