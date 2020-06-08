@@ -1,6 +1,7 @@
 rootProject.name = "com.zenaton"
 
 include("jobManager")
+include("jobManager-pulsar")
 
 pluginManagement {
     repositories {

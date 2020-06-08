@@ -11,7 +11,7 @@ import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
 import com.zenaton.jobManager.pulsar.Topic
-import com.zenaton.jobManager.utils.TestFactory
+import com.zenaton.jobManager.pulsar.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec

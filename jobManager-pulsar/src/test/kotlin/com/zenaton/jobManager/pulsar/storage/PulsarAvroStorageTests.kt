@@ -3,10 +3,10 @@ package com.zenaton.jobManager.pulsar.storage
 import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.data.JobStatus
+import com.zenaton.jobManager.pulsar.utils.TestFactory
 import com.zenaton.jobManager.states.AvroEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
-import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified
@@ -265,7 +265,6 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("delete state") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.get(AvroMonitoringGlobalState::class)
             every { context.deleteState(any()) } returns Unit
             // given
             val stageStorage = PulsarAvroStorage(context)
