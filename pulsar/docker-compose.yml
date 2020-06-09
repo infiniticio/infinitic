@@ -9,8 +9,8 @@ services:
     volumes:
       - "pulsar-data:/pulsar/data"
       - "/pulsar/conf"
-      - "./engine/build/libs:/zenaton/engine/libs:delegated"
-      - "./engine/build/schemas:/zenaton/engine/schemas:delegated"
+      - "../zenaton-jobManager-pulsar/build/libs:/zenaton/engine/libs:delegated"
+      - "../build/schemas:/zenaton/engine/schemas:delegated"
     ports:
       - "6650:6650"
       - "8080:8080"

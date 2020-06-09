@@ -80,17 +80,17 @@ tasks.register("install") {
     dependsOn("set schemas")
     doLast {
         setZenatonFunction(
-            className = "com.zenaton.jobManager.pulsar.engine.EngineFunction",
+            className = "com.zenaton.jobManager.pulsar.functions.EnginePulsarFunction",
             topicsIn = setOf("engine"),
             action = "create"
         )
         setZenatonFunction(
-            className = "com.zenaton.jobManager.pulsar.monitoring.global.MonitoringGlobalFunction",
+            className = "com.zenaton.jobManager.pulsar.functions.MonitoringGlobalPulsarFunction",
             topicsIn = setOf("monitoring-global"),
             action = "create"
         )
         setZenatonFunction(
-            className = "com.zenaton.jobManager.pulsar.monitoring.perName.MonitoringPerNameFunction",
+            className = "com.zenaton.jobManager.pulsar.functions.MonitoringPerNamePulsarFunction",
             topicsIn = setOf("monitoring-per-name"),
             action = "create"
         )
@@ -103,17 +103,17 @@ tasks.register("update") {
     dependsOn("set schemas")
     doLast {
         setZenatonFunction(
-            className = "com.zenaton.jobManager.pulsar.engine.EngineFunction",
+            className = "com.zenaton.jobManager.pulsar.functions.EnginePulsarFunction",
             topicsIn = setOf("engine"),
             action = "update"
         )
         setZenatonFunction(
-            className = "com.zenaton.jobManager.pulsar.monitoring.global.MonitoringGlobalFunction",
+            className = "com.zenaton.jobManager.pulsar.functions.MonitoringGlobalPulsarFunction",
             topicsIn = setOf("monitoring-global"),
             action = "update"
         )
         setZenatonFunction(
-            className = "com.zenaton.jobManager.pulsar.monitoring.perName.MonitoringPerNameFunction",
+            className = "com.zenaton.jobManager.pulsar.functions.MonitoringPerNamePulsarFunction",
             topicsIn = setOf("monitoring-per-name"),
             action = "update"
         )
@@ -138,7 +138,7 @@ tasks.register("delete") {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    val cmd = arrayOf("java", "-cp", "build/libs/engine-1.0-SNAPSHOT-all.jar", "com.zenaton.commons.utils.avro.MainKt")
+    val cmd = arrayOf("java", "-cp", "zenaton-jobManager-pulsar/build/libs/zenaton-jobManager-pulsar-1.0-SNAPSHOT-all.jar", "com.zenaton.jobManager.pulsar.utils.MainKt")
     exec(cmd)
 }
 
@@ -150,7 +150,7 @@ fun uploadSchemaToTopic(
 ) {
     println("Uploading $name schema to $topic topic...")
     val cmd = arrayOf(
-        "docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin",
+        "docker-compose", "-f", "pulsar/docker-compose.yml", "exec", "-T", "pulsar", "bin/pulsar-admin",
         "schemas",
         "upload",
         "persistent://$tenant/$namespace/$topic",
@@ -173,9 +173,9 @@ fun setZenatonFunction(
     )
     println("$action $className for $inputs...")
     val cmd = mutableListOf(
-        "docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin",
+        "docker-compose", "-f", "pulsar/docker-compose.yml", "exec", "-T", "pulsar", "bin/pulsar-admin",
         "functions", action,
-        "--jar", "/zenaton/engine/libs/engine-1.0-SNAPSHOT-all.jar",
+        "--jar", "/zenaton/engine/libs/zenaton-jobManager-pulsar-1.0-SNAPSHOT-all.jar",
         "--log-topic", "persistent://$tenant/$namespace/logs",
         "--classname", className,
         "--inputs", inputs
@@ -190,7 +190,7 @@ fun setZenatonFunction(
 fun deleteZenatonFunction(name: String, tenant: String = "public", namespace: String = "default") {
     println("Deleting $name function from $tenant/$namespace...")
     val cmd = arrayOf(
-        "docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin",
+        "docker-compose", "-f", "pulsar/docker-compose.yml", "exec", "-T", "pulsar", "bin/pulsar-admin",
         "functions", "delete",
         "--tenant", tenant,
         "--namespace", namespace,
@@ -202,7 +202,7 @@ fun deleteZenatonFunction(name: String, tenant: String = "public", namespace: St
 fun forceDeleteTopic(topic: String, tenant: String = "public", namespace: String = "default") {
     println("Deleting $topic topic from $tenant/$namespace...")
     val cmd = arrayOf(
-        "docker-compose", "exec", "-T", "pulsar", "bin/pulsar-admin",
+        "docker-compose", "-f", "pulsar/docker-compose.yml", "exec", "-T", "pulsar", "bin/pulsar-admin",
         "topics", "delete",
         "persistent://$tenant/$namespace/$topic",
         "--deleteSchema",
