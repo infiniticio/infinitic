@@ -1,0 +1,38 @@
+version: "3.7"
+services:
+  pulsar:
+    image: apachepulsar/pulsar-all:2.5.2
+    environment:
+      - PULSAR_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
+    command: >
+      /bin/bash -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
+    volumes:
+      - "pulsar-data:/pulsar/data"
+      - "/pulsar/conf"
+      - "../zenaton-jobManager-pulsar/build/libs:/zenaton/engine/libs:delegated"
+      - "../build/schemas:/zenaton/engine/schemas:delegated"
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    restart: unless-stopped
+
+  dashboard:
+    image: apachepulsar/pulsar-manager:v0.1.0
+    ports:
+      - "9527:9527"
+    depends_on:
+      - pulsar
+    links:
+      - pulsar
+    volumes:
+      - "pulsar-data:/data"
+    environment:
+      REDIRECT_HOST: "http://127.0.0.1"
+      REDIRECT_PORT: "9527"
+      DRIVER_CLASS_NAME: "org.postgresql.Driver"
+      URL: "jdbc:postgresql://127.0.0.1:5432/pulsar_manager"
+      USERNAME: "pulsar"
+      PASSWORD: "pulsar"
+      LOG_LEVEL: "DEBUG"
+volumes:
+  pulsar-data:
