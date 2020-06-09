@@ -1,9 +1,6 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
     application
-    kotlin("jvm") version "1.3.72"
-    id("com.github.johnrengelman.shadow") version "5.2.0"
+    kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
     id("com.commercehub.gradle.plugin.avro") version "0.19.1"
 }
@@ -18,12 +15,9 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.apache.pulsar:pulsar-client:2.5.+")
-    implementation("org.apache.pulsar:pulsar-functions-api:2.5.+")
     implementation("org.apache.avro:avro:1.9.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
-    implementation("org.slf4j:slf4j-api:1.7.+")
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
@@ -47,15 +41,8 @@ tasks {
 }
 
 tasks {
-    named<ShadowJar>("shadowJar") {
-        mergeServiceFiles()
-    }
-}
-
-tasks {
     build {
         dependsOn("ktlintFormat")
-        dependsOn(shadowJar)
     }
 }
 

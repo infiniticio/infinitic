@@ -5,6 +5,16 @@
  * Learn how to create Gradle builds at https://guides.gradle.org/creating-new-gradle-builds
  */
 
+plugins {
+    kotlin("jvm") version "1.3.72" apply false
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
 subprojects {
     version = "1.0-SNAPSHOT"
 }
