@@ -1,0 +1,33 @@
+{
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=12"
+  },
+  "scripts": {
+    "start": "tsdx watch --target node",
+    "build": "tsdx build --target node",
+    "test": "tsdx test",
+    "lint": "tsdx lint --target node",
+    "prepare": "tsdx build --target node"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "name": "@zenaton/messages",
+  "author": "Zenaton",
+  "module": "dist/messages.esm.js",
+  "dependencies": {
+    "avsc": "^5.4.21"
+  },
+  "devDependencies": {}
+}
