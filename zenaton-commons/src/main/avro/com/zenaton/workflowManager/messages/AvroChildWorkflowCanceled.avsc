@@ -1,0 +1,24 @@
+{
+    "type": "record",
+    "name": "AvroChildWorkflowCanceled",
+    "namespace": "com.zenaton.workflowManager.messages",
+    "fields": [
+        {
+            "name": "workflowId",
+            "type": "string",
+            "logicalType": "uuid"
+        }, {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        }, {
+            "name": "childWorkflowId",
+            "type": "string",
+            "logicalType": "uuid"
+        }, {
+            "name": "childWorkflowOutput",
+            "type": ["null", "bytes"],
+            "default": null
+        }
+    ]
+}

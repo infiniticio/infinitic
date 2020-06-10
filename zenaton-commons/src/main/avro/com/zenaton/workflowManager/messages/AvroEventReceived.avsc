@@ -1,0 +1,23 @@
+{
+    "type": "record",
+    "name": "AvroEventReceived",
+    "namespace": "com.zenaton.workflowManager.messages",
+    "fields": [
+        {
+            "name": "workflowId",
+            "type": "string",
+            "logicalType": "uuid"
+        }, {
+            "name": "sentAt",
+            "type": "long",
+            "logicalType": "timestamp-millis"
+        }, {
+            "name": "eventName",
+            "type": "string"
+        }, {
+            "name": "eventData",
+            "type": ["null", "bytes"],
+            "default": null
+        }
+    ]
+}

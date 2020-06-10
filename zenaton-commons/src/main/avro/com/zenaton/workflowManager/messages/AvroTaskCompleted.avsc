@@ -7,18 +7,15 @@
             "name": "workflowId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
+        }, {
             "name": "taskId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
+        }, {
             "name": "taskOutput",
             "type": ["null", "bytes"],
             "default": null
-        },
-        {
+        }, {
             "name": "sentAt",
             "type": "long",
             "logicalType": "timestamp-millis"

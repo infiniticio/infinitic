@@ -11,9 +11,9 @@ import com.zenaton.decisionmanager.messages.interfaces.DecisionAttemptFailingMes
 import com.zenaton.decisionmanager.messages.interfaces.DecisionAttemptMessageInterface
 import com.zenaton.decisionmanager.messages.interfaces.DecisionMessageInterface
 import com.zenaton.decisionmanager.state.DecisionState
-import com.zenaton.workflowengine.interfaces.LoggerInterface
-import com.zenaton.workflowengine.interfaces.StaterInterface
-import com.zenaton.workflowengine.topics.workflows.messages.DecisionCompleted
+import com.zenaton.workflowManager.interfaces.LoggerInterface
+import com.zenaton.workflowManager.interfaces.StaterInterface
+import com.zenaton.workflowManager.messages.DecisionCompleted
 
 class DecisionEngine(
     private val stater: StaterInterface<DecisionState>,
