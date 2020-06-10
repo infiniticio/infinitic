@@ -7,13 +7,11 @@
             "name": "workflowId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
+        }, {
             "name": "taskId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
+        }, {
             "name": "taskOutput",
             "type": ["null", "com.zenaton.commons.data.AvroSerializedData"],
             "default": null

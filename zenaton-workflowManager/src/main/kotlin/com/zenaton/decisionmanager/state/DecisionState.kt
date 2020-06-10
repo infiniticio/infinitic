@@ -5,7 +5,7 @@ import com.zenaton.decisionmanager.data.DecisionAttemptId
 import com.zenaton.decisionmanager.data.DecisionData
 import com.zenaton.decisionmanager.data.DecisionId
 import com.zenaton.decisionmanager.data.DecisionName
-import com.zenaton.workflowengine.data.WorkflowId
+import com.zenaton.workflowManager.data.WorkflowId
 
 data class DecisionState(
     val decisionId: DecisionId,

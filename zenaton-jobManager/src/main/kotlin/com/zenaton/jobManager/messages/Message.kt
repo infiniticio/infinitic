@@ -17,7 +17,6 @@ import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkflowsMessage
 import com.zenaton.jobManager.messages.interfaces.FailingJobAttemptMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
-import com.zenaton.jobManager.messages.interfaces.JobMessage
 
 sealed class Message
 
@@ -65,12 +64,12 @@ data class JobAttemptStarted(
 
 data class JobCanceled(
     override val jobId: JobId
-) : Message(), JobMessage, ForEngineMessage
+) : Message(), ForEngineMessage
 
 data class JobCompleted(
     override val jobId: JobId,
     val jobOutput: JobOutput?
-) : Message(), JobMessage, ForEngineMessage
+) : Message(), ForEngineMessage
 
 data class JobCreated(
     val jobName: JobName

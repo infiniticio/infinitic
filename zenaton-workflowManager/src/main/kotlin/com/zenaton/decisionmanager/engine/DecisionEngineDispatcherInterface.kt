@@ -3,7 +3,7 @@ package com.zenaton.decisionmanager.engine
 import com.zenaton.decisionmanager.messages.DecisionAttemptDispatched
 import com.zenaton.decisionmanager.messages.DecisionAttemptRetried
 import com.zenaton.decisionmanager.messages.DecisionAttemptTimeout
-import com.zenaton.workflowengine.topics.workflows.messages.DecisionCompleted
+import com.zenaton.workflowManager.messages.DecisionCompleted
 
 interface DecisionEngineDispatcherInterface {
     fun dispatch(msg: DecisionCompleted)

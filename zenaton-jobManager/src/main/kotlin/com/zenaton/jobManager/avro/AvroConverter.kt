@@ -79,7 +79,7 @@ object AvroConverter {
                 runJob = convertToAvro(message)
                 type = AvroForWorkerMessageType.RunJob
             }
-            else -> throw Exception("Unknown ForWorkerMessage: $message")
+            else -> throw Exception("Unknown ForWorkerMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
@@ -87,7 +87,7 @@ object AvroConverter {
     fun fromWorkers(input: AvroForWorkerMessage): ForWorkerMessage {
         return when (input.type) {
             AvroForWorkerMessageType.RunJob -> this.convertFromAvro(input.runJob)
-            else -> throw Exception("Unknown AvroForWorkerMessage: $input")
+            else -> throw Exception("Unknown AvroForWorkerMessage: ${input::class.qualifiedName}")
         }
     }
 
@@ -98,7 +98,7 @@ object AvroConverter {
                 jobCreated = convertToAvro(message)
                 type = AvroForMonitoringGlobalMessageType.JobCreated
             }
-            else -> throw Exception("Unknown ForMonitoringGlobalMessage: $message")
+            else -> throw Exception("Unknown ForMonitoringGlobalMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
@@ -106,7 +106,7 @@ object AvroConverter {
     fun fromMonitoringGlobal(input: AvroForMonitoringGlobalMessage): ForMonitoringGlobalMessage {
         return when (input.type) {
             AvroForMonitoringGlobalMessageType.JobCreated -> this.convertFromAvro(input.jobCreated)
-            else -> throw Exception("Unknown AvroForMonitoringGlobalMessage: $input")
+            else -> throw Exception("Unknown AvroForMonitoringGlobalMessage: ${input::class.qualifiedName}")
         }
     }
 
@@ -118,7 +118,7 @@ object AvroConverter {
                 jobStatusUpdated = convertToAvro(message)
                 type = AvroForMonitoringPerNameMessageType.JobStatusUpdated
             }
-            else -> throw Exception("Unknown ForMonitoringPerNameMessage: $message")
+            else -> throw Exception("Unknown ForMonitoringPerNameMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
@@ -126,7 +126,7 @@ object AvroConverter {
     fun fromMonitoringPerName(input: AvroForMonitoringPerNameMessage): ForMonitoringPerNameMessage {
         return when (input.type) {
             AvroForMonitoringPerNameMessageType.JobStatusUpdated -> this.convertFromAvro(input.jobStatusUpdated)
-            else -> throw Exception("Unknown AvroForMonitoringPerNameMessage: $input")
+            else -> throw Exception("Unknown AvroForMonitoringPerNameMessage: ${input::class.qualifiedName}")
         }
     }
 
@@ -174,7 +174,7 @@ object AvroConverter {
                 jobCompleted = convertToAvro(message)
                 type = AvroForEngineMessageType.JobCompleted
             }
-            else -> throw Exception("Unknown ForJobEngineMessage: $message")
+            else -> throw Exception("Unknown ForJobEngineMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
@@ -191,7 +191,7 @@ object AvroConverter {
             AvroForEngineMessageType.JobAttemptStarted -> this.convertFromAvro(input.jobAttemptStarted)
             AvroForEngineMessageType.JobCanceled -> this.convertFromAvro(input.jobCanceled)
             AvroForEngineMessageType.JobCompleted -> this.convertFromAvro(input.jobCompleted)
-            else -> throw Exception("Unknown AvroForEngineMessage: $input")
+            else -> throw Exception("Unknown AvroForEngineMessage: ${input::class.qualifiedName}")
         }
     }
 
@@ -200,10 +200,10 @@ object AvroConverter {
         builder.workflowId = message.workflowId.id
         when (message) {
             is TaskCompleted -> builder.apply {
-                taskCompleted = convertToAvro(message)
-                type = AvroForWorkflowsMessageType.TaskCompleted
+                avroTaskCompleted = convertToAvro(message)
+                type = AvroForWorkflowsMessageType.AvroTaskCompleted
             }
-            else -> throw Exception("Unknown ForWorkflowsMessage: $message")
+            else -> throw Exception("Unknown ForWorkflowsMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
@@ -261,7 +261,7 @@ object AvroConverter {
         is AvroRetryJobAttempt -> this.convertFromAvro(avro)
         is AvroRunJob -> this.convertFromAvro(avro)
         is AvroTaskCompleted -> this.convertFromAvro(avro)
-        else -> throw Exception("Unknown SpecificRecordBase: $avro")
+        else -> throw Exception("Unknown SpecificRecordBase: ${avro::class.qualifiedName}")
     }
 
     /**

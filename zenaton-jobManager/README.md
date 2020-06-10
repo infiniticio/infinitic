@@ -21,13 +21,13 @@ You can find the built JAR files in `./build/libs`.
 #### Register the function
 
 ```shell script
-bin/pulsar-admin functions create --jar /engine/workflow-engine/build/workflow-engine-1.0-SNAPSHOT-all.jar --classname com.zenaton.workflowengine.workflowengine.WorkflowEngineFunction --inputs workflows
+bin/pulsar-admin functions create --jar /engine/workflow-engine/build/workflow-engine-1.0-SNAPSHOT-all.jar --classname com.zenaton.workflowManager.workflowengine.WorkflowEngineFunction --inputs workflows
 ```
 
 #### Update the function
 
 ```shell script
-bin/pulsar-admin functions update --jar /engine/workflow-engine/build/workflow-engine-1.0-SNAPSHOT-all.jar --classname com.zenaton.workflowengine.workflowengine.WorkflowEngineFunction --inputs workflows
+bin/pulsar-admin functions update --jar /engine/workflow-engine/build/workflow-engine-1.0-SNAPSHOT-all.jar --classname com.zenaton.workflowManager.workflowengine.WorkflowEngineFunction --inputs workflows
 ```
 
 #### Delete the function

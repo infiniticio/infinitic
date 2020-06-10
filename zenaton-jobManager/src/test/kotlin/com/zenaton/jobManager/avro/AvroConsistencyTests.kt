@@ -11,7 +11,7 @@ import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkflowsMessage
 import com.zenaton.jobManager.utils.TestFactory
-import com.zenaton.workflowManager.messages.envelopes.AvroForEngineMessage as AvroForWorkflowsMessage
+import com.zenaton.workflowManager.messages.AvroTaskCompleted
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
@@ -26,11 +26,7 @@ class AvroConsistencyTests : StringSpec({
             AvroForEngineMessage()
         )
     )
-    include(
-        `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForWorkflowsMessage>(
-            AvroForWorkflowsMessage()
-        )
-    )
+
     include(
         `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForMonitoringGlobalMessage>(
             AvroForMonitoringGlobalMessage()
@@ -46,6 +42,12 @@ class AvroConsistencyTests : StringSpec({
             AvroForWorkerMessage()
         )
     )
+
+    "Messages used from AvroForWorkflowsMessage should implement ForWorkflowsMessage after conversion" {
+        val taskCompleted = AvroConverter.convertFromAvro(TestFactory.get(AvroTaskCompleted::class))
+        (taskCompleted is ForWorkflowsMessage) shouldBe true
+        (taskCompleted is Message) shouldBe true
+    }
 
     "message implementing a For*Message interface should be convertible to AvroFor*Message" {
         Message::class.sealedSubclasses.forEach {
