@@ -20,10 +20,8 @@ import com.zenaton.jobManager.messages.RunJob
 import com.zenaton.jobManager.messages.TaskCompleted
 import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
-import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.Runs
@@ -42,14 +40,10 @@ fun cancelJob(values: Map<String, Any?>? = null) = TestFactory.get(CancelJob::cl
 fun dispatchJob(values: Map<String, Any?>? = null) = TestFactory.get(DispatchJob::class, values)
 fun retryJob(values: Map<String, Any?>? = null) = TestFactory.get(RetryJob::class, values)
 fun retryJobAttempt(values: Map<String, Any?>? = null) = TestFactory.get(RetryJobAttempt::class, values)
-fun workerMessage(values: Map<String, Any?>? = null) = TestFactory.get(ForWorkerMessage::class, values)
 
 fun jobAttemptCompleted(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptCompleted::class, values)
-fun jobAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptDispatched::class, values)
 fun jobAttemptFailed(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptFailed::class, values)
 fun jobAttemptStarted(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptStarted::class, values)
-fun jobCanceled(values: Map<String, Any?>? = null) = TestFactory.get(JobCanceled::class, values)
-fun jobCompleted(values: Map<String, Any?>? = null) = TestFactory.get(JobCompleted::class, values)
 
 class EngineResults {
     lateinit var dispatcher: Dispatcher
@@ -132,42 +126,6 @@ fun engineHandle(stateIn: EngineState?, msgIn: ForEngineMessage): EngineResults 
 }
 
 class EngineFunctionTests : StringSpec({
-    // Note: dispatchJob is voluntary excluded of this test
-    include(shouldWarnIfNotState(cancelJob()))
-    include(shouldWarnIfNotState(retryJob()))
-    include(shouldWarnIfNotState(retryJobAttempt()))
-    include(shouldWarnIfNotState(jobAttemptCompleted()))
-    include(shouldWarnIfNotState(jobAttemptFailed()))
-    include(shouldWarnIfNotState(jobAttemptStarted()))
-
-    include(shouldErrorIfStateAndMessageHaveInconsistentJobId(cancelJob()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentJobId(retryJob()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentJobId(retryJobAttempt()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentJobId(jobAttemptCompleted()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentJobId(jobAttemptFailed()))
-    include(shouldErrorIfStateAndMessageHaveInconsistentJobId(jobAttemptStarted()))
-
-    // Note: jobAttemptCompleted is voluntary excluded of this test
-    include(shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(retryJobAttempt()))
-    include(shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(jobAttemptFailed()))
-    include(shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(jobAttemptStarted()))
-
-    // Note: jobAttemptCompleted is voluntary excluded of this test
-    include(shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(retryJobAttempt()))
-    include(shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(jobAttemptFailed()))
-    include(shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(jobAttemptStarted()))
-
-    "Should error if job dispatched with existing state" {
-        val stateIn = state()
-        val msgIn = dispatchJob(mapOf("jobId" to stateIn.jobId))
-        val o = engineHandle(stateIn, msgIn)
-        verifyOrder {
-            o.storage.getState(msgIn.jobId)
-            o.logger.error(any(), msgIn, stateIn)
-        }
-        checkConfirmVerified(o)
-    }
-
     "Cancel Job" {
         val stateIn = state(
             mapOf(
@@ -425,34 +383,6 @@ class EngineFunctionTests : StringSpec({
     }
 })
 
-private fun shouldWarnIfNotState(msgIn: ForEngineMessage) = stringSpec {
-    val o = engineHandle(null, msgIn)
-    checkShouldWarnAndDoNothingMore(null, msgIn, o)
-}
-
-private fun shouldErrorIfStateAndMessageHaveInconsistentJobId(msgIn: ForEngineMessage) = stringSpec {
-    val stateIn = state()
-    val o = engineHandle(stateIn, msgIn)
-    checkShouldErrorAndDoNothingMore(stateIn, msgIn, o)
-}
-
-private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptId(msgIn: JobAttemptMessage) = stringSpec {
-    val stateIn = state(mapOf("jobId" to msgIn.jobId))
-    val o = engineHandle(stateIn, msgIn as ForEngineMessage)
-    checkShouldWarnAndDoNothingMore(stateIn, msgIn as ForEngineMessage, o)
-}
-
-private fun shouldWarnIfStateAndAttemptMessageHaveInconsistentAttemptIndex(msgIn: JobAttemptMessage) = stringSpec {
-    val stateIn = state(
-        mapOf(
-            "jobId" to msgIn.jobId,
-            "jobAttemptId" to msgIn.jobAttemptId
-        )
-    )
-    val o = engineHandle(stateIn, msgIn as ForEngineMessage)
-    checkShouldWarnAndDoNothingMore(stateIn, msgIn as ForEngineMessage, o)
-}
-
 private fun checkShouldDoNothing(msgIn: ForEngineMessage, o: EngineResults) {
     verifyOrder {
         o.storage.getState(msgIn.jobId)
@@ -487,22 +417,6 @@ private fun checkShouldRetryJobAttempt(msgIn: ForEngineMessage, stateIn: EngineS
     o.state!!.jobStatus shouldBe JobStatus.RUNNING_WARNING
     o.jobStatusUpdated!!.oldStatus shouldBe stateIn.jobStatus
     o.jobStatusUpdated!!.newStatus shouldBe JobStatus.RUNNING_WARNING
-}
-
-private fun checkShouldWarnAndDoNothingMore(stateIn: EngineState?, msgIn: ForEngineMessage, o: EngineResults) {
-    verifyOrder {
-        o.storage.getState(msgIn.jobId)
-        o.logger.warn(any(), msgIn, stateIn)
-    }
-    checkConfirmVerified(o)
-}
-
-private fun checkShouldErrorAndDoNothingMore(stateIn: EngineState?, msgIn: ForEngineMessage, o: EngineResults) {
-    verifyOrder {
-        o.storage.getState(msgIn.jobId)
-        o.logger.error(any(), msgIn, stateIn)
-    }
-    checkConfirmVerified(o)
 }
 
 private fun checkConfirmVerified(o: EngineResults) {
