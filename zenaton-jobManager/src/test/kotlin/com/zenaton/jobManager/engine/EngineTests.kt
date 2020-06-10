@@ -41,6 +41,9 @@ fun dispatchJob(values: Map<String, Any?>? = null) = TestFactory.get(DispatchJob
 fun retryJob(values: Map<String, Any?>? = null) = TestFactory.get(RetryJob::class, values)
 fun retryJobAttempt(values: Map<String, Any?>? = null) = TestFactory.get(RetryJobAttempt::class, values)
 
+fun jobCompleted(values: Map<String, Any?>? = null) = TestFactory.get(JobCompleted::class, values)
+fun jobCanceled(values: Map<String, Any?>? = null) = TestFactory.get(JobCanceled::class, values)
+fun jobAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptDispatched::class, values)
 fun jobAttemptCompleted(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptCompleted::class, values)
 fun jobAttemptFailed(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptFailed::class, values)
 fun jobAttemptStarted(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptStarted::class, values)
@@ -126,7 +129,35 @@ fun engineHandle(stateIn: EngineState?, msgIn: ForEngineMessage): EngineResults 
 }
 
 class EngineFunctionTests : StringSpec({
-    "Cancel Job" {
+    "JobAttemptDispatched" {
+        val stateIn = state()
+        val msgIn = jobAttemptDispatched()
+        val o = engineHandle(stateIn, msgIn)
+        checkShouldDoNothing(o)
+    }
+
+    "JobAttemptStarted" {
+        val stateIn = state()
+        val msgIn = jobAttemptStarted()
+        val o = engineHandle(stateIn, msgIn)
+        checkShouldDoNothing(o)
+    }
+
+    "JobCompleted" {
+        val stateIn = state()
+        val msgIn = jobCompleted()
+        val o = engineHandle(stateIn, msgIn)
+        checkShouldDoNothing(o)
+    }
+
+    "JobCanceled" {
+        val stateIn = state()
+        val msgIn = jobCanceled()
+        val o = engineHandle(stateIn, msgIn)
+        checkShouldDoNothing(o)
+    }
+
+    "CancelJob" {
         val stateIn = state(
             mapOf(
                 "jobStatus" to JobStatus.RUNNING_OK
@@ -146,7 +177,7 @@ class EngineFunctionTests : StringSpec({
         o.jobStatusUpdated!!.newStatus shouldBe JobStatus.TERMINATED_CANCELED
     }
 
-    "Dispatch Job" {
+    "DispatchJob" {
         val msgIn = dispatchJob()
         val o = engineHandle(null, msgIn)
         verifyOrder {
@@ -176,7 +207,7 @@ class EngineFunctionTests : StringSpec({
         o.jobStatusUpdated!!.newStatus shouldBe JobStatus.RUNNING_OK
     }
 
-    "Retry Job" {
+    "RetryJob" {
         val stateIn = state(
             mapOf(
                 "jobStatus" to JobStatus.RUNNING_ERROR
@@ -212,7 +243,7 @@ class EngineFunctionTests : StringSpec({
         o.jobStatusUpdated!!.newStatus shouldBe JobStatus.RUNNING_WARNING
     }
 
-    "Retry Job Attempt" {
+    "RetryJobAttempt" {
         val stateIn = state(
             mapOf(
                 "jobStatus" to JobStatus.RUNNING_ERROR
@@ -229,7 +260,7 @@ class EngineFunctionTests : StringSpec({
         checkShouldRetryJobAttempt(msgIn, stateIn, o)
     }
 
-    "Job Attempt Completed" {
+    "JobAttemptCompleted" {
         val stateIn = state(
             mapOf(
                 "jobStatus" to JobStatus.RUNNING_OK
@@ -257,7 +288,7 @@ class EngineFunctionTests : StringSpec({
         o.jobStatusUpdated!!.newStatus shouldBe JobStatus.TERMINATED_COMPLETED
     }
 
-    "Job Attempt Failed without retry" {
+    "JobAttemptFailed without retry" {
         val stateIn = state(
             mapOf(
                 "jobStatus" to JobStatus.RUNNING_OK
@@ -280,7 +311,7 @@ class EngineFunctionTests : StringSpec({
         checkConfirmVerified(o)
     }
 
-    "Job Attempt Failed with future retry" {
+    "JobAttemptFailed with future retry" {
         val stateIn = state(
             mapOf(
                 "jobStatus" to JobStatus.RUNNING_OK
@@ -312,7 +343,7 @@ class EngineFunctionTests : StringSpec({
         o.jobStatusUpdated!!.newStatus shouldBe JobStatus.RUNNING_WARNING
     }
 
-    "Job Attempt Failed with immediate retry" {
+    "JobAttemptFailed with immediate retry" {
         val stateIn = state(
             mapOf(
                 "jobStatus" to JobStatus.RUNNING_OK
@@ -330,7 +361,7 @@ class EngineFunctionTests : StringSpec({
         checkShouldRetryJobAttempt(msgIn, stateIn, o)
     }
 
-    "Job Attempt Failed with immediate retry (negative delay)" {
+    "JobAttemptFailed with immediate retry (negative delay)" {
         val stateIn = state(
             mapOf(
                 "jobStatus" to JobStatus.RUNNING_OK
@@ -347,43 +378,13 @@ class EngineFunctionTests : StringSpec({
         val o = engineHandle(stateIn, msgIn)
         checkShouldRetryJobAttempt(msgIn, stateIn, o)
     }
-
-    "Job Attempt Started" {
-        val stateIn = state(
-            mapOf(
-                "jobStatus" to JobStatus.RUNNING_OK
-            )
-        )
-        val msgIn = jobAttemptStarted(
-            mapOf(
-                "jobId" to stateIn.jobId,
-                "jobAttemptId" to stateIn.jobAttemptId,
-                "jobAttemptRetry" to stateIn.jobAttemptRetry
-            )
-        )
-        val o = engineHandle(stateIn, msgIn)
-        checkShouldDoNothing(msgIn, o)
-    }
-
-    "Job attempt started on a OK job should do nothing" {
-        val stateIn = state(
-            mapOf(
-                "jobStatus" to JobStatus.RUNNING_OK
-            )
-        )
-        val msgIn = jobAttemptStarted(
-            mapOf(
-                "jobId" to stateIn.jobId,
-                "jobAttemptId" to stateIn.jobAttemptId,
-                "jobAttemptRetry" to stateIn.jobAttemptRetry
-            )
-        )
-        val o = engineHandle(stateIn, msgIn)
-        checkShouldDoNothing(msgIn, o)
-    }
 })
 
-private fun checkShouldDoNothing(msgIn: ForEngineMessage, o: EngineResults) {
+private fun checkShouldDoNothing(o: EngineResults) {
+    checkConfirmVerified(o)
+}
+
+private fun checkShouldDoNothingExceptGetState(msgIn: ForEngineMessage, o: EngineResults) {
     verifyOrder {
         o.storage.getState(msgIn.jobId)
     }

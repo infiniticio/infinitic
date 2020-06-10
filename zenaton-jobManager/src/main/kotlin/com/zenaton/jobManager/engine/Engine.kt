@@ -28,11 +28,19 @@ class Engine {
     lateinit var dispatcher: Dispatcher
 
     fun handle(message: ForEngineMessage) {
-        // get associated state
+        // immediately discard messages that are non managed
+        when (message) {
+            is JobAttemptDispatched -> return
+            is JobAttemptStarted -> return
+            is JobCompleted -> return
+            is JobCanceled -> return
+        }
+
+        // get current state
         val oldState = storage.getState(message.jobId)
 
         if (oldState != null) {
-            // discard message if state has already evolved
+            // discard message (except JobAttemptCompleted) if state has already evolved
             if (message is JobAttemptMessage && message !is JobAttemptCompleted) {
                 if (oldState.jobAttemptId != message.jobAttemptId) return
                 if (oldState.jobAttemptRetry != message.jobAttemptRetry) return
@@ -46,15 +54,11 @@ class Engine {
             if (oldState == null)
                 dispatchJob(message as DispatchJob)
             else when (message) {
-                is CancelJob -> cancelJob(oldState, message)
+                is CancelJob -> cancelJob(oldState)
                 is RetryJob -> retryJob(oldState)
                 is RetryJobAttempt -> retryJobAttempt(oldState)
-                is JobAttemptDispatched -> oldState
-                is JobAttemptStarted -> oldState
                 is JobAttemptFailed -> taskAttemptFailed(oldState, message)
                 is JobAttemptCompleted -> taskAttemptCompleted(oldState, message)
-                is JobCompleted -> oldState
-                is JobCanceled -> oldState
                 else -> throw Exception("Unknown EngineMessage: $message")
             }
 
@@ -76,7 +80,7 @@ class Engine {
         }
     }
 
-    private fun cancelJob(oldState: EngineState, msg: CancelJob): EngineState {
+    private fun cancelJob(oldState: EngineState): EngineState {
         val state = oldState.copy(jobStatus = JobStatus.TERMINATED_CANCELED)
 
         // log event
