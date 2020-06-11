@@ -13,7 +13,7 @@ import com.zenaton.jobManager.data.WorkflowId
 data class EngineState(
     val jobId: JobId,
     val jobName: JobName,
-    var jobStatus: JobStatus,
+    val jobStatus: JobStatus,
     val jobData: JobData?,
     var jobAttemptId: JobAttemptId,
     var jobAttemptIndex: JobAttemptIndex = JobAttemptIndex(0),
