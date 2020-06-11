@@ -5,7 +5,7 @@ import com.zenaton.commons.pulsar.utils.StateStorage
 import com.zenaton.workflowManager.pulsar.topics.workflows.functions.WorkflowEngineDispatcher
 import com.zenaton.workflowManager.pulsar.topics.workflows.messages.WorkflowMessageContainer
 import com.zenaton.workflowManager.engine.WorkflowEngine
-import com.zenaton.workflowManager.topics.workflows.state.WorkflowState
+import com.zenaton.workflowManager.engine.WorkflowEngineState
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
@@ -18,7 +18,7 @@ class WorkflowEngineFunction : Function<WorkflowMessageContainer, Void> {
             val msg = input.msg()
 
             WorkflowEngine(
-                stater = StateStorage<WorkflowState>(ctx),
+                stater = StateStorage<WorkflowEngineState>(ctx),
                 dispatcher = WorkflowEngineDispatcher(
                     ctx
                 ),
