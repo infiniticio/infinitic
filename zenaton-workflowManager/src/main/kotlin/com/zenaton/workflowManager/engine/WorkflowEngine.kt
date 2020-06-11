@@ -1,13 +1,11 @@
 package com.zenaton.workflowManager.engine
 
-import com.zenaton.decisionmanager.data.DecisionData
-import com.zenaton.decisionmanager.data.DecisionId
-import com.zenaton.decisionmanager.data.DecisionName
-import com.zenaton.decisionmanager.messages.DecisionDispatched
+import com.zenaton.workflowManager.data.DecisionData
+import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
-import com.zenaton.workflowManager.interfaces.LoggerInterface
-import com.zenaton.workflowManager.interfaces.StaterInterface
-import com.zenaton.workflowManager.topics.workflows.interfaces.WorkflowEngineDispatcherInterface
+import com.zenaton.workflowManager.data.state.Branch
+import com.zenaton.workflowManager.data.state.Store
+import com.zenaton.workflowManager.dispatcher.Dispatcher
 import com.zenaton.workflowManager.messages.ChildWorkflowCompleted
 import com.zenaton.workflowManager.messages.DecisionCompleted
 import com.zenaton.workflowManager.messages.DelayCompleted
@@ -16,69 +14,79 @@ import com.zenaton.workflowManager.messages.EventReceived
 import com.zenaton.workflowManager.messages.TaskCompleted
 import com.zenaton.workflowManager.messages.WorkflowCompleted
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
-import com.zenaton.workflowManager.topics.workflows.state.Branch
-import com.zenaton.workflowManager.topics.workflows.state.Store
-import com.zenaton.workflowManager.topics.workflows.state.WorkflowState
+import com.zenaton.workflowManager.messages.CancelWorkflow
+import com.zenaton.workflowManager.messages.ChildWorkflowCanceled
+import com.zenaton.workflowManager.messages.DecisionDispatched
+import com.zenaton.workflowManager.messages.TaskCanceled
+import com.zenaton.workflowManager.messages.TaskDispatched
+import com.zenaton.workflowManager.messages.WorkflowCanceled
+import org.slf4j.Logger
 
-class WorkflowEngine(
-    val stater: StaterInterface<WorkflowState>,
-    val dispatcher: WorkflowEngineDispatcherInterface,
-    val logger: LoggerInterface
-) {
+class WorkflowEngine {
+    lateinit var logger: Logger
+    lateinit var storage: WorkflowEngineStateStorage
+    lateinit var dispatcher: Dispatcher
+
     fun handle(msg: ForWorkflowEngineMessage) {
-        // get associated state
-        var state = stater.getState(msg.workflowId.id)
-        if (state == null) {
-            // a null state should mean that this workflow is already terminated => all messages others than WorkflowDispatched are ignored
-            if (msg !is DispatchWorkflow) {
-                logger.warn("No state found for message:%s(It's normal if this workflow is already terminated)", msg)
-                return
-            }
-            // init a state
-            state = WorkflowState(workflowId = msg.workflowId)
-        } else {
-            // this should never happen
-            if (state.workflowId != msg.workflowId) {
-                logger.error("Inconsistent workflowId in message:%s and State:%s)", msg, state)
-                return
-            }
-            // a non-null state with WorkflowDispatched should mean that this message has been replicated
-            if (msg is DispatchWorkflow) {
-                logger.error("Already existing state for message:%s", msg)
-                return
-            }
-        }
-
-        if (msg is DecisionCompleted) {
-            // check ongoing decision
-            if (state.ongoingDecisionId != msg.decisionId) {
-                logger.error("Inconsistent decisionId in message:%s and State:%s", msg, state)
-                return
-            }
-            // remove ongoing decision from state
-            state.ongoingDecisionId = null
-        } else {
-            if (state.ongoingDecisionId != null) {
-                // buffer this message to handle it after decision returns
-                state.bufferedMessages.add(msg)
-                // save state
-                stater.updateState(msg.workflowId.id, state)
-                return
-            }
-        }
-
+        // discard immediately messages that are not processed
         when (msg) {
-            is DispatchWorkflow -> dispatchWorkflow(state, msg)
-            is DecisionCompleted -> completeDecision(state, msg)
-            is TaskCompleted -> completeTask(state, msg)
-            is ChildWorkflowCompleted -> completeChildWorkflow(state, msg)
-            is DelayCompleted -> completeDelay(state, msg)
-            is EventReceived -> eventReceived(state, msg)
-            is WorkflowCompleted -> workflowCompleted(state, msg)
+            is DecisionDispatched -> return
+            is TaskDispatched -> return
+            is WorkflowCanceled -> return
+            is WorkflowCompleted -> return
+        }
+
+        // get associated state
+        val oldState = storage.getState(msg.workflowId)
+
+        // discard message it workflow is already terminated
+        if (oldState == null && msg !is DispatchWorkflow) return
+
+        // store message (except DecisionCompleted) if a decision is ongoing
+        if (oldState?.ongoingDecisionId != null && msg !is DecisionCompleted) {
+            val newState = bufferMessage(oldState, msg)
+            storage.updateState(msg.workflowId, newState, oldState)
+            return
+        }
+
+        val newState =
+            if (oldState == null)
+                dispatchWorkflow(msg as DispatchWorkflow)
+            else when (msg) {
+                is CancelWorkflow -> cancelWorkflow(oldState, msg)
+                is ChildWorkflowCanceled -> childWorkflowCanceled(oldState, msg)
+                is ChildWorkflowCompleted -> childWorkflowCompleted(oldState, msg)
+                is DecisionCompleted -> decisionCompleted(oldState, msg)
+                is DelayCompleted -> delayCompleted(oldState, msg)
+                is EventReceived -> eventReceived(oldState, msg)
+                is TaskCanceled -> taskCanceled(oldState, msg)
+                is TaskCompleted -> taskCompleted(oldState, msg)
+                else -> throw Exception("Unknown ForWorkflowEngineMessage: ${msg::class.qualifiedName}")
+            }
+
+        // store state if modified
+        if (newState != oldState) {
+            storage.updateState(msg.workflowId, newState, oldState)
         }
     }
 
-    private fun dispatchWorkflow(state: WorkflowState, msg: DispatchWorkflow) {
+    private fun bufferMessage(state: WorkflowEngineState, msg: ForWorkflowEngineMessage): WorkflowEngineState {
+        // buffer this message to handle it after decision returns
+        // val bufferedMessages = oldState.bufferedMessages.add(msg)
+        // oldState.bufferedMessages.add(msg)
+        TODO()
+    }
+
+    private fun cancelWorkflow(state: WorkflowEngineState, msg: CancelWorkflow): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun childWorkflowCanceled(state: WorkflowEngineState, msg: ChildWorkflowCanceled): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun dispatchWorkflow(msg: DispatchWorkflow): WorkflowEngineState {
+        val state = WorkflowEngineState(workflowId = msg.workflowId)
         val decisionId = DecisionId()
         // define branch
         val branch = Branch.Handle(workflowData = msg.workflowData)
@@ -90,36 +98,40 @@ class WorkflowEngine(
         val m = DecisionDispatched(
             decisionId = decisionId,
             workflowId = msg.workflowId,
-            decisionName = DecisionName(msg.workflowName.name),
+            workflowName = msg.workflowName,
             decisionData = DecisionData("".toByteArray()) // AvroSerDe.serialize(decisionInput))
         )
         // dispatch decision
-        dispatcher.dispatch(m)
+        dispatcher.toDeciders(m)
         // save state
-        stater.createState(msg.workflowId.id, state)
+        storage.updateState(msg.workflowId, state, null)
     }
 
-    private fun completeDecision(state: WorkflowState, msg: DecisionCompleted) {
+    private fun decisionCompleted(state: WorkflowEngineState, msg: DecisionCompleted): WorkflowEngineState {
         TODO()
     }
 
-    private fun completeTask(state: WorkflowState, msg: TaskCompleted) {
+    private fun delayCompleted(state: WorkflowEngineState, msg: DelayCompleted): WorkflowEngineState {
         TODO()
     }
 
-    private fun completeChildWorkflow(state: WorkflowState, msg: ChildWorkflowCompleted) {
+    private fun taskCanceled(state: WorkflowEngineState, msg: TaskCanceled): WorkflowEngineState {
         TODO()
     }
 
-    private fun completeDelay(state: WorkflowState, msg: DelayCompleted) {
+    private fun taskCompleted(state: WorkflowEngineState, msg: TaskCompleted): WorkflowEngineState {
         TODO()
     }
 
-    private fun eventReceived(state: WorkflowState, msg: EventReceived) {
+    private fun childWorkflowCompleted(state: WorkflowEngineState, msg: ChildWorkflowCompleted): WorkflowEngineState {
         TODO()
     }
 
-    private fun workflowCompleted(state: WorkflowState, msg: WorkflowCompleted) {
+    private fun completeDelay(state: WorkflowEngineState, msg: DelayCompleted): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun eventReceived(state: WorkflowEngineState, msg: EventReceived): WorkflowEngineState {
         TODO()
     }
 

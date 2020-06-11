@@ -1,9 +1,9 @@
 package com.zenaton.workflowManager.messages
 
 import com.zenaton.commons.data.DateTime
-import com.zenaton.decisionmanager.data.DecisionData
-import com.zenaton.decisionmanager.data.DecisionId
-import com.zenaton.decisionmanager.data.DecisionOutput
+import com.zenaton.workflowManager.data.DecisionData
+import com.zenaton.workflowManager.data.DecisionId
+import com.zenaton.workflowManager.data.DecisionOutput
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventData
 import com.zenaton.workflowManager.data.EventName

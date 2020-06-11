@@ -53,7 +53,7 @@ fun jobCompleted(values: Map<String, Any?>? = null) = TestFactory.get(JobComplet
 
 class EngineResults {
     lateinit var dispatcher: Dispatcher
-    lateinit var storage: EngineStorage
+    lateinit var storage: EngineStateStorage
     lateinit var logger: Logger
     var state: EngineState? = null
     var workerMessage: ForWorkerMessage? = null
@@ -74,7 +74,7 @@ fun engineHandle(stateIn: EngineState?, msgIn: ForEngineMessage): EngineResults 
     val state: EngineState? = stateIn?.deepCopy()
     // mocking
     val logger = mockk<Logger>()
-    val storage = mockk<EngineStorage>()
+    val storage = mockk<EngineStateStorage>()
     val dispatcher = mockk<Dispatcher>()
     val stateSlot = slot<EngineState>()
     val jobAttemptCompletedSlot = slot<JobAttemptCompleted>()

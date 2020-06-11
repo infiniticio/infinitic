@@ -16,7 +16,7 @@ import com.zenaton.workflowManager.messages.EventReceived
 import com.zenaton.workflowManager.messages.TaskCompleted
 import com.zenaton.workflowManager.messages.WorkflowCompleted
 import com.zenaton.workflowManager.messages.WorkflowDispatched
-import com.zenaton.workflowManager.topics.workflows.state.WorkflowState
+import com.zenaton.workflowManager.engine.WorkflowEngineState
 import com.zenaton.workflowManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
@@ -39,7 +39,7 @@ fun workflowCompleted() = TestFactory.get(WorkflowCompleted::class)
 
 fun shouldWarnAndNothingMoreIfNotState(msgIn: WorkflowMessageInterface) = stringSpec {
     // mocking
-    val stater = mockk<StateStorage<WorkflowState>>()
+    val stater = mockk<StateStorage<WorkflowEngineState>>()
     val dispatcher = mockk<WorkflowEngineDispatcher>()
     val logger = mockk<Logger>()
     every { stater.getState(msgIn.getStateId()) } returns null
@@ -63,14 +63,14 @@ fun shouldWarnAndNothingMoreIfNotState(msgIn: WorkflowMessageInterface) = string
 fun shouldbufferMessageIfOngoingDecision(msgIn: WorkflowMessageInterface) = stringSpec {
     "Should buffer ${msgIn::class.simpleName} message if there is an ongoing decision" {
         // mocking
-        val stater = mockk<StateStorage<WorkflowState>>()
+        val stater = mockk<StateStorage<WorkflowEngineState>>()
         val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
-        val state = WorkflowState(
+        val state = WorkflowEngineState(
             workflowId = msgIn.workflowId,
             ongoingDecisionId = DecisionId()
         )
-        val slotState = slot<WorkflowState>()
+        val slotState = slot<WorkflowEngineState>()
         every { stater.getState(msgIn.getStateId()) } returns state
         every { stater.updateState(any(), state = capture(slotState)) } just Runs
         // given
@@ -98,10 +98,10 @@ class WorkflowEngineTests : StringSpec({
     "Should log error and nothing more if retrieved state and msg have not the same Id" {
         val msgIn = workflowDispatched()
         // mocking
-        val stater = mockk<StateStorage<WorkflowState>>()
+        val stater = mockk<StateStorage<WorkflowEngineState>>()
         val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
-        val state = mockk<WorkflowState>()
+        val state = mockk<WorkflowEngineState>()
         every { stater.getState(msgIn.getStateId()) } returns state
         every { state.workflowId } returns WorkflowId()
         every { logger.error(any(), msgIn, state) } returns "error!"
@@ -124,10 +124,10 @@ class WorkflowEngineTests : StringSpec({
     "Should log error and nothing more if workflowDispatched with existing state" {
         val msgIn = workflowDispatched()
         // mocking
-        val stater = mockk<StateStorage<WorkflowState>>()
+        val stater = mockk<StateStorage<WorkflowEngineState>>()
         val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
-        val state = mockk<WorkflowState>()
+        val state = mockk<WorkflowEngineState>()
         every { stater.getState(msgIn.getStateId()) } returns state
         every { state.workflowId } returns msgIn.workflowId
         every { logger.error(any(), msgIn) } returns "error!"
@@ -150,10 +150,10 @@ class WorkflowEngineTests : StringSpec({
     "Should log error and nothing more if decisionCompleted inconsistent with state ongoing decision" {
         val msgIn = decisionCompleted()
         // mocking
-        val stater = mockk<StateStorage<WorkflowState>>()
+        val stater = mockk<StateStorage<WorkflowEngineState>>()
         val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
-        val state = WorkflowState(
+        val state = WorkflowEngineState(
             workflowId = msgIn.workflowId,
             ongoingDecisionId = DecisionId()
         )
@@ -229,11 +229,11 @@ class WorkflowEngineTests : StringSpec({
 
     "Dispatching a workflow" {
         // mocking
-        val stater = mockk<StateStorage<WorkflowState>>()
+        val stater = mockk<StateStorage<WorkflowEngineState>>()
         val dispatcher = mockk<WorkflowEngineDispatcher>()
         val logger = mockk<Logger>()
         val slotMsg = slot<DecisionDispatched>()
-        val slotState = slot<WorkflowState>()
+        val slotState = slot<WorkflowEngineState>()
         val msgIn = workflowDispatched()
         every { stater.getState(msgIn.getStateId()) } returns null
         every { dispatcher.dispatch(msg = capture(slotMsg)) } just Runs

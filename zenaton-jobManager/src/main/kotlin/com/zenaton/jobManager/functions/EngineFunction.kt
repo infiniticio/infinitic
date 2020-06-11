@@ -3,7 +3,7 @@ package com.zenaton.jobManager.functions
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.engine.Engine
-import com.zenaton.jobManager.engine.EngineStorage
+import com.zenaton.jobManager.engine.EngineStateStorage
 import com.zenaton.jobManager.interfaces.AvroDispatcher
 import com.zenaton.jobManager.interfaces.AvroStorage
 import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
@@ -18,7 +18,7 @@ class EngineFunction {
 
     fun handle(input: AvroForEngineMessage) {
         engine.logger = logger
-        engine.storage = EngineStorage(avroStorage)
+        engine.storage = EngineStateStorage(avroStorage)
         engine.dispatcher = Dispatcher(avroDispatcher)
 
         engine.handle(AvroConverter.fromEngine(input))

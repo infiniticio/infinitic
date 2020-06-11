@@ -1,0 +1,12 @@
+{
+    "type" : "record",
+    "name" : "AvroWorkflowEngineState",
+    "namespace" : "com.zenaton.workflowManager.states",
+    "fields" : [
+        {
+            "name" : "workflowId",
+            "type" : "string",
+            "logicalType": "uuid"
+        }
+    ]
+}

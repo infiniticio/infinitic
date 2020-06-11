@@ -25,7 +25,7 @@ import org.slf4j.Logger
 
 class Engine {
     lateinit var logger: Logger
-    lateinit var storage: EngineStorage
+    lateinit var storage: EngineStateStorage
     lateinit var dispatcher: Dispatcher
 
     fun handle(message: ForEngineMessage) {
