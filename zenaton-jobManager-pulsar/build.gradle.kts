@@ -138,6 +138,15 @@ tasks.register("delete") {
     }
 }
 
+tasks.register("prefix") {
+    group = "Zenaton"
+    description = "Delete Zenaton from Pulsar"
+    doLast {
+        setPrefix()
+        println("Current prefix: ${Topic.prefix}")
+    }
+}
+""
 val pulsarAdmin =  "docker-compose -f ../pulsar/docker-compose.yml exec -T pulsar bin/pulsar-admin"
 val jar = "zenaton-jobManager-pulsar-1.0-SNAPSHOT-all.jar"
 
@@ -168,7 +177,7 @@ enum class Topic {
     };
 
     companion object {
-        var prefix = "job"
+        var prefix = "jobs"
     }
 
     abstract fun get(name: String? = ""): String

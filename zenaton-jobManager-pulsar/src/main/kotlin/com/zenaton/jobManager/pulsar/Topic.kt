@@ -2,26 +2,26 @@ package com.zenaton.jobManager.pulsar
 
 enum class Topic {
     ENGINE {
-        override fun get(name: String?) = "${Topic.topicPrefix}-engine"
+        override fun get(name: String?) = "${Topic.prefix}-engine"
     },
     WORKERS {
-        override fun get(name: String?) = "${Topic.topicPrefix}-workers-$name"
+        override fun get(name: String?) = "${Topic.prefix}-workers-$name"
     },
     MONITORING_PER_INSTANCE {
-        override fun get(name: String?) = "${Topic.topicPrefix}-monitoring-per-instance"
+        override fun get(name: String?) = "${Topic.prefix}-monitoring-per-instance"
     },
     MONITORING_PER_NAME {
-        override fun get(name: String?) = "${Topic.topicPrefix}-monitoring-per-name"
+        override fun get(name: String?) = "${Topic.prefix}-monitoring-per-name"
     },
     MONITORING_GLOBAL {
-        override fun get(name: String?) = "${Topic.topicPrefix}-monitoring-global"
+        override fun get(name: String?) = "${Topic.prefix}-monitoring-global"
     },
     LOGS {
-        override fun get(name: String?) = "${Topic.topicPrefix}-logs"
+        override fun get(name: String?) = "${Topic.prefix}-logs"
     };
 
     companion object {
-        var topicPrefix = "job"
+        var prefix = "jobs"
     }
 
     abstract fun get(name: String? = ""): String
