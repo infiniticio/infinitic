@@ -3,7 +3,7 @@ package com.zenaton.jobManager.pulsar.storage
 import com.zenaton.commons.utils.avro.AvroSerDe
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.interfaces.AvroStorage
-import com.zenaton.jobManager.states.AvroEngineState
+import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 import org.apache.pulsar.functions.api.Context
@@ -12,15 +12,15 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
     // serializer injection
     var avroSerDe = AvroSerDe
 
-    override fun getEngineState(jobId: String): AvroEngineState? {
-        return context.getState(getEngineStateKey(jobId))?.let { avroSerDe.deserialize<AvroEngineState>(it) }
+    override fun getJobEngineState(jobId: String): AvroJobEngineState? {
+        return context.getState(getEngineStateKey(jobId))?.let { avroSerDe.deserialize<AvroJobEngineState>(it) }
     }
 
-    override fun updateEngineState(jobId: String, newState: AvroEngineState, oldState: AvroEngineState?) {
+    override fun updateJobEngineState(jobId: String, newState: AvroJobEngineState, oldState: AvroJobEngineState?) {
         context.putState(getEngineStateKey(jobId), avroSerDe.serialize(newState))
     }
 
-    override fun deleteEngineState(jobId: String) {
+    override fun deleteJobEngineState(jobId: String) {
         context.deleteState(getEngineStateKey(jobId))
     }
 

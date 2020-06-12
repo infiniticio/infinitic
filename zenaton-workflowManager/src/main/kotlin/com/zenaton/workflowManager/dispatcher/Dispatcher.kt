@@ -8,14 +8,14 @@ import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 
 class Dispatcher(private val avroDispatcher: AvroDispatcher) {
     fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float = 0f) {
-        avroDispatcher.toWorkflowEngine(AvroConverter.toEngine(msg))
+        avroDispatcher.toWorkflowEngine(AvroConverter.toWorkflowEngine(msg))
     }
 
     fun toDeciders(msg: ForDecidersMessage) {
-        avroDispatcher.toDeciders(AvroConverter.toDeciders(msg))
+        avroDispatcher.toDeciders(AvroConverter.toJobEngine(msg))
     }
 
     fun toWorkers(msg: ForWorkersMessage) {
-        avroDispatcher.toWorkers(AvroConverter.toWorkers(msg))
+        avroDispatcher.toWorkers(AvroConverter.toJobEngine(msg))
     }
 }

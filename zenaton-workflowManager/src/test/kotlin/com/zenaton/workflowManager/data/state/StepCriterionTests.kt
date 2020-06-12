@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.topics.workflows.state
+package com.zenaton.workflowManager.data.state
 
 import com.zenaton.commons.utils.json.Json
 import com.zenaton.jobManager.data.JobId

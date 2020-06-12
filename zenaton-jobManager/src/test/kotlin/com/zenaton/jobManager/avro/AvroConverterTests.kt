@@ -1,8 +1,8 @@
 package com.zenaton.jobManager.avro
 
-import com.zenaton.jobManager.engine.EngineState
+import com.zenaton.jobManager.engine.JobEngineState
 import com.zenaton.jobManager.messages.Message
-import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
@@ -26,10 +26,10 @@ class AvroConverterTests : StringSpec({
                     msg shouldBe msg2
                     avroMsg shouldBe avroMsg2
                 }
-                if (msg is ForEngineMessage) {
-                    val avroMsg = AvroConverter.toEngine(msg)
-                    val msg2 = AvroConverter.fromEngine(avroMsg)
-                    val avroMsg2 = AvroConverter.toEngine(msg2)
+                if (msg is ForJobEngineMessage) {
+                    val avroMsg = AvroConverter.toJobEngine(msg)
+                    val msg2 = AvroConverter.fromJobEngine(avroMsg)
+                    val avroMsg2 = AvroConverter.toJobEngine(msg2)
                     msg shouldBe msg2
                     avroMsg shouldBe avroMsg2
                 }
@@ -53,7 +53,7 @@ class AvroConverterTests : StringSpec({
 
     "Engine state should be avro-reversible" {
         // given
-        val state = TestFactory.get(EngineState::class)
+        val state = TestFactory.get(JobEngineState::class)
         // when
         val avroState = AvroConverter.toAvro(state)
         val state2 = AvroConverter.fromAvro(avroState)

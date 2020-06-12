@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data;
+package com.zenaton.workflowManager.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue

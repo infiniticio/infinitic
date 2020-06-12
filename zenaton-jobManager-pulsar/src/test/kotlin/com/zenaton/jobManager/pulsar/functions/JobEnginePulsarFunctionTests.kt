@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.pulsar.functions
 
 import com.zenaton.jobManager.functions.EngineFunction
-import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarAvroDispatcher
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import io.kotest.assertions.throwables.shouldThrowAny
@@ -15,13 +15,13 @@ import io.mockk.spyk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 
-class EnginePulsarFunctionTests : StringSpec({
+class JobEnginePulsarFunctionTests : StringSpec({
     "TaskEngineFunction should throw an exception if called without context" {
         // given
         val engine = EnginePulsarFunction()
         // then
         shouldThrowAny {
-            engine.process(mockk<AvroForEngineMessage>(), null)
+            engine.process(mockk<AvroForJobEngineMessage>(), null)
         }
     }
 
@@ -31,7 +31,7 @@ class EnginePulsarFunctionTests : StringSpec({
         every { context.logger } returns mockk<org.slf4j.Logger>()
         val engineFunction = spyk(EngineFunction())
         every { engineFunction.handle(any()) } just Runs
-        val avroMsg = mockk<AvroForEngineMessage>()
+        val avroMsg = mockk<AvroForJobEngineMessage>()
         // given
         val fct = EnginePulsarFunction()
         fct.engine = engineFunction

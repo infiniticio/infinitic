@@ -1,12 +1,12 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
 import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
 import com.zenaton.jobManager.pulsar.Topic
-import com.zenaton.workflowManager.messages.envelopes.AvroForEngineMessage as AvroForWorkflowsMessage
+import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessage
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
@@ -50,10 +50,10 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     /**
      *  Engine messages
      */
-    override fun toEngine(msg: AvroForEngineMessage, after: Float) {
+    override fun toJobEngine(msg: AvroForJobEngineMessage, after: Float) {
 
         val msgBuilder = context
-            .newOutputMessage(Topic.ENGINE.get(), AvroSchema.of(AvroForEngineMessage::class.java))
+            .newOutputMessage(Topic.ENGINE.get(), AvroSchema.of(AvroForJobEngineMessage::class.java))
             .key(msg.jobId)
             .value(msg)
 
@@ -64,7 +64,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
         msgBuilder.send()
     }
 
-    override fun toWorkflows(msg: AvroForWorkflowsMessage) {
+    override fun toWorkflowEngine(msg: AvroForWorkflowEngineMessage) {
         TODO("Not yet implemented")
     }
 }

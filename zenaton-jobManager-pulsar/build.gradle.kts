@@ -60,7 +60,7 @@ tasks.register("set schemas") {
     doLast {
         createSchemaFiles()
         uploadSchemaToTopic(
-            name = "AvroForEngineMessage",
+            name = "AvroForJobEngineMessage",
             topic = "engine"
         )
         uploadSchemaToTopic(

@@ -249,9 +249,9 @@ export const AvroJobCreated = typeForSchema<JobCreated>(
   registry
 );
 
-export const AvroForEngineMessage = typeForSchema<ForEngineMessage>(
+export const AvroForJobEngineMessage = typeForSchema<ForEngineMessage>(
   path.resolve(
-    `${__dirname}/avro/messages/envelopes/AvroForEngineMessage.avsc`
+    `${__dirname}/avro/messages/envelopes/AvroForJobEngineMessage.avsc`
   ),
   registry
 );

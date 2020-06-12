@@ -8,8 +8,7 @@ import org.apache.pulsar.client.impl.schema.JSONSchema
 import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
 
-class WorkflowDispatcher(val context: Context) :
-    WorkflowDispatcherInterface {
+class WorkflowDispatcher(val context: Context) : WorkflowDispatcherInterface {
     override fun dispatch(msg: WorkflowMessageInterface, after: Float) {
         val msgBuilder = context
             .newOutputMessage(Topic.WORKFLOWS.get(), JSONSchema.of(WorkflowMessageContainer::class.java))

@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.pulsar.utils
 
 import com.zenaton.commons.utils.json.Json
-import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
@@ -24,7 +24,7 @@ fun main() {
     }
 
     listOf(
-        AvroForEngineMessage::class,
+        AvroForJobEngineMessage::class,
         AvroForWorkerMessage::class,
         AvroForMonitoringPerNameMessage::class,
         AvroForMonitoringGlobalMessage::class

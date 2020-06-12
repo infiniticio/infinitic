@@ -2,11 +2,11 @@ package com.zenaton.jobManager.pulsar.dispatcher
 
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.messages.Message
-import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
-import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
@@ -35,8 +35,8 @@ class PulsarAvroDispatcherTests : StringSpec({
                 if (msg is ForWorkerMessage) {
                     shouldSendMessageToWorkersTopic(AvroConverter.toWorkers(msg))
                 }
-                if (msg is ForEngineMessage) {
-                    shouldSendMessageToEngineTopic(AvroConverter.toEngine(msg))
+                if (msg is ForJobEngineMessage) {
+                    shouldSendMessageToEngineTopic(AvroConverter.toJobEngine(msg))
                 }
                 if (msg is ForMonitoringPerNameMessage) {
                     shouldSendMessageToMonitoringPerNameTopic(AvroConverter.toMonitoringPerName(msg))
@@ -49,22 +49,22 @@ class PulsarAvroDispatcherTests : StringSpec({
     }
 })
 
-fun shouldSendMessageToEngineTopic(msg: AvroForEngineMessage) = stringSpec {
+fun shouldSendMessageToEngineTopic(msg: AvroForJobEngineMessage) = stringSpec {
     // given
     val context = mockk<Context>()
-    val builder = mockk<TypedMessageBuilder<AvroForEngineMessage>>()
-    val slotSchema = slot<AvroSchema<AvroForEngineMessage>>()
+    val builder = mockk<TypedMessageBuilder<AvroForJobEngineMessage>>()
+    val slotSchema = slot<AvroSchema<AvroForJobEngineMessage>>()
     val slotTopic = slot<String>()
-    every { context.newOutputMessage<AvroForEngineMessage>(capture(slotTopic), capture(slotSchema)) } returns builder
+    every { context.newOutputMessage<AvroForJobEngineMessage>(capture(slotTopic), capture(slotSchema)) } returns builder
     every { builder.value(any()) } returns builder
     every { builder.key(any()) } returns builder
     every { builder.send() } returns mockk<MessageId>()
     // when
-    PulsarAvroDispatcher(context).toEngine(msg)
+    PulsarAvroDispatcher(context).toJobEngine(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
     slotTopic.captured shouldBe Topic.ENGINE.get()
-    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForEngineMessage::class.java).avroSchema
+    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForJobEngineMessage::class.java).avroSchema
     verify(exactly = 1) { builder.value(msg) }
     verify(exactly = 1) { builder.key(msg.jobId) }
     verify(exactly = 1) { builder.send() }

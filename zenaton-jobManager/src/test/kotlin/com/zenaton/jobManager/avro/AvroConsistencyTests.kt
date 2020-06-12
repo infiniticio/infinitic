@@ -1,15 +1,15 @@
 package com.zenaton.jobManager.avro
 
 import com.zenaton.jobManager.messages.Message
-import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
-import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkflowsMessage
+import com.zenaton.jobManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.jobManager.utils.TestFactory
 import com.zenaton.workflowManager.messages.AvroTaskCompleted
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -22,8 +22,8 @@ import org.apache.avro.specific.SpecificRecordBase
 class AvroConsistencyTests : StringSpec({
 
     include(
-        `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForEngineMessage>(
-            AvroForEngineMessage()
+        `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForJobEngineMessage>(
+            AvroForJobEngineMessage()
         )
     )
 
@@ -45,7 +45,7 @@ class AvroConsistencyTests : StringSpec({
 
     "Messages used from AvroForWorkflowsMessage should implement ForWorkflowsMessage after conversion" {
         val taskCompleted = AvroConverter.convertFromAvro(TestFactory.get(AvroTaskCompleted::class))
-        (taskCompleted is ForWorkflowsMessage) shouldBe true
+        (taskCompleted is ForWorkflowEngineMessage) shouldBe true
         (taskCompleted is Message) shouldBe true
     }
 
@@ -56,11 +56,11 @@ class AvroConsistencyTests : StringSpec({
                 if (msg is ForWorkerMessage) {
                     AvroConverter.toWorkers(msg)
                 }
-                if (msg is ForEngineMessage) {
-                    AvroConverter.toEngine(msg)
+                if (msg is ForJobEngineMessage) {
+                    AvroConverter.toJobEngine(msg)
                 }
-                if (msg is ForWorkflowsMessage) {
-                    AvroConverter.toWorkflows(msg)
+                if (msg is ForWorkflowEngineMessage) {
+                    AvroConverter.toWorkflowEngine(msg)
                 }
                 if (msg is ForMonitoringPerNameMessage) {
                     AvroConverter.toMonitoringPerName(msg)

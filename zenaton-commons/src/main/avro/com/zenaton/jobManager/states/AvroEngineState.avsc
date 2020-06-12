@@ -1,6 +1,6 @@
 {
     "type" : "record",
-    "name" : "AvroEngineState",
+    "name" : "AvroJobEngineState",
     "namespace" : "com.zenaton.jobManager.states",
     "fields" : [
         {

@@ -1,17 +1,17 @@
 package com.zenaton.jobManager.pulsar.functions
 
 import com.zenaton.jobManager.functions.EngineFunction
-import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarAvroDispatcher
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class EnginePulsarFunction : Function<AvroForEngineMessage, Void> {
+class EnginePulsarFunction : Function<AvroForJobEngineMessage, Void> {
 
     var engine = EngineFunction()
 
-    override fun process(input: AvroForEngineMessage, context: Context?): Void? {
+    override fun process(input: AvroForJobEngineMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
