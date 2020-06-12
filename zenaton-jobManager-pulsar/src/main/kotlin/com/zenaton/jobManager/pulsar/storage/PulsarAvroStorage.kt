@@ -41,11 +41,11 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
         val incrCompleted = newState.terminatedCompletedCount - (oldState?.terminatedCompletedCount ?: 0L)
         val incrCanceled = newState.terminatedCanceledCount - (oldState?.terminatedCanceledCount ?: 0L)
 
-        if (incrOk != 0L) context.incrCounter(counterOkKey, incrOk)
-        if (incrWarning != 0L) context.incrCounter(counterWarningKey, incrWarning)
-        if (incrError != 0L) context.incrCounter(counterErrorKey, incrError)
-        if (incrCompleted != 0L) context.incrCounter(counterCompletedKey, incrCompleted)
-        if (incrCanceled != 0L) context.incrCounter(counterCanceledKey, incrCanceled)
+        incrementCounter(counterOkKey, incrOk, force = oldState == null)
+        incrementCounter(counterWarningKey, incrWarning, force = oldState == null)
+        incrementCounter(counterErrorKey, incrError, force = oldState == null)
+        incrementCounter(counterCompletedKey, incrCompleted, force = oldState == null)
+        incrementCounter(counterCanceledKey, incrCanceled, force = oldState == null)
 
         // save state retrieved from counters
         val state = AvroMonitoringPerNameState.newBuilder().apply {
@@ -58,6 +58,12 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
         }.build()
 
         context.putState(getMonitoringPerNameStateKey(jobName), avroSerDe.serialize(state))
+    }
+
+    private fun incrementCounter(key: String, amount: Long, force: Boolean = false) {
+        if (force || amount != 0L) {
+            context.incrCounter(key, amount)
+        }
     }
 
     override fun deleteMonitoringPerNameState(jobName: String) {
