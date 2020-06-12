@@ -18,19 +18,21 @@ You can find the built JAR files in `./build/libs`.
 
 ### Usage
 
+Job Manager can be used for different usages, by prefixing certain topics
 
-#### Installing
+> Note: -Prefix option can be used once and is remembered after
+
+#### Installing job manager for Task processing
 
 ```shell script
 gradle install -Prefix=tasks
 ```
-or
+
+#### Installing job manager for Decision processing
 
 ```shell script
 gradle install -Prefix=decisions
 ```
-
->> Note: -Prefix option can be used once and is remembered after
 
 #### Update job manager (dev only)
 
@@ -44,4 +46,4 @@ gradle update
 gradle delete
 ```
 
->> Note:  all consumers (especially functions) must be removed before being able to delete topics,
+> Note:  all consumers (especially functions) must be removed before being able to delete topics,
