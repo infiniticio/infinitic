@@ -66,7 +66,7 @@ tasks.register("setSchemas") {
         createSchemaFiles()
         setPrefix()
         uploadSchemaToTopic(
-            name = "AvroForEngineMessage",
+            name = "AvroForJobEngineMessage",
             topic = Topic.ENGINE.get()
         )
         uploadSchemaToTopic(

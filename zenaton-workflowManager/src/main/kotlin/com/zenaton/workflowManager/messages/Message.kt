@@ -1,6 +1,8 @@
 package com.zenaton.workflowManager.messages
 
 import com.zenaton.commons.data.DateTime
+import com.zenaton.jobManager.data.JobData
+import com.zenaton.jobManager.data.JobName
 import com.zenaton.workflowManager.data.DecisionData
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionOutput
@@ -14,6 +16,8 @@ import com.zenaton.workflowManager.data.WorkflowData
 import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.WorkflowName
 import com.zenaton.workflowManager.data.WorkflowOutput
+import com.zenaton.workflowManager.messages.envelopes.ForDecidersMessage
+import com.zenaton.workflowManager.messages.envelopes.ForWorkersMessage
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 
 sealed class Message
@@ -105,3 +109,19 @@ data class WorkflowCompleted(
     override val sentAt: DateTime = DateTime(),
     val workflowOutput: TaskOutput?
 ) : Message(), ForWorkflowEngineMessage
+
+data class DispatchTask(
+    override val taskId: TaskId,
+    override val sentAt: DateTime = DateTime(),
+    val workflowId: WorkflowId,
+    val taskName: JobName,
+    val taskData: JobData
+) : Message(), ForWorkersMessage
+
+data class DispatchDecision(
+    override val decisionId: DecisionId,
+    override val sentAt: DateTime = DateTime(),
+    val workflowId: WorkflowId,
+    val workflowName: WorkflowName,
+    val decisionData: DecisionData
+) : Message(), ForDecidersMessage

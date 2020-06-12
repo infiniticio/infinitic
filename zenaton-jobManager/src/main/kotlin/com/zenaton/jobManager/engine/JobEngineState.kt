@@ -10,7 +10,7 @@ import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.data.WorkflowId
 
-data class EngineState(
+data class JobEngineState(
     val jobId: JobId,
     val jobName: JobName,
     val jobStatus: JobStatus,

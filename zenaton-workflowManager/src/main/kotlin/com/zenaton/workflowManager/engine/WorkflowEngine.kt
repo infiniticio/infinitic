@@ -17,6 +17,7 @@ import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.messages.CancelWorkflow
 import com.zenaton.workflowManager.messages.ChildWorkflowCanceled
 import com.zenaton.workflowManager.messages.DecisionDispatched
+import com.zenaton.workflowManager.messages.DispatchDecision
 import com.zenaton.workflowManager.messages.TaskCanceled
 import com.zenaton.workflowManager.messages.TaskDispatched
 import com.zenaton.workflowManager.messages.WorkflowCanceled
@@ -95,7 +96,7 @@ class WorkflowEngine {
         state.runningBranches.add(branch)
         // create DecisionDispatched message
         val decisionInput = DecisionInput(listOf(branch), filterStore(state.store, listOf(branch)))
-        val m = DecisionDispatched(
+        val m = DispatchDecision(
             decisionId = decisionId,
             workflowId = msg.workflowId,
             workflowName = msg.workflowName,
@@ -103,8 +104,18 @@ class WorkflowEngine {
         )
         // dispatch decision
         dispatcher.toDeciders(m)
+        // log event
+        val dd = DecisionDispatched(
+            decisionId = decisionId,
+            workflowId = msg.workflowId,
+            workflowName = msg.workflowName,
+            decisionData = DecisionData("".toByteArray()) // AvroSerDe.serialize(decisionInput))
+        )
+        dispatcher.toWorkflowEngine(dd)
         // save state
         storage.updateState(msg.workflowId, state, null)
+
+        return state
     }
 
     private fun decisionCompleted(state: WorkflowEngineState, msg: DecisionCompleted): WorkflowEngineState {

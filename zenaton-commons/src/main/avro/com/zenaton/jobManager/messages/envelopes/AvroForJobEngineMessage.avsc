@@ -1,13 +1,13 @@
 {
     "type": "record",
-    "name": "AvroForEngineMessage",
+    "name": "AvroForJobEngineMessage",
     "namespace": "com.zenaton.jobManager.messages.envelopes",
     "fields": [
         {
             "name": "type",
             "type": {
                 "type": "enum",
-                "name": "AvroForEngineMessageType",
+                "name": "AvroForJobEngineMessageType",
                 "symbols": [
                     "DispatchJob",
                     "RetryJob",

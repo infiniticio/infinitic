@@ -2,11 +2,11 @@ package com.zenaton.jobManager.dispatcher
 
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.messages.envelopes.ForEngineMessage
+import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkflowsMessage
+import com.zenaton.jobManager.messages.envelopes.ForWorkflowEngineMessage
 
 class Dispatcher(private val avroDispatcher: AvroDispatcher) {
 
@@ -14,12 +14,12 @@ class Dispatcher(private val avroDispatcher: AvroDispatcher) {
         avroDispatcher.toWorkers(AvroConverter.toWorkers(msg))
     }
 
-    fun toEngine(msg: ForEngineMessage, after: Float = 0f) {
-        avroDispatcher.toEngine(AvroConverter.toEngine(msg))
+    fun toJobEngine(msg: ForJobEngineMessage, after: Float = 0f) {
+        avroDispatcher.toJobEngine(AvroConverter.toJobEngine(msg))
     }
 
-    fun toWorkflows(msg: ForWorkflowsMessage) {
-        avroDispatcher.toWorkflows(AvroConverter.toWorkflows(msg))
+    fun toWorkflowEngine(msg: ForWorkflowEngineMessage) {
+        avroDispatcher.toWorkflowEngine(AvroConverter.toWorkflowEngine(msg))
     }
 
     fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
