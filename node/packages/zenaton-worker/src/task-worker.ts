@@ -45,7 +45,7 @@ export class Worker {
     }
     if (!this.pulsarProducer) {
       this.pulsarProducer = await this.pulsarClient.createProducer({
-        topic: 'persistent://public/default/engine',
+        topic: 'persistent://public/default/tasks-engine',
         sendTimeoutMs: 30000,
         batchingEnabled: false,
       });
@@ -53,7 +53,7 @@ export class Worker {
 
     for (const [, task] of this.taskRegistry) {
       const consumer = await this.pulsarClient.subscribe({
-        topic: `persistent://public/default/workers-${task.name}`,
+        topic: `persistent://public/default/tasks-workers-${task.name}`,
         subscription: `zenaton-worker`,
         subscriptionType: 'Shared',
         ackTimeoutMs: 10000,
