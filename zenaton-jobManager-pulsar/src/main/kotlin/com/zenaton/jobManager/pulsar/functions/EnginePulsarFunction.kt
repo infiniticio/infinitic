@@ -2,7 +2,6 @@ package com.zenaton.jobManager.pulsar.functions
 
 import com.zenaton.jobManager.functions.EngineFunction
 import com.zenaton.jobManager.messages.envelopes.AvroForEngineMessage
-import com.zenaton.jobManager.pulsar.Topic
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarAvroDispatcher
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import org.apache.pulsar.functions.api.Context
@@ -14,9 +13,6 @@ class EnginePulsarFunction : Function<AvroForEngineMessage, Void> {
 
     override fun process(input: AvroForEngineMessage, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
-
-        val prefix = ctx.getUserConfigValue("topicPrefix")
-        if (prefix.isPresent) Topic.topicPrefix = prefix.get().toString()
 
         try {
             engine.logger = ctx.logger

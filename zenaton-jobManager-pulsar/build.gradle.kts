@@ -146,8 +146,8 @@ tasks.register("prefix") {
         println("Current prefix: ${Topic.prefix}")
     }
 }
-""
-val pulsarAdmin =  "docker-compose -f ../pulsar/docker-compose.yml exec -T pulsar bin/pulsar-admin"
+
+val pulsarAdmin = "docker-compose -f ../pulsar/docker-compose.yml exec -T pulsar bin/pulsar-admin"
 val jar = "zenaton-jobManager-pulsar-1.0-SNAPSHOT-all.jar"
 
 fun setPrefix() {
@@ -197,7 +197,7 @@ fun uploadSchemaToTopic(
     namespace: String = "default"
 ) {
     println("Uploading $name schema to $topic topic...")
-    val cmd = pulsarAdmin + " schemas upload \"persistent://$tenant/$namespace/$topic\"" +
+    val cmd = "$pulsarAdmin schemas upload \"persistent://$tenant/$namespace/$topic\"" +
         " --filename \"/zenaton/jobManager/schemas/$name.schema\" "
     return exec(cmd)
 }
@@ -217,7 +217,7 @@ fun setZenatonFunction(
         transform = { "persistent://$tenant/$namespace/$it" }
     )
     println("$action $className for $inputs...")
-    var cmd = pulsarAdmin + " functions $action --jar /zenaton/jobManager/libs/$jar" +
+    var cmd = "$pulsarAdmin functions $action --jar /zenaton/jobManager/libs/$jar" +
         " --classname \"$classNamespace.$className\" --inputs $inputs " +
         " --name \"${Topic.prefix}-$className\" --log-topic \"persistent://$tenant/$namespace/$logs\""
     if (topicOut != null) {
@@ -231,14 +231,14 @@ fun setZenatonFunction(
 
 fun deleteZenatonFunction(name: String, tenant: String = "public", namespace: String = "default") {
     println("Deleting $name function from $tenant/$namespace...")
-    val cmd = pulsarAdmin + " functions delete --tenant \"$tenant\" --namespace \"$namespace\" --name \"${Topic.prefix}-$name\""
+    val cmd = "$pulsarAdmin functions delete --tenant \"$tenant\" --namespace \"$namespace\" --name \"${Topic.prefix}-$name\""
 
     return exec(cmd)
 }
 
 fun forceDeleteTopic(topic: String, tenant: String = "public", namespace: String = "default") {
     println("Deleting $topic topic from $tenant/$namespace...")
-    val cmd = pulsarAdmin + " topics delete \"persistent://$tenant/$namespace/$topic\" --deleteSchema --force"
+    val cmd = "$pulsarAdmin topics delete \"persistent://$tenant/$namespace/$topic\" --deleteSchema --force"
 
     return exec(cmd)
 }

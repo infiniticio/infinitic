@@ -5,7 +5,7 @@ const { forEngineMessage } = require('../avro');
 (async () => {
   // Create a producer
   const producer = await pulsar.createProducer({
-    topic: 'persistent://public/default/engine',
+    topic: 'persistent://public/default/tasks-engine',
     sendTimeoutMs: 30000,
     batchingEnabled: false,
   });
@@ -13,7 +13,7 @@ const { forEngineMessage } = require('../avro');
   var m = new Object()
   m.jobId = uuidv4()
   m.sentAt = 1588705988
-  m.jobName = "MyTask3"
+  m.jobName = "MyTask18"
   m.jobData = { "bytes": Buffer.from('abc') }
   m.workflowId = { "string": uuidv4() }
 

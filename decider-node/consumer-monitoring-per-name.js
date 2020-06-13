@@ -2,10 +2,12 @@ const { pulsar } = require('./pulsar');
 const { forMonitoringPerNameMessage } = require('./avro');
 
 (async () => {
+  const TOPIC = "tasks-monitoring-per-name"
+
   // Create a consumer
   const consumer = await pulsar.subscribe({
-    topic: 'persistent://public/default/monitoring-per-name',
-    subscription: 'monitoring-per-name',
+    topic: `persistent://public/default/${TOPIC}`,
+    subscription: TOPIC,
     subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });
