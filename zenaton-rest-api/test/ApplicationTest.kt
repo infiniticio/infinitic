@@ -7,6 +7,7 @@ import io.ktor.routing.*
 import io.ktor.http.*
 import io.ktor.auth.*
 import com.fasterxml.jackson.databind.*
+import com.zenaton.api.module
 import io.ktor.jackson.*
 import io.ktor.features.*
 import kotlin.test.*
