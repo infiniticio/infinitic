@@ -27,7 +27,7 @@
   "author": "Zenaton",
   "module": "dist/worker.esm.js",
   "dependencies": {
-    "@zenaton/messages": "^0.1.0",
+    "@zenaton/messages": "^0.0.0",
     "pulsar-client": "^1.1.0"
   },
   "devDependencies": {}
