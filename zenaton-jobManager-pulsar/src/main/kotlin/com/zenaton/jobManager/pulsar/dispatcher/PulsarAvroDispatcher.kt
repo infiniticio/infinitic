@@ -11,20 +11,21 @@ import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 
 /**
- * This object provides a 'dispatch' method to send a task message into the tasks topic
+ * This object provides methods to send messages to different topics
  */
 class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
 
     private var prefix = "jobs"
 
-    // Set topics prefix to handle multiple installation of jobManager
+    // With topics prefix, it is possible to have different instances of jobManager in same tenant/namespace
+    // UserConfigValue are set when functions are deployed on topics
     init {
         val prefix = context.getUserConfigValue("topicPrefix")
         if (prefix.isPresent) this.prefix = prefix.get().toString()
     }
 
     /**
-     *  Workers message
+     *  Dispatch messages to workers
      */
     override fun toWorkers(msg: AvroForWorkerMessage) {
         context
@@ -37,7 +38,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     }
 
     /**
-     *  Admin message
+     *  Dispatch messages to Global Monitoring
      */
     override fun toMonitoringGlobal(msg: AvroForMonitoringGlobalMessage) {
         context
@@ -50,7 +51,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     }
 
     /**
-     *  Metrics message
+     *  Dispatch messages to Per Name Monitoring
      */
     override fun toMonitoringPerName(msg: AvroForMonitoringPerNameMessage) {
         context
@@ -64,7 +65,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     }
 
     /**
-     *  Engine messages
+     *  Dispatch messages to JobManager Engine
      */
     override fun toEngine(msg: AvroForEngineMessage, after: Float) {
 

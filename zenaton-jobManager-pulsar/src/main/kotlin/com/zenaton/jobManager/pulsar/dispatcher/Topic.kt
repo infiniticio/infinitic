@@ -7,9 +7,6 @@ enum class Topic {
     WORKERS {
         override fun get(prefix: String, name: String?) = "$prefix-workers-$name"
     },
-    MONITORING_PER_INSTANCE {
-        override fun get(prefix: String, name: String?) = "$prefix-monitoring-per-instance"
-    },
     MONITORING_PER_NAME {
         override fun get(prefix: String, name: String?) = "$prefix-monitoring-per-name"
     },
