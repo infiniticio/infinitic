@@ -39,12 +39,6 @@ tasks {
     }
 }
 
-tasks {
-    build {
-        dependsOn("ktlintFormat")
-    }
-}
-
 tasks.withType<Test> {
     useJUnitPlatform()
 }

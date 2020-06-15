@@ -123,12 +123,15 @@ class PulsarAvroStorageTests : ShouldSpec({
 
     context("PulsarAvroStorage.updateMonitoringPerNameState") {
 
-        should("only increment new counter when old state is null and save state") {
+        should("initializes all counters when old state is null and save state") {
             val context = mockk<Context>()
             val newState = TestFactory.get(
                 AvroMonitoringPerNameState::class,
                 mapOf(
+                    "runningOkCount" to 1L,
+                    "runningWarningCount" to 0L,
                     "runningErrorCount" to 0L,
+                    "terminatedCompletedCount" to 0L,
                     "terminatedCanceledCount" to 0L
                 )
             )
@@ -145,7 +148,9 @@ class PulsarAvroStorageTests : ShouldSpec({
             verifyAll {
                 context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_OK), newState.runningOkCount)
                 context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_WARNING), newState.runningWarningCount)
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_ERROR), newState.runningErrorCount)
                 context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_COMPLETED), newState.terminatedCompletedCount)
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_CANCELED), newState.terminatedCanceledCount)
                 context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_OK))
                 context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_WARNING))
                 context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_ERROR))

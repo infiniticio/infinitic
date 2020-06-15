@@ -48,6 +48,10 @@ tasks {
     }
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
 tasks {
     named<ShadowJar>("shadowJar") {
         mergeServiceFiles()
