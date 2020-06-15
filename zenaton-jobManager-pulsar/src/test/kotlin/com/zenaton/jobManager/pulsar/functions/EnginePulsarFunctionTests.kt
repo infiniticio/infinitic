@@ -14,6 +14,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
+import java.util.Optional
 
 class EnginePulsarFunctionTests : StringSpec({
     "TaskEngineFunction should throw an exception if called without context" {
@@ -27,8 +28,11 @@ class EnginePulsarFunctionTests : StringSpec({
 
     "TaskEngineFunction should call engine with correct parameters" {
         // mocking
+        val topicPrefixValue = mockk<Optional<Any>>()
+        every { topicPrefixValue.isPresent } returns false
         val context = mockk<Context>()
-        every { context.logger } returns mockk<org.slf4j.Logger>()
+        every { context.logger } returns mockk<org.slf4j.Logger>(relaxed = true)
+        every { context.getUserConfigValue("topicPrefix") } returns topicPrefixValue
         val engineFunction = spyk(EngineFunction())
         every { engineFunction.handle(any()) } just Runs
         val avroMsg = mockk<AvroForEngineMessage>()

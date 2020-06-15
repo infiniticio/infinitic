@@ -14,6 +14,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
+import java.util.Optional
 
 class MonitoringPerNameFunctionTests : ShouldSpec({
     context("TaskMetricsFunction.process") {
@@ -28,8 +29,11 @@ class MonitoringPerNameFunctionTests : ShouldSpec({
 
         should("call metrics with correct parameters") {
             // mocking
+            val topicPrefixValue = mockk<Optional<Any>>()
+            every { topicPrefixValue.isPresent } returns false
             val context = mockk<Context>()
-            every { context.logger } returns mockk<org.slf4j.Logger>()
+            every { context.logger } returns mockk<org.slf4j.Logger>(relaxed = true)
+            every { context.getUserConfigValue("topicPrefix") } returns topicPrefixValue
             val monitoringFunction = spyk<MonitoringPerNameFunction>()
             every { monitoringFunction.handle(any()) } just Runs
             val avroMsg = mockk<AvroForMonitoringPerNameMessage>()

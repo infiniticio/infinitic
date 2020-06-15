@@ -53,7 +53,6 @@ tasks {
 
 tasks {
     build {
-        dependsOn("ktlintFormat")
         dependsOn(shadowJar)
     }
 }
