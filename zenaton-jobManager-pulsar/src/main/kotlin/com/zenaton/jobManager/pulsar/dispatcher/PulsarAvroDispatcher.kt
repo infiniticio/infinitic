@@ -32,9 +32,9 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
             .newOutputMessage(Topic.WORKERS.get(prefix, msg.jobName), AvroSchema.of(AvroForWorkerMessage::class.java))
             .value(msg)
             .send()
-        context.logger.info("===============JobManager====================")
-        context.logger.info("Topic: ${Topic.WORKERS.get(prefix, msg.jobName)}")
-        context.logger.info("Msg: $msg")
+        context.logger.debug("===============JobManager====================")
+        context.logger.debug("Topic: ${Topic.WORKERS.get(prefix, msg.jobName)}")
+        context.logger.debug("Msg: $msg")
     }
 
     /**
@@ -45,9 +45,9 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
             .newOutputMessage(Topic.MONITORING_GLOBAL.get(prefix), AvroSchema.of(AvroForMonitoringGlobalMessage::class.java))
             .value(msg)
             .send()
-        context.logger.info("===============JobManager====================")
-        context.logger.info("Topic: ${Topic.MONITORING_GLOBAL.get(prefix)}")
-        context.logger.info("Msg: $msg")
+        context.logger.debug("===============JobManager====================")
+        context.logger.debug("Topic: ${Topic.MONITORING_GLOBAL.get(prefix)}")
+        context.logger.debug("Msg: $msg")
     }
 
     /**
@@ -59,9 +59,9 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
             .key(msg.jobName)
             .value(msg)
             .send()
-        context.logger.info("===============JobManager====================")
-        context.logger.info("Topic: ${Topic.MONITORING_PER_NAME.get(prefix)}")
-        context.logger.info("Msg: $msg")
+        context.logger.debug("===============JobManager====================")
+        context.logger.debug("Topic: ${Topic.MONITORING_PER_NAME.get(prefix)}")
+        context.logger.debug("Msg: $msg")
     }
 
     /**
@@ -79,9 +79,9 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
         }
         msgBuilder.send()
 
-        context.logger.info("===============JobManager====================")
-        context.logger.info("Topic: ${Topic.ENGINE.get(prefix)}")
-        context.logger.info("Msg: $msg")
+        context.logger.debug("===============JobManager====================")
+        context.logger.debug("Topic: ${Topic.ENGINE.get(prefix)}")
+        context.logger.debug("Msg: $msg")
     }
 
     override fun toWorkflows(msg: AvroForWorkflowsMessage) {

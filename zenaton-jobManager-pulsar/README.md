@@ -6,7 +6,7 @@ An Apache Pulsar function responsible for running Zenaton jobs.
 
 ### Requirements
 
-- Java JDK 13
+- Java JDK 8
 
 ### Building
 
