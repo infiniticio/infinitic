@@ -48,6 +48,12 @@ tasks {
     }
 }
 
+tasks {
+    build {
+        dependsOn("ktlintCheck")
+    }
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
 }

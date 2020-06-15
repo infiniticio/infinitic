@@ -41,7 +41,7 @@ tasks {
 
 tasks {
     build {
-        dependsOn("ktlintFormat")
+        dependsOn("ktlintCheck")
     }
 }
 
