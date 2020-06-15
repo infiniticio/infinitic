@@ -14,7 +14,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
-import java.util.*
+import java.util.Optional
 
 class MonitoringPerNameFunctionTests : ShouldSpec({
     context("TaskMetricsFunction.process") {
