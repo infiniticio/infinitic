@@ -2,10 +2,12 @@ const { pulsar } = require('./pulsar');
 const { forEngineMessage } = require('./avro');
 
 (async () => {
+  const TOPIC = "tasks-engine"
+
   // Create a consumer
   const consumer = await pulsar.subscribe({
-    topic: 'persistent://public/default/engine',
-    subscription: 'engine',
+    topic: `persistent://public/default/${TOPIC}`,
+    subscription: TOPIC,
     subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });

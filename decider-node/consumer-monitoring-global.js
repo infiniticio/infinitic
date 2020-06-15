@@ -2,10 +2,12 @@ const { pulsar } = require('./pulsar');
 const { forMonitoringGlobalMessage } = require('./avro');
 
 (async () => {
+  const TOPIC = "tasks-monitoring-global"
+
   // Create a consumer
   const consumer = await pulsar.subscribe({
-    topic: 'persistent://public/default/monitoring-global',
-    subscription: 'monitoring-global',
+    topic: `persistent://public/default/${TOPIC}`,
+    subscription: TOPIC,
     subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });

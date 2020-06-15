@@ -14,7 +14,7 @@ docker-compose up
 To enter the docker container:
 
 ```bash
-docker exec -it zenaton_pulsar_1 /bin/bash
+docker exec -it pulsar_pulsar_1 /bin/bash
 ```
 
 To clean everything

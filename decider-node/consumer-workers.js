@@ -4,10 +4,12 @@ const { forWorkerMessage } = require('./avro');
 const name = 'MyTask';
 
 (async () => {
+  const TOPIC = `tasks-workers-${name}`
+
   // Create a consumer
   const consumer = await pulsar.subscribe({
-    topic: `persistent://public/default/workers-${name}`,
-    subscription: `workers-${name}`,
+    topic: `persistent://public/default/${TOPIC}`,
+    subscription: TOPIC,
     subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });

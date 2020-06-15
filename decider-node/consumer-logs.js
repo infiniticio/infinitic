@@ -1,10 +1,12 @@
 const { pulsar } = require('./pulsar');
 
 (async () => {
+  const TOPIC = "tasks-logs"
+
   // Create a consumer
   const consumer = await pulsar.subscribe({
-    topic: 'persistent://public/default/logs',
-    subscription: 'logs',
+    topic: `persistent://public/default/${TOPIC}`,
+    subscription: TOPIC,
     subscriptionType: 'Shared',
     ackTimeoutMs: 10000,
   });
