@@ -25,6 +25,7 @@ import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
+import org.slf4j.Logger
 import java.util.Optional
 
 class PulsarAvroDispatcherTests : StringSpec({
@@ -65,6 +66,8 @@ fun shouldSendMessageToEngineTopic(msg: AvroForEngineMessage) = stringSpec {
     // then
     verifyAll {
         context.newOutputMessage(Topic.ENGINE.get(prefix), slotSchema.captured)
+        context.logger
+        context.getUserConfigValue("topicPrefix")
     }
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForEngineMessage::class.java).avroSchema
     confirmVerified(context)
@@ -90,6 +93,8 @@ fun shouldSendMessageToMonitoringPerNameTopic(msg: AvroForMonitoringPerNameMessa
     // then
     verifyAll {
         context.newOutputMessage(Topic.MONITORING_PER_NAME.get(prefix), slotSchema.captured)
+        context.logger
+        context.getUserConfigValue("topicPrefix")
     }
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringPerNameMessage::class.java).avroSchema
     confirmVerified(context)
@@ -116,6 +121,10 @@ fun shouldSendMessageToMonitoringGlobalTopic(msg: AvroForMonitoringGlobalMessage
     PulsarAvroDispatcher(context).toMonitoringGlobal(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
+    verify {
+        context.logger
+        context.getUserConfigValue("topicPrefix")
+    }
     slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get(prefix)
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringGlobalMessage::class.java).avroSchema
     verify(exactly = 1) { builder.value(msg) }
@@ -138,6 +147,10 @@ fun shouldSendMessageToWorkersTopic(msg: AvroForWorkerMessage) = stringSpec {
     PulsarAvroDispatcher(context).toWorkers(msg)
     // then
     verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
+    verify {
+        context.logger
+        context.getUserConfigValue("topicPrefix")
+    }
     slotTopic.captured shouldBe Topic.WORKERS.get(prefix, msg.jobName)
     slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForWorkerMessage::class.java).avroSchema
     verify(exactly = 1) { builder.value(msg) }
@@ -149,6 +162,7 @@ fun shouldSendMessageToWorkersTopic(msg: AvroForWorkerMessage) = stringSpec {
 fun context(prefix: String): Context {
     val context = mockk<Context>()
     val optional = mockk<Optional<Any>>()
+    every { context.logger } returns mockk<Logger>(relaxed = true)
     every { context.getUserConfigValue("topicPrefix") } returns optional
     every { optional.isPresent } returns true
     every { optional.get() } returns prefix
