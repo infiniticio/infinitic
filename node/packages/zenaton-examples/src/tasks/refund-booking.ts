@@ -6,8 +6,8 @@ export interface BookingData {
 }
 
 export class RefundBooking implements Task {
-  name: string = "RefundBooking";
-  async handle(data: BookingData)  {
+  name: string = 'RefundBooking';
+  async handle(data: BookingData) {
     console.log(`Refunding booking ${data.bookingId} for user ${data.userId}.`);
 
     // here you would typically send an http request to your payment system to process the refund.
