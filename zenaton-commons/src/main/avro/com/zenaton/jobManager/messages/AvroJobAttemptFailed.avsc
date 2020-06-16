@@ -9,11 +9,6 @@
             "logicalType": "uuid"
         },
         {
-            "name": "sentAt",
-            "type": "long",
-            "logicalType": "timestamp-millis"
-        },
-        {
             "name": "jobAttemptId",
             "type": "string",
             "logicalType": "uuid"

@@ -12,7 +12,6 @@ const { forEngineMessage } = require('../avro');
 
   var m = new Object()
   m.jobId = uuidv4()
-  m.sentAt = 1588705988
   m.jobName = "MyTask18"
   m.jobData = { "bytes": Buffer.from('abc') }
   m.workflowId = { "string": uuidv4() }
