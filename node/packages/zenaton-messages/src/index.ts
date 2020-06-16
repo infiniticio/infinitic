@@ -22,8 +22,8 @@ export type DispatchJob = {
   jobId: string;
   sentAt: number;
   jobName: string;
-  // TODO: add jobData
-  workflowId: string;
+  jobData: Buffer | null;
+  workflowId: string | null;
 };
 
 export type RetryJob = {
@@ -82,7 +82,7 @@ export type JobCanceled = {
 export type JobCompleted = {
   jobId: string;
   sentAt: number;
-  // TODO: add jobOutput
+  jobOutput: Buffer | null;
 };
 
 export type JobCreated = {
