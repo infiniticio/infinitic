@@ -1,0 +1,74 @@
+name: Zenaton Node Packages CI
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "node/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Use Node 12
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install Pulsar lib
+        run: |
+          cd /tmp
+          curl -sL -o apache-pulsar-client.deb 'https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=pulsar/pulsar-2.5.2/DEB/apache-pulsar-client.deb'
+          curl -sL -o apache-pulsar-client-dev.deb 'https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=pulsar/pulsar-2.5.2/DEB/apache-pulsar-client-dev.deb'
+          sudo apt install -y ./apache-pulsar-client*.deb
+          rm apache-pulsar-client.deb
+
+      - name: Use cached node_modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            node/node_modules
+            node/*/*/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('node/**/yarn.lock') }}
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: ./node
+        env:
+          CI: true
+
+      - name: Initialize Lerna
+        run: |
+          npx --no-install lerna bootstrap
+          npx --no-install lerna link
+        working-directory: ./node
+        env:
+          CI: true
+
+      - name: Initialize dist directories
+        run: npx --no-install lerna exec -- mkdir dist
+        working-directory: ./node
+        env:
+          CI: true
+
+      - name: Build
+        run: npx --no-install lerna run build
+        working-directory: ./node
+        env:
+          CI: true
+
+      - name: Lint
+        run: npx --no-install lerna run lint
+        working-directory: ./node
+        env:
+          CI: true
+
+      - name: Test
+        run: npx --no-install lerna run test -- --passWithNoTests --coverage
+        working-directory: ./node
+        env:
+          CI: true
