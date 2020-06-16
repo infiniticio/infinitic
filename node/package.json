@@ -20,6 +20,8 @@
   ],
   "dependencies": {
     "@zenaton/messages": "file:packages/zenaton-messages",
-    "@zenaton/worker": "file:packages/zenaton-worker"
+    "@zenaton/worker": "file:packages/zenaton-worker",
+    "@zenaton/client": "file:packages/zenaton-client",
+    "@zenaton/examples": "file:packages/zenaton-examples"
   }
 }
