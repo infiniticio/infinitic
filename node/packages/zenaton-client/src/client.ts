@@ -1,5 +1,13 @@
-import { ClientOpts as PulsarClientOpts, Client as PulsarClient, Producer as PulsarProducer} from 'pulsar-client';
-import {AvroForEngineMessage, DispatchJobMessage, ForEngineMessage} from '@zenaton/messages';
+import {
+  ClientOpts as PulsarClientOpts,
+  Client as PulsarClient,
+  Producer as PulsarProducer,
+} from 'pulsar-client';
+import {
+  AvroForEngineMessage,
+  DispatchJobMessage,
+  ForEngineMessage,
+} from '@zenaton/messages';
 import { v4 as uuid } from 'uuid';
 
 export interface ClientOpts {
@@ -34,11 +42,11 @@ export class Client {
         sentAt: Date.now(),
         jobName: name,
         jobData: Buffer.from(JSON.stringify(input)),
-        workflowId: null
+        workflowId: null,
       },
     };
 
-    this.dispatchForEngineMessage(message)
+    this.dispatchForEngineMessage(message);
   }
 
   async dispatchForEngineMessage(message: ForEngineMessage) {
