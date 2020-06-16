@@ -4,8 +4,8 @@ import com.zenaton.jobManager.data.JobAttemptError
 import com.zenaton.jobManager.data.JobAttemptId
 import com.zenaton.jobManager.data.JobAttemptIndex
 import com.zenaton.jobManager.data.JobAttemptRetry
-import com.zenaton.jobManager.data.JobData
 import com.zenaton.jobManager.data.JobId
+import com.zenaton.jobManager.data.JobInput
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.jobManager.data.JobStatus
@@ -28,7 +28,7 @@ data class CancelJob(
 data class DispatchJob(
     override val jobId: JobId,
     val jobName: JobName,
-    val jobData: JobData?,
+    val jobInput: JobInput,
     val workflowId: WorkflowId? = null
 ) : Message(), ForEngineMessage
 
@@ -100,7 +100,7 @@ data class RunJob(
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
     override val jobAttemptIndex: JobAttemptIndex,
-    val jobData: JobData?
+    val jobInput: JobInput
 ) : Message(), JobAttemptMessage, ForWorkerMessage
 
 data class TaskCompleted(

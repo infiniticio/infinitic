@@ -17,6 +17,7 @@ class AvroConverterTests : StringSpec({
 
     "messages should be avro-reversible" {
         Message::class.sealedSubclasses.forEach {
+            println(it.qualifiedName)
             shouldNotThrowAny {
                 val msg = TestFactory.get(it)
                 if (msg is ForWorkerMessage) {

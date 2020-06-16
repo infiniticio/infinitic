@@ -98,7 +98,7 @@ class Engine {
         val state = EngineState(
             jobId = msg.jobId,
             jobName = msg.jobName,
-            jobData = msg.jobData,
+            jobInput = msg.jobInput,
             workflowId = msg.workflowId,
             jobAttemptId = JobAttemptId(),
             jobStatus = JobStatus.RUNNING_OK
@@ -111,7 +111,7 @@ class Engine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
-            jobData = state.jobData
+            jobInput = state.jobInput
         )
         dispatcher.toWorkers(rt)
 
@@ -142,7 +142,7 @@ class Engine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
-            jobData = state.jobData
+            jobInput = state.jobInput
         )
         dispatcher.toWorkers(rt)
 
@@ -171,7 +171,7 @@ class Engine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
-            jobData = state.jobData
+            jobInput = state.jobInput
         )
         dispatcher.toWorkers(rt)
 

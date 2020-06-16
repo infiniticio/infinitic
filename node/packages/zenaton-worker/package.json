@@ -1,5 +1,5 @@
 {
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -27,7 +27,7 @@
   "author": "Zenaton",
   "module": "dist/worker.esm.js",
   "dependencies": {
-    "@zenaton/messages": "^0.0.0",
+    "@zenaton/messages": "^0.0.1",
     "pulsar-client": "^1.1.0"
   },
   "devDependencies": {}

@@ -192,13 +192,13 @@ class EngineFunctionTests : StringSpec({
         val run = o.workerMessage as RunJob
         run.jobId shouldBe msgIn.jobId
         run.jobName shouldBe msgIn.jobName
-        run.jobData shouldBe msgIn.jobData
+        run.jobInput shouldBe msgIn.jobInput
         run.jobAttemptRetry.int shouldBe 0
         run.jobAttemptId shouldBe o.jobAttemptDispatched!!.jobAttemptId
         run.jobAttemptRetry shouldBe o.jobAttemptDispatched!!.jobAttemptRetry
         o.state!!.jobId shouldBe msgIn.jobId
         o.state!!.jobName shouldBe msgIn.jobName
-        o.state!!.jobData shouldBe msgIn.jobData
+        o.state!!.jobInput shouldBe msgIn.jobInput
         o.state!!.jobAttemptId shouldBe run.jobAttemptId
         o.state!!.jobAttemptRetry.int shouldBe 0
         o.state!!.workflowId shouldBe msgIn.workflowId
@@ -229,13 +229,13 @@ class EngineFunctionTests : StringSpec({
         run.jobAttemptId shouldNotBe stateIn.jobAttemptId
         run.jobAttemptRetry.int shouldBe 0
         run.jobName shouldBe stateIn.jobName
-        run.jobData shouldBe stateIn.jobData
+        run.jobInput shouldBe stateIn.jobInput
         o.jobAttemptDispatched!!.jobId shouldBe stateIn.jobId
         o.jobAttemptDispatched!!.jobAttemptId shouldBe run.jobAttemptId
         o.jobAttemptDispatched!!.jobAttemptRetry.int shouldBe 0
         o.state!!.jobId shouldBe stateIn.jobId
         o.state!!.jobName shouldBe stateIn.jobName
-        o.state!!.jobData shouldBe stateIn.jobData
+        o.state!!.jobInput shouldBe stateIn.jobInput
         o.state!!.jobAttemptId shouldBe run.jobAttemptId
         o.state!!.jobAttemptRetry shouldBe run.jobAttemptRetry
         o.state!!.jobStatus shouldBe JobStatus.RUNNING_WARNING
@@ -406,13 +406,13 @@ private fun checkShouldRetryJobAttempt(msgIn: ForEngineMessage, stateIn: EngineS
     run.jobAttemptId shouldBe stateIn.jobAttemptId
     run.jobAttemptRetry shouldBe stateIn.jobAttemptRetry + 1
     run.jobName shouldBe stateIn.jobName
-    run.jobData shouldBe stateIn.jobData
+    run.jobInput shouldBe stateIn.jobInput
     o.jobAttemptDispatched!!.jobId shouldBe stateIn.jobId
     o.jobAttemptDispatched!!.jobAttemptId shouldBe run.jobAttemptId
     o.jobAttemptDispatched!!.jobAttemptRetry shouldBe run.jobAttemptRetry
     o.state!!.jobId shouldBe stateIn.jobId
     o.state!!.jobName shouldBe stateIn.jobName
-    o.state!!.jobData shouldBe stateIn.jobData
+    o.state!!.jobInput shouldBe stateIn.jobInput
     o.state!!.jobAttemptId shouldBe run.jobAttemptId
     o.state!!.jobAttemptRetry shouldBe run.jobAttemptRetry
     o.state!!.jobStatus shouldBe JobStatus.RUNNING_WARNING
