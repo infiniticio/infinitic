@@ -16,7 +16,6 @@ const jobAttemptRetry = 1;
 
   var m = new Object()
   m.jobId = jobId
-  m.sentAt = 1588705988
   m.jobAttemptId = jobAttemptId
   m.jobAttemptIndex = jobAttemptIndex
   m.jobAttemptRetry = jobAttemptRetry

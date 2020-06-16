@@ -15,12 +15,10 @@ export type ForEngineMessageType =
 
 export type CancelJob = {
   jobId: string;
-  sentAt: number;
 };
 
 export type DispatchJob = {
   jobId: string;
-  sentAt: number;
   jobName: string;
   // TODO: add jobData
   workflowId: string;
@@ -28,12 +26,10 @@ export type DispatchJob = {
 
 export type RetryJob = {
   jobId: string;
-  sentAt: number;
 };
 
 export type RetryJobAttempt = {
   jobId: string;
-  sentAt: number;
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
@@ -44,7 +40,6 @@ export type JobAttemptCompleted = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  sentAt: number;
   jobOutput: Buffer | null;
 };
 
@@ -53,7 +48,6 @@ export type JobAttemptDispatched = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  sentAt: number;
 };
 
 export type JobAttemptFailed = {
@@ -61,7 +55,6 @@ export type JobAttemptFailed = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  sentAt: number;
   jobAttemptError: Buffer;
   jobAttemptDelayBeforeRetry: number | null;
 };
@@ -71,23 +64,19 @@ export type JobAttemptStarted = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  sentAt: number;
 };
 
 export type JobCanceled = {
   jobId: string;
-  sentAt: number;
 };
 
 export type JobCompleted = {
   jobId: string;
-  sentAt: number;
   // TODO: add jobOutput
 };
 
 export type JobCreated = {
   jobId: string;
-  sentAt: number;
 };
 
 export interface CancelJobMessage {
@@ -178,7 +167,6 @@ export type RunJob = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  sentAt: number;
 };
 
 export interface RunJobMessage {

@@ -13,7 +13,6 @@ const jobId = '15a243f6-5477-4dd7-9ebe-c89d8ad6744c';
 
   var m = new Object()
   m.jobId = jobId
-  m.sentAt = 1588705988
 
   var msg = new Object()
   msg.type = "Retryjob"

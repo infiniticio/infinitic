@@ -20,11 +20,6 @@
         {
             "name": "jobAttemptIndex",
             "type": "int"
-        },
-        {
-            "name": "sentAt",
-            "type": "long",
-            "logicalType": "timestamp-millis"
         }
     ]
 }

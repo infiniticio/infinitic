@@ -1,6 +1,5 @@
 package com.zenaton.jobManager.messages
 
-import com.zenaton.commons.data.DateTime
 import com.zenaton.jobManager.data.JobAttemptError
 import com.zenaton.jobManager.data.JobAttemptId
 import com.zenaton.jobManager.data.JobAttemptIndex
@@ -23,13 +22,11 @@ import com.zenaton.jobManager.messages.interfaces.JobMessage
 sealed class Message
 
 data class CancelJob(
-    override val jobId: JobId,
-    override val sentAt: DateTime = DateTime()
+    override val jobId: JobId
 ) : Message(), ForEngineMessage
 
 data class DispatchJob(
     override val jobId: JobId,
-    override val sentAt: DateTime = DateTime(),
     val jobName: JobName,
     val jobData: JobData?,
     val workflowId: WorkflowId? = null
@@ -37,7 +34,6 @@ data class DispatchJob(
 
 data class JobAttemptCompleted(
     override val jobId: JobId,
-    override val sentAt: DateTime = DateTime(),
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
     override val jobAttemptIndex: JobAttemptIndex,
@@ -48,13 +44,11 @@ data class JobAttemptDispatched(
     override val jobId: JobId,
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
-    override val jobAttemptIndex: JobAttemptIndex,
-    override val sentAt: DateTime = DateTime()
+    override val jobAttemptIndex: JobAttemptIndex
 ) : Message(), JobAttemptMessage, ForEngineMessage
 
 data class JobAttemptFailed(
     override val jobId: JobId,
-    override val sentAt: DateTime = DateTime(),
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
     override val jobAttemptIndex: JobAttemptIndex,
@@ -64,30 +58,25 @@ data class JobAttemptFailed(
 
 data class JobAttemptStarted(
     override val jobId: JobId,
-    override val sentAt: DateTime = DateTime(),
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
     override val jobAttemptIndex: JobAttemptIndex
 ) : Message(), JobAttemptMessage, ForEngineMessage
 
 data class JobCanceled(
-    override val jobId: JobId,
-    override val sentAt: DateTime = DateTime()
+    override val jobId: JobId
 ) : Message(), JobMessage, ForEngineMessage
 
 data class JobCompleted(
     override val jobId: JobId,
-    override val sentAt: DateTime = DateTime(),
     val jobOutput: JobOutput?
 ) : Message(), JobMessage, ForEngineMessage
 
 data class JobCreated(
-    override val sentAt: DateTime = DateTime(),
     val jobName: JobName
 ) : Message(), ForMonitoringGlobalMessage
 
 data class JobStatusUpdated constructor(
-    override val sentAt: DateTime = DateTime(),
     override val jobName: JobName,
     val jobId: JobId,
     val oldStatus: JobStatus?,
@@ -95,13 +84,11 @@ data class JobStatusUpdated constructor(
 ) : Message(), ForMonitoringPerNameMessage
 
 data class RetryJob(
-    override val jobId: JobId,
-    override val sentAt: DateTime = DateTime()
+    override val jobId: JobId
 ) : Message(), ForEngineMessage
 
 data class RetryJobAttempt(
     override val jobId: JobId,
-    override val sentAt: DateTime = DateTime(),
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
     override val jobAttemptIndex: JobAttemptIndex
@@ -109,7 +96,6 @@ data class RetryJobAttempt(
 
 data class RunJob(
     override val jobName: JobName,
-    override val sentAt: DateTime = DateTime(),
     override val jobId: JobId,
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
@@ -119,7 +105,6 @@ data class RunJob(
 
 data class TaskCompleted(
     override val workflowId: WorkflowId,
-    override val sentAt: DateTime = DateTime(),
     val taskId: JobId,
     val taskOutput: JobOutput?
 ) : Message(), ForWorkflowsMessage

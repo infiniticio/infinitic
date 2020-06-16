@@ -4,11 +4,6 @@
     "namespace": "com.zenaton.jobManager.messages",
     "fields": [
         {
-            "name": "sentAt",
-            "type": "long",
-            "logicalType": "timestamp-millis"
-        },
-        {
             "name": "jobName",
             "type": "string"
         }
