@@ -39,7 +39,6 @@ export class Client {
       type: 'DispatchJob',
       DispatchJob: {
         jobId,
-        sentAt: Date.now(),
         jobName: name,
         jobData: Buffer.from(JSON.stringify(input)),
         workflowId: null,

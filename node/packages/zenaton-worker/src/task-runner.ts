@@ -67,7 +67,6 @@ export class TaskRunner {
       type: 'JobAttemptStarted',
       JobAttemptStarted: {
         jobId: message.jobId,
-        sentAt: Date.now(),
         jobAttemptId: message.jobAttemptId,
         jobAttemptRetry: message.jobAttemptRetry,
         jobAttemptIndex: message.jobAttemptIndex,
@@ -92,7 +91,6 @@ export class TaskRunner {
       type: 'JobAttemptCompleted',
       JobAttemptCompleted: {
         jobId: message.jobId,
-        sentAt: Date.now(),
         jobAttemptId: message.jobAttemptId,
         jobAttemptRetry: message.jobAttemptRetry,
         jobAttemptIndex: message.jobAttemptIndex,
@@ -111,7 +109,6 @@ export class TaskRunner {
       type: 'JobAttemptFailed',
       JobAttemptFailed: {
         jobId: message.jobId,
-        sentAt: Date.now(),
         jobAttemptId: message.jobAttemptId,
         jobAttemptRetry: message.jobAttemptIndex,
         jobAttemptIndex: message.jobAttemptIndex,
