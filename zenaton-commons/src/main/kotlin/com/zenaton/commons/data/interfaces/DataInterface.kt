@@ -1,6 +1,5 @@
 package com.zenaton.commons.data.interfaces
 
-import com.zenaton.commons.data.SerializationType
 import java.math.BigInteger
 import java.security.MessageDigest
 

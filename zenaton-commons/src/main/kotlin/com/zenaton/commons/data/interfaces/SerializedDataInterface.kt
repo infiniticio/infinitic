@@ -21,7 +21,6 @@ interface SerializedDataInterface {
         other as SerializedDataInterface
 
         return (serializationType == other.serializationType && serializedData.contentEquals(other.serializedData))
-
     }
 
     fun hashCodeData(): Int {

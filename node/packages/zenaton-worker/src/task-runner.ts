@@ -86,8 +86,8 @@ export class TaskRunner {
     } else {
       jobOutput = {
         serializedData: Buffer.from(JSON.stringify(output)),
-        serializationType: 'JSON'
-      }
+        serializationType: 'JSON',
+      };
     }
 
     const toSend: JobAttemptCompletedMessage = {

@@ -4,7 +4,7 @@ import path from 'path';
 export interface SerializedData {
   serializedData: Buffer;
   serializationType: string;
-};
+}
 
 export type JobInput = SerializedData[];
 export type JobOutput = SerializedData;
@@ -200,7 +200,6 @@ export const AvroSerializedData = typeForSchema<SerializedData>(
 // Job Engine messages definitions
 // ------------------------------------------------------------------------------------------------
 
-
 export const AvroCancelJob = typeForSchema<CancelJob>(
   path.resolve(`${__dirname}/avro/jobManager/messages/AvroCancelJob.avsc`),
   registry
@@ -217,27 +216,37 @@ export const AvroRetryJob = typeForSchema<RetryJob>(
 );
 
 export const AvroRetryJobAttempt = typeForSchema<RetryJobAttempt>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroRetryJobAttempt.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroRetryJobAttempt.avsc`
+  ),
   registry
 );
 
 export const AvroJobAttemptCompleted = typeForSchema<JobAttemptCompleted>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobAttemptCompleted.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroJobAttemptCompleted.avsc`
+  ),
   registry
 );
 
 export const AvroJobAttemptDispatched = typeForSchema<JobAttemptDispatched>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobAttemptDispatched.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroJobAttemptDispatched.avsc`
+  ),
   registry
 );
 
 export const AvroJobAttemptFailed = typeForSchema<JobAttemptFailed>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobAttemptFailed.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroJobAttemptFailed.avsc`
+  ),
   registry
 );
 
 export const AvroJobAttemptStarted = typeForSchema<JobAttemptStarted>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobAttemptStarted.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroJobAttemptStarted.avsc`
+  ),
   registry
 );
 
