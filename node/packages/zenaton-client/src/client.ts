@@ -32,7 +32,7 @@ export class Client {
     );
   }
 
-  async dispatchTask(jobName: string, input: any | null) {
+  async dispatchTask(jobName: string, input: any) {
     const jobId = uuid();
     const jobInput =
       input == null
