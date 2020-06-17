@@ -1,4 +1,4 @@
-package com.zenaton.commons.utils.json
+package com.zenaton.commons.json
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper

@@ -1,4 +1,4 @@
-package com.zenaton.commons.utils.avro
+package com.zenaton.commons.avro
 
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.EncoderFactory

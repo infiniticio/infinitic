@@ -1,6 +1,6 @@
 package com.zenaton.commons.data.interfaces
 
-import com.zenaton.commons.utils.json.Json
+import com.zenaton.commons.json.Json
 import java.io.Serializable
 
 interface StateInterface : Serializable

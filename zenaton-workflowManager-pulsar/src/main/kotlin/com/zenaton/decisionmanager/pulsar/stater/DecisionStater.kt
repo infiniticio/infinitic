@@ -1,6 +1,6 @@
 package com.zenaton.decisionmanager.pulsar.stater
 
-import com.zenaton.commons.utils.avro.AvroSerDe
+import com.zenaton.commons.avro.AvroSerDe
 import com.zenaton.decisionmanager.pulsar.avro.AvroConverter
 import com.zenaton.decisionmanager.state.DecisionState
 import com.zenaton.decisionmanager.states.AvroDecisionState

@@ -1,7 +1,7 @@
 package com.zenaton.commons.pulsar.utils
 
 import com.zenaton.commons.data.interfaces.StateInterface
-import com.zenaton.commons.utils.avro.AvroSerDe
+import com.zenaton.commons.avro.AvroSerDe
 import com.zenaton.workflowManager.interfaces.StaterInterface
 import org.apache.pulsar.functions.api.Context
 

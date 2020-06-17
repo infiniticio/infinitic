@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.pulsar.utils
 
-import com.zenaton.commons.utils.json.Json
+import com.zenaton.commons.json.Json
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage

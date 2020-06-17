@@ -1,10 +1,9 @@
 package com.zenaton.api.task.models
 
-import java.time.Instant
-
 data class TaskAttempt(
     val id: String,
-    val tries: List<TaskAttemptTry> = listOf()) {
+    val tries: List<TaskAttemptTry> = listOf()
+) {
 
     class Builder {
         var id: String? = null
@@ -19,7 +18,7 @@ data class TaskAttempt(
         }
 
         object Exceptions {
-            class IncompleteStateException(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {}
+            class IncompleteStateException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
         }
     }
 }
@@ -29,19 +28,19 @@ data class TaskAttempt(
  */
 fun List<TaskAttempt.Builder>.build(): List<TaskAttempt> = map { it.build() }
 //
-///**
+// /**
 // * Returns the corresponding item identified by [id] or create a new one if it does not exist yet.
 // */
-//fun MutableList<TaskAttempt.Builder>.getOrNew(id: String): TaskAttempt.Builder =
+// fun MutableList<TaskAttempt.Builder>.getOrNew(id: String): TaskAttempt.Builder =
 //    firstOrNull { it.id == id } ?: TaskAttempt.Builder().also {
 //        it.id = id
 //        this.add(it)
 //    }
 //
-///**
+// /**
 // * Returns the corresponding item identified by [id] or create a new one if it does not exist yet.
 // */
-//fun List<TaskAttempt.Builder>.get(id: String): TaskAttempt.Builder =
+// fun List<TaskAttempt.Builder>.get(id: String): TaskAttempt.Builder =
 //    firstOrNull { it.id == id } ?: TaskAttempt.Builder().also {
 //        it.id = id
 //        this.add(it)

@@ -10,7 +10,8 @@ data class Task(
     val startedAt: Instant? = null,
     val completedAt: Instant? = null,
     val failedAt: Instant? = null,
-    val attempts: List<TaskAttempt> = listOf()) {
+    val attempts: List<TaskAttempt> = listOf()
+) {
 
     class Builder {
         var id: String? = null

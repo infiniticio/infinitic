@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.messages
 
 import com.zenaton.commons.data.DateTime
-import com.zenaton.jobManager.data.JobData
+import com.zenaton.jobManager.data.JobInput
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.workflowManager.data.DecisionData
 import com.zenaton.workflowManager.data.DecisionId
@@ -115,7 +115,7 @@ data class DispatchTask(
     override val sentAt: DateTime = DateTime(),
     val workflowId: WorkflowId,
     val taskName: JobName,
-    val taskData: JobData
+    val taskData: JobInput
 ) : Message(), ForWorkersMessage
 
 data class DispatchDecision(

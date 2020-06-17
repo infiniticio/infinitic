@@ -1,8 +1,9 @@
 package com.zenaton.workflowManager.avro
 
-import com.zenaton.commons.utils.json.Json
+import com.zenaton.commons.data.AvroSerializedData
+import com.zenaton.commons.json.Json
+import com.zenaton.jobManager.data.JobParameter
 import com.zenaton.jobManager.messages.AvroDispatchJob
-import com.zenaton.jobManager.messages.DispatchJob
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessageType
 import com.zenaton.workflowManager.engine.WorkflowEngineState
@@ -41,7 +42,6 @@ import com.zenaton.workflowManager.messages.envelopes.ForWorkersMessage
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
 import org.apache.avro.specific.SpecificRecordBase
-import java.nio.ByteBuffer
 
 /**
  * This class does the mapping between avro-generated classes and classes actually used by our code
@@ -194,27 +194,26 @@ object AvroConverter {
     private fun convertToAvro(message: WorkflowCanceled) = convertJson<AvroWorkflowCanceled>(message)
     private fun convertToAvro(message: WorkflowCompleted) = convertJson<AvroWorkflowCompleted>(message)
 
-    private fun convertToAvro(message: DispatchTask): AvroDispatchJob {
-        val builder = AvroDispatchJob.newBuilder()
-        builder.jobId = message.taskId.id
-        builder.workflowId = message.workflowId.id
-        builder.jobName = message.taskName.name
-        builder.jobData = ByteBuffer.wrap(message.taskData.data)
-        builder.sentAt = message.sentAt.time
+    private fun convertToAvro(message: DispatchTask) = AvroDispatchJob.newBuilder().apply {
+        jobId = message.taskId.id
+        workflowId = message.workflowId.id
+        jobName = message.taskName.name
+        jobInput = message.taskData.input.map { convertToAvro(it) }
+    }.build()
 
-        return builder.build()
-    }
+    private fun convertToAvro(message: DispatchDecision) = AvroDispatchJob.newBuilder().apply {
+        jobId = message.decisionId.id
+        workflowId = message.workflowId.id
+        jobName = message.workflowName.name
+        jobInput = message.decisionData.input.map { convertToAvro(it) }
+    }.build()
 
-    private fun convertToAvro(message: DispatchDecision): AvroDispatchJob {
-        val builder = AvroDispatchJob.newBuilder()
-        builder.jobId = message.decisionId.id
-        builder.workflowId = message.workflowId.id
-        builder.jobName = message.workflowName.name
-        builder.jobData = ByteBuffer.wrap(message.decisionData.data)
-        builder.sentAt = message.sentAt.time
+    /**
+     *  Data
+     */
 
-        return builder.build()
-    }
+    private fun convertToAvro(p: JobParameter) = convertJson<AvroSerializedData>(p)
+
     /**
      *  Any Message
      */

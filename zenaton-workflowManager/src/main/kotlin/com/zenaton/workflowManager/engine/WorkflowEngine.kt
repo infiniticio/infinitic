@@ -100,7 +100,7 @@ class WorkflowEngine {
             decisionId = decisionId,
             workflowId = msg.workflowId,
             workflowName = msg.workflowName,
-            decisionData = DecisionData("".toByteArray()) // AvroSerDe.serialize(decisionInput))
+            decisionData = DecisionData(listOf()) // AvroSerDe.serialize(decisionInput))
         )
         // dispatch decision
         dispatcher.toDeciders(m)
@@ -109,7 +109,7 @@ class WorkflowEngine {
             decisionId = decisionId,
             workflowId = msg.workflowId,
             workflowName = msg.workflowName,
-            decisionData = DecisionData("".toByteArray()) // AvroSerDe.serialize(decisionInput))
+            decisionData = DecisionData(listOf()) // AvroSerDe.serialize(decisionInput))
         )
         dispatcher.toWorkflowEngine(dd)
         // save state

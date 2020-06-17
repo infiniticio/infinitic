@@ -21,7 +21,7 @@ data class TaskAttemptTry(val index: Int, val startedAt: Instant?, val completed
         }
 
         object Exceptions {
-            class IncompleteStateException(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {}
+            class IncompleteStateException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
         }
     }
 }

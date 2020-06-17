@@ -1,6 +1,6 @@
 package com.zenaton.decisionmanager.pulsar.avro
 
-import com.zenaton.commons.utils.json.Json
+import com.zenaton.commons.json.Json
 import com.zenaton.decisionmanager.messages.AvroDecisionAttemptCompleted
 import com.zenaton.decisionmanager.messages.AvroDecisionAttemptFailed
 import com.zenaton.decisionmanager.messages.AvroDecisionAttemptMessage
