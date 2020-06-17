@@ -3,6 +3,7 @@ rootProject.name = "com.zenaton"
 include("zenaton-commons")
 include("zenaton-jobManager")
 include("zenaton-jobManager-pulsar")
+include("zenaton-rest-api")
 include("zenaton-workflowManager")
 
 pluginManagement {
