@@ -86,7 +86,7 @@ tasks.register("install") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
-            className = "EnginePulsarFunction",
+            className = "JobEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "create"
         )
@@ -109,7 +109,7 @@ tasks.register("update") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
-            className = "EnginePulsarFunction",
+            className = "JobEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "update"
         )
@@ -132,7 +132,7 @@ tasks.register("delete") {
     description = "Delete Zenaton from Pulsar"
     doLast {
         setPrefix()
-        deleteZenatonFunction("EnginePulsarFunction")
+        deleteZenatonFunction("JobEnginePulsarFunction")
         deleteZenatonFunction("MonitoringGlobalPulsarFunction")
         deleteZenatonFunction("MonitoringPerNamePulsarFunction")
         forceDeleteTopic(Topic.ENGINE.get())

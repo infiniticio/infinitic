@@ -9,7 +9,7 @@ import com.zenaton.jobManager.interfaces.AvroStorage
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import org.slf4j.Logger
 
-class EngineFunction {
+class JobEngineFunction {
     lateinit var logger: Logger
     lateinit var avroStorage: AvroStorage
     lateinit var avroDispatcher: AvroDispatcher
