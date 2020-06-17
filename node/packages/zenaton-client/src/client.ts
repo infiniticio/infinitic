@@ -4,9 +4,9 @@ import {
   Producer as PulsarProducer,
 } from 'pulsar-client';
 import {
-  AvroForEngineMessage,
+  AvroForJobEngineMessage,
   DispatchJobMessage,
-  ForEngineMessage,
+  ForJobEngineMessage,
 } from '@zenaton/messages';
 import { v4 as uuid } from 'uuid';
 
@@ -54,10 +54,10 @@ export class Client {
       },
     };
 
-    this.dispatchForEngineMessage(message);
+    this.dispatchForJobEngineMessage(message);
   }
 
-  async dispatchForEngineMessage(message: ForEngineMessage) {
+  async dispatchForJobEngineMessage(message: ForJobEngineMessage) {
     if (!this.pulsarClient) {
       this.pulsarClient = new PulsarClient(this.opts.pulsar.client);
     }
@@ -69,7 +69,7 @@ export class Client {
       });
     }
     await this.pulsarProducer.send({
-      data: AvroForEngineMessage.toBuffer(message),
+      data: AvroForJobEngineMessage.toBuffer(message),
     });
   }
 }
