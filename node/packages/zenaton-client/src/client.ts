@@ -34,10 +34,15 @@ export class Client {
 
   async dispatchTask(jobName: string, input: any | null) {
     const jobId = uuid();
-    const jobInput = input == null ? [] : [{ 
-      serializedData: Buffer.from(JSON.stringify(input)),
-      serializationType: 'JSON'
-    }];
+    const jobInput =
+      input == null
+        ? []
+        : [
+            {
+              serializedData: Buffer.from(JSON.stringify(input)),
+              serializationType: 'JSON',
+            },
+          ];
     const message: DispatchJobMessage = {
       jobId,
       type: 'DispatchJob',
@@ -45,7 +50,7 @@ export class Client {
         jobId,
         jobName,
         jobInput,
-        workflowId: null
+        workflowId: null,
       },
     };
 
