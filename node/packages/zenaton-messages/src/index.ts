@@ -48,7 +48,7 @@ export type JobAttemptCompleted = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  jobOutput: SerializedData | null;
+  jobOutput: JobOutput | null;
 };
 
 export type JobAttemptDispatched = {
@@ -81,7 +81,7 @@ export type JobCanceled = {
 export type JobCompleted = {
   jobId: string;
   sentAt: number;
-  jobOutput: SerializedData | null;
+  jobOutput: JobOutput | null;
 };
 
 export type JobCreated = {

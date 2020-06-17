@@ -6,12 +6,16 @@ module.exports = {
       copy({
         targets: [
           {
-            src: 'src/avro/messages/envelopes/*.avsc',
-            dest: 'dist/avro/messages/envelopes',
+            src: 'src/avro/jobManager/messages/envelopes/*.avsc',
+            dest: 'dist/avro/jobManager/messages/envelopes',
           },
           {
-            src: 'src/avro/messages/*.avsc',
-            dest: 'dist/avro/messages',
+            src: 'src/avro/jobManager/messages/*.avsc',
+            dest: 'dist/avro/jobManager/messages',
+          },
+          {
+            src: 'src/avro/commons/*.avsc',
+            dest: 'dist/avro/commons',
           },
         ],
       })
