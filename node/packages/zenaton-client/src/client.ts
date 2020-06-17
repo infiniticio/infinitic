@@ -32,9 +32,9 @@ export class Client {
     );
   }
 
-  async dispatchTask(name: string, input: any | null) {
+  async dispatchTask(jobName: string, input: any | null) {
     const jobId = uuid();
-    const jobInput = (input == null) ? [] : [{ 
+    const jobInput = input == null ? [] : [{ 
       serializedData: Buffer.from(JSON.stringify(input)),
       serializationType: 'JSON'
     }];
@@ -43,8 +43,8 @@ export class Client {
       type: 'DispatchJob',
       DispatchJob: {
         jobId,
-        jobName: name,
-        jobInput: jobInput,
+        jobName,
+        jobInput,
         workflowId: null
       },
     };
