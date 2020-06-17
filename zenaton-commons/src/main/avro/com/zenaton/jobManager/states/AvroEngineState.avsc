@@ -14,9 +14,11 @@
              "name" : "jobAttemptIndex",
              "type" : "int"
          }, {
-            "name" : "jobData",
-            "type" : [ "null", "bytes" ],
-            "default": null
+            "name" : "jobInput",
+            "type" : {
+                 "type": "array",
+                 "items" : "com.zenaton.commons.data.AvroSerializedData"
+             }
         }, {
             "name" : "jobId",
             "type" : "string",

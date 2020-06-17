@@ -1,6 +1,14 @@
 import { typeForSchema, AvroRegistry } from './type';
 import path from 'path';
 
+export interface SerializedData {
+  serializedData: Buffer;
+  serializationType: string;
+}
+
+export type JobInput = SerializedData[];
+export type JobOutput = SerializedData;
+
 export type ForEngineMessageType =
   | 'CancelJob'
   | 'DispatchJob'
@@ -20,7 +28,7 @@ export type CancelJob = {
 export type DispatchJob = {
   jobId: string;
   jobName: string;
-  jobData: Buffer | null;
+  jobInput: JobInput;
   workflowId: string | null;
 };
 
@@ -40,7 +48,7 @@ export type JobAttemptCompleted = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  jobOutput: Buffer | null;
+  jobOutput: JobOutput | null;
 };
 
 export type JobAttemptDispatched = {
@@ -73,7 +81,7 @@ export type JobCanceled = {
 export type JobCompleted = {
   jobId: string;
   sentAt: number;
-  jobOutput: Buffer | null;
+  jobOutput: JobOutput | null;
 };
 
 export type JobCreated = {
@@ -164,7 +172,7 @@ export type ForWorkerMessageType = 'RunJob';
 export type RunJob = {
   jobId: string;
   jobName: string;
-  jobData: Buffer | null;
+  jobInput: JobInput;
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
@@ -178,69 +186,88 @@ export interface RunJobMessage {
 export type ForWorkerMessage = RunJobMessage;
 
 // ------------------------------------------------------------------------------------------------
-// Engine messages definitions
+// Common definitions
 // ------------------------------------------------------------------------------------------------
 
 const registry: AvroRegistry = {};
 
+export const AvroSerializedData = typeForSchema<SerializedData>(
+  path.resolve(`${__dirname}/avro/commons/AvroSerializedData.avsc`),
+  registry
+);
+
+// ------------------------------------------------------------------------------------------------
+// Job Engine messages definitions
+// ------------------------------------------------------------------------------------------------
+
 export const AvroCancelJob = typeForSchema<CancelJob>(
-  path.resolve(`${__dirname}/avro/messages/AvroCancelJob.avsc`),
+  path.resolve(`${__dirname}/avro/jobManager/messages/AvroCancelJob.avsc`),
   registry
 );
 
 export const AvroDispatchJob = typeForSchema<DispatchJob>(
-  path.resolve(`${__dirname}/avro/messages/AvroDispatchJob.avsc`),
+  path.resolve(`${__dirname}/avro/jobManager/messages/AvroDispatchJob.avsc`),
   registry
 );
 
 export const AvroRetryJob = typeForSchema<RetryJob>(
-  path.resolve(`${__dirname}/avro/messages/AvroRetryJob.avsc`),
+  path.resolve(`${__dirname}/avro/jobManager/messages/AvroRetryJob.avsc`),
   registry
 );
 
 export const AvroRetryJobAttempt = typeForSchema<RetryJobAttempt>(
-  path.resolve(`${__dirname}/avro/messages/AvroRetryJobAttempt.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroRetryJobAttempt.avsc`
+  ),
   registry
 );
 
 export const AvroJobAttemptCompleted = typeForSchema<JobAttemptCompleted>(
-  path.resolve(`${__dirname}/avro/messages/AvroJobAttemptCompleted.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroJobAttemptCompleted.avsc`
+  ),
   registry
 );
 
 export const AvroJobAttemptDispatched = typeForSchema<JobAttemptDispatched>(
-  path.resolve(`${__dirname}/avro/messages/AvroJobAttemptDispatched.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroJobAttemptDispatched.avsc`
+  ),
   registry
 );
 
 export const AvroJobAttemptFailed = typeForSchema<JobAttemptFailed>(
-  path.resolve(`${__dirname}/avro/messages/AvroJobAttemptFailed.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroJobAttemptFailed.avsc`
+  ),
   registry
 );
 
 export const AvroJobAttemptStarted = typeForSchema<JobAttemptStarted>(
-  path.resolve(`${__dirname}/avro/messages/AvroJobAttemptStarted.avsc`),
+  path.resolve(
+    `${__dirname}/avro/jobManager/messages/AvroJobAttemptStarted.avsc`
+  ),
   registry
 );
 
 export const AvroJobCanceled = typeForSchema<JobCanceled>(
-  path.resolve(`${__dirname}/avro/messages/AvroJobCanceled.avsc`),
+  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCanceled.avsc`),
   registry
 );
 
 export const AvroJobCompleted = typeForSchema<JobCompleted>(
-  path.resolve(`${__dirname}/avro/messages/AvroJobCompleted.avsc`),
+  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCompleted.avsc`),
   registry
 );
 
 export const AvroJobCreated = typeForSchema<JobCreated>(
-  path.resolve(`${__dirname}/avro/messages/AvroJobCreated.avsc`),
+  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCreated.avsc`),
   registry
 );
 
 export const AvroForEngineMessage = typeForSchema<ForEngineMessage>(
   path.resolve(
-    `${__dirname}/avro/messages/envelopes/AvroForEngineMessage.avsc`
+    `${__dirname}/avro/jobManager/messages/envelopes/AvroForEngineMessage.avsc`
   ),
   registry
 );
@@ -250,13 +277,13 @@ export const AvroForEngineMessage = typeForSchema<ForEngineMessage>(
 // ------------------------------------------------------------------------------------------------
 
 export const AvroRunJob = typeForSchema<RunJob>(
-  path.resolve(`${__dirname}/avro/messages/AvroRunJob.avsc`),
+  path.resolve(`${__dirname}/avro/jobManager/messages/AvroRunJob.avsc`),
   registry
 );
 
 export const AvroForWorkerMessage = typeForSchema<ForWorkerMessage>(
   path.resolve(
-    `${__dirname}/avro/messages/envelopes/AvroForWorkerMessage.avsc`
+    `${__dirname}/avro/jobManager/messages/envelopes/AvroForWorkerMessage.avsc`
   ),
   registry
 );

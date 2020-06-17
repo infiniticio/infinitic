@@ -15,7 +15,7 @@
         },
         {
             "name": "taskOutput",
-            "type": ["null", "bytes"],
+            "type": ["null", "com.zenaton.commons.data.AvroSerializedData"],
             "default": null
         }
     ]

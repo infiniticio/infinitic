@@ -1,0 +1,20 @@
+{
+    "type": "record",
+    "name": "AvroSerializedData",
+    "namespace": "com.zenaton.commons.data",
+    "fields" : [
+        {
+            "name" : "serializedData",
+            "type" : "bytes"
+        }, {
+            "name" : "serializationType",
+            "type" : {
+                "type": "enum",
+                "name": "AvrosSerializationType",
+                "symbols": [
+                    "JSON"
+                ]
+            }
+        }
+    ]
+}

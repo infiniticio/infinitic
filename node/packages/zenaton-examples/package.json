@@ -1,5 +1,5 @@
 {
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -27,8 +27,8 @@
   "author": "Zenaton",
   "module": "dist/zenaton-examples.esm.js",
   "dependencies": {
-    "@zenaton/worker": "^0.0.0",
-    "@zenaton/client": "^0.0.0"
+    "@zenaton/worker": "^0.0.1",
+    "@zenaton/client": "^0.0.1"
   },
   "devDependencies": {}
 }

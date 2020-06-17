@@ -1,6 +1,7 @@
 import { Consumer, Producer } from 'pulsar-client';
 import { Task } from './task';
 import {
+  JobOutput,
   AvroForWorkerMessage,
   RunJob,
   AvroForEngineMessage,
@@ -41,8 +42,8 @@ export class TaskRunner {
     await this.notifyTaskAttemptStarted(message);
 
     let input: any;
-    if (message.jobData) {
-      input = JSON.parse(message.jobData.toString());
+    if (message.jobInput.length > 0) {
+      input = JSON.parse(message.jobInput[0].serializedData.toString());
     } else {
       input = undefined;
     }
@@ -79,11 +80,14 @@ export class TaskRunner {
   }
 
   private async notifyTaskAttemptCompleted(message: RunJob, output: unknown) {
-    let jobOutput: Buffer | null;
+    let jobOutput: JobOutput | null;
     if (output === null || output === undefined) {
       jobOutput = null;
     } else {
-      jobOutput = Buffer.from(JSON.stringify(output));
+      jobOutput = {
+        serializedData: Buffer.from(JSON.stringify(output)),
+        serializationType: 'JSON',
+      };
     }
 
     const toSend: JobAttemptCompletedMessage = {

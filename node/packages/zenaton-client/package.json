@@ -1,5 +1,5 @@
 {
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -27,9 +27,9 @@
   "author": "Zenaton",
   "module": "dist/client.esm.js",
   "dependencies": {
-    "@types/uuid": "^8.0.0",
-    "@zenaton/messages": "^0.0.0",
+    "@zenaton/messages": "^0.0.1",
     "pulsar-client": "^1.1.0",
+    "@types/uuid": "^8.0.0",
     "uuid": "^8.1.0"
   },
   "devDependencies": {}

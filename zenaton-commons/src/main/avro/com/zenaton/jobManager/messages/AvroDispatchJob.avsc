@@ -13,9 +13,12 @@
             "type": "string"
         },
         {
-            "name": "jobData",
-            "type": ["null", "bytes"],
-            "default": null
+            "name": "jobInput",
+            "type": {
+                "type": "array",
+                "items" : "com.zenaton.commons.data.AvroSerializedData"
+            },
+            "default": []
         },
         {
             "name": "workflowId",
