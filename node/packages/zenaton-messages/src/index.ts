@@ -192,7 +192,7 @@ export type ForWorkerMessage = RunJobMessage;
 const registry: AvroRegistry = {};
 
 export const AvroSerializedData = typeForSchema<SerializedData>(
-  path.resolve(`${__dirname}/avro/commons/AvroSerializedData.avsc`),
+  path.resolve(`${__dirname}/avro/common/AvroSerializedData.avsc`),
   registry
 );
 
