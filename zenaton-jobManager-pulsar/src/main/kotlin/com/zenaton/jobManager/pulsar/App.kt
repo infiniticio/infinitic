@@ -4,12 +4,12 @@
 package com.zenaton.jobManager.pulsar
 
 import com.zenaton.common.data.AvroSerializedData
-import com.zenaton.common.data.AvrosSerializationType
+import com.zenaton.common.data.AvroSerializationType
 import com.zenaton.common.json.Json
 import com.zenaton.jobManager.data.JobOutput
 
 fun main(args: Array<String>) {
-    val p1 = JobOutput("fdggsdf".toByteArray(), AvrosSerializationType.JSON)
+    val p1 = JobOutput("fdggsdf".toByteArray(), AvroSerializationType.JSON)
     println(p1)
 
     val p2 = Json.parse<AvroSerializedData>(Json.stringify(p1))

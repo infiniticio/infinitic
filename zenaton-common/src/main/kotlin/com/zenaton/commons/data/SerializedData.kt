@@ -5,7 +5,7 @@ import java.security.MessageDigest
 
 open class SerializedData(
     open val serializedData: ByteArray,
-    open val serializationType: AvrosSerializationType
+    open val serializationType: AvroSerializationType
 ) {
     fun hash(): String {
         // MD5 implementation

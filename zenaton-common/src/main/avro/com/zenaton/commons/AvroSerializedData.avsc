@@ -10,7 +10,7 @@
             "name" : "serializationType",
             "type" : {
                 "type": "enum",
-                "name": "AvrosSerializationType",
+                "name": "AvroSerializationType",
                 "symbols": [
                     "JSON"
                 ]
