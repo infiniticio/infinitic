@@ -1,15 +1,10 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    application
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
     id("com.commercehub.gradle.plugin.avro") version "0.19.1"
-}
-
-application {
-    mainClassName = "com.zenaton.workflowManager.AppKt"
 }
 
 dependencies {
