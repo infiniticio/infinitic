@@ -1,8 +1,10 @@
-package com.zenaton.workflowManager.data.state
+package com.zenaton.workflowManager.data.steps
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.zenaton.workflowManager.data.actions.ActionId
+import com.zenaton.workflowManager.data.actions.ActionStatus
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(

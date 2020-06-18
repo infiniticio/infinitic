@@ -1,10 +1,12 @@
-package com.zenaton.workflowManager.data.state
+package com.zenaton.workflowManager.data.steps
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventId
 import com.zenaton.workflowManager.data.WorkflowId
+import com.zenaton.workflowManager.data.actions.ActionId
+import com.zenaton.workflowManager.data.properties.Properties
 
 data class Step(
     val stepHash: StepHash,

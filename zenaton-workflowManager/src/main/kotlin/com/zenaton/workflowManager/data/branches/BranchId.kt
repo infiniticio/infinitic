@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data.state
+package com.zenaton.workflowManager.data.branches
 
 import com.zenaton.commons.data.interfaces.IdInterface
 import java.util.UUID

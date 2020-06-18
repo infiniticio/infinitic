@@ -18,14 +18,9 @@
              "type": "string"
         },
         {
-            "name": "taskData",
+            "name": "taskInput",
             "type": ["null", "bytes"],
             "default": null
-        },
-        {
-            "name": "sentAt",
-            "type": "long",
-            "logicalType": "timestamp-millis"
         }
     ]
 }

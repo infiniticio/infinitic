@@ -1,12 +1,7 @@
 
 plugins {
-    application
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
-}
-
-application {
-    mainClassName = "com.zenaton.jobManager.MainKt"
 }
 
 dependencies {

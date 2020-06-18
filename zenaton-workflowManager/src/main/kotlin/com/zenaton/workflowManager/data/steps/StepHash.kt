@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data.state
+package com.zenaton.workflowManager.data.steps
 
 import com.zenaton.commons.data.interfaces.HashInterface
 

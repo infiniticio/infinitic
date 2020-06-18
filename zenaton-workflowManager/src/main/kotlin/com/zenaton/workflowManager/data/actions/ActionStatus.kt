@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data.state
+package com.zenaton.workflowManager.data.actions
 
 enum class ActionStatus {
     DISPATCHED,

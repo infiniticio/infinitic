@@ -1,9 +1,7 @@
 package com.zenaton.workflowManager.messages.envelopes
 
-import com.zenaton.commons.data.DateTime
-import com.zenaton.workflowManager.data.TaskId
+import com.zenaton.jobManager.data.JobId
 
 interface ForWorkersMessage {
-    val taskId: TaskId
-    val sentAt: DateTime
+    val taskId: JobId
 }

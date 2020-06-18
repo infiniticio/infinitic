@@ -3,8 +3,9 @@ package com.zenaton.workflowManager.engine
 import com.zenaton.workflowManager.data.DecisionData
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
-import com.zenaton.workflowManager.data.state.Branch
-import com.zenaton.workflowManager.data.state.Store
+import com.zenaton.workflowManager.data.branches.Branch
+import com.zenaton.workflowManager.data.branches.BranchName
+import com.zenaton.workflowManager.data.properties.PropertyStore
 import com.zenaton.workflowManager.dispatcher.Dispatcher
 import com.zenaton.workflowManager.messages.ChildWorkflowCompleted
 import com.zenaton.workflowManager.messages.DecisionCompleted
@@ -90,7 +91,10 @@ class WorkflowEngine {
         val state = WorkflowEngineState(workflowId = msg.workflowId)
         val decisionId = DecisionId()
         // define branch
-        val branch = Branch.Handle(workflowData = msg.workflowData)
+        val branch = Branch(
+            branchName = BranchName("handle"),
+            branchInput = msg.workflowInput
+        )
         // initialize state
         state.ongoingDecisionId = decisionId
         state.runningBranches.add(branch)
@@ -146,7 +150,7 @@ class WorkflowEngine {
         TODO()
     }
 
-    private fun filterStore(store: Store, branches: List<Branch>): Store {
+    private fun filterStore(store: PropertyStore, branches: List<Branch>): PropertyStore {
         // Retrieve properties at step at completion in branches
         val listProperties1 = branches.flatMap {
             b ->
@@ -162,6 +166,6 @@ class WorkflowEngine {
         // Keep only relevant keys
         val properties = store.properties.filterKeys { listHashes.contains(it) }
 
-        return Store(properties)
+        return PropertyStore(properties)
     }
 }

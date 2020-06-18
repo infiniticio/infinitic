@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data.state
+package com.zenaton.workflowManager.data.actions
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
@@ -10,7 +10,7 @@ import com.zenaton.workflowManager.data.EventData
 import com.zenaton.workflowManager.data.EventId
 import com.zenaton.workflowManager.data.EventName
 import com.zenaton.workflowManager.data.WorkflowId
-import com.zenaton.workflowManager.data.WorkflowOutput
+import com.zenaton.workflowManager.data.branches.BranchOutput
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
@@ -41,7 +41,7 @@ data class DispatchTask(
 
 data class DispatchChildWorkflow(
     val childWorkflowId: WorkflowId,
-    var childWorkflowOutput: WorkflowOutput?,
+    var childWorkflowOutput: BranchOutput?,
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
@@ -98,7 +98,7 @@ data class CompleteWorkflow(
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED,
-    val workflowOutput: WorkflowOutput? = null
+    val workflowOutput: BranchOutput?
 ) : EngineAction(decidedAt, actionHash, actionStatus)
 
 data class TerminateWorkflow(

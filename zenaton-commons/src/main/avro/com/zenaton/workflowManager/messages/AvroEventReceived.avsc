@@ -8,10 +8,6 @@
             "type": "string",
             "logicalType": "uuid"
         }, {
-            "name": "sentAt",
-            "type": "long",
-            "logicalType": "timestamp-millis"
-        }, {
             "name": "eventName",
             "type": "string"
         }, {

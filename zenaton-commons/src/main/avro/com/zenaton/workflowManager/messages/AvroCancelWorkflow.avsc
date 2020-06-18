@@ -7,11 +7,6 @@
             "name": "workflowId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
-            "name": "sentAt",
-            "type": "long",
-            "logicalType": "timestamp-millis"
         }
     ]
 }

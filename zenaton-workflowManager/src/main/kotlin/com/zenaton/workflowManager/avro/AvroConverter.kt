@@ -2,7 +2,7 @@ package com.zenaton.workflowManager.avro
 
 import com.zenaton.commons.data.AvroSerializedData
 import com.zenaton.commons.json.Json
-import com.zenaton.jobManager.data.JobParameter
+import com.zenaton.commons.data.SerializedData
 import com.zenaton.jobManager.messages.AvroDispatchJob
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessageType
@@ -212,7 +212,7 @@ object AvroConverter {
      *  Data
      */
 
-    private fun convertToAvro(p: JobParameter) = convertJson<AvroSerializedData>(p)
+    private fun convertToAvro(p: SerializedData) = convertJson<AvroSerializedData>(p)
 
     /**
      *  Any Message

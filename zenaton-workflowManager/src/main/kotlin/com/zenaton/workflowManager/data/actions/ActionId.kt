@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data.state
+package com.zenaton.workflowManager.data.actions
 
 import com.zenaton.commons.data.interfaces.IdInterface
 import com.zenaton.jobManager.data.JobId

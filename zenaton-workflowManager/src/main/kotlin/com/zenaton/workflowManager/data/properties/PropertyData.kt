@@ -1,12 +1,13 @@
-package com.zenaton.jobManager.data
+package com.zenaton.workflowManager.data.properties
 
 import com.zenaton.commons.data.AvrosSerializationType
 import com.zenaton.commons.data.interfaces.SerializedDataInterface
 
-class JobParameter(
+class PropertyData(
     override val serializedData: ByteArray,
     override val serializationType: AvrosSerializationType
 ) : SerializedDataInterface {
     override fun equals(other: Any?) = equalsData(other)
     override fun hashCode() = hashCodeData()
+    fun propertyHash() = PropertyHash(hash())
 }

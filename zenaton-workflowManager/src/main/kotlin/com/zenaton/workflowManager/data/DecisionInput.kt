@@ -1,9 +1,9 @@
 package com.zenaton.workflowManager.data
 
-import com.zenaton.workflowManager.data.state.Branch
-import com.zenaton.workflowManager.data.state.Store
+import com.zenaton.workflowManager.data.branches.Branch
+import com.zenaton.workflowManager.data.properties.PropertyStore
 
 class DecisionInput(
     val branches: List<Branch>,
-    val store: Store
+    val store: PropertyStore
 )

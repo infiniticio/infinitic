@@ -2,8 +2,10 @@ package com.zenaton.workflowManager.data.state
 
 import com.zenaton.commons.json.Json
 import com.zenaton.jobManager.data.JobId
-import com.zenaton.workflowManager.data.state.StepCriterion.And
-import com.zenaton.workflowManager.data.state.StepCriterion.Or
+import com.zenaton.workflowManager.data.actions.ActionId
+import com.zenaton.workflowManager.data.steps.StepCriterion
+import com.zenaton.workflowManager.data.steps.StepCriterion.And
+import com.zenaton.workflowManager.data.steps.StepCriterion.Or
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
