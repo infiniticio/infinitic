@@ -4,15 +4,9 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 plugins {
-    application
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
-}
-
-application {
-    // Define the main class for the application.
-    mainClassName = "com.zenaton.jobManager.pulsar.AppKt"
 }
 
 dependencies {
@@ -24,7 +18,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
 
-    implementation(project(":zenaton-commons"))
+    implementation(project(":zenaton-common"))
     implementation(project(":zenaton-jobManager"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
@@ -66,7 +60,7 @@ tasks.register("setSchemas") {
         createSchemaFiles()
         setPrefix()
         uploadSchemaToTopic(
-            name = "AvroForEngineMessage",
+            name = "AvroForJobEngineMessage",
             topic = Topic.ENGINE.get()
         )
         uploadSchemaToTopic(
@@ -86,7 +80,7 @@ tasks.register("install") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
-            className = "EnginePulsarFunction",
+            className = "JobEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "create"
         )
@@ -109,7 +103,7 @@ tasks.register("update") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
-            className = "EnginePulsarFunction",
+            className = "JobEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "update"
         )
@@ -132,7 +126,7 @@ tasks.register("delete") {
     description = "Delete Zenaton from Pulsar"
     doLast {
         setPrefix()
-        deleteZenatonFunction("EnginePulsarFunction")
+        deleteZenatonFunction("JobEnginePulsarFunction")
         deleteZenatonFunction("MonitoringGlobalPulsarFunction")
         deleteZenatonFunction("MonitoringPerNamePulsarFunction")
         forceDeleteTopic(Topic.ENGINE.get())

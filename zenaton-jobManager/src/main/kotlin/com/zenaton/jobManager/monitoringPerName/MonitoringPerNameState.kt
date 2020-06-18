@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.monitoringPerName
 
-import com.zenaton.commons.data.interfaces.StateInterface
+import com.zenaton.common.data.interfaces.StateInterface
 import com.zenaton.jobManager.data.JobName
 
 data class MonitoringPerNameState(

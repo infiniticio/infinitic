@@ -1,0 +1,12 @@
+{
+    "type": "record",
+    "name": "AvroCancelWorkflow",
+    "namespace": "com.zenaton.workflowManager.messages",
+    "fields": [
+        {
+            "name": "workflowId",
+            "type": "string",
+            "logicalType": "uuid"
+        }
+    ]
+}

@@ -2,7 +2,7 @@ const avro = require('avro-js');
 
 const assertValid = function assertValid(type, val) {
     return type.isValid(val, {errorHook: hook});
-  
+
     function hook(path, any) {
       throw new Error(util.format('invalid %s: %j', path.join(), any));
     }
@@ -21,7 +21,7 @@ var JobAttemptFailed = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobA
 var JobAttemptStarted = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobAttemptStarted.avsc", { registry });
 var JobCanceled = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobCanceled.avsc", { registry });
 var JobCompleted = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobCompleted.avsc", { registry });
-var forEngineMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForEngineMessage.avsc", { registry  });
+var forEngineMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForJobEngineMessage.avsc", { registry  });
 
 // Workers
 var runJob = avro.parse(__dirname +"/avro/jobManager/messages/AvroRunJob.avsc", { registry });

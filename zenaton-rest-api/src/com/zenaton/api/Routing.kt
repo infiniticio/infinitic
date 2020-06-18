@@ -2,7 +2,7 @@ package com.zenaton.api
 
 import com.zenaton.api.extensions.io.ktor.application.*
 import com.zenaton.api.task.repositories.TaskRepository
-import com.zenaton.commons.utils.avro.AvroSerDe
+import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 import io.ktor.application.*
@@ -31,7 +31,7 @@ fun Routing.root() {
     get("/task-types/{name}/metrics") {
         val name = call.getPath<String>("name")
         try {
-            val state = pulsarAdmin.functions().getFunctionState("public", "default", "tasks-MonitoringPerNamePulsarFunction", "monitoringPerName.state.${name}").let { AvroSerDe.deserialize<AvroMonitoringPerNameState>(ByteBuffer.wrap(it.stringValue.toByteArray())) }
+            val state = pulsarAdmin.functions().getFunctionState("public", "default", "tasks-MonitoringPerNamePulsarFunction", "monitoringPerName.state.$name").let { AvroSerDe.deserialize<AvroMonitoringPerNameState>(ByteBuffer.wrap(it.stringValue.toByteArray())) }
 
             call.respond(object {
                 val name = name

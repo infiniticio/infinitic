@@ -1,10 +1,10 @@
 package com.zenaton.jobManager.pulsar.storage
 
-import com.zenaton.commons.utils.avro.AvroSerDe
+import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.pulsar.utils.TestFactory
-import com.zenaton.jobManager.states.AvroEngineState
+import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 import io.kotest.core.spec.style.ShouldSpec
@@ -30,7 +30,7 @@ class PulsarAvroStorageTests : ShouldSpec({
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            val state = stateStorage.getEngineState(jobId)
+            val state = stateStorage.getJobEngineState(jobId)
             // then
             verify(exactly = 1) { context.getState("engine.state.$jobId") }
             confirmVerified(context)
@@ -40,12 +40,12 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("return state when state exists") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.get(AvroEngineState::class)
+            val stateIn = TestFactory.get(AvroJobEngineState::class)
             every { context.getState(any()) } returns AvroSerDe.serialize(stateIn)
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            val stateOut = stateStorage.getEngineState(stateIn.jobId)
+            val stateOut = stateStorage.getJobEngineState(stateIn.jobId)
             // then
             verify(exactly = 1) { context.getState("engine.state.${stateIn.jobId}") }
             confirmVerified(context)
@@ -57,12 +57,12 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("record state") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.get(AvroEngineState::class)
+            val stateIn = TestFactory.get(AvroJobEngineState::class)
             every { context.putState(any(), any()) } returns Unit
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            stateStorage.updateEngineState(stateIn.jobId, stateIn, null)
+            stateStorage.updateJobEngineState(stateIn.jobId, stateIn, null)
             // then
             verify(exactly = 1) {
                 context.putState(
@@ -78,12 +78,12 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("delete state") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.get(AvroEngineState::class)
+            val stateIn = TestFactory.get(AvroJobEngineState::class)
             every { context.deleteState(any()) } returns Unit
             // given
             val stageStorage = PulsarAvroStorage(context)
             // when
-            stageStorage.deleteEngineState(stateIn.jobId)
+            stageStorage.deleteJobEngineState(stateIn.jobId)
             // then
             verify(exactly = 1) { context.deleteState("engine.state.${stateIn.jobId}") }
             confirmVerified(context)

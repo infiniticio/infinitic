@@ -1,0 +1,24 @@
+{
+    "type": "record",
+    "name": "AvroDecisionDispatched",
+    "namespace": "com.zenaton.workflowManager.messages",
+    "fields": [
+        {
+            "name": "workflowId",
+            "type": "string",
+            "logicalType": "uuid"
+        }, {
+            "name": "decisionId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "workflowName",
+            "type": "string"
+        },
+        {
+            "name": "decisionData",
+            "type": "bytes"
+        }
+    ]
+}

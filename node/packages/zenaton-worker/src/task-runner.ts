@@ -4,7 +4,7 @@ import {
   JobOutput,
   AvroForWorkerMessage,
   RunJob,
-  AvroForEngineMessage,
+  AvroForJobEngineMessage,
   JobAttemptStartedMessage,
   JobAttemptCompletedMessage,
   JobAttemptFailedMessage,
@@ -75,7 +75,7 @@ export class TaskRunner {
     };
 
     this.pulsarProducer.send({
-      data: AvroForEngineMessage.toBuffer(toSend),
+      data: AvroForJobEngineMessage.toBuffer(toSend),
     });
   }
 
@@ -103,7 +103,7 @@ export class TaskRunner {
     };
 
     this.pulsarProducer.send({
-      data: AvroForEngineMessage.toBuffer(toSend),
+      data: AvroForJobEngineMessage.toBuffer(toSend),
     });
   }
 
@@ -122,7 +122,7 @@ export class TaskRunner {
     };
 
     this.pulsarProducer.send({
-      data: AvroForEngineMessage.toBuffer(toSend),
+      data: AvroForJobEngineMessage.toBuffer(toSend),
     });
   }
 }

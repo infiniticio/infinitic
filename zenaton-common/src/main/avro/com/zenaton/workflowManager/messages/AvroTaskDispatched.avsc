@@ -1,0 +1,26 @@
+{
+    "type": "record",
+    "name": "AvroTaskDispatched",
+    "namespace": "com.zenaton.workflowManager.messages",
+    "fields": [
+        {
+            "name": "workflowId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+            "name": "taskId",
+            "type": "string",
+            "logicalType": "uuid"
+        },
+        {
+             "name": "taskName",
+             "type": "string"
+        },
+        {
+            "name": "taskInput",
+            "type": ["null", "bytes"],
+            "default": null
+        }
+    ]
+}

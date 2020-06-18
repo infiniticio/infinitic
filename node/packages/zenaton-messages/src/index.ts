@@ -9,7 +9,7 @@ export interface SerializedData {
 export type JobInput = SerializedData[];
 export type JobOutput = SerializedData;
 
-export type ForEngineMessageType =
+export type ForJobEngineMessageType =
   | 'CancelJob'
   | 'DispatchJob'
   | 'JobAttemptCompleted'
@@ -154,7 +154,7 @@ export interface JobDispatchedMessage {
   JobDispatched: JobCreated;
 }
 
-export type ForEngineMessage =
+export type ForJobEngineMessage =
   | CancelJobMessage
   | DispatchJobMessage
   | RetryJobMessage
@@ -192,7 +192,7 @@ export type ForWorkerMessage = RunJobMessage;
 const registry: AvroRegistry = {};
 
 export const AvroSerializedData = typeForSchema<SerializedData>(
-  path.resolve(`${__dirname}/avro/commons/AvroSerializedData.avsc`),
+  path.resolve(`${__dirname}/avro/common/AvroSerializedData.avsc`),
   registry
 );
 
@@ -265,9 +265,9 @@ export const AvroJobCreated = typeForSchema<JobCreated>(
   registry
 );
 
-export const AvroForEngineMessage = typeForSchema<ForEngineMessage>(
+export const AvroForJobEngineMessage = typeForSchema<ForJobEngineMessage>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/envelopes/AvroForEngineMessage.avsc`
+    `${__dirname}/avro/jobManager/messages/envelopes/AvroForJobEngineMessage.avsc`
   ),
   registry
 );

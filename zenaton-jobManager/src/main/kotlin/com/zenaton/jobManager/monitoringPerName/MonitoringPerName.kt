@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.monitoringPerName
 
-import com.zenaton.commons.data.interfaces.deepCopy
+import com.zenaton.common.data.interfaces.deepCopy
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.messages.JobCreated

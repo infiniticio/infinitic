@@ -1,12 +1,7 @@
 
 plugins {
-    application
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
-}
-
-application {
-    mainClassName = "com.zenaton.jobManager.MainKt"
 }
 
 dependencies {
@@ -16,7 +11,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
 
-    implementation(project(":zenaton-commons"))
+    implementation(project(":zenaton-common"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

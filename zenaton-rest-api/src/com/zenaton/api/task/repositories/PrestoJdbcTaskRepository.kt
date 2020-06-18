@@ -48,7 +48,7 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
                     attemptIndex = it.getInt(TaskAttemptStartedEvent.Fields.ATTEMPT_INDEX),
                     sentAt = Instant.ofEpochMilli(it.getLong(TaskAttemptStartedEvent.Fields.SENT_AT)),
                     delayBeforeRetry = it.getFloat(TaskAttemptStartedEvent.Fields.DELAY_BEFORE_RETRY),
-                            delayBeforeTimeout = it.getFloat(TaskAttemptStartedEvent.Fields.DELAY_BEFORE_TIMEOUT)
+                    delayBeforeTimeout = it.getFloat(TaskAttemptStartedEvent.Fields.DELAY_BEFORE_TIMEOUT)
                 )
             }
         }.filterNotNull()
