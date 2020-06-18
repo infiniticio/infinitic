@@ -1,6 +1,6 @@
 package com.zenaton.decisionmanager.pulsar.functions
 
-import com.zenaton.commons.pulsar.utils.Logger
+import com.zenaton.common.pulsar.utils.Logger
 import com.zenaton.decisionmanager.engine.DecisionEngine
 import com.zenaton.decisionmanager.messages.AvroDecisionMessage
 import com.zenaton.decisionmanager.pulsar.avro.AvroConverter

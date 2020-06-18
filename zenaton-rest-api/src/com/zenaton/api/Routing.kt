@@ -2,7 +2,7 @@ package com.zenaton.api
 
 import com.zenaton.api.extensions.io.ktor.application.*
 import com.zenaton.api.task.repositories.TaskRepository
-import com.zenaton.commons.avro.AvroSerDe
+import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 import io.ktor.application.*

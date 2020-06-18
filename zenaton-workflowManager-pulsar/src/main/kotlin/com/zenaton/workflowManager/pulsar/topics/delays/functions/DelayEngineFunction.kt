@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.pulsar.topics.delays.functions
 
-import com.zenaton.commons.pulsar.utils.Logger
-import com.zenaton.commons.pulsar.utils.StateStorage
+import com.zenaton.common.pulsar.utils.Logger
+import com.zenaton.common.pulsar.utils.StateStorage
 import com.zenaton.workflowManager.pulsar.topics.delays.messages.DelayMessageContainer
 import com.zenaton.workflowManager.topics.delays.engine.DelayEngine
 import com.zenaton.workflowManager.topics.delays.state.DelayState

@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.data
 
-import com.zenaton.commons.data.AvrosSerializationType
-import com.zenaton.commons.data.SerializedOutput
+import com.zenaton.common.data.AvrosSerializationType
+import com.zenaton.common.data.SerializedOutput
 
 data class JobOutput(
     override val serializedData: ByteArray,

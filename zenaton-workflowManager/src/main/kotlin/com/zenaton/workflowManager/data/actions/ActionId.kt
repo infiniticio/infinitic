@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.data.actions
 
-import com.zenaton.commons.data.interfaces.IdInterface
+import com.zenaton.common.data.interfaces.IdInterface
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventId

@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.avro
 
-import com.zenaton.commons.data.AvroSerializedData
-import com.zenaton.commons.json.Json
-import com.zenaton.commons.data.SerializedData
+import com.zenaton.common.data.AvroSerializedData
+import com.zenaton.common.json.Json
+import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.messages.AvroDispatchJob
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessageType

@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.data.state
 
-import com.zenaton.commons.json.Json
+import com.zenaton.common.json.Json
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.workflowManager.data.actions.ActionId
 import com.zenaton.workflowManager.data.steps.StepCriterion

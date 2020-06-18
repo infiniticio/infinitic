@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.pulsar.storage
 
-import com.zenaton.commons.avro.AvroSerDe
+import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.pulsar.utils.TestFactory

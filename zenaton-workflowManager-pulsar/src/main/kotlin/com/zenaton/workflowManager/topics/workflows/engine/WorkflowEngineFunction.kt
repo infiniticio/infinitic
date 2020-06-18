@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.topics.workflows.engine
 
-import com.zenaton.commons.pulsar.utils.Logger
-import com.zenaton.commons.pulsar.utils.StateStorage
+import com.zenaton.common.pulsar.utils.Logger
+import com.zenaton.common.pulsar.utils.StateStorage
 import com.zenaton.workflowManager.pulsar.topics.workflows.functions.WorkflowEngineDispatcher
 import com.zenaton.workflowManager.pulsar.topics.workflows.messages.WorkflowMessageContainer
 import com.zenaton.workflowManager.engine.WorkflowEngine

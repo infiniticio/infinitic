@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.avro
 
-import com.zenaton.commons.json.Json
+import com.zenaton.common.json.Json
 import com.zenaton.jobManager.engine.JobEngineState
 import com.zenaton.jobManager.messages.AvroCancelJob
 import com.zenaton.jobManager.messages.AvroDispatchJob

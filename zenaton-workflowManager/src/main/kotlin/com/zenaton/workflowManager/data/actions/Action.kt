@@ -2,7 +2,7 @@ package com.zenaton.workflowManager.data.actions
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.zenaton.commons.data.DateTime
+import com.zenaton.common.data.DateTime
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.workflowManager.data.DelayId

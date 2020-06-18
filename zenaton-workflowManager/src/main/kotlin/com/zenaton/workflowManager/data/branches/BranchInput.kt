@@ -2,7 +2,7 @@ package com.zenaton.workflowManager.data.branches
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import com.zenaton.commons.data.SerializedParameter
+import com.zenaton.common.data.SerializedParameter
 
 data class BranchInput
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

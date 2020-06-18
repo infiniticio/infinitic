@@ -2,7 +2,7 @@ package com.zenaton.workflowManager.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import com.zenaton.commons.data.SerializedData
+import com.zenaton.common.data.SerializedData
 
 data class EventData
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

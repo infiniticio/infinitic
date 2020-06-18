@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.engine
 
-import com.zenaton.commons.data.interfaces.StateInterface
+import com.zenaton.common.data.interfaces.StateInterface
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.branches.Branch

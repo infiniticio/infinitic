@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.pulsar.topics.workflows
 
-import com.zenaton.commons.pulsar.utils.Logger
-import com.zenaton.commons.pulsar.utils.StateStorage
+import com.zenaton.common.pulsar.utils.Logger
+import com.zenaton.common.pulsar.utils.StateStorage
 import com.zenaton.decisionmanager.data.DecisionId
 import com.zenaton.decisionmanager.data.DecisionName
 import com.zenaton.decisionmanager.messages.DecisionDispatched

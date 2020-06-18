@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.data
 
-import com.zenaton.commons.data.AvrosSerializationType
-import com.zenaton.commons.data.interfaces.SerializedDataInterface
+import com.zenaton.common.data.AvrosSerializationType
+import com.zenaton.common.data.interfaces.SerializedDataInterface
 
 class DecisionOutput(
     override val serializedData: ByteArray,

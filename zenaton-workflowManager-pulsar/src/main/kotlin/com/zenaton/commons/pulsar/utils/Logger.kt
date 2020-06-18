@@ -1,6 +1,6 @@
-package com.zenaton.commons.pulsar.utils
+package com.zenaton.common.pulsar.utils
 
-import com.zenaton.commons.json.Json
+import com.zenaton.common.json.Json
 import com.zenaton.workflowManager.interfaces.LoggerInterface
 import com.zenaton.workflowManager.pulsar.topics.logs.LogDispatcher
 import org.apache.pulsar.functions.api.Context

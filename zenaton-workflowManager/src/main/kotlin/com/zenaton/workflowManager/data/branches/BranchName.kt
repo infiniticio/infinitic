@@ -2,7 +2,7 @@ package com.zenaton.workflowManager.data.branches
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import com.zenaton.commons.data.interfaces.NameInterface
+import com.zenaton.common.data.interfaces.NameInterface
 
 data class BranchName
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
