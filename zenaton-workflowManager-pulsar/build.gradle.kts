@@ -16,7 +16,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
 
-    implementation(project(":zenaton-commons"))
+    implementation(project(":zenaton-common"))
     implementation(project(":zenaton-jobManager"))
     implementation(project(":zenaton-workflowManager"))
 
