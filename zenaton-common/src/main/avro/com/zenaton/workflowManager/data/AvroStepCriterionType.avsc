@@ -1,0 +1,6 @@
+{
+    "type" : "enum",
+    "name" : "AvroStepCriterionType",
+    "namespace":  "com.zenaton.workflowManager.data",
+    "symbols" : [ "ID", "OR", "AND" ]
+ }

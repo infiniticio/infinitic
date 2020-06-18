@@ -1,0 +1,10 @@
+{
+    "type": "enum",
+    "name": "AvroActionStatus",
+    "namespace": "com.zenaton.workflowManager.data",
+    "symbols": [
+        "DISPATCHED",
+        "CANCELED",
+        "COMPLETED"
+    ]
+}

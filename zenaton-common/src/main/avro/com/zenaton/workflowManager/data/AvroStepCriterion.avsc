@@ -1,0 +1,21 @@
+{
+    "type" : "record",
+    "name" : "AvroStepCriterion",
+    "namespace" : "com.zenaton.workflowManager.data",
+    "fields" : [
+        {
+            "name" : "type",
+            "type" : "com.zenaton.workflowManager.data.AvroStepCriterionType"
+        }, {
+            "name" : "actionId",
+            "type" : ["null", "string"]
+        }, {
+            "name" : "actionStatus",
+            "type" : ["null", "com.zenaton.workflowManager.data.AvroActionStatus"]
+        }, {
+            "name" : "actionCriteria",
+            "type" : {"type" : "array", "items" : "com.zenaton.workflowManager.data.AvroStepCriterion"},
+            "default": []
+        }
+    ]
+}

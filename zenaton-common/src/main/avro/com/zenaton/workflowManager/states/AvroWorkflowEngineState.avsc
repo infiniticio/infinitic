@@ -7,6 +7,23 @@
             "name" : "workflowId",
             "type" : "string",
             "logicalType": "uuid"
-        }
+        }, {
+            "name" : "parentWorkflowId",
+            "type" : ["null", {"type": "string", "logicalType": "uuid"}],
+            "default": null
+        }, {
+            "name" : "ongoingDecisionId",
+            "type" : ["null", {"type": "string", "logicalType": "uuid"}],
+            "default": null
+        }, {
+             "name" : "bufferedMessages",
+             "type" : {"type": "array", "items": "com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessage"}
+         }, {
+             "name" : "store",
+             "type" : {"type" : "map", "values" : "com.zenaton.common.data.AvroSerializedData"}
+         }, {
+            "name" : "runningBranches",
+            "type" : {"type" : "array", "items" : "com.zenaton.workflowManager.data.AvroBranch"}
+         }
     ]
 }

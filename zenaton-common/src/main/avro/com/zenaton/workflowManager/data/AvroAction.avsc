@@ -1,0 +1,47 @@
+{
+    "type" : "record",
+    "name" : "AvroAction",
+    "namespace" : "com.zenaton.workflowManager.data",
+    "fields" : [
+        {
+            "name" : "type",
+            "type" : "com.zenaton.workflowManager.data.AvroActionType"
+        }, {
+            "name" : "decidedAt",
+            "type" : "long"
+        }, {
+            "name" : "actionHash",
+            "type" : "string"
+        }, {
+            "name" : "actionStatus",
+            "type" : "com.zenaton.workflowManager.data.AvroActionStatus"
+        }, {
+            "name" : "jobId",
+            "type" : ["null", "string"]
+        }, {
+            "name" : "jobOutput",
+            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
+        }, {
+            "name" : "childWorkflowId",
+            "type" : ["null", "string"]
+        }, {
+            "name" : "childWorkflowOutput",
+            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
+        }, {
+            "name" : "delayId",
+            "type" : ["null", "string"]
+        }, {
+            "name" : "eventId",
+            "type" : ["null", "string"]
+        }, {
+            "name" : "eventName",
+            "type" : ["null", "string"]
+        }, {
+            "name" : "eventData",
+            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
+        }, {
+            "name" : "workflowOutput",
+            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
+        }
+    ]
+}
