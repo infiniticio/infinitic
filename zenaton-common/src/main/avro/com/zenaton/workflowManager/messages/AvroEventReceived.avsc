@@ -12,8 +12,11 @@
             "type": "string"
         }, {
             "name": "eventData",
-            "type": ["null", "bytes"],
-            "default": null
+            "type": {
+                "type": "array",
+                "items" : "com.zenaton.common.data.AvroSerializedData"
+            },
+            "default": []
         }
     ]
 }

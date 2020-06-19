@@ -1,6 +1,6 @@
 {
     "type": "record",
-    "name": "AvroForMonitoringGlobalMessage",
+    "name": "AvroEnvelopeForMonitoringGlobal",
     "namespace": "com.zenaton.jobManager.messages.envelopes",
     "fields": [
         {

@@ -1,3 +1,8 @@
 package com.zenaton.workflowManager.data.properties
 
-data class PropertyStore(val properties: Map<PropertyHash, PropertyData> = mapOf())
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonValue
+
+data class PropertyStore
+@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+constructor(@get:JsonValue val properties: Map<PropertyHash, PropertyData>)

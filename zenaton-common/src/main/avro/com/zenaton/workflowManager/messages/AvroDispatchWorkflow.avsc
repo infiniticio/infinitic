@@ -13,9 +13,12 @@
             "type": "string"
         },
         {
-            "name": "workflowData",
-            "type": ["null", "bytes"],
-            "default": null
+            "name": "workflowInput",
+            "type": {
+                "type": "array",
+                "items" : "com.zenaton.common.data.AvroSerializedData"
+            },
+            "default": []
         }
     ]
 }

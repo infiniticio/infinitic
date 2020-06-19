@@ -265,9 +265,9 @@ export const AvroJobCreated = typeForSchema<JobCreated>(
   registry
 );
 
-export const AvroForJobEngineMessage = typeForSchema<ForJobEngineMessage>(
+export const AvroEnvelopeForJobEngine = typeForSchema<ForJobEngineMessage>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/envelopes/AvroForJobEngineMessage.avsc`
+    `${__dirname}/avro/jobManager/messages/envelopes/AvroEnvelopeForJobEngine.avsc`
   ),
   registry
 );
@@ -281,9 +281,9 @@ export const AvroRunJob = typeForSchema<RunJob>(
   registry
 );
 
-export const AvroForWorkerMessage = typeForSchema<ForWorkerMessage>(
+export const AvroEnvelopeForWorker = typeForSchema<ForWorkerMessage>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/envelopes/AvroForWorkerMessage.avsc`
+    `${__dirname}/avro/jobManager/messages/envelopes/AvroEnvelopeForWorker.avsc`
   ),
   registry
 );

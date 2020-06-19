@@ -1,10 +1,10 @@
 package com.zenaton.jobManager.avro
 
 import com.zenaton.jobManager.messages.Message
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
@@ -23,23 +23,23 @@ class AvroConsistencyTests : StringSpec({
 
     include(
         `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForJobEngineMessage>(
-            AvroForJobEngineMessage()
+            AvroEnvelopeForJobEngine()
         )
     )
 
     include(
         `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForMonitoringGlobalMessage>(
-            AvroForMonitoringGlobalMessage()
+            AvroEnvelopeForMonitoringGlobal()
         )
     )
     include(
         `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForMonitoringPerNameMessage>(
-            AvroForMonitoringPerNameMessage()
+            AvroEnvelopeForMonitoringPerName()
         )
     )
     include(
         `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForWorkerMessage>(
-            AvroForWorkerMessage()
+            AvroEnvelopeForWorker()
         )
     )
 

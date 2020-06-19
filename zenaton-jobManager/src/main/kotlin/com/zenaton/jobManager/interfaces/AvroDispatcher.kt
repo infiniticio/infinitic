@@ -1,15 +1,15 @@
 package com.zenaton.jobManager.interfaces
 
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
-import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
+import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 
 interface AvroDispatcher {
-    fun toWorkers(msg: AvroForWorkerMessage)
-    fun toJobEngine(msg: AvroForJobEngineMessage, after: Float = 0f)
-    fun toWorkflowEngine(msg: AvroForWorkflowEngineMessage)
-    fun toMonitoringGlobal(msg: AvroForMonitoringGlobalMessage)
-    fun toMonitoringPerName(msg: AvroForMonitoringPerNameMessage)
+    fun toWorkers(msg: AvroEnvelopeForWorker)
+    fun toJobEngine(msg: AvroEnvelopeForJobEngine, after: Float = 0f)
+    fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine)
+    fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal)
+    fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName)
 }

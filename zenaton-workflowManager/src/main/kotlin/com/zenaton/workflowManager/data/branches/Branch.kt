@@ -20,7 +20,7 @@ data class Branch(
     val branchId: BranchId = BranchId(),
     val branchName: BranchName,
     val branchInput: BranchInput,
-    val propertiesAtStart: Properties = Properties(),
+    val propertiesAtStart: Properties = Properties(mapOf()),
     val dispatchedAt: DateTime = DateTime(),
     val steps: List<Step> = listOf(),
     val actions: List<Action> = listOf()
@@ -60,7 +60,7 @@ data class Branch(
         return steps.last().completeDelay(delayId, properties)
     }
 
-    fun completeEvent(eventName: EventName, eventData: EventData?, properties: Properties): Boolean {
+    fun completeEvent(eventName: EventName, eventData: EventData, properties: Properties): Boolean {
         // complete action if relevant
         val event = actions
             .filterIsInstance<WaitEvent>()

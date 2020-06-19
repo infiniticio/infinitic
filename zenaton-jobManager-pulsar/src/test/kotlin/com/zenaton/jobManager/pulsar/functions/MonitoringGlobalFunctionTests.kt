@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.pulsar.functions
 
 import com.zenaton.jobManager.functions.MonitoringGlobalFunction
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
@@ -21,7 +21,7 @@ class MonitoringGlobalFunctionTests : ShouldSpec({
             val function = MonitoringGlobalPulsarFunction()
 
             shouldThrow<NullPointerException> {
-                function.process(mockk<AvroForMonitoringGlobalMessage>(), null)
+                function.process(mockk<AvroEnvelopeForMonitoringGlobal>(), null)
             }
         }
 
@@ -31,7 +31,7 @@ class MonitoringGlobalFunctionTests : ShouldSpec({
             every { context.logger } returns mockk<org.slf4j.Logger>()
             val monitoringFunction = spyk<MonitoringGlobalFunction>()
             every { monitoringFunction.handle(any()) } just Runs
-            val avroMsg = mockk<AvroForMonitoringGlobalMessage>()
+            val avroMsg = mockk<AvroEnvelopeForMonitoringGlobal>()
             // given
             val fct = MonitoringGlobalPulsarFunction()
             fct.monitoring = monitoringFunction

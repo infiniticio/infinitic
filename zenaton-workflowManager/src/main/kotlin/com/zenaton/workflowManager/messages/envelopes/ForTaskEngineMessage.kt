@@ -2,6 +2,6 @@ package com.zenaton.workflowManager.messages.envelopes
 
 import com.zenaton.jobManager.data.JobId
 
-interface ForWorkersMessage {
+interface ForTaskEngineMessage {
     val taskId: JobId
 }

@@ -29,13 +29,13 @@ import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
 import com.zenaton.jobManager.messages.TaskCompleted
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessageType
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessageType
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessageType
-import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessageType
 import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
@@ -48,7 +48,7 @@ import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 import com.zenaton.workflowManager.messages.AvroTaskCompleted
-import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessage
+import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessageType
 import org.apache.avro.specific.SpecificRecordBase
 
@@ -60,19 +60,19 @@ object AvroConverter {
     /**
      *  States
      */
-    fun fromAvro(avro: AvroJobEngineState) = convertJson<JobEngineState>(avro)
-    fun fromAvro(avro: AvroMonitoringGlobalState) = convertJson<MonitoringGlobalState>(avro)
-    fun fromAvro(avro: AvroMonitoringPerNameState) = convertJson<MonitoringPerNameState>(avro)
+    fun fromStorage(avro: AvroJobEngineState) = convertJson<JobEngineState>(avro)
+    fun fromStorage(avro: AvroMonitoringGlobalState) = convertJson<MonitoringGlobalState>(avro)
+    fun fromStorage(avro: AvroMonitoringPerNameState) = convertJson<MonitoringPerNameState>(avro)
 
-    fun toAvro(state: JobEngineState) = convertJson<AvroJobEngineState>(state)
-    fun toAvro(state: MonitoringGlobalState) = convertJson<AvroMonitoringGlobalState>(state)
-    fun toAvro(state: MonitoringPerNameState) = convertJson<AvroMonitoringPerNameState>(state)
+    fun toStorage(state: JobEngineState) = convertJson<AvroJobEngineState>(state)
+    fun toStorage(state: MonitoringGlobalState) = convertJson<AvroMonitoringGlobalState>(state)
+    fun toStorage(state: MonitoringPerNameState) = convertJson<AvroMonitoringPerNameState>(state)
 
     /**
      *  Envelopes
      */
-    fun toWorkers(message: ForWorkerMessage): AvroForWorkerMessage {
-        val builder = AvroForWorkerMessage.newBuilder()
+    fun toWorkers(message: ForWorkerMessage): AvroEnvelopeForWorker {
+        val builder = AvroEnvelopeForWorker.newBuilder()
         builder.jobName = message.jobName.name
         when (message) {
             is RunJob -> builder.apply {
@@ -84,15 +84,15 @@ object AvroConverter {
         return builder.build()
     }
 
-    fun fromWorkers(input: AvroForWorkerMessage): ForWorkerMessage {
+    fun fromWorkers(input: AvroEnvelopeForWorker): ForWorkerMessage {
         return when (input.type) {
             AvroForWorkerMessageType.RunJob -> this.convertFromAvro(input.runJob)
-            else -> throw Exception("Unknown AvroForWorkerMessage: ${input::class.qualifiedName}")
+            else -> throw Exception("Unknown AvroEnvelopeForWorker: ${input::class.qualifiedName}")
         }
     }
 
-    fun toMonitoringGlobal(message: ForMonitoringGlobalMessage): AvroForMonitoringGlobalMessage {
-        val builder = AvroForMonitoringGlobalMessage.newBuilder()
+    fun toMonitoringGlobal(message: ForMonitoringGlobalMessage): AvroEnvelopeForMonitoringGlobal {
+        val builder = AvroEnvelopeForMonitoringGlobal.newBuilder()
         when (message) {
             is JobCreated -> builder.apply {
                 jobCreated = convertToAvro(message)
@@ -103,15 +103,15 @@ object AvroConverter {
         return builder.build()
     }
 
-    fun fromMonitoringGlobal(input: AvroForMonitoringGlobalMessage): ForMonitoringGlobalMessage {
+    fun fromMonitoringGlobal(input: AvroEnvelopeForMonitoringGlobal): ForMonitoringGlobalMessage {
         return when (input.type) {
             AvroForMonitoringGlobalMessageType.JobCreated -> this.convertFromAvro(input.jobCreated)
-            else -> throw Exception("Unknown AvroForMonitoringGlobalMessage: ${input::class.qualifiedName}")
+            else -> throw Exception("Unknown AvroEnvelopeForMonitoringGlobal: ${input::class.qualifiedName}")
         }
     }
 
-    fun toMonitoringPerName(message: ForMonitoringPerNameMessage): AvroForMonitoringPerNameMessage {
-        val builder = AvroForMonitoringPerNameMessage.newBuilder()
+    fun toMonitoringPerName(message: ForMonitoringPerNameMessage): AvroEnvelopeForMonitoringPerName {
+        val builder = AvroEnvelopeForMonitoringPerName.newBuilder()
         builder.jobName = message.jobName.name
         when (message) {
             is JobStatusUpdated -> builder.apply {
@@ -123,15 +123,15 @@ object AvroConverter {
         return builder.build()
     }
 
-    fun fromMonitoringPerName(input: AvroForMonitoringPerNameMessage): ForMonitoringPerNameMessage {
+    fun fromMonitoringPerName(input: AvroEnvelopeForMonitoringPerName): ForMonitoringPerNameMessage {
         return when (input.type) {
             AvroForMonitoringPerNameMessageType.JobStatusUpdated -> this.convertFromAvro(input.jobStatusUpdated)
-            else -> throw Exception("Unknown AvroForMonitoringPerNameMessage: ${input::class.qualifiedName}")
+            else -> throw Exception("Unknown AvroEnvelopeForMonitoringPerName: ${input::class.qualifiedName}")
         }
     }
 
-    fun toJobEngine(message: ForJobEngineMessage): AvroForJobEngineMessage {
-        val builder = AvroForJobEngineMessage.newBuilder()
+    fun toJobEngine(message: ForJobEngineMessage): AvroEnvelopeForJobEngine {
+        val builder = AvroEnvelopeForJobEngine.newBuilder()
         builder.jobId = message.jobId.id
         when (message) {
             is CancelJob -> builder.apply {
@@ -179,7 +179,7 @@ object AvroConverter {
         return builder.build()
     }
 
-    fun fromJobEngine(input: AvroForJobEngineMessage): ForJobEngineMessage {
+    fun fromJobEngine(input: AvroEnvelopeForJobEngine): ForJobEngineMessage {
         return when (input.type) {
             AvroForJobEngineMessageType.CancelJob -> this.convertFromAvro(input.cancelJob)
             AvroForJobEngineMessageType.DispatchJob -> this.convertFromAvro(input.dispatchJob)
@@ -191,12 +191,12 @@ object AvroConverter {
             AvroForJobEngineMessageType.JobAttemptStarted -> this.convertFromAvro(input.jobAttemptStarted)
             AvroForJobEngineMessageType.JobCanceled -> this.convertFromAvro(input.jobCanceled)
             AvroForJobEngineMessageType.JobCompleted -> this.convertFromAvro(input.jobCompleted)
-            else -> throw Exception("Unknown AvroForJobEngineMessage: ${input::class.qualifiedName}")
+            else -> throw Exception("Unknown AvroEnvelopeForJobEngine: ${input::class.qualifiedName}")
         }
     }
 
-    fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroForWorkflowEngineMessage {
-        val builder = AvroForWorkflowEngineMessage.newBuilder()
+    fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroEnvelopeForWorkflowEngine {
+        val builder = AvroEnvelopeForWorkflowEngine.newBuilder()
         builder.workflowId = message.workflowId.id
         when (message) {
             is TaskCompleted -> builder.apply {

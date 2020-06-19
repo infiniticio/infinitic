@@ -1,6 +1,6 @@
 {
     "type": "record",
-    "name": "AvroForWorkflowEngineMessage",
+    "name": "AvroEnvelopeForWorkflowEngine",
     "namespace": "com.zenaton.workflowManager.messages.envelopes",
     "fields": [
         {

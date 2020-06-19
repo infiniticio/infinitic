@@ -55,9 +55,9 @@ class AvroConverterTests : StringSpec({
         // given
         val state = TestFactory.get(JobEngineState::class)
         // when
-        val avroState = AvroConverter.toAvro(state)
-        val state2 = AvroConverter.fromAvro(avroState)
-        val avroState2 = AvroConverter.toAvro(state2)
+        val avroState = AvroConverter.toStorage(state)
+        val state2 = AvroConverter.fromStorage(avroState)
+        val avroState2 = AvroConverter.toStorage(state2)
         // then
         state2 shouldBe state
         avroState2 shouldBe avroState
@@ -67,9 +67,9 @@ class AvroConverterTests : StringSpec({
         // given
         val state = TestFactory.get(MonitoringPerNameState::class)
         // when
-        val avroState = AvroConverter.toAvro(state)
-        val state2 = AvroConverter.fromAvro(avroState)
-        val avroState2 = AvroConverter.toAvro(state2)
+        val avroState = AvroConverter.toStorage(state)
+        val state2 = AvroConverter.fromStorage(avroState)
+        val avroState2 = AvroConverter.toStorage(state2)
         // then
         state2 shouldBe state
         avroState2 shouldBe avroState
@@ -79,9 +79,9 @@ class AvroConverterTests : StringSpec({
         // given
         val state = TestFactory.get(MonitoringGlobalState::class)
         // when
-        val avroState = AvroConverter.toAvro(state)
-        val state2 = AvroConverter.fromAvro(avroState)
-        val avroState2 = AvroConverter.toAvro(state2)
+        val avroState = AvroConverter.toStorage(state)
+        val state2 = AvroConverter.fromStorage(avroState)
+        val avroState2 = AvroConverter.toStorage(state2)
         // then
         state2 shouldBe state
         avroState2 shouldBe avroState

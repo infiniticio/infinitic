@@ -1,6 +1,7 @@
 package com.zenaton.workflowManager.data.steps
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.zenaton.workflowManager.data.actions.ActionId
@@ -12,6 +13,7 @@ import com.zenaton.workflowManager.data.actions.ActionStatus
     JsonSubTypes.Type(value = StepCriterion.And::class, name = "AND"),
     JsonSubTypes.Type(value = StepCriterion.Or::class, name = "OR")
 )
+@JsonIgnoreProperties(ignoreUnknown = true)
 sealed class StepCriterion {
     data class Id(val actionId: ActionId, var actionStatus: ActionStatus = ActionStatus.DISPATCHED) : StepCriterion()
     data class And(var actionCriteria: List<StepCriterion>) : StepCriterion()
@@ -26,9 +28,7 @@ sealed class StepCriterion {
 
     fun complete(actionId: ActionId): StepCriterion {
         when (this) {
-            is Id ->
-                if (this.actionId == actionId) this.actionStatus =
-                    ActionStatus.COMPLETED
+            is Id -> if (this.actionId == actionId) this.actionStatus = ActionStatus.COMPLETED
             is And -> this.actionCriteria = this.actionCriteria.map { s -> s.complete(actionId) }
             is Or -> this.actionCriteria = this.actionCriteria.map { s -> s.complete(actionId) }
         }
@@ -37,6 +37,7 @@ sealed class StepCriterion {
 
     private fun resolveOr(): StepCriterion {
         when (this) {
+            is Id -> Unit
             is And -> this.actionCriteria = this.actionCriteria.map { s -> s.resolveOr() }
             is Or ->
                 this.actionCriteria =
@@ -50,6 +51,7 @@ sealed class StepCriterion {
 
     private fun compose(): StepCriterion {
         when (this) {
+            is Id -> Unit
             is And -> while (this.actionCriteria.any { s -> s is And || (s is Or && s.actionCriteria.count() == 1) }) {
                 this.actionCriteria = this.actionCriteria.fold(mutableListOf<StepCriterion>()) { l, s ->
                     return@fold when (s) {

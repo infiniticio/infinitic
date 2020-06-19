@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.pulsar.functions
 
 import com.zenaton.jobManager.functions.JobEngineFunction
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarAvroDispatcher
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import io.kotest.assertions.throwables.shouldThrowAny
@@ -22,7 +22,7 @@ class JobEnginePulsarFunctionTests : StringSpec({
         val engine = JobEnginePulsarFunction()
         // then
         shouldThrowAny {
-            engine.process(mockk<AvroForJobEngineMessage>(), null)
+            engine.process(mockk<AvroEnvelopeForJobEngine>(), null)
         }
     }
 
@@ -35,7 +35,7 @@ class JobEnginePulsarFunctionTests : StringSpec({
         every { context.getUserConfigValue("topicPrefix") } returns topicPrefixValue
         val engineFunction = spyk(JobEngineFunction())
         every { engineFunction.handle(any()) } just Runs
-        val avroMsg = mockk<AvroForJobEngineMessage>()
+        val avroMsg = mockk<AvroEnvelopeForJobEngine>()
         // given
         val fct = JobEnginePulsarFunction()
         fct.engine = engineFunction

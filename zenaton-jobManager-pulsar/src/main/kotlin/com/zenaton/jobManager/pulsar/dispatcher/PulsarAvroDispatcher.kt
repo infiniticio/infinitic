@@ -1,11 +1,11 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
 import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
-import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
+import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
@@ -27,9 +27,9 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     /**
      *  Dispatch messages to workers
      */
-    override fun toWorkers(msg: AvroForWorkerMessage) {
+    override fun toWorkers(msg: AvroEnvelopeForWorker) {
         context
-            .newOutputMessage(Topic.WORKERS.get(prefix, msg.jobName), AvroSchema.of(AvroForWorkerMessage::class.java))
+            .newOutputMessage(Topic.WORKERS.get(prefix, msg.jobName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
             .value(msg)
             .send()
         context.logger.debug("===============JobManager====================")
@@ -40,9 +40,9 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     /**
      *  Dispatch messages to Global Monitoring
      */
-    override fun toMonitoringGlobal(msg: AvroForMonitoringGlobalMessage) {
+    override fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal) {
         context
-            .newOutputMessage(Topic.MONITORING_GLOBAL.get(prefix), AvroSchema.of(AvroForMonitoringGlobalMessage::class.java))
+            .newOutputMessage(Topic.MONITORING_GLOBAL.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringGlobal::class.java))
             .value(msg)
             .send()
         context.logger.debug("===============JobManager====================")
@@ -53,9 +53,9 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     /**
      *  Dispatch messages to Per Name Monitoring
      */
-    override fun toMonitoringPerName(msg: AvroForMonitoringPerNameMessage) {
+    override fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
         context
-            .newOutputMessage(Topic.MONITORING_PER_NAME.get(prefix), AvroSchema.of(AvroForMonitoringPerNameMessage::class.java))
+            .newOutputMessage(Topic.MONITORING_PER_NAME.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java))
             .key(msg.jobName)
             .value(msg)
             .send()
@@ -67,10 +67,10 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     /**
      *  Dispatch messages to JobManager Engine
      */
-    override fun toJobEngine(msg: AvroForJobEngineMessage, after: Float) {
+    override fun toJobEngine(msg: AvroEnvelopeForJobEngine, after: Float) {
 
         val msgBuilder = context
-            .newOutputMessage(Topic.ENGINE.get(prefix), AvroSchema.of(AvroForJobEngineMessage::class.java))
+            .newOutputMessage(Topic.ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
             .key(msg.jobId)
             .value(msg)
 
@@ -84,7 +84,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
         context.logger.debug("Msg: $msg")
     }
 
-    override fun toWorkflowEngine(msg: AvroForWorkflowEngineMessage) {
+    override fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine) {
         TODO("Not yet implemented")
     }
 }

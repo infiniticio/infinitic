@@ -2,9 +2,9 @@ import { Consumer, Producer } from 'pulsar-client';
 import { Task } from './task';
 import {
   JobOutput,
-  AvroForWorkerMessage,
+  AvroEnvelopeForWorker,
   RunJob,
-  AvroForJobEngineMessage,
+  AvroEnvelopeForJobEngine,
   JobAttemptStartedMessage,
   JobAttemptCompletedMessage,
   JobAttemptFailedMessage,
@@ -22,7 +22,7 @@ export class TaskRunner {
   async run(): Promise<void> {
     while (!this.shouldStop) {
       const message = await this.pulsarConsumer.receive();
-      const decodedMessage = AvroForWorkerMessage.fromBuffer(message.getData());
+      const decodedMessage = AvroEnvelopeForWorker.fromBuffer(message.getData());
 
       switch (decodedMessage.type) {
         case 'RunJob':
@@ -75,7 +75,7 @@ export class TaskRunner {
     };
 
     this.pulsarProducer.send({
-      data: AvroForJobEngineMessage.toBuffer(toSend),
+      data: AvroEnvelopeForJobEngine.toBuffer(toSend),
     });
   }
 
@@ -103,7 +103,7 @@ export class TaskRunner {
     };
 
     this.pulsarProducer.send({
-      data: AvroForJobEngineMessage.toBuffer(toSend),
+      data: AvroEnvelopeForJobEngine.toBuffer(toSend),
     });
   }
 
@@ -122,7 +122,7 @@ export class TaskRunner {
     };
 
     this.pulsarProducer.send({
-      data: AvroForJobEngineMessage.toBuffer(toSend),
+      data: AvroEnvelopeForJobEngine.toBuffer(toSend),
     });
   }
 }

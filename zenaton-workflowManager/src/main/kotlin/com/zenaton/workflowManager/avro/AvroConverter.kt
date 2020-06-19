@@ -4,8 +4,14 @@ import com.zenaton.common.data.AvroSerializedData
 import com.zenaton.common.json.Json
 import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.messages.AvroDispatchJob
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessageType
+import com.zenaton.workflowManager.data.AvroAction
+import com.zenaton.workflowManager.data.AvroBranch
+import com.zenaton.workflowManager.data.AvroStepCriterion
+import com.zenaton.workflowManager.data.actions.Action
+import com.zenaton.workflowManager.data.branches.Branch
+import com.zenaton.workflowManager.data.steps.StepCriterion
 import com.zenaton.workflowManager.engine.WorkflowEngineState
 import com.zenaton.workflowManager.messages.AvroCancelWorkflow
 import com.zenaton.workflowManager.messages.AvroChildWorkflowCanceled
@@ -35,10 +41,10 @@ import com.zenaton.workflowManager.messages.TaskCompleted
 import com.zenaton.workflowManager.messages.TaskDispatched
 import com.zenaton.workflowManager.messages.WorkflowCanceled
 import com.zenaton.workflowManager.messages.WorkflowCompleted
-import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessage
+import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessageType
-import com.zenaton.workflowManager.messages.envelopes.ForDecidersMessage
-import com.zenaton.workflowManager.messages.envelopes.ForWorkersMessage
+import com.zenaton.workflowManager.messages.envelopes.ForDecisionEngineMessage
+import com.zenaton.workflowManager.messages.envelopes.ForTaskEngineMessage
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
 import org.apache.avro.specific.SpecificRecordBase
@@ -51,15 +57,14 @@ object AvroConverter {
     /**
      *  States
      */
-    fun fromAvro(avro: AvroWorkflowEngineState) = convertJson<WorkflowEngineState>(avro)
-    fun toAvro(state: WorkflowEngineState) = convertJson<AvroWorkflowEngineState>(state)
+    fun fromStorage(avro: AvroWorkflowEngineState) = convertJson<WorkflowEngineState>(avro)
+    fun toStorage(state: WorkflowEngineState) = convertJson<AvroWorkflowEngineState>(state)
 
     /**
      *  Envelopes
      */
-
-    fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroForWorkflowEngineMessage {
-        val builder = AvroForWorkflowEngineMessage.newBuilder()
+    fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroEnvelopeForWorkflowEngine {
+        val builder = AvroEnvelopeForWorkflowEngine.newBuilder()
         builder.workflowId = message.workflowId.id
         when (message) {
             is CancelWorkflow -> builder.apply {
@@ -119,7 +124,7 @@ object AvroConverter {
         return builder.build()
     }
 
-    fun fromWorkflowEngine(input: AvroForWorkflowEngineMessage): ForWorkflowEngineMessage {
+    fun fromWorkflowEngine(input: AvroEnvelopeForWorkflowEngine): ForWorkflowEngineMessage {
         return when (input.type) {
             AvroForWorkflowEngineMessageType.AvroCancelWorkflow -> convertFromAvro(input.avroCancelWorkflow)
             AvroForWorkflowEngineMessageType.AvroChildWorkflowCanceled -> convertFromAvro(input.avroChildWorkflowCanceled)
@@ -134,30 +139,32 @@ object AvroConverter {
             AvroForWorkflowEngineMessageType.AvroTaskDispatched -> convertFromAvro(input.avroTaskDispatched)
             AvroForWorkflowEngineMessageType.AvroWorkflowCanceled -> convertFromAvro(input.avroWorkflowCanceled)
             AvroForWorkflowEngineMessageType.AvroWorkflowCompleted -> convertFromAvro(input.avroWorkflowCompleted)
-            else -> throw Exception("Unknown AvroForJobEngineMessage: ${input::class.qualifiedName}")
+            else -> throw Exception("Unknown AvroEnvelopeForWorkflowEngine: ${input::class.qualifiedName}")
         }
     }
 
-    fun toJobEngine(message: ForDecidersMessage): AvroForJobEngineMessage {
-        val builder = AvroForJobEngineMessage.newBuilder()
+    fun toDecisionEngine(message: ForDecisionEngineMessage): AvroEnvelopeForJobEngine {
+        val builder = AvroEnvelopeForJobEngine.newBuilder()
+        builder.jobId = message.decisionId.id
         when (message) {
             is DispatchDecision -> builder.apply {
                 dispatchJob = convertToAvro(message)
                 type = AvroForJobEngineMessageType.DispatchJob
             }
-            else -> throw Exception("Unknown ForWorkflowEngineMessage: ${message::class.qualifiedName}")
+            else -> throw Exception("Unknown ForDecisionEngineMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
 
-    fun toJobEngine(message: ForWorkersMessage): AvroForJobEngineMessage {
-        val builder = AvroForJobEngineMessage.newBuilder()
+    fun toTaskEngine(message: ForTaskEngineMessage): AvroEnvelopeForJobEngine {
+        val builder = AvroEnvelopeForJobEngine.newBuilder()
+        builder.jobId = message.taskId.id
         when (message) {
             is DispatchTask -> builder.apply {
                 dispatchJob = convertToAvro(message)
                 type = AvroForJobEngineMessageType.DispatchJob
             }
-            else -> throw Exception("Unknown ForWorkflowEngineMessage: ${message::class.qualifiedName}")
+            else -> throw Exception("Unknown ForTaskEngineMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
@@ -165,7 +172,6 @@ object AvroConverter {
     /**
      *  Messages
      */
-
     private fun convertFromAvro(avro: AvroCancelWorkflow) = convertJson<CancelWorkflow>(avro)
     private fun convertFromAvro(avro: AvroChildWorkflowCanceled) = convertJson<ChildWorkflowCanceled>(avro)
     private fun convertFromAvro(avro: AvroChildWorkflowCompleted) = convertJson<ChildWorkflowCompleted>(avro)
@@ -214,10 +220,18 @@ object AvroConverter {
 
     private fun convertToAvro(p: SerializedData) = convertJson<AvroSerializedData>(p)
 
+    fun toAvro(action: Action) = convertJson<AvroAction>(action)
+    fun fromAvro(avro: AvroAction) = convertJson<Action>(avro)
+
+    fun toAvro(step: StepCriterion) = convertJson<AvroStepCriterion>(step)
+    fun fromAvro(avro: AvroStepCriterion) = convertJson<StepCriterion>(avro)
+
+    fun toAvro(branch: Branch) = convertJson<AvroBranch>(branch)
+    fun fromAvro(avro: AvroBranch) = convertJson<Branch>(avro)
+
     /**
      *  Any Message
      */
-
     fun convertFromAvro(avro: SpecificRecordBase): Any = when (avro) {
         is AvroCancelWorkflow -> convertFromAvro(avro)
         is AvroChildWorkflowCanceled -> convertFromAvro(avro)

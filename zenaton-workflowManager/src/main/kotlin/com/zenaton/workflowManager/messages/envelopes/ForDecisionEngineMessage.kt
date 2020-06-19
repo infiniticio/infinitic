@@ -2,6 +2,6 @@ package com.zenaton.workflowManager.messages.envelopes
 
 import com.zenaton.workflowManager.data.DecisionId
 
-interface ForDecidersMessage {
+interface ForDecisionEngineMessage {
     val decisionId: DecisionId
 }

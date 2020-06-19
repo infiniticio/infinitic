@@ -18,7 +18,11 @@
         },
         {
             "name": "decisionData",
-            "type": "bytes"
+            "type": {
+                "type": "array",
+                "items" : "com.zenaton.common.data.AvroSerializedData"
+            },
+            "default": []
         }
     ]
 }

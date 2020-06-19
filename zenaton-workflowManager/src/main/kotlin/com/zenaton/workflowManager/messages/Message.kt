@@ -14,8 +14,8 @@ import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.WorkflowName
 import com.zenaton.workflowManager.data.branches.BranchInput
 import com.zenaton.workflowManager.data.branches.BranchOutput
-import com.zenaton.workflowManager.messages.envelopes.ForDecidersMessage
-import com.zenaton.workflowManager.messages.envelopes.ForWorkersMessage
+import com.zenaton.workflowManager.messages.envelopes.ForDecisionEngineMessage
+import com.zenaton.workflowManager.messages.envelopes.ForTaskEngineMessage
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 
 sealed class Message
@@ -34,7 +34,7 @@ data class ChildWorkflowCanceled(
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childBranchOutput: BranchOutput?
+    val childWorkflowOutput: BranchOutput?
 ) : Message(), ForWorkflowEngineMessage
 
 data class DecisionCompleted(
@@ -100,11 +100,11 @@ data class DispatchTask(
     val workflowId: WorkflowId,
     val taskName: JobName,
     val taskData: JobInput
-) : Message(), ForWorkersMessage
+) : Message(), ForTaskEngineMessage
 
 data class DispatchDecision(
     override val decisionId: DecisionId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
     val decisionData: DecisionData
-) : Message(), ForDecidersMessage
+) : Message(), ForDecisionEngineMessage

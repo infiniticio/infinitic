@@ -38,7 +38,7 @@
             "type" : ["null", "string"]
         }, {
             "name" : "eventData",
-            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
+            "type" : ["null",  {"type" : "array", "items" : "com.zenaton.common.data.AvroSerializedData"}]
         }, {
             "name" : "workflowOutput",
             "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]

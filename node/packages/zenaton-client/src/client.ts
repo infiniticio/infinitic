@@ -4,7 +4,7 @@ import {
   Producer as PulsarProducer,
 } from 'pulsar-client';
 import {
-  AvroForJobEngineMessage,
+  AvroEnvelopeForJobEngine,
   DispatchJobMessage,
   ForJobEngineMessage,
 } from '@zenaton/messages';
@@ -69,7 +69,7 @@ export class Client {
       });
     }
     await this.pulsarProducer.send({
-      data: AvroForJobEngineMessage.toBuffer(message),
+      data: AvroEnvelopeForJobEngine.toBuffer(message),
     });
   }
 }

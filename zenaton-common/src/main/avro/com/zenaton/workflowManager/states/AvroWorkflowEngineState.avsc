@@ -17,7 +17,7 @@
             "default": null
         }, {
              "name" : "bufferedMessages",
-             "type" : {"type": "array", "items": "com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessage"}
+             "type" : {"type": "array", "items": "com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine"}
          }, {
              "name" : "store",
              "type" : {"type" : "map", "values" : "com.zenaton.common.data.AvroSerializedData"}

@@ -1,6 +1,6 @@
 {
     "type": "record",
-    "name": "AvroForWorkerMessage",
+    "name": "AvroEnvelopeForWorker",
     "namespace": "com.zenaton.jobManager.messages.envelopes",
     "fields": [
         {
