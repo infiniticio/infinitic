@@ -1,5 +1,7 @@
 type WorkflowName = string;
 
+export * from "./tasks";
+
 interface WorkflowStartedMetric {
   readonly value: number;
   readonly previousValue: number;
