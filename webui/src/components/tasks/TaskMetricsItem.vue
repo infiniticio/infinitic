@@ -100,7 +100,6 @@ export default Vue.extend({
 
       try {
         this.metrics = await getTaskTypeMetrics(this.taskType);
-        console.log(this.metrics);
       } catch (error) {
         this.error = error;
       } finally {
