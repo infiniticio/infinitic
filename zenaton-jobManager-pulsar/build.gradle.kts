@@ -254,5 +254,5 @@ fun exec(cmd: String) {
     var line: String? = ""
     while (output.readLine().also { line = it } != null) out.style(normalStyle).println(line)
     while (error.readLine().also { line = it } != null) out.style(errorStyle).println(line)
-    if (0 != p.waitFor()) throw StopActionException()
+    if (0 != p.waitFor()) throw GradleException("The following command failed to execute properly: $cmd")
 }
