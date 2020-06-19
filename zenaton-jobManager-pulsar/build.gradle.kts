@@ -31,7 +31,7 @@ dependencies {
 }
 
 application {
-    mainClassName = "com.zenaton.jobManager.pulsar.utils.MainKt"
+    mainClassName = "com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 java {
@@ -190,7 +190,7 @@ enum class Topic {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    val cmd = "java -cp ./build/libs/$jar com.zenaton.jobManager.pulsar.utils.MainKt"
+    val cmd = "java -cp ./build/libs/$jar com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
     return exec(cmd)
 }
 
