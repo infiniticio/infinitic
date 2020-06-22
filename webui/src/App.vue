@@ -25,12 +25,7 @@
           </button>
         </div>
 
-        <main
-          class="flex-1 relative z-0 overflow-y-auto pt-2 pb-6 focus:outline-none md:py-6"
-          tabindex="0"
-        >
-          <router-view />
-        </main>
+        <router-view />
       </div>
     </div>
   </div>
