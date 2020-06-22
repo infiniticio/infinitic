@@ -7,7 +7,6 @@ data class TaskAttemptFailedEvent(val attemptId: String, val attemptIndex: Int, 
     object Fields {
         const val ATTEMPT_ID = "taskattemptfailed.taskattemptid"
         const val ATTEMPT_INDEX = "taskattemptfailed.taskattemptindex"
-        const val SENT_AT = "taskattemptfailed.sentat"
         const val DELAY_BEFORE_RETRY = "taskattemptfailed.delaybeforeretry"
     }
 }

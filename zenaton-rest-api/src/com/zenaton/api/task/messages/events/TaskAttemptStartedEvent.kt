@@ -7,7 +7,6 @@ data class TaskAttemptStartedEvent(val attemptId: String, val attemptIndex: Int,
     object Fields {
         const val ATTEMPT_ID = "taskattemptstarted.taskattemptid"
         const val ATTEMPT_INDEX = "taskattemptstarted.taskattemptindex"
-        const val SENT_AT = "taskattemptstarted.sentat"
         const val DELAY_BEFORE_RETRY = "taskattemptstarted.taskattemptdelaybeforeretry"
         const val DELAY_BEFORE_TIMEOUT = "taskattemptstarted.taskattemptdelaybeforetimeout"
     }

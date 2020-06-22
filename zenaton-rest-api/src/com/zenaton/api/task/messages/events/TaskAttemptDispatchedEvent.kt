@@ -7,6 +7,5 @@ data class TaskAttemptDispatchedEvent(val attemptId: String, val attemptIndex: I
     object Fields {
         const val ATTEMPT_ID = "taskattemptdispatched.taskattemptid"
         const val ATTEMPT_INDEX = "taskattemptdispatched.taskattemptindex"
-        const val SENT_AT = "taskattemptdispatched.sentat"
     }
 }

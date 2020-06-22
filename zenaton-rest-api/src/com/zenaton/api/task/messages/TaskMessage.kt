@@ -32,5 +32,6 @@ interface TaskMessage {
     object Fields {
         const val TASK_ID = "taskid"
         const val TYPE = "type"
+        const val SENT_AT = "__publish_time__";
     }
 }

@@ -30,23 +30,23 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
                 TaskMessage.Type.TASK_ATTEMPT_COMPLETED -> TaskAttemptCompletedEvent(
                     attemptId = it.getString(TaskAttemptCompletedEvent.Fields.ATTEMPT_ID),
                     attemptIndex = it.getInt(TaskAttemptCompletedEvent.Fields.ATTEMPT_INDEX),
-                    sentAt = Instant.ofEpochMilli(it.getLong(TaskAttemptCompletedEvent.Fields.SENT_AT))
+                    sentAt = Instant.ofEpochMilli(it.getLong(TaskMessage.Fields.SENT_AT))
                 )
                 TaskMessage.Type.TASK_ATTEMPT_DISPATCHED -> TaskAttemptDispatchedEvent(
                     attemptId = it.getString(TaskAttemptDispatchedEvent.Fields.ATTEMPT_ID),
                     attemptIndex = it.getInt(TaskAttemptDispatchedEvent.Fields.ATTEMPT_INDEX),
-                    sentAt = Instant.ofEpochMilli(it.getLong(TaskAttemptDispatchedEvent.Fields.SENT_AT))
+                    sentAt = Instant.ofEpochMilli(it.getLong(TaskMessage.Fields.SENT_AT))
                 )
                 TaskMessage.Type.TASK_ATTEMPT_FAILED -> TaskAttemptFailedEvent(
                     attemptId = it.getString(TaskAttemptFailedEvent.Fields.ATTEMPT_ID),
                     attemptIndex = it.getInt(TaskAttemptFailedEvent.Fields.ATTEMPT_INDEX),
-                    sentAt = Instant.ofEpochMilli(it.getLong(TaskAttemptFailedEvent.Fields.SENT_AT)),
+                    sentAt = Instant.ofEpochMilli(it.getLong(TaskMessage.Fields.SENT_AT)),
                     delayBeforeRetry = it.getFloat(TaskAttemptFailedEvent.Fields.DELAY_BEFORE_RETRY)
                 )
                 TaskMessage.Type.TASK_ATTEMPT_STARTED -> TaskAttemptStartedEvent(
                     attemptId = it.getString(TaskAttemptStartedEvent.Fields.ATTEMPT_ID),
                     attemptIndex = it.getInt(TaskAttemptStartedEvent.Fields.ATTEMPT_INDEX),
-                    sentAt = Instant.ofEpochMilli(it.getLong(TaskAttemptStartedEvent.Fields.SENT_AT)),
+                    sentAt = Instant.ofEpochMilli(it.getLong(TaskMessage.Fields.SENT_AT)),
                     delayBeforeRetry = it.getFloat(TaskAttemptStartedEvent.Fields.DELAY_BEFORE_RETRY),
                     delayBeforeTimeout = it.getFloat(TaskAttemptStartedEvent.Fields.DELAY_BEFORE_TIMEOUT)
                 )
