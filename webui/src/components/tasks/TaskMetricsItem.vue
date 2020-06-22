@@ -4,69 +4,23 @@
       {{ taskType.name }}
     </h3>
     <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-          <div v-if="loading">
-            Loading
-          </div>
-          <dl v-else-if="!loading && error">
-            Error
-          </dl>
-          <dl v-else>
-            <dt class="text-sm leading-5 font-medium text-gray-500 truncate">
-              OK
-            </dt>
-            <dd class="mt-1 text-3xl leading-9 font-semibold text-gray-900">
-              {{ metrics.runningOkCount }}
-            </dd>
-          </dl>
-        </div>
-      </div>
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-          <div v-if="loading">
-            Loading
-          </div>
-          <dl v-else-if="!loading && error">
-            Error
-          </dl>
-          <dl v-else>
-            <dt class="text-sm leading-5 font-medium text-gray-500 truncate">
-              Warning
-            </dt>
-            <dd class="mt-1 text-3xl leading-9 font-semibold text-gray-900">
-              {{ metrics.runningWarningCount }}
-            </dd>
-          </dl>
-        </div>
-      </div>
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-          <div v-if="loading">
-            Loading
-          </div>
-          <dl v-else-if="!loading && error">
-            Error
-          </dl>
-          <dl v-else>
-            <dt class="text-sm leading-5 font-medium text-gray-500 truncate">
-              Error
-            </dt>
-            <dd class="mt-1 text-3xl leading-9 font-semibold text-gray-900">
-              {{ metrics.runningErrorCount }}
-            </dd>
-          </dl>
-        </div>
-      </div>
+      <simple-stat label="OK" :value="runningOkCount" />
+      <simple-stat label="Warning" :value="runningWarningCount" />
+      <simple-stat label="Error" :value="runningErrorCount" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
+import { from, Observable } from "rxjs";
+import { pluck, share, map } from "rxjs/operators";
 import { TaskType, getTaskTypeMetrics, TaskTypeMetrics } from "@/api";
+import SimpleStat from "@/components/data-display/stats/SimpleStat.vue";
 
 export default Vue.extend({
+  components: { SimpleStat },
+
   props: {
     taskType: {
       type: Object as PropType<TaskType>,
@@ -75,37 +29,28 @@ export default Vue.extend({
   },
 
   data() {
+    const metrics: Observable<TaskTypeMetrics> = from(
+      getTaskTypeMetrics(this.$props.taskType)
+    ).pipe(share());
+
     return {
-      loading: false,
-      error: undefined,
-      metrics: undefined
+      runningOkCount: metrics.pipe(
+        pluck("runningOkCount"),
+        map(value => value.toString())
+      ),
+      runningWarningCount: metrics.pipe(
+        pluck("runningWarningCount"),
+        map(value => value.toString())
+      ),
+      runningErrorCount: metrics.pipe(
+        pluck("runningErrorCount"),
+        map(value => value.toString())
+      )
     } as {
-      loading: boolean;
-      error: Error | undefined;
-      metrics: TaskTypeMetrics | undefined;
+      runningOkCount: Observable<string>;
+      runningWarningCount: Observable<string>;
+      runningErrorCount: Observable<string>;
     };
-  },
-
-  created() {
-    this.loadData();
-  },
-
-  methods: {
-    async loadData() {
-      if (this.loading) {
-        return;
-      }
-
-      this.loading = true;
-
-      try {
-        this.metrics = await getTaskTypeMetrics(this.taskType);
-      } catch (error) {
-        this.error = error;
-      } finally {
-        this.loading = false;
-      }
-    }
   }
 });
 </script>

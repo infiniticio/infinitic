@@ -38,14 +38,14 @@
       tabindex="0"
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div v-if="loading">
+        <div v-if="loading$">
           Loading
         </div>
-        <div v-else-if="error">
+        <div v-else-if="error$">
           Display error
         </div>
         <div v-else>
-          <task-metrics-list :taskTypes="taskTypes" />
+          <task-metrics-list :taskTypes="taskTypes$" />
         </div>
       </div>
     </main>
@@ -54,8 +54,10 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { getTaskTypes, TaskType } from "@/api";
+import { getTaskTypes } from "@/api";
 import TaskMetricsList from "@/components/tasks/TaskMetricsList.vue";
+import { from, of } from "rxjs";
+import { share, mapTo, startWith, catchError } from "rxjs/operators";
 
 export default Vue.extend({
   name: "Tasks",
@@ -64,39 +66,26 @@ export default Vue.extend({
 
   data() {
     return {
-      loading: false,
-      taskTypes: undefined,
-      error: undefined,
       searchInput: ""
     } as {
-      loading: boolean;
-      taskTypes: TaskType[] | undefined;
-      error: Error | undefined;
       searchInput: string;
     };
   },
 
-  created() {
-    this.loadData();
+  subscriptions() {
+    const taskTypes = from(getTaskTypes()).pipe(share());
+
+    return {
+      loading$: taskTypes.pipe(mapTo(false), startWith(true)),
+      error$: taskTypes.pipe(
+        mapTo(undefined),
+        catchError(err => of<Error>(err))
+      ),
+      taskTypes$: taskTypes
+    };
   },
 
   methods: {
-    async loadData() {
-      if (this.loading) {
-        return;
-      }
-
-      this.loading = true;
-
-      try {
-        this.taskTypes = await getTaskTypes();
-      } catch (e) {
-        this.error = e;
-      } finally {
-        this.loading = false;
-      }
-    },
-
     async searchTask() {
       console.log(this.searchInput);
     }
