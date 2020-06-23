@@ -4,8 +4,8 @@ import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobInput
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.data.JobOutput
-import com.zenaton.workflowManager.data.DecisionData
 import com.zenaton.workflowManager.data.DecisionId
+import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.DecisionOutput
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventData
@@ -14,8 +14,8 @@ import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.WorkflowName
 import com.zenaton.workflowManager.data.branches.BranchInput
 import com.zenaton.workflowManager.data.branches.BranchOutput
-import com.zenaton.workflowManager.messages.envelopes.ForDecidersMessage
-import com.zenaton.workflowManager.messages.envelopes.ForWorkersMessage
+import com.zenaton.workflowManager.messages.envelopes.ForDecisionEngineMessage
+import com.zenaton.workflowManager.messages.envelopes.ForTaskEngineMessage
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 
 sealed class Message
@@ -34,7 +34,7 @@ data class ChildWorkflowCanceled(
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childBranchOutput: BranchOutput?
+    val childWorkflowOutput: BranchOutput?
 ) : Message(), ForWorkflowEngineMessage
 
 data class DecisionCompleted(
@@ -47,7 +47,7 @@ data class DecisionDispatched(
     override val workflowId: WorkflowId,
     val decisionId: DecisionId,
     val workflowName: WorkflowName,
-    val decisionData: DecisionData
+    val decisionInput: DecisionInput
 ) : Message(), ForWorkflowEngineMessage
 
 data class DelayCompleted(
@@ -99,12 +99,12 @@ data class DispatchTask(
     override val taskId: JobId,
     val workflowId: WorkflowId,
     val taskName: JobName,
-    val taskData: JobInput
-) : Message(), ForWorkersMessage
+    val taskInput: JobInput
+) : Message(), ForTaskEngineMessage
 
 data class DispatchDecision(
     override val decisionId: DecisionId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val decisionData: DecisionData
-) : Message(), ForDecidersMessage
+    val decisionInput: JobInput
+) : Message(), ForDecisionEngineMessage

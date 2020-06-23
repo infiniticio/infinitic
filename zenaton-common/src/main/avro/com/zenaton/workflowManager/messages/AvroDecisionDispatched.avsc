@@ -17,8 +17,8 @@
             "type": "string"
         },
         {
-            "name": "decisionData",
-            "type": "bytes"
+            "name": "decisionInput",
+            "type": "com.zenaton.workflowManager.decisions.AvroDecisionInput"
         }
     ]
 }

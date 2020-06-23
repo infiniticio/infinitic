@@ -6,7 +6,7 @@ import com.zenaton.jobManager.engine.JobEngine
 import com.zenaton.jobManager.engine.JobEngineStateStorage
 import com.zenaton.jobManager.interfaces.AvroDispatcher
 import com.zenaton.jobManager.interfaces.AvroStorage
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import org.slf4j.Logger
 
 class JobEngineFunction {
@@ -16,7 +16,7 @@ class JobEngineFunction {
 
     var engine = JobEngine()
 
-    fun handle(input: AvroForJobEngineMessage) {
+    fun handle(input: AvroEnvelopeForJobEngine) {
         engine.logger = logger
         engine.storage = JobEngineStateStorage(avroStorage)
         engine.dispatcher = Dispatcher(avroDispatcher)

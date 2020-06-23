@@ -9,8 +9,7 @@
             "logicalType": "uuid"
         }, {
             "name": "workflowOutput",
-            "type": ["null", "bytes"],
-            "default": null
+            "type": "com.zenaton.common.data.AvroSerializedData"
         }
     ]
 }

@@ -1,12 +1,12 @@
 package com.zenaton.common.data.interfaces
 
-import com.zenaton.common.data.AvroSerializationType
+import com.zenaton.common.data.SerializationType
 import java.math.BigInteger
 import java.security.MessageDigest
 
 interface SerializedDataInterface {
     val serializedData: ByteArray
-    val serializationType: AvroSerializationType
+    val serializationType: SerializationType
 
     fun hash(): String {
         // MD5 implementation

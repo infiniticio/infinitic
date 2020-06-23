@@ -66,15 +66,15 @@ tasks.register("setSchemas") {
         createSchemaFiles()
         setPrefix()
         uploadSchemaToTopic(
-            name = "AvroForJobEngineMessage",
+            name = "AvroEnvelopeForJobEngine",
             topic = Topic.ENGINE.get()
         )
         uploadSchemaToTopic(
-            name = "AvroForMonitoringPerNameMessage",
+            name = "AvroEnvelopeForMonitoringPerName",
             topic = Topic.MONITORING_PER_NAME.get()
         )
         uploadSchemaToTopic(
-            name = "AvroForMonitoringGlobalMessage",
+            name = "AvroEnvelopeForMonitoringGlobal",
             topic = Topic.MONITORING_GLOBAL.get()
         )
     }

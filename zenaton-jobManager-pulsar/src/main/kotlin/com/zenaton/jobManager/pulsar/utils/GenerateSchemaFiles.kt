@@ -1,10 +1,10 @@
 package com.zenaton.jobManager.pulsar.utils
 
 import com.zenaton.common.json.Json
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import java.io.File
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
@@ -24,10 +24,10 @@ fun main() {
     }
 
     listOf(
-        AvroForJobEngineMessage::class,
-        AvroForWorkerMessage::class,
-        AvroForMonitoringPerNameMessage::class,
-        AvroForMonitoringGlobalMessage::class
+        AvroEnvelopeForJobEngine::class,
+        AvroEnvelopeForWorker::class,
+        AvroEnvelopeForMonitoringPerName::class,
+        AvroEnvelopeForMonitoringGlobal::class
     ).map { klass ->
         File(System.getProperty("user.dir") + "/build/schemas/${klass.simpleName}.schema")
             .also { it.parentFile.mkdirs() }

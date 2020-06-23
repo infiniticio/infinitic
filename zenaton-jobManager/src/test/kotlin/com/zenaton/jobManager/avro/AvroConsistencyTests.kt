@@ -1,93 +1,110 @@
 package com.zenaton.jobManager.avro
 
 import com.zenaton.jobManager.messages.Message
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.jobManager.utils.TestFactory
-import com.zenaton.workflowManager.messages.AvroTaskCompleted
 import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.core.spec.TestConfiguration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
+import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
 
 class AvroConsistencyTests : StringSpec({
-
-    include(
-        `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForJobEngineMessage>(
-            AvroForJobEngineMessage()
-        )
-    )
-
-    include(
-        `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForMonitoringGlobalMessage>(
-            AvroForMonitoringGlobalMessage()
-        )
-    )
-    include(
-        `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForMonitoringPerNameMessage>(
-            AvroForMonitoringPerNameMessage()
-        )
-    )
-    include(
-        `Avro messages in AvroFor*Message should implement For*Message after conversion`<ForWorkerMessage>(
-            AvroForWorkerMessage()
-        )
-    )
-
-    "Messages used from AvroForWorkflowsMessage should implement ForWorkflowsMessage after conversion" {
-        val taskCompleted = AvroConverter.convertFromAvro(TestFactory.get(AvroTaskCompleted::class))
-        (taskCompleted is ForWorkflowEngineMessage) shouldBe true
-        (taskCompleted is Message) shouldBe true
-    }
-
-    "message implementing a For*Message interface should be convertible to AvroFor*Message" {
-        Message::class.sealedSubclasses.forEach {
-            shouldNotThrowAny {
-                val msg = TestFactory.get(it)
-                if (msg is ForWorkerMessage) {
-                    AvroConverter.toWorkers(msg)
-                }
-                if (msg is ForJobEngineMessage) {
-                    AvroConverter.toJobEngine(msg)
-                }
-                if (msg is ForWorkflowEngineMessage) {
-                    AvroConverter.toWorkflowEngine(msg)
-                }
-                if (msg is ForMonitoringPerNameMessage) {
-                    AvroConverter.toMonitoringPerName(msg)
-                }
-                if (msg is ForMonitoringGlobalMessage) {
-                    AvroConverter.toMonitoringGlobal(msg)
-                }
-            }
+    // From Message
+    Message::class.sealedSubclasses.forEach {
+        val msg = TestFactory.get(it)
+        if (msg is ForWorkerMessage) {
+            include(checkAvroConversionToEnvelopeForWorker(msg))
+        }
+        if (msg is ForJobEngineMessage) {
+            include(checkAvroConversionToEnvelopeForJobEngine(msg))
+        }
+        if (msg is ForMonitoringPerNameMessage) {
+            include(checkAvroConversionToEnvelopeForMonitoringPerName(msg))
+        }
+        if (msg is ForMonitoringGlobalMessage) {
+            include(checkAvroConversionToEnvelopeForMonitoringGlobal(msg))
         }
     }
+
+    // From Avro
+    checkAllSubTypesFromEnvelope<ForWorkerMessage>(this, AvroEnvelopeForWorker())
+    checkAllSubTypesFromEnvelope<ForJobEngineMessage>(this, AvroEnvelopeForJobEngine())
+    checkAllSubTypesFromEnvelope<ForMonitoringGlobalMessage>(this, AvroEnvelopeForMonitoringGlobal())
+    checkAllSubTypesFromEnvelope<ForMonitoringPerNameMessage>(this, AvroEnvelopeForMonitoringPerName())
 })
 
-private inline fun <reified T> `Avro messages in AvroFor*Message should implement For*Message after conversion`(msg: SpecificRecordBase) = stringSpec {
+fun checkAvroConversionToEnvelopeForWorker(msg: ForWorkerMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForWorker::class.simpleName}" {
+        shouldNotThrowAny {
+            AvroConverter.toWorkers(msg)
+        }
+    }
+}
+
+fun checkAvroConversionToEnvelopeForJobEngine(msg: ForJobEngineMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForJobEngine::class.simpleName}" {
+        shouldNotThrowAny {
+            AvroConverter.toJobEngine(msg)
+        }
+    }
+}
+
+fun checkAvroConversionToEnvelopeForMonitoringPerName(msg: ForMonitoringPerNameMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForMonitoringPerName::class.simpleName}" {
+        shouldNotThrowAny {
+            AvroConverter.toMonitoringPerName(msg)
+        }
+    }
+}
+
+fun checkAvroConversionToEnvelopeForMonitoringGlobal(msg: ForMonitoringGlobalMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForMonitoringGlobal::class.simpleName}" {
+        shouldNotThrowAny {
+            AvroConverter.toMonitoringGlobal(msg)
+        }
+    }
+}
+
+inline fun <reified T> checkAllSubTypesFromEnvelope(config: TestConfiguration, msg: GenericRecord) {
     msg.schema.getField("type").schema().enumSymbols.forEach {
         val schema = msg.schema.getField(it).schema()
+        config.include(checkEnvelopeSchema(it, schema, msg::class))
+        val name = schema.types[1].name
+        val namespace = schema.types[1].namespace
+        config.include(checkConversionFromAvro<T>(name, namespace))
+    }
+}
+
+fun checkEnvelopeSchema(field: String, schema: Schema, klass: KClass<out GenericRecord>) = stringSpec {
+    "Checking schema for field $field of ${klass.simpleName}" {
         // check that type is an union
         schema.isUnion shouldBe true
         // check that first type is null
         schema.types[0].isNullable shouldBe true
-        // check that, if known, it implements Message and For*Message after conversion
-        try {
-            // get class name
-            @Suppress("UNCHECKED_CAST")
-            val klass = Class.forName("${schema.types[1].namespace}.${schema.types[1].name}").kotlin as KClass<SpecificRecordBase>
-            val message = AvroConverter.convertFromAvro(TestFactory.get(klass))
-            (message is T) shouldBe true
-            (message is Message) shouldBe true
-        } catch (e: ClassNotFoundException) {}
+        // check size
+        schema.types.size shouldBe 2
+    }
+}
+
+inline fun <reified T> checkConversionFromAvro(name: String, namespace: String) = stringSpec {
+    "$name should be convertible from avro" {
+        // get class name
+        @Suppress("UNCHECKED_CAST")
+        val klass = Class.forName("$namespace.$name").kotlin as KClass<SpecificRecordBase>
+        val message = AvroConverter.convertFromAvro(TestFactory.get(klass))
+        (message is T) shouldBe true
+        (message is Message) shouldBe true
     }
 }

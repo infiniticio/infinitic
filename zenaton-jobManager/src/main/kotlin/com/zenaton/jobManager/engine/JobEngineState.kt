@@ -6,9 +6,9 @@ import com.zenaton.jobManager.data.JobAttemptIndex
 import com.zenaton.jobManager.data.JobAttemptRetry
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobInput
+import com.zenaton.jobManager.data.JobMeta
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.data.JobStatus
-import com.zenaton.jobManager.data.WorkflowId
 
 data class JobEngineState(
     val jobId: JobId,
@@ -18,5 +18,5 @@ data class JobEngineState(
     var jobAttemptId: JobAttemptId,
     var jobAttemptIndex: JobAttemptIndex = JobAttemptIndex(0),
     var jobAttemptRetry: JobAttemptRetry = JobAttemptRetry(0),
-    val workflowId: WorkflowId? = null
+    val jobMeta: JobMeta
 ) : StateInterface

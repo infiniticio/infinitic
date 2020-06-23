@@ -1,5 +1,6 @@
 package com.zenaton.workflowManager.data.actions
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.zenaton.common.data.DateTime
@@ -18,13 +19,14 @@ import com.zenaton.workflowManager.data.branches.BranchOutput
     JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
     JsonSubTypes.Type(value = WaitDelay::class, name = "WAIT_DELAY"),
     JsonSubTypes.Type(value = WaitEvent::class, name = "WAIT_EVENT"),
-    JsonSubTypes.Type(value = InstantTask::class, name = "INSTANT_TASK"),
+    JsonSubTypes.Type(value = InstantTask::class, name = "RUN_INSTANT_TASK"),
     JsonSubTypes.Type(value = PauseWorkflow::class, name = "PAUSE_WORKFLOW"),
     JsonSubTypes.Type(value = ResumeWorkflow::class, name = "RESUME_WORKFLOW"),
     JsonSubTypes.Type(value = CompleteWorkflow::class, name = "COMPLETE_WORKFLOW"),
     JsonSubTypes.Type(value = TerminateWorkflow::class, name = "TERMINATE_WORKFLOW"),
     JsonSubTypes.Type(value = SendEvent::class, name = "SEND_EVENT")
 )
+@JsonIgnoreProperties(ignoreUnknown = true)
 sealed class Action(
     open val decidedAt: DateTime,
     open val actionHash: ActionHash,
@@ -33,7 +35,7 @@ sealed class Action(
 
 data class DispatchTask(
     val jobId: JobId,
-    var jobOutput: JobOutput?,
+    var jobOutput: JobOutput,
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
@@ -41,7 +43,7 @@ data class DispatchTask(
 
 data class DispatchChildWorkflow(
     val childWorkflowId: WorkflowId,
-    var childWorkflowOutput: BranchOutput?,
+    var childWorkflowOutput: BranchOutput,
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
@@ -57,7 +59,7 @@ data class WaitDelay(
 data class WaitEvent(
     val eventId: EventId,
     val eventName: EventName,
-    var eventData: EventData?,
+    var eventData: EventData,
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
@@ -70,7 +72,7 @@ data class InstantTask(
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override val actionStatus: ActionStatus,
-    var jobOutput: JobOutput?
+    var jobOutput: JobOutput
 ) : Action(decidedAt, actionHash, actionStatus)
 
 /**

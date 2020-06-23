@@ -6,5 +6,4 @@ import com.zenaton.common.data.interfaces.NameInterface
 
 data class EventName
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val name: String) :
-    NameInterface
+constructor(@get:JsonValue override val name: String) : NameInterface

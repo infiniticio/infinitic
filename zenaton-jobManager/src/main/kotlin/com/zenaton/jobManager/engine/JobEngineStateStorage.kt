@@ -7,14 +7,14 @@ import com.zenaton.jobManager.interfaces.AvroStorage
 class JobEngineStateStorage(val avroStorage: AvroStorage) {
 
     fun getState(jobId: JobId): JobEngineState? {
-        return avroStorage.getJobEngineState(jobId.id)?.let { AvroConverter.fromAvro(it) }
+        return avroStorage.getJobEngineState(jobId.id)?.let { AvroConverter.fromStorage(it) }
     }
 
     fun updateState(jobId: JobId, newState: JobEngineState, oldState: JobEngineState?) {
         avroStorage.updateJobEngineState(
             jobId.id,
-            AvroConverter.toAvro(newState),
-            oldState?.let { AvroConverter.toAvro(it) }
+            AvroConverter.toStorage(newState),
+            oldState?.let { AvroConverter.toStorage(it) }
         )
     }
 

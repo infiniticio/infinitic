@@ -17,13 +17,11 @@
             "type": {
                 "type": "array",
                 "items" : "com.zenaton.common.data.AvroSerializedData"
-            },
-            "default": []
+            }
         },
         {
-            "name": "workflowId",
-            "type": ["null", {"type": "string", "logicalType": "uuid"}],
-            "default": null
+            "name": "jobMeta",
+            "type": {"type": "map", "values": "bytes"}
         }
     ]
 }

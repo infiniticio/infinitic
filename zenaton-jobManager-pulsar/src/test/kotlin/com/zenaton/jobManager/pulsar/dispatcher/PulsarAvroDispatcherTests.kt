@@ -2,10 +2,10 @@ package com.zenaton.jobManager.pulsar.dispatcher
 
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.messages.Message
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
@@ -51,13 +51,13 @@ class PulsarAvroDispatcherTests : StringSpec({
     }
 })
 
-fun shouldSendMessageToEngineTopic(msg: AvroForJobEngineMessage) = stringSpec {
+fun shouldSendMessageToEngineTopic(msg: AvroEnvelopeForJobEngine) = stringSpec {
     // given
     val prefix = TestFactory.get(String::class)
     val context = context(prefix)
-    val builder = mockk<TypedMessageBuilder<AvroForJobEngineMessage>>()
-    val slotSchema = slot<AvroSchema<AvroForJobEngineMessage>>()
-    every { context.newOutputMessage<AvroForJobEngineMessage>(any(), capture(slotSchema)) } returns builder
+    val builder = mockk<TypedMessageBuilder<AvroEnvelopeForJobEngine>>()
+    val slotSchema = slot<AvroSchema<AvroEnvelopeForJobEngine>>()
+    every { context.newOutputMessage<AvroEnvelopeForJobEngine>(any(), capture(slotSchema)) } returns builder
     every { builder.value(any()) } returns builder
     every { builder.key(any()) } returns builder
     every { builder.send() } returns mockk<MessageId>()
@@ -69,7 +69,7 @@ fun shouldSendMessageToEngineTopic(msg: AvroForJobEngineMessage) = stringSpec {
         context.logger
         context.getUserConfigValue("topicPrefix")
     }
-    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForJobEngineMessage::class.java).avroSchema
+    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroEnvelopeForJobEngine::class.java).avroSchema
     confirmVerified(context)
     verifyAll {
         builder.value(msg)
@@ -78,13 +78,13 @@ fun shouldSendMessageToEngineTopic(msg: AvroForJobEngineMessage) = stringSpec {
     }
     confirmVerified(builder)
 }
-fun shouldSendMessageToMonitoringPerNameTopic(msg: AvroForMonitoringPerNameMessage) = stringSpec {
+fun shouldSendMessageToMonitoringPerNameTopic(msg: AvroEnvelopeForMonitoringPerName) = stringSpec {
     // given
     val prefix = TestFactory.get(String::class)
     val context = context(prefix)
-    val builder = mockk<TypedMessageBuilder<AvroForMonitoringPerNameMessage>>()
-    val slotSchema = slot<AvroSchema<AvroForMonitoringPerNameMessage>>()
-    every { context.newOutputMessage<AvroForMonitoringPerNameMessage>(any(), capture(slotSchema)) } returns builder
+    val builder = mockk<TypedMessageBuilder<AvroEnvelopeForMonitoringPerName>>()
+    val slotSchema = slot<AvroSchema<AvroEnvelopeForMonitoringPerName>>()
+    every { context.newOutputMessage<AvroEnvelopeForMonitoringPerName>(any(), capture(slotSchema)) } returns builder
     every { builder.value(msg) } returns builder
     every { builder.key(msg.jobName) } returns builder
     every { builder.send() } returns mockk<MessageId>()
@@ -96,7 +96,7 @@ fun shouldSendMessageToMonitoringPerNameTopic(msg: AvroForMonitoringPerNameMessa
         context.logger
         context.getUserConfigValue("topicPrefix")
     }
-    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringPerNameMessage::class.java).avroSchema
+    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java).avroSchema
     confirmVerified(context)
     verifyAll {
         builder.value(msg)
@@ -106,14 +106,14 @@ fun shouldSendMessageToMonitoringPerNameTopic(msg: AvroForMonitoringPerNameMessa
     confirmVerified(builder)
 }
 
-fun shouldSendMessageToMonitoringGlobalTopic(msg: AvroForMonitoringGlobalMessage) = stringSpec {
+fun shouldSendMessageToMonitoringGlobalTopic(msg: AvroEnvelopeForMonitoringGlobal) = stringSpec {
     // given
     val prefix = TestFactory.get(String::class)
     val context = context(prefix)
-    val builder = mockk<TypedMessageBuilder<AvroForMonitoringGlobalMessage>>()
-    val slotSchema = slot<AvroSchema<AvroForMonitoringGlobalMessage>>()
+    val builder = mockk<TypedMessageBuilder<AvroEnvelopeForMonitoringGlobal>>()
+    val slotSchema = slot<AvroSchema<AvroEnvelopeForMonitoringGlobal>>()
     val slotTopic = slot<String>()
-    every { context.newOutputMessage<AvroForMonitoringGlobalMessage>(capture(slotTopic), capture(slotSchema)) } returns builder
+    every { context.newOutputMessage<AvroEnvelopeForMonitoringGlobal>(capture(slotTopic), capture(slotSchema)) } returns builder
     every { builder.value(any()) } returns builder
     every { builder.key(any()) } returns builder
     every { builder.send() } returns mockk<MessageId>()
@@ -126,21 +126,21 @@ fun shouldSendMessageToMonitoringGlobalTopic(msg: AvroForMonitoringGlobalMessage
         context.getUserConfigValue("topicPrefix")
     }
     slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get(prefix)
-    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForMonitoringGlobalMessage::class.java).avroSchema
+    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroEnvelopeForMonitoringGlobal::class.java).avroSchema
     verify(exactly = 1) { builder.value(msg) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)
     confirmVerified(builder)
 }
 
-fun shouldSendMessageToWorkersTopic(msg: AvroForWorkerMessage) = stringSpec {
+fun shouldSendMessageToWorkersTopic(msg: AvroEnvelopeForWorker) = stringSpec {
     // given
     val prefix = TestFactory.get(String::class)
     val context = context(prefix)
-    val builder = mockk<TypedMessageBuilder<AvroForWorkerMessage>>()
-    val slotSchema = slot<AvroSchema<AvroForWorkerMessage>>()
+    val builder = mockk<TypedMessageBuilder<AvroEnvelopeForWorker>>()
+    val slotSchema = slot<AvroSchema<AvroEnvelopeForWorker>>()
     val slotTopic = slot<String>()
-    every { context.newOutputMessage<AvroForWorkerMessage>(capture(slotTopic), capture(slotSchema)) } returns builder
+    every { context.newOutputMessage<AvroEnvelopeForWorker>(capture(slotTopic), capture(slotSchema)) } returns builder
     every { builder.value(any()) } returns builder
     every { builder.send() } returns mockk<MessageId>()
     // when
@@ -152,7 +152,7 @@ fun shouldSendMessageToWorkersTopic(msg: AvroForWorkerMessage) = stringSpec {
         context.getUserConfigValue("topicPrefix")
     }
     slotTopic.captured shouldBe Topic.WORKERS.get(prefix, msg.jobName)
-    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroForWorkerMessage::class.java).avroSchema
+    slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroEnvelopeForWorker::class.java).avroSchema
     verify(exactly = 1) { builder.value(msg) }
     verify(exactly = 1) { builder.send() }
     confirmVerified(context)

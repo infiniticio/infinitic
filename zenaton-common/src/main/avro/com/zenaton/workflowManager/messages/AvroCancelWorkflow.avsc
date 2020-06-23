@@ -7,6 +7,9 @@
             "name": "workflowId",
             "type": "string",
             "logicalType": "uuid"
+        }, {
+            "name": "workflowOutput",
+            "type": "com.zenaton.common.data.AvroSerializedData"
         }
     ]
 }

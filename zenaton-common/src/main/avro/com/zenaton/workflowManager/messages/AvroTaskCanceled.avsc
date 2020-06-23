@@ -13,8 +13,7 @@
             "logicalType": "uuid"
         }, {
             "name": "taskOutput",
-            "type": ["null", "bytes"],
-            "default": null
+            "type": "com.zenaton.common.data.AvroSerializedData"
         }
     ]
 }

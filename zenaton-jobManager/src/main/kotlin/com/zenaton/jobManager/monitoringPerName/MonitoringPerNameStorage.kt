@@ -7,14 +7,14 @@ import com.zenaton.jobManager.interfaces.AvroStorage
 class MonitoringPerNameStorage(val avroStorage: AvroStorage) {
 
     fun getState(jobName: JobName): MonitoringPerNameState? {
-        return avroStorage.getMonitoringPerNameState(jobName.name)?.let { AvroConverter.fromAvro(it) }
+        return avroStorage.getMonitoringPerNameState(jobName.name)?.let { AvroConverter.fromStorage(it) }
     }
 
     fun updateState(jobName: JobName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
         avroStorage.updateMonitoringPerNameState(
             jobName.name,
-            AvroConverter.toAvro(newState),
-            oldState?.let { AvroConverter.toAvro(it) }
+            AvroConverter.toStorage(newState),
+            oldState?.let { AvroConverter.toStorage(it) }
         )
     }
 

@@ -6,13 +6,13 @@ import com.zenaton.jobManager.interfaces.AvroStorage
 class MonitoringGlobalStorage(val avroStorage: AvroStorage) {
 
     fun getState(): MonitoringGlobalState? {
-        return avroStorage.getMonitoringGlobalState()?.let { AvroConverter.fromAvro(it) }
+        return avroStorage.getMonitoringGlobalState()?.let { AvroConverter.fromStorage(it) }
     }
 
     fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
         avroStorage.updateMonitoringGlobalState(
-            AvroConverter.toAvro(newState),
-            oldState?.let { AvroConverter.toAvro(it) }
+            AvroConverter.toStorage(newState),
+            oldState?.let { AvroConverter.toStorage(it) }
         )
     }
 

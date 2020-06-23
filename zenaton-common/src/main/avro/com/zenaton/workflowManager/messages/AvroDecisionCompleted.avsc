@@ -14,7 +14,7 @@
         },
         {
             "name": "decisionOutput",
-            "type": "bytes"
+            "type": "com.zenaton.common.data.AvroSerializedData"
         }
     ]
 }

@@ -1,17 +1,17 @@
 package com.zenaton.jobManager.pulsar.functions
 
 import com.zenaton.jobManager.functions.MonitoringPerNameFunction
-import com.zenaton.jobManager.messages.envelopes.AvroForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarAvroDispatcher
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class MonitoringPerNamePulsarFunction : Function<AvroForMonitoringPerNameMessage, Void> {
+class MonitoringPerNamePulsarFunction : Function<AvroEnvelopeForMonitoringPerName, Void> {
 
     var monitoring = MonitoringPerNameFunction()
 
-    override fun process(input: AvroForMonitoringPerNameMessage, context: Context?): Void? {
+    override fun process(input: AvroEnvelopeForMonitoringPerName, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {

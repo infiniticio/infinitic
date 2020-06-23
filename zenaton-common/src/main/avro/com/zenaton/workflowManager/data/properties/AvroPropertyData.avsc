@@ -1,7 +1,7 @@
 {
     "type": "record",
-    "name": "AvroSerializedData",
-    "namespace": "com.zenaton.common.data",
+    "name": "AvroPropertyData",
+    "namespace": "com.zenaton.workflowManager.data.properties",
     "fields" : [
         {
             "name" : "serializedData",
@@ -10,9 +10,12 @@
             "name" : "serializationType",
             "type" : {
                 "type": "enum",
-                "name": "AvroSerializationType",
+                "name": "SerializationType",
                 "symbols": [
-                    "JSON"
+                    "NULL",
+                    "BYTES",
+                    "JSON",
+                    "AVRO"
                 ]
             }
         }

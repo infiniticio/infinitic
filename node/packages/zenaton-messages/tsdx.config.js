@@ -14,8 +14,8 @@ module.exports = {
             dest: 'dist/avro/jobManager/messages',
           },
           {
-            src: 'src/avro/common/*.avsc',
-            dest: 'dist/avro/common',
+            src: 'src/avro/common/data/*.avsc',
+            dest: 'dist/avro/common/data',
           },
         ],
       })

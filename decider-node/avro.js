@@ -21,20 +21,20 @@ var JobAttemptFailed = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobA
 var JobAttemptStarted = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobAttemptStarted.avsc", { registry });
 var JobCanceled = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobCanceled.avsc", { registry });
 var JobCompleted = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobCompleted.avsc", { registry });
-var forEngineMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForJobEngineMessage.avsc", { registry  });
+var forEngineMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroEnvelopeForJobEngine.avsc", { registry  });
 
 // Workers
 var runJob = avro.parse(__dirname +"/avro/jobManager/messages/AvroRunJob.avsc", { registry });
-var forWorkerMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForWorkerMessage.avsc", { registry  });
+var forWorkerMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroEnvelopeForWorker.avsc", { registry  });
 
 // MonitoringPerName
 avro.parse(__dirname +"/avro/jobManager/data/AvroJobStatus.avsc", { registry });
 var jobStatusUpdated = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobStatusUpdated.avsc", { registry });
-var forMonitoringPerNameMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForMonitoringPerNameMessage.avsc", { registry  });
+var forMonitoringPerNameMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroEnvelopeForMonitoringPerName.avsc", { registry  });
 
 // MonitoringGlobal
 var jobCreated = avro.parse(__dirname +"/avro/jobManager/messages/AvroJobCreated.avsc", { registry });
-var forMonitoringGlobalMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroForMonitoringGlobalMessage.avsc", { registry  });
+var forMonitoringGlobalMessage = avro.parse(__dirname +"/avro/jobManager/messages/envelopes/AvroEnvelopeForMonitoringGlobal.avsc", { registry  });
 
 module.exports = {
     assertValid,

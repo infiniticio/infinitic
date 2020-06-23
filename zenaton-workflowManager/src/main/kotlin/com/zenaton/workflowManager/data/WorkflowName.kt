@@ -7,5 +7,4 @@ import java.util.UUID
 
 data class WorkflowName
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val name: String = UUID.randomUUID().toString()) :
-    NameInterface
+constructor(@get:JsonValue override val name: String = UUID.randomUUID().toString()) : NameInterface

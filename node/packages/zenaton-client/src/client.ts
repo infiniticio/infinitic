@@ -4,7 +4,7 @@ import {
   Producer as PulsarProducer,
 } from 'pulsar-client';
 import {
-  AvroForJobEngineMessage,
+  AvroEnvelopeForJobEngine,
   DispatchJobMessage,
   ForJobEngineMessage,
 } from '@zenaton/messages';
@@ -32,7 +32,11 @@ export class Client {
     );
   }
 
-  async dispatchTask(jobName: string, input: any) {
+  async dispatchTask(
+    jobName: string,
+    input: any = null,
+    jobMeta: Map<string, Buffer> = new Map()
+  ) {
     const jobId = uuid();
     const jobInput =
       input == null
@@ -50,7 +54,7 @@ export class Client {
         jobId,
         jobName,
         jobInput,
-        workflowId: null,
+        jobMeta,
       },
     };
 
@@ -69,7 +73,7 @@ export class Client {
       });
     }
     await this.pulsarProducer.send({
-      data: AvroForJobEngineMessage.toBuffer(message),
+      data: AvroEnvelopeForJobEngine.toBuffer(message),
     });
   }
 }

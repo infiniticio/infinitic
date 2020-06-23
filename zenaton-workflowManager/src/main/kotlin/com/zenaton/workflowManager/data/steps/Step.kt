@@ -11,7 +11,7 @@ import com.zenaton.workflowManager.data.properties.Properties
 data class Step(
     val stepHash: StepHash,
     val criterion: StepCriterion,
-    var propertiesAfterCompletion: Properties?
+    var propertiesAfterCompletion: Properties
 ) {
     @JsonIgnore
     fun isCompleted() = criterion.isCompleted()

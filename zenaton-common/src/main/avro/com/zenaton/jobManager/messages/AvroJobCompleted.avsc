@@ -12,6 +12,10 @@
             "name": "jobOutput",
             "type": ["null", "com.zenaton.common.data.AvroSerializedData"],
             "default": null
+        },
+        {
+            "name": "jobMeta",
+            "type": {"type": "map", "values": "bytes"}
         }
     ]
 }

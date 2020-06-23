@@ -11,53 +11,18 @@ import com.zenaton.jobManager.monitoringPerName.MonitoringPerNameState
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
 
 class AvroConverterTests : StringSpec({
-
-    "messages should be avro-reversible" {
-        Message::class.sealedSubclasses.forEach {
-            shouldNotThrowAny {
-                val msg = TestFactory.get(it)
-                if (msg is ForWorkerMessage) {
-                    val avroMsg = AvroConverter.toWorkers(msg)
-                    val msg2 = AvroConverter.fromWorkers(avroMsg)
-                    val avroMsg2 = AvroConverter.toWorkers(msg2)
-                    msg shouldBe msg2
-                    avroMsg shouldBe avroMsg2
-                }
-                if (msg is ForJobEngineMessage) {
-                    val avroMsg = AvroConverter.toJobEngine(msg)
-                    val msg2 = AvroConverter.fromJobEngine(avroMsg)
-                    val avroMsg2 = AvroConverter.toJobEngine(msg2)
-                    msg shouldBe msg2
-                    avroMsg shouldBe avroMsg2
-                }
-                if (msg is ForMonitoringPerNameMessage) {
-                    val avroMsg = AvroConverter.toMonitoringPerName(msg)
-                    val msg2 = AvroConverter.fromMonitoringPerName(avroMsg)
-                    val avroMsg2 = AvroConverter.toMonitoringPerName(msg2)
-                    msg shouldBe msg2
-                    avroMsg shouldBe avroMsg2
-                }
-                if (msg is ForMonitoringGlobalMessage) {
-                    val avroMsg = AvroConverter.toMonitoringGlobal(msg)
-                    val msg2 = AvroConverter.fromMonitoringGlobal(avroMsg)
-                    val avroMsg2 = AvroConverter.toMonitoringGlobal(msg2)
-                    msg shouldBe msg2
-                    avroMsg shouldBe avroMsg2
-                }
-            }
-        }
-    }
 
     "Engine state should be avro-reversible" {
         // given
         val state = TestFactory.get(JobEngineState::class)
         // when
-        val avroState = AvroConverter.toAvro(state)
-        val state2 = AvroConverter.fromAvro(avroState)
-        val avroState2 = AvroConverter.toAvro(state2)
+        val avroState = AvroConverter.toStorage(state)
+        val state2 = AvroConverter.fromStorage(avroState)
+        val avroState2 = AvroConverter.toStorage(state2)
         // then
         state2 shouldBe state
         avroState2 shouldBe avroState
@@ -67,9 +32,9 @@ class AvroConverterTests : StringSpec({
         // given
         val state = TestFactory.get(MonitoringPerNameState::class)
         // when
-        val avroState = AvroConverter.toAvro(state)
-        val state2 = AvroConverter.fromAvro(avroState)
-        val avroState2 = AvroConverter.toAvro(state2)
+        val avroState = AvroConverter.toStorage(state)
+        val state2 = AvroConverter.fromStorage(avroState)
+        val avroState2 = AvroConverter.toStorage(state2)
         // then
         state2 shouldBe state
         avroState2 shouldBe avroState
@@ -79,11 +44,75 @@ class AvroConverterTests : StringSpec({
         // given
         val state = TestFactory.get(MonitoringGlobalState::class)
         // when
-        val avroState = AvroConverter.toAvro(state)
-        val state2 = AvroConverter.fromAvro(avroState)
-        val avroState2 = AvroConverter.toAvro(state2)
+        val avroState = AvroConverter.toStorage(state)
+        val state2 = AvroConverter.fromStorage(avroState)
+        val avroState2 = AvroConverter.toStorage(state2)
         // then
         state2 shouldBe state
         avroState2 shouldBe avroState
     }
+
+    Message::class.sealedSubclasses.forEach {
+        val msg = TestFactory.get(it)
+        if (msg is ForWorkerMessage) {
+            include(messagesToWorkersShouldBeAvroReversible(msg))
+        }
+        if (msg is ForJobEngineMessage) {
+            include(messagesToJobEngineShouldBeAvroReversible(msg))
+        }
+        if (msg is ForMonitoringPerNameMessage) {
+            include(messagesToMonitoringPerNameShouldBeAvroReversible(msg))
+        }
+        if (msg is ForMonitoringGlobalMessage) {
+            include(messagesToMonitoringGlobalShouldBeAvroReversible(msg))
+        }
+    }
 })
+
+fun messagesToWorkersShouldBeAvroReversible(msg: ForWorkerMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be avro-convertible" {
+        shouldNotThrowAny {
+            val avroMsg = AvroConverter.toWorkers(msg)
+            val msg2 = AvroConverter.fromWorkers(avroMsg)
+            val avroMsg2 = AvroConverter.toWorkers(msg2)
+            msg shouldBe msg2
+            avroMsg shouldBe avroMsg2
+        }
+    }
+}
+
+fun messagesToJobEngineShouldBeAvroReversible(msg: ForJobEngineMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be avro-convertible" {
+        shouldNotThrowAny {
+            val avroMsg = AvroConverter.toJobEngine(msg)
+            val msg2 = AvroConverter.fromJobEngine(avroMsg)
+            val avroMsg2 = AvroConverter.toJobEngine(msg2)
+            msg shouldBe msg2
+            avroMsg shouldBe avroMsg2
+        }
+    }
+}
+
+fun messagesToMonitoringPerNameShouldBeAvroReversible(msg: ForMonitoringPerNameMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be avro-convertible" {
+        shouldNotThrowAny {
+            val avroMsg = AvroConverter.toMonitoringPerName(msg)
+            val msg2 = AvroConverter.fromMonitoringPerName(avroMsg)
+            val avroMsg2 = AvroConverter.toMonitoringPerName(msg2)
+            msg shouldBe msg2
+            avroMsg shouldBe avroMsg2
+        }
+    }
+}
+
+fun messagesToMonitoringGlobalShouldBeAvroReversible(msg: ForMonitoringGlobalMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be avro-convertible" {
+        shouldNotThrowAny {
+            val avroMsg = AvroConverter.toMonitoringGlobal(msg)
+            val msg2 = AvroConverter.fromMonitoringGlobal(avroMsg)
+            val avroMsg2 = AvroConverter.toMonitoringGlobal(msg2)
+            msg shouldBe msg2
+            avroMsg shouldBe avroMsg2
+        }
+    }
+}
