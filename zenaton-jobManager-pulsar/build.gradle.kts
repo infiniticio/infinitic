@@ -7,6 +7,8 @@ plugins {
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+
+    application
 }
 
 dependencies {
@@ -26,6 +28,10 @@ dependencies {
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")
     testImplementation("io.kotest:kotest-core-jvm:4.0.+")
     testImplementation("io.mockk:mockk:1.9.+")
+}
+
+application {
+    mainClassName = "com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 java {
@@ -184,7 +190,7 @@ enum class Topic {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    val cmd = "java -cp ./build/libs/$jar com.zenaton.jobManager.pulsar.utils.MainKt"
+    val cmd = "java -cp ./build/libs/$jar com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
     return exec(cmd)
 }
 
@@ -254,5 +260,5 @@ fun exec(cmd: String) {
     var line: String? = ""
     while (output.readLine().also { line = it } != null) out.style(normalStyle).println(line)
     while (error.readLine().also { line = it } != null) out.style(errorStyle).println(line)
-    if (0 != p.waitFor()) throw StopActionException()
+    if (0 != p.waitFor()) throw GradleException("The following command failed to execute properly: $cmd")
 }
