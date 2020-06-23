@@ -22,8 +22,8 @@ jobs:
       - name: Install Pulsar lib
         run: |
           cd /tmp
-          curl -sL -o apache-pulsar-client.deb 'https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=pulsar/pulsar-2.5.2/DEB/apache-pulsar-client.deb'
-          curl -sL -o apache-pulsar-client-dev.deb 'https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=pulsar/pulsar-2.5.2/DEB/apache-pulsar-client-dev.deb'
+          curl -sL -o apache-pulsar-client.deb 'https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=pulsar/pulsar-2.6.0/DEB/apache-pulsar-client.deb'
+          curl -sL -o apache-pulsar-client-dev.deb 'https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=pulsar/pulsar-2.6.0/DEB/apache-pulsar-client-dev.deb'
           sudo apt install -y ./apache-pulsar-client*.deb
           rm apache-pulsar-client.deb
 
