@@ -38,10 +38,13 @@
       tabindex="0"
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div v-if="loading$">
-          Loading
-        </div>
-        <div v-else-if="error$">
+        <pulse-loader
+          v-if="loading$"
+          class="mt-5 text-center"
+          color="#6875F5"
+          :loading="true"
+        />
+        <div v-if="error$">
           Display error
         </div>
         <div v-else>
@@ -55,14 +58,15 @@
 <script lang="ts">
 import Vue from "vue";
 import { getTaskTypes } from "@/api";
-import TaskMetricsList from "@/components/tasks/TaskMetricsList.vue";
 import { from, of } from "rxjs";
 import { share, mapTo, startWith, catchError } from "rxjs/operators";
+import TaskMetricsList from "@/components/tasks/TaskMetricsList.vue";
+import { PulseLoader } from "@saeris/vue-spinners";
 
 export default Vue.extend({
   name: "Tasks",
 
-  components: { TaskMetricsList },
+  components: { PulseLoader, TaskMetricsList },
 
   data() {
     return {
