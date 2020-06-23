@@ -32,7 +32,11 @@ export class Client {
     );
   }
 
-  async dispatchTask(jobName: string, input: any) {
+  async dispatchTask(
+    jobName: string,
+    input: any = null,
+    jobMeta: Map<string, string> = new Map()
+  ) {
     const jobId = uuid();
     const jobInput =
       input == null
@@ -50,7 +54,7 @@ export class Client {
         jobId,
         jobName,
         jobInput,
-        workflowId: null,
+        jobMeta,
       },
     };
 
