@@ -1,10 +1,7 @@
 package com.zenaton.workflowManager.avro
 
-import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.workflowManager.messages.Message
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
-import com.zenaton.workflowManager.messages.envelopes.ForDecisionEngineMessage
-import com.zenaton.workflowManager.messages.envelopes.ForTaskEngineMessage
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -20,15 +17,9 @@ import org.apache.avro.specific.SpecificRecordBase
 class AvroConsistencyTests : StringSpec({
     // From Message
     Message::class.sealedSubclasses.forEach {
-        val msg = TestFactory.get(it)
+        val msg = TestFactory.random(it)
         if (msg is ForWorkflowEngineMessage) {
             include(checkAvroConversionToEnvelopeForWorkflowEngine(msg))
-        }
-        if (msg is ForDecisionEngineMessage) {
-            include(checkAvroConversionToEnvelopeForDecisionEngine(msg))
-        }
-        if (msg is ForTaskEngineMessage) {
-            include(checkAvroConversionToEnvelopeForTaskEngine(msg))
         }
     }
 
@@ -39,22 +30,6 @@ fun checkAvroConversionToEnvelopeForWorkflowEngine(msg: ForWorkflowEngineMessage
     "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForWorkflowEngine::class.simpleName}" {
         shouldNotThrowAny {
             AvroConverter.toWorkflowEngine(msg)
-        }
-    }
-}
-
-fun checkAvroConversionToEnvelopeForDecisionEngine(msg: ForDecisionEngineMessage) = stringSpec {
-    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForJobEngine::class.simpleName}" {
-        shouldNotThrowAny {
-            AvroConverter.toDecisionEngine(msg)
-        }
-    }
-}
-
-fun checkAvroConversionToEnvelopeForTaskEngine(msg: ForTaskEngineMessage) = stringSpec {
-    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForJobEngine::class.simpleName}" {
-        shouldNotThrowAny {
-            AvroConverter.toTaskEngine(msg)
         }
     }
 }
@@ -85,7 +60,7 @@ inline fun <reified T> checkConversionFromAvro(name: String, namespace: String) 
         // get class name
         @Suppress("UNCHECKED_CAST")
         val klass = Class.forName("$namespace.$name").kotlin as KClass<SpecificRecordBase>
-        val message = AvroConverter.fromAvroMessage(TestFactory.get(klass))
+        val message = AvroConverter.fromAvroMessage(TestFactory.random(klass))
         (message is T) shouldBe true
         (message is Message) shouldBe true
     }

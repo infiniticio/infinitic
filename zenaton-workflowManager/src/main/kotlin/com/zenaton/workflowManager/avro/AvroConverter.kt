@@ -1,12 +1,7 @@
 package com.zenaton.workflowManager.avro
 
-import com.zenaton.common.data.AvroSerializedData
 import com.zenaton.common.data.DateTime
 import com.zenaton.common.json.Json
-import com.zenaton.jobManager.messages.AvroDispatchJob
-import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
-import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessageType
-import com.zenaton.workflowManager.data.branches.AvroBranch
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.WorkflowId
@@ -14,6 +9,7 @@ import com.zenaton.workflowManager.data.WorkflowName
 import com.zenaton.workflowManager.data.actions.Action
 import com.zenaton.workflowManager.data.actions.ActionId
 import com.zenaton.workflowManager.data.actions.AvroAction
+import com.zenaton.workflowManager.data.branches.AvroBranch
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.branches.BranchId
 import com.zenaton.workflowManager.data.branches.BranchName
@@ -44,8 +40,6 @@ import com.zenaton.workflowManager.messages.ChildWorkflowCompleted
 import com.zenaton.workflowManager.messages.DecisionCompleted
 import com.zenaton.workflowManager.messages.DecisionDispatched
 import com.zenaton.workflowManager.messages.DelayCompleted
-import com.zenaton.workflowManager.messages.DispatchDecision
-import com.zenaton.workflowManager.messages.DispatchTask
 import com.zenaton.workflowManager.messages.DispatchWorkflow
 import com.zenaton.workflowManager.messages.EventReceived
 import com.zenaton.workflowManager.messages.TaskCanceled
@@ -55,12 +49,9 @@ import com.zenaton.workflowManager.messages.WorkflowCanceled
 import com.zenaton.workflowManager.messages.WorkflowCompleted
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessageType
-import com.zenaton.workflowManager.messages.envelopes.ForDecisionEngineMessage
-import com.zenaton.workflowManager.messages.envelopes.ForTaskEngineMessage
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
 import org.apache.avro.specific.SpecificRecordBase
-import java.nio.ByteBuffer
 
 /**
  * This class does the mapping between avro-generated classes and classes actually used by our code
@@ -174,32 +165,6 @@ object AvroConverter {
         }
     }
 
-    fun toDecisionEngine(message: ForDecisionEngineMessage): AvroEnvelopeForJobEngine {
-        val builder = AvroEnvelopeForJobEngine.newBuilder()
-        builder.jobId = message.decisionId.id
-        when (message) {
-            is DispatchDecision -> builder.apply {
-                dispatchJob = toAvroMessage(message)
-                type = AvroForJobEngineMessageType.DispatchJob
-            }
-            else -> throw Exception("Unknown ForDecisionEngineMessage: ${message::class.qualifiedName}")
-        }
-        return builder.build()
-    }
-
-    fun toTaskEngine(message: ForTaskEngineMessage): AvroEnvelopeForJobEngine {
-        val builder = AvroEnvelopeForJobEngine.newBuilder()
-        builder.jobId = message.taskId.id
-        when (message) {
-            is DispatchTask -> builder.apply {
-                dispatchJob = toAvroMessage(message)
-                type = AvroForJobEngineMessageType.DispatchJob
-            }
-            else -> throw Exception("Unknown ForTaskEngineMessage: ${message::class.qualifiedName}")
-        }
-        return builder.build()
-    }
-
     /**
      *  Messages
      */
@@ -252,20 +217,6 @@ object AvroConverter {
     private fun toAvroMessage(message: TaskDispatched) = convertJson<AvroTaskDispatched>(message)
     private fun toAvroMessage(message: WorkflowCanceled) = convertJson<AvroWorkflowCanceled>(message)
     private fun toAvroMessage(message: WorkflowCompleted) = convertJson<AvroWorkflowCompleted>(message)
-
-    private fun toAvroMessage(message: DispatchTask) = AvroDispatchJob.newBuilder().apply {
-        jobId = message.taskId.id
-        jobName = message.taskName.name
-        jobInput = message.taskInput.input.map { convertJson<AvroSerializedData>(it) }
-        jobMeta = mapOf("workflowId" to ByteBuffer.wrap(message.workflowId.id.toByteArray(Charsets.UTF_8)))
-    }.build()
-
-    fun toAvroMessage(message: DispatchDecision) = AvroDispatchJob.newBuilder().apply {
-        jobId = message.decisionId.id
-        jobName = message.workflowName.name
-        jobInput = message.decisionInput.input.map { convertJson<AvroSerializedData>(it) }
-        jobMeta = mapOf("workflowId" to ByteBuffer.wrap(message.workflowId.id.toByteArray(Charsets.UTF_8)))
-    }.build()
 
     fun toAvroMessage(message: DecisionDispatched) = AvroDecisionDispatched.newBuilder().apply {
         decisionId = message.decisionId.id

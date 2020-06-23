@@ -21,7 +21,7 @@ object TestFactory {
         return this
     }
 
-    fun <T : Any> get(klass: KClass<T>, values: Map<String, Any?>? = null): T {
+    fun <T : Any> random(klass: KClass<T>, values: Map<String, Any?>? = null): T {
         // if not updated, 2 subsequents calls to this method would provide the same values
         seed++
 
@@ -39,22 +39,27 @@ object TestFactory {
     }
 
     fun randomStepCriterion(): StepCriterion {
+        val criteria = stepCriteria().values.toList()
+        return criteria[Random.nextInt(until = criteria.size - 1)]
+    }
+
+    fun stepCriteria(): Map<String, StepCriterion> {
         fun getStepId() = StepCriterion.Id(ActionId(JobId()))
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()
         val stepD = getStepId()
-        return when (Random.nextInt(until = 8)) {
-            0 -> stepA
-            1 -> StepCriterion.Or(listOf(stepA))
-            2 -> StepCriterion.And(listOf(stepA))
-            3 -> StepCriterion.And(listOf(stepA, stepB))
-            4 -> StepCriterion.Or(listOf(stepA, stepB))
-            5 -> StepCriterion.Or(listOf(stepA, StepCriterion.Or(listOf(stepB, stepC))))
-            6 -> StepCriterion.And(listOf(stepA, StepCriterion.Or(listOf(stepB, stepC))))
-            7 -> StepCriterion.And(listOf(stepA, StepCriterion.And(listOf(stepB, stepC))))
-            8 -> StepCriterion.Or(listOf(stepA, StepCriterion.And(listOf(stepB, StepCriterion.Or(listOf(stepC, stepD))))))
-            else -> throw Exception("This should not happen")
-        }
+
+        return mapOf(
+            "A" to stepA,
+            "OR B" to StepCriterion.Or(listOf(stepA)),
+            "AND A" to StepCriterion.And(listOf(stepA)),
+            "A AND B" to StepCriterion.And(listOf(stepA, stepB)),
+            "A OR B" to StepCriterion.Or(listOf(stepA, stepB)),
+            "A OR (B OR C)" to StepCriterion.Or(listOf(stepA, StepCriterion.Or(listOf(stepB, stepC)))),
+            "A AND (B OR C)" to StepCriterion.And(listOf(stepA, StepCriterion.Or(listOf(stepB, stepC)))),
+            "A AND (B AND C)" to StepCriterion.And(listOf(stepA, StepCriterion.And(listOf(stepB, stepC)))),
+            "A OR (B AND (C OR D))" to StepCriterion.Or(listOf(stepA, StepCriterion.And(listOf(stepB, StepCriterion.Or(listOf(stepC, stepD))))))
+        )
     }
 }
