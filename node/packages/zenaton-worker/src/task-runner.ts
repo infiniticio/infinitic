@@ -22,7 +22,9 @@ export class TaskRunner {
   async run(): Promise<void> {
     while (!this.shouldStop) {
       const message = await this.pulsarConsumer.receive();
-      const decodedMessage = AvroEnvelopeForWorker.fromBuffer(message.getData());
+      const decodedMessage = AvroEnvelopeForWorker.fromBuffer(
+        message.getData()
+      );
 
       switch (decodedMessage.type) {
         case 'RunJob':

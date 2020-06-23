@@ -19,7 +19,7 @@ import com.zenaton.workflowManager.data.branches.BranchOutput
     JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
     JsonSubTypes.Type(value = WaitDelay::class, name = "WAIT_DELAY"),
     JsonSubTypes.Type(value = WaitEvent::class, name = "WAIT_EVENT"),
-    JsonSubTypes.Type(value = InstantTask::class, name = "INSTANT_TASK"),
+    JsonSubTypes.Type(value = InstantTask::class, name = "RUN_INSTANT_TASK"),
     JsonSubTypes.Type(value = PauseWorkflow::class, name = "PAUSE_WORKFLOW"),
     JsonSubTypes.Type(value = ResumeWorkflow::class, name = "RESUME_WORKFLOW"),
     JsonSubTypes.Type(value = CompleteWorkflow::class, name = "COMPLETE_WORKFLOW"),

@@ -7,7 +7,7 @@
         "DISPATCH_CHILD_WORKFLOW",
         "WAIT_DELAY",
         "WAIT_EVENT",
-        "INSTANT_TASK",
+        "RUN_INSTANT_TASK",
         "PAUSE_WORKFLOW",
         "RESUME_WORKFLOW",
         "COMPLETE_WORKFLOW",
