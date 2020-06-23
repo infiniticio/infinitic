@@ -240,7 +240,7 @@ object AvroConverter {
     )
 
     /**
-     *  StepCriterioa
+     *  StepCriteria
      */
 
     fun toAvroStepCriterion(obj: StepCriterion): AvroStepCriterion = when (obj) {
@@ -273,52 +273,10 @@ object AvroConverter {
         null -> throw Exception("this should not happen")
     }
 
-//    fun toAvro(obj: StepCriterion.Id) = AvroStepCriterionId.newBuilder().apply {
-//        actionId = obj.actionId.id
-//        actionStatus = obj.actionStatus
-//    }.build()
-//
-//    fun toAvro(obj: StepCriterion.And): AvroStepCriterionLogical = AvroStepCriterionLogical.newBuilder().apply {
-//        operator = AvroStepCriterionLogicalType.AND
-//        actionCriteria = obj.actionCriteria.map { toAvroStepCriterion(it) }
-//    }.build()
-//
-//    fun toAvro(obj: StepCriterion.Or): AvroStepCriterionLogical = AvroStepCriterionLogical.newBuilder().apply {
-//        operator = AvroStepCriterionLogicalType.OR
-//        actionCriteria = obj.actionCriteria.map { toAvroStepCriterion(it) }
-//    }.build()
-//
-//    fun fromAvro(avro: AvroStepCriterionId) = StepCriterion.Id(
-//        actionId = ActionId(avro.actionId),
-//        actionStatus = avro.actionStatus
-//    )
-//
-//    fun fromAvro(avro: AvroStepCriterionLogical): StepCriterion = when (avro.operator) {
-//        AvroStepCriterionLogicalType.AND -> StepCriterion.And(
-//            actionCriteria = avro.actionCriteria.map {
-//                when (it) {
-//                    is AvroStepCriterionId -> fromAvro(it)
-//                    is AvroStepCriterionLogical -> fromAvro(it)
-//                    else -> throw Exception("this should not happen")
-//                }
-//            }
-//        )
-//        AvroStepCriterionLogicalType.OR -> StepCriterion.Or(
-//            actionCriteria = avro.actionCriteria.map {
-//                when (it) {
-//                    is AvroStepCriterionId -> fromAvro(it)
-//                    is AvroStepCriterionLogical -> fromAvro(it)
-//                    else -> throw Exception("this should not happen")
-//                }
-//            }
-//        )
-//        null -> throw Exception("this should not happen")
-//    }
-
     /**
      *  Steps
      */
-    fun toAvroStep(obj: Step) = AvroStep.newBuilder().apply {
+    fun toAvroStep(obj: Step): AvroStep = AvroStep.newBuilder().apply {
         stepHash = obj.stepHash.hash
         criterion = toAvroStepCriterion(obj.criterion)
         propertiesAfterCompletion = convertJson(obj.propertiesAfterCompletion)
@@ -334,7 +292,7 @@ object AvroConverter {
      *  Branches
      */
 
-    fun toAvroBranch(obj: Branch) = AvroBranch.newBuilder().apply {
+    fun toAvroBranch(obj: Branch): AvroBranch = AvroBranch.newBuilder().apply {
         branchId = obj.branchId.id
         branchName = obj.branchName.name
         branchInput = convertJson(obj.branchInput)
