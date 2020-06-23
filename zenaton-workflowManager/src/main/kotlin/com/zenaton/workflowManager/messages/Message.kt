@@ -4,8 +4,8 @@ import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobInput
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.data.JobOutput
-import com.zenaton.workflowManager.data.DecisionData
 import com.zenaton.workflowManager.data.DecisionId
+import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.DecisionOutput
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventData
@@ -47,7 +47,7 @@ data class DecisionDispatched(
     override val workflowId: WorkflowId,
     val decisionId: DecisionId,
     val workflowName: WorkflowName,
-    val decisionData: DecisionData
+    val decisionInput: DecisionInput
 ) : Message(), ForWorkflowEngineMessage
 
 data class DelayCompleted(
@@ -99,12 +99,12 @@ data class DispatchTask(
     override val taskId: JobId,
     val workflowId: WorkflowId,
     val taskName: JobName,
-    val taskData: JobInput
+    val taskInput: JobInput
 ) : Message(), ForTaskEngineMessage
 
 data class DispatchDecision(
     override val decisionId: DecisionId,
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val decisionData: DecisionData
+    val decisionInput: JobInput
 ) : Message(), ForDecisionEngineMessage

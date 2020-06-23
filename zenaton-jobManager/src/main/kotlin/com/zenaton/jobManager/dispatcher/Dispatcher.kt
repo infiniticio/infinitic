@@ -6,7 +6,6 @@ import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkflowEngineMessage
 
 class Dispatcher(private val avroDispatcher: AvroDispatcher) {
 
@@ -16,10 +15,6 @@ class Dispatcher(private val avroDispatcher: AvroDispatcher) {
 
     fun toJobEngine(msg: ForJobEngineMessage, after: Float = 0f) {
         avroDispatcher.toJobEngine(AvroConverter.toJobEngine(msg))
-    }
-
-    fun toWorkflowEngine(msg: ForWorkflowEngineMessage) {
-        avroDispatcher.toWorkflowEngine(AvroConverter.toWorkflowEngine(msg))
     }
 
     fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {

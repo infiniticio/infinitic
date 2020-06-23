@@ -3,23 +3,23 @@
  */
 package com.zenaton.jobManager.pulsar
 
-import com.zenaton.common.data.AvroSerializedData
-import com.zenaton.common.data.AvroSerializationType
+import com.zenaton.common.data.SerializedData
+import com.zenaton.common.data.SerializationType
 import com.zenaton.common.json.Json
 import com.zenaton.jobManager.data.JobOutput
 
 fun main(args: Array<String>) {
-    val p1 = JobOutput("fdggsdf".toByteArray(), AvroSerializationType.JSON)
+    val p1 = JobOutput("fdggsdf".toByteArray(), SerializationType.JSON)
     println(p1)
 
-    val p2 = Json.parse<AvroSerializedData>(Json.stringify(p1))
+    val p2 = Json.parse<SerializedData>(Json.stringify(p1))
     println(p2)
 
     val p3 = Json.parse<JobOutput>(Json.stringify(p2))
     println(p3)
     println(p3 == p1)
 
-    val p4 = Json.parse<AvroSerializedData>(Json.stringify(p3))
+    val p4 = Json.parse<SerializedData>(Json.stringify(p3))
     println(p4)
     println(p4 == p2)
 //    Assert.assertTrue(SchemaCompatibility.schemaNameEquals(newSchema, oldSchema))

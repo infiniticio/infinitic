@@ -12,13 +12,17 @@ import java.nio.ByteBuffer
  * This object provides methods to serialize/deserialize an Avro-generated class
  */
 object AvroSerDe {
-    fun serialize(data: SpecificRecord): ByteBuffer {
+    fun serializeToByteArray(data: SpecificRecord): ByteArray {
         val baos = ByteArrayOutputStream()
         val outputDatumWriter = SpecificDatumWriter<SpecificRecord>(data.schema)
         val encoder = EncoderFactory.get().binaryEncoder(baos, null)
         outputDatumWriter.write(data, encoder)
         encoder.flush()
-        return ByteBuffer.wrap(baos.toByteArray())
+        return baos.toByteArray()
+    }
+
+    fun serialize(data: SpecificRecord): ByteBuffer {
+        return ByteBuffer.wrap(serializeToByteArray(data))
     }
 
     inline fun <reified T : SpecificRecord> deserialize(data: ByteBuffer): T {

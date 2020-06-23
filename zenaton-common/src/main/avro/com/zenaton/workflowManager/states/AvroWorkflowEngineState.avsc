@@ -23,7 +23,10 @@
              "type" : {"type" : "map", "values" : "com.zenaton.common.data.AvroSerializedData"}
          }, {
             "name" : "runningBranches",
-            "type" : {"type" : "array", "items" : "com.zenaton.workflowManager.data.AvroBranch"}
+            "type" : {"type" : "array", "items" : "com.zenaton.workflowManager.data.branches.AvroBranch"}
+         }, {
+            "name" : "currentProperties",
+            "type" : {"type" : "map", "values" : "string"}
          }
     ]
 }

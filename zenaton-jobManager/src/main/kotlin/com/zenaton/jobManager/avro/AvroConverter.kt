@@ -28,7 +28,6 @@ import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
-import com.zenaton.jobManager.messages.TaskCompleted
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessageType
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
@@ -41,15 +40,12 @@ import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.jobManager.monitoringGlobal.MonitoringGlobalState
 import com.zenaton.jobManager.monitoringPerName.MonitoringPerNameState
 import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 import com.zenaton.workflowManager.messages.AvroTaskCompleted
-import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
-import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessageType
 import org.apache.avro.specific.SpecificRecordBase
 
 /**
@@ -195,19 +191,6 @@ object AvroConverter {
         }
     }
 
-    fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroEnvelopeForWorkflowEngine {
-        val builder = AvroEnvelopeForWorkflowEngine.newBuilder()
-        builder.workflowId = message.workflowId.id
-        when (message) {
-            is TaskCompleted -> builder.apply {
-                avroTaskCompleted = convertToAvro(message)
-                type = AvroForWorkflowEngineMessageType.AvroTaskCompleted
-            }
-            else -> throw Exception("Unknown ForWorkflowsMessage: ${message::class.qualifiedName}")
-        }
-        return builder.build()
-    }
-
     /**
      *  Messages
      */
@@ -225,7 +208,6 @@ object AvroConverter {
     private fun convertFromAvro(avro: AvroRetryJob) = convertJson<RetryJob>(avro)
     private fun convertFromAvro(avro: AvroRetryJobAttempt) = convertJson<RetryJobAttempt>(avro)
     private fun convertFromAvro(avro: AvroRunJob) = convertJson<RunJob>(avro)
-    private fun convertFromAvro(avro: AvroTaskCompleted) = convertJson<TaskCompleted>(avro)
 
     private fun convertToAvro(message: CancelJob) = convertJson<AvroCancelJob>(message)
     private fun convertToAvro(message: DispatchJob) = convertJson<AvroDispatchJob>(message)
@@ -240,7 +222,6 @@ object AvroConverter {
     private fun convertToAvro(message: RetryJob) = convertJson<AvroRetryJob>(message)
     private fun convertToAvro(message: RetryJobAttempt) = convertJson<AvroRetryJobAttempt>(message)
     private fun convertToAvro(message: RunJob) = convertJson<AvroRunJob>(message)
-    private fun convertToAvro(message: TaskCompleted) = convertJson<AvroTaskCompleted>(message)
 
     /**
      *  Any Message

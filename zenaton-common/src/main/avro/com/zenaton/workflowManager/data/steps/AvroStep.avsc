@@ -1,14 +1,14 @@
 {
     "type" : "record",
     "name" : "AvroStep",
-    "namespace" : "com.zenaton.workflowManager.data",
+    "namespace" : "com.zenaton.workflowManager.data.steps",
     "fields" : [
         {
             "name" : "stepHash",
             "type" : "string"
         }, {
             "name" : "criterion",
-            "type" : "com.zenaton.workflowManager.data.AvroStepCriterion"
+            "type" : "com.zenaton.workflowManager.data.steps.AvroStepCriterion"
         }, {
             "name" : "propertiesAfterCompletion",
             "type" : {"type" : "map", "values" : "string"}

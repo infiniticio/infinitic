@@ -13,7 +13,7 @@ data class WorkflowEngineState(
     var parentWorkflowId: WorkflowId? = null,
     var ongoingDecisionId: DecisionId? = null,
     val bufferedMessages: MutableList<ForWorkflowEngineMessage> = mutableListOf(),
-    val store: PropertyStore = PropertyStore(mapOf()),
+    val store: PropertyStore = PropertyStore(mutableMapOf()),
     val runningBranches: MutableList<Branch> = mutableListOf(),
     val currentProperties: Properties = Properties(mapOf())
 ) : StateInterface

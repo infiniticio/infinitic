@@ -1,17 +1,29 @@
 package com.zenaton.workflowManager.avro
 
 import com.zenaton.common.data.AvroSerializedData
+import com.zenaton.common.data.DateTime
 import com.zenaton.common.json.Json
-import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.messages.AvroDispatchJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroForJobEngineMessageType
-import com.zenaton.workflowManager.data.AvroAction
-import com.zenaton.workflowManager.data.AvroBranch
-import com.zenaton.workflowManager.data.AvroStepCriterion
+import com.zenaton.workflowManager.data.branches.AvroBranch
+import com.zenaton.workflowManager.data.DecisionId
+import com.zenaton.workflowManager.data.DecisionInput
+import com.zenaton.workflowManager.data.WorkflowId
+import com.zenaton.workflowManager.data.WorkflowName
 import com.zenaton.workflowManager.data.actions.Action
+import com.zenaton.workflowManager.data.actions.ActionId
+import com.zenaton.workflowManager.data.actions.AvroAction
 import com.zenaton.workflowManager.data.branches.Branch
+import com.zenaton.workflowManager.data.branches.BranchId
+import com.zenaton.workflowManager.data.branches.BranchName
+import com.zenaton.workflowManager.data.steps.AvroStep
+import com.zenaton.workflowManager.data.steps.AvroStepCriterion
+import com.zenaton.workflowManager.data.steps.AvroStepCriterionType
+import com.zenaton.workflowManager.data.steps.Step
 import com.zenaton.workflowManager.data.steps.StepCriterion
+import com.zenaton.workflowManager.data.steps.StepHash
+import com.zenaton.workflowManager.decisions.AvroDecisionInput
 import com.zenaton.workflowManager.engine.WorkflowEngineState
 import com.zenaton.workflowManager.messages.AvroCancelWorkflow
 import com.zenaton.workflowManager.messages.AvroChildWorkflowCanceled
@@ -57,8 +69,26 @@ object AvroConverter {
     /**
      *  States
      */
-    fun fromStorage(avro: AvroWorkflowEngineState) = convertJson<WorkflowEngineState>(avro)
-    fun toStorage(state: WorkflowEngineState) = convertJson<AvroWorkflowEngineState>(state)
+    fun fromStorage(avro: AvroWorkflowEngineState) = WorkflowEngineState(
+        workflowId = WorkflowId(avro.workflowId),
+        parentWorkflowId = if (avro.parentWorkflowId == null) null else WorkflowId(avro.parentWorkflowId),
+        ongoingDecisionId = if (avro.ongoingDecisionId == null) null else DecisionId(avro.ongoingDecisionId),
+        bufferedMessages = avro.bufferedMessages.map { fromWorkflowEngine(it) }.toMutableList(),
+        store = convertJson(avro.store),
+        runningBranches = avro.runningBranches.map { fromAvroBranch(it) }.toMutableList(),
+        currentProperties = convertJson(avro.currentProperties)
+    )
+
+    fun toStorage(state: WorkflowEngineState) = AvroWorkflowEngineState
+        .newBuilder()
+        .setWorkflowId(state.workflowId.id)
+        .setParentWorkflowId(state.parentWorkflowId?.id)
+        .setOngoingDecisionId(state.ongoingDecisionId?.id)
+        .setBufferedMessages(state.bufferedMessages.map { toWorkflowEngine(it) })
+        .setStore(convertJson(state.store))
+        .setRunningBranches(state.runningBranches.map { toAvroBranch(it) })
+        .setCurrentProperties(convertJson(state.currentProperties))
+        .build()
 
     /**
      *  Envelopes
@@ -68,55 +98,55 @@ object AvroConverter {
         builder.workflowId = message.workflowId.id
         when (message) {
             is CancelWorkflow -> builder.apply {
-                avroCancelWorkflow = convertToAvro(message)
+                avroCancelWorkflow = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroCancelWorkflow
             }
             is ChildWorkflowCanceled -> builder.apply {
-                avroChildWorkflowCanceled = convertToAvro(message)
+                avroChildWorkflowCanceled = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroChildWorkflowCanceled
             }
             is ChildWorkflowCompleted -> builder.apply {
-                avroChildWorkflowCompleted = convertToAvro(message)
+                avroChildWorkflowCompleted = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroChildWorkflowCompleted
             }
             is DecisionCompleted -> builder.apply {
-                avroDecisionCompleted = convertToAvro(message)
+                avroDecisionCompleted = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroDecisionCompleted
             }
             is DecisionDispatched -> builder.apply {
-                avroDecisionDispatched = convertToAvro(message)
+                avroDecisionDispatched = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroDecisionDispatched
             }
             is DelayCompleted -> builder.apply {
-                avroDelayCompleted = convertToAvro(message)
+                avroDelayCompleted = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroDelayCompleted
             }
             is DispatchWorkflow -> builder.apply {
-                avroDispatchWorkflow = convertToAvro(message)
+                avroDispatchWorkflow = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroDispatchWorkflow
             }
             is EventReceived -> builder.apply {
-                avroEventReceived = convertToAvro(message)
+                avroEventReceived = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroEventReceived
             }
             is TaskCanceled -> builder.apply {
-                avroTaskCanceled = convertToAvro(message)
+                avroTaskCanceled = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroTaskCanceled
             }
             is TaskCompleted -> builder.apply {
-                avroTaskCompleted = convertToAvro(message)
+                avroTaskCompleted = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroTaskCompleted
             }
             is TaskDispatched -> builder.apply {
-                avroTaskDispatched = convertToAvro(message)
+                avroTaskDispatched = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroTaskDispatched
             }
             is WorkflowCanceled -> builder.apply {
-                avroWorkflowCanceled = convertToAvro(message)
+                avroWorkflowCanceled = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroWorkflowCanceled
             }
             is WorkflowCompleted -> builder.apply {
-                avroWorkflowCompleted = convertToAvro(message)
+                avroWorkflowCompleted = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroWorkflowCompleted
             }
             else -> throw Exception("Unknown ForWorkflowEngineMessage: ${message::class.qualifiedName}")
@@ -126,19 +156,19 @@ object AvroConverter {
 
     fun fromWorkflowEngine(input: AvroEnvelopeForWorkflowEngine): ForWorkflowEngineMessage {
         return when (input.type) {
-            AvroForWorkflowEngineMessageType.AvroCancelWorkflow -> convertFromAvro(input.avroCancelWorkflow)
-            AvroForWorkflowEngineMessageType.AvroChildWorkflowCanceled -> convertFromAvro(input.avroChildWorkflowCanceled)
-            AvroForWorkflowEngineMessageType.AvroChildWorkflowCompleted -> convertFromAvro(input.avroChildWorkflowCompleted)
-            AvroForWorkflowEngineMessageType.AvroDecisionCompleted -> convertFromAvro(input.avroDecisionCompleted)
-            AvroForWorkflowEngineMessageType.AvroDecisionDispatched -> convertFromAvro(input.avroDecisionDispatched)
-            AvroForWorkflowEngineMessageType.AvroDelayCompleted -> convertFromAvro(input.avroDelayCompleted)
-            AvroForWorkflowEngineMessageType.AvroDispatchWorkflow -> convertFromAvro(input.avroDispatchWorkflow)
-            AvroForWorkflowEngineMessageType.AvroEventReceived -> convertFromAvro(input.avroEventReceived)
-            AvroForWorkflowEngineMessageType.AvroTaskCanceled -> convertFromAvro(input.avroTaskCanceled)
-            AvroForWorkflowEngineMessageType.AvroTaskCompleted -> convertFromAvro(input.avroTaskCompleted)
-            AvroForWorkflowEngineMessageType.AvroTaskDispatched -> convertFromAvro(input.avroTaskDispatched)
-            AvroForWorkflowEngineMessageType.AvroWorkflowCanceled -> convertFromAvro(input.avroWorkflowCanceled)
-            AvroForWorkflowEngineMessageType.AvroWorkflowCompleted -> convertFromAvro(input.avroWorkflowCompleted)
+            AvroForWorkflowEngineMessageType.AvroCancelWorkflow -> fromAvroMessage(input.avroCancelWorkflow)
+            AvroForWorkflowEngineMessageType.AvroChildWorkflowCanceled -> fromAvroMessage(input.avroChildWorkflowCanceled)
+            AvroForWorkflowEngineMessageType.AvroChildWorkflowCompleted -> fromAvroMessage(input.avroChildWorkflowCompleted)
+            AvroForWorkflowEngineMessageType.AvroDecisionCompleted -> fromAvroMessage(input.avroDecisionCompleted)
+            AvroForWorkflowEngineMessageType.AvroDecisionDispatched -> fromAvroMessage(input.avroDecisionDispatched)
+            AvroForWorkflowEngineMessageType.AvroDelayCompleted -> fromAvroMessage(input.avroDelayCompleted)
+            AvroForWorkflowEngineMessageType.AvroDispatchWorkflow -> fromAvroMessage(input.avroDispatchWorkflow)
+            AvroForWorkflowEngineMessageType.AvroEventReceived -> fromAvroMessage(input.avroEventReceived)
+            AvroForWorkflowEngineMessageType.AvroTaskCanceled -> fromAvroMessage(input.avroTaskCanceled)
+            AvroForWorkflowEngineMessageType.AvroTaskCompleted -> fromAvroMessage(input.avroTaskCompleted)
+            AvroForWorkflowEngineMessageType.AvroTaskDispatched -> fromAvroMessage(input.avroTaskDispatched)
+            AvroForWorkflowEngineMessageType.AvroWorkflowCanceled -> fromAvroMessage(input.avroWorkflowCanceled)
+            AvroForWorkflowEngineMessageType.AvroWorkflowCompleted -> fromAvroMessage(input.avroWorkflowCompleted)
             else -> throw Exception("Unknown AvroEnvelopeForWorkflowEngine: ${input::class.qualifiedName}")
         }
     }
@@ -148,7 +178,7 @@ object AvroConverter {
         builder.jobId = message.decisionId.id
         when (message) {
             is DispatchDecision -> builder.apply {
-                dispatchJob = convertToAvro(message)
+                dispatchJob = toAvroMessage(message)
                 type = AvroForJobEngineMessageType.DispatchJob
             }
             else -> throw Exception("Unknown ForDecisionEngineMessage: ${message::class.qualifiedName}")
@@ -161,7 +191,7 @@ object AvroConverter {
         builder.jobId = message.taskId.id
         when (message) {
             is DispatchTask -> builder.apply {
-                dispatchJob = convertToAvro(message)
+                dispatchJob = toAvroMessage(message)
                 type = AvroForJobEngineMessageType.DispatchJob
             }
             else -> throw Exception("Unknown ForTaskEngineMessage: ${message::class.qualifiedName}")
@@ -172,85 +202,208 @@ object AvroConverter {
     /**
      *  Messages
      */
-    private fun convertFromAvro(avro: AvroCancelWorkflow) = convertJson<CancelWorkflow>(avro)
-    private fun convertFromAvro(avro: AvroChildWorkflowCanceled) = convertJson<ChildWorkflowCanceled>(avro)
-    private fun convertFromAvro(avro: AvroChildWorkflowCompleted) = convertJson<ChildWorkflowCompleted>(avro)
-    private fun convertFromAvro(avro: AvroDecisionCompleted) = convertJson<DecisionCompleted>(avro)
-    private fun convertFromAvro(avro: AvroDecisionDispatched) = convertJson<DecisionDispatched>(avro)
-    private fun convertFromAvro(avro: AvroDelayCompleted) = convertJson<DelayCompleted>(avro)
-    private fun convertFromAvro(avro: AvroDispatchWorkflow) = convertJson<DispatchWorkflow>(avro)
-    private fun convertFromAvro(avro: AvroEventReceived) = convertJson<EventReceived>(avro)
-    private fun convertFromAvro(avro: AvroTaskCanceled) = convertJson<TaskCanceled>(avro)
-    private fun convertFromAvro(avro: AvroTaskCompleted) = convertJson<TaskCompleted>(avro)
-    private fun convertFromAvro(avro: AvroTaskDispatched) = convertJson<TaskDispatched>(avro)
-    private fun convertFromAvro(avro: AvroWorkflowCanceled) = convertJson<WorkflowCanceled>(avro)
-    private fun convertFromAvro(avro: AvroWorkflowCompleted) = convertJson<WorkflowCompleted>(avro)
-
-    private fun convertToAvro(message: CancelWorkflow) = convertJson<AvroCancelWorkflow>(message)
-    private fun convertToAvro(message: ChildWorkflowCanceled) = convertJson<AvroChildWorkflowCanceled>(message)
-    private fun convertToAvro(message: ChildWorkflowCompleted) = convertJson<AvroChildWorkflowCompleted>(message)
-    private fun convertToAvro(message: DecisionCompleted) = convertJson<AvroDecisionCompleted>(message)
-    private fun convertToAvro(message: DecisionDispatched) = convertJson<AvroDecisionDispatched>(message)
-    private fun convertToAvro(message: DelayCompleted) = convertJson<AvroDelayCompleted>(message)
-    private fun convertToAvro(message: DispatchWorkflow) = convertJson<AvroDispatchWorkflow>(message)
-    private fun convertToAvro(message: EventReceived) = convertJson<AvroEventReceived>(message)
-    private fun convertToAvro(message: TaskCanceled) = convertJson<AvroTaskCanceled>(message)
-    private fun convertToAvro(message: TaskCompleted) = convertJson<AvroTaskCompleted>(message)
-    private fun convertToAvro(message: TaskDispatched) = convertJson<AvroTaskDispatched>(message)
-    private fun convertToAvro(message: WorkflowCanceled) = convertJson<AvroWorkflowCanceled>(message)
-    private fun convertToAvro(message: WorkflowCompleted) = convertJson<AvroWorkflowCompleted>(message)
-
-    private fun convertToAvro(message: DispatchTask) = AvroDispatchJob.newBuilder().apply {
-        jobId = message.taskId.id
-        workflowId = message.workflowId.id
-        jobName = message.taskName.name
-        jobInput = message.taskData.input.map { convertToAvro(it) }
-    }.build()
-
-    private fun convertToAvro(message: DispatchDecision) = AvroDispatchJob.newBuilder().apply {
-        jobId = message.decisionId.id
-        workflowId = message.workflowId.id
-        jobName = message.workflowName.name
-        jobInput = message.decisionData.input.map { convertToAvro(it) }
-    }.build()
-
-    /**
-     *  Data
-     */
-
-    private fun convertToAvro(p: SerializedData) = convertJson<AvroSerializedData>(p)
-
-    fun toAvro(action: Action) = convertJson<AvroAction>(action)
-    fun fromAvro(avro: AvroAction) = convertJson<Action>(avro)
-
-    fun toAvro(step: StepCriterion) = convertJson<AvroStepCriterion>(step)
-    fun fromAvro(avro: AvroStepCriterion) = convertJson<StepCriterion>(avro)
-
-    fun toAvro(branch: Branch) = convertJson<AvroBranch>(branch)
-    fun fromAvro(avro: AvroBranch) = convertJson<Branch>(avro)
-
-    /**
-     *  Any Message
-     */
-    fun convertFromAvro(avro: SpecificRecordBase): Any = when (avro) {
-        is AvroCancelWorkflow -> convertFromAvro(avro)
-        is AvroChildWorkflowCanceled -> convertFromAvro(avro)
-        is AvroChildWorkflowCompleted -> convertFromAvro(avro)
-        is AvroDecisionCompleted -> convertFromAvro(avro)
-        is AvroDecisionDispatched -> convertFromAvro(avro)
-        is AvroDelayCompleted -> convertFromAvro(avro)
-        is AvroDispatchWorkflow -> convertFromAvro(avro)
-        is AvroEventReceived -> convertFromAvro(avro)
-        is AvroTaskCanceled -> convertFromAvro(avro)
-        is AvroTaskCompleted -> convertFromAvro(avro)
-        is AvroTaskDispatched -> convertFromAvro(avro)
-        is AvroWorkflowCanceled -> convertFromAvro(avro)
-        is AvroWorkflowCompleted -> convertFromAvro(avro)
+    fun fromAvroMessage(avro: SpecificRecordBase): Any = when (avro) {
+        is AvroCancelWorkflow -> fromAvroMessage(avro)
+        is AvroChildWorkflowCanceled -> fromAvroMessage(avro)
+        is AvroChildWorkflowCompleted -> fromAvroMessage(avro)
+        is AvroDecisionCompleted -> fromAvroMessage(avro)
+        is AvroDecisionDispatched -> fromAvroMessage(avro)
+        is AvroDelayCompleted -> fromAvroMessage(avro)
+        is AvroDispatchWorkflow -> fromAvroMessage(avro)
+        is AvroEventReceived -> fromAvroMessage(avro)
+        is AvroTaskCanceled -> fromAvroMessage(avro)
+        is AvroTaskCompleted -> fromAvroMessage(avro)
+        is AvroTaskDispatched -> fromAvroMessage(avro)
+        is AvroWorkflowCanceled -> fromAvroMessage(avro)
+        is AvroWorkflowCompleted -> fromAvroMessage(avro)
         else -> throw Exception("Unknown SpecificRecordBase: ${avro::class.qualifiedName}")
     }
+
+    private fun fromAvroMessage(avro: AvroCancelWorkflow) = convertJson<CancelWorkflow>(avro)
+    private fun fromAvroMessage(avro: AvroChildWorkflowCanceled) = convertJson<ChildWorkflowCanceled>(avro)
+    private fun fromAvroMessage(avro: AvroChildWorkflowCompleted) = convertJson<ChildWorkflowCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroDecisionCompleted) = convertJson<DecisionCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroDelayCompleted) = convertJson<DelayCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroDispatchWorkflow) = convertJson<DispatchWorkflow>(avro)
+    private fun fromAvroMessage(avro: AvroEventReceived) = convertJson<EventReceived>(avro)
+    private fun fromAvroMessage(avro: AvroTaskCanceled) = convertJson<TaskCanceled>(avro)
+    private fun fromAvroMessage(avro: AvroTaskCompleted) = convertJson<TaskCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroTaskDispatched) = convertJson<TaskDispatched>(avro)
+    private fun fromAvroMessage(avro: AvroWorkflowCanceled) = convertJson<WorkflowCanceled>(avro)
+    private fun fromAvroMessage(avro: AvroWorkflowCompleted) = convertJson<WorkflowCompleted>(avro)
+
+    fun fromAvroMessage(avro: AvroDecisionDispatched) = DecisionDispatched(
+        decisionId = DecisionId(avro.decisionId),
+        workflowId = WorkflowId(avro.workflowId),
+        workflowName = WorkflowName(avro.workflowName),
+        decisionInput = fromAvroDecisionInput(avro.decisionInput)
+    )
+
+    private fun toAvroMessage(message: CancelWorkflow) = convertJson<AvroCancelWorkflow>(message)
+    private fun toAvroMessage(message: ChildWorkflowCanceled) = convertJson<AvroChildWorkflowCanceled>(message)
+    private fun toAvroMessage(message: ChildWorkflowCompleted) = convertJson<AvroChildWorkflowCompleted>(message)
+    private fun toAvroMessage(message: DecisionCompleted) = convertJson<AvroDecisionCompleted>(message)
+    private fun toAvroMessage(message: DelayCompleted) = convertJson<AvroDelayCompleted>(message)
+    private fun toAvroMessage(message: DispatchWorkflow) = convertJson<AvroDispatchWorkflow>(message)
+    private fun toAvroMessage(message: EventReceived) = convertJson<AvroEventReceived>(message)
+    private fun toAvroMessage(message: TaskCanceled) = convertJson<AvroTaskCanceled>(message)
+    private fun toAvroMessage(message: TaskCompleted) = convertJson<AvroTaskCompleted>(message)
+    private fun toAvroMessage(message: TaskDispatched) = convertJson<AvroTaskDispatched>(message)
+    private fun toAvroMessage(message: WorkflowCanceled) = convertJson<AvroWorkflowCanceled>(message)
+    private fun toAvroMessage(message: WorkflowCompleted) = convertJson<AvroWorkflowCompleted>(message)
+
+    private fun toAvroMessage(message: DispatchTask) = AvroDispatchJob.newBuilder().apply {
+        jobId = message.taskId.id
+        jobName = message.taskName.name
+        jobInput = message.taskInput.input.map { convertJson<AvroSerializedData>(it) }
+        jobMeta = mapOf("workflowId" to message.workflowId.id)
+    }.build()
+
+    fun toAvroMessage(message: DispatchDecision) = AvroDispatchJob.newBuilder().apply {
+        jobId = message.decisionId.id
+        jobName = message.workflowName.name
+        jobInput = message.decisionInput.input.map { convertJson<AvroSerializedData>(it) }
+        jobMeta = mapOf("workflowId" to message.workflowId.id)
+    }.build()
+
+    fun toAvroMessage(message: DecisionDispatched) = AvroDecisionDispatched.newBuilder().apply {
+        decisionId = message.decisionId.id
+        workflowId = message.workflowId.id
+        workflowName = message.workflowName.name
+        decisionInput = toAvroDecisionInput(message.decisionInput)
+    }.build()
+
+    /**
+     *  Decision Input
+     */
+
+    fun toAvroDecisionInput(obj: DecisionInput) = AvroDecisionInput.newBuilder().apply {
+        branches = obj.branches.map { toAvroBranch(it) }
+        store = convertJson(obj.store)
+    }.build()
+
+    fun fromAvroDecisionInput(avro: AvroDecisionInput) = DecisionInput(
+        branches = avro.branches.map { fromAvroBranch(it) },
+        store = convertJson(avro.store)
+    )
+
+    /**
+     *  StepCriterioa
+     */
+
+    fun toAvroStepCriterion(obj: StepCriterion): AvroStepCriterion = when (obj) {
+        is StepCriterion.Id -> AvroStepCriterion.newBuilder().apply {
+            type = AvroStepCriterionType.ID
+            actionId = obj.actionId.id
+            actionStatus = obj.actionStatus
+        }.build()
+        is StepCriterion.Or -> AvroStepCriterion.newBuilder().apply {
+            type = AvroStepCriterionType.OR
+            actionCriteria = obj.actionCriteria.map { toAvroStepCriterion(it) }
+        }.build()
+        is StepCriterion.And -> AvroStepCriterion.newBuilder().apply {
+            type = AvroStepCriterionType.AND
+            actionCriteria = obj.actionCriteria.map { toAvroStepCriterion(it) }
+        }.build()
+    }
+
+    fun fromAvroStepCriterion(avro: AvroStepCriterion): StepCriterion = when (avro.type) {
+        AvroStepCriterionType.ID -> StepCriterion.Id(
+            actionId = ActionId(avro.actionId),
+            actionStatus = avro.actionStatus
+        )
+        AvroStepCriterionType.OR -> StepCriterion.Or(
+            actionCriteria = avro.actionCriteria.map { fromAvroStepCriterion(it) }
+        )
+        AvroStepCriterionType.AND -> StepCriterion.And(
+            actionCriteria = avro.actionCriteria.map { fromAvroStepCriterion(it) }
+        )
+        null -> throw Exception("this should not happen")
+    }
+
+//    fun toAvro(obj: StepCriterion.Id) = AvroStepCriterionId.newBuilder().apply {
+//        actionId = obj.actionId.id
+//        actionStatus = obj.actionStatus
+//    }.build()
+//
+//    fun toAvro(obj: StepCriterion.And): AvroStepCriterionLogical = AvroStepCriterionLogical.newBuilder().apply {
+//        operator = AvroStepCriterionLogicalType.AND
+//        actionCriteria = obj.actionCriteria.map { toAvroStepCriterion(it) }
+//    }.build()
+//
+//    fun toAvro(obj: StepCriterion.Or): AvroStepCriterionLogical = AvroStepCriterionLogical.newBuilder().apply {
+//        operator = AvroStepCriterionLogicalType.OR
+//        actionCriteria = obj.actionCriteria.map { toAvroStepCriterion(it) }
+//    }.build()
+//
+//    fun fromAvro(avro: AvroStepCriterionId) = StepCriterion.Id(
+//        actionId = ActionId(avro.actionId),
+//        actionStatus = avro.actionStatus
+//    )
+//
+//    fun fromAvro(avro: AvroStepCriterionLogical): StepCriterion = when (avro.operator) {
+//        AvroStepCriterionLogicalType.AND -> StepCriterion.And(
+//            actionCriteria = avro.actionCriteria.map {
+//                when (it) {
+//                    is AvroStepCriterionId -> fromAvro(it)
+//                    is AvroStepCriterionLogical -> fromAvro(it)
+//                    else -> throw Exception("this should not happen")
+//                }
+//            }
+//        )
+//        AvroStepCriterionLogicalType.OR -> StepCriterion.Or(
+//            actionCriteria = avro.actionCriteria.map {
+//                when (it) {
+//                    is AvroStepCriterionId -> fromAvro(it)
+//                    is AvroStepCriterionLogical -> fromAvro(it)
+//                    else -> throw Exception("this should not happen")
+//                }
+//            }
+//        )
+//        null -> throw Exception("this should not happen")
+//    }
+
+    /**
+     *  Steps
+     */
+    fun toAvroStep(obj: Step) = AvroStep.newBuilder().apply {
+        stepHash = obj.stepHash.hash
+        criterion = toAvroStepCriterion(obj.criterion)
+        propertiesAfterCompletion = convertJson(obj.propertiesAfterCompletion)
+    }.build()
+
+    fun fromAvroStep(avro: AvroStep) = Step(
+        stepHash = StepHash(avro.stepHash),
+        criterion = fromAvroStepCriterion(avro.criterion),
+        propertiesAfterCompletion = convertJson(avro.propertiesAfterCompletion)
+    )
+
+    /**
+     *  Branches
+     */
+
+    fun toAvroBranch(obj: Branch) = AvroBranch.newBuilder().apply {
+        branchId = obj.branchId.id
+        branchName = obj.branchName.name
+        branchInput = convertJson(obj.branchInput)
+        propertiesAtStart = convertJson(obj.propertiesAtStart)
+        dispatchedAt = convertJson(obj.dispatchedAt)
+        steps = obj.steps.map { toAvroStep(it) }
+        actions = obj.actions.map { convertJson<AvroAction>(it) }
+    }.build()
+
+    fun fromAvroBranch(avro: AvroBranch) = Branch(
+        branchId = BranchId(avro.branchId),
+        branchName = BranchName(avro.branchName),
+        branchInput = convertJson(avro.branchInput),
+        propertiesAtStart = convertJson(avro.propertiesAtStart),
+        dispatchedAt = DateTime(avro.dispatchedAt),
+        steps = avro.steps.map { fromAvroStep(it) },
+        actions = avro.actions.map { convertJson<Action>(it) }
+    )
 
     /**
      *  Mapping function by Json serialization/deserialization
      */
-    private inline fun <reified T : Any> convertJson(from: Any): T = Json.parse(Json.stringify(from))
+    inline fun <reified T : Any> convertJson(from: Any): T = Json.parse(Json.stringify(from))
 }

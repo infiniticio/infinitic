@@ -17,7 +17,6 @@ import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
-import com.zenaton.jobManager.messages.TaskCompleted
 import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 import org.slf4j.Logger
@@ -84,7 +83,10 @@ class JobEngine {
         val state = oldState.copy(jobStatus = JobStatus.TERMINATED_CANCELED)
 
         // log event
-        val tad = JobCanceled(jobId = state.jobId)
+        val tad = JobCanceled(
+            jobId = state.jobId,
+            jobMeta = state.jobMeta
+        )
         dispatcher.toJobEngine(tad)
 
         // Delete stored state
@@ -99,9 +101,9 @@ class JobEngine {
             jobId = msg.jobId,
             jobName = msg.jobName,
             jobInput = msg.jobInput,
-            workflowId = msg.workflowId,
             jobAttemptId = JobAttemptId(),
-            jobStatus = JobStatus.RUNNING_OK
+            jobStatus = JobStatus.RUNNING_OK,
+            jobMeta = msg.jobMeta
         )
 
         // send task to workers
@@ -190,20 +192,11 @@ class JobEngine {
     private fun taskAttemptCompleted(oldState: JobEngineState, msg: JobAttemptCompleted): JobEngineState {
         val state = oldState.copy(jobStatus = JobStatus.TERMINATED_COMPLETED)
 
-        // if this task belongs to a workflow
-        if (state.workflowId != null) {
-            val tc = TaskCompleted(
-                workflowId = state.workflowId,
-                taskId = state.jobId,
-                taskOutput = msg.jobOutput
-            )
-            dispatcher.toWorkflowEngine(tc)
-        }
-
         // log event
         val tc = JobCompleted(
             jobId = state.jobId,
-            jobOutput = msg.jobOutput
+            jobOutput = msg.jobOutput,
+            jobMeta = state.jobMeta
         )
         dispatcher.toJobEngine(tc)
 

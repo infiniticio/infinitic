@@ -29,7 +29,7 @@ export type DispatchJob = {
   jobId: string;
   jobName: string;
   jobInput: JobInput;
-  workflowId: string | null;
+  jobMeta: Map<string, string>;
 };
 
 export type RetryJob = {
@@ -191,8 +191,8 @@ export type ForWorkerMessage = RunJobMessage;
 
 const registry: AvroRegistry = {};
 
-export const AvroSerializedData = typeForSchema<SerializedData>(
-  path.resolve(`${__dirname}/avro/common/AvroSerializedData.avsc`),
+export const SerializedData = typeForSchema<SerializedData>(
+  path.resolve(`${__dirname}/avro/common/data/AvroSerializedData.avsc`),
   registry
 );
 

@@ -1,7 +1,7 @@
 {
     "type" : "enum",
     "name" : "AvroActionType",
-    "namespace":  "com.zenaton.workflowManager.data",
+    "namespace": "com.zenaton.workflowManager.data.actions",
     "symbols" : [
         "DISPATCH_TASK",
         "DISPATCH_CHILD_WORKFLOW",

@@ -3,7 +3,6 @@ package com.zenaton.jobManager.engine
 import com.zenaton.common.data.interfaces.deepCopy
 import com.zenaton.common.data.interfaces.plus
 import com.zenaton.jobManager.data.JobStatus
-import com.zenaton.jobManager.data.WorkflowId
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.messages.CancelJob
 import com.zenaton.jobManager.messages.DispatchJob
@@ -17,7 +16,6 @@ import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
-import com.zenaton.jobManager.messages.TaskCompleted
 import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
 import com.zenaton.jobManager.utils.TestFactory
@@ -63,7 +61,6 @@ class EngineResults {
     var jobCanceled: JobCanceled? = null
     var jobCompleted: JobCompleted? = null
     var jobStatusUpdated: JobStatusUpdated? = null
-    var taskCompleted: TaskCompleted? = null
 }
 
 fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage): EngineResults {
@@ -83,7 +80,6 @@ fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage): EngineRe
     val retryJobAttemptSlot = slot<RetryJobAttempt>()
     val retryJobAttemptDelaySlot = slot<Float>()
     val workerMessageSlot = slot<ForWorkerMessage>()
-    val taskCompletedSlot = slot<TaskCompleted>()
     val jobStatusUpdatedSlot = slot<JobStatusUpdated>()
     every { logger.error(any(), msgIn, stateIn) } just Runs
     every { logger.warn(any(), msgIn, stateIn) } just Runs
@@ -99,7 +95,6 @@ fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage): EngineRe
     every { dispatcher.toJobEngine(capture(jobCanceledSlot)) } just Runs
     every { dispatcher.toJobEngine(capture(jobCompletedSlot)) } just Runs
     every { dispatcher.toMonitoringPerName(capture(jobStatusUpdatedSlot)) } just Runs
-    every { dispatcher.toWorkflowEngine(capture(taskCompletedSlot)) } just Runs
     // given
     val engine = JobEngine()
     engine.logger = logger
@@ -123,7 +118,6 @@ fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage): EngineRe
     if (jobCanceledSlot.isCaptured) o.jobCanceled = jobCanceledSlot.captured
     if (jobCompletedSlot.isCaptured) o.jobCompleted = jobCompletedSlot.captured
     if (jobStatusUpdatedSlot.isCaptured) o.jobStatusUpdated = jobStatusUpdatedSlot.captured
-    if (taskCompletedSlot.isCaptured) o.taskCompleted = taskCompletedSlot.captured
 
     return o
 }
@@ -158,11 +152,7 @@ class JobEngineFunctionTests : StringSpec({
     }
 
     "CancelJob" {
-        val stateIn = state(
-            mapOf(
-                "jobStatus" to JobStatus.RUNNING_OK
-            )
-        )
+        val stateIn = state(mapOf("jobStatus" to JobStatus.RUNNING_OK))
         val msgIn = cancelJob(mapOf("jobId" to stateIn.jobId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
@@ -173,6 +163,7 @@ class JobEngineFunctionTests : StringSpec({
         }
         checkConfirmVerified(o)
         o.jobCanceled!!.jobId shouldBe msgIn.jobId
+        o.jobCanceled!!.jobMeta shouldBe stateIn.jobMeta
         o.jobStatusUpdated!!.oldStatus shouldBe stateIn.jobStatus
         o.jobStatusUpdated!!.newStatus shouldBe JobStatus.TERMINATED_CANCELED
     }
@@ -201,7 +192,7 @@ class JobEngineFunctionTests : StringSpec({
         o.state!!.jobInput shouldBe msgIn.jobInput
         o.state!!.jobAttemptId shouldBe run.jobAttemptId
         o.state!!.jobAttemptRetry.int shouldBe 0
-        o.state!!.workflowId shouldBe msgIn.workflowId
+        o.state!!.jobMeta shouldBe msgIn.jobMeta
         o.state!!.jobStatus shouldBe JobStatus.RUNNING_OK
         o.jobStatusUpdated!!.oldStatus shouldBe null
         o.jobStatusUpdated!!.newStatus shouldBe JobStatus.RUNNING_OK
@@ -261,31 +252,20 @@ class JobEngineFunctionTests : StringSpec({
     }
 
     "JobAttemptCompleted" {
-        val stateIn = state(
-            mapOf(
-                "jobStatus" to JobStatus.RUNNING_OK
-            )
-        )
-        val msgIn = jobAttemptCompleted(
-            mapOf(
-                "jobId" to stateIn.jobId,
-                "workflowId" to TestFactory.get(WorkflowId::class)
-            )
-        )
+        val stateIn = state(mapOf("jobStatus" to JobStatus.RUNNING_OK))
+        val msgIn = jobAttemptCompleted(mapOf("jobId" to stateIn.jobId))
         val o = engineHandle(stateIn, msgIn)
         verifyOrder {
             o.storage.getState(msgIn.jobId)
-            o.dispatcher.toWorkflowEngine(o.taskCompleted!!)
             o.dispatcher.toJobEngine(o.jobCompleted!!)
             o.storage.deleteState(msgIn.jobId)
             o.dispatcher.toMonitoringPerName(o.jobStatusUpdated!!)
         }
         checkConfirmVerified(o)
-        o.taskCompleted!!.taskId shouldBe stateIn.jobId
-        o.taskCompleted!!.workflowId shouldBe stateIn.workflowId
-        o.taskCompleted!!.taskOutput shouldBe msgIn.jobOutput
         o.jobStatusUpdated!!.oldStatus shouldBe stateIn.jobStatus
         o.jobStatusUpdated!!.newStatus shouldBe JobStatus.TERMINATED_COMPLETED
+        o.jobCompleted!!.jobOutput shouldBe msgIn.jobOutput
+        o.jobCompleted!!.jobMeta shouldBe stateIn.jobMeta
     }
 
     "JobAttemptFailed without retry" {

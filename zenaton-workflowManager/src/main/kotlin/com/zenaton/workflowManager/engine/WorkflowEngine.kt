@@ -1,6 +1,10 @@
 package com.zenaton.workflowManager.engine
 
-import com.zenaton.workflowManager.data.DecisionData
+import com.zenaton.common.avro.AvroSerDe
+import com.zenaton.common.data.SerializationType
+import com.zenaton.common.data.SerializedParameter
+import com.zenaton.jobManager.data.JobInput
+import com.zenaton.workflowManager.avro.AvroConverter
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.branches.Branch
@@ -98,24 +102,36 @@ class WorkflowEngine {
         // initialize state
         state.ongoingDecisionId = decisionId
         state.runningBranches.add(branch)
-        // create DecisionDispatched message
-        val decisionInput = DecisionInput(listOf(branch), filterStore(state.store, listOf(branch)))
-        val m = DispatchDecision(
-            decisionId = decisionId,
-            workflowId = msg.workflowId,
-            workflowName = msg.workflowName,
-            decisionData = DecisionData(listOf()) // AvroSerDe.serialize(decisionInput))
+        // decision input
+        val decisionInput = DecisionInput(
+            branches = listOf(branch),
+            store = filterStore(state.store, listOf(branch))
         )
         // dispatch decision
-        dispatcher.toDeciders(m)
-        // log event
-        val dd = DecisionDispatched(
-            decisionId = decisionId,
-            workflowId = msg.workflowId,
-            workflowName = msg.workflowName,
-            decisionData = DecisionData(listOf()) // AvroSerDe.serialize(decisionInput))
+        dispatcher.toDeciders(
+            DispatchDecision(
+                decisionId = decisionId,
+                workflowId = msg.workflowId,
+                workflowName = msg.workflowName,
+                decisionInput = JobInput(
+                    listOf(
+                        SerializedParameter(
+                            serializationType = SerializationType.AVRO,
+                            serializedData = AvroSerDe.serializeToByteArray(AvroConverter.toAvroDecisionInput(decisionInput))
+                        )
+                    )
+                )
+            )
         )
-        dispatcher.toWorkflowEngine(dd)
+        // log event
+        dispatcher.toWorkflowEngine(
+            DecisionDispatched(
+                decisionId = decisionId,
+                workflowId = msg.workflowId,
+                workflowName = msg.workflowName,
+                decisionInput = decisionInput
+            )
+        )
         // save state
         storage.updateState(msg.workflowId, state, null)
 
@@ -164,7 +180,7 @@ class WorkflowEngine {
         // Retrieve List<PropertyHash?> relevant for branches
         val listHashes = listProperties1.union(listProperties2).flatMap { it.properties.values }
         // Keep only relevant keys
-        val properties = store.properties.filterKeys { listHashes.contains(it) }
+        val properties = store.properties.filterKeys { listHashes.contains(it) }.toMutableMap()
 
         return PropertyStore(properties)
     }

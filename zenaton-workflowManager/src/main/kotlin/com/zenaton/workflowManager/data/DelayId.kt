@@ -7,5 +7,4 @@ import java.util.UUID
 
 data class DelayId
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val id: String = UUID.randomUUID().toString()) :
-    IdInterface
+constructor(@get:JsonValue override val id: String = UUID.randomUUID().toString()) : IdInterface

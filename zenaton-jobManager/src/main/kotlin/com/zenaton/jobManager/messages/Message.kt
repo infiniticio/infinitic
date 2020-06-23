@@ -6,15 +6,14 @@ import com.zenaton.jobManager.data.JobAttemptIndex
 import com.zenaton.jobManager.data.JobAttemptRetry
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobInput
+import com.zenaton.jobManager.data.JobMeta
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.data.JobOutput
 import com.zenaton.jobManager.data.JobStatus
-import com.zenaton.jobManager.data.WorkflowId
 import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.jobManager.messages.interfaces.FailingJobAttemptMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
 
@@ -28,7 +27,7 @@ data class DispatchJob(
     override val jobId: JobId,
     val jobName: JobName,
     val jobInput: JobInput,
-    val workflowId: WorkflowId? = null
+    val jobMeta: JobMeta
 ) : Message(), ForJobEngineMessage
 
 data class JobAttemptCompleted(
@@ -36,7 +35,7 @@ data class JobAttemptCompleted(
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
     override val jobAttemptIndex: JobAttemptIndex,
-    val jobOutput: JobOutput?
+    val jobOutput: JobOutput
 ) : Message(), JobAttemptMessage, ForJobEngineMessage
 
 data class JobAttemptDispatched(
@@ -63,12 +62,14 @@ data class JobAttemptStarted(
 ) : Message(), JobAttemptMessage, ForJobEngineMessage
 
 data class JobCanceled(
-    override val jobId: JobId
+    override val jobId: JobId,
+    val jobMeta: JobMeta
 ) : Message(), ForJobEngineMessage
 
 data class JobCompleted(
     override val jobId: JobId,
-    val jobOutput: JobOutput?
+    val jobOutput: JobOutput,
+    val jobMeta: JobMeta
 ) : Message(), ForJobEngineMessage
 
 data class JobCreated(
@@ -101,9 +102,3 @@ data class RunJob(
     override val jobAttemptIndex: JobAttemptIndex,
     val jobInput: JobInput
 ) : Message(), JobAttemptMessage, ForWorkerMessage
-
-data class TaskCompleted(
-    override val workflowId: WorkflowId,
-    val taskId: JobId,
-    val taskOutput: JobOutput?
-) : Message(), ForWorkflowEngineMessage

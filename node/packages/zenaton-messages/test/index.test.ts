@@ -17,7 +17,7 @@ describe('@zenaton/messages', () => {
     const value = random(types.AvroDispatchJob);
     expect(value.jobId).toBeOfType('string');
     expect(value.jobName).toBeOfType('string');
-    expect(value.workflowId).toBeOfTypeOrNull('string');
+    // expect(value.jobMeta).toBeOfType('Map');
   });
 
   it('exports a correct AvroJobAttemptCompleted', () => {

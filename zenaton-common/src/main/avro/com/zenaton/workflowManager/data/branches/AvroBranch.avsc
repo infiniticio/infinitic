@@ -1,7 +1,7 @@
 {
     "type" : "record",
     "name" : "AvroBranch",
-    "namespace" : "com.zenaton.workflowManager.data",
+    "namespace" : "com.zenaton.workflowManager.data.branches",
     "fields" : [
         {
             "name" : "branchId",
@@ -21,10 +21,10 @@
             "type" : "long"
         }, {
             "name" : "steps",
-            "type" : {"type" : "array", "items" : "com.zenaton.workflowManager.data.AvroStep"}
+            "type" : {"type" : "array", "items" : "com.zenaton.workflowManager.data.steps.AvroStep"}
         }, {
             "name" : "actions",
-            "type" : {"type" : "array", "items" : "com.zenaton.workflowManager.data.AvroAction"}
+            "type" : {"type" : "array", "items" : "com.zenaton.workflowManager.data.actions.AvroAction"}
         }
     ]
 }

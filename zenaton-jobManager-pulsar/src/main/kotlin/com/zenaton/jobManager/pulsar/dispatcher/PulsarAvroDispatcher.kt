@@ -5,7 +5,6 @@ import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
-import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
@@ -82,9 +81,5 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
         context.logger.debug("===============JobManager====================")
         context.logger.debug("Topic: ${Topic.ENGINE.get(prefix)}")
         context.logger.debug("Msg: $msg")
-    }
-
-    override fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine) {
-        TODO("Not yet implemented")
     }
 }

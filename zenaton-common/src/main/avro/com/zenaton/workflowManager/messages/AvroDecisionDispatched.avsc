@@ -17,12 +17,8 @@
             "type": "string"
         },
         {
-            "name": "decisionData",
-            "type": {
-                "type": "array",
-                "items" : "com.zenaton.common.data.AvroSerializedData"
-            },
-            "default": []
+            "name": "decisionInput",
+            "type": "com.zenaton.workflowManager.decisions.AvroDecisionInput"
         }
     ]
 }

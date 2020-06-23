@@ -5,4 +5,4 @@ import com.fasterxml.jackson.annotation.JsonValue
 
 data class PropertyStore
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue val properties: Map<PropertyHash, PropertyData>)
+constructor(@get:JsonValue val properties: MutableMap<PropertyHash, PropertyData>)
