@@ -115,10 +115,14 @@ class WorkflowEngine {
             DispatchJob(
                 jobId = JobId(decisionId.id),
                 jobName = JobName(msg.workflowName.name),
-                jobInput = JobInput(listOf(SerializedParameter(
-                    serializationType = SerializationType.AVRO,
-                    serializedData = AvroSerDe.serializeToByteArray(AvroConverter.toAvroDecisionInput(decisionInput))
-                ))),
+                jobInput = JobInput(
+                    listOf(
+                        SerializedParameter(
+                            serializationType = SerializationType.AVRO,
+                            serializedData = AvroSerDe.serializeToByteArray(AvroConverter.toAvroDecisionInput(decisionInput))
+                        )
+                    )
+                ),
                 jobMeta = JobMeta.builder().add("workflowId", msg.workflowId.id).get()
             )
         )
