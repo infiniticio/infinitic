@@ -52,4 +52,5 @@ dependencies {
     implementation "io.prestosql:presto-jdbc:$prestojdbc_version"
     implementation "org.koin:koin-ktor:$koin_version"
     implementation "org.apache.pulsar:pulsar-client-admin:$pulsarclientadmin_version"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.10.2"
 }
