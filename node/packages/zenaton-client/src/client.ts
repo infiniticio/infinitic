@@ -35,7 +35,7 @@ export class Client {
   async dispatchTask(
     jobName: string,
     input: any = null,
-    jobMeta: Map<string, string> = new Map()
+    jobMeta: Map<string, Buffer> = new Map()
   ) {
     const jobId = uuid();
     const jobInput =
