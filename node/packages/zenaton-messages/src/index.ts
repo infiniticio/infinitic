@@ -29,7 +29,7 @@ export type DispatchJob = {
   jobId: string;
   jobName: string;
   jobInput: JobInput;
-  jobMeta: Map<string, string>;
+  jobMeta: Map<string, Buffer>;
 };
 
 export type RetryJob = {

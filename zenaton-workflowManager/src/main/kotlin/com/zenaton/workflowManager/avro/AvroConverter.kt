@@ -60,6 +60,7 @@ import com.zenaton.workflowManager.messages.envelopes.ForTaskEngineMessage
 import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
 import org.apache.avro.specific.SpecificRecordBase
+import java.nio.ByteBuffer
 
 /**
  * This class does the mapping between avro-generated classes and classes actually used by our code
@@ -256,14 +257,14 @@ object AvroConverter {
         jobId = message.taskId.id
         jobName = message.taskName.name
         jobInput = message.taskInput.input.map { convertJson<AvroSerializedData>(it) }
-        jobMeta = mapOf("workflowId" to message.workflowId.id)
+        jobMeta = mapOf("workflowId" to ByteBuffer.wrap(message.workflowId.id.toByteArray(Charsets.UTF_8)))
     }.build()
 
     fun toAvroMessage(message: DispatchDecision) = AvroDispatchJob.newBuilder().apply {
         jobId = message.decisionId.id
         jobName = message.workflowName.name
         jobInput = message.decisionInput.input.map { convertJson<AvroSerializedData>(it) }
-        jobMeta = mapOf("workflowId" to message.workflowId.id)
+        jobMeta = mapOf("workflowId" to ByteBuffer.wrap(message.workflowId.id.toByteArray(Charsets.UTF_8)))
     }.build()
 
     fun toAvroMessage(message: DecisionDispatched) = AvroDecisionDispatched.newBuilder().apply {

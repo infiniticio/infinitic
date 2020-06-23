@@ -21,7 +21,7 @@
         },
         {
             "name": "jobMeta",
-            "type": {"type": "map", "values": "string"}
+            "type": {"type": "map", "values": "bytes"}
         }
     ]
 }

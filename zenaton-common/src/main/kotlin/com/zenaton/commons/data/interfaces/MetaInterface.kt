@@ -1,5 +1,5 @@
 package com.zenaton.commons.data.interfaces
 
 interface MetaInterface {
-    val meta: Map<String, String>
+    val meta: Map<String, ByteArray>
 }

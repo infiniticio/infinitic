@@ -6,4 +6,4 @@ import com.zenaton.commons.data.interfaces.MetaInterface
 
 data class JobMeta
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val meta: Map<String, String> = mapOf()) : MetaInterface
+constructor(@get:JsonValue override val meta: Map<String, ByteArray> = mapOf()) : MetaInterface
