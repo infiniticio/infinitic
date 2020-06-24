@@ -32,6 +32,6 @@ class JobMetaBuilder {
     fun build() = JobMeta(meta)
 
     private fun checkKey(key: String) {
-        if (meta.containsKey(key)) throw Exception("Duplicate $key key")
+        if (meta.containsKey(key)) throw Exception("Duplicated $key key")
     }
 }
