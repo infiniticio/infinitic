@@ -56,8 +56,8 @@ class JobEngine {
                 is CancelJob -> cancelJob(oldState)
                 is RetryJob -> retryJob(oldState)
                 is RetryJobAttempt -> retryJobAttempt(oldState)
-                is JobAttemptFailed -> taskAttemptFailed(oldState, message)
-                is JobAttemptCompleted -> taskAttemptCompleted(oldState, message)
+                is JobAttemptFailed -> jobAttemptFailed(oldState, message)
+                is JobAttemptCompleted -> jobAttemptCompleted(oldState, message)
                 else -> throw Exception("Unknown EngineMessage: $message")
             }
 
@@ -106,7 +106,7 @@ class JobEngine {
             jobMeta = msg.jobMeta
         )
 
-        // send task to workers
+        // send job to workers
         val rt = RunJob(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
@@ -137,7 +137,7 @@ class JobEngine {
             jobAttemptIndex = oldState.jobAttemptIndex + 1
         )
 
-        // send task to workers
+        // send job to workers
         val rt = RunJob(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
@@ -166,7 +166,7 @@ class JobEngine {
             jobAttemptRetry = oldState.jobAttemptRetry + 1
         )
 
-        // send task to workers
+        // send job to workers
         val rt = RunJob(
             jobId = state.jobId,
             jobAttemptId = state.jobAttemptId,
@@ -189,7 +189,7 @@ class JobEngine {
         return state
     }
 
-    private fun taskAttemptCompleted(oldState: JobEngineState, msg: JobAttemptCompleted): JobEngineState {
+    private fun jobAttemptCompleted(oldState: JobEngineState, msg: JobAttemptCompleted): JobEngineState {
         val state = oldState.copy(jobStatus = JobStatus.TERMINATED_COMPLETED)
 
         // log event
@@ -206,7 +206,7 @@ class JobEngine {
         return state
     }
 
-    private fun taskAttemptFailed(oldState: JobEngineState, msg: JobAttemptFailed): JobEngineState {
+    private fun jobAttemptFailed(oldState: JobEngineState, msg: JobAttemptFailed): JobEngineState {
         return delayRetryJobAttempt(oldState, delay = msg.jobAttemptDelayBeforeRetry)
     }
 
