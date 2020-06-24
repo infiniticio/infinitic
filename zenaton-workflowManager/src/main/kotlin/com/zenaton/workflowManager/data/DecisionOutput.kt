@@ -8,4 +8,3 @@ import com.zenaton.commons.data.interfaces.OutputInterface
 data class DecisionOutput
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
 constructor(@get:JsonValue override val output: SerializedData) : OutputInterface
-
