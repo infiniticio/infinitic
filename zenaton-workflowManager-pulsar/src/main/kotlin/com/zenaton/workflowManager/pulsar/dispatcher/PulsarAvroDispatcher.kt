@@ -46,7 +46,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
             .send()
 
         context.logger.debug("== WorkflowManager: dispatching ==")
-        context.logger.debug("To topic: ${JobTopic.JOB_ENGINE.get("decisions")}")
+        context.logger.debug("To topic: ${JobTopic.JOB_ENGINE.get("tasks")}")
         context.logger.debug("Msg: $msg")
     }
 }
