@@ -1,8 +1,5 @@
 package com.zenaton.workflowManager.engine
 
-import com.zenaton.common.avro.AvroSerDe
-import com.zenaton.common.data.SerializationType
-import com.zenaton.common.data.SerializedParameter
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobInput
 import com.zenaton.jobManager.data.JobMeta
@@ -115,15 +112,14 @@ class WorkflowEngine {
             DispatchJob(
                 jobId = JobId(decisionId.id),
                 jobName = JobName(msg.workflowName.name),
-                jobInput = JobInput(
-                    listOf(
-                        SerializedParameter(
-                            serializationType = SerializationType.AVRO,
-                            serializedData = AvroSerDe.serializeToByteArray(AvroConverter.toAvroDecisionInput(decisionInput))
-                        )
-                    )
-                ),
-                jobMeta = JobMeta.builder().add("workflowId", msg.workflowId.id).get()
+                jobInput = JobInput
+                    .builder()
+                    .add(AvroConverter.toAvroDecisionInput(decisionInput))
+                    .get(),
+                jobMeta = JobMeta
+                    .builder()
+                    .add("workflowId", msg.workflowId.id)
+                    .get()
             )
         )
         // log event
