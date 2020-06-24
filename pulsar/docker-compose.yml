@@ -1,9 +1,9 @@
 version: "3.7"
 services:
   pulsar:
-    image: apachepulsar/pulsar-all:2.5.2
+    image: apachepulsar/pulsar-all:2.6.0
     environment:
-      - PULSAR_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
+      - BOOKIE_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
     command: >
       /bin/bash -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
     volumes:
