@@ -1,7 +1,6 @@
 package com.zenaton.jobManager.utils
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.data.JobMeta
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass

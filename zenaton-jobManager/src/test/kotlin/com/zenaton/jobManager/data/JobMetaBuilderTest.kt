@@ -1,9 +1,6 @@
 package com.zenaton.jobManager.data
 
-import com.zenaton.common.avro.AvroSerDe
-import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.utils.TestFactory
-import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

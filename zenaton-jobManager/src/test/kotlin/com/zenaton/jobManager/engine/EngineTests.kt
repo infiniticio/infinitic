@@ -398,4 +398,3 @@ private fun jobAttemptDispatched(values: Map<String, Any?>? = null) = TestFactor
 private fun jobAttemptCompleted(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptCompleted::class, values)
 private fun jobAttemptFailed(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptFailed::class, values)
 private fun jobAttemptStarted(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptStarted::class, values)
-
