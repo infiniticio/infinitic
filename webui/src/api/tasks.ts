@@ -8,20 +8,27 @@ export interface Task {
   id: string;
   name: string;
   status: TaskStatus;
-  dispatchedAt: Date;
-  startedAt: Date | null;
-  completedAt: Date | null;
-  failedAt: Date | null;
+  dispatchedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  failedAt: string | null;
   attempts: Array<TaskAttempt>;
 }
 
 export interface TaskAttempt {
   id: string;
+  index: number;
   tries: Array<TaskAttemptTry>;
 }
 
 export interface TaskAttemptTry {
   id: string;
+  retry: number;
+  dispatchedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  failedAt: string | null;
+  delayBeforeRetry: number | null;
 }
 
 export interface TaskType {

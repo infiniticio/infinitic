@@ -126,19 +126,29 @@
                     Attempts
                   </dt>
                   <dd
-                    class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
+                    class="flex flex-col mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
                   >
                     <div
-                      class="shadow w-full bg-grey-light"
-                      v-for="attempt in taskDetails$.attempts"
+                      class="relative shadow w-full h-5 bg-gray-100"
+                      v-for="(attempt, index) in taskDetails$.attempts"
                       :key="attempt.id"
+                      :class="{ 'mt-5': index > 0 }"
                     >
                       <div
-                        class="bg-blue-400 text-xs leading-none py-1 text-center text-white"
-                        style="width: 45%"
-                      >
-                        45%
-                      </div>
+                        v-for="attemptTry in attempt.tries"
+                        :key="'progress-' + attemptTry.retry"
+                        :class="{
+                          'bg-blue-400':
+                            !attemptTry.failedAt && !attemptTry.completedAt,
+                          'bg-red-400': !!attemptTry.failedAt,
+                          'bg-green-400': !!attemptTry.completedAt
+                        }"
+                        class="absolute inline-block h-5 text-xs leading-none py-1 text-center text-white"
+                        :style="{
+                          width: `${segmentLength(taskDetails$, attemptTry)}%`,
+                          left: `${segmentOffset(taskDetails$, attemptTry)}%`
+                        }"
+                      ></div>
                     </div>
                   </dd>
                 </div>
@@ -153,16 +163,9 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { getTaskDetails } from "@/api";
+import { getTaskDetails, Task, TaskAttemptTry } from "@/api";
 import { from, of } from "rxjs";
-import {
-  share,
-  mapTo,
-  startWith,
-  catchError,
-  tap,
-  onErrorResumeNext
-} from "rxjs/operators";
+import { share, mapTo, startWith, catchError } from "rxjs/operators";
 import { PulseLoader } from "@saeris/vue-spinners";
 
 export default Vue.extend({
@@ -228,6 +231,51 @@ export default Vue.extend({
         name: "TaskDetails",
         params: { id: this.searchInput }
       });
+    },
+
+    barOriginDate(task: Task) {
+      return new Date(task.dispatchedAt);
+    },
+
+    segmentOffset(task: Task, attemptTry: TaskAttemptTry) {
+      if (attemptTry.startedAt === null) {
+        return 0;
+      }
+
+      const taskEndDate = task.completedAt
+        ? new Date(task.completedAt)
+        : new Date();
+      const taskStartDate = this.barOriginDate(task);
+      const segmentStartDate = new Date(attemptTry.startedAt);
+
+      return Math.abs(
+        ((segmentStartDate.getTime() - taskStartDate.getTime()) * 100) /
+          (taskEndDate.getTime() - taskStartDate.getTime())
+      );
+    },
+
+    segmentLength(task: Task, attemptTry: TaskAttemptTry) {
+      if (attemptTry.startedAt === null) {
+        return 0;
+      }
+
+      const taskEndDate = task.completedAt
+        ? new Date(task.completedAt)
+        : new Date();
+
+      const taskStartDate = this.barOriginDate(task);
+
+      const segmentEndDate = attemptTry.completedAt
+        ? new Date(attemptTry.completedAt)
+        : attemptTry.failedAt
+        ? new Date(attemptTry.failedAt)
+        : new Date();
+      const segmentStartDate = new Date(attemptTry.startedAt);
+
+      return Math.abs(
+        ((segmentEndDate.getTime() - segmentStartDate.getTime()) * 100) /
+          (taskEndDate.getTime() - taskStartDate.getTime())
+      );
     }
   }
 });
