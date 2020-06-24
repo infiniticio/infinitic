@@ -11,6 +11,7 @@ open class SerializedData(
     open val serializedData: ByteArray,
     open val serializationType: SerializationType
 ) {
+    // SerializedData() returns a null
     constructor() : this(
         serializedData = ByteArray(0),
         serializationType = SerializationType.NULL

@@ -1,5 +1,6 @@
 package com.zenaton.workflowManager.pulsar
 
+import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.workflowManager.avro.AvroConverter
@@ -23,26 +24,17 @@ import kotlin.random.Random
 import kotlin.reflect.KClass
 
 fun main() {
-    val o = TestFactory.random(Branch::class)
-    println(o)
-    val a = AvroConverter.toAvroBranch(o)
-    val b = AvroConverter.toAvroBranch(o)
+
+    val o = TestFactory.random(DecisionDispatched::class)
+    val a = AvroConverter.toWorkflowEngine(o)
+    val b = AvroConverter.toWorkflowEngine(o)
     println(a)
 
     println(a == b)
 
-    val o2 = AvroConverter.fromAvroBranch(a)
+    val o2 = AvroConverter.fromWorkflowEngine(a)
     println(o2)
 
     println(o == o2)
 
-
 }
-
-//branchId = obj.branchId.id
-//branchName = obj.branchName.name
-//branchInput = convertJson(obj.branchInput)
-//propertiesAtStart = convertJson(obj.propertiesAtStart)
-//dispatchedAt = convertJson(obj.dispatchedAt)
-//steps = obj.steps.map { AvroConverter.toAvroStep(it) }
-//actions = obj.actions.map { AvroConverter.convertJson<AvroAction>(it)
