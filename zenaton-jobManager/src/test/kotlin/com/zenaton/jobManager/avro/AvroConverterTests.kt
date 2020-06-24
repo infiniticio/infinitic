@@ -18,7 +18,7 @@ class AvroConverterTests : StringSpec({
 
     "Engine state should be avro-reversible" {
         // given
-        val state = TestFactory.get(JobEngineState::class)
+        val state = TestFactory.random(JobEngineState::class)
         // when
         val avroState = AvroConverter.toStorage(state)
         val state2 = AvroConverter.fromStorage(avroState)
@@ -30,7 +30,7 @@ class AvroConverterTests : StringSpec({
 
     "MonitoringPerName state state should be avro-reversible" {
         // given
-        val state = TestFactory.get(MonitoringPerNameState::class)
+        val state = TestFactory.random(MonitoringPerNameState::class)
         // when
         val avroState = AvroConverter.toStorage(state)
         val state2 = AvroConverter.fromStorage(avroState)
@@ -42,7 +42,7 @@ class AvroConverterTests : StringSpec({
 
     "MonitoringGlobal state state should be avro-reversible" {
         // given
-        val state = TestFactory.get(MonitoringGlobalState::class)
+        val state = TestFactory.random(MonitoringGlobalState::class)
         // when
         val avroState = AvroConverter.toStorage(state)
         val state2 = AvroConverter.fromStorage(avroState)
@@ -53,7 +53,7 @@ class AvroConverterTests : StringSpec({
     }
 
     Message::class.sealedSubclasses.forEach {
-        val msg = TestFactory.get(it)
+        val msg = TestFactory.random(it)
         if (msg is ForWorkerMessage) {
             include(messagesToWorkersShouldBeAvroReversible(msg))
         }
@@ -69,7 +69,7 @@ class AvroConverterTests : StringSpec({
     }
 })
 
-fun messagesToWorkersShouldBeAvroReversible(msg: ForWorkerMessage) = stringSpec {
+internal fun messagesToWorkersShouldBeAvroReversible(msg: ForWorkerMessage) = stringSpec {
     "${msg::class.simpleName!!} should be avro-convertible" {
         shouldNotThrowAny {
             val avroMsg = AvroConverter.toWorkers(msg)
@@ -81,7 +81,7 @@ fun messagesToWorkersShouldBeAvroReversible(msg: ForWorkerMessage) = stringSpec 
     }
 }
 
-fun messagesToJobEngineShouldBeAvroReversible(msg: ForJobEngineMessage) = stringSpec {
+internal fun messagesToJobEngineShouldBeAvroReversible(msg: ForJobEngineMessage) = stringSpec {
     "${msg::class.simpleName!!} should be avro-convertible" {
         shouldNotThrowAny {
             val avroMsg = AvroConverter.toJobEngine(msg)
@@ -93,7 +93,7 @@ fun messagesToJobEngineShouldBeAvroReversible(msg: ForJobEngineMessage) = string
     }
 }
 
-fun messagesToMonitoringPerNameShouldBeAvroReversible(msg: ForMonitoringPerNameMessage) = stringSpec {
+internal fun messagesToMonitoringPerNameShouldBeAvroReversible(msg: ForMonitoringPerNameMessage) = stringSpec {
     "${msg::class.simpleName!!} should be avro-convertible" {
         shouldNotThrowAny {
             val avroMsg = AvroConverter.toMonitoringPerName(msg)
@@ -105,7 +105,7 @@ fun messagesToMonitoringPerNameShouldBeAvroReversible(msg: ForMonitoringPerNameM
     }
 }
 
-fun messagesToMonitoringGlobalShouldBeAvroReversible(msg: ForMonitoringGlobalMessage) = stringSpec {
+internal fun messagesToMonitoringGlobalShouldBeAvroReversible(msg: ForMonitoringGlobalMessage) = stringSpec {
     "${msg::class.simpleName!!} should be avro-convertible" {
         shouldNotThrowAny {
             val avroMsg = AvroConverter.toMonitoringGlobal(msg)

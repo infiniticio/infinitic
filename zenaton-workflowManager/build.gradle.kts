@@ -19,7 +19,7 @@ dependencies {
     implementation(project(":zenaton-common"))
     implementation(project(":zenaton-jobManager"))
 
-    implementation("org.jeasy:easy-random-core:4.2.+")
+    testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")
     testImplementation("io.kotest:kotest-core-jvm:4.0.+")

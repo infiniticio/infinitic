@@ -32,21 +32,7 @@ import io.mockk.verifyAll
 import io.mockk.verifyOrder
 import org.slf4j.Logger
 
-fun state(values: Map<String, Any?>? = null) = TestFactory.get(JobEngineState::class, values)
-
-fun cancelJob(values: Map<String, Any?>? = null) = TestFactory.get(CancelJob::class, values)
-fun dispatchJob(values: Map<String, Any?>? = null) = TestFactory.get(DispatchJob::class, values)
-fun retryJob(values: Map<String, Any?>? = null) = TestFactory.get(RetryJob::class, values)
-fun retryJobAttempt(values: Map<String, Any?>? = null) = TestFactory.get(RetryJobAttempt::class, values)
-
-fun jobCompleted(values: Map<String, Any?>? = null) = TestFactory.get(JobCompleted::class, values)
-fun jobCanceled(values: Map<String, Any?>? = null) = TestFactory.get(JobCanceled::class, values)
-fun jobAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptDispatched::class, values)
-fun jobAttemptCompleted(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptCompleted::class, values)
-fun jobAttemptFailed(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptFailed::class, values)
-fun jobAttemptStarted(values: Map<String, Any?>? = null) = TestFactory.get(JobAttemptStarted::class, values)
-
-class EngineResults {
+internal class EngineResults {
     lateinit var dispatcher: Dispatcher
     lateinit var storage: JobEngineStateStorage
     lateinit var logger: Logger
@@ -63,7 +49,7 @@ class EngineResults {
     var jobStatusUpdated: JobStatusUpdated? = null
 }
 
-fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage): EngineResults {
+internal fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage): EngineResults {
     // deep copy of stateIn to avoid updating it
     val state: JobEngineState? = stateIn?.deepCopy()
     // mocking
@@ -122,7 +108,7 @@ fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage): EngineRe
     return o
 }
 
-class JobEngineFunctionTests : StringSpec({
+internal class JobEngineFunctionTests : StringSpec({
     "JobAttemptDispatched" {
         val stateIn = state()
         val msgIn = jobAttemptDispatched()
@@ -364,13 +350,6 @@ private fun checkShouldDoNothing(o: EngineResults) {
     checkConfirmVerified(o)
 }
 
-private fun checkShouldDoNothingExceptGetState(msgIn: ForJobEngineMessage, o: EngineResults) {
-    verifyOrder {
-        o.storage.getState(msgIn.jobId)
-    }
-    checkConfirmVerified(o)
-}
-
 private fun checkShouldRetryJobAttempt(msgIn: ForJobEngineMessage, stateIn: JobEngineState, o: EngineResults) {
     verifyOrder {
         o.storage.getState(msgIn.jobId)
@@ -405,3 +384,17 @@ private fun checkConfirmVerified(o: EngineResults) {
     confirmVerified(o.storage)
     confirmVerified(o.logger)
 }
+
+private fun state(values: Map<String, Any?>? = null) = TestFactory.random(JobEngineState::class, values)
+
+private fun cancelJob(values: Map<String, Any?>? = null) = TestFactory.random(CancelJob::class, values)
+private fun dispatchJob(values: Map<String, Any?>? = null) = TestFactory.random(DispatchJob::class, values)
+private fun retryJob(values: Map<String, Any?>? = null) = TestFactory.random(RetryJob::class, values)
+private fun retryJobAttempt(values: Map<String, Any?>? = null) = TestFactory.random(RetryJobAttempt::class, values)
+
+private fun jobCompleted(values: Map<String, Any?>? = null) = TestFactory.random(JobCompleted::class, values)
+private fun jobCanceled(values: Map<String, Any?>? = null) = TestFactory.random(JobCanceled::class, values)
+private fun jobAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptDispatched::class, values)
+private fun jobAttemptCompleted(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptCompleted::class, values)
+private fun jobAttemptFailed(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptFailed::class, values)
+private fun jobAttemptStarted(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptStarted::class, values)

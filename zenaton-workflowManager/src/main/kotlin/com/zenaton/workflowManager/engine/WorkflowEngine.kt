@@ -1,9 +1,10 @@
 package com.zenaton.workflowManager.engine
 
-import com.zenaton.common.avro.AvroSerDe
-import com.zenaton.common.data.SerializationType
-import com.zenaton.common.data.SerializedParameter
+import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobInput
+import com.zenaton.jobManager.data.JobMeta
+import com.zenaton.jobManager.data.JobName
+import com.zenaton.jobManager.messages.DispatchJob
 import com.zenaton.workflowManager.avro.AvroConverter
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
@@ -11,21 +12,20 @@ import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.branches.BranchName
 import com.zenaton.workflowManager.data.properties.PropertyStore
 import com.zenaton.workflowManager.dispatcher.Dispatcher
+import com.zenaton.workflowManager.messages.CancelWorkflow
+import com.zenaton.workflowManager.messages.ChildWorkflowCanceled
 import com.zenaton.workflowManager.messages.ChildWorkflowCompleted
 import com.zenaton.workflowManager.messages.DecisionCompleted
+import com.zenaton.workflowManager.messages.DecisionDispatched
 import com.zenaton.workflowManager.messages.DelayCompleted
 import com.zenaton.workflowManager.messages.DispatchWorkflow
 import com.zenaton.workflowManager.messages.EventReceived
-import com.zenaton.workflowManager.messages.TaskCompleted
-import com.zenaton.workflowManager.messages.WorkflowCompleted
-import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
-import com.zenaton.workflowManager.messages.CancelWorkflow
-import com.zenaton.workflowManager.messages.ChildWorkflowCanceled
-import com.zenaton.workflowManager.messages.DecisionDispatched
-import com.zenaton.workflowManager.messages.DispatchDecision
 import com.zenaton.workflowManager.messages.TaskCanceled
+import com.zenaton.workflowManager.messages.TaskCompleted
 import com.zenaton.workflowManager.messages.TaskDispatched
 import com.zenaton.workflowManager.messages.WorkflowCanceled
+import com.zenaton.workflowManager.messages.WorkflowCompleted
+import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import org.slf4j.Logger
 
 class WorkflowEngine {
@@ -109,18 +109,17 @@ class WorkflowEngine {
         )
         // dispatch decision
         dispatcher.toDeciders(
-            DispatchDecision(
-                decisionId = decisionId,
-                workflowId = msg.workflowId,
-                workflowName = msg.workflowName,
-                decisionInput = JobInput(
-                    listOf(
-                        SerializedParameter(
-                            serializationType = SerializationType.AVRO,
-                            serializedData = AvroSerDe.serializeToByteArray(AvroConverter.toAvroDecisionInput(decisionInput))
-                        )
-                    )
-                )
+            DispatchJob(
+                jobId = JobId(decisionId.id),
+                jobName = JobName(msg.workflowName.name),
+                jobInput = JobInput
+                    .builder()
+                    .add(AvroConverter.toAvroDecisionInput(decisionInput))
+                    .build(),
+                jobMeta = JobMeta
+                    .builder()
+                    .add("workflowId", msg.workflowId.id)
+                    .build()
             )
         )
         // log event
@@ -140,6 +139,12 @@ class WorkflowEngine {
 
     private fun decisionCompleted(state: WorkflowEngineState, msg: DecisionCompleted): WorkflowEngineState {
         TODO()
+//        DispatchJob(
+//            jobId = msg.taskId,
+//            jobName = msg.taskName,
+//            jobInput = msg.taskInput,
+//            jobMeta = JobMeta.builder().add("workflowId", msg.workflowId.id).get()
+//        )
     }
 
     private fun delayCompleted(state: WorkflowEngineState, msg: DelayCompleted): WorkflowEngineState {
