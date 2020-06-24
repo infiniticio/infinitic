@@ -28,25 +28,25 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
 
     override fun toDeciders(msg: AvroEnvelopeForJobEngine) {
         val msgBuilder = context
-            .newOutputMessage(JobTopic.ENGINE.get("decisions"), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
+            .newOutputMessage(JobTopic.JOB_ENGINE.get("decisions"), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
             .key(msg.jobId)
             .value(msg)
             .send()
 
         context.logger.debug("== WorkflowManager: dispatching ==")
-        context.logger.debug("To topic: ${JobTopic.ENGINE.get("decisions")}")
+        context.logger.debug("To topic: ${JobTopic.JOB_ENGINE.get("decisions")}")
         context.logger.debug("Msg: $msg")
     }
 
     override fun toWorkers(msg: AvroEnvelopeForJobEngine) {
         val msgBuilder = context
-            .newOutputMessage(JobTopic.ENGINE.get("tasks"), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
+            .newOutputMessage(JobTopic.JOB_ENGINE.get("tasks"), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
             .key(msg.jobId)
             .value(msg)
             .send()
 
         context.logger.debug("== WorkflowManager: dispatching ==")
-        context.logger.debug("To topic: ${JobTopic.ENGINE.get("decisions")}")
+        context.logger.debug("To topic: ${JobTopic.JOB_ENGINE.get("decisions")}")
         context.logger.debug("Msg: $msg")
     }
 }

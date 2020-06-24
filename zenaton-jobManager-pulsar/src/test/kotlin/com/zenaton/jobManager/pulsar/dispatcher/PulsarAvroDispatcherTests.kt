@@ -65,7 +65,7 @@ fun shouldSendMessageToEngineTopic(msg: AvroEnvelopeForJobEngine) = stringSpec {
     PulsarAvroDispatcher(context).toJobEngine(msg)
     // then
     verifyAll {
-        context.newOutputMessage(Topic.ENGINE.get(prefix), slotSchema.captured)
+        context.newOutputMessage(Topic.JOB_ENGINE.get(prefix), slotSchema.captured)
         context.logger
         context.getUserConfigValue("topicPrefix")
     }

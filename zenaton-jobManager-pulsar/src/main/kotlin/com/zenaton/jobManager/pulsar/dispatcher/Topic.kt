@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
 enum class Topic {
-    ENGINE {
+    JOB_ENGINE {
         override fun get(prefix: String, name: String?) = "$prefix-engine"
     },
     WORKERS {
