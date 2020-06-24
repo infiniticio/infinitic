@@ -32,7 +32,7 @@ object TestFactory {
 
         val parameters = EasyRandomParameters()
             .seed(seed)
-            .collectionSizeRange(1,5)
+            .collectionSizeRange(1, 5)
             .scanClasspathForConcreteTypes(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStepCriterion(randomStepCriterion()) }

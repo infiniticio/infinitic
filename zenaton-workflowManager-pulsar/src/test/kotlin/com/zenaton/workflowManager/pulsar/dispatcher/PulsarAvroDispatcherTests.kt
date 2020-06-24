@@ -19,7 +19,6 @@ import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
-import java.util.Optional
 
 class PulsarAvroDispatcherTests : StringSpec({
     // From Message
@@ -35,7 +34,7 @@ private fun checkMessageCanBeDispatched(msg: ForWorkflowEngineMessage) = stringS
     "${msg::class.simpleName!!} can be dispatched" {
         shouldNotThrowAny {
             val avro = AvroConverter.toWorkflowEngine(msg)
-            val context  = mockk<Context>()
+            val context = mockk<Context>()
             every { context.logger } returns mockk<Logger>(relaxed = true)
             val builder = mockk<TypedMessageBuilder<AvroEnvelopeForWorkflowEngine>>()
             val slotSchema = slot<AvroSchema<AvroEnvelopeForWorkflowEngine>>()

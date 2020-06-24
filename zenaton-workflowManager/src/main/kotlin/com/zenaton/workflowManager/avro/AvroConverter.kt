@@ -12,7 +12,6 @@ import com.zenaton.workflowManager.data.actions.Action
 import com.zenaton.workflowManager.data.actions.ActionId
 import com.zenaton.workflowManager.data.actions.AvroAction
 import com.zenaton.workflowManager.data.branches.AvroBranch
-import com.zenaton.workflowManager.data.branches.AvroBranch2
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.branches.BranchId
 import com.zenaton.workflowManager.data.branches.BranchInput
@@ -323,13 +322,13 @@ object AvroConverter {
      *  Properties
      */
 
-    fun toAvroProperties(obj: Properties) : Map<String, String> = convertJson(obj)
+    fun toAvroProperties(obj: Properties): Map<String, String> = convertJson(obj)
 
-    fun fromAvroProperties(avro: Map<String, String>) = Properties(avro
-        .mapValues { PropertyHash(it.value) }
-        .mapKeys { PropertyKey(it.key) }
+    fun fromAvroProperties(avro: Map<String, String>) = Properties(
+        avro
+            .mapValues { PropertyHash(it.value) }
+            .mapKeys { PropertyKey(it.key) }
     )
-
 
     /**
      *  Mapping function by Json serialization/deserialization

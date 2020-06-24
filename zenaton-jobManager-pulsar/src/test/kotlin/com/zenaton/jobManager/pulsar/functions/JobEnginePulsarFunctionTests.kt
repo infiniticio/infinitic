@@ -17,7 +17,7 @@ import org.apache.pulsar.functions.api.Context
 import java.util.Optional
 
 class JobEnginePulsarFunctionTests : StringSpec({
-    "TaskEngineFunction should throw an exception if called without context" {
+    "JobEnginePulsarFunction should throw an exception if called without context" {
         // given
         val engine = JobEnginePulsarFunction()
         // then
@@ -26,7 +26,7 @@ class JobEnginePulsarFunctionTests : StringSpec({
         }
     }
 
-    "TaskEngineFunction should call engine with correct parameters" {
+    "JobEnginePulsarFunction should call engine with correct parameters" {
         // mocking
         val topicPrefixValue = mockk<Optional<Any>>()
         every { topicPrefixValue.isPresent } returns false

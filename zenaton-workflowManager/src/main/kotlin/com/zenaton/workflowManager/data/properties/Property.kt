@@ -2,7 +2,6 @@ package com.zenaton.workflowManager.data.properties
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import com.zenaton.common.data.SerializationType
 import com.zenaton.common.data.SerializedData
 import com.zenaton.commons.data.interfaces.PropertyInterface
 
