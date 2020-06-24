@@ -1,6 +1,28 @@
 import axios from "axios";
-import { GenericError } from "./errors";
+import { GenericError, NotFoundError } from "./errors";
 import { isAxiosError } from "./axios";
+
+export type TaskStatus = "ok" | "warning" | "error";
+
+export interface Task {
+  id: string;
+  name: string;
+  status: TaskStatus;
+  dispatchedAt: Date;
+  startedAt: Date | null;
+  completedAt: Date | null;
+  failedAt: Date | null;
+  attempts: Array<TaskAttempt>;
+}
+
+export interface TaskAttempt {
+  id: string;
+  tries: Array<TaskAttemptTry>;
+}
+
+export interface TaskAttemptTry {
+  id: string;
+}
 
 export interface TaskType {
   name: string;
@@ -42,5 +64,23 @@ export async function getTaskTypeMetrics(
     } else {
       throw new GenericError();
     }
+  }
+}
+
+export async function getTaskDetails(id: Task["id"]) {
+  try {
+    const result = await axios.get<Task>(`http://localhost:3010/tasks/${id}`);
+
+    return result.data;
+  } catch (error) {
+    if (isAxiosError(error)) {
+      if (error.response?.status === 404) {
+        throw new NotFoundError(
+          `Unable to retrieve task information for task ${id}.`
+        );
+      }
+    }
+
+    throw error;
   }
 }

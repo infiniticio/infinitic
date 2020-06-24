@@ -5,9 +5,25 @@ export class GenericError extends Error {
     }
 
     super(message);
+
+    Object.setPrototypeOf(this, new.target.prototype);
+    this.name = GenericError.name;
   }
 
   static withMessage(message: string): GenericError {
     return new GenericError(message);
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor(message?: string) {
+    if (message === undefined) {
+      message = "Not Found";
+    }
+
+    super(message);
+
+    Object.setPrototypeOf(this, new.target.prototype);
+    this.name = NotFoundError.name;
   }
 }

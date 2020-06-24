@@ -44,7 +44,7 @@
           color="#6875F5"
           :loading="true"
         />
-        <div v-if="error$">
+        <div v-else-if="error$">
           Display error
         </div>
         <div v-else>
@@ -80,7 +80,11 @@ export default Vue.extend({
     const taskTypes = from(getTaskTypes()).pipe(share());
 
     return {
-      loading$: taskTypes.pipe(mapTo(false), startWith(true)),
+      loading$: taskTypes.pipe(
+        mapTo(false),
+        catchError(() => of(false)),
+        startWith(true)
+      ),
       error$: taskTypes.pipe(
         mapTo(undefined),
         catchError(err => of<Error>(err))
@@ -91,7 +95,10 @@ export default Vue.extend({
 
   methods: {
     async searchTask() {
-      console.log(this.searchInput);
+      this.$router.push({
+        name: "TaskDetails",
+        params: { id: this.searchInput }
+      });
     }
   }
 });

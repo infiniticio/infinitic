@@ -24,6 +24,13 @@ const routes: Array<RouteConfig> = [
     name: "Tasks",
     component: () =>
       import(/* webpackChunkName: "tasks" */ "../views/Tasks.vue")
+  },
+  {
+    path: "/tasks/:id",
+    name: "TaskDetails",
+    component: () =>
+      import(/* webpackChunkName: "tasks" */ "../views/TaskDetails.vue"),
+    props: true
   }
 ];
 
