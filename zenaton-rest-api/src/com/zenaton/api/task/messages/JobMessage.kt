@@ -12,6 +12,7 @@ interface JobMessage {
         JOB_ATTEMPT_DISPATCHED,
         JOB_ATTEMPT_FAILED,
         JOB_ATTEMPT_STARTED,
+        JOB_COMPLETED,
         ;
 
         companion object {
@@ -24,6 +25,7 @@ interface JobMessage {
                 "JobAttemptDispatched" -> JOB_ATTEMPT_DISPATCHED
                 "JobAttemptFailed" -> JOB_ATTEMPT_FAILED
                 "JobAttemptStarted" -> JOB_ATTEMPT_STARTED
+                "JobCompleted" -> JOB_COMPLETED
                 else -> throw IllegalArgumentException("Unknown task message type '$type'")
             }
         }

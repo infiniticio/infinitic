@@ -2,18 +2,22 @@ package com.zenaton.api.task.models
 
 data class TaskAttempt(
     val id: String,
+    val index: Int,
     val tries: List<TaskAttemptTry> = listOf()
 ) {
 
     class Builder {
         var id: String? = null
+        var index: Int? = null
         var tries = mutableListOf<TaskAttemptTry.Builder>()
 
         fun build(): TaskAttempt {
             val tries = tries.build()
 
             return TaskAttempt(
-                id = id ?: throw Exceptions.IncompleteStateException("Id is mandatory to build a TaskAttempt object.")
+                id = id ?: throw Exceptions.IncompleteStateException("Id is mandatory to build a TaskAttempt object."),
+                index = index ?: throw Exceptions.IncompleteStateException("Index is mandatory to build a TaskAttempt object."),
+                tries = tries
             )
         }
 
