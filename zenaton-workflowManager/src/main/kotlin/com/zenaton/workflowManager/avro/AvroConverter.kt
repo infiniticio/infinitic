@@ -1,6 +1,8 @@
 package com.zenaton.workflowManager.avro
 
+import com.zenaton.common.data.AvroSerializedData
 import com.zenaton.common.data.DateTime
+import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
@@ -10,9 +12,12 @@ import com.zenaton.workflowManager.data.actions.Action
 import com.zenaton.workflowManager.data.actions.ActionId
 import com.zenaton.workflowManager.data.actions.AvroAction
 import com.zenaton.workflowManager.data.branches.AvroBranch
+import com.zenaton.workflowManager.data.branches.AvroBranch2
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.branches.BranchId
+import com.zenaton.workflowManager.data.branches.BranchInput
 import com.zenaton.workflowManager.data.branches.BranchName
+import com.zenaton.workflowManager.data.properties.Properties
 import com.zenaton.workflowManager.data.steps.AvroStep
 import com.zenaton.workflowManager.data.steps.AvroStepCriterion
 import com.zenaton.workflowManager.data.steps.AvroStepCriterionType
@@ -295,7 +300,7 @@ object AvroConverter {
     fun toAvroBranch(obj: Branch): AvroBranch = AvroBranch.newBuilder().apply {
         branchId = obj.branchId.id
         branchName = obj.branchName.name
-        branchInput = convertJson(obj.branchInput)
+        branchInput = obj.branchInput.input.map { convertJson<AvroSerializedData>(it) }
         propertiesAtStart = convertJson(obj.propertiesAtStart)
         dispatchedAt = convertJson(obj.dispatchedAt)
         steps = obj.steps.map { toAvroStep(it) }
@@ -305,12 +310,13 @@ object AvroConverter {
     fun fromAvroBranch(avro: AvroBranch) = Branch(
         branchId = BranchId(avro.branchId),
         branchName = BranchName(avro.branchName),
-        branchInput = convertJson(avro.branchInput),
-        propertiesAtStart = convertJson(avro.propertiesAtStart),
+        branchInput = BranchInput(avro.branchInput.map { convertJson<SerializedData>(it) }),
+        propertiesAtStart = Properties(convertJson(avro.propertiesAtStart)),
         dispatchedAt = DateTime(avro.dispatchedAt),
         steps = avro.steps.map { fromAvroStep(it) },
         actions = avro.actions.map { convertJson<Action>(it) }
     )
+
 
     /**
      *  Mapping function by Json serialization/deserialization

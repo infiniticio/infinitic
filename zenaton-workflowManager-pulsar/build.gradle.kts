@@ -1,10 +1,14 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
+    application
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
-    id("com.commercehub.gradle.plugin.avro") version "0.19.1"
+}
+
+application {
+    mainClassName = "com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 dependencies {
@@ -18,6 +22,7 @@ dependencies {
 
     implementation(project(":zenaton-common"))
     implementation(project(":zenaton-jobManager"))
+    implementation(project(":zenaton-jobManager-pulsar"))
     implementation(project(":zenaton-workflowManager"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
@@ -49,23 +54,10 @@ tasks {
 
 tasks {
     build {
-        dependsOn("ktlintFormat")
         dependsOn(shadowJar)
     }
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-avro {
-    isCreateSetters.set(false)
-    isCreateOptionalGetters.set(false)
-    isGettersReturnOptional.set(false)
-    fieldVisibility.set("PRIVATE")
-    outputCharacterEncoding.set("UTF-8")
-    stringType.set("String")
-    templateDirectory.set(null as String?)
-    isEnableDecimalLogicalType.set(true)
-    dateTimeLogicalType.set("JSR310")
 }
