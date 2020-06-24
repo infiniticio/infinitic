@@ -1,6 +1,6 @@
 package com.zenaton.common.data
 
-open class SerializedOutput(
+abstract class SerializedOutput(
     override val serializedData: ByteArray,
     override val serializationType: SerializationType
 ) : SerializedData(serializedData, serializationType)

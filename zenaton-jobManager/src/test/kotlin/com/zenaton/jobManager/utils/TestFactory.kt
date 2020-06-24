@@ -1,5 +1,7 @@
 package com.zenaton.jobManager.utils
 
+import com.zenaton.common.data.SerializedData
+import com.zenaton.jobManager.data.JobMeta
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -11,18 +13,20 @@ import org.jeasy.random.api.Randomizer
 object TestFactory {
     private var seed = 0L
 
-    private fun seed(seed: Long): TestFactory {
+    fun seed(seed: Long): TestFactory {
         TestFactory.seed = seed
         return this
     }
 
-    fun <T : Any> get(klass: KClass<T>, values: Map<String, Any?>? = null): T {
+    fun <T : Any> random(klass: KClass<T>, values: Map<String, Any?>? = null): T {
         // if not updated, 2 subsequents calls to this method would provide the same values
         seed++
 
         val parameters = EasyRandomParameters()
             .seed(seed)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
+            .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
+            .randomize(SerializedData::class.java) { SerializedData() }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })

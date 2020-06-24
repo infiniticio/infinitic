@@ -21,14 +21,14 @@ class MonitoringPerNameTests : ShouldSpec({
             val storage = mockk<MonitoringPerNameStorage>()
             val dispatcher = mockk<Dispatcher>()
             val logger = mockk<Logger>()
-            val msg = TestFactory.get(
+            val msg = TestFactory.random(
                 JobStatusUpdated::class,
                 mapOf(
                     "oldStatus" to JobStatus.RUNNING_OK,
                     "newStatus" to JobStatus.RUNNING_ERROR
                 )
             )
-            val stateIn = TestFactory.get(MonitoringPerNameState::class, mapOf("taskName" to msg.jobName))
+            val stateIn = TestFactory.random(MonitoringPerNameState::class, mapOf("taskName" to msg.jobName))
             val stateOutSlot = slot<MonitoringPerNameState>()
             every { storage.getState(msg.jobName) } returns stateIn
             every { storage.updateState(msg.jobName, capture(stateOutSlot), any()) } just runs
@@ -53,7 +53,7 @@ class MonitoringPerNameTests : ShouldSpec({
             val storage = mockk<MonitoringPerNameStorage>()
             val dispatcher = mockk<Dispatcher>()
             val logger = mockk<Logger>()
-            val msg = TestFactory.get(
+            val msg = TestFactory.random(
                 JobStatusUpdated::class,
                 mapOf(
                     "oldStatus" to null,

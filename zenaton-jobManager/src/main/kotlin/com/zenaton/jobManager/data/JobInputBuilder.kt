@@ -2,37 +2,39 @@ package com.zenaton.jobManager.data
 
 import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.common.data.SerializationType
-import com.zenaton.common.data.SerializedParameter
+import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
 import org.apache.avro.specific.SpecificRecord
 import java.nio.ByteBuffer
 
 class JobInputBuilder {
-    private var input: MutableList<SerializedParameter> = mutableListOf()
+    private var input: MutableList<SerializedData> = mutableListOf()
 
     fun add(value: Any?): JobInputBuilder {
         when (value) {
             null -> input.add(
-                SerializedParameter(
+                SerializedData(
                     serializedData = ByteArray(0),
                     serializationType = SerializationType.NULL
                 )
             )
             is ByteArray -> input.add(
-                SerializedParameter(
+                SerializedData(
                     serializedData = value,
                     serializationType = SerializationType.BYTES
                 )
             )
             is ByteBuffer -> {
-                value.rewind()
+                val p = value.position()
                 val bytes = ByteArray(value.remaining())
                 value.get(bytes, 0, bytes.size)
+                value.position(p)
+
                 add(bytes)
             }
             is SpecificRecord -> {
                 input.add(
-                    SerializedParameter(
+                    SerializedData(
                         serializedData = AvroSerDe.serializeToByteArray(value),
                         serializationType = SerializationType.AVRO
                     )
@@ -40,7 +42,7 @@ class JobInputBuilder {
             }
             else -> {
                 input.add(
-                    SerializedParameter(
+                    SerializedData(
                         serializedData = Json.stringify(value).toByteArray(Charsets.UTF_8),
                         serializationType = SerializationType.JSON
                     )
@@ -51,5 +53,5 @@ class JobInputBuilder {
         return this
     }
 
-    fun get() = JobInput(input)
+    fun build() = JobInput(input)
 }

@@ -23,7 +23,7 @@ import org.apache.avro.specific.SpecificRecordBase
 class AvroConsistencyTests : StringSpec({
     // From Message
     Message::class.sealedSubclasses.forEach {
-        val msg = TestFactory.get(it)
+        val msg = TestFactory.random(it)
         if (msg is ForWorkerMessage) {
             include(checkAvroConversionToEnvelopeForWorker(msg))
         }
@@ -45,7 +45,7 @@ class AvroConsistencyTests : StringSpec({
     checkAllSubTypesFromEnvelope<ForMonitoringPerNameMessage>(this, AvroEnvelopeForMonitoringPerName())
 })
 
-fun checkAvroConversionToEnvelopeForWorker(msg: ForWorkerMessage) = stringSpec {
+internal fun checkAvroConversionToEnvelopeForWorker(msg: ForWorkerMessage) = stringSpec {
     "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForWorker::class.simpleName}" {
         shouldNotThrowAny {
             AvroConverter.toWorkers(msg)
@@ -53,7 +53,7 @@ fun checkAvroConversionToEnvelopeForWorker(msg: ForWorkerMessage) = stringSpec {
     }
 }
 
-fun checkAvroConversionToEnvelopeForJobEngine(msg: ForJobEngineMessage) = stringSpec {
+internal fun checkAvroConversionToEnvelopeForJobEngine(msg: ForJobEngineMessage) = stringSpec {
     "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForJobEngine::class.simpleName}" {
         shouldNotThrowAny {
             AvroConverter.toJobEngine(msg)
@@ -61,7 +61,7 @@ fun checkAvroConversionToEnvelopeForJobEngine(msg: ForJobEngineMessage) = string
     }
 }
 
-fun checkAvroConversionToEnvelopeForMonitoringPerName(msg: ForMonitoringPerNameMessage) = stringSpec {
+internal fun checkAvroConversionToEnvelopeForMonitoringPerName(msg: ForMonitoringPerNameMessage) = stringSpec {
     "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForMonitoringPerName::class.simpleName}" {
         shouldNotThrowAny {
             AvroConverter.toMonitoringPerName(msg)
@@ -69,7 +69,7 @@ fun checkAvroConversionToEnvelopeForMonitoringPerName(msg: ForMonitoringPerNameM
     }
 }
 
-fun checkAvroConversionToEnvelopeForMonitoringGlobal(msg: ForMonitoringGlobalMessage) = stringSpec {
+internal fun checkAvroConversionToEnvelopeForMonitoringGlobal(msg: ForMonitoringGlobalMessage) = stringSpec {
     "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForMonitoringGlobal::class.simpleName}" {
         shouldNotThrowAny {
             AvroConverter.toMonitoringGlobal(msg)
@@ -77,7 +77,7 @@ fun checkAvroConversionToEnvelopeForMonitoringGlobal(msg: ForMonitoringGlobalMes
     }
 }
 
-inline fun <reified T> checkAllSubTypesFromEnvelope(config: TestConfiguration, msg: GenericRecord) {
+internal inline fun <reified T> checkAllSubTypesFromEnvelope(config: TestConfiguration, msg: GenericRecord) {
     msg.schema.getField("type").schema().enumSymbols.forEach {
         val schema = msg.schema.getField(it).schema()
         config.include(checkEnvelopeSchema(it, schema, msg::class))
@@ -87,7 +87,7 @@ inline fun <reified T> checkAllSubTypesFromEnvelope(config: TestConfiguration, m
     }
 }
 
-fun checkEnvelopeSchema(field: String, schema: Schema, klass: KClass<out GenericRecord>) = stringSpec {
+internal fun checkEnvelopeSchema(field: String, schema: Schema, klass: KClass<out GenericRecord>) = stringSpec {
     "Checking schema for field $field of ${klass.simpleName}" {
         // check that type is an union
         schema.isUnion shouldBe true
@@ -98,12 +98,12 @@ fun checkEnvelopeSchema(field: String, schema: Schema, klass: KClass<out Generic
     }
 }
 
-inline fun <reified T> checkConversionFromAvro(name: String, namespace: String) = stringSpec {
+internal inline fun <reified T> checkConversionFromAvro(name: String, namespace: String) = stringSpec {
     "$name should be convertible from avro" {
         // get class name
         @Suppress("UNCHECKED_CAST")
         val klass = Class.forName("$namespace.$name").kotlin as KClass<SpecificRecordBase>
-        val message = AvroConverter.convertFromAvro(TestFactory.get(klass))
+        val message = AvroConverter.convertFromAvro(TestFactory.random(klass))
         (message is T) shouldBe true
         (message is Message) shouldBe true
     }

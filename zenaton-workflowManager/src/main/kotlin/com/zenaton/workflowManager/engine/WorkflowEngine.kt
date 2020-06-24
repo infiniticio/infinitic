@@ -115,11 +115,11 @@ class WorkflowEngine {
                 jobInput = JobInput
                     .builder()
                     .add(AvroConverter.toAvroDecisionInput(decisionInput))
-                    .get(),
+                    .build(),
                 jobMeta = JobMeta
                     .builder()
                     .add("workflowId", msg.workflowId.id)
-                    .get()
+                    .build()
             )
         )
         // log event

@@ -1,5 +1,6 @@
 package com.zenaton.common.avro
 
+import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumReader
