@@ -11,15 +11,19 @@ class JobInputBuilder {
     private var input: MutableList<SerializedParameter> = mutableListOf()
 
     fun add(value: Any?): JobInputBuilder {
-        when(value) {
-            null -> input.add(SerializedParameter(
-                serializedData = ByteArray(0),
-                serializationType = SerializationType.NULL
-            ))
-            is ByteArray -> input.add(SerializedParameter(
-                serializedData = value,
-                serializationType = SerializationType.BYTES
-            ))
+        when (value) {
+            null -> input.add(
+                SerializedParameter(
+                    serializedData = ByteArray(0),
+                    serializationType = SerializationType.NULL
+                )
+            )
+            is ByteArray -> input.add(
+                SerializedParameter(
+                    serializedData = value,
+                    serializationType = SerializationType.BYTES
+                )
+            )
             is ByteBuffer -> {
                 value.rewind()
                 val bytes = ByteArray(value.remaining())
@@ -27,16 +31,20 @@ class JobInputBuilder {
                 add(bytes)
             }
             is SpecificRecord -> {
-                input.add(SerializedParameter(
-                    serializedData = AvroSerDe.serializeToByteArray(value),
-                    serializationType = SerializationType.AVRO
-                ))
+                input.add(
+                    SerializedParameter(
+                        serializedData = AvroSerDe.serializeToByteArray(value),
+                        serializationType = SerializationType.AVRO
+                    )
+                )
             }
             else -> {
-                input.add(SerializedParameter(
-                    serializedData = Json.stringify(value).toByteArray(Charsets.UTF_8),
-                    serializationType = SerializationType.JSON
-                ))
+                input.add(
+                    SerializedParameter(
+                        serializedData = Json.stringify(value).toByteArray(Charsets.UTF_8),
+                        serializationType = SerializationType.JSON
+                    )
+                )
             }
         }
 
