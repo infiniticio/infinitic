@@ -27,9 +27,10 @@
   "author": "Zenaton",
   "module": "dist/client.esm.js",
   "dependencies": {
-    "@zenaton/messages": "^0.0.1",
-    "pulsar-client": "^1.1.0",
     "@types/uuid": "^8.0.0",
+    "@zenaton/messages": "^0.0.1",
+    "p-limit": "^3.0.1",
+    "pulsar-client": "^1.1.0",
     "uuid": "^8.1.0"
   },
   "devDependencies": {}
