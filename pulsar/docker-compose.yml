@@ -11,6 +11,8 @@ services:
       - "pulsarconf:/pulsar/conf"
       - "../zenaton-jobManager-pulsar/build/libs:/zenaton/jobManager/libs:delegated"
       - "../zenaton-jobManager-pulsar/build/schemas:/zenaton/jobManager/schemas:delegated"
+      - "../zenaton-workflowManager-pulsar/build/libs:/zenaton/workflowManager/libs:delegated"
+      - "../zenaton-workflowManager-pulsar/build/schemas:/zenaton/workflowManager/schemas:delegated"
     ports:
       - "6650:6650"
       - "8080:8080"

@@ -69,7 +69,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     override fun toJobEngine(msg: AvroEnvelopeForJobEngine, after: Float) {
 
         val msgBuilder = context
-            .newOutputMessage(Topic.ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
+            .newOutputMessage(Topic.JOB_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
             .key(msg.jobId)
             .value(msg)
 
@@ -79,7 +79,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
         msgBuilder.send()
 
         context.logger.debug("===============JobManager====================")
-        context.logger.debug("Topic: ${Topic.ENGINE.get(prefix)}")
+        context.logger.debug("Topic: ${Topic.JOB_ENGINE.get(prefix)}")
         context.logger.debug("Msg: $msg")
     }
 }

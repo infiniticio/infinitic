@@ -5,7 +5,7 @@ include("zenaton-jobManager")
 include("zenaton-jobManager-pulsar")
 include("zenaton-rest-api")
 include("zenaton-workflowManager")
-// include("zenaton-workflowManager-pulsar")
+include("zenaton-workflowManager-pulsar")
 
 pluginManagement {
     repositories {

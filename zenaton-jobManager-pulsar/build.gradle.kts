@@ -4,11 +4,14 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 plugins {
+    application
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+}
 
-    application
+application {
+    mainClassName = "com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 dependencies {
@@ -28,10 +31,6 @@ dependencies {
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")
     testImplementation("io.kotest:kotest-core-jvm:4.0.+")
     testImplementation("io.mockk:mockk:1.9.+")
-}
-
-application {
-    mainClassName = "com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 java {

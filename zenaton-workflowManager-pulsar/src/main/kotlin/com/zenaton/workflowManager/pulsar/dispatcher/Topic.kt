@@ -1,17 +1,11 @@
-package com.zenaton.workflowManager.pulsar.topics
+package com.zenaton.workflowManager.pulsar.dispatcher
 
 enum class Topic {
-    WORKFLOWS {
+    WORKFLOW_ENGINE {
         override fun get(name: String?) = "workflows"
-    },
-    DECISIONS {
-        override fun get(name: String?) = "decisions"
     },
     DELAYS {
         override fun get(name: String?) = "delays"
-    },
-    DECISION_ATTEMPTS {
-        override fun get(name: String?) = "decisions-$name"
     },
     LOGS {
         override fun get(name: String?) = "logs"

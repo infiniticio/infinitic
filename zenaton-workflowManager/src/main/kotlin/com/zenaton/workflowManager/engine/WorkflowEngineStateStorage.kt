@@ -7,11 +7,11 @@ import com.zenaton.workflowManager.interfaces.AvroStorage
 class WorkflowEngineStateStorage(val avroStorage: AvroStorage) {
 
     fun getState(workflowId: WorkflowId): WorkflowEngineState? {
-        return avroStorage.getEngineState(workflowId.id)?.let { AvroConverter.fromStorage(it) }
+        return avroStorage.getWorkflowEngineState(workflowId.id)?.let { AvroConverter.fromStorage(it) }
     }
 
     fun updateState(workflowId: WorkflowId, newState: WorkflowEngineState, oldState: WorkflowEngineState?) {
-        avroStorage.updateEngineState(
+        avroStorage.updateWorkflowEngineState(
             workflowId.id,
             AvroConverter.toStorage(newState),
             oldState?.let { AvroConverter.toStorage(it) }
@@ -19,6 +19,6 @@ class WorkflowEngineStateStorage(val avroStorage: AvroStorage) {
     }
 
     fun deleteState(workflowId: WorkflowId) {
-        avroStorage.deleteEngineState(workflowId.id)
+        avroStorage.deleteWorkflowEngineState(workflowId.id)
     }
 }
