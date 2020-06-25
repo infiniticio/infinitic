@@ -64,14 +64,6 @@ export class Client {
     this.dispatchForJobEngineMessage(message);
   }
 
-  async dispatchForJobEngineMessage(message: ForJobEngineMessage) {
-    await this.initializeClientAndProducer();
-
-    await this.pulsarProducer!.send({
-      data: AvroEnvelopeForJobEngine.toBuffer(message),
-    });
-  }
-
   async close() {
     if (this.pulsarProducer) {
       await this.pulsarProducer.close();
@@ -79,6 +71,14 @@ export class Client {
     if (this.pulsarClient) {
       await this.pulsarClient.close();
     }
+  }
+
+  private async dispatchForJobEngineMessage(message: ForJobEngineMessage) {
+    await this.initializeClientAndProducer();
+
+    await this.pulsarProducer!.send({
+      data: AvroEnvelopeForJobEngine.toBuffer(message),
+    });
   }
 
   /**
