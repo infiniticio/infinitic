@@ -5,17 +5,49 @@ import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.common.json.Json
 import org.apache.avro.specific.SpecificRecord
 import java.math.BigInteger
+import java.nio.ByteBuffer
 import java.security.MessageDigest
 
-open class SerializedData(
-    open val serializedData: ByteArray,
-    open val serializationType: SerializationType
+data class SerializedData(
+    var serializedData: ByteArray,
+    var serializationType: SerializationType
 ) {
-    // SerializedData() returns a null
-    constructor() : this(
-        serializedData = ByteArray(0),
-        serializationType = SerializationType.NULL
-    )
+    companion object  {
+        fun from(value: Any? = null) : SerializedData {
+            val data: ByteArray
+            val type: SerializationType
+
+            when(value) {
+                null -> {
+                    data = ByteArray(0)
+                    type = SerializationType.NULL
+                }
+                is ByteArray -> {
+                    data = value
+                    type = SerializationType.BYTES
+                }
+                is ByteBuffer -> {
+                    val p = value.position()
+                    val bytes = ByteArray(value.remaining())
+                    value.get(bytes, 0, bytes.size)
+                    value.position(p)
+
+                    data = bytes
+                    type = SerializationType.BYTES
+                }
+                is SpecificRecord -> {
+                    data = AvroSerDe.serializeToByteArray(value)
+                    type = SerializationType.AVRO
+                }
+                else -> {
+                    data = Json.stringify(value).toByteArray(Charsets.UTF_8)
+                    type = SerializationType.JSON
+                }
+            }
+
+            return SerializedData(data, type)
+        }
+    }
 
     fun hash(): String {
         // MD5 implementation
@@ -23,8 +55,7 @@ open class SerializedData(
         return BigInteger(1, md.digest(serializedData)).toString(16).padStart(32, '0')
     }
 
-    // final is important here for inheritance by data class
-    final override fun equals(other: Any?): Boolean {
+    override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
@@ -33,8 +64,7 @@ open class SerializedData(
         return (serializationType == other.serializationType && serializedData.contentEquals(other.serializedData))
     }
 
-    // final is important here for inheritance by data class
-    final override fun hashCode(): Int {
+    override fun hashCode(): Int {
         return serializedData.contentHashCode()
     }
 

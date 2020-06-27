@@ -25,7 +25,7 @@ object TestFactory {
             .seed(seed)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) { SerializedData() }
+            .randomize(SerializedData::class.java) { SerializedData.from() }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })
