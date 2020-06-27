@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.pulsar.dispatcher
 
-import com.zenaton.jobManager.interfaces.AvroDispatcher
+import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName

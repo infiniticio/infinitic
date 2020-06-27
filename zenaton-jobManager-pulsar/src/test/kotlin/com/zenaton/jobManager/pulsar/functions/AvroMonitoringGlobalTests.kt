@@ -1,8 +1,7 @@
 package com.zenaton.jobManager.pulsar.functions
 
-import com.zenaton.jobManager.functions.MonitoringPerNameFunction
-import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import com.zenaton.jobManager.pulsar.dispatcher.PulsarAvroDispatcher
+import com.zenaton.jobManager.avroEngines.AvroMonitoringGlobal
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
@@ -14,38 +13,33 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
-import java.util.Optional
 
-class MonitoringPerNameFunctionTests : ShouldSpec({
-    context("TaskMetricsFunction.process") {
+class AvroMonitoringGlobalTests : ShouldSpec({
+    context("MonitoringGlobalPulsarFunction.process") {
 
         should("throw an exception if called with a null context") {
-            val function = MonitoringPerNamePulsarFunction()
+            val function = MonitoringGlobalPulsarFunction()
 
             shouldThrow<NullPointerException> {
-                function.process(mockk<AvroEnvelopeForMonitoringPerName>(), null)
+                function.process(mockk<AvroEnvelopeForMonitoringGlobal>(), null)
             }
         }
 
         should("call metrics with correct parameters") {
             // mocking
-            val topicPrefixValue = mockk<Optional<Any>>()
-            every { topicPrefixValue.isPresent } returns false
             val context = mockk<Context>()
-            every { context.logger } returns mockk<org.slf4j.Logger>(relaxed = true)
-            every { context.getUserConfigValue("topicPrefix") } returns topicPrefixValue
-            val monitoringFunction = spyk<MonitoringPerNameFunction>()
+            every { context.logger } returns mockk<org.slf4j.Logger>()
+            val monitoringFunction = spyk<AvroMonitoringGlobal>()
             every { monitoringFunction.handle(any()) } just Runs
-            val avroMsg = mockk<AvroEnvelopeForMonitoringPerName>()
+            val avroMsg = mockk<AvroEnvelopeForMonitoringGlobal>()
             // given
-            val fct = MonitoringPerNamePulsarFunction()
+            val fct = MonitoringGlobalPulsarFunction()
             fct.monitoring = monitoringFunction
             // when
             fct.process(avroMsg, context)
             // then
             monitoringFunction.logger shouldBe context.logger
             (monitoringFunction.avroStorage as PulsarAvroStorage).context shouldBe context
-            (monitoringFunction.avroDispatcher as PulsarAvroDispatcher).context shouldBe context
             verify(exactly = 1) { monitoringFunction.handle(avroMsg) }
         }
     }

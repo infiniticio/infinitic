@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.engine
+package com.zenaton.jobManager.engines
 
 import com.zenaton.common.data.interfaces.plus
 import com.zenaton.jobManager.data.JobAttemptId
@@ -7,6 +7,7 @@ import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.messages.CancelJob
 import com.zenaton.jobManager.messages.DispatchJob
+import com.zenaton.jobManager.messages.ForJobEngineMessage
 import com.zenaton.jobManager.messages.JobAttemptCompleted
 import com.zenaton.jobManager.messages.JobAttemptDispatched
 import com.zenaton.jobManager.messages.JobAttemptFailed
@@ -17,8 +18,9 @@ import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
-import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
 import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
+import com.zenaton.jobManager.states.JobEngineState
+import com.zenaton.jobManager.storages.JobEngineStateStorage
 import org.slf4j.Logger
 
 class JobEngine {
@@ -33,6 +35,7 @@ class JobEngine {
             is JobAttemptStarted -> return
             is JobCompleted -> return
             is JobCanceled -> return
+            else -> Unit
         }
 
         // get current state

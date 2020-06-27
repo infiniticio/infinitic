@@ -1,14 +1,14 @@
 package com.zenaton.jobManager.avro
 
+import com.zenaton.jobManager.messages.ForJobEngineMessage
+import com.zenaton.jobManager.messages.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.ForWorkerMessage
 import com.zenaton.jobManager.messages.Message
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
-import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.TestConfiguration
@@ -21,21 +21,20 @@ import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
 
 class AvroConsistencyTests : StringSpec({
-    // From Message
-    Message::class.sealedSubclasses.forEach {
-        val msg = TestFactory.random(it)
-        if (msg is ForWorkerMessage) {
-            include(checkAvroConversionToEnvelopeForWorker(msg))
-        }
-        if (msg is ForJobEngineMessage) {
-            include(checkAvroConversionToEnvelopeForJobEngine(msg))
-        }
-        if (msg is ForMonitoringPerNameMessage) {
-            include(checkAvroConversionToEnvelopeForMonitoringPerName(msg))
-        }
-        if (msg is ForMonitoringGlobalMessage) {
-            include(checkAvroConversionToEnvelopeForMonitoringGlobal(msg))
-        }
+    ForJobEngineMessage::class.sealedSubclasses.forEach {
+        include(checkAvroConversionToEnvelopeForJobEngine(TestFactory.random(it)))
+    }
+
+    ForMonitoringPerNameMessage::class.sealedSubclasses.forEach {
+        include(checkAvroConversionToEnvelopeForMonitoringPerName(TestFactory.random(it)))
+    }
+
+    ForMonitoringGlobalMessage::class.sealedSubclasses.forEach {
+        include(checkAvroConversionToEnvelopeForMonitoringGlobal(TestFactory.random(it)))
+    }
+
+    ForWorkerMessage::class.sealedSubclasses.forEach {
+        include(checkAvroConversionToEnvelopeForWorker(TestFactory.random(it)))
     }
 
     // From Avro
@@ -44,14 +43,6 @@ class AvroConsistencyTests : StringSpec({
     checkAllSubTypesFromEnvelope<ForMonitoringGlobalMessage>(this, AvroEnvelopeForMonitoringGlobal())
     checkAllSubTypesFromEnvelope<ForMonitoringPerNameMessage>(this, AvroEnvelopeForMonitoringPerName())
 })
-
-internal fun checkAvroConversionToEnvelopeForWorker(msg: ForWorkerMessage) = stringSpec {
-    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForWorker::class.simpleName}" {
-        shouldNotThrowAny {
-            AvroConverter.toWorkers(msg)
-        }
-    }
-}
 
 internal fun checkAvroConversionToEnvelopeForJobEngine(msg: ForJobEngineMessage) = stringSpec {
     "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForJobEngine::class.simpleName}" {
@@ -73,6 +64,14 @@ internal fun checkAvroConversionToEnvelopeForMonitoringGlobal(msg: ForMonitoring
     "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForMonitoringGlobal::class.simpleName}" {
         shouldNotThrowAny {
             AvroConverter.toMonitoringGlobal(msg)
+        }
+    }
+}
+
+internal fun checkAvroConversionToEnvelopeForWorker(msg: ForWorkerMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForWorker::class.simpleName}" {
+        shouldNotThrowAny {
+            AvroConverter.toWorkers(msg)
         }
     }
 }

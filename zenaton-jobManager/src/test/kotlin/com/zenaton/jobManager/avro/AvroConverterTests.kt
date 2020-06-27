@@ -1,13 +1,12 @@
 package com.zenaton.jobManager.avro
 
-import com.zenaton.jobManager.engine.JobEngineState
-import com.zenaton.jobManager.messages.Message
-import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
-import com.zenaton.jobManager.monitoringGlobal.MonitoringGlobalState
-import com.zenaton.jobManager.monitoringPerName.MonitoringPerNameState
+import com.zenaton.jobManager.messages.ForJobEngineMessage
+import com.zenaton.jobManager.messages.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.messages.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.messages.ForWorkerMessage
+import com.zenaton.jobManager.states.JobEngineState
+import com.zenaton.jobManager.states.MonitoringGlobalState
+import com.zenaton.jobManager.states.MonitoringPerNameState
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -16,7 +15,7 @@ import io.kotest.matchers.shouldBe
 
 class AvroConverterTests : StringSpec({
 
-    "Engine state should be avro-reversible" {
+    "JobEngineState should be avro-reversible" {
         // given
         val state = TestFactory.random(JobEngineState::class)
         // when
@@ -28,7 +27,7 @@ class AvroConverterTests : StringSpec({
         avroState2 shouldBe avroState
     }
 
-    "MonitoringPerName state state should be avro-reversible" {
+    "MonitoringPerNameState should be avro-reversible" {
         // given
         val state = TestFactory.random(MonitoringPerNameState::class)
         // when
@@ -40,7 +39,7 @@ class AvroConverterTests : StringSpec({
         avroState2 shouldBe avroState
     }
 
-    "MonitoringGlobal state state should be avro-reversible" {
+    "MonitoringGlobalState should be avro-reversible" {
         // given
         val state = TestFactory.random(MonitoringGlobalState::class)
         // when
@@ -52,22 +51,34 @@ class AvroConverterTests : StringSpec({
         avroState2 shouldBe avroState
     }
 
-    Message::class.sealedSubclasses.forEach {
-        val msg = TestFactory.random(it)
-        if (msg is ForWorkerMessage) {
-            include(messagesToWorkersShouldBeAvroReversible(msg))
-        }
-        if (msg is ForJobEngineMessage) {
-            include(messagesToJobEngineShouldBeAvroReversible(msg))
-        }
-        if (msg is ForMonitoringPerNameMessage) {
-            include(messagesToMonitoringPerNameShouldBeAvroReversible(msg))
-        }
-        if (msg is ForMonitoringGlobalMessage) {
-            include(messagesToMonitoringGlobalShouldBeAvroReversible(msg))
-        }
+    ForJobEngineMessage::class.sealedSubclasses.forEach {
+        include(messagesToJobEngineShouldBeAvroReversible(TestFactory.random(it)))
+    }
+
+    ForMonitoringPerNameMessage::class.sealedSubclasses.forEach {
+        include(messagesToMonitoringPerNameShouldBeAvroReversible(TestFactory.random(it)))
+    }
+
+    ForMonitoringGlobalMessage::class.sealedSubclasses.forEach {
+        include(messagesToMonitoringGlobalShouldBeAvroReversible(TestFactory.random(it)))
+    }
+
+    ForWorkerMessage::class.sealedSubclasses.forEach {
+        include(messagesToWorkersShouldBeAvroReversible(TestFactory.random(it)))
     }
 })
+
+internal fun stateShouldBeAvroReversible(msg: ForWorkerMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be avro-convertible" {
+        shouldNotThrowAny {
+            val avroMsg = AvroConverter.toWorkers(msg)
+            val msg2 = AvroConverter.fromWorkers(avroMsg)
+            val avroMsg2 = AvroConverter.toWorkers(msg2)
+            msg shouldBe msg2
+            avroMsg shouldBe avroMsg2
+        }
+    }
+}
 
 internal fun messagesToWorkersShouldBeAvroReversible(msg: ForWorkerMessage) = stringSpec {
     "${msg::class.simpleName!!} should be avro-convertible" {

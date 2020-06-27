@@ -1,15 +1,15 @@
-package com.zenaton.jobManager.functions
+package com.zenaton.jobManager.avroEngines
 
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.engine.JobEngine
-import com.zenaton.jobManager.engine.JobEngineStateStorage
-import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.interfaces.AvroStorage
+import com.zenaton.jobManager.engines.JobEngine
+import com.zenaton.jobManager.storages.JobEngineStateStorage
+import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import org.slf4j.Logger
 
-class JobEngineFunction {
+class AvroJobEngine {
     lateinit var logger: Logger
     lateinit var avroStorage: AvroStorage
     lateinit var avroDispatcher: AvroDispatcher

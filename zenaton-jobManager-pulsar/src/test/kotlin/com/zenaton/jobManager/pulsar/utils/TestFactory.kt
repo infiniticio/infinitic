@@ -21,7 +21,7 @@ object TestFactory {
         return this
     }
 
-    fun <T : Any> get(klass: KClass<T>, values: Map<String, Any?>? = null): T {
+    fun <T : Any> random(klass: KClass<T>, values: Map<String, Any?>? = null): T {
         // if not updated, 2 subsequents calls to this method would provide the same values
         seed++
 

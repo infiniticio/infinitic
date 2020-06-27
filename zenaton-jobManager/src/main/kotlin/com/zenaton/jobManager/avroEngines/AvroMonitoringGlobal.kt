@@ -1,13 +1,13 @@
-package com.zenaton.jobManager.functions
+package com.zenaton.jobManager.avroEngines
 
 import com.zenaton.jobManager.avro.AvroConverter
-import com.zenaton.jobManager.interfaces.AvroStorage
+import com.zenaton.jobManager.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
-import com.zenaton.jobManager.monitoringGlobal.MonitoringGlobal
-import com.zenaton.jobManager.monitoringGlobal.MonitoringGlobalStorage
+import com.zenaton.jobManager.engines.MonitoringGlobal
+import com.zenaton.jobManager.storages.MonitoringGlobalStorage
 import org.slf4j.Logger
 
-class MonitoringGlobalFunction {
+class AvroMonitoringGlobal {
     lateinit var logger: Logger
     lateinit var avroStorage: AvroStorage
 

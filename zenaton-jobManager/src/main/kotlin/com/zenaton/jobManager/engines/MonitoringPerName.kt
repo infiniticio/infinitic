@@ -1,11 +1,12 @@
-package com.zenaton.jobManager.monitoringPerName
+package com.zenaton.jobManager.engines
 
-import com.zenaton.common.data.interfaces.deepCopy
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
+import com.zenaton.jobManager.messages.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobStatusUpdated
-import com.zenaton.jobManager.messages.envelopes.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.states.MonitoringPerNameState
+import com.zenaton.jobManager.storages.MonitoringPerNameStorage
 import org.slf4j.Logger
 
 class MonitoringPerName {

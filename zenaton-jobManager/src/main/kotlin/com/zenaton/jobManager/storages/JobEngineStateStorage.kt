@@ -1,8 +1,9 @@
-package com.zenaton.jobManager.engine
+package com.zenaton.jobManager.storages
 
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.data.JobId
-import com.zenaton.jobManager.interfaces.AvroStorage
+import com.zenaton.jobManager.avroInterfaces.AvroStorage
+import com.zenaton.jobManager.states.JobEngineState
 
 class JobEngineStateStorage(val avroStorage: AvroStorage) {
 

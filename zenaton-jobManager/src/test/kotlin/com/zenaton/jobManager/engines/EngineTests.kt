@@ -1,11 +1,12 @@
-package com.zenaton.jobManager.engine
+package com.zenaton.jobManager.engines
 
-import com.zenaton.common.data.interfaces.deepCopy
 import com.zenaton.common.data.interfaces.plus
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
 import com.zenaton.jobManager.messages.CancelJob
 import com.zenaton.jobManager.messages.DispatchJob
+import com.zenaton.jobManager.messages.ForJobEngineMessage
+import com.zenaton.jobManager.messages.ForWorkerMessage
 import com.zenaton.jobManager.messages.JobAttemptCompleted
 import com.zenaton.jobManager.messages.JobAttemptDispatched
 import com.zenaton.jobManager.messages.JobAttemptFailed
@@ -16,8 +17,8 @@ import com.zenaton.jobManager.messages.JobStatusUpdated
 import com.zenaton.jobManager.messages.RetryJob
 import com.zenaton.jobManager.messages.RetryJobAttempt
 import com.zenaton.jobManager.messages.RunJob
-import com.zenaton.jobManager.messages.envelopes.ForJobEngineMessage
-import com.zenaton.jobManager.messages.envelopes.ForWorkerMessage
+import com.zenaton.jobManager.states.JobEngineState
+import com.zenaton.jobManager.storages.JobEngineStateStorage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -108,7 +109,7 @@ internal fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage):
     return o
 }
 
-internal class JobEngineFunctionTests : StringSpec({
+internal class AvroJobEngineTests : StringSpec({
     "JobAttemptDispatched" {
         val stateIn = state()
         val msgIn = jobAttemptDispatched()

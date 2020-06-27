@@ -1,8 +1,9 @@
-package com.zenaton.jobManager.monitoringPerName
+package com.zenaton.jobManager.storages
 
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.data.JobName
-import com.zenaton.jobManager.interfaces.AvroStorage
+import com.zenaton.jobManager.avroInterfaces.AvroStorage
+import com.zenaton.jobManager.states.MonitoringPerNameState
 
 class MonitoringPerNameStorage(val avroStorage: AvroStorage) {
 

@@ -1,15 +1,15 @@
-package com.zenaton.jobManager.functions
+package com.zenaton.jobManager.avroEngines
 
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.interfaces.AvroDispatcher
-import com.zenaton.jobManager.interfaces.AvroStorage
+import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import com.zenaton.jobManager.monitoringPerName.MonitoringPerName
-import com.zenaton.jobManager.monitoringPerName.MonitoringPerNameStorage
+import com.zenaton.jobManager.engines.MonitoringPerName
+import com.zenaton.jobManager.storages.MonitoringPerNameStorage
 import org.slf4j.Logger
 
-class MonitoringPerNameFunction {
+class AvroMonitoringPerName {
     lateinit var logger: Logger
     lateinit var avroStorage: AvroStorage
     lateinit var avroDispatcher: AvroDispatcher

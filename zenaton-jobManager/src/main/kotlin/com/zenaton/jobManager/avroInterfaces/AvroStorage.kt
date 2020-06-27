@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.interfaces
+package com.zenaton.jobManager.avroInterfaces
 
 import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
