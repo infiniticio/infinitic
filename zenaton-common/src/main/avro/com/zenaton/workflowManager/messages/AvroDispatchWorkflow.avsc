@@ -7,12 +7,10 @@
             "name": "workflowId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
+        }, {
             "name": "workflowName",
             "type": "string"
-        },
-        {
+        }, {
             "name": "workflowInput",
             "type": {
                 "type": "array",

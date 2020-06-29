@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.pulsar.functions
 
-import com.zenaton.jobManager.functions.JobEngineFunction
+import com.zenaton.jobManager.avroEngines.AvroJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarAvroDispatcher
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
@@ -33,7 +33,7 @@ class JobEnginePulsarFunctionTests : StringSpec({
         val context = mockk<Context>()
         every { context.logger } returns mockk<org.slf4j.Logger>(relaxed = true)
         every { context.getUserConfigValue("topicPrefix") } returns topicPrefixValue
-        val engineFunction = spyk(JobEngineFunction())
+        val engineFunction = spyk(AvroJobEngine())
         every { engineFunction.handle(any()) } just Runs
         val avroMsg = mockk<AvroEnvelopeForJobEngine>()
         // given

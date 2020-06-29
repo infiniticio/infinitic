@@ -2,7 +2,7 @@ package com.zenaton.jobManager.pulsar.storage
 
 import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.jobManager.data.JobStatus
-import com.zenaton.jobManager.interfaces.AvroStorage
+import com.zenaton.jobManager.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState

@@ -34,6 +34,6 @@ interface JobMessage {
     object Fields {
         const val JOB_ID = "jobid"
         const val TYPE = "type"
-        const val SENT_AT = "__publish_time__";
+        const val SENT_AT = "__publish_time__"
     }
 }

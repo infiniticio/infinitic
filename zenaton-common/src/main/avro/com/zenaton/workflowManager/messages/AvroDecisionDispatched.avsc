@@ -11,12 +11,10 @@
             "name": "decisionId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
+        }, {
             "name": "workflowName",
             "type": "string"
-        },
-        {
+        }, {
             "name": "decisionInput",
             "type": "com.zenaton.workflowManager.decisions.AvroDecisionInput"
         }

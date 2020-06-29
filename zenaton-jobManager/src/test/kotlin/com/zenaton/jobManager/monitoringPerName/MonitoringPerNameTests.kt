@@ -2,8 +2,11 @@ package com.zenaton.jobManager.monitoringPerName
 
 import com.zenaton.jobManager.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
+import com.zenaton.jobManager.engines.MonitoringPerName
 import com.zenaton.jobManager.messages.JobCreated
 import com.zenaton.jobManager.messages.JobStatusUpdated
+import com.zenaton.jobManager.states.MonitoringPerNameState
+import com.zenaton.jobManager.storages.MonitoringPerNameStorage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
