@@ -2,9 +2,10 @@ package com.zenaton.api.task.models
 
 import java.time.Instant
 
-data class TaskAttemptTry(val index: Int, val startedAt: Instant?, val completedAt: Instant?, val failedAt: Instant?, val delayBeforeRetry: Float?) {
+data class TaskAttemptTry(val retry: Int, val dispatchedAt: Instant, val startedAt: Instant?, val completedAt: Instant?, val failedAt: Instant?, val delayBeforeRetry: Float?) {
     class Builder {
-        var index: Int? = null
+        var retry: Int? = null
+        var dispatchedAt: Instant? = null
         var startedAt: Instant? = null
         var completedAt: Instant? = null
         var failedAt: Instant? = null
@@ -12,7 +13,8 @@ data class TaskAttemptTry(val index: Int, val startedAt: Instant?, val completed
 
         fun build(): TaskAttemptTry {
             return TaskAttemptTry(
-                index = index ?: throw Exceptions.IncompleteStateException("Index is mandatory to build a TaskAttemptTry object."),
+                retry = retry ?: throw Exceptions.IncompleteStateException("Retry is mandatory to build a TaskAttemptTry object."),
+                dispatchedAt = dispatchedAt ?: throw Exceptions.IncompleteStateException("Dispatched date is mandatory to build a TaskAttemptTry object."),
                 startedAt = startedAt,
                 completedAt = completedAt,
                 failedAt = failedAt,
@@ -31,4 +33,4 @@ data class TaskAttemptTry(val index: Int, val startedAt: Instant?, val completed
  */
 fun List<TaskAttemptTry.Builder>.build(): List<TaskAttemptTry> = map { it.build() }
 
-fun List<TaskAttemptTry.Builder>.findWithIndex(index: Int): TaskAttemptTry.Builder? = find { it.index == index }
+fun List<TaskAttemptTry.Builder>.findWithRetry(index: Int): TaskAttemptTry.Builder? = find { it.retry == index }
