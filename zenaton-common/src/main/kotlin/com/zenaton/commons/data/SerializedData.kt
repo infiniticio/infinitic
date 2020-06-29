@@ -12,12 +12,12 @@ data class SerializedData(
     var serializedData: ByteArray,
     var serializationType: SerializationType
 ) {
-    companion object  {
-        fun from(value: Any? = null) : SerializedData {
+    companion object {
+        fun from(value: Any? = null): SerializedData {
             val data: ByteArray
             val type: SerializationType
 
-            when(value) {
+            when (value) {
                 null -> {
                     data = ByteArray(0)
                     type = SerializationType.NULL

@@ -1,14 +1,15 @@
 package com.zenaton.jobManager.avroEngines
 
-import com.zenaton.common.data.AvroSerializedData
 import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.avro.AvroConverter
 import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.avroInterfaces.AvroStorage
+import com.zenaton.jobManager.data.AvroJobStatus
 import com.zenaton.jobManager.messages.AvroDispatchJob
 import com.zenaton.jobManager.messages.AvroJobAttemptCompleted
 import com.zenaton.jobManager.messages.AvroJobAttemptFailed
 import com.zenaton.jobManager.messages.AvroJobAttemptStarted
+import com.zenaton.jobManager.messages.AvroRetryJob
 import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
@@ -18,14 +19,18 @@ import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 import com.zenaton.jobManager.utils.TestFactory
-import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
-import java.lang.StringBuilder
 
 private val logger = mockk<Logger>(relaxed = true)
 private val engine = AvroJobEngine()
@@ -35,33 +40,108 @@ private val worker = SyncWorker()
 private val avroDispatcher = SyncAvroDispatcher(engine, perName, global, worker)
 private val avroStorage = SyncAvroStorage()
 
-class AvroEngineTests : ShouldSpec({
+enum class Status {
+    SUCCESS,
+    FAIL_WITH_RETRY,
+    FAIL_WITHOUT_RETRY
+}
 
-    context("q") {
+class AvroEngineTests : StringSpec({
+    "Job succeeds at first try" {
+        beforeTest()
+        // job will succeed
+        worker.behavior = { Status.SUCCESS }
+        // run system
+        runBlocking {
+            avroDispatcher.scope = this
+            avroDispatcher.toJobEngine(getAvroDispatchJob())
+        }
+        // check that job is completed
+        avroStorage.engineStore shouldBe mapOf()
+        // checks number of job processings
+        verify(exactly = 1) {
+            worker.jobA.handle()
+        }
+    }
 
+    "Job succeeds at 5th try" {
+        beforeTest()
+        // job will succeed only at the 4th try
+        worker.behavior = { job: AvroRunJob -> if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.SUCCESS }
+        // run system
+        runBlocking {
+            avroDispatcher.scope = this
+            avroDispatcher.toJobEngine(getAvroDispatchJob())
+        }
+        // check that job is completed
+        avroStorage.engineStore shouldBe mapOf()
+        // checks number of job processings
+        verify(exactly = 4) {
+            worker.jobA.handle()
+        }
+    }
 
-        should("q") {
-            val avro = TestFactory.random(
-                AvroDispatchJob::class,
-                mapOf("jobName" to "JobA", "jobMeta" to mapOf<String, String>())
-            )
+    "Job fails" {
+        beforeTest()
+        // job will succeed only at the 4th try
+        worker.behavior = { Status.FAIL_WITHOUT_RETRY }
+        // run system
+        val avro = getAvroDispatchJob()
+        runBlocking {
+            avroDispatcher.scope = this
+            avroDispatcher.toJobEngine(avro)
+        }
+        // check that job is completed
+        avroStorage.engineStore.get(avro.jobId)?.jobStatus shouldBe AvroJobStatus.RUNNING_ERROR
+        // checks number of job processings
+        verify(exactly = 1) {
+            worker.jobA.handle()
+        }
+    }
 
-            runBlocking {
-                avroDispatcher.scope = this
-                avroDispatcher.toJobEngine(AvroConverter.addEnvelopeToJobEngineMessage(avro))
-            }
+    "Job fails after 4 trys " {
+        beforeTest()
+        // job will succeed only at the 4th try
+        worker.behavior = { job: AvroRunJob -> if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.FAIL_WITHOUT_RETRY }
+        // run system
+        val avro = getAvroDispatchJob()
+        runBlocking {
+            avroDispatcher.scope = this
+            avroDispatcher.toJobEngine(avro)
+        }
+        // check that job is completed
+        avroStorage.engineStore.get(avro.jobId)?.jobStatus shouldBe AvroJobStatus.RUNNING_ERROR
+        // checks number of job processings
+        verify(exactly = 4) {
+            worker.jobA.handle()
+        }
+    }
 
-            avroStorage.engineStore shouldBe mapOf()
-            worker.log shouldBe """
-JobA failed
-JobA failed
-JobA failed
-JobA failed
-JobA failed
-JobA failed
-JobA completed
-"""
-
+    "Job succeeds after manual retry" {
+        beforeTest()
+        // job will succeed only at the 4th try
+        worker.behavior = { job: AvroRunJob ->
+            if (job.jobAttemptRetry < 3)
+                Status.FAIL_WITH_RETRY
+            else if (job.jobAttemptIndex == 0)
+                Status.FAIL_WITHOUT_RETRY
+            else
+                Status.SUCCESS
+        }
+        // run system
+        val dispatch = getAvroDispatchJob()
+        val retry = getAvroRetryJob(dispatch.jobId)
+        runBlocking {
+            avroDispatcher.scope = this
+            avroDispatcher.toJobEngine(dispatch)
+            delay(100)
+            avroDispatcher.toJobEngine(retry)
+        }
+        // check that job is completed
+        avroStorage.engineStore.get(dispatch.jobId)?.jobStatus shouldBe null
+        // checks number of job processings
+        verify(exactly = 8) {
+            worker.jobA.handle()
         }
     }
 }) {
@@ -75,9 +155,22 @@ JobA completed
         global.avroStorage = avroStorage
         global.logger = logger
         worker.avroDispatcher = avroDispatcher
-        worker.avroDispatcher = avroDispatcher
     }
 }
+
+private fun beforeTest() {
+    worker.jobA = mockk<JobA>()
+    every { worker.jobA.handle() } just Runs
+    avroStorage.init()
+}
+
+private fun getAvroDispatchJob() = AvroConverter.addEnvelopeToJobEngineMessage(
+    TestFactory.random(AvroDispatchJob::class, mapOf("jobName" to "JobA"))
+)
+
+private fun getAvroRetryJob(id: String) = AvroConverter.addEnvelopeToJobEngineMessage(
+    TestFactory.random(AvroRetryJob::class, mapOf("jobId" to id))
+)
 
 internal class SyncAvroDispatcher(
     private val avroJobEngine: AvroJobEngine,
@@ -112,32 +205,30 @@ internal class SyncAvroDispatcher(
     }
 }
 
+class JobA() { fun handle() {} }
+
 class SyncWorker() {
     lateinit var avroDispatcher: AvroDispatcher
-    var log = "\n"
+    lateinit var behavior: (msg: AvroRunJob) -> Status?
+    var jobA: JobA = mockk<JobA>()
 
-    fun logJobStarted(name: String, input: List<AvroSerializedData>) {
-        log += "$name"
-    }
-    fun logJobCompleted(name: String) {
-        log += " completed\n"
-    }
-    fun logJobFailed(name: String) {
-        log += " failed\n"
+    init {
+        every { jobA.handle() } just Runs
     }
 
-    suspend fun handle(msg: AvroEnvelopeForWorker) {
+    fun handle(msg: AvroEnvelopeForWorker) {
         val avro = AvroConverter.removeEnvelopeFromWorkerMessage(msg)
         when (avro) {
             is AvroRunJob -> {
                 sendJobStarted(avro)
-                logJobStarted(avro.jobName, avro.jobInput)
-                if (avro.jobAttemptRetry < 6) {
-                    sendJobFailed(avro, Exception("Try Again!"), 1F)
-                    logJobFailed(avro.jobName)
-                } else {
-                    sendJobCompleted(avro, "${avro.jobName} output")
-                    logJobCompleted(avro.jobName)
+                val out = when (avro.jobName) {
+                    "JobA" -> jobA.handle()
+                    else -> throw Exception("Unknown job ${avro.jobName}")
+                }
+                when (behavior(avro)) {
+                    Status.SUCCESS -> sendJobCompleted(avro, out)
+                    Status.FAIL_WITH_RETRY -> sendJobFailed(avro, Exception("Will Try Again"), 1F)
+                    Status.FAIL_WITHOUT_RETRY -> sendJobFailed(avro, Exception("Failed"))
                 }
             }
         }
@@ -184,6 +275,12 @@ private class SyncAvroStorage : AvroStorage {
     var engineStore: Map<String, AvroJobEngineState> = mapOf()
     var perNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var globalStore: AvroMonitoringGlobalState? = null
+
+    fun init() {
+        engineStore = mapOf()
+        perNameStore = mapOf()
+        globalStore = null
+    }
 
     override fun getJobEngineState(jobId: String): AvroJobEngineState? {
         return engineStore[jobId]

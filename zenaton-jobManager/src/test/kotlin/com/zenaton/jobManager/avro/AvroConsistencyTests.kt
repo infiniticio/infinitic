@@ -4,7 +4,6 @@ import com.zenaton.jobManager.messages.ForJobEngineMessage
 import com.zenaton.jobManager.messages.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.messages.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.messages.ForWorkerMessage
-import com.zenaton.jobManager.messages.Message
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName

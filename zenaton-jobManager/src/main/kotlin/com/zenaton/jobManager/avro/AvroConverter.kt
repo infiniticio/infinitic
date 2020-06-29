@@ -315,7 +315,7 @@ object AvroConverter {
      *  SerializedData to AvroSerializedData
      */
 
-    fun fromAvroSerializedData(avro: AvroSerializedData) : SerializedData {
+    fun fromAvroSerializedData(avro: AvroSerializedData): SerializedData {
         val buffer = avro.serializedData
         val position = buffer.position()
         val bytes = ByteArray(buffer.remaining())
@@ -325,7 +325,7 @@ object AvroConverter {
         return SerializedData(bytes, avro.serializationType)
     }
 
-    fun toAvroSerializedData(data: SerializedData) : AvroSerializedData = AvroSerializedData
+    fun toAvroSerializedData(data: SerializedData): AvroSerializedData = AvroSerializedData
         .newBuilder()
         .setSerializationType(data.serializationType)
         .setSerializedData(ByteBuffer.wrap(data.serializedData))

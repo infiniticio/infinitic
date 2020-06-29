@@ -14,7 +14,7 @@ object TestFactory {
 
     fun seed(seed: Long): TestFactory {
         this.seed = seed
-        
+
         return this
     }
 
