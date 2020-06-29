@@ -102,8 +102,7 @@ internal inline fun <reified T> checkConversionFromAvro(name: String, namespace:
         // get class name
         @Suppress("UNCHECKED_CAST")
         val klass = Class.forName("$namespace.$name").kotlin as KClass<SpecificRecordBase>
-        val message = AvroConverter.convertFromAvro(TestFactory.random(klass))
+        val message = AvroConverter.fromAvroMessage(TestFactory.random(klass))
         (message is T) shouldBe true
-        (message is Message) shouldBe true
     }
 }

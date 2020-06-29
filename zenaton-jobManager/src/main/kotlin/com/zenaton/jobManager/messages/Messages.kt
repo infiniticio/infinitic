@@ -28,7 +28,8 @@ sealed class ForWorkerMessage(open val jobName: JobName) : Message()
  */
 
 data class CancelJob(
-    override val jobId: JobId
+    override val jobId: JobId,
+    val jobOutput: JobOutput
 ) : ForJobEngineMessage(jobId)
 
 data class DispatchJob(

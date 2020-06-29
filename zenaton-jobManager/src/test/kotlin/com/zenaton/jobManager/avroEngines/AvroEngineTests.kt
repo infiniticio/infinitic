@@ -1,48 +1,83 @@
-package com.zenaton.jobManager.engines
+package com.zenaton.jobManager.avroEngines
 
+import com.zenaton.common.data.AvroSerializedData
+import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.avro.AvroConverter
-import com.zenaton.jobManager.avroEngines.AvroJobEngine
-import com.zenaton.jobManager.avroEngines.AvroMonitoringGlobal
-import com.zenaton.jobManager.avroEngines.AvroMonitoringPerName
 import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.avroInterfaces.AvroStorage
+import com.zenaton.jobManager.messages.AvroDispatchJob
+import com.zenaton.jobManager.messages.AvroJobAttemptCompleted
+import com.zenaton.jobManager.messages.AvroJobAttemptFailed
 import com.zenaton.jobManager.messages.AvroJobAttemptStarted
 import com.zenaton.jobManager.messages.AvroRunJob
-import com.zenaton.jobManager.messages.RunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
-import com.zenaton.jobManager.messages.envelopes.AvroForWorkerMessageType
 import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
+import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
-import org.apache.avro.specific.SpecificRecordBase
-import java.lang.Exception
+import io.kotest.matchers.shouldBe
+import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.slf4j.Logger
+import java.lang.StringBuilder
 
+private val logger = mockk<Logger>(relaxed = true)
 private val engine = AvroJobEngine()
 private val perName = AvroMonitoringPerName()
 private val global = AvroMonitoringGlobal()
 private val worker = SyncWorker()
-private val dispatcher = SyncAvroDispatcher(engine, perName, global, worker)
+private val avroDispatcher = SyncAvroDispatcher(engine, perName, global, worker)
+private val avroStorage = SyncAvroStorage()
 
-class EngineScenariiTests : ShouldSpec({
+class AvroEngineTests : ShouldSpec({
 
-    context("TaskMetrics.handle") {
-//        val avroStorage = SyncAvroStorage()
-//        val avroDispatcher = SyncAvroDispatcher()
-//        engine.avroStorage = avroStorage
-//        engine.avroDispatcher = avroDispatcher
-//        perName.avroStorage = avroStorage
-//        perName.avroDispatcher = avroDispatcher
-//        global.avroStorage = avroStorage
-//        worker.avroDispatcher = avroDispatcher
+    context("q") {
 
-        should("should update TaskMetricsState when receiving TaskStatusUpdate message") {
+
+        should("q") {
+            val avro = TestFactory.random(
+                AvroDispatchJob::class,
+                mapOf("jobName" to "JobA", "jobMeta" to mapOf<String, String>())
+            )
+
+            runBlocking {
+                avroDispatcher.scope = this
+                avroDispatcher.toJobEngine(AvroConverter.addEnvelopeToJobEngineMessage(avro))
+            }
+
+            avroStorage.engineStore shouldBe mapOf()
+            worker.log shouldBe """
+JobA failed
+JobA failed
+JobA failed
+JobA failed
+JobA failed
+JobA failed
+JobA completed
+"""
+
         }
     }
-})
+}) {
+    init {
+        engine.avroStorage = avroStorage
+        engine.avroDispatcher = avroDispatcher
+        engine.logger = logger
+        perName.avroStorage = avroStorage
+        perName.avroDispatcher = avroDispatcher
+        perName.logger = logger
+        global.avroStorage = avroStorage
+        global.logger = logger
+        worker.avroDispatcher = avroDispatcher
+        worker.avroDispatcher = avroDispatcher
+    }
+}
 
 internal class SyncAvroDispatcher(
     private val avroJobEngine: AvroJobEngine,
@@ -50,50 +85,99 @@ internal class SyncAvroDispatcher(
     private val avroMonitoringGlobal: AvroMonitoringGlobal,
     private val worker: SyncWorker
 ) : AvroDispatcher {
-    override fun toWorkers(msg: AvroEnvelopeForWorker) {
-        TODO("Not yet implemented")
-    }
+    lateinit var scope: CoroutineScope
 
     override fun toJobEngine(msg: AvroEnvelopeForJobEngine, after: Float) {
-        avroJobEngine.handle(msg)
+        scope.launch {
+            avroJobEngine.handle(msg)
+        }
     }
 
     override fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
-        avroMonitoringPerName.handle(msg)
+        scope.launch() {
+            avroMonitoringPerName.handle(msg)
+        }
     }
 
     override fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal) {
-        avroMonitoringGlobal.handle(msg)
+        scope.launch() {
+            avroMonitoringGlobal.handle(msg)
+        }
+    }
+
+    override fun toWorkers(msg: AvroEnvelopeForWorker) {
+        scope.launch() {
+            worker.handle(msg)
+        }
     }
 }
 
 class SyncWorker() {
     lateinit var avroDispatcher: AvroDispatcher
+    var log = "\n"
 
-    fun handle(msg: AvroEnvelopeForWorker) {
-        val avro = AvroConverter.fromWorkers(msg)
+    fun logJobStarted(name: String, input: List<AvroSerializedData>) {
+        log += "$name"
+    }
+    fun logJobCompleted(name: String) {
+        log += " completed\n"
+    }
+    fun logJobFailed(name: String) {
+        log += " failed\n"
+    }
+
+    suspend fun handle(msg: AvroEnvelopeForWorker) {
+        val avro = AvroConverter.removeEnvelopeFromWorkerMessage(msg)
         when (avro) {
-            is RunJob -> {
-                val avroJobAttemptStarted = AvroJobAttemptStarted.newBuilder()
-                    .setJobAttemptId(avro.jobAttemptId.id)
-                    .build()
+            is AvroRunJob -> {
+                sendJobStarted(avro)
+                logJobStarted(avro.jobName, avro.jobInput)
+                if (avro.jobAttemptRetry < 6) {
+                    sendJobFailed(avro, Exception("Try Again!"), 1F)
+                    logJobFailed(avro.jobName)
+                } else {
+                    sendJobCompleted(avro, "${avro.jobName} output")
+                    logJobCompleted(avro.jobName)
+                }
             }
         }
     }
-}
 
-private fun removeEnvelopeForWorker(msg: AvroEnvelopeForWorker) = when (msg.type!!) {
-    AvroForWorkerMessageType.RunJob -> msg.runJob
-}
-
-private fun addEnvelopeForWorker(msg: SpecificRecordBase): AvroEnvelopeForWorker = when (msg) {
-    is AvroRunJob ->
-        AvroEnvelopeForWorker.newBuilder()
-            .setJobName(msg.jobName)
-            .setType(AvroForWorkerMessageType.RunJob)
-            .setRunJob(msg)
+    private fun sendJobStarted(avro: AvroRunJob) {
+        // send start
+        val avroJobAttemptStarted = AvroJobAttemptStarted.newBuilder()
+            .setJobId(avro.jobId)
+            .setJobAttemptId(avro.jobAttemptId)
+            .setJobAttemptRetry(avro.jobAttemptRetry)
+            .setJobAttemptIndex(avro.jobAttemptIndex)
             .build()
-    else -> throw Exception("Unknown msg $msg")
+        avroDispatcher.toJobEngine(AvroConverter.addEnvelopeToJobEngineMessage(avroJobAttemptStarted))
+    }
+
+    private fun sendJobFailed(avro: AvroRunJob, error: Exception? = null, delay: Float? = null) {
+        // send failure
+        val avroJobAttemptFailed = AvroJobAttemptFailed.newBuilder()
+            .setJobId(avro.jobId)
+            .setJobAttemptId(avro.jobAttemptId)
+            .setJobAttemptRetry(avro.jobAttemptRetry)
+            .setJobAttemptIndex(avro.jobAttemptIndex)
+            .setJobAttemptError(AvroConverter.toAvroSerializedData(SerializedData.from(error)))
+            .setJobAttemptDelayBeforeRetry(delay)
+            .build()
+        avroDispatcher.toJobEngine(AvroConverter.addEnvelopeToJobEngineMessage(avroJobAttemptFailed))
+    }
+
+    private fun sendJobCompleted(avro: AvroRunJob, out: Any? = null) {
+        // send completion
+        val avroJobAttemptCompleted = AvroJobAttemptCompleted.newBuilder()
+            .setJobId(avro.jobId)
+            .setJobAttemptId(avro.jobAttemptId)
+            .setJobAttemptRetry(avro.jobAttemptRetry)
+            .setJobAttemptIndex(avro.jobAttemptIndex)
+            .setJobOutput(AvroConverter.toAvroSerializedData(SerializedData.from(out)))
+            .build()
+        avroDispatcher.toJobEngine(AvroConverter.addEnvelopeToJobEngineMessage(avroJobAttemptCompleted))
+    }
 }
 
 private class SyncAvroStorage : AvroStorage {
@@ -101,14 +185,16 @@ private class SyncAvroStorage : AvroStorage {
     var perNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var globalStore: AvroMonitoringGlobalState? = null
 
-    override fun getJobEngineState(jobId: String): AvroJobEngineState? = engineStore[jobId]
+    override fun getJobEngineState(jobId: String): AvroJobEngineState? {
+        return engineStore[jobId]
+    }
 
     override fun updateJobEngineState(jobId: String, newState: AvroJobEngineState, oldState: AvroJobEngineState?) {
         engineStore = engineStore.plus(jobId to newState)
     }
 
     override fun deleteJobEngineState(jobId: String) {
-        engineStore.minus(jobId)
+        engineStore = engineStore.minus(jobId)
     }
 
     override fun getMonitoringPerNameState(jobName: String): AvroMonitoringPerNameState? = perNameStore[jobName]
@@ -118,7 +204,7 @@ private class SyncAvroStorage : AvroStorage {
     }
 
     override fun deleteMonitoringPerNameState(jobName: String) {
-        perNameStore.minus(jobName)
+        perNameStore = perNameStore.minus(jobName)
     }
 
     override fun getMonitoringGlobalState(): AvroMonitoringGlobalState? = globalStore

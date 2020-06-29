@@ -11,8 +11,7 @@
             "name": "decisionId",
             "type": "string",
             "logicalType": "uuid"
-        },
-        {
+        }, {
             "name": "decisionOutput",
             "type": "com.zenaton.common.data.AvroSerializedData"
         }

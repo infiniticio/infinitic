@@ -20,13 +20,13 @@
             "type" : ["null", "string"]
         }, {
             "name" : "jobOutput",
-            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
+            "type" :"com.zenaton.common.data.AvroSerializedData"
         }, {
             "name" : "childWorkflowId",
             "type" : ["null", "string"]
         }, {
             "name" : "childWorkflowOutput",
-            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
+            "type" : "com.zenaton.common.data.AvroSerializedData"
         }, {
             "name" : "delayId",
             "type" : ["null", "string"]
@@ -41,7 +41,7 @@
             "type" : ["null",  {"type" : "array", "items" : "com.zenaton.common.data.AvroSerializedData"}]
         }, {
             "name" : "workflowOutput",
-            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
+            "type" : "com.zenaton.common.data.AvroSerializedData"
         }
     ]
 }

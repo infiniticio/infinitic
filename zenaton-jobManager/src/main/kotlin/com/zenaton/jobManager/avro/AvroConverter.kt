@@ -1,5 +1,7 @@
 package com.zenaton.jobManager.avro
 
+import com.zenaton.common.data.AvroSerializedData
+import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
 import com.zenaton.jobManager.messages.AvroCancelJob
 import com.zenaton.jobManager.messages.AvroDispatchJob
@@ -48,6 +50,7 @@ import com.zenaton.jobManager.states.MonitoringGlobalState
 import com.zenaton.jobManager.states.MonitoringPerNameState
 import com.zenaton.jobManager.states.State
 import org.apache.avro.specific.SpecificRecordBase
+import java.nio.ByteBuffer
 
 /**
  * This class does the mapping between avro-generated classes and classes actually used by our code
@@ -65,15 +68,15 @@ object AvroConverter {
         else -> throw Exception("Unknown SpecificRecordBase: ${avro::class.qualifiedName}")
     }
 
+    fun fromStorage(avro: AvroJobEngineState) = convertJson<JobEngineState>(avro)
+    fun fromStorage(avro: AvroMonitoringGlobalState) = convertJson<MonitoringGlobalState>(avro)
+    fun fromStorage(avro: AvroMonitoringPerNameState) = convertJson<MonitoringPerNameState>(avro)
+
     fun toStorage(state: State): SpecificRecordBase = when (state) {
         is JobEngineState -> toStorage(state)
         is MonitoringGlobalState -> toStorage(state)
         is MonitoringPerNameState -> toStorage(state)
     }
-
-    fun fromStorage(avro: AvroJobEngineState) = convertJson<JobEngineState>(avro)
-    fun fromStorage(avro: AvroMonitoringGlobalState) = convertJson<MonitoringGlobalState>(avro)
-    fun fromStorage(avro: AvroMonitoringPerNameState) = convertJson<MonitoringPerNameState>(avro)
 
     fun toStorage(state: JobEngineState) = convertJson<AvroJobEngineState>(state)
     fun toStorage(state: MonitoringGlobalState) = convertJson<AvroMonitoringGlobalState>(state)
@@ -142,7 +145,7 @@ object AvroConverter {
     }
 
     fun removeEnvelopeFromJobEngineMessage(input: AvroEnvelopeForJobEngine): SpecificRecordBase {
-        return when (input.type!!) {
+        return when (input.type) {
             AvroForJobEngineMessageType.CancelJob -> input.cancelJob
             AvroForJobEngineMessageType.DispatchJob -> input.dispatchJob
             AvroForJobEngineMessageType.RetryJob -> input.retryJob
@@ -153,6 +156,7 @@ object AvroConverter {
             AvroForJobEngineMessageType.JobAttemptStarted -> input.jobAttemptStarted
             AvroForJobEngineMessageType.JobCanceled -> input.jobCanceled
             AvroForJobEngineMessageType.JobCompleted -> input.jobCompleted
+            null -> throw Exception("Null type in $input")
         }
     }
 
@@ -219,93 +223,113 @@ object AvroConverter {
      */
 
     fun toJobEngine(message: ForJobEngineMessage): AvroEnvelopeForJobEngine =
-        addEnvelopeToJobEngineMessage(converToAvro(message))
+        addEnvelopeToJobEngineMessage(toAvroMessage(message))
 
     fun fromJobEngine(input: AvroEnvelopeForJobEngine) =
-        convertFromAvro(removeEnvelopeFromJobEngineMessage(input)) as ForJobEngineMessage
+        fromAvroMessage(removeEnvelopeFromJobEngineMessage(input)) as ForJobEngineMessage
 
     fun toMonitoringPerName(message: ForMonitoringPerNameMessage): AvroEnvelopeForMonitoringPerName =
-        addEnvelopeToMonitoringPerNameMessage(converToAvro(message))
+        addEnvelopeToMonitoringPerNameMessage(toAvroMessage(message))
 
     fun fromMonitoringPerName(input: AvroEnvelopeForMonitoringPerName) =
-        convertFromAvro(removeEnvelopeFromMonitoringPerNameMessage(input)) as ForMonitoringPerNameMessage
+        fromAvroMessage(removeEnvelopeFromMonitoringPerNameMessage(input)) as ForMonitoringPerNameMessage
 
     fun toMonitoringGlobal(message: ForMonitoringGlobalMessage): AvroEnvelopeForMonitoringGlobal =
-        addEnvelopeToMonitoringGlobalMessage(converToAvro(message))
+        addEnvelopeToMonitoringGlobalMessage(toAvroMessage(message))
 
     fun fromMonitoringGlobal(input: AvroEnvelopeForMonitoringGlobal) =
-        convertFromAvro(removeEnvelopeFromMonitoringGlobalMessage(input)) as ForMonitoringGlobalMessage
+        fromAvroMessage(removeEnvelopeFromMonitoringGlobalMessage(input)) as ForMonitoringGlobalMessage
 
     fun toWorkers(message: ForWorkerMessage): AvroEnvelopeForWorker =
-        addEnvelopeToWorkerMessage(converToAvro(message))
+        addEnvelopeToWorkerMessage(toAvroMessage(message))
 
     fun fromWorkers(input: AvroEnvelopeForWorker) =
-        convertFromAvro(removeEnvelopeFromWorkerMessage(input)) as ForWorkerMessage
+        fromAvroMessage(removeEnvelopeFromWorkerMessage(input)) as ForWorkerMessage
 
     /**
      *  Message <-> Avro Message
      */
 
-    fun convertFromAvro(avro: SpecificRecordBase): Message = when (avro) {
-        is AvroCancelJob -> convertFromAvro(avro)
-        is AvroDispatchJob -> convertFromAvro(avro)
-        is AvroJobAttemptCompleted -> convertFromAvro(avro)
-        is AvroJobAttemptDispatched -> convertFromAvro(avro)
-        is AvroJobAttemptFailed -> convertFromAvro(avro)
-        is AvroJobAttemptStarted -> convertFromAvro(avro)
-        is AvroJobCanceled -> convertFromAvro(avro)
-        is AvroJobCompleted -> convertFromAvro(avro)
-        is AvroJobCreated -> convertFromAvro(avro)
-        is AvroJobStatusUpdated -> convertFromAvro(avro)
-        is AvroRetryJob -> convertFromAvro(avro)
-        is AvroRetryJobAttempt -> convertFromAvro(avro)
-        is AvroRunJob -> convertFromAvro(avro)
+    fun fromAvroMessage(avro: SpecificRecordBase): Message = when (avro) {
+        is AvroCancelJob -> fromAvroMessage(avro)
+        is AvroDispatchJob -> fromAvroMessage(avro)
+        is AvroJobAttemptCompleted -> fromAvroMessage(avro)
+        is AvroJobAttemptDispatched -> fromAvroMessage(avro)
+        is AvroJobAttemptFailed -> fromAvroMessage(avro)
+        is AvroJobAttemptStarted -> fromAvroMessage(avro)
+        is AvroJobCanceled -> fromAvroMessage(avro)
+        is AvroJobCompleted -> fromAvroMessage(avro)
+        is AvroJobCreated -> fromAvroMessage(avro)
+        is AvroJobStatusUpdated -> fromAvroMessage(avro)
+        is AvroRetryJob -> fromAvroMessage(avro)
+        is AvroRetryJobAttempt -> fromAvroMessage(avro)
+        is AvroRunJob -> fromAvroMessage(avro)
         else -> throw Exception("Unknown SpecificRecordBase: ${avro::class.qualifiedName}")
     }
 
-    fun converToAvro(msg: Message): SpecificRecordBase = when (msg) {
-        is CancelJob -> this.convertToAvro(msg)
-        is DispatchJob -> this.convertToAvro(msg)
-        is JobAttemptCompleted -> this.convertToAvro(msg)
-        is JobAttemptDispatched -> this.convertToAvro(msg)
-        is JobAttemptFailed -> this.convertToAvro(msg)
-        is JobAttemptStarted -> this.convertToAvro(msg)
-        is JobCanceled -> this.convertToAvro(msg)
-        is JobCompleted -> this.convertToAvro(msg)
-        is JobCreated -> this.convertToAvro(msg)
-        is JobStatusUpdated -> this.convertToAvro(msg)
-        is RetryJob -> this.convertToAvro(msg)
-        is RetryJobAttempt -> this.convertToAvro(msg)
-        is RunJob -> this.convertToAvro(msg)
+    private fun fromAvroMessage(avro: AvroCancelJob) = convertJson<CancelJob>(avro)
+    private fun fromAvroMessage(avro: AvroDispatchJob) = convertJson<DispatchJob>(avro)
+    private fun fromAvroMessage(avro: AvroJobAttemptCompleted) = convertJson<JobAttemptCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroJobAttemptDispatched) = convertJson<JobAttemptDispatched>(avro)
+    private fun fromAvroMessage(avro: AvroJobAttemptFailed) = convertJson<JobAttemptFailed>(avro)
+    private fun fromAvroMessage(avro: AvroJobAttemptStarted) = convertJson<JobAttemptStarted>(avro)
+    private fun fromAvroMessage(avro: AvroJobCanceled) = convertJson<JobCanceled>(avro)
+    private fun fromAvroMessage(avro: AvroJobCompleted) = convertJson<JobCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroJobCreated) = convertJson<JobCreated>(avro)
+    private fun fromAvroMessage(avro: AvroJobStatusUpdated) = convertJson<JobStatusUpdated>(avro)
+    private fun fromAvroMessage(avro: AvroRetryJob) = convertJson<RetryJob>(avro)
+    private fun fromAvroMessage(avro: AvroRetryJobAttempt) = convertJson<RetryJobAttempt>(avro)
+    private fun fromAvroMessage(avro: AvroRunJob) = convertJson<RunJob>(avro)
+
+    fun toAvroMessage(msg: Message): SpecificRecordBase = when (msg) {
+        is CancelJob -> toAvroMessage(msg)
+        is DispatchJob -> toAvroMessage(msg)
+        is JobAttemptCompleted -> toAvroMessage(msg)
+        is JobAttemptDispatched -> toAvroMessage(msg)
+        is JobAttemptFailed -> toAvroMessage(msg)
+        is JobAttemptStarted -> toAvroMessage(msg)
+        is JobCanceled -> toAvroMessage(msg)
+        is JobCompleted -> toAvroMessage(msg)
+        is JobCreated -> toAvroMessage(msg)
+        is JobStatusUpdated -> toAvroMessage(msg)
+        is RetryJob -> toAvroMessage(msg)
+        is RetryJobAttempt -> toAvroMessage(msg)
+        is RunJob -> toAvroMessage(msg)
     }
 
-    private fun convertFromAvro(avro: AvroCancelJob) = convertJson<CancelJob>(avro)
-    private fun convertFromAvro(avro: AvroDispatchJob) = convertJson<DispatchJob>(avro)
-    private fun convertFromAvro(avro: AvroJobAttemptCompleted) = convertJson<JobAttemptCompleted>(avro)
-    private fun convertFromAvro(avro: AvroJobAttemptDispatched) = convertJson<JobAttemptDispatched>(avro)
-    private fun convertFromAvro(avro: AvroJobAttemptFailed) = convertJson<JobAttemptFailed>(avro)
-    private fun convertFromAvro(avro: AvroJobAttemptStarted) = convertJson<JobAttemptStarted>(avro)
-    private fun convertFromAvro(avro: AvroJobCanceled) = convertJson<JobCanceled>(avro)
-    private fun convertFromAvro(avro: AvroJobCompleted) = convertJson<JobCompleted>(avro)
-    private fun convertFromAvro(avro: AvroJobCreated) = convertJson<JobCreated>(avro)
-    private fun convertFromAvro(avro: AvroJobStatusUpdated) = convertJson<JobStatusUpdated>(avro)
-    private fun convertFromAvro(avro: AvroRetryJob) = convertJson<RetryJob>(avro)
-    private fun convertFromAvro(avro: AvroRetryJobAttempt) = convertJson<RetryJobAttempt>(avro)
-    private fun convertFromAvro(avro: AvroRunJob) = convertJson<RunJob>(avro)
+    private fun toAvroMessage(message: CancelJob) = convertJson<AvroCancelJob>(message)
+    private fun toAvroMessage(message: DispatchJob) = convertJson<AvroDispatchJob>(message)
+    private fun toAvroMessage(message: JobAttemptCompleted) = convertJson<AvroJobAttemptCompleted>(message)
+    private fun toAvroMessage(message: JobAttemptDispatched) = convertJson<AvroJobAttemptDispatched>(message)
+    private fun toAvroMessage(message: JobAttemptFailed) = convertJson<AvroJobAttemptFailed>(message)
+    private fun toAvroMessage(message: JobAttemptStarted) = convertJson<AvroJobAttemptStarted>(message)
+    private fun toAvroMessage(message: JobCanceled) = convertJson<AvroJobCanceled>(message)
+    private fun toAvroMessage(message: JobCompleted) = convertJson<AvroJobCompleted>(message)
+    private fun toAvroMessage(message: JobCreated) = convertJson<AvroJobCreated>(message)
+    private fun toAvroMessage(message: JobStatusUpdated) = convertJson<AvroJobStatusUpdated>(message)
+    private fun toAvroMessage(message: RetryJob) = convertJson<AvroRetryJob>(message)
+    private fun toAvroMessage(message: RetryJobAttempt) = convertJson<AvroRetryJobAttempt>(message)
+    private fun toAvroMessage(message: RunJob) = convertJson<AvroRunJob>(message)
 
-    private fun convertToAvro(message: CancelJob) = convertJson<AvroCancelJob>(message)
-    private fun convertToAvro(message: DispatchJob) = convertJson<AvroDispatchJob>(message)
-    private fun convertToAvro(message: JobAttemptCompleted) = convertJson<AvroJobAttemptCompleted>(message)
-    private fun convertToAvro(message: JobAttemptDispatched) = convertJson<AvroJobAttemptDispatched>(message)
-    private fun convertToAvro(message: JobAttemptFailed) = convertJson<AvroJobAttemptFailed>(message)
-    private fun convertToAvro(message: JobAttemptStarted) = convertJson<AvroJobAttemptStarted>(message)
-    private fun convertToAvro(message: JobCanceled) = convertJson<AvroJobCanceled>(message)
-    private fun convertToAvro(message: JobCompleted) = convertJson<AvroJobCompleted>(message)
-    private fun convertToAvro(message: JobCreated) = convertJson<AvroJobCreated>(message)
-    private fun convertToAvro(message: JobStatusUpdated) = convertJson<AvroJobStatusUpdated>(message)
-    private fun convertToAvro(message: RetryJob) = convertJson<AvroRetryJob>(message)
-    private fun convertToAvro(message: RetryJobAttempt) = convertJson<AvroRetryJobAttempt>(message)
-    private fun convertToAvro(message: RunJob) = convertJson<AvroRunJob>(message)
+    /**
+     *  SerializedData to AvroSerializedData
+     */
+
+    fun fromAvroSerializedData(avro: AvroSerializedData) : SerializedData {
+        val buffer = avro.serializedData
+        val position = buffer.position()
+        val bytes = ByteArray(buffer.remaining())
+        buffer.get(bytes, 0, bytes.size)
+        buffer.position(position)
+
+        return SerializedData(bytes, avro.serializationType)
+    }
+
+    fun toAvroSerializedData(data: SerializedData) : AvroSerializedData = AvroSerializedData
+        .newBuilder()
+        .setSerializationType(data.serializationType)
+        .setSerializedData(ByteBuffer.wrap(data.serializedData))
+        .build()
 
     /**
      *  Mapping function by Json serialization/deserialization

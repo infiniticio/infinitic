@@ -23,7 +23,7 @@
         },
         {
             "name": "jobAttemptError",
-            "type": "bytes"
+            "type": "com.zenaton.common.data.AvroSerializedData"
         },
         {
             "name": "jobAttemptDelayBeforeRetry",
