@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.avro
+package com.zenaton.jobManager.avroConverter
 
 import com.zenaton.common.data.AvroSerializedData
 import com.zenaton.common.data.SerializedData

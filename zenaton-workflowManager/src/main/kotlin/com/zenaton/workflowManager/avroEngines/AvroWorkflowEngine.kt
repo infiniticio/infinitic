@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.avroEngines
 
-import com.zenaton.workflowManager.avro.AvroConverter
+import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.dispatcher.Dispatcher
 import com.zenaton.workflowManager.engines.WorkflowEngine
 import com.zenaton.workflowManager.storages.WorkflowEngineStateStorage

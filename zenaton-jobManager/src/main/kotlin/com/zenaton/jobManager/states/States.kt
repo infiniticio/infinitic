@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.states
 
-import com.zenaton.jobManager.avro.AvroConverter
+import com.zenaton.jobManager.avroConverter.AvroConverter
 import com.zenaton.jobManager.data.JobAttemptId
 import com.zenaton.jobManager.data.JobAttemptIndex
 import com.zenaton.jobManager.data.JobAttemptRetry

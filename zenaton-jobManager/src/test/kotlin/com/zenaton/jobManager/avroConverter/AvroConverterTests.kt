@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.avro
+package com.zenaton.jobManager.avroConverter
 
 import com.zenaton.jobManager.messages.ForJobEngineMessage
 import com.zenaton.jobManager.messages.ForMonitoringGlobalMessage

@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.avro
+package com.zenaton.jobManager.avroConverter
 
 import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.jobManager.states.AvroJobEngineState

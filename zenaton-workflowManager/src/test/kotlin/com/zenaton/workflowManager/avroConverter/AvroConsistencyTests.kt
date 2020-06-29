@@ -1,7 +1,6 @@
-package com.zenaton.workflowManager.avro
+package com.zenaton.workflowManager.avroConverter
 
 import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
-import com.zenaton.workflowManager.messages.Message
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import com.zenaton.workflowManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -15,12 +14,9 @@ import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
 
 class AvroConsistencyTests : StringSpec({
-    // From Message
-    Message::class.sealedSubclasses.forEach {
+    ForWorkflowEngineMessage::class.sealedSubclasses.forEach {
         val msg = TestFactory.random(it)
-        if (msg is ForWorkflowEngineMessage) {
-            include(checkAvroConversionToEnvelopeForWorkflowEngine(msg))
-        }
+        include(checkAvroConversionToEnvelopeForWorkflowEngine(msg))
     }
 
     checkAllSubTypesFromEnvelope<ForWorkflowEngineMessage>(this, AvroEnvelopeForWorkflowEngine())
@@ -62,6 +58,5 @@ inline fun <reified T> checkConversionFromAvro(name: String, namespace: String) 
         val klass = Class.forName("$namespace.$name").kotlin as KClass<SpecificRecordBase>
         val message = AvroConverter.fromAvroMessage(TestFactory.random(klass))
         (message is T) shouldBe true
-        (message is Message) shouldBe true
     }
 }

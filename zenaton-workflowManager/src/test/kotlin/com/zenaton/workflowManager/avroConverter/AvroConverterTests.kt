@@ -1,6 +1,5 @@
-package com.zenaton.workflowManager.avro
+package com.zenaton.workflowManager.avroConverter
 
-import com.zenaton.jobManager.messages.Message
 import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.actions.Action
 import com.zenaton.workflowManager.data.actions.AvroAction
@@ -80,11 +79,9 @@ class AvroConverterTests : ShouldSpec({
         }
     }
 
-    Message::class.sealedSubclasses.forEach {
+    ForWorkflowEngineMessage::class.sealedSubclasses.forEach {
         val msg = TestFactory.random(it)
-        if (msg is ForWorkflowEngineMessage) {
-            include(messagesToWorkflowEngineShouldBeAvroReversible(msg))
-        }
+        include(messagesToWorkflowEngineShouldBeAvroReversible(msg))
     }
 })
 

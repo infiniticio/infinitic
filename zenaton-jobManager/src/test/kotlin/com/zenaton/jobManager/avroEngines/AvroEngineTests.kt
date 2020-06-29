@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.avroEngines
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.avro.AvroConverter
+import com.zenaton.jobManager.avroConverter.AvroConverter
 import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.data.AvroJobStatus

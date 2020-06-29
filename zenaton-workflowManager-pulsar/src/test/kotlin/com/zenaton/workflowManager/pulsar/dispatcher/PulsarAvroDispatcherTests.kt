@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.pulsar.dispatcher
 
-import com.zenaton.workflowManager.avro.AvroConverter
+import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.messages.Message
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine

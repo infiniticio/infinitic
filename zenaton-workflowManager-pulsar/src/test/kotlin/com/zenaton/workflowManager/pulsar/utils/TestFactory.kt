@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.pulsar.utils
 
 import com.zenaton.jobManager.data.JobId
-import com.zenaton.workflowManager.avro.AvroConverter
+import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.actions.ActionId
 import com.zenaton.workflowManager.data.steps.AvroStepCriterion
 import com.zenaton.workflowManager.data.steps.StepCriterion

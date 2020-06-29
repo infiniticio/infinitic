@@ -5,7 +5,7 @@ import com.zenaton.jobManager.data.JobInput
 import com.zenaton.jobManager.data.JobMeta
 import com.zenaton.jobManager.data.JobName
 import com.zenaton.jobManager.messages.DispatchJob
-import com.zenaton.workflowManager.avro.AvroConverter
+import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.branches.Branch

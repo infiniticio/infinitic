@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.avro
+package com.zenaton.workflowManager.avroConverter
 
 import com.zenaton.common.data.AvroSerializedData
 import com.zenaton.common.data.DateTime
@@ -49,6 +49,7 @@ import com.zenaton.workflowManager.messages.DelayCompleted
 import com.zenaton.workflowManager.messages.DispatchWorkflow
 import com.zenaton.workflowManager.messages.EventReceived
 import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
+import com.zenaton.workflowManager.messages.Message
 import com.zenaton.workflowManager.messages.TaskCanceled
 import com.zenaton.workflowManager.messages.TaskCompleted
 import com.zenaton.workflowManager.messages.TaskDispatched
@@ -171,9 +172,9 @@ object AvroConverter {
     }
 
     /**
-     *  Messages
+     *  Message <-> Avro Message
      */
-    fun fromAvroMessage(avro: SpecificRecordBase): Any = when (avro) {
+    fun fromAvroMessage(avro: SpecificRecordBase): Message = when (avro) {
         is AvroCancelWorkflow -> fromAvroMessage(avro)
         is AvroChildWorkflowCanceled -> fromAvroMessage(avro)
         is AvroChildWorkflowCompleted -> fromAvroMessage(avro)
