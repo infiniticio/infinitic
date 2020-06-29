@@ -1,12 +1,14 @@
-package com.zenaton.workflowManager.engine
+package com.zenaton.workflowManager.states
 
-import com.zenaton.common.data.interfaces.StateInterface
+import com.zenaton.workflowManager.avro.AvroConverter
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.properties.Properties
 import com.zenaton.workflowManager.data.properties.PropertyStore
 import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
+
+sealed class State
 
 data class WorkflowEngineState(
     val workflowId: WorkflowId,
@@ -16,4 +18,6 @@ data class WorkflowEngineState(
     val store: PropertyStore = PropertyStore(mutableMapOf()),
     val runningBranches: MutableList<Branch> = mutableListOf(),
     val currentProperties: Properties = Properties(mapOf())
-) : StateInterface
+) : State() {
+    fun deepCopy() = AvroConverter.fromStorage(AvroConverter.toStorage(this))
+}

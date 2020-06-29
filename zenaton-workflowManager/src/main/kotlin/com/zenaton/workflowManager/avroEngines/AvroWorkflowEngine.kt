@@ -2,8 +2,8 @@ package com.zenaton.workflowManager.avroEngines
 
 import com.zenaton.workflowManager.avro.AvroConverter
 import com.zenaton.workflowManager.dispatcher.Dispatcher
-import com.zenaton.workflowManager.engine.WorkflowEngine
-import com.zenaton.workflowManager.engine.WorkflowEngineStateStorage
+import com.zenaton.workflowManager.engines.WorkflowEngine
+import com.zenaton.workflowManager.storages.WorkflowEngineStateStorage
 import com.zenaton.workflowManager.avroInterfaces.AvroDispatcher
 import com.zenaton.workflowManager.avroInterfaces.AvroStorage
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine

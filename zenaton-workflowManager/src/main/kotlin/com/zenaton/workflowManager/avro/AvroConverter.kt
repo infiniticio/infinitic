@@ -26,7 +26,7 @@ import com.zenaton.workflowManager.data.steps.Step
 import com.zenaton.workflowManager.data.steps.StepCriterion
 import com.zenaton.workflowManager.data.steps.StepHash
 import com.zenaton.workflowManager.decisions.AvroDecisionInput
-import com.zenaton.workflowManager.engine.WorkflowEngineState
+import com.zenaton.workflowManager.states.WorkflowEngineState
 import com.zenaton.workflowManager.messages.AvroCancelWorkflow
 import com.zenaton.workflowManager.messages.AvroChildWorkflowCanceled
 import com.zenaton.workflowManager.messages.AvroChildWorkflowCompleted

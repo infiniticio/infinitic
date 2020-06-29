@@ -22,7 +22,6 @@ class MonitoringPerName {
 
         when (message) {
             is JobStatusUpdated -> handleTaskStatusUpdated(message, newState)
-            else -> throw Exception("Unknown MonitoringPerNameMessage: $message")
         }
 
         // Update stored state if needed and existing

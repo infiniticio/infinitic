@@ -1,8 +1,9 @@
-package com.zenaton.workflowManager.engine
+package com.zenaton.workflowManager.storages
 
 import com.zenaton.workflowManager.avro.AvroConverter
 import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.avroInterfaces.AvroStorage
+import com.zenaton.workflowManager.states.WorkflowEngineState
 
 class WorkflowEngineStateStorage(val avroStorage: AvroStorage) {
 

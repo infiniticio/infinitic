@@ -18,7 +18,6 @@ class MonitoringGlobal {
 
         when (message) {
             is JobCreated -> handleTaskTypeCreated(message, newState)
-            else -> throw Exception("Unknown MonitoringGlobalMessage: $message")
         }
 
         // Update stored state if needed and existing

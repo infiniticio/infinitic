@@ -5,7 +5,7 @@ import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.actions.Action
 import com.zenaton.workflowManager.data.actions.AvroAction
 import com.zenaton.workflowManager.data.branches.Branch
-import com.zenaton.workflowManager.engine.WorkflowEngineState
+import com.zenaton.workflowManager.states.WorkflowEngineState
 import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny

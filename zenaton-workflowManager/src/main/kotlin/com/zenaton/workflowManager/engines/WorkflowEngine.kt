@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.engine
+package com.zenaton.workflowManager.engines
 
 import com.zenaton.jobManager.data.JobId
 import com.zenaton.jobManager.data.JobInput
@@ -11,6 +11,8 @@ import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.branches.BranchName
 import com.zenaton.workflowManager.data.properties.PropertyStore
+import com.zenaton.workflowManager.states.WorkflowEngineState
+import com.zenaton.workflowManager.storages.WorkflowEngineStateStorage
 import com.zenaton.workflowManager.dispatcher.Dispatcher
 import com.zenaton.workflowManager.messages.CancelWorkflow
 import com.zenaton.workflowManager.messages.ChildWorkflowCanceled
@@ -174,11 +176,13 @@ class WorkflowEngine {
     private fun filterStore(store: PropertyStore, branches: List<Branch>): PropertyStore {
         // Retrieve properties at step at completion in branches
         val listProperties1 = branches.flatMap {
-            b -> b.steps.map { it.propertiesAfterCompletion }
+            b ->
+            b.steps.map { it.propertiesAfterCompletion }
         }
         // Retrieve properties when starting in branches
         val listProperties2 = branches.map {
-            b -> b.propertiesAtStart
+            b ->
+            b.propertiesAtStart
         }
         // Retrieve List<PropertyHash?> relevant for branches
         val listHashes = listProperties1.union(listProperties2).flatMap { it.properties.values }
