@@ -28,7 +28,7 @@ export class TaskRunner {
 
       switch (decodedMessage.type) {
         case 'RunJob':
-          this.runTask(decodedMessage.RunJob);
+          await this.runTask(decodedMessage.RunJob);
           this.pulsarConsumer.acknowledge(message);
           break;
       }

@@ -57,6 +57,16 @@ tasks {
     }
 }
 
+tasks.register("setRetention") {
+    group = "Zenaton"
+    description = "Set retention for default tenant/namespace to 1G"
+    doLast {
+        println("Set Pulsar retention to 1G size for public/default")
+        val cmd = "$pulsarAdmin namespaces set-retention public/default --size 1G --time -1"
+        exec(cmd)
+    }
+}
+
 tasks.register("setSchemas") {
     group = "Zenaton"
     description = "Upload Zenaton schemas into Pulsar"
@@ -82,6 +92,7 @@ tasks.register("setSchemas") {
 tasks.register("install") {
     group = "Zenaton"
     description = "Install Zenaton into Pulsar"
+    dependsOn("setRetention")
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(

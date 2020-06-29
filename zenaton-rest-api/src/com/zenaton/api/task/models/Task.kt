@@ -50,7 +50,7 @@ data class Task(
             }
 
             // If the task has only one try for every attempt and they are not failed, the task is ok
-            if (attempts.mapNotNull { it.tries.maxBy { item -> item.index } }.all { it.index == 0 } && attempts.flatMap { it.tries }.all { it.failedAt == null }) {
+            if (attempts.mapNotNull { it.tries.maxBy { item -> item.retry } }.all { it.retry == 0 } && attempts.flatMap { it.tries }.all { it.failedAt == null }) {
                 return "ok"
             }
 
