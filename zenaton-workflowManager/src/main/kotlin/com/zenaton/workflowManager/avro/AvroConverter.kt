@@ -48,6 +48,7 @@ import com.zenaton.workflowManager.messages.DecisionDispatched
 import com.zenaton.workflowManager.messages.DelayCompleted
 import com.zenaton.workflowManager.messages.DispatchWorkflow
 import com.zenaton.workflowManager.messages.EventReceived
+import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.messages.TaskCanceled
 import com.zenaton.workflowManager.messages.TaskCompleted
 import com.zenaton.workflowManager.messages.TaskDispatched
@@ -55,7 +56,6 @@ import com.zenaton.workflowManager.messages.WorkflowCanceled
 import com.zenaton.workflowManager.messages.WorkflowCompleted
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessageType
-import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
 import org.apache.avro.specific.SpecificRecordBase
 
@@ -65,7 +65,7 @@ import org.apache.avro.specific.SpecificRecordBase
 object AvroConverter {
 
     /**
-     *  States
+     *  State <-> Avro State
      */
     fun fromStorage(avro: AvroWorkflowEngineState) = WorkflowEngineState(
         workflowId = WorkflowId(avro.workflowId),
@@ -89,7 +89,7 @@ object AvroConverter {
         .build()
 
     /**
-     *  Envelopes
+     *  Avro message <-> Avro Envelope
      */
     fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroEnvelopeForWorkflowEngine {
         val builder = AvroEnvelopeForWorkflowEngine.newBuilder()
@@ -147,7 +147,6 @@ object AvroConverter {
                 avroWorkflowCompleted = toAvroMessage(message)
                 type = AvroForWorkflowEngineMessageType.AvroWorkflowCompleted
             }
-            else -> throw Exception("Unknown ForWorkflowEngineMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }

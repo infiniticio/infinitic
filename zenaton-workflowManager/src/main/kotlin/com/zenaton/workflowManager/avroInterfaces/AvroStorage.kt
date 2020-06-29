@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.interfaces
+package com.zenaton.workflowManager.avroInterfaces
 
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
 

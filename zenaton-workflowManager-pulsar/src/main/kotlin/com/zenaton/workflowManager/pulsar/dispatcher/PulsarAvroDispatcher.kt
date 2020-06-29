@@ -2,7 +2,7 @@ package com.zenaton.workflowManager.pulsar.dispatcher
 
 import com.zenaton.jobManager.pulsar.dispatcher.Topic as JobTopic
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
-import com.zenaton.workflowManager.interfaces.AvroDispatcher
+import com.zenaton.workflowManager.avroInterfaces.AvroDispatcher
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context

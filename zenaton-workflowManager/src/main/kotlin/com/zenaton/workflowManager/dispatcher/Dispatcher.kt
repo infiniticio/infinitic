@@ -2,8 +2,8 @@ package com.zenaton.workflowManager.dispatcher
 
 import com.zenaton.jobManager.messages.DispatchJob
 import com.zenaton.workflowManager.avro.AvroConverter
-import com.zenaton.workflowManager.interfaces.AvroDispatcher
-import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
+import com.zenaton.workflowManager.avroInterfaces.AvroDispatcher
+import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
 import com.zenaton.jobManager.avro.AvroConverter as AvroJobConverter
 
 class Dispatcher(private val avroDispatcher: AvroDispatcher) {

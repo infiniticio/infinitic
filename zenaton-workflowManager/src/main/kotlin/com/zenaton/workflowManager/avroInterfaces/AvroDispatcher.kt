@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.interfaces
+package com.zenaton.workflowManager.avroInterfaces
 
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine

@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.pulsar.storage
 
 import com.zenaton.common.avro.AvroSerDe
-import com.zenaton.workflowManager.interfaces.AvroStorage
+import com.zenaton.workflowManager.avroInterfaces.AvroStorage
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
 import org.apache.pulsar.functions.api.Context
 

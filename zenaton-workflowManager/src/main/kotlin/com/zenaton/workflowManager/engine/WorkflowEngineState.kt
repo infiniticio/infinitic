@@ -6,7 +6,7 @@ import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.properties.Properties
 import com.zenaton.workflowManager.data.properties.PropertyStore
-import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
+import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
 
 data class WorkflowEngineState(
     val workflowId: WorkflowId,

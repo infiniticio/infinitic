@@ -2,7 +2,7 @@ package com.zenaton.workflowManager.engine
 
 import com.zenaton.workflowManager.avro.AvroConverter
 import com.zenaton.workflowManager.data.WorkflowId
-import com.zenaton.workflowManager.interfaces.AvroStorage
+import com.zenaton.workflowManager.avroInterfaces.AvroStorage
 
 class WorkflowEngineStateStorage(val avroStorage: AvroStorage) {
 

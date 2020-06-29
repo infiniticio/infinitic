@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.avro
 
+import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.messages.Message
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
-import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.TestConfiguration

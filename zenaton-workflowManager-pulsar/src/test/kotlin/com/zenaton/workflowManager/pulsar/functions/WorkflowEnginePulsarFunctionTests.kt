@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.pulsar.functions
 
-import com.zenaton.workflowManager.functions.WorkflowEngineFunction
+import com.zenaton.workflowManager.avroEngines.AvroWorkflowEngine
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import com.zenaton.workflowManager.pulsar.dispatcher.PulsarAvroDispatcher
 import com.zenaton.workflowManager.pulsar.storage.PulsarAvroStorage
@@ -29,7 +29,7 @@ class WorkflowEnginePulsarFunctionTests : StringSpec({
         // mocking
         val context = mockk<Context>()
         every { context.logger } returns mockk<org.slf4j.Logger>(relaxed = true)
-        val engineFunction = spyk(WorkflowEngineFunction())
+        val engineFunction = spyk(AvroWorkflowEngine())
         every { engineFunction.handle(any()) } just Runs
         val avroMsg = mockk<AvroEnvelopeForWorkflowEngine>()
         // given

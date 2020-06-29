@@ -1,15 +1,15 @@
-package com.zenaton.workflowManager.functions
+package com.zenaton.workflowManager.avroEngines
 
 import com.zenaton.workflowManager.avro.AvroConverter
 import com.zenaton.workflowManager.dispatcher.Dispatcher
 import com.zenaton.workflowManager.engine.WorkflowEngine
 import com.zenaton.workflowManager.engine.WorkflowEngineStateStorage
-import com.zenaton.workflowManager.interfaces.AvroDispatcher
-import com.zenaton.workflowManager.interfaces.AvroStorage
+import com.zenaton.workflowManager.avroInterfaces.AvroDispatcher
+import com.zenaton.workflowManager.avroInterfaces.AvroStorage
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import org.slf4j.Logger
 
-class WorkflowEngineFunction {
+class AvroWorkflowEngine {
     lateinit var logger: Logger
     lateinit var avroStorage: AvroStorage
     lateinit var avroDispatcher: AvroDispatcher

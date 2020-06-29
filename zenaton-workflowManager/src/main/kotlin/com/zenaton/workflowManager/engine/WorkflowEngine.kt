@@ -20,12 +20,12 @@ import com.zenaton.workflowManager.messages.DecisionDispatched
 import com.zenaton.workflowManager.messages.DelayCompleted
 import com.zenaton.workflowManager.messages.DispatchWorkflow
 import com.zenaton.workflowManager.messages.EventReceived
+import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.messages.TaskCanceled
 import com.zenaton.workflowManager.messages.TaskCompleted
 import com.zenaton.workflowManager.messages.TaskDispatched
 import com.zenaton.workflowManager.messages.WorkflowCanceled
 import com.zenaton.workflowManager.messages.WorkflowCompleted
-import com.zenaton.workflowManager.messages.envelopes.ForWorkflowEngineMessage
 import org.slf4j.Logger
 
 class WorkflowEngine {
@@ -174,13 +174,11 @@ class WorkflowEngine {
     private fun filterStore(store: PropertyStore, branches: List<Branch>): PropertyStore {
         // Retrieve properties at step at completion in branches
         val listProperties1 = branches.flatMap {
-            b ->
-            b.steps.filter { it.propertiesAfterCompletion != null }.map { it.propertiesAfterCompletion!! }
+            b -> b.steps.map { it.propertiesAfterCompletion }
         }
         // Retrieve properties when starting in branches
         val listProperties2 = branches.map {
-            b ->
-            b.propertiesAtStart
+            b -> b.propertiesAtStart
         }
         // Retrieve List<PropertyHash?> relevant for branches
         val listHashes = listProperties1.union(listProperties2).flatMap { it.properties.values }

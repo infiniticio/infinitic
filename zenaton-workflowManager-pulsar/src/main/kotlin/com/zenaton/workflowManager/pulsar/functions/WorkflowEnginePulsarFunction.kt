@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.pulsar.functions
 
 import com.zenaton.workflowManager.pulsar.dispatcher.PulsarAvroDispatcher
-import com.zenaton.workflowManager.functions.WorkflowEngineFunction
+import com.zenaton.workflowManager.avroEngines.AvroWorkflowEngine
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import com.zenaton.workflowManager.pulsar.storage.PulsarAvroStorage
 import org.apache.pulsar.functions.api.Context
@@ -9,7 +9,7 @@ import org.apache.pulsar.functions.api.Function
 
 class WorkflowEnginePulsarFunction : Function<AvroEnvelopeForWorkflowEngine, Void> {
 
-    var engine = WorkflowEngineFunction()
+    var engine = AvroWorkflowEngine()
 
     override fun process(input: AvroEnvelopeForWorkflowEngine, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
