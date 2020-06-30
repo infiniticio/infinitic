@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.avroEngines.jobSync
 
-    import com.zenaton.jobManager.avroConverter.AvroConverter
+import com.zenaton.jobManager.avroConverter.AvroConverter
 import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
@@ -10,8 +10,12 @@ internal class SyncWorkerTask : SyncWorker {
     override lateinit var avroDispatcher: AvroDispatcher
     lateinit var behavior: (msg: AvroRunJob) -> Status?
     var jobA = JobA()
+    var jobB = JobB()
+    var jobC = JobC()
 
     class JobA { fun handle() {} }
+    class JobB { fun handle() {} }
+    class JobC { fun handle() {} }
 
     override fun handle(msg: AvroEnvelopeForWorker) {
         when (val avro = AvroConverter.removeEnvelopeFromWorkerMessage(msg)) {
@@ -19,6 +23,8 @@ internal class SyncWorkerTask : SyncWorker {
                 sendJobStarted(avro)
                 val out = when (avro.jobName) {
                     "JobA" -> jobA.handle()
+                    "JobB" -> jobB.handle()
+                    "JobC" -> jobC.handle()
                     else -> throw Exception("Unknown job ${avro.jobName}")
                 }
                 when (behavior(avro)) {

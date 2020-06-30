@@ -3,8 +3,8 @@ package com.zenaton.jobManager.avroEngines
 import com.zenaton.jobManager.avroConverter.AvroConverter
 import com.zenaton.jobManager.avroEngines.sync.SyncDispatcher
 import com.zenaton.jobManager.avroEngines.sync.SyncStorage
-import com.zenaton.jobManager.avroEngines.sync.SyncWorkerTask
 import com.zenaton.jobManager.avroEngines.sync.SyncWorker.Status
+import com.zenaton.jobManager.avroEngines.sync.SyncWorkerTask
 import com.zenaton.jobManager.data.AvroJobStatus
 import com.zenaton.jobManager.messages.AvroDispatchJob
 import com.zenaton.jobManager.messages.AvroRetryJob
@@ -17,8 +17,8 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 
 private val logger = mockk<Logger>(relaxed = true)
@@ -36,12 +36,12 @@ class AvroEngineTests : StringSpec({
         worker.behavior = { Status.SUCCESS }
         // run system
         val dispatch = getAvroDispatchJob()
-        runBlocking {
+        coroutineScope {
             dispatcher.scope = this
             dispatcher.toJobEngine(dispatch)
         }
         // check that job is completed
-        storage.jobEngineStore.get(dispatch.jobId) shouldBe null
+        storage.jobEngineStore[dispatch.jobId] shouldBe null
         // checks number of job processings
         verify(exactly = 1) {
             worker.jobA.handle()
@@ -54,7 +54,7 @@ class AvroEngineTests : StringSpec({
         worker.behavior = { job: AvroRunJob -> if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.SUCCESS }
         // run system
         val dispatch = getAvroDispatchJob()
-        runBlocking {
+        coroutineScope {
             dispatcher.scope = this
             dispatcher.toJobEngine(dispatch)
         }
@@ -72,7 +72,7 @@ class AvroEngineTests : StringSpec({
         worker.behavior = { Status.FAIL_WITHOUT_RETRY }
         // run system
         val dispatch = getAvroDispatchJob()
-        runBlocking {
+        coroutineScope {
             dispatcher.scope = this
             dispatcher.toJobEngine(dispatch)
         }
@@ -90,7 +90,7 @@ class AvroEngineTests : StringSpec({
         worker.behavior = { job: AvroRunJob -> if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.FAIL_WITHOUT_RETRY }
         // run system
         val dispatch = getAvroDispatchJob()
-        runBlocking {
+        coroutineScope {
             dispatcher.scope = this
             dispatcher.toJobEngine(dispatch)
         }
@@ -117,7 +117,7 @@ class AvroEngineTests : StringSpec({
         // run system
         val dispatch = getAvroDispatchJob()
         val retry = getAvroRetryJob(dispatch.jobId)
-        runBlocking {
+        coroutineScope {
             dispatcher.scope = this
             dispatcher.toJobEngine(dispatch)
             delay(100)

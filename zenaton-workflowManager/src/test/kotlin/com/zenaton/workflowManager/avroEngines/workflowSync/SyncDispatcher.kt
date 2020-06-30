@@ -13,9 +13,8 @@ import kotlinx.coroutines.launch
 
 internal class SyncDispatcher(
     private val workflowEngine: AvroWorkflowEngine,
-    private val jobEngine: AvroJobEngine,
-    private val decider: SyncWorkerDecision,
-    private val worker: SyncWorker
+    private val decisionEngine: AvroJobEngine,
+    private val taskEngine: AvroJobEngine
 ) : AvroDispatcher {
     lateinit var scope: CoroutineScope
 
@@ -30,13 +29,13 @@ internal class SyncDispatcher(
 
     override fun toDeciders(msg: AvroEnvelopeForJobEngine) {
         scope.launch {
-            jobEngine.handle(msg)
+            decisionEngine.handle(msg)
         }
     }
 
     override fun toWorkers(msg: AvroEnvelopeForJobEngine) {
         scope.launch {
-            jobEngine.handle(msg)
+            taskEngine.handle(msg)
         }
     }
 }
