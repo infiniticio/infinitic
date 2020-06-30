@@ -14,7 +14,7 @@ class Dispatcher(private val avroDispatcher: AvroDispatcher) {
     }
 
     fun toJobEngine(msg: ForJobEngineMessage, after: Float = 0f) {
-        avroDispatcher.toJobEngine(AvroConverter.toJobEngine(msg))
+        avroDispatcher.toJobEngine(AvroConverter.toJobEngine(msg), after)
     }
 
     fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {

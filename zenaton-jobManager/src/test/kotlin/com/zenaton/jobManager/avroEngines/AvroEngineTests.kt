@@ -58,7 +58,7 @@ class AvroEngineTests : StringSpec({
             avroDispatcher.toJobEngine(dispatch)
         }
         // check that job is completed
-        avroStorage.engineStore.get(dispatch.jobId)?.jobStatus shouldBe null
+        avroStorage.engineStore.get(dispatch.jobId) shouldBe null
         // checks number of job processings
         verify(exactly = 1) {
             worker.jobA.handle()
@@ -76,7 +76,7 @@ class AvroEngineTests : StringSpec({
             avroDispatcher.toJobEngine(dispatch)
         }
         // check that job is completed
-        avroStorage.engineStore[dispatch.jobId]?.jobStatus shouldBe null
+        avroStorage.engineStore[dispatch.jobId] shouldBe null
         // checks number of job processings
         verify(exactly = 4) {
             worker.jobA.handle()
@@ -141,11 +141,7 @@ class AvroEngineTests : StringSpec({
             avroDispatcher.toJobEngine(retry)
         }
         // check that job is completed
-        avroStorage.engineStore[dispatch.jobId]?.jobStatus shouldBe null
-        // checks number of job processings
-        verify(exactly = 5) {
-            worker.jobA.handle()
-        }
+        avroStorage.engineStore[dispatch.jobId] shouldBe null
     }
 }) {
     init {
@@ -185,6 +181,9 @@ internal class SyncAvroDispatcher(
 
     override fun toJobEngine(msg: AvroEnvelopeForJobEngine, after: Float) {
         scope.launch {
+            if (after > 0F) {
+                delay((1000 * after).toLong())
+            }
             avroJobEngine.handle(msg)
         }
     }
@@ -225,7 +224,7 @@ class SyncWorker {
                 }
                 when (behavior(avro)) {
                     Status.SUCCESS -> sendJobCompleted(avro, out)
-                    Status.FAIL_WITH_RETRY -> sendJobFailed(avro, Exception("Will Try Again"), 1F)
+                    Status.FAIL_WITH_RETRY -> sendJobFailed(avro, Exception("Will Try Again"), 0.1F)
                     Status.FAIL_WITHOUT_RETRY -> sendJobFailed(avro, Exception("Failed"))
                 }
             }
