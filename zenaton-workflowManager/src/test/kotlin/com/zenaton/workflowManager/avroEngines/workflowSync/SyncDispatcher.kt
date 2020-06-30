@@ -3,8 +3,6 @@ package com.zenaton.workflowManager.avroEngines.workflowSync
 import com.zenaton.jobManager.avroEngines.AvroJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.workflowManager.avroEngines.AvroWorkflowEngine
-import com.zenaton.workflowManager.avroEngines.jobSync.SyncWorkerDecision
-import com.zenaton.workflowManager.avroEngines.jobSync.SyncWorker
 import com.zenaton.workflowManager.avroInterfaces.AvroDispatcher
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import kotlinx.coroutines.CoroutineScope

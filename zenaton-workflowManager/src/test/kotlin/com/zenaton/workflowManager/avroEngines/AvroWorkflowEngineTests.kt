@@ -12,14 +12,10 @@ import com.zenaton.workflowManager.avroEngines.workflowSync.SyncStorage
 import com.zenaton.workflowManager.messages.AvroDispatchWorkflow
 import com.zenaton.workflowManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
 import io.mockk.Runs
-import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.verifyAll
-import kotlinx.coroutines.coroutineScope
 import org.slf4j.Logger
 import com.zenaton.workflowManager.avroEngines.jobSync.SyncDispatcher as SyncJobDispatcher
 import com.zenaton.workflowManager.avroEngines.jobSync.SyncStorage as SyncJobStorage
@@ -55,7 +51,7 @@ class AvroWorkflowEngineTests : StringSpec({
 //            workflowDispatcher.scope = this
 //            workflowDispatcher.toWorkflowEngine(dispatch)
 //        }
-//        // check that job is completed
+//        // check that workflow     is completed
 //        taskStorage.jobEngineStore[dispatch.workflowId] shouldBe null
 //        // checks scenarios
 //        verifyAll {
