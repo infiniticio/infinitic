@@ -45,7 +45,7 @@
           :loading="true"
         />
         <div v-else-if="error$">
-          {{ error$ }}
+          <server-error />
         </div>
         <div v-else-if="taskDetails$">
           <div class="bg-white shadow overflow-hidden  sm:rounded-lg">
@@ -167,11 +167,12 @@ import { getTaskDetails, Task, TaskAttemptTry } from "@/api";
 import { from, of } from "rxjs";
 import { share, mapTo, startWith, catchError } from "rxjs/operators";
 import { PulseLoader } from "@saeris/vue-spinners";
+import ServerError from "@/components/errors/ServerError.vue";
 
 export default Vue.extend({
   name: "TaskDetails",
 
-  components: { PulseLoader },
+  components: { PulseLoader, ServerError },
 
   props: {
     id: {
