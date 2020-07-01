@@ -1,37 +1,15 @@
 package com.zenaton.jobManager.data
 
-import java.lang.Exception
-import java.nio.ByteBuffer
+import com.zenaton.common.data.SerializedData
 
 class JobMetaBuilder {
-    private var meta: MutableMap<String, ByteArray> = mutableMapOf()
+    private var meta: MutableMap<String, SerializedData> = mutableMapOf()
 
-    fun add(key: String, data: String): JobMetaBuilder {
-        checkKey(key)
-        meta[key] = data.toByteArray(Charsets.UTF_8)
-
-        return this
-    }
-
-    fun add(key: String, data: ByteArray): JobMetaBuilder {
-        checkKey(key)
-        meta[key] = data
+    fun add(key: String, data: Any?): JobMetaBuilder {
+        meta[key] = SerializedData.from(data)
 
         return this
-    }
-
-    fun add(key: String, data: ByteBuffer): JobMetaBuilder {
-        val p = data.position()
-        val bytes = ByteArray(data.remaining())
-        data.get(bytes, 0, bytes.size)
-        data.position(p)
-
-        return add(key, bytes)
     }
 
     fun build() = JobMeta(meta)
-
-    private fun checkKey(key: String) {
-        if (meta.containsKey(key)) throw Exception("Duplicated $key key")
-    }
 }

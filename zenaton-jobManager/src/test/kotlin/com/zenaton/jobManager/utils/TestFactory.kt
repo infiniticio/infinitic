@@ -25,6 +25,7 @@ object TestFactory {
         val parameters = EasyRandomParameters()
             .seed(seed)
             .scanClasspathForConcreteTypes(true)
+            .overrideDefaultInitialization(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(SerializedData::class.java) { SerializedData.from("test") }

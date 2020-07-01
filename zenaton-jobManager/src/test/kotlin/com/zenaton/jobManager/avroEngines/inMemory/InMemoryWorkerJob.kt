@@ -6,15 +6,10 @@ import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.jobManager.avroEngines.inMemory.InMemoryWorker.Status
 
-internal class InMemoryWorkerTask : InMemoryWorker {
+internal class InMemoryWorkerJob : InMemoryWorker {
     override lateinit var avroDispatcher: AvroDispatcher
-    lateinit var behavior: (msg: AvroRunJob) -> Status?
-
-    var jobA = JobA()
-
-    class JobA {
-        fun handle() {}
-    }
+    lateinit var behavior: (msg: AvroRunJob) -> Status
+    lateinit var jobA: Job
 
     override fun handle(msg: AvroEnvelopeForWorker) {
 
@@ -29,7 +24,7 @@ internal class InMemoryWorkerTask : InMemoryWorker {
                 when (behavior(avro)) {
                     Status.SUCCESS -> sendJobCompleted(avro, out)
                     Status.FAIL_WITH_RETRY -> sendJobFailed(avro, Exception("Will Try Again"), 0.1F)
-                    Status.FAIL_WITHOUT_RETRY -> sendJobFailed(avro, Exception("Failed"))
+                    Status.FAIL_WITHOUT_RETRY -> sendJobFailed(avro, Exception("Job Failed"))
                 }
             }
         }

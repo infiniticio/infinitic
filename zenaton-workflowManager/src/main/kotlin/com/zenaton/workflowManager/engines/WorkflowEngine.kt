@@ -31,6 +31,10 @@ import com.zenaton.workflowManager.messages.WorkflowCompleted
 import org.slf4j.Logger
 
 class WorkflowEngine {
+    companion object {
+        const val META_WORKFLOW_ID = "workflowID"
+    }
+
     lateinit var logger: Logger
     lateinit var storage: WorkflowEngineStateStorage
     lateinit var dispatcher: Dispatcher
@@ -118,7 +122,7 @@ class WorkflowEngine {
                     .add(AvroConverter.toAvroDecisionInput(decisionInput))
                     .build(),
                 jobMeta = JobMeta.builder()
-                    .add("workflowId", msg.workflowId.id)
+                    .add(META_WORKFLOW_ID, msg.workflowId.id)
                     .build()
             )
         )

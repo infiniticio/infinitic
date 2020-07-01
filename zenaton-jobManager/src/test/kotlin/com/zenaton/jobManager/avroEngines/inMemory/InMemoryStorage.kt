@@ -10,7 +10,7 @@ internal class InMemoryStorage : AvroStorage {
     var monitoringPerNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var monitoringGlobalStore: AvroMonitoringGlobalState? = null
 
-    fun init() {
+    fun reset() {
         jobEngineStore = mapOf()
         monitoringPerNameStore = mapOf()
         monitoringGlobalStore = null
