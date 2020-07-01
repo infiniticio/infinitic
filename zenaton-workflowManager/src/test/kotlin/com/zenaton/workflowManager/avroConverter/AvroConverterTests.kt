@@ -87,7 +87,7 @@ class AvroConverterTests : ShouldSpec({
 
 fun messagesToWorkflowEngineShouldBeAvroReversible(msg: ForWorkflowEngineMessage) = shouldSpec {
     context(msg::class.simpleName!!) {
-        should("be avro-convertible") {
+        should("should be avro-convertible") {
             shouldNotThrowAny {
                 val avroMsg = AvroConverter.toWorkflowEngine(msg)
                 val msg2 = AvroConverter.fromWorkflowEngine(avroMsg)

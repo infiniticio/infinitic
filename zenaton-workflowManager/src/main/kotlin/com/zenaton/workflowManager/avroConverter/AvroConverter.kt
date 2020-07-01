@@ -26,7 +26,6 @@ import com.zenaton.workflowManager.data.steps.Step
 import com.zenaton.workflowManager.data.steps.StepCriterion
 import com.zenaton.workflowManager.data.steps.StepHash
 import com.zenaton.workflowManager.decisions.AvroDecisionInput
-import com.zenaton.workflowManager.states.WorkflowEngineState
 import com.zenaton.workflowManager.messages.AvroCancelWorkflow
 import com.zenaton.workflowManager.messages.AvroChildWorkflowCanceled
 import com.zenaton.workflowManager.messages.AvroChildWorkflowCompleted
@@ -58,6 +57,7 @@ import com.zenaton.workflowManager.messages.WorkflowCompleted
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import com.zenaton.workflowManager.messages.envelopes.AvroForWorkflowEngineMessageType
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
+import com.zenaton.workflowManager.states.WorkflowEngineState
 import org.apache.avro.specific.SpecificRecordBase
 
 /**
@@ -92,88 +92,111 @@ object AvroConverter {
     /**
      *  Avro message <-> Avro Envelope
      */
-    fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroEnvelopeForWorkflowEngine {
+
+    fun addEnvelopeToWorkflowEngineMessage(message: SpecificRecordBase): AvroEnvelopeForWorkflowEngine {
         val builder = AvroEnvelopeForWorkflowEngine.newBuilder()
-        builder.workflowId = message.workflowId.id
         when (message) {
-            is CancelWorkflow -> builder.apply {
-                avroCancelWorkflow = toAvroMessage(message)
+            is AvroCancelWorkflow -> builder.apply {
+                workflowId = message.workflowId
+                avroCancelWorkflow = message
                 type = AvroForWorkflowEngineMessageType.AvroCancelWorkflow
             }
-            is ChildWorkflowCanceled -> builder.apply {
-                avroChildWorkflowCanceled = toAvroMessage(message)
+            is AvroChildWorkflowCanceled -> builder.apply {
+                workflowId = message.workflowId
+                avroChildWorkflowCanceled = message
                 type = AvroForWorkflowEngineMessageType.AvroChildWorkflowCanceled
             }
-            is ChildWorkflowCompleted -> builder.apply {
-                avroChildWorkflowCompleted = toAvroMessage(message)
+            is AvroChildWorkflowCompleted -> builder.apply {
+                workflowId = message.workflowId
+                avroChildWorkflowCompleted = message
                 type = AvroForWorkflowEngineMessageType.AvroChildWorkflowCompleted
             }
-            is DecisionCompleted -> builder.apply {
-                avroDecisionCompleted = toAvroMessage(message)
+            is AvroDecisionCompleted -> builder.apply {
+                workflowId = message.workflowId
+                avroDecisionCompleted = message
                 type = AvroForWorkflowEngineMessageType.AvroDecisionCompleted
             }
-            is DecisionDispatched -> builder.apply {
-                avroDecisionDispatched = toAvroMessage(message)
+            is AvroDecisionDispatched -> builder.apply {
+                workflowId = message.workflowId
+                avroDecisionDispatched = message
                 type = AvroForWorkflowEngineMessageType.AvroDecisionDispatched
             }
-            is DelayCompleted -> builder.apply {
-                avroDelayCompleted = toAvroMessage(message)
+            is AvroDelayCompleted -> builder.apply {
+                workflowId = message.workflowId
+                avroDelayCompleted = message
                 type = AvroForWorkflowEngineMessageType.AvroDelayCompleted
             }
-            is DispatchWorkflow -> builder.apply {
-                avroDispatchWorkflow = toAvroMessage(message)
+            is AvroDispatchWorkflow -> builder.apply {
+                workflowId = message.workflowId
+                avroDispatchWorkflow = message
                 type = AvroForWorkflowEngineMessageType.AvroDispatchWorkflow
             }
-            is EventReceived -> builder.apply {
-                avroEventReceived = toAvroMessage(message)
+            is AvroEventReceived -> builder.apply {
+                workflowId = message.workflowId
+                avroEventReceived = message
                 type = AvroForWorkflowEngineMessageType.AvroEventReceived
             }
-            is TaskCanceled -> builder.apply {
-                avroTaskCanceled = toAvroMessage(message)
+            is AvroTaskCanceled -> builder.apply {
+                workflowId = message.workflowId
+                avroTaskCanceled = message
                 type = AvroForWorkflowEngineMessageType.AvroTaskCanceled
             }
-            is TaskCompleted -> builder.apply {
-                avroTaskCompleted = toAvroMessage(message)
+            is AvroTaskCompleted -> builder.apply {
+                workflowId = message.workflowId
+                avroTaskCompleted = message
                 type = AvroForWorkflowEngineMessageType.AvroTaskCompleted
             }
-            is TaskDispatched -> builder.apply {
-                avroTaskDispatched = toAvroMessage(message)
+            is AvroTaskDispatched -> builder.apply {
+                workflowId = message.workflowId
+                avroTaskDispatched = message
                 type = AvroForWorkflowEngineMessageType.AvroTaskDispatched
             }
-            is WorkflowCanceled -> builder.apply {
-                avroWorkflowCanceled = toAvroMessage(message)
+            is AvroWorkflowCanceled -> builder.apply {
+                workflowId = message.workflowId
+                avroWorkflowCanceled = message
                 type = AvroForWorkflowEngineMessageType.AvroWorkflowCanceled
             }
-            is WorkflowCompleted -> builder.apply {
-                avroWorkflowCompleted = toAvroMessage(message)
+            is AvroWorkflowCompleted -> builder.apply {
+                workflowId = message.workflowId
+                avroWorkflowCompleted = message
                 type = AvroForWorkflowEngineMessageType.AvroWorkflowCompleted
             }
+            else -> throw Exception("Unknown AvroWorkflowEngineMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
 
-    fun fromWorkflowEngine(input: AvroEnvelopeForWorkflowEngine): ForWorkflowEngineMessage {
-        return when (input.type) {
-            AvroForWorkflowEngineMessageType.AvroCancelWorkflow -> fromAvroMessage(input.avroCancelWorkflow)
-            AvroForWorkflowEngineMessageType.AvroChildWorkflowCanceled -> fromAvroMessage(input.avroChildWorkflowCanceled)
-            AvroForWorkflowEngineMessageType.AvroChildWorkflowCompleted -> fromAvroMessage(input.avroChildWorkflowCompleted)
-            AvroForWorkflowEngineMessageType.AvroDecisionCompleted -> fromAvroMessage(input.avroDecisionCompleted)
-            AvroForWorkflowEngineMessageType.AvroDecisionDispatched -> fromAvroMessage(input.avroDecisionDispatched)
-            AvroForWorkflowEngineMessageType.AvroDelayCompleted -> fromAvroMessage(input.avroDelayCompleted)
-            AvroForWorkflowEngineMessageType.AvroDispatchWorkflow -> fromAvroMessage(input.avroDispatchWorkflow)
-            AvroForWorkflowEngineMessageType.AvroEventReceived -> fromAvroMessage(input.avroEventReceived)
-            AvroForWorkflowEngineMessageType.AvroTaskCanceled -> fromAvroMessage(input.avroTaskCanceled)
-            AvroForWorkflowEngineMessageType.AvroTaskCompleted -> fromAvroMessage(input.avroTaskCompleted)
-            AvroForWorkflowEngineMessageType.AvroTaskDispatched -> fromAvroMessage(input.avroTaskDispatched)
-            AvroForWorkflowEngineMessageType.AvroWorkflowCanceled -> fromAvroMessage(input.avroWorkflowCanceled)
-            AvroForWorkflowEngineMessageType.AvroWorkflowCompleted -> fromAvroMessage(input.avroWorkflowCompleted)
-            else -> throw Exception("Unknown AvroEnvelopeForWorkflowEngine: ${input::class.qualifiedName}")
-        }
+    fun removeEnvelopeFromWorkflowEngineMessage(input: AvroEnvelopeForWorkflowEngine): SpecificRecordBase = when (input.type) {
+        AvroForWorkflowEngineMessageType.AvroCancelWorkflow -> input.avroCancelWorkflow
+        AvroForWorkflowEngineMessageType.AvroChildWorkflowCanceled -> input.avroChildWorkflowCanceled
+        AvroForWorkflowEngineMessageType.AvroChildWorkflowCompleted -> input.avroChildWorkflowCompleted
+        AvroForWorkflowEngineMessageType.AvroDecisionCompleted -> input.avroDecisionCompleted
+        AvroForWorkflowEngineMessageType.AvroDecisionDispatched -> input.avroDecisionDispatched
+        AvroForWorkflowEngineMessageType.AvroDelayCompleted -> input.avroDelayCompleted
+        AvroForWorkflowEngineMessageType.AvroDispatchWorkflow -> input.avroDispatchWorkflow
+        AvroForWorkflowEngineMessageType.AvroEventReceived -> input.avroEventReceived
+        AvroForWorkflowEngineMessageType.AvroTaskCanceled -> input.avroTaskCanceled
+        AvroForWorkflowEngineMessageType.AvroTaskCompleted -> input.avroTaskCompleted
+        AvroForWorkflowEngineMessageType.AvroTaskDispatched -> input.avroTaskDispatched
+        AvroForWorkflowEngineMessageType.AvroWorkflowCanceled -> input.avroWorkflowCanceled
+        AvroForWorkflowEngineMessageType.AvroWorkflowCompleted -> input.avroWorkflowCompleted
+        null -> throw Exception("Null type in $input")
     }
+
+    /**
+     *  Message <-> Avro Envelope
+     */
+
+    fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroEnvelopeForWorkflowEngine =
+        addEnvelopeToWorkflowEngineMessage(toAvroMessage(message))
+
+    fun fromWorkflowEngine(avro: AvroEnvelopeForWorkflowEngine) =
+        fromAvroMessage(removeEnvelopeFromWorkflowEngineMessage(avro)) as ForWorkflowEngineMessage
 
     /**
      *  Message <-> Avro Message
      */
+
     fun fromAvroMessage(avro: SpecificRecordBase): Message = when (avro) {
         is AvroCancelWorkflow -> fromAvroMessage(avro)
         is AvroChildWorkflowCanceled -> fromAvroMessage(avro)
@@ -210,6 +233,22 @@ object AvroConverter {
         workflowName = WorkflowName(avro.workflowName),
         decisionInput = fromAvroDecisionInput(avro.decisionInput)
     )
+
+    fun toAvroMessage(message: Message): SpecificRecordBase = when (message) {
+        is CancelWorkflow -> toAvroMessage(message)
+        is ChildWorkflowCanceled -> toAvroMessage(message)
+        is ChildWorkflowCompleted -> toAvroMessage(message)
+        is DecisionCompleted -> toAvroMessage(message)
+        is DecisionDispatched -> toAvroMessage(message)
+        is DelayCompleted -> toAvroMessage(message)
+        is DispatchWorkflow -> toAvroMessage(message)
+        is EventReceived -> toAvroMessage(message)
+        is TaskCanceled -> toAvroMessage(message)
+        is TaskCompleted -> toAvroMessage(message)
+        is TaskDispatched -> toAvroMessage(message)
+        is WorkflowCanceled -> toAvroMessage(message)
+        is WorkflowCompleted -> toAvroMessage(message)
+    }
 
     private fun toAvroMessage(message: CancelWorkflow) = convertJson<AvroCancelWorkflow>(message)
     private fun toAvroMessage(message: ChildWorkflowCanceled) = convertJson<AvroChildWorkflowCanceled>(message)
