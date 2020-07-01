@@ -1,10 +1,10 @@
 package com.zenaton.jobManager.avroEngines
 
 import com.zenaton.jobManager.avroConverter.AvroConverter
-import com.zenaton.jobManager.avroEngines.sync.SyncDispatcher
-import com.zenaton.jobManager.avroEngines.sync.SyncStorage
-import com.zenaton.jobManager.avroEngines.sync.SyncWorker.Status
-import com.zenaton.jobManager.avroEngines.sync.SyncWorkerTask
+import com.zenaton.jobManager.avroEngines.inMemory.InMemoryDispatcher
+import com.zenaton.jobManager.avroEngines.inMemory.InMemoryStorage
+import com.zenaton.jobManager.avroEngines.inMemory.InMemoryWorker.Status
+import com.zenaton.jobManager.avroEngines.inMemory.InMemoryWorkerTask
 import com.zenaton.jobManager.data.AvroJobStatus
 import com.zenaton.jobManager.messages.AvroDispatchJob
 import com.zenaton.jobManager.messages.AvroRetryJob
@@ -25,13 +25,18 @@ private val logger = mockk<Logger>(relaxed = true)
 private val jobEngine = AvroJobEngine()
 private val monitoringPerName = AvroMonitoringPerName()
 private val monitoringGlobal = AvroMonitoringGlobal()
-private val worker = SyncWorkerTask()
-private val dispatcher = SyncDispatcher(jobEngine, monitoringPerName, monitoringGlobal, worker)
-private val storage = SyncStorage()
+private val worker = InMemoryWorkerTask()
+private val dispatcher = InMemoryDispatcher(jobEngine, monitoringPerName, monitoringGlobal, worker)
+private val storage = InMemoryStorage()
 
 class AvroEngineTests : StringSpec({
+    beforeTest {
+        worker.jobA = mockk()
+        every { worker.jobA.handle() } just Runs
+        storage.init()
+    }
+
     "Job succeeds at first try" {
-        beforeTest()
         // job will succeed
         worker.behavior = { Status.SUCCESS }
         // run system
@@ -42,14 +47,13 @@ class AvroEngineTests : StringSpec({
         }
         // check that job is completed
         storage.jobEngineStore[dispatch.jobId] shouldBe null
-        // checks number of job processings
+        // checks number of job processing
         verify(exactly = 1) {
             worker.jobA.handle()
         }
     }
 
-    "Job succeeds at 5th try" {
-        beforeTest()
+    "Job succeeds at 4th try" {
         // job will succeed only at the 4th try
         worker.behavior = { job: AvroRunJob -> if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.SUCCESS }
         // run system
@@ -60,14 +64,13 @@ class AvroEngineTests : StringSpec({
         }
         // check that job is completed
         storage.jobEngineStore[dispatch.jobId] shouldBe null
-        // checks number of job processings
+        // checks number of job processing
         verify(exactly = 4) {
             worker.jobA.handle()
         }
     }
 
     "Job fails" {
-        beforeTest()
         // job will succeed only at the 4th try
         worker.behavior = { Status.FAIL_WITHOUT_RETRY }
         // run system
@@ -78,17 +81,20 @@ class AvroEngineTests : StringSpec({
         }
         // check that job is completed
         storage.jobEngineStore[dispatch.jobId]?.jobStatus shouldBe AvroJobStatus.RUNNING_ERROR
-        // checks number of job processings
+        // checks number of job processing
         verify(exactly = 1) {
             worker.jobA.handle()
         }
     }
 
     "Job fails after 4 trys " {
-        beforeTest()
         // job will succeed only at the 4th try
-        worker.behavior = { job: AvroRunJob -> if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.FAIL_WITHOUT_RETRY }
-        // run system
+        worker.behavior = { job: AvroRunJob ->
+            if (job.jobAttemptIndex == 0)
+                if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.FAIL_WITHOUT_RETRY
+            else
+                Status.SUCCESS
+        } // run system
         val dispatch = getAvroDispatchJob()
         coroutineScope {
             dispatcher.scope = this
@@ -96,21 +102,17 @@ class AvroEngineTests : StringSpec({
         }
         // check that job is completed
         storage.jobEngineStore[dispatch.jobId]?.jobStatus shouldBe AvroJobStatus.RUNNING_ERROR
-        // checks number of job processings
+        // checks number of job processing
         verify(exactly = 4) {
             worker.jobA.handle()
         }
     }
 
     "Job succeeds after manual retry" {
-        beforeTest()
         // job will succeed only at the 4th try
         worker.behavior = { job: AvroRunJob ->
             if (job.jobAttemptIndex == 0)
-                if (job.jobAttemptRetry < 3)
-                    Status.FAIL_WITH_RETRY
-                else
-                    Status.FAIL_WITHOUT_RETRY
+                if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.FAIL_WITHOUT_RETRY
             else
                 Status.SUCCESS
         }
@@ -141,12 +143,6 @@ class AvroEngineTests : StringSpec({
 
         worker.avroDispatcher = dispatcher
     }
-}
-
-private fun beforeTest() {
-    worker.jobA = mockk()
-    every { worker.jobA.handle() } just Runs
-    storage.init()
 }
 
 private fun getAvroDispatchJob() = AvroConverter.addEnvelopeToJobEngineMessage(

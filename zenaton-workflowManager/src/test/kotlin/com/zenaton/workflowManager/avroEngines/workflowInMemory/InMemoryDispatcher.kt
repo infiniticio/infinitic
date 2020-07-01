@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.avroEngines.workflowSync
+package com.zenaton.workflowManager.avroEngines.workflowInMemory
 
 import com.zenaton.jobManager.avroEngines.AvroJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-internal class SyncDispatcher(
+internal class InMemoryDispatcher(
     private val workflowEngine: AvroWorkflowEngine,
     private val decisionEngine: AvroJobEngine,
     private val taskEngine: AvroJobEngine

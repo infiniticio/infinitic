@@ -1,12 +1,12 @@
-package com.zenaton.workflowManager.avroEngines.jobSync
+package com.zenaton.workflowManager.avroEngines.jobInMemory
 
 import com.zenaton.jobManager.avroConverter.AvroConverter
 import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
-import com.zenaton.workflowManager.avroEngines.jobSync.SyncWorker.Status
+import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorker.Status
 
-internal class SyncWorkerDecision : SyncWorker {
+internal class InMemoryWorkerDecision : InMemoryWorker {
     override lateinit var avroDispatcher: AvroDispatcher
     lateinit var behavior: (msg: AvroRunJob) -> Status?
     var workflowA = WorkflowA()
@@ -21,11 +21,7 @@ internal class SyncWorkerDecision : SyncWorker {
                     "WorkflowA" -> workflowA.handle()
                     else -> throw Exception("Unknown job ${avro.jobName}")
                 }
-                when (behavior(avro)) {
-                    Status.SUCCESS -> sendJobCompleted(avro, out)
-                    Status.FAIL_WITH_RETRY -> sendJobFailed(avro, Exception("Will Try Again"), 0.1F)
-                    Status.FAIL_WITHOUT_RETRY -> sendJobFailed(avro, Exception("Failed"))
-                }
+                sendJobCompleted(avro, out)
             }
         }
     }

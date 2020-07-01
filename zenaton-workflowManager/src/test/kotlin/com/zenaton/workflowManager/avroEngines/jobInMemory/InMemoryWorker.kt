@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.avroEngines.sync
+package com.zenaton.workflowManager.avroEngines.jobInMemory
 
 import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.avroConverter.AvroConverter
@@ -9,7 +9,7 @@ import com.zenaton.jobManager.messages.AvroJobAttemptStarted
 import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 
-internal interface SyncWorker {
+internal interface InMemoryWorker {
     var avroDispatcher: AvroDispatcher
 
     enum class Status {

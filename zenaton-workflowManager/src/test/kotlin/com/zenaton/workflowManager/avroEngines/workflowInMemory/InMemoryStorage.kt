@@ -1,9 +1,9 @@
-package com.zenaton.workflowManager.avroEngines.workflowSync
+package com.zenaton.workflowManager.avroEngines.workflowInMemory
 
 import com.zenaton.workflowManager.avroInterfaces.AvroStorage
 import com.zenaton.workflowManager.states.AvroWorkflowEngineState
 
-internal class SyncStorage : AvroStorage {
+internal class InMemoryStorage : AvroStorage {
     var workflowEngineStore: Map<String, AvroWorkflowEngineState> = mapOf()
 
     fun init() {

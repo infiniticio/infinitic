@@ -114,12 +114,10 @@ class WorkflowEngine {
             DispatchJob(
                 jobId = JobId(decisionId.id),
                 jobName = JobName(msg.workflowName.name),
-                jobInput = JobInput
-                    .builder()
+                jobInput = JobInput.builder()
                     .add(AvroConverter.toAvroDecisionInput(decisionInput))
                     .build(),
-                jobMeta = JobMeta
-                    .builder()
+                jobMeta = JobMeta.builder()
                     .add("workflowId", msg.workflowId.id)
                     .build()
             )
@@ -133,8 +131,6 @@ class WorkflowEngine {
                 decisionInput = decisionInput
             )
         )
-        // save state
-        storage.updateState(msg.workflowId, state, null)
 
         return state
     }

@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.avroEngines.jobSync
+package com.zenaton.jobManager.avroEngines.inMemory
 
 import com.zenaton.jobManager.avroEngines.AvroJobEngine
 import com.zenaton.jobManager.avroEngines.AvroMonitoringGlobal
@@ -12,11 +12,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-internal class SyncDispatcher(
+internal class InMemoryDispatcher(
     private val jobEngine: AvroJobEngine,
     private val monitoringPerName: AvroMonitoringPerName,
     private val monitoringGlobal: AvroMonitoringGlobal,
-    private val worker: SyncWorker
+    private val worker: InMemoryWorker
 ) : AvroDispatcher {
     lateinit var scope: CoroutineScope
 

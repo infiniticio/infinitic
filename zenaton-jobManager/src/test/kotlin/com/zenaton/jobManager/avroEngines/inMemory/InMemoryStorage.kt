@@ -1,11 +1,11 @@
-package com.zenaton.jobManager.avroEngines.sync
+package com.zenaton.jobManager.avroEngines.inMemory
 
 import com.zenaton.jobManager.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState
 
-internal class SyncStorage : AvroStorage {
+internal class InMemoryStorage : AvroStorage {
     var jobEngineStore: Map<String, AvroJobEngineState> = mapOf()
     var monitoringPerNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var monitoringGlobalStore: AvroMonitoringGlobalState? = null
