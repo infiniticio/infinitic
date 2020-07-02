@@ -6,6 +6,7 @@ import com.zenaton.jobManager.avroEngines.inMemory.InMemoryStorage
 import com.zenaton.jobManager.avroEngines.inMemory.InMemoryWorker.Status
 import com.zenaton.jobManager.avroEngines.inMemory.InMemoryWorkerJob
 import com.zenaton.jobManager.data.AvroJobStatus
+import com.zenaton.jobManager.messages.AvroCancelJob
 import com.zenaton.jobManager.messages.AvroDispatchJob
 import com.zenaton.jobManager.messages.AvroRetryJob
 import com.zenaton.jobManager.utils.TestFactory
@@ -37,7 +38,7 @@ class AvroEngineTests : StringSpec({
 
     "Job succeeds at first try" {
         // job will succeed
-        worker.behavior = { Status.SUCCESS }
+        worker.behavior = { Status.COMPLETED }
         // run system
         val dispatch = getAvroDispatchJob()
         coroutineScope {
@@ -54,7 +55,7 @@ class AvroEngineTests : StringSpec({
 
     "Job succeeds at 4th try" {
         // job will succeed only at the 4th try
-        worker.behavior = { job -> if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.SUCCESS }
+        worker.behavior = { job -> if (job.jobAttemptRetry < 3) Status.FAILED_WITH_RETRY else Status.COMPLETED }
         // run system
         val dispatch = getAvroDispatchJob()
         coroutineScope {
@@ -71,7 +72,7 @@ class AvroEngineTests : StringSpec({
 
     "Job fails" {
         // job will succeed only at the 4th try
-        worker.behavior = { Status.FAIL_WITHOUT_RETRY }
+        worker.behavior = { Status.FAILED_WITHOUT_RETRY }
         // run system
         val dispatch = getAvroDispatchJob()
         coroutineScope {
@@ -90,9 +91,9 @@ class AvroEngineTests : StringSpec({
         // job will succeed only at the 4th try
         worker.behavior = { job ->
             if (job.jobAttemptIndex == 0)
-                if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.FAIL_WITHOUT_RETRY
+                if (job.jobAttemptRetry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
             else
-                Status.SUCCESS
+                Status.COMPLETED
         } // run system
         val dispatch = getAvroDispatchJob()
         coroutineScope {
@@ -111,9 +112,9 @@ class AvroEngineTests : StringSpec({
         // job will succeed only at the 4th try
         worker.behavior = { job ->
             if (job.jobAttemptIndex == 0)
-                if (job.jobAttemptRetry < 3) Status.FAIL_WITH_RETRY else Status.FAIL_WITHOUT_RETRY
+                if (job.jobAttemptRetry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
             else
-                Status.SUCCESS
+                Status.COMPLETED
         }
         // run system
         val dispatch = getAvroDispatchJob()
@@ -125,6 +126,22 @@ class AvroEngineTests : StringSpec({
             dispatcher.toJobEngine(retry)
         }
         // check that job is completed
+        storage.jobEngineStore[dispatch.jobId] shouldBe null
+    }
+
+    "Job canceled during automatic retry" {
+        // job will succeed only at the 4th try
+        worker.behavior = { job -> Status.FAILED_WITH_RETRY }
+        // run system
+        val dispatch = getAvroDispatchJob()
+        val retry = getAvroCancelJob(dispatch.jobId)
+        coroutineScope {
+            dispatcher.scope = this
+            dispatcher.toJobEngine(dispatch)
+            delay(100)
+            dispatcher.toJobEngine(retry)
+        }
+        // check that job is canceled
         storage.jobEngineStore[dispatch.jobId] shouldBe null
     }
 }) {
@@ -163,4 +180,8 @@ private fun getAvroDispatchJob() = AvroConverter.addEnvelopeToJobEngineMessage(
 
 private fun getAvroRetryJob(id: String) = AvroConverter.addEnvelopeToJobEngineMessage(
     TestFactory.random(AvroRetryJob::class, mapOf("jobId" to id))
+)
+
+private fun getAvroCancelJob(id: String) = AvroConverter.addEnvelopeToJobEngineMessage(
+    TestFactory.random(AvroCancelJob::class, mapOf("jobId" to id))
 )

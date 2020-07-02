@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 internal class InMemoryDispatcher : AvroDispatcher {
+    // Here we favor lambda to avoid a direct dependency with engines'instances
     lateinit var jobEngineHandle: (msg: AvroEnvelopeForJobEngine) -> Unit
     lateinit var monitoringPerNameHandle: (msg: AvroEnvelopeForMonitoringPerName) -> Unit
     lateinit var monitoringGlobalHandle: (msg: AvroEnvelopeForMonitoringGlobal) -> Unit
