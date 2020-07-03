@@ -102,7 +102,7 @@ class AvroWorkflowEngineTests : StringSpec({
 //            workflowDispatcher.toWorkflowEngine(dispatch)
 //        }
 //        // check that workflow     is completed
-//        taskStorage.jobEngineStore[dispa      tch.workflowId] shouldBe null
+//        taskStorage.jobEngineStore[dispatch.workflowId] shouldBe null
 //        // checks scenarios
 //        verifyAll {
 //            worker.jobA.handle()
