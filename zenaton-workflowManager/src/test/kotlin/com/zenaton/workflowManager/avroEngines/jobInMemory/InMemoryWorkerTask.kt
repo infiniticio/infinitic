@@ -24,9 +24,9 @@ internal class InMemoryWorkerTask : InMemoryWorker {
                     else -> throw Exception("Unknown job ${avro.jobName}")
                 }
                 when (behavior(avro)) {
-                    Status.SUCCESS -> sendJobCompleted(avro, out)
-                    Status.FAIL_WITH_RETRY -> sendJobFailed(avro, Exception("Will Try Again"), 0.1F)
-                    Status.FAIL_WITHOUT_RETRY -> sendJobFailed(avro, Exception("Failed"))
+                    Status.COMPLETED -> sendJobCompleted(avro, out)
+                    Status.FAILED_WITH_RETRY -> sendJobFailed(avro, Exception("Will Try Again"), 0.1F)
+                    Status.FAILED_WITHOUT_RETRY -> sendJobFailed(avro, Exception("Failed"))
                 }
             }
         }

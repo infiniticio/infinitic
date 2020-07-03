@@ -13,9 +13,9 @@ internal interface InMemoryWorker {
     var avroDispatcher: AvroDispatcher
 
     enum class Status {
-        SUCCESS,
-        FAIL_WITH_RETRY,
-        FAIL_WITHOUT_RETRY
+        COMPLETED,
+        FAILED_WITH_RETRY,
+        FAILED_WITHOUT_RETRY
     }
 
     fun handle(msg: AvroEnvelopeForWorker)
