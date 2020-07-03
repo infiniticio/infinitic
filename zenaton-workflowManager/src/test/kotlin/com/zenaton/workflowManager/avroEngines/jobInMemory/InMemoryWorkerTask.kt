@@ -8,23 +8,19 @@ import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorker.Status
 
 internal class InMemoryWorkerTask : InMemoryWorker {
     override lateinit var avroDispatcher: AvroDispatcher
-    lateinit var behavior: (msg: AvroRunJob) -> Status?
-    var jobA = JobA()
-    var jobB = JobB()
-    var jobC = JobC()
-
-    class JobA { fun handle() {} }
-    class JobB { fun handle() {} }
-    class JobC { fun handle() {} }
+    lateinit var behavior: (msg: AvroRunJob) -> Status
+    lateinit var taskA: Task
+    lateinit var taskB: Task
+    lateinit var taskC: Task
 
     override fun handle(msg: AvroEnvelopeForWorker) {
         when (val avro = AvroConverter.removeEnvelopeFromWorkerMessage(msg)) {
             is AvroRunJob -> {
                 sendJobStarted(avro)
                 val out = when (avro.jobName) {
-                    "JobA" -> jobA.handle()
-                    "JobB" -> jobB.handle()
-                    "JobC" -> jobC.handle()
+                    "TaskA" -> taskA.handle()
+                    "TaskB" -> taskB.handle()
+                    "TaskC" -> taskC.handle()
                     else -> throw Exception("Unknown job ${avro.jobName}")
                 }
                 when (behavior(avro)) {

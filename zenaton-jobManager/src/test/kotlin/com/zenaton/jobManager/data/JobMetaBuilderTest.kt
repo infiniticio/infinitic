@@ -1,7 +1,6 @@
 package com.zenaton.jobManager.data
 
 import com.zenaton.jobManager.utils.TestFactory
-import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import java.nio.ByteBuffer
@@ -21,21 +20,8 @@ internal class JobMetaBuilderTest : StringSpec({
             .build()
         // then
         out.meta.size shouldBe 3
-        out.meta["key1"] shouldBe str.toByteArray(Charsets.UTF_8)
-        out.meta["key2"] shouldBe bytes
-        ByteBuffer.wrap(out.meta["key3"]) shouldBe buffer
-    }
-
-    "JobMetaBuiler should not accept duplicate keys" {
-        // given
-        val str = TestFactory.random(String::class)
-        // when
-        shouldThrowAny {
-            JobMeta
-                .builder()
-                .add("key", str)
-                .add("key", str)
-                .build()
-        }
+        out.meta["key1"]?.get<String>() shouldBe str
+        out.meta["key2"]?.getBytes() shouldBe bytes
+        ByteBuffer.wrap(out.meta["key3"]?.getBytes()) shouldBe buffer
     }
 })

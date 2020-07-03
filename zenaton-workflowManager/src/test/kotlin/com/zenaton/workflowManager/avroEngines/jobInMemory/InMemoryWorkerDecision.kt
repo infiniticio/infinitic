@@ -8,10 +8,8 @@ import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorker.Status
 
 internal class InMemoryWorkerDecision : InMemoryWorker {
     override lateinit var avroDispatcher: AvroDispatcher
-    lateinit var behavior: (msg: AvroRunJob) -> Status?
-    var workflowA = WorkflowA()
-
-    class WorkflowA { fun handle() {} }
+    lateinit var behavior: (msg: AvroRunJob) -> Status
+    lateinit var workflowA: Workflow
 
     override fun handle(msg: AvroEnvelopeForWorker) {
         when (val avro = AvroConverter.removeEnvelopeFromWorkerMessage(msg)) {

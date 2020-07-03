@@ -75,14 +75,14 @@ data class SerializedData(
     @JsonIgnore fun isAvro() = (serializationType == SerializationType.AVRO)
 
     // retrieve bytes
-    fun fromBytes() = if (isBytes()) serializedData else
+    fun getBytes() = if (isBytes()) serializedData else
         throw Exception("Trying to retrieve bytes from a $serializationType type")
 
-    // retrieve from json
-    inline fun <reified T : Any> fromJson() = if (isJson()) Json.parse<T>(String(serializedData, Charsets.UTF_8)) else
+    // retrieve from json (default)
+    inline fun <reified T : Any> get(): T? = if (isJson()) Json.parse<T>(String(serializedData, Charsets.UTF_8)) else
         throw Exception("Trying to retrieve value using json from a $serializationType type")
 
     // retrieve from avro
-    inline fun <reified T : SpecificRecord> fromAvro() = if (isAvro()) AvroSerDe.deserializeFromByteArray<T>(serializedData) else
+    inline fun <reified T : SpecificRecord> getAvro() = if (isAvro()) AvroSerDe.deserializeFromByteArray<T>(serializedData) else
         throw Exception("Trying to retrieve value using avro from a $serializationType type")
 }

@@ -21,7 +21,7 @@
         },
         {
             "name": "jobMeta",
-            "type": {"type": "map", "values": "bytes"}
+            "type": {"type": "map", "values": "com.zenaton.common.data.AvroSerializedData"}
         }
     ]
 }
