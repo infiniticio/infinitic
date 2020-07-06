@@ -3,6 +3,11 @@ import App from "./App.vue";
 import router from "./router";
 import store from "./store";
 import VueRx from "vue-rx";
+import { useApiMocks } from "@/utils/env";
+
+if (useApiMocks) {
+  import("./api/mocks");
+}
 
 Vue.config.productionTip = false;
 

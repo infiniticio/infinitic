@@ -13,8 +13,18 @@ const opts = {
 };
 
 const client = new Client(opts);
+console.log('Dispatching task...');
+client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
+client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
+client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
+client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
+client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
+client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
+client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
+client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
 client.dispatchTask('RefundBooking', { bookingId: uuid(), userId: 'john.doe' });
 
+console.log('Launching worker...');
 const worker = new Worker(opts);
 worker.registerTask(new RefundBooking());
 worker.run();

@@ -1,6 +1,5 @@
-import axios from "axios";
 import { GenericError, NotFoundError } from "./errors";
-import { isAxiosError } from "./axios";
+import { axiosClient, isAxiosError } from "./axios";
 
 export type TaskStatus = "ok" | "warning" | "error";
 
@@ -46,9 +45,7 @@ export interface TaskTypeMetrics {
 
 export async function getTaskTypes(): Promise<TaskType[]> {
   try {
-    const result = await axios.get<TaskType[]>(
-      "http://localhost:3010/task-types/"
-    );
+    const result = await axiosClient.get<TaskType[]>("/task-types/");
 
     return result.data;
   } catch (e) {
@@ -60,8 +57,8 @@ export async function getTaskTypeMetrics(
   taskType: TaskType
 ): Promise<TaskTypeMetrics> {
   try {
-    const result = await axios.get<TaskTypeMetrics>(
-      `http://localhost:3010/task-types/${taskType.name}/metrics`
+    const result = await axiosClient.get<TaskTypeMetrics>(
+      `/task-types/${taskType.name}/metrics`
     );
 
     return result.data;
@@ -76,7 +73,7 @@ export async function getTaskTypeMetrics(
 
 export async function getTaskDetails(id: Task["id"]) {
   try {
-    const result = await axios.get<Task>(`http://localhost:3010/tasks/${id}`);
+    const result = await axiosClient.get<Task>(`/tasks/${id}`);
 
     return result.data;
   } catch (error) {
