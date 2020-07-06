@@ -7,10 +7,10 @@ import {
   AvroEnvelopeForJobEngine,
   DispatchJobMessage,
   ForJobEngineMessage,
+  SerializedData,
 } from '@zenaton/messages';
 import { v4 as uuid } from 'uuid';
 import pLimit from 'p-limit';
-import { SerializedData } from '../../zenaton-messages/dist/index';
 
 const lock = pLimit(1);
 
