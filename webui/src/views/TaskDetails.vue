@@ -39,22 +39,22 @@
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <pulse-loader
-          v-if="loading$"
+          v-if="loading"
           class="mt-5 text-center"
           color="#6875F5"
           :loading="true"
         />
-        <div v-else-if="error$">
+        <div v-else-if="error">
           <server-error />
         </div>
-        <div v-else-if="taskDetails$">
+        <div v-else-if="task">
           <div class="bg-white shadow overflow-hidden  sm:rounded-lg">
             <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
               <h3 class="text-lg leading-6 font-medium text-gray-900">
-                {{ taskDetails$.name }}
+                {{ task.name }}
               </h3>
               <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">
-                {{ taskDetails$.id }}
+                {{ task.id }}
               </p>
             </div>
             <div class="px-4 py-5 sm:p-0">
@@ -66,7 +66,7 @@
                   <dd
                     class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
                   >
-                    {{ taskDetails$.status }}
+                    {{ task.status }}
                   </dd>
                 </div>
                 <div
@@ -78,7 +78,7 @@
                   <dd
                     class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
                   >
-                    {{ formatDate(taskDetails$.dispatchedAt) }}
+                    {{ formatDate(task.dispatchedAt) }}
                   </dd>
                 </div>
                 <div
@@ -90,11 +90,11 @@
                   <dd
                     class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
                   >
-                    {{ formatDate(taskDetails$.startedAt) }}
+                    {{ formatDate(task.startedAt) }}
                   </dd>
                 </div>
                 <div
-                  v-if="taskDetails$.status !== 'error'"
+                  v-if="task.status !== 'error'"
                   class="mt-8 sm:mt-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:border-t sm:border-gray-200 sm:px-6 sm:py-5"
                 >
                   <dt class="text-sm leading-5 font-medium text-gray-500">
@@ -103,11 +103,11 @@
                   <dd
                     class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
                   >
-                    {{ formatDate(taskDetails$.completedAt) }}
+                    {{ formatDate(task.completedAt) }}
                   </dd>
                 </div>
                 <div
-                  v-if="taskDetails$.status === 'error'"
+                  v-if="task.status === 'error'"
                   class="mt-8 sm:mt-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:border-t sm:border-gray-200 sm:px-6 sm:py-5"
                 >
                   <dt class="text-sm leading-5 font-medium text-gray-500">
@@ -116,7 +116,7 @@
                   <dd
                     class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2"
                   >
-                    {{ formatDate(taskDetails$.failedAt) }}
+                    {{ formatDate(task.failedAt) }}
                   </dd>
                 </div>
                 <div
@@ -130,7 +130,7 @@
                   >
                     <div
                       class="relative shadow w-full h-5 bg-gray-100"
-                      v-for="(attempt, index) in taskDetails$.attempts"
+                      v-for="(attempt, index) in task.attempts"
                       :key="attempt.id"
                       :class="{ 'mt-5': index > 0 }"
                     >
@@ -145,8 +145,8 @@
                         }"
                         class="absolute inline-block h-5 text-xs leading-none py-1 text-center text-white"
                         :style="{
-                          width: `${segmentLength(taskDetails$, attemptTry)}%`,
-                          left: `${segmentOffset(taskDetails$, attemptTry)}%`
+                          width: `${segmentLength(task, attemptTry)}%`,
+                          left: `${segmentOffset(task, attemptTry)}%`
                         }"
                       ></div>
                     </div>
@@ -164,8 +164,6 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import { getTaskDetails, Task, TaskAttemptTry } from "@/api";
-import { from, of } from "rxjs";
-import { share, mapTo, startWith, catchError } from "rxjs/operators";
 import { PulseLoader } from "@saeris/vue-spinners";
 import ServerError from "@/components/errors/ServerError.vue";
 
@@ -183,6 +181,9 @@ export default Vue.extend({
 
   data() {
     return {
+      loading: false,
+      task: undefined,
+      error: undefined,
       searchInput: this.$props.id,
       dateFormatter: new Intl.DateTimeFormat([...navigator.languages], {
         year: "numeric",
@@ -194,29 +195,42 @@ export default Vue.extend({
         timeZoneName: "short"
       })
     } as {
+      loading: boolean;
+      task: Task | undefined;
+      error: Error | undefined;
       searchInput: string;
       dateFormatter: Intl.DateTimeFormat;
     };
   },
 
-  subscriptions() {
-    const taskDetails = from(getTaskDetails(this.$props.id)).pipe(share());
-
-    return {
-      loading$: taskDetails.pipe(
-        mapTo(false),
-        catchError(() => of(false)),
-        startWith(true)
-      ),
-      error$: taskDetails.pipe(
-        mapTo(undefined),
-        catchError(err => of<Error>(err))
-      ),
-      taskDetails$: taskDetails.pipe(catchError(() => of(undefined)))
-    };
+  created() {
+    this.loadData();
   },
 
   methods: {
+    async loadData() {
+      if (this.loading) {
+        return;
+      }
+
+      this.loading = true;
+
+      try {
+        this.task = await getTaskDetails(this.id);
+      } catch (err) {
+        this.error = err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async searchTask() {
+      this.$router.push({
+        name: "TaskDetails",
+        params: { id: this.searchInput }
+      });
+    },
+
     formatDate(date: string | null): string {
       if (date === null) {
         return "-";
@@ -225,13 +239,6 @@ export default Vue.extend({
       const dateObject = new Date(date);
 
       return this.dateFormatter.format(dateObject);
-    },
-
-    async searchTask() {
-      this.$router.push({
-        name: "TaskDetails",
-        params: { id: this.searchInput }
-      });
     },
 
     barOriginDate(task: Task) {
