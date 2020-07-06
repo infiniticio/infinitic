@@ -4,17 +4,30 @@
       {{ taskType.name }}
     </h3>
     <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-      <simple-stat label="OK" :value="runningOkCount" />
-      <simple-stat label="Warning" :value="runningWarningCount" />
-      <simple-stat label="Error" :value="runningErrorCount" />
+      <simple-stat
+        label="OK"
+        :loading="loading"
+        :value="runningOkCount"
+        :error="error"
+      />
+      <simple-stat
+        label="Warning"
+        :loading="loading"
+        :value="runningWarningCount"
+        :error="error"
+      />
+      <simple-stat
+        label="Error"
+        :loading="loading"
+        :value="runningErrorCount"
+        :error="error"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { from, Observable } from "rxjs";
-import { pluck, share, map } from "rxjs/operators";
 import { TaskType, getTaskTypeMetrics, TaskTypeMetrics } from "@/api";
 import SimpleStat from "@/components/data-display/stats/SimpleStat.vue";
 
@@ -29,28 +42,55 @@ export default Vue.extend({
   },
 
   data() {
-    const metrics: Observable<TaskTypeMetrics> = from(
-      getTaskTypeMetrics(this.$props.taskType)
-    ).pipe(share());
-
     return {
-      runningOkCount: metrics.pipe(
-        pluck("runningOkCount"),
-        map(value => value.toString())
-      ),
-      runningWarningCount: metrics.pipe(
-        pluck("runningWarningCount"),
-        map(value => value.toString())
-      ),
-      runningErrorCount: metrics.pipe(
-        pluck("runningErrorCount"),
-        map(value => value.toString())
-      )
+      loading: false,
+      error: undefined,
+      metrics: undefined
     } as {
-      runningOkCount: Observable<string>;
-      runningWarningCount: Observable<string>;
-      runningErrorCount: Observable<string>;
+      loading: boolean;
+      error: Error | undefined;
+      metrics: TaskTypeMetrics | undefined;
     };
+  },
+
+  created() {
+    this.loadData();
+  },
+
+  computed: {
+    runningOkCount(): string | undefined {
+      return this.metrics ? this.metrics.runningOkCount.toString() : undefined;
+    },
+
+    runningWarningCount(): string | undefined {
+      return this.metrics
+        ? this.metrics.runningWarningCount.toString()
+        : undefined;
+    },
+
+    runningErrorCount(): string | undefined {
+      return this.metrics
+        ? this.metrics.runningErrorCount.toString()
+        : undefined;
+    }
+  },
+
+  methods: {
+    async loadData() {
+      if (this.loading) {
+        return;
+      }
+
+      this.loading = true;
+
+      try {
+        this.metrics = await getTaskTypeMetrics(this.taskType);
+      } catch (err) {
+        this.error = err;
+      } finally {
+        this.loading = false;
+      }
+    }
   }
 });
 </script>

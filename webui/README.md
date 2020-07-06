@@ -64,3 +64,16 @@ The following VSCode settings are also recommended:
 ## Customize configuration
 
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+## Application environment variables
+
+There are some application environment variables available to tweak the behavior of the application for some precise use-case.
+
+### Use API mocks
+
+To develop the WebUI without a fully working setup, it is possible to use the `VUE_APP_USE_API_MOCKS` environment variable.
+Set this variable to `true` to make sure the WebUI will mocks requests to the API and will be able to get mocked data to display components instead of real data.
+
+```sh
+VUE_APP_USE_API_MOCKS=true yarn serve
+```

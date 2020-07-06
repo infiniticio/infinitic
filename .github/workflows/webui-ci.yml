@@ -1,0 +1,47 @@
+name: WebUI CI
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "webui/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Use Node 12
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Use cached node_modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            webui/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('webui/yarn.lock') }}
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: ./webui
+        env:
+          CI: true
+
+      - name: Build
+        run: yarn build
+        working-directory: ./webui
+        env:
+          CI: true
+          NODE_ENV: production
+
+      - name: Lint
+        run: yarn lint
+        working-directory: ./webui
+        env:
+          CI: true
+          NODE_ENV: production

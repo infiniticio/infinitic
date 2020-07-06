@@ -39,16 +39,16 @@
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <pulse-loader
-          v-if="loading$"
+          v-if="loading"
           class="mt-5 text-center"
           color="#6875F5"
           :loading="true"
         />
-        <div v-else-if="error$">
-          Display error
+        <div v-else-if="error">
+          <server-error />
         </div>
         <div v-else>
-          <task-metrics-list :taskTypes="taskTypes$" />
+          <task-metrics-list :taskTypes="taskTypes" />
         </div>
       </div>
     </main>
@@ -57,43 +57,51 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { getTaskTypes } from "@/api";
-import { from, of } from "rxjs";
-import { share, mapTo, startWith, catchError } from "rxjs/operators";
+import { getTaskTypes, TaskType } from "@/api";
 import TaskMetricsList from "@/components/tasks/TaskMetricsList.vue";
+import ServerError from "@/components/errors/ServerError.vue";
 import { PulseLoader } from "@saeris/vue-spinners";
 
 export default Vue.extend({
   name: "Tasks",
 
-  components: { PulseLoader, TaskMetricsList },
+  components: { PulseLoader, TaskMetricsList, ServerError },
 
   data() {
     return {
-      searchInput: ""
+      searchInput: "",
+      loading: false,
+      taskTypes: undefined,
+      error: undefined
     } as {
       searchInput: string;
+      loading: boolean;
+      taskTypes: TaskType[] | undefined;
+      error: Error | undefined;
     };
   },
 
-  subscriptions() {
-    const taskTypes = from(getTaskTypes()).pipe(share());
-
-    return {
-      loading$: taskTypes.pipe(
-        mapTo(false),
-        catchError(() => of(false)),
-        startWith(true)
-      ),
-      error$: taskTypes.pipe(
-        mapTo(undefined),
-        catchError(err => of<Error>(err))
-      ),
-      taskTypes$: taskTypes
-    };
+  created() {
+    this.loadData();
   },
 
   methods: {
+    async loadData() {
+      if (this.loading) {
+        return;
+      }
+
+      this.loading = true;
+
+      try {
+        this.taskTypes = await getTaskTypes();
+      } catch (err) {
+        this.error = err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async searchTask() {
       this.$router.push({
         name: "TaskDetails",

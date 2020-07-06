@@ -7,13 +7,13 @@
         </dt>
         <dd class="mt-1 text-3xl leading-9 font-semibold text-gray-900">
           <pulse-loader
-            v-if="loading$"
+            v-if="loading"
             class="mx-auto text-center"
             color="#6875F5"
             :loading="true"
           />
           <template v-else>
-            {{ error$ ? error$ : value$ }}
+            {{ error ? error : value }}
           </template>
         </dd>
       </dl>
@@ -23,36 +23,31 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { Observable, of } from "rxjs";
-import { startWith, mapTo, catchError } from "rxjs/operators";
 import { PulseLoader } from "@saeris/vue-spinners";
 
 export default Vue.extend({
   components: { PulseLoader },
 
   props: {
-    value: {
-      type: Object as PropType<Observable<string>>,
+    loading: {
+      type: Boolean as PropType<boolean>,
       required: true
+    },
+
+    error: {
+      type: Error as PropType<Error | undefined>,
+      required: false
+    },
+
+    value: {
+      type: String as PropType<string>,
+      required: false
     },
 
     label: {
       type: String as PropType<string>,
       required: true
     }
-  },
-
-  subscriptions() {
-    const value = this.$props.value as Observable<string>;
-
-    return {
-      loading$: value.pipe(mapTo(false), startWith(true)),
-      error$: value.pipe(
-        mapTo(undefined),
-        catchError(err => of<Error>(err))
-      ),
-      value$: value
-    };
   }
 });
 </script>
