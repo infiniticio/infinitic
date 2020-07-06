@@ -10,6 +10,7 @@ import {
 } from '@zenaton/messages';
 import { v4 as uuid } from 'uuid';
 import pLimit from 'p-limit';
+import { SerializedData } from '../../zenaton-messages/dist/index';
 
 const lock = pLimit(1);
 
@@ -38,7 +39,7 @@ export class Client {
   async dispatchTask(
     jobName: string,
     input: any = null,
-    jobMeta: Map<string, Buffer> = new Map()
+    jobMeta: Map<string, SerializedData> = new Map()
   ) {
     const jobId = uuid();
     const jobInput =
