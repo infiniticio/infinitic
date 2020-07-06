@@ -7,6 +7,7 @@ import {
   AvroEnvelopeForJobEngine,
   DispatchJobMessage,
   ForJobEngineMessage,
+  SerializedData,
 } from '@zenaton/messages';
 import { v4 as uuid } from 'uuid';
 import pLimit from 'p-limit';
@@ -38,7 +39,7 @@ export class Client {
   async dispatchTask(
     jobName: string,
     input: any = null,
-    jobMeta: Map<string, Buffer> = new Map()
+    jobMeta: Map<string, SerializedData> = new Map()
   ) {
     const jobId = uuid();
     const jobInput =
