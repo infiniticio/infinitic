@@ -16,17 +16,17 @@
             "name" : "actionStatus",
             "type" : "com.zenaton.workflowManager.data.actions.ActionStatus"
         }, {
-            "name" : "jobId",
+            "name" : "taskId",
             "type" : ["null", "string"]
         }, {
-            "name" : "jobOutput",
-            "type" :"com.zenaton.common.data.AvroSerializedData"
+            "name" : "taskOutput",
+            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
         }, {
             "name" : "childWorkflowId",
             "type" : ["null", "string"]
         }, {
             "name" : "childWorkflowOutput",
-            "type" : "com.zenaton.common.data.AvroSerializedData"
+            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
         }, {
             "name" : "delayId",
             "type" : ["null", "string"]
@@ -41,7 +41,7 @@
             "type" : ["null",  {"type" : "array", "items" : "com.zenaton.common.data.AvroSerializedData"}]
         }, {
             "name" : "workflowOutput",
-            "type" : "com.zenaton.common.data.AvroSerializedData"
+            "type" : ["null", "com.zenaton.common.data.AvroSerializedData"]
         }
     ]
 }

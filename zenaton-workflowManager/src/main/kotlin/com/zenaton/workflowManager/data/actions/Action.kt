@@ -34,8 +34,8 @@ sealed class Action(
 )
 
 data class DispatchTask(
-    val jobId: JobId,
-    var jobOutput: JobOutput,
+    val taskId: JobId,
+    var taskOutput: JobOutput?,
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
@@ -43,7 +43,7 @@ data class DispatchTask(
 
 data class DispatchChildWorkflow(
     val childWorkflowId: WorkflowId,
-    var childWorkflowOutput: BranchOutput,
+    var childWorkflowOutput: BranchOutput?,
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
@@ -59,7 +59,7 @@ data class WaitDelay(
 data class WaitEvent(
     val eventId: EventId,
     val eventName: EventName,
-    var eventData: EventData,
+    var eventData: EventData?,
     override val decidedAt: DateTime,
     override val actionHash: ActionHash,
     override var actionStatus: ActionStatus = ActionStatus.DISPATCHED

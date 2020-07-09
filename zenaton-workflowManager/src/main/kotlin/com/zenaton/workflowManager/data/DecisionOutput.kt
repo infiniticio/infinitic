@@ -1,10 +1,11 @@
 package com.zenaton.workflowManager.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
-import com.zenaton.common.data.SerializedData
-import com.zenaton.commons.data.interfaces.OutputInterface
+import com.zenaton.workflowManager.data.properties.Properties
+import com.zenaton.workflowManager.data.properties.Property
+import com.zenaton.workflowManager.data.properties.PropertyHash
+import com.zenaton.workflowManager.data.properties.PropertyKey
+import com.zenaton.workflowManager.data.properties.PropertyStore
 
-data class DecisionOutput
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val output: SerializedData) : OutputInterface
+data class DecisionOutput(
+    val updatedProperties: Map<PropertyKey, Property> = mapOf()
+)

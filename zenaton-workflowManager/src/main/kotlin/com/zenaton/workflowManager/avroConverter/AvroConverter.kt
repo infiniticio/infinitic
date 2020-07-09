@@ -6,6 +6,7 @@ import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
+import com.zenaton.workflowManager.data.DecisionOutput
 import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.WorkflowName
 import com.zenaton.workflowManager.data.actions.Action
@@ -274,12 +275,25 @@ object AvroConverter {
      *  Decision Input
      */
 
-    fun toAvroDecisionInput(obj: DecisionInput) = AvroDecisionInput.newBuilder().apply {
+    fun toAvroDecisionInput(obj: DecisionInput): AvroDecisionInput = AvroDecisionInput.newBuilder().apply {
         branches = obj.branches.map { toAvroBranch(it) }
         store = convertJson(obj.store)
     }.build()
 
     fun fromAvroDecisionInput(avro: AvroDecisionInput) = DecisionInput(
+        branches = avro.branches.map { fromAvroBranch(it) },
+        store = convertJson(avro.store)
+    )
+
+    /**
+     *  Decision Output
+     */
+
+    fun toAvroDecisionOutput(obj: DecisionOutput): AvroDecisionOutput = AvroDecisionOutput.newBuilder().apply {
+        branches = obj.branches.map { toAvroBranch(it) }
+    }.build()
+
+    fun fromAvroDecisionOutput(avro: AvroDecisionOutput) = DecisionOuput(
         branches = avro.branches.map { fromAvroBranch(it) },
         store = convertJson(avro.store)
     )

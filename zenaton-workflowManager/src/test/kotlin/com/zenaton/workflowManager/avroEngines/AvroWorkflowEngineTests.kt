@@ -12,7 +12,7 @@ import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorker.Status
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorkerDecision
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorkerTask
 import com.zenaton.workflowManager.avroEngines.jobInMemory.Task
-import com.zenaton.workflowManager.avroEngines.jobInMemory.Workflow
+import com.zenaton.workflowManager.avroEngines.jobInMemory.WorkflowA
 import com.zenaton.workflowManager.avroEngines.workflowInMemory.InMemoryDispatcher
 import com.zenaton.workflowManager.avroEngines.workflowInMemory.InMemoryStorage
 import com.zenaton.workflowManager.data.WorkflowId
@@ -60,10 +60,11 @@ class AvroWorkflowEngineTests : StringSpec({
         worker.taskA = getMockTask()
         worker.taskB = getMockTask()
         worker.taskC = getMockTask()
-        fun getMockWorkflow(): Workflow { val flow = mockk<Workflow>(); every { flow.handle() } just Runs; return flow }
-        decider.workflowA = getMockWorkflow()
+
+        decider.workflowA = WorkflowA()
 
         taskStorage.init()
+        decisionStorage.init()
     }
 
     "Task succeeds" {
@@ -79,25 +80,14 @@ class AvroWorkflowEngineTests : StringSpec({
         taskStorage.jobEngineStore[dispatch.jobId] shouldBe null
     }
 
-    "Decision succeeds" {
-        // job will succeed only at the 4th try
-        decider.behavior = { Status.COMPLETED }
-        // run system
-        val dispatch = getAvroDispatchDecision()
-        coroutineScope {
-            decisionDispatcher.scope = this
-            decisionDispatcher.toJobEngine(dispatch)
-        }
-        // check that job is completed
-        decisionStorage.jobEngineStore[dispatch.jobId] shouldBe null
-    }
-
     "Job succeeds at first try" {
         // all jobs will succeed
         worker.behavior = { Status.COMPLETED }
         // run system
         val dispatch = getAvroDispatchWorkflow()
 //        coroutineScope {
+//            taskDispatcher.scope = this
+//            decisionDispatcher.scope = this
 //            workflowDispatcher.scope = this
 //            workflowDispatcher.toWorkflowEngine(dispatch)
 //        }

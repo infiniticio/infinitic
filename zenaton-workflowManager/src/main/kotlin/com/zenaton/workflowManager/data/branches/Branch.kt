@@ -29,8 +29,8 @@ data class Branch(
         // complete action if relevant
         val task = actions
             .filterIsInstance<DispatchTask>()
-            .firstOrNull { a -> a.jobId == jobId && a.actionStatus != ActionStatus.COMPLETED }
-        task?.jobOutput = jobOutput
+            .firstOrNull { a -> a.taskId == jobId && a.actionStatus != ActionStatus.COMPLETED }
+        task?.taskOutput = jobOutput
         task?.actionStatus = ActionStatus.COMPLETED
 
         // does this task complete the current step?
