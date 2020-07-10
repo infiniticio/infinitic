@@ -2,7 +2,10 @@ package com.zenaton.api
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.zenaton.api.task.repositories.PrestoJdbcTaskRepository
+import com.zenaton.api.task.repositories.TaskRepository
 import io.ktor.application.Application
+import io.ktor.application.ApplicationEnvironment
 import io.ktor.application.install
 import io.ktor.auth.Authentication
 import io.ktor.features.CORS
@@ -11,7 +14,16 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.jackson.jackson
 import io.ktor.routing.routing
+import io.ktor.util.KtorExperimentalAPI
+import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.client.impl.conf.ClientConfigurationData
+import org.koin.core.KoinApplication
+import org.koin.core.module.Module
+import org.koin.dsl.bind
+import org.koin.dsl.module
 import org.koin.ktor.ext.Koin
+import java.sql.DriverManager
+import java.util.*
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -41,10 +53,31 @@ fun Application.module(testing: Boolean = false) {
     }
 
     install(Koin) {
-        modules(ApiModule)
+        installModules(environment)
     }
 
     routing {
         root()
     }
+}
+
+@OptIn(KtorExperimentalAPI::class)
+fun KoinApplication.installModules(environment: ApplicationEnvironment) {
+    val apiModule = module(createdAtStart = true) {
+        single {
+            val properties = Properties()
+            properties["user"] = "user" // Presto requires setting a user name even if there is no authentication involved
+
+            DriverManager.getConnection("""jdbc:presto://localhost:8081/pulsar""", properties)
+        }
+
+        single { PrestoJdbcTaskRepository(get()) } bind TaskRepository::class
+
+        single {
+            val config = ClientConfigurationData()
+            PulsarAdmin(environment.config.property("infinitic.pulsar.admin.url").getString(), config)
+        }
+    }
+
+    modules(apiModule)
 }
