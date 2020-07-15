@@ -8,6 +8,7 @@ import io.ktor.application.Application
 import io.ktor.application.ApplicationEnvironment
 import io.ktor.application.install
 import io.ktor.auth.Authentication
+import io.ktor.config.ApplicationConfig
 import io.ktor.features.CORS
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpHeaders
@@ -63,6 +64,8 @@ fun Application.module(testing: Boolean = false) {
 @OptIn(KtorExperimentalAPI::class)
 fun KoinApplication.installModules(environment: ApplicationEnvironment) {
     val apiModule = module(createdAtStart = true) {
+        single { environment.config } bind ApplicationConfig::class
+
         single {
             val properties = Properties()
             properties["user"] = "user" // Presto requires setting a user name even if there is no authentication involved
