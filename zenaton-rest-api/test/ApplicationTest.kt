@@ -22,6 +22,7 @@ class ApplicationTest {
         withTestApplication({
             (environment.config as MapApplicationConfig).apply {
                 put("infinitic.pulsar.admin.url", "http://localhost:8080")
+                put("infinitic.pulsar.presto.url", "jdbc:presto://localhost:8081/pulsar")
             }
             module(testing = true)
         }) {
