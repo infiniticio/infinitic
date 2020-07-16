@@ -2,6 +2,7 @@ package com.zenaton.api
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.zenaton.api.support.BuildInfo
 import com.zenaton.api.task.repositories.PrestoJdbcTaskRepository
 import com.zenaton.api.task.repositories.TaskRepository
 import io.ktor.application.Application
@@ -23,6 +24,9 @@ import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.ktor.ext.Koin
+import java.io.FileNotFoundException
+import java.lang.Exception
+import java.lang.RuntimeException
 import java.sql.DriverManager
 import java.util.*
 
@@ -64,6 +68,14 @@ fun Application.module(testing: Boolean = false) {
 @OptIn(KtorExperimentalAPI::class)
 fun KoinApplication.installModules(environment: ApplicationEnvironment) {
     val apiModule = module(createdAtStart = true) {
+        single {
+            val inputStream = javaClass.classLoader.getResourceAsStream("build-info.properties") ?: throw FileNotFoundException("Unable to find the build-info.properties file.")
+            val properties = Properties()
+            properties.load(inputStream)
+
+            BuildInfo(properties)
+        }
+
         single { environment.config } bind ApplicationConfig::class
 
         single {
