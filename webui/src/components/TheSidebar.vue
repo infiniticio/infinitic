@@ -52,7 +52,7 @@
               <img
                 class="h-8 w-auto"
                 src="@/assets/images/logo-with-text.svg"
-                alt="Pulsation Logo"
+                alt="Infinitic logo"
               />
             </div>
             <nav class="mt-5 px-2">
