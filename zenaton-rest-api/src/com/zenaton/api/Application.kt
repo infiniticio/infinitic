@@ -70,7 +70,7 @@ fun KoinApplication.installModules(environment: ApplicationEnvironment) {
             val properties = Properties()
             properties["user"] = "user" // Presto requires setting a user name even if there is no authentication involved
 
-            DriverManager.getConnection("""jdbc:presto://localhost:8081/pulsar""", properties)
+            DriverManager.getConnection(environment.config.property("infinitic.pulsar.presto.url").getString(), properties)
         }
 
         single { PrestoJdbcTaskRepository(get()) } bind TaskRepository::class
