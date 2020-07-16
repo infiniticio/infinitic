@@ -1,6 +1,7 @@
 package com.zenaton.api
 
 import com.zenaton.api.extensions.io.ktor.application.*
+import com.zenaton.api.support.BuildInfo
 import com.zenaton.api.task.repositories.TaskRepository
 import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
@@ -22,6 +23,13 @@ fun Routing.root() {
     val taskRepository: TaskRepository by inject()
     val pulsarAdmin: PulsarAdmin by inject()
     val config: ApplicationConfig by inject()
+    val buildInfo: BuildInfo by inject()
+
+    get("/info") {
+        call.respond(object {
+            val version = buildInfo.version
+        })
+    }
 
     get("/task-types/") {
         val state =
