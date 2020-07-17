@@ -162,7 +162,7 @@ tasks.register("prefix") {
 }
 
 val pulsarAdmin = "docker-compose -f ../pulsar/docker-compose.yml exec -T pulsar bin/pulsar-admin"
-val jar = "zenaton-jobManager-pulsar-1.0-SNAPSHOT-all.jar"
+val jar = "zenaton-jobManager-pulsar-1.0.0-SNAPSHOT-all.jar"
 
 fun setPrefix() {
     if (gradle.rootProject.hasProperty("refix")) {
