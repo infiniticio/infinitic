@@ -33,7 +33,7 @@ fun Routing.root() {
 
     get("/task-types/") {
         val state =
-            pulsarAdmin.functions().getFunctionState(config.property("infinitic.pulsar.tenant").getString(), config.property("infinitic.pulsar.namespace").getString(), "tasks-MonitoringGlobalPulsarFunction", "monitoringGlobal.state")?.let { AvroSerDe.deserialize<AvroMonitoringGlobalState>(ByteBuffer.wrap(it.stringValue.toByteArray())) } ?: return@get
+            pulsarAdmin.functions().getFunctionState(config.property("infinitic.pulsar.tenant").getString(), config.property("infinitic.pulsar.namespace").getString(), "infinitic-tasks-monitoring-global", "monitoringGlobal.state")?.let { AvroSerDe.deserialize<AvroMonitoringGlobalState>(ByteBuffer.wrap(it.stringValue.toByteArray())) } ?: return@get
 
         val jobs = state.jobNames.map { object { val name = it } }
 
@@ -43,7 +43,7 @@ fun Routing.root() {
     get("/task-types/{name}/metrics") {
         val name = call.getPath<String>("name")
         try {
-            val state = pulsarAdmin.functions().getFunctionState(config.property("infinitic.pulsar.tenant").getString(), config.property("infinitic.pulsar.namespace").getString(), "tasks-MonitoringPerNamePulsarFunction", "monitoringPerName.state.$name").let { AvroSerDe.deserialize<AvroMonitoringPerNameState>(ByteBuffer.wrap(it.stringValue.toByteArray())) }
+            val state = pulsarAdmin.functions().getFunctionState(config.property("infinitic.pulsar.tenant").getString(), config.property("infinitic.pulsar.namespace").getString(), "infinitic-tasks-monitoring-per-name", "monitoringPerName.state.$name").let { AvroSerDe.deserialize<AvroMonitoringPerNameState>(ByteBuffer.wrap(it.stringValue.toByteArray())) }
 
             call.respond(object {
                 val name = name
