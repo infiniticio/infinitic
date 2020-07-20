@@ -96,16 +96,19 @@ tasks.register("install") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
+            name = "infinitic-tasks-engine",
             className = "JobEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "create"
         )
         setZenatonFunction(
+            name = "infinitic-tasks-monitoring-global",
             className = "MonitoringGlobalPulsarFunction",
             topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
             action = "create"
         )
         setZenatonFunction(
+            name = "infinitic-tasks-monitoring-per-name",
             className = "MonitoringPerNamePulsarFunction",
             topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
             action = "create"
@@ -119,17 +122,20 @@ tasks.register("update") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
+            name = "infinitic-tasks-engine",
             className = "JobEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "update"
         )
         setZenatonFunction(
+            name = "infinitic-tasks-monitoring-global",
             className = "MonitoringGlobalPulsarFunction",
             classNamespace = "com.zenaton.jobManager.pulsar.functions",
             topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
             action = "update"
         )
         setZenatonFunction(
+            name = "infinitic-tasks-monitoring-per-name",
             className = "MonitoringPerNamePulsarFunction",
             topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
             action = "update"
@@ -142,9 +148,9 @@ tasks.register("delete") {
     description = "Delete Zenaton from Pulsar"
     doLast {
         setPrefix()
-        deleteZenatonFunction("JobEnginePulsarFunction")
-        deleteZenatonFunction("MonitoringGlobalPulsarFunction")
-        deleteZenatonFunction("MonitoringPerNamePulsarFunction")
+        deleteZenatonFunction("infinitic-tasks-engine")
+        deleteZenatonFunction("infinitic-tasks-monitoring-global")
+        deleteZenatonFunction("infinitic-tasks-monitoring-per-name")
         forceDeleteTopic(Topic.ENGINE.get())
         forceDeleteTopic(Topic.MONITORING_PER_NAME.get())
         forceDeleteTopic(Topic.MONITORING_GLOBAL.get())
@@ -217,6 +223,7 @@ fun uploadSchemaToTopic(
 }
 
 fun setZenatonFunction(
+    name: String,
     className: String,
     classNamespace: String = "com.zenaton.jobManager.pulsar.functions",
     topicsIn: Set<String>,
@@ -233,7 +240,7 @@ fun setZenatonFunction(
     println("$action $className for $inputs...")
     var cmd = "$pulsarAdmin functions $action --jar /zenaton/jobManager/libs/$jar" +
         " --classname \"$classNamespace.$className\" --inputs $inputs " +
-        " --name \"${Topic.prefix}-$className\" --log-topic \"persistent://$tenant/$namespace/$logs\""
+        " --name \"$name\" --log-topic \"persistent://$tenant/$namespace/$logs\""
     if (topicOut != null) {
         cmd += " --output \"persistent://$tenant/$namespace/$topicOut\""
     }
@@ -245,7 +252,7 @@ fun setZenatonFunction(
 
 fun deleteZenatonFunction(name: String, tenant: String = "public", namespace: String = "default") {
     println("Deleting $name function from $tenant/$namespace...")
-    val cmd = "$pulsarAdmin functions delete --tenant \"$tenant\" --namespace \"$namespace\" --name \"${Topic.prefix}-$name\""
+    val cmd = "$pulsarAdmin functions delete --tenant \"$tenant\" --namespace \"$namespace\" --name \"$name\""
 
     return exec(cmd)
 }
