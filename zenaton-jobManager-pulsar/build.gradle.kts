@@ -73,7 +73,7 @@ tasks.register("setSchemas") {
     dependsOn("assemble")
     doLast {
         createSchemaFiles()
-        setPrefix()
+        setPrefix("tasks")
         uploadSchemaToTopic(
             name = "AvroEnvelopeForJobEngine",
             topic = Topic.ENGINE.get()
@@ -147,7 +147,7 @@ tasks.register("delete") {
     group = "Zenaton"
     description = "Delete Zenaton from Pulsar"
     doLast {
-        setPrefix()
+        setPrefix("tasks")
         deleteZenatonFunction("infinitic-tasks-engine")
         deleteZenatonFunction("infinitic-tasks-monitoring-global")
         deleteZenatonFunction("infinitic-tasks-monitoring-per-name")
@@ -158,22 +158,11 @@ tasks.register("delete") {
     }
 }
 
-tasks.register("prefix") {
-    group = "Zenaton"
-    description = "Delete Zenaton from Pulsar"
-    doLast {
-        setPrefix()
-        println("Current prefix: ${Topic.prefix}")
-    }
-}
-
 val pulsarAdmin = "docker-compose -f ../pulsar/docker-compose.yml exec -T pulsar bin/pulsar-admin"
 val jar = "zenaton-jobManager-pulsar-1.0.0-SNAPSHOT-all.jar"
 
-fun setPrefix() {
-    if (gradle.rootProject.hasProperty("refix")) {
-        Topic.prefix = gradle.rootProject.property("refix").toString()
-    }
+fun setPrefix(prefix: String) {
+    Topic.prefix = prefix
 }
 
 enum class Topic {
@@ -244,9 +233,9 @@ fun setZenatonFunction(
     if (topicOut != null) {
         cmd += " --output \"persistent://$tenant/$namespace/$topicOut\""
     }
-    if (gradle.rootProject.hasProperty("refix")) {
-        cmd += " --user-config {\"topicPrefix\":\"${gradle.rootProject.property("refix")}\"}"
-    }
+
+    cmd += " --user-config {\"topicPrefix\":\"${Topic.prefix}\"}"
+
     return exec(cmd)
 }
 
