@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
+  <sidebar-with-header-layout>
+    <template v-slot:header>
       <div class="flex-1 px-4 flex justify-between">
         <div class="flex-1 flex">
           <div class="w-full flex md:ml-0">
@@ -31,7 +31,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <main
       class="flex-1 relative z-0 overflow-y-auto pt-2 pb-6 focus:outline-none md:py-6"
@@ -52,12 +52,13 @@
         </div>
       </div>
     </main>
-  </div>
+  </sidebar-with-header-layout>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
 import { getTaskTypes, TaskType } from "@/api";
+import SidebarWithHeaderLayout from "@/components/layouts/SidebarWithHeaderLayout.vue";
 import TaskMetricsList from "@/components/tasks/TaskMetricsList.vue";
 import ServerError from "@/components/errors/ServerError.vue";
 import { PulseLoader } from "@saeris/vue-spinners";
@@ -65,7 +66,12 @@ import { PulseLoader } from "@saeris/vue-spinners";
 export default Vue.extend({
   name: "Tasks",
 
-  components: { PulseLoader, TaskMetricsList, ServerError },
+  components: {
+    SidebarWithHeaderLayout,
+    PulseLoader,
+    TaskMetricsList,
+    ServerError
+  },
 
   data() {
     return {

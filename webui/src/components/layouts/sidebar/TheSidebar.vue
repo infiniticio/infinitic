@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex overflow-hidden bg-gray-100">
+  <div class="flex">
     <!-- Off-canvas menu for mobile -->
     <div class="md:hidden">
       <div class="fixed inset-0 flex z-40">
@@ -442,7 +442,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import NavigationLink from "@/components/layout/sidebar/NavigationLink.vue";
+import NavigationLink from "@/components/layouts/sidebar/NavigationLink.vue";
 
 export default Vue.extend({
   name: "TheSidebar",
