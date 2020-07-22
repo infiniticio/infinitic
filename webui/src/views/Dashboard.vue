@@ -46,7 +46,7 @@
                 <dt
                   class="text-sm leading-5 font-medium text-gray-500 truncate"
                 >
-                  Avg. Click Rate
+                  Error Rate
                 </dt>
                 <dd class="mt-1 text-3xl leading-9 font-semibold text-gray-900">
                   24.57%

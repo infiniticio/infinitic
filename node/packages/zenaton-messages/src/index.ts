@@ -8,6 +8,7 @@ export interface SerializedData {
 
 export type JobInput = SerializedData[];
 export type JobOutput = SerializedData;
+export type JobAttemptError = SerializedData;
 
 export type ForJobEngineMessageType =
   | 'CancelJob'
@@ -63,7 +64,7 @@ export type JobAttemptFailed = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  jobAttemptError: Buffer;
+  jobAttemptError: JobAttemptError;
   jobAttemptDelayBeforeRetry: number | null;
 };
 

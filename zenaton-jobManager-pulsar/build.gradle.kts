@@ -73,7 +73,7 @@ tasks.register("setSchemas") {
     dependsOn("assemble")
     doLast {
         createSchemaFiles()
-        setPrefix()
+        setPrefix("tasks")
         uploadSchemaToTopic(
             name = "AvroEnvelopeForJobEngine",
             topic = Topic.ENGINE.get()
@@ -96,16 +96,19 @@ tasks.register("install") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
+            name = "infinitic-tasks-engine",
             className = "JobEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "create"
         )
         setZenatonFunction(
+            name = "infinitic-tasks-monitoring-global",
             className = "MonitoringGlobalPulsarFunction",
             topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
             action = "create"
         )
         setZenatonFunction(
+            name = "infinitic-tasks-monitoring-per-name",
             className = "MonitoringPerNamePulsarFunction",
             topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
             action = "create"
@@ -119,17 +122,20 @@ tasks.register("update") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
+            name = "infinitic-tasks-engine",
             className = "JobEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "update"
         )
         setZenatonFunction(
+            name = "infinitic-tasks-monitoring-global",
             className = "MonitoringGlobalPulsarFunction",
             classNamespace = "com.zenaton.jobManager.pulsar.functions",
             topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
             action = "update"
         )
         setZenatonFunction(
+            name = "infinitic-tasks-monitoring-per-name",
             className = "MonitoringPerNamePulsarFunction",
             topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
             action = "update"
@@ -141,10 +147,10 @@ tasks.register("delete") {
     group = "Zenaton"
     description = "Delete Zenaton from Pulsar"
     doLast {
-        setPrefix()
-        deleteZenatonFunction("JobEnginePulsarFunction")
-        deleteZenatonFunction("MonitoringGlobalPulsarFunction")
-        deleteZenatonFunction("MonitoringPerNamePulsarFunction")
+        setPrefix("tasks")
+        deleteZenatonFunction("infinitic-tasks-engine")
+        deleteZenatonFunction("infinitic-tasks-monitoring-global")
+        deleteZenatonFunction("infinitic-tasks-monitoring-per-name")
         forceDeleteTopic(Topic.ENGINE.get())
         forceDeleteTopic(Topic.MONITORING_PER_NAME.get())
         forceDeleteTopic(Topic.MONITORING_GLOBAL.get())
@@ -152,22 +158,11 @@ tasks.register("delete") {
     }
 }
 
-tasks.register("prefix") {
-    group = "Zenaton"
-    description = "Delete Zenaton from Pulsar"
-    doLast {
-        setPrefix()
-        println("Current prefix: ${Topic.prefix}")
-    }
-}
-
 val pulsarAdmin = "docker-compose -f ../pulsar/docker-compose.yml exec -T pulsar bin/pulsar-admin"
-val jar = "zenaton-jobManager-pulsar-1.0-SNAPSHOT-all.jar"
+val jar = "zenaton-jobManager-pulsar-1.0.0-SNAPSHOT-all.jar"
 
-fun setPrefix() {
-    if (gradle.rootProject.hasProperty("refix")) {
-        Topic.prefix = gradle.rootProject.property("refix").toString()
-    }
+fun setPrefix(prefix: String) {
+    Topic.prefix = prefix
 }
 
 enum class Topic {
@@ -217,6 +212,7 @@ fun uploadSchemaToTopic(
 }
 
 fun setZenatonFunction(
+    name: String,
     className: String,
     classNamespace: String = "com.zenaton.jobManager.pulsar.functions",
     topicsIn: Set<String>,
@@ -233,19 +229,19 @@ fun setZenatonFunction(
     println("$action $className for $inputs...")
     var cmd = "$pulsarAdmin functions $action --jar /zenaton/jobManager/libs/$jar" +
         " --classname \"$classNamespace.$className\" --inputs $inputs " +
-        " --name \"${Topic.prefix}-$className\" --log-topic \"persistent://$tenant/$namespace/$logs\""
+        " --name \"$name\" --log-topic \"persistent://$tenant/$namespace/$logs\""
     if (topicOut != null) {
         cmd += " --output \"persistent://$tenant/$namespace/$topicOut\""
     }
-    if (gradle.rootProject.hasProperty("refix")) {
-        cmd += " --user-config {\"topicPrefix\":\"${gradle.rootProject.property("refix")}\"}"
-    }
+
+    cmd += " --user-config {\"topicPrefix\":\"${Topic.prefix}\"}"
+
     return exec(cmd)
 }
 
 fun deleteZenatonFunction(name: String, tenant: String = "public", namespace: String = "default") {
     println("Deleting $name function from $tenant/$namespace...")
-    val cmd = "$pulsarAdmin functions delete --tenant \"$tenant\" --namespace \"$namespace\" --name \"${Topic.prefix}-$name\""
+    val cmd = "$pulsarAdmin functions delete --tenant \"$tenant\" --namespace \"$namespace\" --name \"$name\""
 
     return exec(cmd)
 }

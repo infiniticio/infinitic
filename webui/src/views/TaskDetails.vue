@@ -45,7 +45,13 @@
           :loading="true"
         />
         <div v-else-if="error">
-          <server-error />
+          <h3
+            v-if="isNotFound(error)"
+            class="text-4xl leading-6 text-center font-medium text-gray-600 mt-12"
+          >
+            There is no task with identifier {{ id }}.
+          </h3>
+          <server-error v-else />
         </div>
         <div v-else-if="task">
           <div class="bg-white shadow overflow-hidden  sm:rounded-lg">
@@ -166,6 +172,7 @@ import Vue, { PropType } from "vue";
 import { getTaskDetails, Task, TaskAttemptTry } from "@/api";
 import { PulseLoader } from "@saeris/vue-spinners";
 import ServerError from "@/components/errors/ServerError.vue";
+import { NotFoundError } from "@/api/errors";
 
 export default Vue.extend({
   name: "TaskDetails",
@@ -225,10 +232,20 @@ export default Vue.extend({
     },
 
     async searchTask() {
-      this.$router.push({
-        name: "TaskDetails",
-        params: { id: this.searchInput }
-      });
+      if (this.searchInput === "") {
+        this.$router.push({
+          name: "Tasks"
+        });
+      } else {
+        this.$router.push({
+          name: "TaskDetails",
+          params: { id: this.searchInput }
+        });
+      }
+    },
+
+    isNotFound(error: Error) {
+      return error instanceof NotFoundError;
     },
 
     formatDate(date: string | null): string {

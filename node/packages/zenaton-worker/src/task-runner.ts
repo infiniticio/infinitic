@@ -116,10 +116,13 @@ export class TaskRunner {
       JobAttemptFailed: {
         jobId: message.jobId,
         jobAttemptId: message.jobAttemptId,
-        jobAttemptRetry: message.jobAttemptIndex,
+        jobAttemptRetry: message.jobAttemptRetry,
         jobAttemptIndex: message.jobAttemptIndex,
         jobAttemptDelayBeforeRetry: null,
-        jobAttemptError: Buffer.from(JSON.stringify(error)),
+        jobAttemptError: {
+          serializedData: Buffer.from(JSON.stringify(error)),
+          serializationType: 'JSON',
+        },
       },
     };
 
