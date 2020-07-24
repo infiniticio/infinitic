@@ -38,37 +38,25 @@ jobs:
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Initialize Lerna
         run: |
           npx --no-install lerna bootstrap
           npx --no-install lerna link
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Initialize dist directories
         run: npx --no-install lerna exec -- mkdir dist
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Build
         run: npx --no-install lerna run build
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Lint
         run: npx --no-install lerna run lint
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Test
         run: npx --no-install lerna run test -- --passWithNoTests --coverage
         working-directory: ./node
-        env:
-          CI: true
