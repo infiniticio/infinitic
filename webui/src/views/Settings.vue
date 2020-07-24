@@ -60,7 +60,6 @@ import Vue from "vue";
 import SidebarLayout, {
   Background
 } from "@/components/layouts/SidebarLayout.vue";
-import { isValidApiUrl } from "@/api";
 import { State } from "@/store";
 
 export default Vue.extend({
