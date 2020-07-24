@@ -1,5 +1,8 @@
 <template>
-  <div class="h-screen flex overflow-hidden bg-gray-100">
+  <div
+    class="h-screen flex overflow-hidden"
+    :class="{ 'bg-gray-100': background == Background.Gray }"
+  >
     <the-sidebar />
 
     <div class="flex flex-col w-0 flex-1 overflow-hidden">
@@ -30,10 +33,29 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropType } from "vue";
 import TheSidebar from "@/components/layouts/sidebar/TheSidebar.vue";
 
+export enum Background {
+  Gray = "GRAY",
+  White = "WHITE"
+}
+
 export default Vue.extend({
-  components: { TheSidebar }
+  components: { TheSidebar },
+
+  props: {
+    background: {
+      type: String as PropType<Background>,
+      required: false,
+      default: Background.Gray
+    }
+  },
+
+  data() {
+    return {
+      Background
+    };
+  }
 });
 </script>

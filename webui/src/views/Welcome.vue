@@ -112,7 +112,7 @@
                   v-if="loading"
                   class="mx-auto text-center"
                   color="#ffffff"
-                  size="9"
+                  :size="9"
                   :loading="true"
                 />
                 <span v-else class="flex-none">
