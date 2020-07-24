@@ -1,3 +1,5 @@
+import { createAxiosClient } from "./axios";
+
 type WorkflowName = string;
 
 export * from "./tasks";
@@ -24,6 +26,22 @@ interface WorkflowMetrics {
     WorkflowCompletedMetric,
     WorkflowErrorRateMetric
   ];
+}
+
+interface Info {
+  readonly version: string;
+}
+
+export async function isValidApiUrl(url: string): Promise<boolean> {
+  const client = createAxiosClient({ baseURL: url });
+
+  try {
+    await client.get<Info>("/info");
+
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 export function getAllWorkflowMetrics(): WorkflowMetrics[] {

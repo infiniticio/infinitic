@@ -1,4 +1,4 @@
-import Axios, { AxiosError } from "axios";
+import Axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { useApiMocks } from "@/utils/env";
 
 export function isAxiosError(error: Error): error is AxiosError {
@@ -8,3 +8,7 @@ export function isAxiosError(error: Error): error is AxiosError {
 export const axiosClient = Axios.create({
   baseURL: useApiMocks ? undefined : "http://localhost:3010"
 });
+
+export function createAxiosClient(config?: AxiosRequestConfig) {
+  return Axios.create(config);
+}
