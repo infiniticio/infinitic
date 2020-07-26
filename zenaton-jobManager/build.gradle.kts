@@ -13,7 +13,7 @@ dependencies {
 
     implementation(project(":zenaton-common"))
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.+")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")

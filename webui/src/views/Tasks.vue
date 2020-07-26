@@ -103,10 +103,12 @@ export default Vue.extend({
     },
 
     async searchTask() {
-      this.$router.push({
-        name: "TaskDetails",
-        params: { id: this.searchInput }
-      });
+      if (this.searchInput.length > 0) {
+        this.$router.push({
+          name: "TaskDetails",
+          params: { id: this.searchInput }
+        });
+      }
     }
   }
 });
