@@ -8,7 +8,6 @@ import com.zenaton.api.task.messages.events.*
 import com.zenaton.api.task.models.*
 import java.sql.Connection
 import java.text.SimpleDateFormat
-import java.util.TimeZone
 
 class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskRepository {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z")
