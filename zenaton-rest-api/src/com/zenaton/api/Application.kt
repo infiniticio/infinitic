@@ -20,13 +20,10 @@ import io.ktor.util.KtorExperimentalAPI
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.impl.conf.ClientConfigurationData
 import org.koin.core.KoinApplication
-import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.ktor.ext.Koin
 import java.io.FileNotFoundException
-import java.lang.Exception
-import java.lang.RuntimeException
 import java.sql.DriverManager
 import java.util.*
 
