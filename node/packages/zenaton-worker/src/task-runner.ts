@@ -45,7 +45,7 @@ export class TaskRunner {
 
     let input: any;
     if (message.jobInput.length > 0) {
-      input = JSON.parse(message.jobInput[0].serializedData.toString());
+      input = JSON.parse(message.jobInput[0].bytes.toString());
     } else {
       input = undefined;
     }
@@ -87,8 +87,9 @@ export class TaskRunner {
       jobOutput = null;
     } else {
       jobOutput = {
-        serializedData: Buffer.from(JSON.stringify(output)),
-        serializationType: 'JSON',
+        bytes: Buffer.from(JSON.stringify(output)),
+        type: 'JSON',
+        meta: new Map(),
       };
     }
 

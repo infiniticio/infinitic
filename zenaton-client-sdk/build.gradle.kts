@@ -1,6 +1,9 @@
 plugins {
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+
+    // Apply the java-library plugin for API and implementation separation.
+    `java-library`
 }
 
 dependencies {
@@ -11,8 +14,9 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     implementation(project(":zenaton-common"))
+    implementation(project(":zenaton-jobManager"))
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.+")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")

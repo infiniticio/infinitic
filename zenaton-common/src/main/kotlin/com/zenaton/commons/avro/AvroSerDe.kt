@@ -22,22 +22,26 @@ object AvroSerDe {
         return out.toByteArray()
     }
 
-    inline fun <reified T : SpecificRecord> deserializeFromByteArray(bytes: ByteArray): T {
-        val reader = SpecificDatumReader(T::class.java)
+    fun <T : SpecificRecord> deserializeFromByteArray(bytes: ByteArray, klass: Class<out T>): T {
+        val reader = SpecificDatumReader(klass)
         val binaryDecoder = DecoderFactory.get().binaryDecoder(bytes, null)
         return reader.read(null, binaryDecoder)
     }
+
+    inline fun <reified T : SpecificRecord> deserializeFromByteArray(bytes: ByteArray): T = deserializeFromByteArray(bytes, T::class.javaObjectType)
 
     fun serialize(data: SpecificRecord): ByteBuffer {
         return ByteBuffer.wrap(serializeToByteArray(data))
     }
 
-    inline fun <reified T : SpecificRecord> deserialize(data: ByteBuffer): T {
+    fun <T : SpecificRecord> deserialize(data: ByteBuffer, klass: Class<out T>): T {
         // transform ByteBuffer to bytes[]
         data.rewind()
         val bytes = ByteArray(data.remaining())
         data.get(bytes, 0, bytes.size)
         // read data
-        return deserializeFromByteArray<T>(bytes)
+        return deserializeFromByteArray(bytes, klass)
     }
+
+    inline fun <reified T : SpecificRecord> deserialize(data: ByteBuffer): T = deserialize(data, T::class.javaObjectType)
 }

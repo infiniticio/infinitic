@@ -10,7 +10,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.apache.avro:avro:1.9.+")
+    implementation("org.apache.avro:avro:1.10.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
 
@@ -47,6 +47,6 @@ avro {
     outputCharacterEncoding.set("UTF-8")
     stringType.set("String")
     templateDirectory.set(null as String?)
-    isEnableDecimalLogicalType.set(true)
+    isEnableDecimalLogicalType.set(false)
     dateTimeLogicalType.set("JSR310")
 }

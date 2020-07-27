@@ -7,4 +7,6 @@ import com.zenaton.commons.data.interfaces.ErrorInterface
 
 data class JobAttemptError
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val error: SerializedData) : ErrorInterface
+constructor(@get:JsonValue override val error: SerializedData) : ErrorInterface {
+    constructor(error: Any) : this(SerializedData.from(error))
+}

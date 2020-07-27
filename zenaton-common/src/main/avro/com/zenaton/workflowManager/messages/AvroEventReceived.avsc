@@ -1,22 +1,24 @@
 {
-    "type": "record",
-    "name": "AvroEventReceived",
-    "namespace": "com.zenaton.workflowManager.messages",
-    "fields": [
-        {
-            "name": "workflowId",
-            "type": "string",
-            "logicalType": "uuid"
-        }, {
-            "name": "eventName",
-            "type": "string"
-        }, {
-            "name": "eventData",
-            "type": {
-                "type": "array",
-                "items" : "com.zenaton.common.data.AvroSerializedData"
-            },
-            "default": []
-        }
-    ]
+  "type": "record",
+  "name": "AvroEventReceived",
+  "namespace": "com.zenaton.workflowManager.messages",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "eventName",
+      "type": "string"
+    },
+    {
+      "name": "eventData",
+      "type": {
+        "type": "array",
+        "items": "com.zenaton.common.data.AvroSerializedData"
+      },
+      "default": []
+    }
+  ]
 }

@@ -1,14 +1,21 @@
 {
-    "type" : "record",
-    "name" : "AvroDecisionInput",
-    "namespace" : "com.zenaton.workflowManager.decisions",
-    "fields" : [
-        {
-            "name" : "branches",
-            "type" : { "type": "array", "items": "com.zenaton.workflowManager.data.branches.AvroBranch" }
-        }, {
-            "name" : "store",
-            "type" : { "type": "map", "values": "com.zenaton.common.data.AvroSerializedData" }
-        }
-    ]
+  "type": "record",
+  "name": "AvroDecisionInput",
+  "namespace": "com.zenaton.workflowManager.decisions",
+  "fields": [
+    {
+      "name": "branches",
+      "type": {
+        "type": "array",
+        "items": "com.zenaton.workflowManager.data.branches.AvroBranch"
+      }
+    },
+    {
+      "name": "store",
+      "type": {
+        "type": "map",
+        "values": "com.zenaton.common.data.AvroSerializedData"
+      }
+    }
+  ]
 }

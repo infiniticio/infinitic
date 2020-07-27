@@ -116,7 +116,8 @@ class JobEngine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
-            jobInput = state.jobInput
+            jobInput = state.jobInput,
+            jobMeta = state.jobMeta
         )
         dispatcher.toWorkers(rt)
 
@@ -147,7 +148,8 @@ class JobEngine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
-            jobInput = state.jobInput
+            jobInput = state.jobInput,
+            jobMeta = state.jobMeta
         )
         dispatcher.toWorkers(rt)
 
@@ -176,7 +178,8 @@ class JobEngine {
             jobAttemptRetry = state.jobAttemptRetry,
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
-            jobInput = state.jobInput
+            jobInput = state.jobInput,
+            jobMeta = state.jobMeta
         )
         dispatcher.toWorkers(rt)
 

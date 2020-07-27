@@ -28,7 +28,12 @@ object TestFactory {
             .overrideDefaultInitialization(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) { SerializedData.from("test") }
+            .randomize(SerializedData::class.java) {
+                SerializedData.from(
+                    "test",
+                    mapOf("metakey" to "metavalue".toByteArray(charset = Charsets.UTF_8))
+                )
+            }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })

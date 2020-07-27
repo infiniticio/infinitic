@@ -60,7 +60,6 @@ object AvroConverter {
     /**
      *  State <-> Avro State
      */
-
     fun fromStorage(avro: SpecificRecordBase): State = when (avro) {
         is AvroJobEngineState -> fromStorage(avro)
         is AvroMonitoringGlobalState -> fromStorage(avro)
@@ -250,7 +249,7 @@ object AvroConverter {
      *  Message <-> Avro Message
      */
 
-    fun fromAvroMessage(avro: SpecificRecordBase): Message = when (avro) {
+    fun fromAvroMessage(avro: SpecificRecordBase) = when (avro) {
         is AvroCancelJob -> fromAvroMessage(avro)
         is AvroDispatchJob -> fromAvroMessage(avro)
         is AvroJobAttemptCompleted -> fromAvroMessage(avro)
@@ -281,7 +280,7 @@ object AvroConverter {
     private fun fromAvroMessage(avro: AvroRetryJobAttempt) = convertJson<RetryJobAttempt>(avro)
     private fun fromAvroMessage(avro: AvroRunJob) = convertJson<RunJob>(avro)
 
-    fun toAvroMessage(msg: Message): SpecificRecordBase = when (msg) {
+    fun toAvroMessage(msg: Message) = when (msg) {
         is CancelJob -> toAvroMessage(msg)
         is DispatchJob -> toAvroMessage(msg)
         is JobAttemptCompleted -> toAvroMessage(msg)
@@ -315,24 +314,21 @@ object AvroConverter {
      *  SerializedData to AvroSerializedData
      */
 
-    fun fromAvroSerializedData(avro: AvroSerializedData): SerializedData {
-        val buffer = avro.serializedData
-        val position = buffer.position()
-        val bytes = ByteArray(buffer.remaining())
-        buffer.get(bytes, 0, bytes.size)
-        buffer.position(position)
-
-        return SerializedData(bytes, avro.serializationType)
-    }
+    fun fromAvroSerializedData(avro: AvroSerializedData) = SerializedData(
+        avro.bytes.array(),
+        avro.type,
+        avro.meta.mapValues { it.value.array() }
+    )
 
     fun toAvroSerializedData(data: SerializedData): AvroSerializedData = AvroSerializedData
         .newBuilder()
-        .setSerializationType(data.serializationType)
-        .setSerializedData(ByteBuffer.wrap(data.serializedData))
+        .setType(data.type)
+        .setBytes(ByteBuffer.wrap(data.bytes))
+        .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
         .build()
 
     /**
      *  Mapping function by Json serialization/deserialization
      */
-    inline fun <reified T : Any> convertJson(from: Any): T = Json.parse(Json.stringify(from))
+    private inline fun <reified T : Any> convertJson(from: Any): T = Json.parse(Json.stringify(from))
 }

@@ -5,7 +5,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import java.nio.ByteBuffer
 
-internal class JobMetaBuilderTest : StringSpec({
+internal class JobMetaBuilderTests : StringSpec({
     "JobMetaBuiler should build correct JobMeta" {
         // given
         val str = TestFactory.random(String::class)
@@ -20,8 +20,8 @@ internal class JobMetaBuilderTest : StringSpec({
             .build()
         // then
         out.meta.size shouldBe 3
-        out.meta["key1"]?.get<String>() shouldBe str
-        out.meta["key2"]?.getBytes() shouldBe bytes
-        ByteBuffer.wrap(out.meta["key3"]?.getBytes()) shouldBe buffer
+        out.meta["key1"]?.fromJson<String>() shouldBe str
+        out.meta["key2"]?.fromBytes() shouldBe bytes
+        ByteBuffer.wrap(out.meta["key3"]?.fromBytes()) shouldBe buffer
     }
 })

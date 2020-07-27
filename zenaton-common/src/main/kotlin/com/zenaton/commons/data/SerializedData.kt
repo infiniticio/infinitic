@@ -4,55 +4,53 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.common.json.Json
 import org.apache.avro.specific.SpecificRecord
+import org.apache.avro.specific.SpecificRecordBase
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 data class SerializedData(
-    var serializedData: ByteArray,
-    var serializationType: SerializationType
+    var bytes: ByteArray,
+    var type: AvroSerializedDataType,
+    val meta: Map<String, ByteArray> = mapOf()
 ) {
     companion object {
-        fun from(value: Any? = null): SerializedData {
-            val data: ByteArray
-            val type: SerializationType
+        const val JAVA_CLASS_KEY = "java-class"
+
+        fun from(value: Any?, meta: Map<String, ByteArray> = mapOf()): SerializedData {
+            val bytes: ByteArray
+            val type: AvroSerializedDataType
 
             when (value) {
                 null -> {
-                    data = ByteArray(0)
-                    type = SerializationType.NULL
+                    bytes = ByteArray(0)
+                    type = AvroSerializedDataType.NULL
                 }
                 is ByteArray -> {
-                    data = value
-                    type = SerializationType.BYTES
+                    bytes = value
+                    type = AvroSerializedDataType.BYTES
                 }
                 is ByteBuffer -> {
-                    val p = value.position()
-                    val bytes = ByteArray(value.remaining())
-                    value.get(bytes, 0, bytes.size)
-                    value.position(p)
-
-                    data = bytes
-                    type = SerializationType.BYTES
+                    bytes = value.array()
+                    type = AvroSerializedDataType.BYTES
                 }
-                is SpecificRecord -> {
-                    data = AvroSerDe.serializeToByteArray(value)
-                    type = SerializationType.AVRO
+                is SpecificRecordBase -> {
+                    bytes = AvroSerDe.serializeToByteArray(value)
+                    type = AvroSerializedDataType.AVRO
                 }
                 else -> {
-                    data = Json.stringify(value).toByteArray(Charsets.UTF_8)
-                    type = SerializationType.JSON
+                    bytes = Json.stringify(value).toByteArray(charset = Charsets.UTF_8)
+                    type = AvroSerializedDataType.JSON
                 }
             }
-
-            return SerializedData(data, type)
+            return SerializedData(bytes, type, meta)
         }
     }
 
     fun hash(): String {
         // MD5 implementation
         val md = MessageDigest.getInstance("MD5")
-        return BigInteger(1, md.digest(serializedData)).toString(16).padStart(32, '0')
+        return BigInteger(1, md.digest(bytes)).toString(16).padStart(32, '0')
     }
 
     override fun equals(other: Any?): Boolean {
@@ -61,28 +59,73 @@ data class SerializedData(
 
         other as SerializedData
 
-        return (serializationType == other.serializationType && serializedData.contentEquals(other.serializedData))
+        return (type == other.type && bytes.contentEquals(other.bytes))
     }
 
     override fun hashCode(): Int {
-        return serializedData.contentHashCode()
+        return bytes.contentHashCode()
     }
 
-    // type checking
-    @JsonIgnore fun isNull() = (serializationType == SerializationType.NULL)
-    @JsonIgnore fun isBytes() = (serializationType == SerializationType.BYTES)
-    @JsonIgnore fun isJson() = (serializationType == SerializationType.JSON)
-    @JsonIgnore fun isAvro() = (serializationType == SerializationType.AVRO)
+    /**
+     * @return true if value is null, else false
+     */
+    @JsonIgnore fun isNull() = (type == AvroSerializedDataType.NULL)
 
-    // retrieve bytes
-    fun getBytes() = if (isBytes()) serializedData else
-        throw Exception("Trying to retrieve bytes from a $serializationType type")
+    /**
+     * @return true if deserialize value is a bytes array, else false
+     */
+    @JsonIgnore fun isByteArray() = (type == AvroSerializedDataType.BYTES)
 
-    // retrieve from json (default)
-    inline fun <reified T : Any> get(): T? = if (isJson()) Json.parse<T>(String(serializedData, Charsets.UTF_8)) else
-        throw Exception("Trying to retrieve value using json from a $serializationType type")
+    /**
+     * @return true if json-encoded, else false
+     */
+    @JsonIgnore fun isJson() = (type == AvroSerializedDataType.JSON)
 
-    // retrieve from avro
-    inline fun <reified T : SpecificRecord> getAvro() = if (isAvro()) AvroSerDe.deserializeFromByteArray<T>(serializedData) else
-        throw Exception("Trying to retrieve value using avro from a $serializationType type")
+    /**
+     * @return true if avro-encoded, else false
+     */
+    @JsonIgnore fun isAvro() = (type == AvroSerializedDataType.AVRO)
+
+    /**
+     * @return true if custom-encoded, else false
+     */
+    @JsonIgnore fun isCustom() = (type == AvroSerializedDataType.CUSTOM)
+
+    /**
+     * @return deserialize value
+     *
+     * @throws Exception if the type is not BYTES
+     */
+    fun fromBytes() = if (isByteArray()) bytes else
+        throw Exception("Trying to retrieve bytes from a $type type")
+
+    /**
+     * @return deserialize value
+     *
+     * @throws Exception if type is not JSON
+     */
+    fun <T : Any> fromJson(klass: Class<out T>): T = if (isJson()) Json.parse(String(bytes, Charsets.UTF_8), klass) else
+        throw Exception("Trying to retrieve value using json from a $type type")
+
+    /**
+     * @return deserialize value
+     *
+     * @throws Exception if type is not JSON
+     */
+    inline fun <reified T : Any> fromJson(): T = fromJson(T::class.javaObjectType)
+
+    /**
+     * @return deserialize value
+     *
+     * @throws Exception if type is not AVRO
+     */
+    fun <T : SpecificRecord> fromAvro(klass: Class<out T>) = if (isAvro()) AvroSerDe.deserializeFromByteArray(bytes, klass) else
+        throw Exception("Trying to retrieve value using avro from a $type type")
+
+    /**
+     * @return deserialize value
+     *
+     * @throws Exception if type is not AVRO
+     */
+    inline fun <reified T : SpecificRecord> fromAvro() = fromAvro(T::class.javaObjectType)
 }

@@ -1,16 +1,16 @@
 {
-    "type": "record",
-    "name": "AvroCancelJob",
-    "namespace": "com.zenaton.jobManager.messages",
-    "fields": [
-        {
-            "name": "jobId",
-            "type": "string",
-            "logicalType": "uuid"
-        },
-        {
-            "name": "jobOutput",
-            "type": "com.zenaton.common.data.AvroSerializedData"
-        }
-    ]
+  "type": "record",
+  "name": "AvroCancelJob",
+  "namespace": "com.zenaton.jobManager.messages",
+  "fields": [
+    {
+      "name": "jobId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "jobOutput",
+      "type": "com.zenaton.common.data.AvroSerializedData"
+    }
+  ]
 }

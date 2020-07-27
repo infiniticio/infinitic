@@ -1,34 +1,37 @@
 {
-    "type": "record",
-    "name": "AvroJobAttemptFailed",
-    "namespace": "com.zenaton.jobManager.messages",
-    "fields": [
-        {
-            "name": "jobId",
-            "type": "string",
-            "logicalType": "uuid"
-        },
-        {
-            "name": "jobAttemptId",
-            "type": "string",
-            "logicalType": "uuid"
-        },
-        {
-            "name": "jobAttemptRetry",
-            "type": "int"
-        },
-        {
-            "name": "jobAttemptIndex",
-            "type": "int"
-        },
-        {
-            "name": "jobAttemptError",
-            "type": "com.zenaton.common.data.AvroSerializedData"
-        },
-        {
-            "name": "jobAttemptDelayBeforeRetry",
-            "type": ["null", "float"],
-            "default": null
-        }
-    ]
+  "type": "record",
+  "name": "AvroJobAttemptFailed",
+  "namespace": "com.zenaton.jobManager.messages",
+  "fields": [
+    {
+      "name": "jobId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "jobAttemptId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "jobAttemptRetry",
+      "type": "int"
+    },
+    {
+      "name": "jobAttemptIndex",
+      "type": "int"
+    },
+    {
+      "name": "jobAttemptError",
+      "type": "com.zenaton.common.data.AvroSerializedData"
+    },
+    {
+      "name": "jobAttemptDelayBeforeRetry",
+      "type": [
+        "null",
+        "float"
+      ],
+      "default": null
+    }
+  ]
 }

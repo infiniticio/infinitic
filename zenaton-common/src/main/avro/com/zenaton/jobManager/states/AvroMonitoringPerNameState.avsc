@@ -1,31 +1,31 @@
 {
-    "type" : "record",
-    "name" : "AvroMonitoringPerNameState",
-    "namespace" : "com.zenaton.jobManager.states",
-    "fields" : [
-        {
-            "name" : "jobName",
-            "type" : "string"
-        },
-        {
-            "name" : "runningOkCount",
-            "type" : "long"
-        },
-        {
-            "name" : "runningWarningCount",
-            "type" : "long"
-        },
-        {
-            "name" : "runningErrorCount",
-            "type" : "long"
-        },
-        {
-            "name" : "terminatedCompletedCount",
-            "type" : "long"
-        },
-        {
-            "name" : "terminatedCanceledCount",
-            "type" : "long"
-        }
-    ]
+  "type": "record",
+  "name": "AvroMonitoringPerNameState",
+  "namespace": "com.zenaton.jobManager.states",
+  "fields": [
+    {
+      "name": "jobName",
+      "type": "string"
+    },
+    {
+      "name": "runningOkCount",
+      "type": "long"
+    },
+    {
+      "name": "runningWarningCount",
+      "type": "long"
+    },
+    {
+      "name": "runningErrorCount",
+      "type": "long"
+    },
+    {
+      "name": "terminatedCompletedCount",
+      "type": "long"
+    },
+    {
+      "name": "terminatedCanceledCount",
+      "type": "long"
+    }
+  ]
 }

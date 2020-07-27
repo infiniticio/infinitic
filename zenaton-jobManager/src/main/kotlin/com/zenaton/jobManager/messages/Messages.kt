@@ -121,5 +121,6 @@ data class RunJob(
     override val jobAttemptId: JobAttemptId,
     override val jobAttemptRetry: JobAttemptRetry,
     override val jobAttemptIndex: JobAttemptIndex,
-    val jobInput: JobInput
+    val jobInput: JobInput,
+    val jobMeta: JobMeta
 ) : ForWorkerMessage(jobName), JobAttemptMessage

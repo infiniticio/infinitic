@@ -153,7 +153,7 @@ private fun catchTaskCompletion(msg: AvroEnvelopeForJobEngine): AvroEnvelopeForW
         AvroTaskCompleted.newBuilder()
             .setTaskId(job.jobId)
             .setTaskOutput(job.jobOutput)
-            .setWorkflowId(job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]?.let { com.zenaton.jobManager.avroConverter.AvroConverter.fromAvroSerializedData(it) }?.get())
+            .setWorkflowId(job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]?.let { com.zenaton.jobManager.avroConverter.AvroConverter.fromAvroSerializedData(it) }?.fromJson())
             .build()
     )
 
@@ -166,7 +166,7 @@ private fun catchDecisionCompletion(msg: AvroEnvelopeForJobEngine): AvroEnvelope
         AvroDecisionCompleted.newBuilder()
             .setDecisionId(job.jobId)
             .setDecisionOutput(job.jobOutput)
-            .setWorkflowId(job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]?.let { AvroJobConverter.fromAvroSerializedData(it) }?.get())
+            .setWorkflowId(job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]?.let { AvroJobConverter.fromAvroSerializedData(it) }?.fromJson())
             .build()
     )
 

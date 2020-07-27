@@ -1,25 +1,25 @@
 {
-    "type": "record",
-    "name": "AvroJobAttemptStarted",
-    "namespace": "com.zenaton.jobManager.messages",
-    "fields": [
-        {
-            "name": "jobId",
-            "type": "string",
-            "logicalType": "uuid"
-        },
-        {
-          "name": "jobAttemptId",
-          "type": "string",
-          "logicalType": "uuid"
-        },
-        {
-            "name": "jobAttemptRetry",
-            "type": "int"
-        },
-        {
-            "name": "jobAttemptIndex",
-            "type": "int"
-        }
-    ]
+  "type": "record",
+  "name": "AvroJobAttemptStarted",
+  "namespace": "com.zenaton.jobManager.messages",
+  "fields": [
+    {
+      "name": "jobId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "jobAttemptId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "jobAttemptRetry",
+      "type": "int"
+    },
+    {
+      "name": "jobAttemptIndex",
+      "type": "int"
+    }
+  ]
 }

@@ -2,8 +2,9 @@ import { typeForSchema, AvroRegistry } from './type';
 import path from 'path';
 
 export interface SerializedData {
-  serializedData: Buffer;
-  serializationType: string;
+  bytes: Buffer;
+  type: string;
+  meta: Map<string, Buffer>;
 }
 
 export type JobInput = SerializedData[];

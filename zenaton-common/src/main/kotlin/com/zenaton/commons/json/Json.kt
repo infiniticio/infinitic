@@ -16,15 +16,13 @@ object Json {
         abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
     }
 
-    fun stringify(msg: Any, pretty: Boolean = false): String {
-        return if (pretty) {
-            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
-        } else {
-            mapper.writeValueAsString(msg)
-        }
+    fun stringify(msg: Any, pretty: Boolean = false): String = if (pretty) {
+        mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
+    } else {
+        mapper.writeValueAsString(msg)
     }
 
-    inline fun <reified M : Any> parse(json: String): M {
-        return mapper.readValue(json, M::class.java)
-    }
+    fun <T : Any> parse(json: String, klass: Class<out T>): T = mapper.readValue(json, klass)
+
+    inline fun <reified M : Any> parse(json: String) = parse(json, M::class.java)
 }
