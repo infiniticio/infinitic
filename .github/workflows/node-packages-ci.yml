@@ -1,4 +1,4 @@
-name: Zenaton Node Packages CI
+name: Node Packages CI
 
 on:
   pull_request:
