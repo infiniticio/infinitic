@@ -25,6 +25,7 @@ dependencies {
 
     implementation(project(":zenaton-common"))
     implementation(project(":zenaton-jobManager"))
+    implementation(project(":zenaton-jobManager-common"))
     implementation(project(":zenaton-jobManager-pulsar"))
     implementation(project(":zenaton-workflowManager"))
 

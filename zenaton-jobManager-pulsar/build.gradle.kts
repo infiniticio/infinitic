@@ -25,6 +25,7 @@ dependencies {
 
     implementation(project(":zenaton-common"))
     implementation(project(":zenaton-jobManager"))
+    implementation(project(":zenaton-jobManager-common"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

@@ -33,6 +33,7 @@ fun main() {
     val worker = AvroWorker()
     worker.avroDispatcher = FakeAvroDispatcher()
     worker.handle(avro)
+    val m = Test::handle
 }
 
 class Test {

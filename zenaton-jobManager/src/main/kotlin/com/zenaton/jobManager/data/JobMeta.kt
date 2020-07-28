@@ -3,7 +3,7 @@ package com.zenaton.jobManager.data
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import com.zenaton.common.data.SerializedData
-import com.zenaton.commons.data.interfaces.MetaInterface
+import com.zenaton.jobManager.common.data.interfaces.MetaInterface
 
 data class JobMeta
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

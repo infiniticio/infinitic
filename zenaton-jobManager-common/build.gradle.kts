@@ -12,7 +12,6 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     implementation(project(":zenaton-common"))
-    implementation(project(":zenaton-jobManager-common"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     testImplementation("org.jeasy:easy-random-core:4.2.+")
