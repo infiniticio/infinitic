@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "AvroDelayCompleted",
+  "namespace": "com.zenaton.workflowManager.messages",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "delayId",
+      "type": "string",
+      "logicalType": "uuid"
+    }
+  ]
+}

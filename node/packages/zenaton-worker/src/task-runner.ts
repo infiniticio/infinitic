@@ -121,8 +121,9 @@ export class TaskRunner {
         jobAttemptIndex: message.jobAttemptIndex,
         jobAttemptDelayBeforeRetry: null,
         jobAttemptError: {
-          serializedData: Buffer.from(JSON.stringify(error)),
-          serializationType: 'JSON',
+          bytes: Buffer.from(JSON.stringify(error)),
+          type: 'JSON',
+          meta: new Map()
         },
       },
     };

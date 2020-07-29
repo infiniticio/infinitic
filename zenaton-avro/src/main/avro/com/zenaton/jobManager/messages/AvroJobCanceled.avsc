@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "AvroJobCanceled",
+  "namespace": "com.zenaton.jobManager.messages",
+  "fields": [
+    {
+      "name": "jobId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "jobMeta",
+      "type": {
+        "type": "map",
+        "values": "com.zenaton.jobManager.data.AvroSerializedData"
+      }
+    }
+  ]
+}

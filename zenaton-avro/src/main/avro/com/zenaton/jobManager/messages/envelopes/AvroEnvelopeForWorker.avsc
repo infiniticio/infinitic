@@ -1,0 +1,24 @@
+{
+    "type": "record",
+    "name": "AvroEnvelopeForWorker",
+    "namespace": "com.zenaton.jobManager.messages.envelopes",
+    "fields": [
+        {
+            "name": "type",
+            "type": {
+                "type": "enum",
+                "name": "AvroForWorkerMessageType",
+                "symbols": [
+                    "RunJob"
+                ]
+            }
+        }, {
+            "name": "jobName",
+            "type": "string"
+        },{
+             "name": "RunJob",
+             "type": ["null", "com.zenaton.jobManager.messages.AvroRunJob"],
+             "default": null
+        }
+    ]
+}

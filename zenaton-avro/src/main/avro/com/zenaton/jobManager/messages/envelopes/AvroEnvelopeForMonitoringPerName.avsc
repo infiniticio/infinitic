@@ -1,0 +1,24 @@
+{
+    "type": "record",
+    "name": "AvroEnvelopeForMonitoringPerName",
+    "namespace": "com.zenaton.jobManager.messages.envelopes",
+    "fields": [
+        {
+            "name": "type",
+            "type": {
+                "type": "enum",
+                "name": "AvroForMonitoringPerNameMessageType",
+                "symbols": [
+                    "JobStatusUpdated"
+                ]
+            }
+        }, {
+            "name": "jobName",
+            "type": "string"
+        }, {
+            "name": "JobStatusUpdated",
+            "type": ["null", "com.zenaton.jobManager.messages.AvroJobStatusUpdated"],
+            "default": null
+        }
+    ]
+}
