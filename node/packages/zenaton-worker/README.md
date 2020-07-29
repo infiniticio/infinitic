@@ -1,42 +1,32 @@
-# Zenaton Worker
+# Infinitic Worker
 
-This is a NodeJS worker to run Zenaton tasks.
+This package is a NodeJS implementation of an infinitic worker.
+
+> ⚠️ This package is mostly a work in progress and serves as an example infinitic worker implementation.
+> It is _not_ recommended to use it in production.
+
+## Installation
+
+To install the latest version:
+
+```sh
+npm install --save @zenaton/worker
+```
+
+Or using yarn:
+
+```sh
+yarn add @zenaton/worker
+```
 
 ## Usage
 
 ### Javascript
 
-This section describes how to use the worker using Javascript only.
-If you want to use Typescript instead, please refer to the [Typescript](#typescript) section.
+> This section describes how to use the worker using Javascript only.
+> If you want to use Typescript instead, please refer to the [Typescript](#typescript) section.
 
-Before trying to use this package, we need to make sure it is linkable by yarn in other projects.
-Run the following command in the root directory of this package:
-
-```bash
-yarn build
-yarn link
-```
-
-This allows yarn to symlink this package in other projects while this package is not yet published on the npm registry.
-
-Start a new project somewhere:
-
-```bash
-mkdir my-zenaton-project && cd my-zenaton-project
-```
-
-Initialize a NodeJS project:
-
-```bash
-yarn init -y
-```
-
-Link the worker package in your project:
-
-```bash
-yarn link @zenaton/worker
-```
-
+In order to use the worker, you first need to define a `task` that the worker will be able to run.
 Create a file at `src/tasks/refund-booking.js` with the following content:
 
 ```javascript
@@ -55,10 +45,14 @@ module.exports = {
 };
 ```
 
-Create a file at `index.js` with the following content:
+Now, a `Worker` object needs to be created to register and run the task.
+Create a file at `src/index.js` with the following content:
 
 ```javascript
+// src/index.js
+
 const { Worker } = require('@zenaton/worker');
+const RefundBooking = require('./tasks/refund-booking');
 
 const worker = new Worker({
   pulsar: {
@@ -68,60 +62,24 @@ const worker = new Worker({
   },
 });
 
-worker.registerTask(require('./src/tasks/refund-booking'));
+worker.registerTask(RefundBooking);
 
 worker.run();
 ```
 
-Run this file using node:
-
-```bash
-node index.js
-```
-
-Your worker should start and be waiting for incoming messages asking for task processing.
+You can now run this file using `node src/index.js`.
+The worker should start and wait for incoming RefundBooking tasks to process.
+You are free to register as many tasks as you want on the worker object.
 
 ### Typescript
 
-This section describes how to use the worker using Typescript.
-If you want to use Javascript instead, please refer to the [Javascript](#javascript) section.
-
-Before trying to use this package, we need to make sure it is linkable by yarn in other projects.
-Run the following command in the root directory of this package:
-
-```bash
-yarn build
-yarn link
-```
-
-This allows yarn to symlink this package in other projects while this package is not yet published on the npm registry.
-
-To create our project, we will use [TSDX](https://github.com/jaredpalmer/tsdx). It's a zero-config tool to help
-develop typescript projects.
-You are free to create your project manually or using a different tool but keep in mind you might have to adapt some
-of the following steps in order to make everything work properly.
-
-Run the following command to bootstrap your project:
-
-```bash
-npx tsdx create my-zenaton-project
-```
-
-After answer a few questions, your project will be created.
-You can go to the newly created directory and link the worker package.
-
-```bash
-cd my-zenaton-project
-yarn link @zenaton/worker
-```
-
-The `yarn start` command is provided by TSDX and is used to run the project in development/watch mode.
-Your project will be rebuilt upon changes.
+> This section describes how to use the worker using Typescript.
+> If you want to use Javascript instead, please refer to the [Javascript](#javascript) section.
 
 The first thing we will do is to write a task. Tasks are objects conforming to the Task interface defined
 in the `@zenaton/worker` package.
 
-```typescript
+```javascript
 // src/tasks/refund-booking.ts
 import { Task } from '@zenaton/worker';
 
@@ -166,12 +124,41 @@ worker.registerTask(RefundBooking);
 worker.run();
 ```
 
-If you ran the `yarn start` as instructed in the previous steps, TSDX should have rebuild your project,
-which is now ready to be run.
-By default, your project is build in the `dist/` directory. You can run it with the following command:
+Build and run your project using the typescript compiler or the module bundler of your choice.
+The worker should start and wait for incoming RefundBooking tasks to process.
+You are free to register as many tasks as you want on the worker object.
+
+## Contributing
+
+If you want change code in the worker and observe on a real infinitic cluster how it behaves, make sure
+this package is linkable by yarn in other projects.
+Run the following command in the root directory of this package:
 
 ```bash
-node dist/index.js
+yarn build
+yarn link
 ```
 
-The worker should start and wait for incoming RefundBooking tasks to process.
+This allows yarn to symlink this package in other projects. You will be able to use a locally modified
+worker.
+
+Start a new project somewhere:
+
+```bash
+mkdir my-zenaton-project && cd my-zenaton-project
+```
+
+Initialize a NodeJS project:
+
+```bash
+yarn init -y
+```
+
+Link the worker package in your project:
+
+```bash
+yarn link @zenaton/worker
+```
+
+This will make your current working directory of the worker package to be used in your project.
+Please refer to the [Usage](#usage) section for examples of usages.
