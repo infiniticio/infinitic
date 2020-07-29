@@ -123,7 +123,7 @@ export class TaskRunner {
         jobAttemptError: {
           bytes: Buffer.from(JSON.stringify(error)),
           type: 'JSON',
-          meta: new Map()
+          meta: new Map(),
         },
       },
     };
