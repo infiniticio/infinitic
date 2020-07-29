@@ -16,14 +16,14 @@
       "name": "jobInput",
       "type": {
         "type": "array",
-        "items": "com.zenaton.common.data.AvroSerializedData"
+        "items": "com.zenaton.jobManager.data.AvroSerializedData"
       }
     },
     {
       "name": "jobMeta",
       "type": {
         "type": "map",
-        "values": "com.zenaton.common.data.AvroSerializedData"
+        "values": "com.zenaton.jobManager.data.AvroSerializedData"
       },
       "default": {}
     }

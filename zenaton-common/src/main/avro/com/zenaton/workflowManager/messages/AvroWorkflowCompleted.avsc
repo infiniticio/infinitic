@@ -10,7 +10,7 @@
     },
     {
       "name": "workflowOutput",
-      "type": "com.zenaton.common.data.AvroSerializedData"
+      "type": "com.zenaton.jobManager.data.AvroSerializedData"
     }
   ]
 }

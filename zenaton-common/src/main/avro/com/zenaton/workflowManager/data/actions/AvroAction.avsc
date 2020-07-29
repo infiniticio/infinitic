@@ -28,7 +28,7 @@
     },
     {
       "name": "jobOutput",
-      "type": "com.zenaton.common.data.AvroSerializedData"
+      "type": "com.zenaton.jobManager.data.AvroSerializedData"
     },
     {
       "name": "childWorkflowId",
@@ -39,7 +39,7 @@
     },
     {
       "name": "childWorkflowOutput",
-      "type": "com.zenaton.common.data.AvroSerializedData"
+      "type": "com.zenaton.jobManager.data.AvroSerializedData"
     },
     {
       "name": "delayId",
@@ -68,13 +68,13 @@
         "null",
         {
           "type": "array",
-          "items": "com.zenaton.common.data.AvroSerializedData"
+          "items": "com.zenaton.jobManager.data.AvroSerializedData"
         }
       ]
     },
     {
       "name": "workflowOutput",
-      "type": "com.zenaton.common.data.AvroSerializedData"
+      "type": "com.zenaton.jobManager.data.AvroSerializedData"
     }
   ]
 }

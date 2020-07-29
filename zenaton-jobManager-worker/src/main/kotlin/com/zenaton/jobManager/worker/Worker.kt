@@ -3,7 +3,7 @@
  */
 package com.zenaton.jobManager.worker
 
-import com.zenaton.common.data.AvroSerializedDataType
+import com.zenaton.jobManager.data.AvroSerializedDataType
 import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.data.JobAttemptError
 import com.zenaton.jobManager.data.JobInput

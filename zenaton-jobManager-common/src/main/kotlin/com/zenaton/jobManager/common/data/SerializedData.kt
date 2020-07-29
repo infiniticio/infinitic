@@ -3,6 +3,7 @@ package com.zenaton.common.data
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.common.json.Json
+import com.zenaton.jobManager.data.AvroSerializedDataType
 import org.apache.avro.specific.SpecificRecord
 import org.apache.avro.specific.SpecificRecordBase
 import java.math.BigInteger

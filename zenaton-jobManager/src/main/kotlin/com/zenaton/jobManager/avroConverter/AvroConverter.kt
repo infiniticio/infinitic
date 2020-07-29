@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.avroConverter
 
-import com.zenaton.common.data.AvroSerializedData
+import com.zenaton.jobManager.data.AvroSerializedData
 import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
 import com.zenaton.jobManager.messages.AvroCancelJob

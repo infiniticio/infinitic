@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroSerializedData",
-  "namespace": "com.zenaton.common.data",
+  "namespace": "com.zenaton.jobManager.data",
   "fields": [
     {
       "name": "bytes",

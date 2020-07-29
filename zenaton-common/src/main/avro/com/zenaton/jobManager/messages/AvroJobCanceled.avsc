@@ -12,7 +12,7 @@
       "name": "jobMeta",
       "type": {
         "type": "map",
-        "values": "com.zenaton.common.data.AvroSerializedData"
+        "values": "com.zenaton.jobManager.data.AvroSerializedData"
       }
     }
   ]

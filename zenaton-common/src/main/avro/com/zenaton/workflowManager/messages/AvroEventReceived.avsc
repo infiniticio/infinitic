@@ -16,7 +16,7 @@
       "name": "eventData",
       "type": {
         "type": "array",
-        "items": "com.zenaton.common.data.AvroSerializedData"
+        "items": "com.zenaton.jobManager.data.AvroSerializedData"
       },
       "default": []
     }
