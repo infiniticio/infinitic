@@ -1,12 +1,13 @@
 package com.zenaton.jobManager.avroConverter
 
-import com.zenaton.jobManager.messages.ForJobEngineMessage
-import com.zenaton.jobManager.messages.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.ForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.ForWorkerMessage
-import com.zenaton.jobManager.states.JobEngineState
-import com.zenaton.jobManager.states.MonitoringGlobalState
-import com.zenaton.jobManager.states.MonitoringPerNameState
+import com.zenaton.jobManager.common.avro.AvroConverter
+import com.zenaton.jobManager.common.messages.ForJobEngineMessage
+import com.zenaton.jobManager.common.messages.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.common.messages.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.common.messages.ForWorkerMessage
+import com.zenaton.jobManager.common.states.JobEngineState
+import com.zenaton.jobManager.common.states.MonitoringGlobalState
+import com.zenaton.jobManager.common.states.MonitoringPerNameState
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec

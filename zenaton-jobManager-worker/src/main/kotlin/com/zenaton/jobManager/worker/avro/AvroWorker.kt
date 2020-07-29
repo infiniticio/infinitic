@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.worker.avro
 
-import com.zenaton.jobManager.avroConverter.AvroConverter
+import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.jobManager.worker.Dispatcher
 import com.zenaton.jobManager.worker.Worker

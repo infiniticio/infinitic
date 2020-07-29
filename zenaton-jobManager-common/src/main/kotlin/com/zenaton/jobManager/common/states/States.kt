@@ -1,14 +1,14 @@
-package com.zenaton.jobManager.states
+package com.zenaton.jobManager.common.states
 
-import com.zenaton.jobManager.avroConverter.AvroConverter
-import com.zenaton.jobManager.data.JobAttemptId
-import com.zenaton.jobManager.data.JobAttemptIndex
-import com.zenaton.jobManager.data.JobAttemptRetry
-import com.zenaton.jobManager.data.JobId
-import com.zenaton.jobManager.data.JobInput
-import com.zenaton.jobManager.data.JobMeta
-import com.zenaton.jobManager.data.JobName
-import com.zenaton.jobManager.data.JobStatus
+import com.zenaton.jobManager.common.avro.AvroConverter
+import com.zenaton.jobManager.common.data.JobAttemptId
+import com.zenaton.jobManager.common.data.JobAttemptIndex
+import com.zenaton.jobManager.common.data.JobAttemptRetry
+import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.jobManager.common.data.JobInput
+import com.zenaton.jobManager.common.data.JobMeta
+import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.data.JobStatus
 
 sealed class State
 

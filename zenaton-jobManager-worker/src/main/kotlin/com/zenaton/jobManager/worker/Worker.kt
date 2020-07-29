@@ -3,16 +3,16 @@
  */
 package com.zenaton.jobManager.worker
 
-import com.zenaton.jobManager.data.AvroSerializedDataType
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.data.JobAttemptError
-import com.zenaton.jobManager.data.JobInput
-import com.zenaton.jobManager.data.JobOutput
-import com.zenaton.jobManager.messages.ForWorkerMessage
-import com.zenaton.jobManager.messages.JobAttemptCompleted
-import com.zenaton.jobManager.messages.JobAttemptFailed
-import com.zenaton.jobManager.messages.JobAttemptStarted
-import com.zenaton.jobManager.messages.RunJob
+import com.zenaton.jobManager.common.data.JobAttemptError
+import com.zenaton.jobManager.common.data.JobInput
+import com.zenaton.jobManager.common.data.JobOutput
+import com.zenaton.jobManager.common.messages.ForWorkerMessage
+import com.zenaton.jobManager.common.messages.JobAttemptCompleted
+import com.zenaton.jobManager.common.messages.JobAttemptFailed
+import com.zenaton.jobManager.common.messages.JobAttemptStarted
+import com.zenaton.jobManager.common.messages.RunJob
+import com.zenaton.jobManager.data.AvroSerializedDataType
 import org.apache.avro.specific.SpecificRecordBase
 import java.lang.reflect.Method
 import java.security.InvalidParameterException
@@ -21,9 +21,9 @@ class Worker {
     lateinit var dispatcher: Dispatcher
 
     companion object {
-        val METHOD_DIVIDER = "::"
-        val METHOD_DEFAULT = "handle"
-        val META_PARAMETER_TYPES = "javaParameterTypes"
+        const val METHOD_DIVIDER = "::"
+        const val METHOD_DEFAULT = "handle"
+        const val META_PARAMETER_TYPES = "javaParameterTypes"
     }
 
     private val registeredJobs = mutableMapOf<String, Any>()

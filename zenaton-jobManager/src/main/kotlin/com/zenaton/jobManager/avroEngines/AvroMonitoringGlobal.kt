@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.avroEngines
 
-import com.zenaton.jobManager.avroConverter.AvroConverter
+import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.engines.MonitoringGlobal

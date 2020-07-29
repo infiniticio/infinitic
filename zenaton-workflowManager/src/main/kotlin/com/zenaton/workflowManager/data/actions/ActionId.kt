@@ -3,7 +3,7 @@ package com.zenaton.workflowManager.data.actions
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import com.zenaton.common.data.interfaces.IdInterface
-import com.zenaton.jobManager.data.JobId
+import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventId
 import com.zenaton.workflowManager.data.WorkflowId

@@ -1,17 +1,17 @@
-package com.zenaton.jobManager.messages
+package com.zenaton.jobManager.common.messages
 
-import com.zenaton.jobManager.data.JobAttemptError
-import com.zenaton.jobManager.data.JobAttemptId
-import com.zenaton.jobManager.data.JobAttemptIndex
-import com.zenaton.jobManager.data.JobAttemptRetry
-import com.zenaton.jobManager.data.JobId
-import com.zenaton.jobManager.data.JobInput
-import com.zenaton.jobManager.data.JobMeta
-import com.zenaton.jobManager.data.JobName
-import com.zenaton.jobManager.data.JobOutput
-import com.zenaton.jobManager.data.JobStatus
-import com.zenaton.jobManager.messages.interfaces.FailingJobAttemptMessage
-import com.zenaton.jobManager.messages.interfaces.JobAttemptMessage
+import com.zenaton.jobManager.common.data.JobAttemptError
+import com.zenaton.jobManager.common.data.JobAttemptId
+import com.zenaton.jobManager.common.data.JobAttemptIndex
+import com.zenaton.jobManager.common.data.JobAttemptRetry
+import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.jobManager.common.data.JobInput
+import com.zenaton.jobManager.common.data.JobMeta
+import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.data.JobOutput
+import com.zenaton.jobManager.common.data.JobStatus
+import com.zenaton.jobManager.common.messages.interfaces.FailingJobAttemptMessage
+import com.zenaton.jobManager.common.messages.interfaces.JobAttemptMessage
 
 sealed class Message
 

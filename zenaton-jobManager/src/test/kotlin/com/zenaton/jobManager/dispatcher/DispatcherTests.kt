@@ -1,11 +1,11 @@
 package com.zenaton.jobManager.dispatcher
 
-import com.zenaton.jobManager.avroConverter.AvroConverter
+import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
-import com.zenaton.jobManager.messages.ForJobEngineMessage
-import com.zenaton.jobManager.messages.ForMonitoringGlobalMessage
-import com.zenaton.jobManager.messages.ForMonitoringPerNameMessage
-import com.zenaton.jobManager.messages.ForWorkerMessage
+import com.zenaton.jobManager.common.messages.ForJobEngineMessage
+import com.zenaton.jobManager.common.messages.ForMonitoringGlobalMessage
+import com.zenaton.jobManager.common.messages.ForMonitoringPerNameMessage
+import com.zenaton.jobManager.common.messages.ForWorkerMessage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.confirmVerified

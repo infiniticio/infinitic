@@ -1,8 +1,8 @@
 package com.zenaton.jobManager.storages
 
-import com.zenaton.jobManager.avroConverter.AvroConverter
+import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.avroInterfaces.AvroStorage
-import com.zenaton.jobManager.states.MonitoringGlobalState
+import com.zenaton.jobManager.common.states.MonitoringGlobalState
 
 class MonitoringGlobalStorage(val avroStorage: AvroStorage) {
 

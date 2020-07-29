@@ -24,7 +24,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import org.slf4j.Logger
-import com.zenaton.jobManager.avroConverter.AvroConverter as AvroJobConverter
+import com.zenaton.jobManager.common.avro.AvroConverter as AvroJobConverter
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryDispatcher as InMemoryJobDispatcher
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryStorage as InMemoryJobStorage
 
@@ -153,7 +153,7 @@ private fun catchTaskCompletion(msg: AvroEnvelopeForJobEngine): AvroEnvelopeForW
         AvroTaskCompleted.newBuilder()
             .setTaskId(job.jobId)
             .setTaskOutput(job.jobOutput)
-            .setWorkflowId(job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]?.let { com.zenaton.jobManager.avroConverter.AvroConverter.fromAvroSerializedData(it) }?.fromJson())
+            .setWorkflowId(job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]?.let { com.zenaton.jobManager.common.avro.AvroConverter.fromAvroSerializedData(it) }?.fromJson())
             .build()
     )
 

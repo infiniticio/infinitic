@@ -1,11 +1,12 @@
 package com.zenaton.jobManager.client
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.data.JobId
-import com.zenaton.jobManager.data.JobInput
-import com.zenaton.jobManager.data.JobMeta
-import com.zenaton.jobManager.data.JobName
-import com.zenaton.jobManager.messages.DispatchJob
+import com.zenaton.jobManager.client.data.Job
+import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.jobManager.common.data.JobInput
+import com.zenaton.jobManager.common.data.JobMeta
+import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.messages.DispatchJob
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 

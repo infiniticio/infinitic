@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.avroEngines.inMemory
 
-import com.zenaton.jobManager.avroConverter.AvroConverter
+import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker

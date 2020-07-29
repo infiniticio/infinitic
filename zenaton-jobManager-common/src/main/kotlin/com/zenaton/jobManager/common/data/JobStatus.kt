@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.data
+package com.zenaton.jobManager.common.data
 
 enum class JobStatus {
     RUNNING_OK {

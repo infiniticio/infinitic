@@ -1,15 +1,15 @@
 package com.zenaton.jobManager.worker
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.avroConverter.AvroConverter
-import com.zenaton.jobManager.data.JobAttemptId
-import com.zenaton.jobManager.data.JobAttemptIndex
-import com.zenaton.jobManager.data.JobAttemptRetry
-import com.zenaton.jobManager.data.JobId
-import com.zenaton.jobManager.data.JobInput
-import com.zenaton.jobManager.data.JobMeta
-import com.zenaton.jobManager.data.JobName
-import com.zenaton.jobManager.messages.RunJob
+import com.zenaton.jobManager.common.avro.AvroConverter
+import com.zenaton.jobManager.common.data.JobAttemptId
+import com.zenaton.jobManager.common.data.JobAttemptIndex
+import com.zenaton.jobManager.common.data.JobAttemptRetry
+import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.jobManager.common.data.JobInput
+import com.zenaton.jobManager.common.data.JobMeta
+import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.messages.RunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.worker.avro.AvroDispatcher
 import com.zenaton.jobManager.worker.avro.AvroWorker

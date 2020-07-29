@@ -16,8 +16,6 @@ data class SerializedData(
     val meta: Map<String, ByteArray> = mapOf()
 ) {
     companion object {
-        const val JAVA_CLASS_KEY = "java-class"
-
         fun from(value: Any?, meta: Map<String, ByteArray> = mapOf()): SerializedData {
             val bytes: ByteArray
             val type: AvroSerializedDataType

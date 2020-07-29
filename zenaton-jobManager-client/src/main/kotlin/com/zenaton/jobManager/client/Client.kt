@@ -3,6 +3,7 @@
  */
 package com.zenaton.jobManager.client
 
+import com.zenaton.jobManager.client.data.Job
 import java.lang.Exception
 import java.lang.reflect.Proxy
 

@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.avroEngines
 
-import com.zenaton.jobManager.avroConverter.AvroConverter
+import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.avroEngines.inMemory.InMemoryDispatcher
 import com.zenaton.jobManager.avroEngines.inMemory.InMemoryStorage
 import com.zenaton.jobManager.avroEngines.inMemory.InMemoryWorker.Status

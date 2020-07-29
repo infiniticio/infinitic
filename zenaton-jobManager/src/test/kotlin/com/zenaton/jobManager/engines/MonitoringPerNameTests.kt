@@ -1,10 +1,10 @@
 package com.zenaton.jobManager.engines
 
-import com.zenaton.jobManager.data.JobStatus
+import com.zenaton.jobManager.common.data.JobStatus
 import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.messages.JobCreated
-import com.zenaton.jobManager.messages.JobStatusUpdated
-import com.zenaton.jobManager.states.MonitoringPerNameState
+import com.zenaton.jobManager.common.messages.JobCreated
+import com.zenaton.jobManager.common.messages.JobStatusUpdated
+import com.zenaton.jobManager.common.states.MonitoringPerNameState
 import com.zenaton.jobManager.storages.MonitoringPerNameStorage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec

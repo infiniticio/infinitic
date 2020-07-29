@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.data
+package com.zenaton.jobManager.common.data
 
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec

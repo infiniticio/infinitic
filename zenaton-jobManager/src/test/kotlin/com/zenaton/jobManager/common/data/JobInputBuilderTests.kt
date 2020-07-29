@@ -1,7 +1,7 @@
-package com.zenaton.jobManager.data
+package com.zenaton.jobManager.common.data
 
 import com.zenaton.jobManager.states.AvroJobEngineState
-import com.zenaton.jobManager.states.JobEngineState
+import com.zenaton.jobManager.common.states.JobEngineState
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

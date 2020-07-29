@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.data
+package com.zenaton.jobManager.common.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
