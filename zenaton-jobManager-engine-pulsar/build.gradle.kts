@@ -11,7 +11,7 @@ plugins {
 }
 
 application {
-    mainClassName = "com.zenaton.workflowManager.pulsar.utils.GenerateSchemaFilesKt"
+    mainClassName = "com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 dependencies {
@@ -26,8 +26,6 @@ dependencies {
     implementation(project(":zenaton-avro"))
     implementation(project(":zenaton-jobManager-common"))
     implementation(project(":zenaton-jobManager-engine"))
-    implementation(project(":zenaton-jobManager-engine-pulsar"))
-    implementation(project(":zenaton-workflowManager"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
@@ -50,20 +48,24 @@ tasks {
     }
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
 tasks {
     named<ShadowJar>("shadowJar") {
         mergeServiceFiles()
     }
 }
 
-tasks {
-    build {
-        dependsOn(shadowJar)
+tasks.register("setRetention") {
+    group = "Zenaton"
+    description = "Set retention for default tenant/namespace to 1G"
+    doLast {
+        println("Set Pulsar retention to 1G size for public/default")
+        val cmd = "$pulsarAdmin namespaces set-retention public/default --size 1G --time -1"
+        exec(cmd)
     }
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
 }
 
 tasks.register("setSchemas") {
@@ -72,9 +74,18 @@ tasks.register("setSchemas") {
     dependsOn("assemble")
     doLast {
         createSchemaFiles()
+        setPrefix("tasks")
         uploadSchemaToTopic(
-            name = "AvroEnvelopeForWorkflowEngine",
-            topic = Topic.WORKFLOW_ENGINE.get()
+            name = "AvroEnvelopeForJobEngine",
+            topic = Topic.ENGINE.get()
+        )
+        uploadSchemaToTopic(
+            name = "AvroEnvelopeForMonitoringPerName",
+            topic = Topic.MONITORING_PER_NAME.get()
+        )
+        uploadSchemaToTopic(
+            name = "AvroEnvelopeForMonitoringGlobal",
+            topic = Topic.MONITORING_GLOBAL.get()
         )
     }
 }
@@ -82,11 +93,25 @@ tasks.register("setSchemas") {
 tasks.register("install") {
     group = "Zenaton"
     description = "Install Zenaton into Pulsar"
+    dependsOn("setRetention")
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
-            className = "WorkflowEnginePulsarFunction",
-            topicsIn = setOf(Topic.WORKFLOW_ENGINE.get()),
+            name = "infinitic-tasks-engine",
+            className = "JobEnginePulsarFunction",
+            topicsIn = setOf(Topic.ENGINE.get()),
+            action = "create"
+        )
+        setZenatonFunction(
+            name = "infinitic-tasks-monitoring-global",
+            className = "MonitoringGlobalPulsarFunction",
+            topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
+            action = "create"
+        )
+        setZenatonFunction(
+            name = "infinitic-tasks-monitoring-per-name",
+            className = "MonitoringPerNamePulsarFunction",
+            topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
             action = "create"
         )
     }
@@ -98,8 +123,22 @@ tasks.register("update") {
     dependsOn("setSchemas")
     doLast {
         setZenatonFunction(
-            className = "WorkflowEnginePulsarFunction",
-            topicsIn = setOf(Topic.WORKFLOW_ENGINE.get()),
+            name = "infinitic-tasks-engine",
+            className = "JobEnginePulsarFunction",
+            topicsIn = setOf(Topic.ENGINE.get()),
+            action = "update"
+        )
+        setZenatonFunction(
+            name = "infinitic-tasks-monitoring-global",
+            className = "MonitoringGlobalPulsarFunction",
+            classNamespace = "com.zenaton.jobManager.pulsar.functions",
+            topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
+            action = "update"
+        )
+        setZenatonFunction(
+            name = "infinitic-tasks-monitoring-per-name",
+            className = "MonitoringPerNamePulsarFunction",
+            topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
             action = "update"
         )
     }
@@ -109,25 +148,47 @@ tasks.register("delete") {
     group = "Zenaton"
     description = "Delete Zenaton from Pulsar"
     doLast {
-        deleteZenatonFunction("WorkflowEnginePulsarFunction")
-        forceDeleteTopic(Topic.WORKFLOW_ENGINE.get())
+        setPrefix("tasks")
+        deleteZenatonFunction("infinitic-tasks-engine")
+        deleteZenatonFunction("infinitic-tasks-monitoring-global")
+        deleteZenatonFunction("infinitic-tasks-monitoring-per-name")
+        forceDeleteTopic(Topic.ENGINE.get())
+        forceDeleteTopic(Topic.MONITORING_PER_NAME.get())
+        forceDeleteTopic(Topic.MONITORING_GLOBAL.get())
         forceDeleteTopic(Topic.LOGS.get())
     }
 }
 
 val pulsarAdmin = "docker-compose -f ../pulsar/docker-compose.yml exec -T pulsar bin/pulsar-admin"
-val jar = "zenaton-workflowManager-pulsar-1.0-SNAPSHOT-all.jar"
+val jar = "zenaton-jobManager-engine-pulsar-1.0.0-SNAPSHOT-all.jar"
+
+fun setPrefix(prefix: String) {
+    Topic.prefix = prefix
+}
 
 enum class Topic {
-    WORKFLOW_ENGINE {
-        override fun get(name: String?) = "workflows"
+    ENGINE {
+        override fun get(name: String?) = "${Topic.prefix}-engine"
     },
-    DELAYS {
-        override fun get(name: String?) = "delays"
+    WORKERS {
+        override fun get(name: String?) = "${Topic.prefix}-workers-$name"
+    },
+    MONITORING_PER_INSTANCE {
+        override fun get(name: String?) = "${Topic.prefix}-monitoring-per-instance"
+    },
+    MONITORING_PER_NAME {
+        override fun get(name: String?) = "${Topic.prefix}-monitoring-per-name"
+    },
+    MONITORING_GLOBAL {
+        override fun get(name: String?) = "${Topic.prefix}-monitoring-global"
     },
     LOGS {
-        override fun get(name: String?) = "logs"
+        override fun get(name: String?) = "${Topic.prefix}-logs"
     };
+
+    companion object {
+        var prefix = "jobs"
+    }
 
     abstract fun get(name: String? = ""): String
 }
@@ -135,7 +196,7 @@ enum class Topic {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    val cmd = "java -cp ./build/libs/$jar com.zenaton.workflowManager.pulsar.utils.GenerateSchemaFilesKt"
+    val cmd = "java -cp ./build/libs/$jar com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt"
     return exec(cmd)
 }
 
@@ -147,13 +208,14 @@ fun uploadSchemaToTopic(
 ) {
     println("Uploading $name schema to $topic topic...")
     val cmd = "$pulsarAdmin schemas upload \"persistent://$tenant/$namespace/$topic\"" +
-        " --filename \"/zenaton/workflowManager/schemas/$name.schema\" "
+        " --filename \"/zenaton/jobManager/schemas/$name.schema\" "
     return exec(cmd)
 }
 
 fun setZenatonFunction(
+    name: String,
     className: String,
-    classNamespace: String = "com.zenaton.workflowManager.pulsar.functions",
+    classNamespace: String = "com.zenaton.jobManager.pulsar.functions",
     topicsIn: Set<String>,
     action: String,
     topicOut: String? = null,
@@ -166,12 +228,15 @@ fun setZenatonFunction(
         transform = { "persistent://$tenant/$namespace/$it" }
     )
     println("$action $className for $inputs...")
-    var cmd = "$pulsarAdmin functions $action --jar /zenaton/workflowManager/libs/$jar" +
+    var cmd = "$pulsarAdmin functions $action --jar /zenaton/jobManager/libs/$jar" +
         " --classname \"$classNamespace.$className\" --inputs $inputs " +
-        " --name \"$className\" --log-topic \"persistent://$tenant/$namespace/$logs\""
+        " --name \"$name\" --log-topic \"persistent://$tenant/$namespace/$logs\""
     if (topicOut != null) {
         cmd += " --output \"persistent://$tenant/$namespace/$topicOut\""
     }
+
+    cmd += " --user-config {\"topicPrefix\":\"${Topic.prefix}\"}"
+
     return exec(cmd)
 }
 
