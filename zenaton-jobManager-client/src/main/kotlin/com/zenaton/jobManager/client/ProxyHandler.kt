@@ -14,6 +14,8 @@ class ProxyHandler(private val className: String, private val dispatcher: Dispat
     private var jobId: JobId? = null
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>) {
+        if (jobId != null) throw Exception("only one method of $className can be dispatched at a time")
+
         jobId = JobId()
         val msg = DispatchJob(
             jobId = jobId!!,
