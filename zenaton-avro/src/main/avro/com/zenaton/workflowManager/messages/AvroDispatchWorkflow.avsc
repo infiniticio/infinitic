@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "AvroDispatchWorkflow",
+  "namespace": "com.zenaton.workflowManager.messages",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "workflowName",
+      "type": "string"
+    },
+    {
+      "name": "workflowInput",
+      "type": {
+        "type": "array",
+        "items": "com.zenaton.jobManager.data.AvroSerializedData"
+      },
+      "default": []
+    }
+  ]
+}

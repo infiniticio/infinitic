@@ -1,0 +1,31 @@
+{
+  "type": "record",
+  "name": "AvroDispatchJob",
+  "namespace": "com.zenaton.jobManager.messages",
+  "fields": [
+    {
+      "name": "jobId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "jobName",
+      "type": "string"
+    },
+    {
+      "name": "jobInput",
+      "type": {
+        "type": "array",
+        "items": "com.zenaton.jobManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "jobMeta",
+      "type": {
+        "type": "map",
+        "values": "com.zenaton.jobManager.data.AvroSerializedData"
+      },
+      "default": {}
+    }
+  ]
+}

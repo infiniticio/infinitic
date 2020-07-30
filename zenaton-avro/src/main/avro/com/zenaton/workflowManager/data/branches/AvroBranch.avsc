@@ -1,0 +1,48 @@
+{
+  "type": "record",
+  "name": "AvroBranch",
+  "namespace": "com.zenaton.workflowManager.data.branches",
+  "fields": [
+    {
+      "name": "branchId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "branchName",
+      "type": "string"
+    },
+    {
+      "name": "branchInput",
+      "type": {
+        "type": "array",
+        "items": "com.zenaton.jobManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "propertiesAtStart",
+      "type": {
+        "type": "map",
+        "values": "string"
+      }
+    },
+    {
+      "name": "dispatchedAt",
+      "type": "long"
+    },
+    {
+      "name": "steps",
+      "type": {
+        "type": "array",
+        "items": "com.zenaton.workflowManager.data.steps.AvroStep"
+      }
+    },
+    {
+      "name": "actions",
+      "type": {
+        "type": "array",
+        "items": "com.zenaton.workflowManager.data.actions.AvroAction"
+      }
+    }
+  ]
+}

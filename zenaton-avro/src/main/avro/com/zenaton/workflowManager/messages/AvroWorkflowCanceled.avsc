@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "AvroWorkflowCanceled",
+  "namespace": "com.zenaton.workflowManager.messages",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "workflowOutput",
+      "type": "com.zenaton.jobManager.data.AvroSerializedData"
+    }
+  ]
+}

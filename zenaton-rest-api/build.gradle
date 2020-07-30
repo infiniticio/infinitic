@@ -52,7 +52,8 @@ dependencies {
     implementation "io.ktor:ktor-jackson:$ktor_version"
     testImplementation "io.ktor:ktor-server-tests:$ktor_version"
 
-    implementation project(":zenaton-common")
+    implementation project(":zenaton-avro")
+    implementation project(":zenaton-jobManager-common")
 
     implementation "io.prestosql:presto-jdbc:$prestojdbc_version"
     implementation "org.koin:koin-ktor:$koin_version"

@@ -1,9 +1,9 @@
 package com.zenaton.workflowManager.avroConverter
 
-import com.zenaton.common.data.AvroSerializedData
 import com.zenaton.common.data.DateTime
 import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
+import com.zenaton.jobManager.data.AvroSerializedData
 import com.zenaton.workflowManager.data.DecisionId
 import com.zenaton.workflowManager.data.DecisionInput
 import com.zenaton.workflowManager.data.WorkflowId

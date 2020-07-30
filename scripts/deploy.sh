@@ -8,8 +8,8 @@ DEFAULT_PULSAR_NAMESPACE=default
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-JOB_MANAGER_JAR_PATH=$SCRIPT_DIR/../zenaton-jobManager-pulsar/build/libs/zenaton-jobManager-pulsar-1.0.0-SNAPSHOT-all.jar
-SCHEMA_FILES_PATH=./zenaton-jobManager-pulsar/build/schemas
+JOB_MANAGER_JAR_PATH=$SCRIPT_DIR/../zenaton-jobManager-engine-pulsar/build/libs/zenaton-jobManager-engine-pulsar-1.0.0-SNAPSHOT-all.jar
+SCHEMA_FILES_PATH=./zenaton-jobManager-engine-pulsar/build/schemas
 
 tmp_dir=$(mktemp -d -t infinitic-deploy-XXXXXXXXXX)
 
