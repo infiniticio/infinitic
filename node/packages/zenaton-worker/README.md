@@ -128,6 +128,28 @@ Build and run your project using the typescript compiler or the module bundler o
 The worker should start and wait for incoming RefundBooking tasks to process.
 You are free to register as many tasks as you want on the worker object.
 
+## API
+
+### `Class: Worker`
+
+#### `new Worker(options)`
+
+- `options` `<Object>`
+  - `pulsar` `<Object>`
+    - `client` `<Object>`
+      - `serviceUrl` `<string>` The infinic cluster connection url.
+
+#### `worker.registerTask(task)`
+
+- `task` `<Object>`
+
+Register a task on the worker.
+
+#### `worker.run()`
+
+Starts the worker. It will connect to the Pulsar cluster and consume topics based on tasks that were
+registered.
+
 ## Contributing
 
 If you want change code in the worker and observe on a real infinitic cluster how it behaves, make sure
