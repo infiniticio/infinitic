@@ -20,7 +20,7 @@ class ProxyHandler(private val className: String, private val dispatcher: Dispat
         val msg = DispatchJob(
             jobId = jobId!!,
             jobName = JobName("$className::${method.name}"),
-            jobInput = JobInput(args?.map { SerializedData.from(it) } ?: listOf() ),
+            jobInput = JobInput(args?.map { SerializedData.from(it) } ?: listOf()),
             jobMeta = JobMeta(mapOf("javaParameterTypes" to SerializedData.from(method.parameterTypes.map { it.name })))
         )
         dispatcher.toJobEngine(msg)

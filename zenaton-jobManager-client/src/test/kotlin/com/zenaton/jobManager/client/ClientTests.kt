@@ -1,14 +1,9 @@
 package com.zenaton.jobManager.client
 
-import com.zenaton.common.data.SerializedData
 import com.zenaton.common.data.interfaces.IdInterface
 import com.zenaton.jobManager.client.avro.AvroDispatcher
 import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.common.data.JobId
-import com.zenaton.jobManager.common.data.JobInput
-import com.zenaton.jobManager.common.messages.DispatchJob
-import com.zenaton.jobManager.common.messages.ForJobEngineMessage
-import com.zenaton.jobManager.common.messages.JobAttemptCompleted
 import com.zenaton.jobManager.data.AvroSerializedData
 import com.zenaton.jobManager.data.AvroSerializedDataType
 import com.zenaton.jobManager.messages.AvroDispatchJob
@@ -16,12 +11,10 @@ import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
-import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
 import java.nio.ByteBuffer
 
 class ClientTests : StringSpec({
@@ -114,6 +107,6 @@ private interface FakeTask {
     fun m1()
     fun m1(i: Int): String
     fun m1(str: String): Any?
-    fun m2(p1: Int, p2: String):String
-    fun m2(id: IdInterface):String
+    fun m2(p1: Int, p2: String): String
+    fun m2(id: IdInterface): String
 }
