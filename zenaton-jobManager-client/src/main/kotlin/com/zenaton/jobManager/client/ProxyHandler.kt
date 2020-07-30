@@ -13,17 +13,19 @@ import java.lang.reflect.Method
 class ProxyHandler(private val className: String, private val dispatcher: Dispatcher) : InvocationHandler {
     private var jobId: JobId? = null
 
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>) {
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         if (jobId != null) throw Exception("only one method of $className can be dispatched at a time")
 
         jobId = JobId()
         val msg = DispatchJob(
             jobId = jobId!!,
             jobName = JobName("$className::${method.name}"),
-            jobInput = JobInput(args.map { SerializedData.from(it) }),
+            jobInput = JobInput(args?.map { SerializedData.from(it) } ?: listOf() ),
             jobMeta = JobMeta(mapOf("javaParameterTypes" to SerializedData.from(method.parameterTypes.map { it.name })))
         )
         dispatcher.toJobEngine(msg)
+
+        return null
     }
 
     fun getJob() = jobId?.let { Job(it) }

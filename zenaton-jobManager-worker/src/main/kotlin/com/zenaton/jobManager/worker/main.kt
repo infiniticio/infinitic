@@ -33,11 +33,10 @@ fun main() {
     val worker = AvroWorker()
     worker.avroDispatcher = FakeAvroDispatcher()
     worker.handle(avro)
-    val m = Test::handle
 }
 
 class Test {
-    fun handle(i: Int, j: String, k: JobName) = (i * j.toInt()).toString() + k.name
+    fun handle(i: Int?, j: String, k: JobName) = (i!! * j.toInt()).toString() + k.name
 }
 
 class FakeAvroDispatcher : AvroDispatcher {
