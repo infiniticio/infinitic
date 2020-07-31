@@ -7,7 +7,7 @@ import java.lang.reflect.Proxy
 class Client() {
     lateinit var dispatcher: Dispatcher
 
-    inline fun <reified T> dispatch(method: T.() -> Any): Job {
+    inline fun <reified T> dispatch(method: T.() -> Any?): Job {
         // handler will be where the actual job is done
         val handler = ProxyHandler(T::class.java.name, dispatcher)
 

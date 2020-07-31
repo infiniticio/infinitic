@@ -131,7 +131,7 @@ class AvroEngineTests : StringSpec({
 
     "Job canceled during automatic retry" {
         // job will succeed only at the 4th try
-        worker.behavior = { job -> Status.FAILED_WITH_RETRY }
+        worker.behavior = { Status.FAILED_WITH_RETRY }
         // run system
         val dispatch = getAvroDispatchJob()
         val retry = getAvroCancelJob(dispatch.jobId)
