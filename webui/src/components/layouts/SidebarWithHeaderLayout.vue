@@ -1,12 +1,17 @@
 <template>
   <div class="h-screen flex overflow-hidden bg-gray-100">
-    <the-sidebar />
+    <sidebar-mobile
+      :isOpen="sidebarIsOpen"
+      @close-sidebar="sidebarIsOpen = false"
+    />
+    <sidebar-desktop />
 
     <div class="flex flex-col w-0 flex-1 overflow-hidden">
       <div class="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
         <button
           class="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:bg-gray-100 focus:text-gray-600 md:hidden"
           aria-label="Open sidebar"
+          @click.stop="sidebarIsOpen = true"
         >
           <svg
             class="h-6 w-6"
@@ -33,9 +38,18 @@
 
 <script lang="ts">
 import Vue from "vue";
-import TheSidebar from "@/components/layouts/sidebar/TheSidebar.vue";
+import SidebarDesktop from "@/components/layouts/sidebar/SidebarDesktop.vue";
+import SidebarMobile from "@/components/layouts/sidebar/SidebarMobile.vue";
 
 export default Vue.extend({
-  components: { TheSidebar }
+  name: "SidebarWithHeaderLayout",
+
+  components: { SidebarDesktop, SidebarMobile },
+
+  data() {
+    return {
+      sidebarIsOpen: false
+    };
+  }
 });
 </script>
