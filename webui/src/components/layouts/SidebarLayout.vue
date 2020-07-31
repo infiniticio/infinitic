@@ -1,7 +1,7 @@
 <template>
   <div
     class="h-screen flex overflow-hidden"
-    :class="{ 'bg-gray-100': background == Background.Gray }"
+    :class="{ 'bg-gray-100': background === Background.Gray }"
   >
     <the-sidebar />
 
