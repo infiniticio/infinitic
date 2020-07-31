@@ -19,8 +19,8 @@ internal class JobMetaBuilderTests : StringSpec({
             .build()
         // then
         out.meta.size shouldBe 3
-        out.meta["key1"]?.fromJson<String>() shouldBe str
-        out.meta["key2"]?.fromBytes() shouldBe bytes
-        ByteBuffer.wrap(out.meta["key3"]?.fromBytes()) shouldBe buffer
+        out.meta["key1"]?.deserialize<String>() shouldBe str
+        out.meta["key2"]?.deserialize<ByteArray>() shouldBe bytes
+        ByteBuffer.wrap(out.meta["key3"]?.deserialize<ByteArray>()) shouldBe buffer
     }
 })

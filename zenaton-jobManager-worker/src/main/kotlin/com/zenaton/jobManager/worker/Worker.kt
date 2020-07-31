@@ -10,8 +10,6 @@ import com.zenaton.jobManager.common.messages.JobAttemptCompleted
 import com.zenaton.jobManager.common.messages.JobAttemptFailed
 import com.zenaton.jobManager.common.messages.JobAttemptStarted
 import com.zenaton.jobManager.common.messages.RunJob
-import com.zenaton.jobManager.data.AvroSerializedDataType
-import org.apache.avro.specific.SpecificRecordBase
 import java.lang.reflect.Method
 import java.security.InvalidParameterException
 
@@ -77,7 +75,10 @@ class Worker {
         }
     }
 
-    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.meta[Constants.META_PARAMETER_TYPES]?.fromJson<List<String>>()?.map { getClass(it) }?.toTypedArray()
+    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.meta[Constants.META_PARAMETER_TYPES]
+        ?.deserialize<List<String>>()
+        ?.map { getClass(it) }
+        ?.toTypedArray()
 
     private fun getClass(name: String) = when (name) {
         "bytes" -> Byte::class.java
@@ -110,13 +111,7 @@ class Worker {
     private fun getParameters(input: JobInput, parameterTypes: Array<Class<*>>): Array<Any?> {
         return input.input.mapIndexed {
             index, serializedData ->
-            when (serializedData.type) {
-                AvroSerializedDataType.NULL -> null
-                AvroSerializedDataType.BYTES -> serializedData.bytes
-                AvroSerializedDataType.JSON -> serializedData.fromJson(parameterTypes[index])
-                AvroSerializedDataType.AVRO -> serializedData.fromAvro(parameterTypes[index] as Class<out SpecificRecordBase>)
-                else -> throw Exception("Can't deserialize data with CUSTOM serialization")
-            }
+            serializedData.deserialize(parameterTypes[index])
         }.toTypedArray()
     }
 
