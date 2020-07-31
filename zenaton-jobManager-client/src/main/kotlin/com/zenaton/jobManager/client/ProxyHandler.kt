@@ -2,6 +2,7 @@ package com.zenaton.jobManager.client
 
 import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.client.data.Job
+import com.zenaton.jobManager.common.Constants
 import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobMeta
@@ -19,9 +20,9 @@ class ProxyHandler(private val className: String, private val dispatcher: Dispat
         jobId = JobId()
         val msg = DispatchJob(
             jobId = jobId!!,
-            jobName = JobName("$className::${method.name}"),
+            jobName = JobName("$className${Constants.METHOD_DIVIDER}${method.name}"),
             jobInput = JobInput(args?.map { SerializedData.from(it) } ?: listOf()),
-            jobMeta = JobMeta(mapOf("javaParameterTypes" to SerializedData.from(method.parameterTypes.map { it.name })))
+            jobMeta = JobMeta(mapOf(Constants.META_PARAMETER_TYPES to SerializedData.from(method.parameterTypes.map { it.name })))
         )
         dispatcher.toJobEngine(msg)
 

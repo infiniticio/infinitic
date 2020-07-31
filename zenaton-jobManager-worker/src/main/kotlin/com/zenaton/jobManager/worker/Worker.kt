@@ -1,6 +1,7 @@
 package com.zenaton.jobManager.worker
 
 import com.zenaton.common.data.SerializedData
+import com.zenaton.jobManager.common.Constants
 import com.zenaton.jobManager.common.data.JobAttemptError
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobOutput
@@ -17,19 +18,13 @@ import java.security.InvalidParameterException
 class Worker {
     lateinit var dispatcher: Dispatcher
 
-    companion object {
-        const val METHOD_DIVIDER = "::"
-        const val METHOD_DEFAULT = "handle"
-        const val META_PARAMETER_TYPES = "javaParameterTypes"
-    }
-
     private val registeredJobs = mutableMapOf<String, Any>()
 
     /**
      * With this method, user can register a job instance to use for a given name
      */
     fun register(name: String, job: Any): Worker {
-        if (name.contains(METHOD_DIVIDER)) throw InvalidParameterException("Job name \"$name\" must not contain the \"$METHOD_DIVIDER\" divider")
+        if (name.contains(Constants.METHOD_DIVIDER)) throw InvalidParameterException("Job name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider")
 
         registeredJobs[name] = job
 
@@ -60,11 +55,11 @@ class Worker {
     }
 
     private fun getClassAndMethodNames(msg: RunJob): List<String> {
-        val parts = msg.jobName.name.split(METHOD_DIVIDER)
+        val parts = msg.jobName.name.split(Constants.METHOD_DIVIDER)
         return when (parts.size) {
-            1 -> parts + METHOD_DEFAULT
+            1 -> parts + Constants.METHOD_DEFAULT
             2 -> parts
-            else -> throw InvalidParameterException("Job name \"$msg.jobName.name\" must not contain the $METHOD_DIVIDER divider more than once")
+            else -> throw InvalidParameterException("Job name \"$msg.jobName.name\" must not contain the ${Constants.METHOD_DIVIDER} divider more than once")
         }
     }
 
@@ -82,7 +77,7 @@ class Worker {
         }
     }
 
-    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.meta[META_PARAMETER_TYPES]?.fromJson<List<String>>()?.map { getClass(it) }?.toTypedArray()
+    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.meta[Constants.META_PARAMETER_TYPES]?.fromJson<List<String>>()?.map { getClass(it) }?.toTypedArray()
 
     private fun getClass(name: String) = when (name) {
         "bytes" -> Byte::class.java
