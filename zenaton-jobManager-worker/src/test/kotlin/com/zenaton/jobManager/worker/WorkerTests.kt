@@ -28,6 +28,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import java.nio.ByteBuffer
+import kotlin.random.Random
 
 class WorkerTests : StringSpec({
     val dispatcher = mockk<Dispatcher>()
@@ -47,15 +48,7 @@ class WorkerTests : StringSpec({
         val types = listOf(Int::class.java.name, String::class.java.name)
 
         // with
-        val msg = RunJob(
-            jobId = JobId(),
-            jobAttemptId = JobAttemptId(),
-            jobAttemptIndex = JobAttemptIndex(0),
-            jobAttemptRetry = JobAttemptRetry(0),
-            jobName = JobName(Test::class.java.name),
-            jobInput = JobInput(input),
-            jobMeta = JobMeta.forParameterTypes(types)
-        )
+        val msg = getRunJob(input, types)
         // when
         worker.handle(msg)
         // then
@@ -80,15 +73,8 @@ class WorkerTests : StringSpec({
         val types = listOf(Int::class.java.name, String::class.java.name)
 
         // with
-        val msg = RunJob(
-            jobId = JobId(),
-            jobAttemptId = JobAttemptId(),
-            jobAttemptIndex = JobAttemptIndex(0),
-            jobAttemptRetry = JobAttemptRetry(0),
-            jobName = JobName("${Test::class.java.name}::handle"),
-            jobInput = JobInput(input),
-            jobMeta = JobMeta.forParameterTypes(types)
-        )
+        val msg = getRunJob(input, types)
+
         // when
         worker.handle(msg)
         // then
@@ -113,3 +99,13 @@ private class Test {
     @Suppress("unused")
     fun handle(i: Int, j: String) = (i * j.toInt()).toString()
 }
+
+private fun getRunJob(input: List<SerializedData>, types: List<String>) = RunJob(
+    jobId = JobId(),
+    jobAttemptId = JobAttemptId(),
+    jobAttemptIndex = JobAttemptIndex(12),
+    jobAttemptRetry = JobAttemptRetry(7),
+    jobName = JobName(Test::class.java.name),
+    jobInput = JobInput(input),
+    jobMeta = JobMeta.forParameterTypes(types)
+)
