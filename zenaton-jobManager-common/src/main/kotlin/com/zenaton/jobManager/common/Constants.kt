@@ -4,6 +4,5 @@ class Constants {
     companion object {
         const val METHOD_DIVIDER = "::"
         const val METHOD_DEFAULT = "handle"
-        const val META_PARAMETER_TYPES = "javaParameterTypes"
     }
 }

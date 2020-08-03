@@ -75,8 +75,7 @@ class Worker {
         }
     }
 
-    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.meta[Constants.META_PARAMETER_TYPES]
-        ?.deserialize<List<String>>()
+    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.getParameterTypes()
         ?.map { getClass(it) }
         ?.toTypedArray()
 

@@ -2,6 +2,8 @@ package com.zenaton.common.data
 
 import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.common.json.Json
+import com.zenaton.jobManager.common.exceptions.MissingMetaJavaClassDuringDeserialization
+import com.zenaton.jobManager.common.exceptions.UnknownReturnClassDuringDeserialization
 import com.zenaton.jobManager.data.AvroSerializedDataType
 import org.apache.avro.specific.SpecificRecordBase
 import java.math.BigInteger
@@ -14,12 +16,16 @@ data class SerializedData(
     val meta: Map<String, ByteArray> = mapOf()
 ) {
     companion object {
+        // meta key containing the name of the serialized java class
+        const val META_JAVA_CLASS = "javaClass"
+
         /**
          * @return serialized value
          */
-        fun from(value: Any?, meta: Map<String, ByteArray> = mapOf()): SerializedData {
+        fun from(value: Any?): SerializedData {
             val bytes: ByteArray
             val type: AvroSerializedDataType
+            val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name.toByteArray(charset = Charsets.UTF_8))
 
             when (value) {
                 null -> {
@@ -48,7 +54,8 @@ data class SerializedData(
     }
 
     /**
-     * @return deserialize value
+     * @return deserialized value
+     * @param
      */
     fun deserialize(klass: Class<*>) = when (type) {
         AvroSerializedDataType.NULL -> null
@@ -59,10 +66,21 @@ data class SerializedData(
     }
 
     /**
-     * @return deserialize value
+     * @return deserialized value
      */
-    inline fun <reified T : Any> deserialize(): T? = deserialize(T::class.javaObjectType)?.let { it as T }
+    fun deserialize(): Any? {
+        val klassName = meta[META_JAVA_CLASS]?.let { String(it, charset = Charsets.UTF_8) }
+        if (klassName === null) throw MissingMetaJavaClassDuringDeserialization(this)
 
+        val klass = try {
+            Class.forName(klassName)
+        } catch (e: ClassNotFoundException) {
+            throw UnknownReturnClassDuringDeserialization(this, klassName)
+        }
+
+        return deserialize(klass)
+    }
+    
     fun hash(): String {
         // MD5 implementation
         val md = MessageDigest.getInstance("MD5")

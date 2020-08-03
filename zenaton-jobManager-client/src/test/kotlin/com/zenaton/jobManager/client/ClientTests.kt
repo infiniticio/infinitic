@@ -94,7 +94,7 @@ class ClientTests : StringSpec({
 private fun getAvroSerializedDataFromJson(str: String) = AvroSerializedData.newBuilder()
     .setBytes(ByteBuffer.wrap(str.toByteArray()))
     .setType(AvroSerializedDataType.JSON)
-    .setMeta(mapOf())
+    .setMeta(mapOf( ))
     .build()
 
 private fun getAvroSerializedDataFromNull() = AvroSerializedData.newBuilder()
