@@ -80,7 +80,7 @@ data class SerializedData(
 
         return deserialize(klass)
     }
-    
+
     fun hash(): String {
         // MD5 implementation
         val md = MessageDigest.getInstance("MD5")
@@ -93,7 +93,10 @@ data class SerializedData(
 
         other as SerializedData
 
-        return (type == other.type && bytes.contentEquals(other.bytes))
+        if (!bytes.contentEquals(other.bytes)) return false
+        if (type != other.type) return false
+
+        return true
     }
 
     override fun hashCode(): Int {
