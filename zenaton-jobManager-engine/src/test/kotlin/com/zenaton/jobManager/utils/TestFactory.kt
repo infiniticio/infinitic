@@ -1,6 +1,7 @@
 package com.zenaton.jobManager.utils
 
 import com.zenaton.common.data.SerializedData
+import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -28,12 +29,7 @@ object TestFactory {
             .overrideDefaultInitialization(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) {
-                SerializedData.from(
-                    "test",
-                    mapOf("metakey" to "metavalue".toByteArray(charset = Charsets.UTF_8))
-                )
-            }
+            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).nextPrintableString(10)) }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })

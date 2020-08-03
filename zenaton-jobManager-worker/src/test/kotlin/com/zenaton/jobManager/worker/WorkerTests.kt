@@ -9,6 +9,10 @@ import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobMeta
 import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.data.JobOutput
+import com.zenaton.jobManager.common.messages.ForJobEngineMessage
+import com.zenaton.jobManager.common.messages.JobAttemptCompleted
+import com.zenaton.jobManager.common.messages.JobAttemptStarted
 import com.zenaton.jobManager.common.messages.RunJob
 import com.zenaton.jobManager.data.AvroSerializedData
 import com.zenaton.jobManager.data.AvroSerializedDataType
@@ -26,12 +30,12 @@ import io.mockk.mockk
 import java.nio.ByteBuffer
 
 class WorkerTests : StringSpec({
-    val avroDispatcher = mockk<AvroDispatcher>()
-    val slots = mutableListOf<AvroEnvelopeForJobEngine>()
-    every { avroDispatcher.toJobEngine(capture(slots)) } just Runs
+    val dispatcher = mockk<Dispatcher>()
+    val slots = mutableListOf<ForJobEngineMessage>()
+    every { dispatcher.toJobEngine(capture(slots)) } just Runs
 
-    val worker = AvroWorker()
-    worker.avroDispatcher = avroDispatcher
+    val worker = Worker()
+    worker.dispatcher = dispatcher
 
     // ensure slots are emptied between each test
     beforeTest {
@@ -40,7 +44,7 @@ class WorkerTests : StringSpec({
 
     "Should be able to run a default method with 2 parameters" {
         val input = listOf(2, "3").map { SerializedData.from(it) }
-        val types = Test::class.java.methods.filter { it.name == "handle" }[0].parameterTypes.map { it.name }
+        val types = listOf(Int::class.java.name, String::class.java.name)
 
         // with
         val msg = RunJob(
@@ -50,30 +54,30 @@ class WorkerTests : StringSpec({
             jobAttemptRetry = JobAttemptRetry(0),
             jobName = JobName(Test::class.java.name),
             jobInput = JobInput(input),
-            jobMeta = JobMeta(mapOf("javaParameterTypes" to SerializedData.from(types)))
+            jobMeta = JobMeta.forParameterTypes(types)
         )
         // when
-        worker.handle(AvroConverter.addEnvelopeToWorkerMessage(AvroConverter.toAvroMessage(msg)))
+        worker.handle(msg)
         // then
-        AvroConverter.removeEnvelopeFromJobEngineMessage(slots[0]) shouldBe AvroJobAttemptStarted.newBuilder()
-            .setJobId(msg.jobId.id)
-            .setJobAttemptId(msg.jobAttemptId.id)
-            .setJobAttemptIndex(msg.jobAttemptIndex.int)
-            .setJobAttemptRetry(msg.jobAttemptRetry.int)
-            .build()
+        slots[0] shouldBe JobAttemptStarted(
+            jobId = msg.jobId,
+            jobAttemptId = msg.jobAttemptId,
+            jobAttemptIndex = msg.jobAttemptIndex,
+            jobAttemptRetry = msg.jobAttemptRetry
+        )
 
-        AvroConverter.removeEnvelopeFromJobEngineMessage(slots[1]) shouldBe AvroJobAttemptCompleted.newBuilder()
-            .setJobId(msg.jobId.id)
-            .setJobAttemptId(msg.jobAttemptId.id)
-            .setJobAttemptIndex(msg.jobAttemptIndex.int)
-            .setJobAttemptRetry(msg.jobAttemptRetry.int)
-            .setJobOutput(getAvroSerializedDataFromJson("\"6\""))
-            .build()
+        slots[1] shouldBe JobAttemptCompleted(
+            jobId = msg.jobId,
+            jobAttemptId = msg.jobAttemptId,
+            jobAttemptIndex = msg.jobAttemptIndex,
+            jobAttemptRetry = msg.jobAttemptRetry,
+            jobOutput = JobOutput(SerializedData.from("6"))
+        )
     }
 
     "Should be able to run an explicit method with 2 parameters" {
         val input = listOf(3, "3").map { SerializedData.from(it) }
-        val types = Test::class.java.methods.filter { it.name == "handle" }[0].parameterTypes.map { it.name }
+        val types = listOf(Int::class.java.name, String::class.java.name)
 
         // with
         val msg = RunJob(
@@ -83,34 +87,29 @@ class WorkerTests : StringSpec({
             jobAttemptRetry = JobAttemptRetry(0),
             jobName = JobName("${Test::class.java.name}::handle"),
             jobInput = JobInput(input),
-            jobMeta = JobMeta(mapOf("javaParameterTypes" to SerializedData.from(types)))
+            jobMeta = JobMeta.forParameterTypes(types)
         )
         // when
-        worker.handle(AvroConverter.addEnvelopeToWorkerMessage(AvroConverter.toAvroMessage(msg)))
+        worker.handle(msg)
         // then
-        AvroConverter.removeEnvelopeFromJobEngineMessage(slots[0]) shouldBe AvroJobAttemptStarted.newBuilder()
-            .setJobId(msg.jobId.id)
-            .setJobAttemptId(msg.jobAttemptId.id)
-            .setJobAttemptIndex(msg.jobAttemptIndex.int)
-            .setJobAttemptRetry(msg.jobAttemptRetry.int)
-            .build()
+        slots[0] shouldBe JobAttemptStarted(
+            jobId = msg.jobId,
+            jobAttemptId = msg.jobAttemptId,
+            jobAttemptIndex = msg.jobAttemptIndex,
+            jobAttemptRetry = msg.jobAttemptRetry
+        )
 
-        AvroConverter.removeEnvelopeFromJobEngineMessage(slots[1]) shouldBe AvroJobAttemptCompleted.newBuilder()
-            .setJobId(msg.jobId.id)
-            .setJobAttemptId(msg.jobAttemptId.id)
-            .setJobAttemptIndex(msg.jobAttemptIndex.int)
-            .setJobAttemptRetry(msg.jobAttemptRetry.int)
-            .setJobOutput(getAvroSerializedDataFromJson("\"9\""))
-            .build()
+        slots[1] shouldBe JobAttemptCompleted(
+            jobId = msg.jobId,
+            jobAttemptId = msg.jobAttemptId,
+            jobAttemptIndex = msg.jobAttemptIndex,
+            jobAttemptRetry = msg.jobAttemptRetry,
+            jobOutput = JobOutput(SerializedData.from("9"))
+        )
     }
 })
 
 private class Test {
+    @Suppress("unused")
     fun handle(i: Int, j: String) = (i * j.toInt()).toString()
 }
-
-private fun getAvroSerializedDataFromJson(str: String) = AvroSerializedData.newBuilder()
-    .setBytes(ByteBuffer.wrap(str.toByteArray()))
-    .setType(AvroSerializedDataType.JSON)
-    .setMeta(mapOf())
-    .build()
