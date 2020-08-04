@@ -28,7 +28,6 @@ import io.mockk.just
 import io.mockk.mockk
 import org.slf4j.Logger
 
-
 private val mockLogger = mockk<Logger>(relaxed = true)
 
 private val taskEngine = AvroJobEngine()
@@ -154,9 +153,10 @@ private fun catchTaskCompletion(msg: AvroEnvelopeForJobEngine): AvroEnvelopeForW
         AvroTaskCompleted.newBuilder()
             .setTaskId(job.jobId)
             .setTaskOutput(job.jobOutput)
-            .setWorkflowId(job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]
-                ?.let { AvroJobConverter.fromAvroSerializedData(it) }
-                ?.deserialize() as String
+            .setWorkflowId(
+                job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]
+                    ?.let { AvroJobConverter.fromAvroSerializedData(it) }
+                    ?.deserialize() as String
             )
             .build()
     )
@@ -170,9 +170,10 @@ private fun catchDecisionCompletion(msg: AvroEnvelopeForJobEngine): AvroEnvelope
         AvroDecisionCompleted.newBuilder()
             .setDecisionId(job.jobId)
             .setDecisionOutput(job.jobOutput)
-            .setWorkflowId(job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]
-                ?.let { AvroJobConverter.fromAvroSerializedData(it) }
-                ?.deserialize() as String
+            .setWorkflowId(
+                job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]
+                    ?.let { AvroJobConverter.fromAvroSerializedData(it) }
+                    ?.deserialize() as String
             )
             .build()
     )
