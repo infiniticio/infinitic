@@ -5,13 +5,19 @@ import com.zenaton.jobManager.common.Constants
 import com.zenaton.jobManager.common.data.JobAttemptError
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobOutput
+import com.zenaton.jobManager.common.exceptions.ClassNotFoundDuringJobInstantiation
+import com.zenaton.jobManager.common.exceptions.ErrorDuringJobInstantiation
+import com.zenaton.jobManager.common.exceptions.InvalidUseOfDividerInJobName
+import com.zenaton.jobManager.common.exceptions.MultipleUseOfDividerInJobName
+import com.zenaton.jobManager.common.exceptions.NoMethodFoundWithParameterCount
+import com.zenaton.jobManager.common.exceptions.NoMethodFoundWithParameterTypes
+import com.zenaton.jobManager.common.exceptions.TooManyMethodsFoundWithParameterCount
 import com.zenaton.jobManager.common.messages.ForWorkerMessage
 import com.zenaton.jobManager.common.messages.JobAttemptCompleted
 import com.zenaton.jobManager.common.messages.JobAttemptFailed
 import com.zenaton.jobManager.common.messages.JobAttemptStarted
 import com.zenaton.jobManager.common.messages.RunJob
 import java.lang.reflect.Method
-import java.security.InvalidParameterException
 
 class Worker {
     lateinit var dispatcher: Dispatcher
@@ -21,8 +27,9 @@ class Worker {
     /**
      * With this method, user can register a job instance to use for a given name
      */
+    @Suppress("unused")
     fun register(name: String, job: Any): Worker {
-        if (name.contains(Constants.METHOD_DIVIDER)) throw InvalidParameterException("Job name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider")
+        if (name.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInJobName(name)
 
         registeredJobs[name] = job
 
@@ -57,7 +64,7 @@ class Worker {
         return when (parts.size) {
             1 -> parts + Constants.METHOD_DEFAULT
             2 -> parts
-            else -> throw InvalidParameterException("Job name \"$msg.jobName.name\" must not contain the ${Constants.METHOD_DIVIDER} divider more than once")
+            else -> throw MultipleUseOfDividerInJobName(msg.jobName.name)
         }
     }
 
@@ -71,7 +78,7 @@ class Worker {
         return try {
             klass.newInstance()
         } catch (e: Exception) {
-            throw InstantiationError("Impossible to instantiate job \"$name\" - please use \"register\" method to provide an instance")
+            throw ErrorDuringJobInstantiation(name)
         }
     }
 
@@ -92,17 +99,22 @@ class Worker {
             try {
                 Class.forName(name)
             } catch (e: ClassNotFoundException) {
-                throw ClassNotFoundException("Impossible to find a Class associated to job \"$name\" - please use \"register\" method to provide an instance")
+                throw ClassNotFoundDuringJobInstantiation(name)
             }
     }
 
     private fun getMethod(job: Any, methodName: String, parameterCount: Int, parameterTypes: Array<Class<*>>?): Method {
         // Case where parameter types have been provided
-        if (parameterTypes != null) return job::class.java.getMethod(methodName, *parameterTypes)
+        if (parameterTypes != null) return try {
+            job::class.java.getMethod(methodName, *parameterTypes)
+        } catch (e: NoSuchMethodException) {
+            throw NoMethodFoundWithParameterTypes(job::class.java.name, methodName, parameterTypes.map { it.name })
+        }
 
         // if not, hopefully there is only one method with this name
         val methods = job::class.javaObjectType.methods.filter { it.name == methodName && it.parameterCount == parameterCount }
-        if (methods.size != 1) throw Exception("Unable to decide which method \"$methodName\" to use in \"${job::class}\" job")
+        if (methods.isEmpty()) throw NoMethodFoundWithParameterCount(job::class.java.name, methodName, parameterCount)
+        if (methods.size > 1) throw TooManyMethodsFoundWithParameterCount(job::class.java.name, methodName, parameterCount)
 
         return methods[0]
     }

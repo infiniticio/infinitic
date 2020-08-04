@@ -1,7 +1,6 @@
 package com.zenaton.jobManager.worker
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.common.data.JobAttemptId
 import com.zenaton.jobManager.common.data.JobAttemptIndex
 import com.zenaton.jobManager.common.data.JobAttemptRetry
@@ -14,21 +13,12 @@ import com.zenaton.jobManager.common.messages.ForJobEngineMessage
 import com.zenaton.jobManager.common.messages.JobAttemptCompleted
 import com.zenaton.jobManager.common.messages.JobAttemptStarted
 import com.zenaton.jobManager.common.messages.RunJob
-import com.zenaton.jobManager.data.AvroSerializedData
-import com.zenaton.jobManager.data.AvroSerializedDataType
-import com.zenaton.jobManager.messages.AvroJobAttemptCompleted
-import com.zenaton.jobManager.messages.AvroJobAttemptStarted
-import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
-import com.zenaton.jobManager.worker.avro.AvroDispatcher
-import com.zenaton.jobManager.worker.avro.AvroWorker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import java.nio.ByteBuffer
-import kotlin.random.Random
 
 class WorkerTests : StringSpec({
     val dispatcher = mockk<Dispatcher>()
@@ -46,7 +36,6 @@ class WorkerTests : StringSpec({
     "Should be able to run a default method with 2 parameters" {
         val input = listOf(2, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
-
         // with
         val msg = getRunJob(input, types)
         // when
@@ -58,7 +47,6 @@ class WorkerTests : StringSpec({
             jobAttemptIndex = msg.jobAttemptIndex,
             jobAttemptRetry = msg.jobAttemptRetry
         )
-
         slots[1] shouldBe JobAttemptCompleted(
             jobId = msg.jobId,
             jobAttemptId = msg.jobAttemptId,
@@ -71,10 +59,8 @@ class WorkerTests : StringSpec({
     "Should be able to run an explicit method with 2 parameters" {
         val input = listOf(3, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
-
         // with
         val msg = getRunJob(input, types)
-
         // when
         worker.handle(msg)
         // then
@@ -84,7 +70,6 @@ class WorkerTests : StringSpec({
             jobAttemptIndex = msg.jobAttemptIndex,
             jobAttemptRetry = msg.jobAttemptRetry
         )
-
         slots[1] shouldBe JobAttemptCompleted(
             jobId = msg.jobId,
             jobAttemptId = msg.jobAttemptId,
