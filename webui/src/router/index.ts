@@ -44,16 +44,17 @@ const routes: Array<RouteConfig> = [
       import(/* webpackChunkName: "tasks" */ "../views/Tasks.vue"),
     meta: {
       requiresConnection: true
-    },
-    children: [
-      {
-        path: ":id",
-        name: "TaskDetails",
-        component: () =>
-          import(/* webpackChunkName: "tasks" */ "../views/TaskDetails.vue"),
-        props: true
-      }
-    ]
+    }
+  },
+  {
+    path: "/tasks/:id",
+    name: "TaskDetails",
+    component: () =>
+      import(/* webpackChunkName: "tasks" */ "../views/TaskDetails.vue"),
+    props: true,
+    meta: {
+      requiresConnection: true
+    }
   },
   {
     path: "/settings",
