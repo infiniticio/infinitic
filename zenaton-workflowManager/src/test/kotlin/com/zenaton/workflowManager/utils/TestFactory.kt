@@ -6,6 +6,7 @@ import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.actions.ActionId
 import com.zenaton.workflowManager.data.steps.AvroStepCriterion
 import com.zenaton.workflowManager.data.steps.StepCriterion
+import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -33,12 +34,7 @@ object TestFactory {
             .overrideDefaultInitialization(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) {
-                SerializedData.from(
-                    "test",
-                    mapOf("metakey" to "metavalue".toByteArray(charset = Charsets.UTF_8))
-                )
-            }
+            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).nextPrintableString(10)) }
             .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStepCriterion(randomStepCriterion()) }
 
         values?.forEach {

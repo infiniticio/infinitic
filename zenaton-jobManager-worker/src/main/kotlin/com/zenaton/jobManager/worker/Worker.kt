@@ -1,35 +1,35 @@
 package com.zenaton.jobManager.worker
 
 import com.zenaton.common.data.SerializedData
+import com.zenaton.jobManager.common.Constants
 import com.zenaton.jobManager.common.data.JobAttemptError
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobOutput
+import com.zenaton.jobManager.common.exceptions.ClassNotFoundDuringJobInstantiation
+import com.zenaton.jobManager.common.exceptions.ErrorDuringJobInstantiation
+import com.zenaton.jobManager.common.exceptions.InvalidUseOfDividerInJobName
+import com.zenaton.jobManager.common.exceptions.MultipleUseOfDividerInJobName
+import com.zenaton.jobManager.common.exceptions.NoMethodFoundWithParameterCount
+import com.zenaton.jobManager.common.exceptions.NoMethodFoundWithParameterTypes
+import com.zenaton.jobManager.common.exceptions.TooManyMethodsFoundWithParameterCount
 import com.zenaton.jobManager.common.messages.ForWorkerMessage
 import com.zenaton.jobManager.common.messages.JobAttemptCompleted
 import com.zenaton.jobManager.common.messages.JobAttemptFailed
 import com.zenaton.jobManager.common.messages.JobAttemptStarted
 import com.zenaton.jobManager.common.messages.RunJob
-import com.zenaton.jobManager.data.AvroSerializedDataType
-import org.apache.avro.specific.SpecificRecordBase
 import java.lang.reflect.Method
-import java.security.InvalidParameterException
 
 class Worker {
     lateinit var dispatcher: Dispatcher
-
-    companion object {
-        const val METHOD_DIVIDER = "::"
-        const val METHOD_DEFAULT = "handle"
-        const val META_PARAMETER_TYPES = "javaParameterTypes"
-    }
 
     private val registeredJobs = mutableMapOf<String, Any>()
 
     /**
      * With this method, user can register a job instance to use for a given name
      */
+    @Suppress("unused")
     fun register(name: String, job: Any): Worker {
-        if (name.contains(METHOD_DIVIDER)) throw InvalidParameterException("Job name \"$name\" must not contain the \"$METHOD_DIVIDER\" divider")
+        if (name.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInJobName(name)
 
         registeredJobs[name] = job
 
@@ -60,11 +60,11 @@ class Worker {
     }
 
     private fun getClassAndMethodNames(msg: RunJob): List<String> {
-        val parts = msg.jobName.name.split(METHOD_DIVIDER)
+        val parts = msg.jobName.name.split(Constants.METHOD_DIVIDER)
         return when (parts.size) {
-            1 -> parts + METHOD_DEFAULT
+            1 -> parts + Constants.METHOD_DEFAULT
             2 -> parts
-            else -> throw InvalidParameterException("Job name \"$msg.jobName.name\" must not contain the $METHOD_DIVIDER divider more than once")
+            else -> throw MultipleUseOfDividerInJobName(msg.jobName.name)
         }
     }
 
@@ -78,11 +78,13 @@ class Worker {
         return try {
             klass.newInstance()
         } catch (e: Exception) {
-            throw InstantiationError("Impossible to instantiate job \"$name\" - please use \"register\" method to provide an instance")
+            throw ErrorDuringJobInstantiation(name)
         }
     }
 
-    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.meta[META_PARAMETER_TYPES]?.fromJson<List<String>>()?.map { getClass(it) }?.toTypedArray()
+    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.getParameterTypes()
+        ?.map { getClass(it) }
+        ?.toTypedArray()
 
     private fun getClass(name: String) = when (name) {
         "bytes" -> Byte::class.java
@@ -97,17 +99,22 @@ class Worker {
             try {
                 Class.forName(name)
             } catch (e: ClassNotFoundException) {
-                throw ClassNotFoundException("Impossible to find a Class associated to job \"$name\" - please use \"register\" method to provide an instance")
+                throw ClassNotFoundDuringJobInstantiation(name)
             }
     }
 
     private fun getMethod(job: Any, methodName: String, parameterCount: Int, parameterTypes: Array<Class<*>>?): Method {
         // Case where parameter types have been provided
-        if (parameterTypes != null) return job::class.java.getMethod(methodName, *parameterTypes)
+        if (parameterTypes != null) return try {
+            job::class.java.getMethod(methodName, *parameterTypes)
+        } catch (e: NoSuchMethodException) {
+            throw NoMethodFoundWithParameterTypes(job::class.java.name, methodName, parameterTypes.map { it.name })
+        }
 
         // if not, hopefully there is only one method with this name
         val methods = job::class.javaObjectType.methods.filter { it.name == methodName && it.parameterCount == parameterCount }
-        if (methods.size != 1) throw Exception("Unable to decide which method \"$methodName\" to use in \"${job::class}\" job")
+        if (methods.isEmpty()) throw NoMethodFoundWithParameterCount(job::class.java.name, methodName, parameterCount)
+        if (methods.size > 1) throw TooManyMethodsFoundWithParameterCount(job::class.java.name, methodName, parameterCount)
 
         return methods[0]
     }
@@ -115,13 +122,7 @@ class Worker {
     private fun getParameters(input: JobInput, parameterTypes: Array<Class<*>>): Array<Any?> {
         return input.input.mapIndexed {
             index, serializedData ->
-            when (serializedData.type) {
-                AvroSerializedDataType.NULL -> null
-                AvroSerializedDataType.BYTES -> serializedData.bytes
-                AvroSerializedDataType.JSON -> serializedData.fromJson(parameterTypes[index])
-                AvroSerializedDataType.AVRO -> serializedData.fromAvro(parameterTypes[index] as Class<out SpecificRecordBase>)
-                else -> throw Exception("Can't deserialize data with CUSTOM serialization")
-            }
+            serializedData.deserialize(parameterTypes[index])
         }.toTypedArray()
     }
 

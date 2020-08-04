@@ -25,10 +25,10 @@ internal class JobInputBuilderTests : StringSpec({
         // then
         val input = out.input
         input.size shouldBe 5
-        input[0].isNull() shouldBe true
-        input[1].fromJson<JobEngineState>() shouldBe state
-        input[2].fromBytes() shouldBe bytes
-        ByteBuffer.wrap(input[3].fromBytes()) shouldBe buffer
-        input[4].fromAvro<AvroJobEngineState>() shouldBe avro
+        input[0].deserialize() shouldBe null
+        input[1].deserialize() shouldBe state
+        input[2].deserialize() shouldBe bytes
+        input[3].deserialize() shouldBe buffer.array()
+        input[4].deserialize() shouldBe avro
     }
 })

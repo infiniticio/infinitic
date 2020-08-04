@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.client
 
 import com.zenaton.jobManager.client.data.Job
-import java.lang.Exception
+import com.zenaton.jobManager.common.exceptions.NoMethodCallAtDispatch
 import java.lang.reflect.Proxy
 
 class Client() {
@@ -22,6 +22,6 @@ class Client() {
         klass.method()
 
         // ask
-        return handler.getJob() ?: throw Exception("When dispatching, you did not provide a method call")
+        return handler.getJob() ?: throw NoMethodCallAtDispatch(T::class.java.name)
     }
 }
