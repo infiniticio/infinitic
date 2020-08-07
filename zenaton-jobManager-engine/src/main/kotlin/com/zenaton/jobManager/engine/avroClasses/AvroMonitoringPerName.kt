@@ -1,12 +1,12 @@
-package com.zenaton.jobManager.avroEngines
+package com.zenaton.jobManager.engine.avroClasses
 
 import com.zenaton.jobManager.common.avro.AvroConverter
-import com.zenaton.jobManager.dispatcher.Dispatcher
-import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
-import com.zenaton.jobManager.avroInterfaces.AvroStorage
+import com.zenaton.jobManager.engine.dispatcher.Dispatcher
+import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.engine.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import com.zenaton.jobManager.engines.MonitoringPerName
-import com.zenaton.jobManager.storages.MonitoringPerNameStorage
+import com.zenaton.jobManager.engine.engines.MonitoringPerName
+import com.zenaton.jobManager.engine.storages.MonitoringPerNameStorage
 import org.slf4j.Logger
 
 class AvroMonitoringPerName {
@@ -14,7 +14,7 @@ class AvroMonitoringPerName {
     lateinit var avroStorage: AvroStorage
     lateinit var avroDispatcher: AvroDispatcher
 
-    val monitoring = MonitoringPerName()
+    private val monitoring = MonitoringPerName()
 
     fun handle(input: AvroEnvelopeForMonitoringPerName) {
         monitoring.logger = logger

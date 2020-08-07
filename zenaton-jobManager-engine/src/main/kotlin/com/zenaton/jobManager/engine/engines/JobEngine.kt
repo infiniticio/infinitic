@@ -1,10 +1,10 @@
-package com.zenaton.jobManager.engines
+package com.zenaton.jobManager.engine.engines
 
 import com.zenaton.common.data.interfaces.plus
 import com.zenaton.jobManager.common.data.JobAttemptId
 import com.zenaton.jobManager.common.data.JobAttemptRetry
 import com.zenaton.jobManager.common.data.JobStatus
-import com.zenaton.jobManager.dispatcher.Dispatcher
+import com.zenaton.jobManager.engine.dispatcher.Dispatcher
 import com.zenaton.jobManager.common.messages.CancelJob
 import com.zenaton.jobManager.common.messages.DispatchJob
 import com.zenaton.jobManager.common.messages.ForJobEngineMessage
@@ -20,7 +20,7 @@ import com.zenaton.jobManager.common.messages.RetryJobAttempt
 import com.zenaton.jobManager.common.messages.RunJob
 import com.zenaton.jobManager.common.messages.interfaces.JobAttemptMessage
 import com.zenaton.jobManager.common.states.JobEngineState
-import com.zenaton.jobManager.storages.JobEngineStateStorage
+import com.zenaton.jobManager.engine.storages.JobEngineStateStorage
 import org.slf4j.Logger
 
 class JobEngine {
@@ -106,6 +106,7 @@ class JobEngine {
             jobInput = msg.jobInput,
             jobAttemptId = JobAttemptId(),
             jobStatus = JobStatus.RUNNING_OK,
+            jobOptions = msg.jobOptions,
             jobMeta = msg.jobMeta
         )
 
@@ -117,6 +118,7 @@ class JobEngine {
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
             jobInput = state.jobInput,
+            jobOptions = state.jobOptions,
             jobMeta = state.jobMeta
         )
         dispatcher.toWorkers(rt)
@@ -149,7 +151,8 @@ class JobEngine {
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
             jobInput = state.jobInput,
-            jobMeta = state.jobMeta
+            jobMeta = state.jobMeta,
+            jobOptions = state.jobOptions
         )
         dispatcher.toWorkers(rt)
 
@@ -179,6 +182,7 @@ class JobEngine {
             jobAttemptIndex = state.jobAttemptIndex,
             jobName = state.jobName,
             jobInput = state.jobInput,
+            jobOptions = state.jobOptions,
             jobMeta = state.jobMeta
         )
         dispatcher.toWorkers(rt)

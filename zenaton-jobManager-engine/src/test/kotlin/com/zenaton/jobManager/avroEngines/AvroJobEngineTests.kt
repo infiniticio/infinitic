@@ -1,5 +1,8 @@
 package com.zenaton.jobManager.avroEngines
 
+import com.zenaton.jobManager.engine.avroClasses.AvroJobEngine
+import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringGlobal
+import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringPerName
 import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.avroEngines.inMemory.InMemoryDispatcher
 import com.zenaton.jobManager.avroEngines.inMemory.InMemoryStorage

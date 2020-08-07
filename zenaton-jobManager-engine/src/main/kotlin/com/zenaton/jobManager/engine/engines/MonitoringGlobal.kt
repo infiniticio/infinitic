@@ -1,9 +1,9 @@
-package com.zenaton.jobManager.engines
+package com.zenaton.jobManager.engine.engines
 
 import com.zenaton.jobManager.common.messages.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.common.messages.JobCreated
 import com.zenaton.jobManager.common.states.MonitoringGlobalState
-import com.zenaton.jobManager.storages.MonitoringGlobalStorage
+import com.zenaton.jobManager.engine.storages.MonitoringGlobalStorage
 import org.slf4j.Logger
 
 class MonitoringGlobal {

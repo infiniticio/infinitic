@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.pulsar.functions
 
-import com.zenaton.jobManager.avroEngines.AvroMonitoringGlobal
+import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage
 import io.kotest.assertions.throwables.shouldThrow

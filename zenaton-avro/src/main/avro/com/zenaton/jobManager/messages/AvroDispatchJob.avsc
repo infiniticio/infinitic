@@ -20,6 +20,10 @@
       }
     },
     {
+      "name": "jobOptions",
+      "type": "com.zenaton.jobManager.data.AvroJobOptions"
+    },
+    {
       "name": "jobMeta",
       "type": {
         "type": "map",

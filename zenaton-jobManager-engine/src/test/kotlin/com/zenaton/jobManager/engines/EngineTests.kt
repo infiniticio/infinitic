@@ -2,7 +2,8 @@ package com.zenaton.jobManager.engines
 
 import com.zenaton.common.data.interfaces.plus
 import com.zenaton.jobManager.common.data.JobStatus
-import com.zenaton.jobManager.dispatcher.Dispatcher
+import com.zenaton.jobManager.engine.dispatcher.Dispatcher
+import com.zenaton.jobManager.engine.engines.JobEngine
 import com.zenaton.jobManager.common.messages.CancelJob
 import com.zenaton.jobManager.common.messages.DispatchJob
 import com.zenaton.jobManager.common.messages.ForJobEngineMessage
@@ -18,7 +19,7 @@ import com.zenaton.jobManager.common.messages.RetryJob
 import com.zenaton.jobManager.common.messages.RetryJobAttempt
 import com.zenaton.jobManager.common.messages.RunJob
 import com.zenaton.jobManager.common.states.JobEngineState
-import com.zenaton.jobManager.storages.JobEngineStateStorage
+import com.zenaton.jobManager.engine.storages.JobEngineStateStorage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

@@ -19,7 +19,7 @@ import com.zenaton.jobManager.common.messages.JobAttemptStarted
 import com.zenaton.jobManager.common.messages.RunJob
 import java.lang.reflect.Method
 
-class Worker {
+open class Worker {
     lateinit var dispatcher: Dispatcher
 
     private val registeredJobs = mutableMapOf<String, Any>()

@@ -1,12 +1,12 @@
-package com.zenaton.jobManager.engines
+package com.zenaton.jobManager.engine.engines
 
 import com.zenaton.jobManager.common.data.JobStatus
-import com.zenaton.jobManager.dispatcher.Dispatcher
+import com.zenaton.jobManager.engine.dispatcher.Dispatcher
 import com.zenaton.jobManager.common.messages.ForMonitoringPerNameMessage
 import com.zenaton.jobManager.common.messages.JobCreated
 import com.zenaton.jobManager.common.messages.JobStatusUpdated
 import com.zenaton.jobManager.common.states.MonitoringPerNameState
-import com.zenaton.jobManager.storages.MonitoringPerNameStorage
+import com.zenaton.jobManager.engine.storages.MonitoringPerNameStorage
 import org.slf4j.Logger
 
 class MonitoringPerName {

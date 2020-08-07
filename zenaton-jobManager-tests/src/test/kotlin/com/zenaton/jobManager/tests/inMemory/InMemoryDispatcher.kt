@@ -1,16 +1,17 @@
-package com.zenaton.jobManager.avroEngines.inMemory
+package com.zenaton.jobManager.tests.inMemory
 
-import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher as AvroEngineDispatcher
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
+import com.zenaton.jobManager.worker.avroInterfaces.AvroDispatcher as AvroWorkerDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-internal class InMemoryDispatcher : AvroDispatcher {
-    // Here we favor lambda to avoid a direct dependency with engines'instances
+internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher {
+    // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var jobEngineHandle: (msg: AvroEnvelopeForJobEngine) -> Unit
     lateinit var monitoringPerNameHandle: (msg: AvroEnvelopeForMonitoringPerName) -> Unit
     lateinit var monitoringGlobalHandle: (msg: AvroEnvelopeForMonitoringGlobal) -> Unit
@@ -25,6 +26,8 @@ internal class InMemoryDispatcher : AvroDispatcher {
             jobEngineHandle(msg)
         }
     }
+
+    override fun toJobEngine(msg: AvroEnvelopeForJobEngine) = toJobEngine(msg, 0F)
 
     override fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
         scope.launch {

@@ -1,8 +1,8 @@
-package com.zenaton.jobManager.avroEngines.inMemory
+package com.zenaton.jobManager.tests.inMemory
 
 import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.common.avro.AvroConverter
-import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.AvroJobAttemptCompleted
 import com.zenaton.jobManager.messages.AvroJobAttemptFailed
 import com.zenaton.jobManager.messages.AvroJobAttemptStarted

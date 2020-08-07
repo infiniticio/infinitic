@@ -1,6 +1,6 @@
 package com.zenaton.jobManager.pulsar.functions
 
-import com.zenaton.jobManager.avroEngines.AvroJobEngine
+import com.zenaton.jobManager.engine.avroClasses.AvroJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.pulsar.dispatcher.PulsarAvroDispatcher
 import com.zenaton.jobManager.pulsar.storage.PulsarAvroStorage

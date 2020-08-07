@@ -1,7 +1,7 @@
-package com.zenaton.jobManager.dispatcher
+package com.zenaton.jobManager.engine.dispatcher
 
 import com.zenaton.jobManager.common.avro.AvroConverter
-import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.common.messages.ForJobEngineMessage
 import com.zenaton.jobManager.common.messages.ForMonitoringGlobalMessage
 import com.zenaton.jobManager.common.messages.ForMonitoringPerNameMessage

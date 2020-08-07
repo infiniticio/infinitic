@@ -8,6 +8,7 @@ import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobMeta
 import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.data.JobOptions
 import com.zenaton.jobManager.common.data.JobOutput
 import com.zenaton.jobManager.common.messages.ForJobEngineMessage
 import com.zenaton.jobManager.common.messages.JobAttemptCompleted
@@ -92,5 +93,6 @@ private fun getRunJob(input: List<SerializedData>, types: List<String>) = RunJob
     jobAttemptRetry = JobAttemptRetry(7),
     jobName = JobName(Test::class.java.name),
     jobInput = JobInput(input),
-    jobMeta = JobMeta.forParameterTypes(types)
+    jobOptions = JobOptions(),
+    jobMeta = JobMeta().setParameterTypes(types)
 )

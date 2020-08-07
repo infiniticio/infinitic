@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.avroEngines.inMemory
+package com.zenaton.jobManager.tests.inMemory
 
 interface Job {
     fun handle()

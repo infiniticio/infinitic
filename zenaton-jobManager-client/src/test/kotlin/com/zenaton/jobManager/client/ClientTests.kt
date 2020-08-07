@@ -6,6 +6,7 @@ import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobMeta
 import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.data.JobOptions
 import com.zenaton.jobManager.common.messages.DispatchJob
 import com.zenaton.jobManager.common.messages.ForJobEngineMessage
 import io.kotest.core.spec.style.StringSpec
@@ -37,7 +38,8 @@ class ClientTests : StringSpec({
             jobId = job.jobId,
             jobInput = JobInput(listOf()),
             jobName = JobName("${FakeTask::class.java.name}::m1"),
-            jobMeta = JobMeta.forParameterTypes(listOf())
+            jobOptions = JobOptions(),
+            jobMeta = JobMeta().setParameterTypes(listOf())
         )
     }
 
@@ -51,7 +53,8 @@ class ClientTests : StringSpec({
             jobId = job.jobId,
             jobInput = JobInput(listOf(SerializedData.from(0))),
             jobName = JobName("${FakeTask::class.java.name}::m1"),
-            jobMeta = JobMeta.forParameterTypes(listOf(Int::class.java.name))
+            jobOptions = JobOptions(),
+            jobMeta = JobMeta().setParameterTypes(listOf(Int::class.java.name))
         )
     }
 
@@ -65,7 +68,8 @@ class ClientTests : StringSpec({
             jobId = job.jobId,
             jobInput = JobInput(listOf(SerializedData.from("a"))),
             jobName = JobName("${FakeTask::class.java.name}::m1"),
-            jobMeta = JobMeta.forParameterTypes(listOf(String::class.java.name))
+            jobOptions = JobOptions(),
+            jobMeta = JobMeta().setParameterTypes(listOf(String::class.java.name))
         )
     }
 
@@ -79,7 +83,8 @@ class ClientTests : StringSpec({
             jobId = job.jobId,
             jobInput = JobInput(listOf(SerializedData.from(0), SerializedData.from("a"))),
             jobName = JobName("${FakeTask::class.java.name}::m1"),
-            jobMeta = JobMeta.forParameterTypes(listOf(Int::class.java.name, String::class.java.name))
+            jobOptions = JobOptions(),
+            jobMeta = JobMeta().setParameterTypes(listOf(Int::class.java.name, String::class.java.name))
         )
     }
 
@@ -90,11 +95,13 @@ class ClientTests : StringSpec({
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
+
         msg shouldBe DispatchJob(
             jobId = job.jobId,
             jobInput = JobInput(listOf(SerializedData.from(jobId))),
             jobName = JobName("${FakeTask::class.java.name}::m1"),
-            jobMeta = JobMeta.forParameterTypes(listOf(IdInterface::class.java.name))
+            jobOptions = JobOptions(),
+            jobMeta = JobMeta().setParameterTypes(listOf(IdInterface::class.java.name))
         )
     }
 })

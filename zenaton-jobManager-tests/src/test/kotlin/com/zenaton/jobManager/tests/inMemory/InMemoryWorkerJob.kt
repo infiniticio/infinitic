@@ -1,10 +1,10 @@
-package com.zenaton.jobManager.avroEngines.inMemory
+package com.zenaton.jobManager.tests.inMemory
 
 import com.zenaton.jobManager.common.avro.AvroConverter
-import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
-import com.zenaton.jobManager.avroEngines.inMemory.InMemoryWorker.Status
+import com.zenaton.jobManager.tests.inMemory.InMemoryWorker.Status
 
 internal class InMemoryWorkerJob : InMemoryWorker {
     override lateinit var avroDispatcher: AvroDispatcher

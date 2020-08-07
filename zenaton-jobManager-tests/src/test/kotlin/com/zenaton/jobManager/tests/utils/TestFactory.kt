@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.utils
+package com.zenaton.jobManager.tests.utils
 
 import com.zenaton.common.data.SerializedData
 import io.kotest.properties.nextPrintableString
@@ -14,7 +14,7 @@ object TestFactory {
     private var seed = 0L
 
     fun seed(seed: Long): TestFactory {
-        this.seed = seed
+        TestFactory.seed = seed
 
         return this
     }
