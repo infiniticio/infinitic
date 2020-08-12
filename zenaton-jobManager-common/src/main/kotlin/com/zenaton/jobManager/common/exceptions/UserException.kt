@@ -7,11 +7,17 @@ import com.zenaton.common.json.Json
 import com.zenaton.jobManager.common.Constants
 import com.zenaton.jobManager.common.data.JobOptions
 
+/*
+ *  @JsonIgnoreProperties and @JsonProperty annotations are here
+ *  to allow correct JSON ser/deserialization through constructors
+ */
+
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 sealed class UserException(
     open val msg: String,
     open val help: String
-) : Exception("$msg\n$help")
+) : Exception("$msg. $help")
 
 open class UserExceptionInCommon(
     override val msg: String,
@@ -32,14 +38,19 @@ open class UserExceptionInWorker(
  * Exceptions in common
  ***********************/
 
-class MissingMetaJavaClassDuringDeserialization(data: SerializedData) : UserExceptionInCommon(
+class MissingMetaJavaClassDuringDeserialization(
+    @JsonProperty("data") val data: SerializedData
+) : UserExceptionInCommon(
     msg = "You can't deserialize SerializedData $data without explicitly providing return type if the data does not have one in its  \"${SerializedData.META_JAVA_CLASS}\" meta value",
     help = "Consider those options:\n" +
         "- update your data to include a \"${SerializedData.META_JAVA_CLASS}\" meta value describing the java class that should be used to deserialize your data\n" +
         "- update your code to use \"deserialize(klass: Class<*>)\" method"
 )
 
-class UnknownReturnClassDuringDeserialization(data: SerializedData, name: String) : UserExceptionInCommon(
+class UnknownReturnClassDuringDeserialization(
+    @JsonProperty("data") val data: SerializedData,
+    @JsonProperty("name") val name: String
+) : UserExceptionInCommon(
     msg = "The return type \"$name\$ provided in the \"${SerializedData.META_JAVA_CLASS}\" meta value of $data is not a known java class",
     help = "Consider those options:\n" +
         "- if needed, fix the \"${SerializedData.META_JAVA_CLASS}\" meta value describing the java class that should be used to deserialize your data\n" +
@@ -50,31 +61,54 @@ class UnknownReturnClassDuringDeserialization(data: SerializedData, name: String
  * Exceptions in client
  ***********************/
 
-class NoMethodCallAtDispatch(name: String) : UserExceptionInClient(
+class NoMethodCallAtDispatch(
+    @JsonProperty("name") val name: String
+) : UserExceptionInClient(
     msg = "None method of $name has been provided to dispatch",
     help = "Make sure you call a method of the provided interface within the curly braces - example: infinitic.dispatch<FooInterface> { barMethod(*args) }"
 )
 
-class MultipleMethodCallsAtDispatch(name: String) : UserExceptionInClient(
+class MultipleMethodCallsAtDispatch(
+    @JsonProperty("name") val name: String
+) : UserExceptionInClient(
     msg = "Only one method of $name can be dispatched at a time",
     help = "Make sure you call only one method of the provided interface within curly braces - multiple calls such as infinitic.dispatch<FooInterface> { barMethod(*args); bazMethod(*args) } is forbidden"
 )
 
-class ErrorDuringJsonSerializationOfParameter(parameterName: String, parameterValue: Any?, parameterType: String, methodName: String, className: String) : UserExceptionInClient(
+class ErrorDuringJsonSerializationOfParameter(
+    @JsonProperty("parameterName") val parameterName: String,
+    @JsonProperty("parameterValue") val parameterValue: Any?,
+    @JsonProperty("parameterType") val parameterType: String,
+    @JsonProperty("methodName") val methodName: String,
+    @JsonProperty("className") val className: String
+) : UserExceptionInClient(
     msg = "Error during Json serialization of parameter $parameterName of $className::$methodName with value $parameterValue",
     help = "We are using Jackson library per default to serialize object through the ${Json::class.java.name} wrapper. If an exception is thrown during serialization, please consider those options:\n" +
         "- modifying $parameterType to make it serializable by ${Json::class.java.name}\n" +
         "- replacing $parameterType per simpler parameters in $className::$methodName\n"
 )
 
-class ErrorDuringJsonDeserializationOfParameter(parameterName: String, parameterValue: Any?, parameterType: String, methodName: String, className: String) : UserExceptionInClient(
+class ErrorDuringJsonDeserializationOfParameter(
+    @JsonProperty("parameterName") val parameterName: String,
+    @JsonProperty("parameterValue") val parameterValue: Any?,
+    @JsonProperty("parameterType") val parameterType: String,
+    @JsonProperty("methodName") val methodName: String,
+    @JsonProperty("className") val className: String
+) : UserExceptionInClient(
     msg = "Error during Json de-serialization of parameter $parameterName of $className::$methodName with value $parameterValue",
     help = "We are using Jackson library per default to serialize/deserialize object through the ${Json::class.java.name} wrapper. If an exception is thrown during serialization or deserialization, please consider those options:\n" +
         "- modifying $parameterType to make it serializable by ${Json::class.java.name}\n" +
         "- replacing $parameterType per simpler parameters in $className::$methodName\n"
 )
 
-class InconsistentJsonSerializationOfParameter(parameterName: String, parameterValue: Any?, restoredValue: Any?, parameterType: String, methodName: String, className: String) : UserExceptionInClient(
+class InconsistentJsonSerializationOfParameter(
+    @JsonProperty("parameterName") val parameterName: String,
+    @JsonProperty("parameterValue") val parameterValue: Any?,
+    @JsonProperty("restoredValue") val restoredValue: Any?,
+    @JsonProperty("parameterType") val parameterType: String,
+    @JsonProperty("methodName") val methodName: String,
+    @JsonProperty("className") val className: String
+    ) : UserExceptionInClient(
     msg = "Serialization/Deserialization of parameter $parameterName of $className::$methodName is not consistent: value provided $parameterValue - value after serialization/deserialization $restoredValue",
     help = "We are using Jackson library per default to serialize/deserialize object through the ${Json::class.java.name} wrapper. If an exception is thrown during serialization or deserialization, consider those options:\n" +
         "- modifying $parameterType to make it serializable by ${Json::class.java.name}\n" +
@@ -162,11 +196,11 @@ class ProcessingTimeout(
 )
 
 class JobAttemptContextRetrievedOutsideOfProcessingThread() : UserExceptionInWorker(
-    msg = "Worker.getContext() can be used only in the same thread that invoked the task.",
+    msg = "Worker.getContext() can be used only in the same thread that invoked the task",
     help = "Check that your task do not try to retrieve its context from a new thread"
 )
 
 class JobAttemptContextSetFromExistingProcessingThread() : UserExceptionInWorker(
-    msg = "A same thread can not process multiple tasks concurrently.",
+    msg = "A same thread can not process multiple tasks concurrently",
     help = "Check that you do not use the same thread for multiple concurrent task processing"
 )
