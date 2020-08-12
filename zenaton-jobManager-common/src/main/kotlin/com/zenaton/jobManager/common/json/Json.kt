@@ -2,11 +2,13 @@ package com.zenaton.common.json
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.zenaton.jobManager.common.exceptions.UserException
 import org.apache.avro.specific.SpecificRecordBase
 
 object Json {
     val mapper = jacksonObjectMapper()
         .addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
+        .addMixIn(UserException::class.java, UserExceptionMixIn::class.java)
 
     // https://stackoverflow.com/questions/56742226/avro-generated-class-issue-with-json-conversion-kotlin
     abstract class AvroMixIn {
@@ -14,6 +16,11 @@ object Json {
         abstract fun getSchema(): org.apache.avro.Schema
         @JsonIgnore
         abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
+    }
+
+    abstract class UserExceptionMixIn {
+        @JsonIgnore
+        abstract fun getMessage(): String
     }
 
     fun stringify(msg: Any, pretty: Boolean = false): String = if (pretty) {

@@ -5,7 +5,7 @@ data class JobAttemptContext(
     val jobAttemptId: JobAttemptId,
     val jobAttemptIndex: JobAttemptIndex,
     val jobAttemptRetry: JobAttemptRetry,
-    val exception: Exception? = null,
-    val meta: JobMeta,
-    val options: JobOptions
+    var exception: Throwable? = null,
+    val jobMeta: JobMeta,
+    val jobOptions: JobOptions
 )
