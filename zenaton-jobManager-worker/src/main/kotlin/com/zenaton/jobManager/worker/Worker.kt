@@ -6,8 +6,9 @@ import com.zenaton.jobManager.common.data.JobAttemptError
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobOutput
 import com.zenaton.jobManager.common.exceptions.ClassNotFoundDuringJobInstantiation
-import com.zenaton.jobManager.common.exceptions.DelayBeforeRetryReturnTypeError
+import com.zenaton.jobManager.common.exceptions.RetryDelayHasWrongReturnType
 import com.zenaton.jobManager.common.exceptions.ErrorDuringJobInstantiation
+import com.zenaton.jobManager.common.exceptions.ExceptionDuringParametersDeserialization
 import com.zenaton.jobManager.common.exceptions.InvalidUseOfDividerInJobName
 import com.zenaton.jobManager.common.exceptions.JobAttemptContextRetrievedOutsideOfProcessingThread
 import com.zenaton.jobManager.common.exceptions.JobAttemptContextSetFromExistingProcessingThread
@@ -32,7 +33,9 @@ import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 
 open class Worker {
+
     lateinit var dispatcher: Dispatcher
+
     companion object {
 
         private val registeredTasks = ConcurrentHashMap<String, Any>()
@@ -59,11 +62,11 @@ open class Worker {
         /**
          * Use this method to retrieve JobAttemptContext associated to a task
          */
-        fun getContext(): JobAttemptContext? {
+        fun getContext(): JobAttemptContext {
             val key = getContextKey()
             if (! contexts.containsKey(key)) throw JobAttemptContextRetrievedOutsideOfProcessingThread()
 
-            return contexts[key]
+            return contexts[key]!!
         }
 
         private fun getContextKey() = Thread.currentThread().id
@@ -160,7 +163,7 @@ open class Worker {
                 // returning the original cause
                 failTask(msg, context.exception, delay.value, parentJob, contextKey)
             }
-            is RetryDelayRetrievalException -> {
+            is RetryDelayFailed -> {
                 // returning the error in getRetryDelay, without retry
                 failTask(msg, delay.e, null, parentJob, contextKey)
             }
@@ -194,7 +197,7 @@ open class Worker {
         val job = getTaskInstance(jobName)
         val parameterTypes = getMetaParameterTypes(msg)
         val method = getMethod(job, methodName, msg.jobInput.input.size, parameterTypes)
-        val parameters = getParameters(msg.jobInput, parameterTypes ?: method.parameterTypes)
+        val parameters = getParameters(job::class.java.name, methodName, msg.jobInput, parameterTypes ?: method.parameterTypes)
 
         return JobCommand(job, method, parameters, msg.jobOptions)
     }
@@ -259,11 +262,15 @@ open class Worker {
         return methods[0]
     }
 
-    private fun getParameters(input: JobInput, parameterTypes: Array<Class<*>>): Array<Any?> {
-        return input.input.mapIndexed {
-            index, serializedData ->
-            serializedData.deserialize(parameterTypes[index])
-        }.toTypedArray()
+    private fun getParameters(jobName: String, methodName: String, input: JobInput, parameterTypes: Array<Class<*>>): Array<Any?> {
+        return try {
+            input.input.mapIndexed {
+                index, serializedData ->
+                serializedData.deserialize(parameterTypes[index])
+            }.toTypedArray()
+        } catch (e: Exception) {
+            throw ExceptionDuringParametersDeserialization(jobName, methodName, input.input, parameterTypes.map { it.name })
+        }
     }
 
     private fun getDelayBeforeRetry(job: Any, context: JobAttemptContext): RetryDelayCommand {
@@ -275,14 +282,14 @@ open class Worker {
 
         val actualType = method.genericReturnType.typeName
         val expectedType = "float"
-        if (actualType != expectedType) return RetryDelayRetrievalException(
-            DelayBeforeRetryReturnTypeError(job::class.java.name, actualType, expectedType)
+        if (actualType != expectedType) return RetryDelayFailed(
+            RetryDelayHasWrongReturnType(job::class.java.name, actualType, expectedType)
         )
 
         return try {
             RetryDelayRetrieved(method.invoke(job, context) as Float?)
-        } catch (e: Exception) {
-            RetryDelayRetrievalException(e)
+        } catch (e: InvocationTargetException) {
+            RetryDelayFailed(e.cause)
         }
     }
 

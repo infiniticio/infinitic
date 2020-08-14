@@ -3,7 +3,7 @@ package com.zenaton.jobManager.worker
 import com.zenaton.jobManager.common.data.JobOptions
 import java.lang.reflect.Method
 
-data class JobCommand(
+internal data class JobCommand(
     val job: Any,
     val method: Method,
     val parameters: Array<Any?>,

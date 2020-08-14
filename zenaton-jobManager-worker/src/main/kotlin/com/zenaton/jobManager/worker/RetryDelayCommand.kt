@@ -1,7 +1,7 @@
 package com.zenaton.jobManager.worker
 
-sealed class RetryDelayCommand
+internal sealed class RetryDelayCommand
 
-data class RetryDelayRetrieved(val value: Float?) : RetryDelayCommand()
+internal data class RetryDelayRetrieved(val value: Float?) : RetryDelayCommand()
 
-data class RetryDelayRetrievalException(val e: Throwable) : RetryDelayCommand()
+internal data class RetryDelayFailed(val e: Throwable?) : RetryDelayCommand()

@@ -14,9 +14,11 @@ constructor(@get:JsonValue override val meta: MutableMap<String, SerializedData>
         fun builder() = JobMetaBuilder()
     }
 
-    fun setParameterTypes(types: List<String>, override: Boolean = false): JobMeta {
-        if (override || ! meta.containsKey(META_PARAMETER_TYPES)) {
-            meta[META_PARAMETER_TYPES] = SerializedData.from(types)
+    fun setParameterTypes(types: List<String>?, override: Boolean = false): JobMeta {
+        if (override || !meta.containsKey(META_PARAMETER_TYPES)) {
+            types?.let {
+                meta[META_PARAMETER_TYPES] = SerializedData.from(types)
+            }
         }
 
         return this

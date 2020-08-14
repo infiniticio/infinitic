@@ -12,24 +12,23 @@ import com.zenaton.jobManager.common.data.JobOptions
  *  to allow correct JSON ser/deserialization through constructors
  */
 
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 sealed class UserException(
     open val msg: String,
     open val help: String
-) : Exception("$msg. $help")
+) : Exception("$msg.\n$help")
 
-open class UserExceptionInCommon(
+sealed class UserExceptionInCommon(
     override val msg: String,
     override val help: String
 ) : UserException(msg, help)
 
-open class UserExceptionInClient(
+sealed class UserExceptionInClient(
     override val msg: String,
     override val help: String
 ) : UserException(msg, help)
 
-open class UserExceptionInWorker(
+sealed class UserExceptionInWorker(
     override val msg: String,
     override val help: String
 ) : UserException(msg, help)
@@ -108,7 +107,7 @@ class InconsistentJsonSerializationOfParameter(
     @JsonProperty("parameterType") val parameterType: String,
     @JsonProperty("methodName") val methodName: String,
     @JsonProperty("className") val className: String
-    ) : UserExceptionInClient(
+) : UserExceptionInClient(
     msg = "Serialization/Deserialization of parameter $parameterName of $className::$methodName is not consistent: value provided $parameterValue - value after serialization/deserialization $restoredValue",
     help = "We are using Jackson library per default to serialize/deserialize object through the ${Json::class.java.name} wrapper. If an exception is thrown during serialization or deserialization, consider those options:\n" +
         "- modifying $parameterType to make it serializable by ${Json::class.java.name}\n" +
@@ -178,7 +177,7 @@ class TooManyMethodsFoundWithParameterCount(
     help = ""
 )
 
-class DelayBeforeRetryReturnTypeError(
+class RetryDelayHasWrongReturnType(
     @JsonProperty("klass") val klass: String,
     @JsonProperty("actualType") val actualType: String,
     @JsonProperty("expectedType") val expectedType: String
@@ -195,12 +194,22 @@ class ProcessingTimeout(
     help = "You can increase (or remove entirely) this constraint in the options ${JobOptions::javaClass.name}"
 )
 
-class JobAttemptContextRetrievedOutsideOfProcessingThread() : UserExceptionInWorker(
+class JobAttemptContextRetrievedOutsideOfProcessingThread : UserExceptionInWorker(
     msg = "Worker.getContext() can be used only in the same thread that invoked the task",
     help = "Check that your task do not try to retrieve its context from a new thread"
 )
 
-class JobAttemptContextSetFromExistingProcessingThread() : UserExceptionInWorker(
+class JobAttemptContextSetFromExistingProcessingThread : UserExceptionInWorker(
     msg = "A same thread can not process multiple tasks concurrently",
     help = "Check that you do not use the same thread for multiple concurrent task processing"
+)
+
+class ExceptionDuringParametersDeserialization(
+    @JsonProperty("taskName") val taskName: String,
+    @JsonProperty("methodName") val methodName: String,
+    @JsonProperty("input") val input: List<SerializedData>,
+    @JsonProperty("parameterTypes") val parameterTypes: List<String>
+) : UserExceptionInWorker(
+    msg = "Impossible to deserialize input \"$input\" with types \"$parameterTypes\" for method \"$taskName::$methodName\"",
+    help = ""
 )

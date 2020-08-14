@@ -14,8 +14,12 @@ import com.zenaton.jobManager.common.data.JobOutput
 import com.zenaton.jobManager.common.exceptions.ClassNotFoundDuringJobInstantiation
 import com.zenaton.jobManager.common.exceptions.ErrorDuringJobInstantiation
 import com.zenaton.jobManager.common.exceptions.InvalidUseOfDividerInJobName
+import com.zenaton.jobManager.common.exceptions.JobAttemptContextRetrievedOutsideOfProcessingThread
 import com.zenaton.jobManager.common.exceptions.MultipleUseOfDividerInJobName
+import com.zenaton.jobManager.common.exceptions.NoMethodFoundWithParameterCount
 import com.zenaton.jobManager.common.exceptions.NoMethodFoundWithParameterTypes
+import com.zenaton.jobManager.common.exceptions.RetryDelayHasWrongReturnType
+import com.zenaton.jobManager.common.exceptions.TooManyMethodsFoundWithParameterCount
 import com.zenaton.jobManager.common.messages.ForJobEngineMessage
 import com.zenaton.jobManager.common.messages.JobAttemptCompleted
 import com.zenaton.jobManager.common.messages.JobAttemptFailed
@@ -29,12 +33,13 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
+import java.lang.IllegalStateException
 
 class WorkerTests : StringSpec({
     val dispatcher = mockk<Dispatcher>()
     val slots = mutableListOf<ForJobEngineMessage>()
     every { dispatcher.toJobEngine(capture(slots)) } just Runs
-    var worker = Worker()
+    val worker = Worker()
     worker.dispatcher = dispatcher
 
     // ensure slots are emptied between each test
@@ -67,7 +72,7 @@ class WorkerTests : StringSpec({
         val input = listOf(3, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
-        val msg = getRunJob(TestWithoutRetry::class.java.name, input, types)
+        val msg = getRunJob("${TestWithoutRetryAndExplicitMethod::class.java.name}::run", input, types)
         // when
         coroutineScope {
             worker.suspendingHandle(msg)
@@ -82,6 +87,27 @@ class WorkerTests : StringSpec({
             jobAttemptIndex = msg.jobAttemptIndex,
             jobAttemptRetry = msg.jobAttemptRetry,
             jobOutput = JobOutput(SerializedData.from("9"))
+        )
+    }
+
+    "Should be able to run an explicit method with 2 parameters without parameterTypes" {
+        val input = listOf(4, "3").map { SerializedData.from(it) }
+        // with
+        val msg = getRunJob("${TestWithoutRetryAndExplicitMethod::class.java.name}::run", input, null)
+        // when
+        coroutineScope {
+            worker.suspendingHandle(msg)
+        }
+
+        // then
+        slots[0] shouldBe getJobAttemptStarted(msg)
+
+        slots[1] shouldBe JobAttemptCompleted(
+            jobId = msg.jobId,
+            jobAttemptId = msg.jobAttemptId,
+            jobAttemptIndex = msg.jobAttemptIndex,
+            jobAttemptRetry = msg.jobAttemptRetry,
+            jobOutput = JobOutput(SerializedData.from("12"))
         )
     }
 
@@ -114,7 +140,7 @@ class WorkerTests : StringSpec({
         )
     }
 
-    "Should fail when trying to process an invalid task name " {
+    "Should throw MultipleUseOfDividerInJobName when trying to process an invalid task name " {
         val input = listOf(2, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -134,10 +160,11 @@ class WorkerTests : StringSpec({
         fail.jobAttemptId shouldBe msg.jobAttemptId
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
         (fail.jobAttemptError.error.deserialize() is MultipleUseOfDividerInJobName) shouldBe true
     }
 
-    "Should fail when trying to process an unknown task" {
+    "Should throw ClassNotFoundDuringJobInstantiation when trying to process an unknown task" {
         val input = listOf(2, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -159,10 +186,11 @@ class WorkerTests : StringSpec({
         fail.jobAttemptId shouldBe msg.jobAttemptId
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
         (fail.jobAttemptError.error.deserialize() is ClassNotFoundDuringJobInstantiation) shouldBe true
     }
 
-    "Should fail when if impossible to create new instance" {
+    "Should throw ErrorDuringJobInstantiation when if impossible to create new instance" {
         val input = listOf(2, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -182,10 +210,11 @@ class WorkerTests : StringSpec({
         fail.jobAttemptId shouldBe msg.jobAttemptId
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
         (fail.jobAttemptError.error.deserialize() is ErrorDuringJobInstantiation) shouldBe true
     }
 
-    "Should fail when trying to process an unknown method" {
+    "Should throw NoMethodFoundWithParameterTypes  when trying to process an unknown method" {
         val input = listOf(2, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -205,26 +234,187 @@ class WorkerTests : StringSpec({
         fail.jobAttemptId shouldBe msg.jobAttemptId
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
         (fail.jobAttemptError.error.deserialize() is NoMethodFoundWithParameterTypes) shouldBe true
+    }
+
+    "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
+        val input = listOf(2, "3").map { SerializedData.from(it) }
+        // with
+        val msg = getRunJob("${TestWithoutRetry::class.java.name}::unknown", input, null)
+
+        // when
+        coroutineScope {
+            worker.suspendingHandle(msg)
+        }
+
+        // then
+        slots[0] shouldBe getJobAttemptStarted(msg)
+
+        (slots[1] is JobAttemptFailed) shouldBe true
+        val fail = slots[1] as JobAttemptFailed
+        fail.jobId shouldBe msg.jobId
+        fail.jobAttemptId shouldBe msg.jobAttemptId
+        fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
+        fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
+        (fail.jobAttemptError.error.deserialize() is NoMethodFoundWithParameterCount) shouldBe true
+    }
+
+    "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
+        val input = listOf(2, "3").map { SerializedData.from(it) }
+        // with
+        val msg = getRunJob("${TestWithoutRetry::class.java.name}::handle", input, null)
+
+        // when
+        coroutineScope {
+            worker.suspendingHandle(msg)
+        }
+
+        // then
+        slots[0] shouldBe getJobAttemptStarted(msg)
+
+        (slots[1] is JobAttemptFailed) shouldBe true
+        val fail = slots[1] as JobAttemptFailed
+        fail.jobId shouldBe msg.jobId
+        fail.jobAttemptId shouldBe msg.jobAttemptId
+        fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
+        fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
+        (fail.jobAttemptError.error.deserialize() is TooManyMethodsFoundWithParameterCount) shouldBe true
+    }
+
+    "Should retry with correct exception" {
+        val input = listOf(2, "3").map { SerializedData.from(it) }
+        // with
+        val msg = getRunJob(TestWithRetry::class.java.name, input, null)
+
+        // when
+        coroutineScope {
+            worker.suspendingHandle(msg)
+        }
+
+        // then
+        slots[0] shouldBe getJobAttemptStarted(msg)
+
+        (slots[1] is JobAttemptFailed) shouldBe true
+        val fail = slots[1] as JobAttemptFailed
+        fail.jobId shouldBe msg.jobId
+        fail.jobAttemptId shouldBe msg.jobAttemptId
+        fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
+        fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe 3F
+        (fail.jobAttemptError.error.deserialize() is IllegalStateException) shouldBe true
+    }
+
+    "Should throw RetryDelayReturnTypeError when getRetryDelay has wrong return type" {
+        val input = listOf(2, "3").map { SerializedData.from(it) }
+        // with
+        val msg = getRunJob(TestWithBadRetryType::class.java.name, input, null)
+
+        // when
+        coroutineScope {
+            worker.suspendingHandle(msg)
+        }
+
+        // then
+        slots[0] shouldBe getJobAttemptStarted(msg)
+
+        (slots[1] is JobAttemptFailed) shouldBe true
+        val fail = slots[1] as JobAttemptFailed
+        fail.jobId shouldBe msg.jobId
+        fail.jobAttemptId shouldBe msg.jobAttemptId
+        fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
+        fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
+        (fail.jobAttemptError.error.deserialize() is RetryDelayHasWrongReturnType) shouldBe true
+    }
+
+    "Should throw when getRetryDelay throw an exception" {
+        val input = listOf(2, "3").map { SerializedData.from(it) }
+        // with
+        val msg = getRunJob(TestWithBuggyRetry::class.java.name, input, null)
+
+        // when
+        coroutineScope {
+            worker.suspendingHandle(msg)
+        }
+
+        // then
+        slots[0] shouldBe getJobAttemptStarted(msg)
+
+        (slots[1] is JobAttemptFailed) shouldBe true
+        val fail = slots[1] as JobAttemptFailed
+        fail.jobId shouldBe msg.jobId
+        fail.jobAttemptId shouldBe msg.jobAttemptId
+        fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
+        fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
+        (fail.jobAttemptError.error.deserialize() is IllegalArgumentException) shouldBe true
+    }
+
+    "Should be able to access context from task" {
+        val input = listOf(2, "3").map { SerializedData.from(it) }
+        // with
+        val msg = getRunJob(TestWithContext::class.java.name, input, null)
+
+        // when
+        coroutineScope {
+            worker.suspendingHandle(msg)
+        }
+
+        // then
+        slots[0] shouldBe getJobAttemptStarted(msg)
+
+        slots[1] shouldBe JobAttemptCompleted(
+            jobId = msg.jobId,
+            jobAttemptId = msg.jobAttemptId,
+            jobAttemptIndex = msg.jobAttemptIndex,
+            jobAttemptRetry = msg.jobAttemptRetry,
+            jobOutput = JobOutput(SerializedData.from("72"))
+        )
+    }
+
+    "Should throw when Worker.getContext() called outside of a processing thread " {
+        shouldThrow<JobAttemptContextRetrievedOutsideOfProcessingThread> {
+            Worker.getContext()
+        }
     }
 })
 
 internal class TestWithoutRetry {
-    @Suppress("unused")
-    fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+    @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+    @Suppress("unused") fun handle(i: Int, j: Int) = (i * j).toString()
+}
+
+internal class TestWithoutRetryAndExplicitMethod {
+    @Suppress("unused") fun run(i: Int, j: String) = (i * j.toInt()).toString()
 }
 
 internal class TestWithRetry {
-    @Suppress("unused")
-    fun handle(i: Int, j: String) = (i * j.toInt()).toString()
-    fun delayBeforeRetry(context: JobAttemptContext) = 3F
+    @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext) = if (context.exception is IllegalStateException) 3F else 0F
+}
+
+internal class TestWithBuggyRetry {
+    @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext) = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
+}
+
+internal class TestWithBadRetryType {
+    @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext) = 3
 }
 
 internal class TestWithConstructor(val value: String) {
-    fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+    @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt()).toString()
 }
 
-private fun getRunJob(name: String, input: List<SerializedData>, types: List<String>) = RunJob(
+internal class TestWithContext() {
+    @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt() * Worker.getContext().jobAttemptIndex.int).toString()
+}
+
+private fun getRunJob(name: String, input: List<SerializedData>, types: List<String>?) = RunJob(
     jobId = JobId(),
     jobAttemptId = JobAttemptId(),
     jobAttemptIndex = JobAttemptIndex(12),
