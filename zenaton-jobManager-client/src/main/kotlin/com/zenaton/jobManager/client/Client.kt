@@ -14,7 +14,7 @@ class Client() {
         meta: JobMeta = JobMeta(),
         method: T.() -> Any?
     ): Job {
-        // TODO: refactor to be able to use class instances also and not only interface
+        // TODO: using class instance instead of interface is not supported
         // handler will be where the actual job is done
         val handler = ProxyHandler(T::class.java.name, dispatcher, options, meta)
 

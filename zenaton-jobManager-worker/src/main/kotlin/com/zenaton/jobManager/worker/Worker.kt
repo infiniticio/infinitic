@@ -63,6 +63,7 @@ open class Worker {
         /**
          * Use this method to retrieve JobAttemptContext associated to a task
          */
+        // TODO: currently running task in coroutines (instead of Thread) is not supported (as Context is mapped to threadId)
         fun getContext(): JobAttemptContext {
             val key = getContextKey()
             if (! contexts.containsKey(key)) throw JobAttemptContextRetrievedOutsideOfProcessingThread()
@@ -167,10 +168,12 @@ open class Worker {
     private fun getRetryDelayAndFailTask(task: Any, msg: RunJob, parentJob: Job, contextKey: Long, context: JobAttemptContext) {
         when (val delay = getDelayBeforeRetry(task, context)) {
             is RetryDelayRetrieved -> {
+                println("delay=$delay")
                 // returning the original cause
                 failTask(msg, context.exception, delay.value, parentJob, contextKey)
             }
             is RetryDelayFailed -> {
+                println("delay=$delay")
                 // returning the error in getRetryDelay, without retry
                 failTask(msg, delay.e, null, parentJob, contextKey)
             }
@@ -253,6 +256,7 @@ open class Worker {
             }
     }
 
+    // TODO: currently method using "suspend" keywork are not supported
     private fun getMethod(job: Any, methodName: String, parameterCount: Int, parameterTypes: Array<Class<*>>?): Method {
         // Case where parameter types have been provided
         if (parameterTypes != null) return try {
@@ -280,6 +284,7 @@ open class Worker {
         }
     }
 
+    // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
     private fun getDelayBeforeRetry(job: Any, context: JobAttemptContext): RetryDelayCommand {
         val method = try {
             job::class.java.getMethod(Constants.DELAY_BEFORE_RETRY_METHOD, JobAttemptContext::class.java)
@@ -288,7 +293,7 @@ open class Worker {
         }
 
         val actualType = method.genericReturnType.typeName
-        val expectedType = "float"
+        val expectedType = Float::class.javaObjectType.name
         if (actualType != expectedType) return RetryDelayFailed(
             RetryDelayHasWrongReturnType(job::class.java.name, actualType, expectedType)
         )

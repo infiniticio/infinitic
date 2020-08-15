@@ -448,12 +448,12 @@ internal class TestWithoutRetryAndExplicitMethod {
 
 internal class TestWithRetry {
     @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext) = if (context.exception is IllegalStateException) 3F else 0F
+    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext): Float? = if (context.exception is IllegalStateException) 3F else 0F
 }
 
 internal class TestWithBuggyRetry {
     @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext) = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
+    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext): Float?  = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
 }
 
 internal class TestWithBadRetryType {

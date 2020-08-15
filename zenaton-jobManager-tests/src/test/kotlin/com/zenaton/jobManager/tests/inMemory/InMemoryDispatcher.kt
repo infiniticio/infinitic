@@ -1,5 +1,6 @@
 package com.zenaton.jobManager.tests.inMemory
 
+import com.zenaton.jobManager.client.avroInterfaces.AvroDispatcher as AvroClientDispatcher
 import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher as AvroEngineDispatcher
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
@@ -10,7 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher {
+internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher, AvroClientDispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var jobEngineHandle: (msg: AvroEnvelopeForJobEngine) -> Unit
     lateinit var monitoringPerNameHandle: (msg: AvroEnvelopeForMonitoringPerName) -> Unit

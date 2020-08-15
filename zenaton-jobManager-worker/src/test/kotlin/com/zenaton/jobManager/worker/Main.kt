@@ -1,5 +1,8 @@
 package com.zenaton.jobManager.worker
 
 fun main() {
-    println(TestWithSuspend::class.java.methods.filter { it.name == "handle" }.first())
+    val m = TestWithRetry::class.java.methods.find { it.name == "getRetryDelay"}
+
+    println(Float::class.javaObjectType.name)
+    println(m!!.returnType.typeName)
 }

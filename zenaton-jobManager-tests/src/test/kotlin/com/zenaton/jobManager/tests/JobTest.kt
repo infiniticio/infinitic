@@ -1,17 +1,42 @@
 package com.zenaton.jobManager.tests
 
-class JobTest {
+import com.zenaton.jobManager.common.data.JobAttemptContext
+import com.zenaton.jobManager.worker.Worker
+
+interface JobTest {
+    fun log(i: Int): String
+}
+
+class JobTestImpl {
     lateinit var behavior: (index: Int, retry: Int) -> Status
 
-    enum class Status {
-        COMPLETED,
-        FAILED_WITH_RETRY,
-        FAILED_WITHOUT_RETRY
+    companion object {
+        var log = ""
     }
 
-//    fun mult(i: Int, j: String) = when (behavior(avro)) {
-//        InMemoryWorker.Status.COMPLETED -> (i * j.toInt()).toString()
-//        InMemoryWorker.Status.FAILED_WITH_RETRY -> sendJobFailed(avro, Exception("Will Try Again"), 0.1F)
-//        InMemoryWorker.Status.FAILED_WITHOUT_RETRY -> sendJobFailed(avro, Exception("Job Failed"))
-//    }
+    fun log(i: Int): String {
+        log += i
+
+        val context = Worker.getContext()
+        when (behavior(context.jobAttemptIndex.int, context.jobAttemptRetry.int)) {
+            Status.SUCCESS -> log += "END"
+            Status.TIMEOUT_WITH_RETRY, Status.TIMEOUT_WITHOUT_RETRY -> Thread.sleep(1000)
+            Status.FAILED_WITH_RETRY, Status.FAILED_WITHOUT_RETRY -> throw Exception()
+        }
+
+        return i.toString()
+    }
+
+    fun getRetryDelay(context: JobAttemptContext): Float? = when (behavior(context.jobAttemptIndex.int, context.jobAttemptRetry.int)) {
+        Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> 0F
+        else -> null
+    }
+}
+
+enum class Status {
+    SUCCESS,
+    TIMEOUT_WITH_RETRY,
+    TIMEOUT_WITHOUT_RETRY,
+    FAILED_WITH_RETRY,
+    FAILED_WITHOUT_RETRY
 }
