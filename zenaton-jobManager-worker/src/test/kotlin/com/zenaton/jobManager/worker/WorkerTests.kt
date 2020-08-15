@@ -18,6 +18,7 @@ import com.zenaton.jobManager.common.exceptions.JobAttemptContextRetrievedOutsid
 import com.zenaton.jobManager.common.exceptions.MultipleUseOfDividerInJobName
 import com.zenaton.jobManager.common.exceptions.NoMethodFoundWithParameterCount
 import com.zenaton.jobManager.common.exceptions.NoMethodFoundWithParameterTypes
+import com.zenaton.jobManager.common.exceptions.ProcessingTimeout
 import com.zenaton.jobManager.common.exceptions.RetryDelayHasWrongReturnType
 import com.zenaton.jobManager.common.exceptions.TooManyMethodsFoundWithParameterCount
 import com.zenaton.jobManager.common.messages.ForJobEngineMessage
@@ -57,6 +58,8 @@ class WorkerTests : StringSpec({
             worker.suspendingHandle(msg)
         }
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         slots[1] shouldBe JobAttemptCompleted(
@@ -79,6 +82,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         slots[1] shouldBe JobAttemptCompleted(
@@ -100,6 +105,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         slots[1] shouldBe JobAttemptCompleted(
@@ -129,6 +136,8 @@ class WorkerTests : StringSpec({
             worker.suspendingHandle(msg)
         }
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         slots[1] shouldBe JobAttemptCompleted(
@@ -152,6 +161,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -161,7 +172,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe null
-        (fail.jobAttemptError.error.deserialize() is MultipleUseOfDividerInJobName) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe MultipleUseOfDividerInJobName::class.java.name
     }
 
     "Should throw ClassNotFoundDuringJobInstantiation when trying to process an unknown task" {
@@ -178,6 +189,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -187,7 +200,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe null
-        (fail.jobAttemptError.error.deserialize() is ClassNotFoundDuringJobInstantiation) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe ClassNotFoundDuringJobInstantiation::class.java.name
     }
 
     "Should throw ErrorDuringJobInstantiation when if impossible to create new instance" {
@@ -202,6 +215,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -211,7 +226,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe null
-        (fail.jobAttemptError.error.deserialize() is ErrorDuringJobInstantiation) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe ErrorDuringJobInstantiation::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterTypes  when trying to process an unknown method" {
@@ -226,6 +241,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -235,7 +252,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe null
-        (fail.jobAttemptError.error.deserialize() is NoMethodFoundWithParameterTypes) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe NoMethodFoundWithParameterTypes::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -249,6 +266,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -258,7 +277,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe null
-        (fail.jobAttemptError.error.deserialize() is NoMethodFoundWithParameterCount) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe NoMethodFoundWithParameterCount::class.java.name
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -272,6 +291,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -281,7 +302,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe null
-        (fail.jobAttemptError.error.deserialize() is TooManyMethodsFoundWithParameterCount) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe TooManyMethodsFoundWithParameterCount::class.java.name
     }
 
     "Should retry with correct exception" {
@@ -295,6 +316,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -304,7 +327,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe 3F
-        (fail.jobAttemptError.error.deserialize() is IllegalStateException) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe IllegalStateException::class.java.name
     }
 
     "Should throw RetryDelayReturnTypeError when getRetryDelay has wrong return type" {
@@ -318,6 +341,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -327,7 +352,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe null
-        (fail.jobAttemptError.error.deserialize() is RetryDelayHasWrongReturnType) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe RetryDelayHasWrongReturnType::class.java.name
     }
 
     "Should throw when getRetryDelay throw an exception" {
@@ -341,6 +366,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         (slots[1] is JobAttemptFailed) shouldBe true
@@ -350,7 +377,7 @@ class WorkerTests : StringSpec({
         fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
         fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
         fail.jobAttemptDelayBeforeRetry shouldBe null
-        (fail.jobAttemptError.error.deserialize() is IllegalArgumentException) shouldBe true
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe IllegalArgumentException::class.java.name
     }
 
     "Should be able to access context from task" {
@@ -364,6 +391,8 @@ class WorkerTests : StringSpec({
         }
 
         // then
+        slots.size shouldBe 2
+
         slots[0] shouldBe getJobAttemptStarted(msg)
 
         slots[1] shouldBe JobAttemptCompleted(
@@ -379,6 +408,32 @@ class WorkerTests : StringSpec({
         shouldThrow<JobAttemptContextRetrievedOutsideOfProcessingThread> {
             Worker.getContext()
         }
+    }
+
+    "Should throw ProcessingTimeout if processing time is too long" {
+        val types = listOf(Int::class.java.name, String::class.java.name)
+        val input = listOf(2, "3").map { SerializedData.from(it) }
+        // with
+        val msg = getRunJob(TestWithTimeout::class.java.name, input, types)
+
+        // when
+        coroutineScope {
+            worker.suspendingHandle(msg)
+        }
+
+        // then
+        slots.size shouldBe 2
+
+        slots[0] shouldBe getJobAttemptStarted(msg)
+
+        (slots[1] is JobAttemptFailed) shouldBe true
+        val fail = slots[1] as JobAttemptFailed
+        fail.jobId shouldBe msg.jobId
+        fail.jobAttemptId shouldBe msg.jobAttemptId
+        fail.jobAttemptIndex shouldBe msg.jobAttemptIndex
+        fail.jobAttemptRetry shouldBe msg.jobAttemptRetry
+        fail.jobAttemptDelayBeforeRetry shouldBe null
+        fail.jobAttemptError.error.deserialize()!!::class.java.name shouldBe ProcessingTimeout::class.java.name
     }
 })
 
@@ -414,6 +469,18 @@ internal class TestWithContext() {
     @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt() * Worker.getContext().jobAttemptIndex.int).toString()
 }
 
+internal class TestWithTimeout() {
+    @Suppress("unused") fun handle(i: Int, j: String): String {
+        Thread.sleep(400)
+
+        return (i * j.toInt() * Worker.getContext().jobAttemptIndex.int).toString()
+    }
+}
+
+internal class TestWithSuspend() {
+    @Suppress("unused") suspend fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+}
+
 private fun getRunJob(name: String, input: List<SerializedData>, types: List<String>?) = RunJob(
     jobId = JobId(),
     jobAttemptId = JobAttemptId(),
@@ -421,7 +488,7 @@ private fun getRunJob(name: String, input: List<SerializedData>, types: List<Str
     jobAttemptRetry = JobAttemptRetry(7),
     jobName = JobName(name),
     jobInput = JobInput(input),
-    jobOptions = JobOptions(runningTimeout = 2F),
+    jobOptions = JobOptions(runningTimeout = .2F),
     jobMeta = JobMeta().setParameterTypes(types)
 )
 

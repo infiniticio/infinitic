@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.lang.reflect.InvocationTargetException
@@ -130,16 +131,22 @@ open class Worker {
                             }
 
                             val output = method.invoke(task, *parameters)
-
-                            completeTask(msg, output, parentJob, contextKey)
+                            // isActive below checks that the coroutine has not been canceled by timeout
+                            if (isActive) {
+                                completeTask(msg, output, parentJob, contextKey)
+                            }
                         } catch (e: InvocationTargetException) {
-                            // update context with the cause (to be potentially used in getRetryDelay method)
-                            context.exception = e.cause
-                            // retrieve delay before retry
-                            getRetryDelayAndFailTask(task, msg, parentJob, contextKey, context)
+                            if (isActive) {
+                                // update context with the cause (to be potentially used in getRetryDelay method)
+                                context.exception = e.cause
+                                // retrieve delay before retry
+                                getRetryDelayAndFailTask(task, msg, parentJob, contextKey, context)
+                            }
                         } catch (e: Exception) {
-                            // returning the exception (no retry)
-                            failTask(msg, e, null, parentJob, contextKey)
+                            if (isActive) {
+                                // returning the exception (no retry)
+                                failTask(msg, e, null, parentJob, contextKey)
+                            }
                         }
                     }
                 }.join()
