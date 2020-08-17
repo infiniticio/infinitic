@@ -5,14 +5,10 @@ import com.zenaton.jobManager.client.Dispatcher
 import com.zenaton.jobManager.engine.avroClasses.AvroJobEngine
 import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringGlobal
 import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringPerName
-import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.common.data.Job
+import com.zenaton.jobManager.data.AvroJobStatus
 import com.zenaton.jobManager.tests.inMemory.InMemoryDispatcher
 import com.zenaton.jobManager.tests.inMemory.InMemoryStorage
-import com.zenaton.jobManager.messages.AvroCancelJob
-import com.zenaton.jobManager.messages.AvroDispatchJob
-import com.zenaton.jobManager.messages.AvroRetryJob
-import com.zenaton.jobManager.tests.utils.TestFactory
 import com.zenaton.jobManager.worker.Worker
 import com.zenaton.jobManager.worker.avroClasses.AvroWorker
 import io.kotest.core.spec.style.StringSpec
@@ -30,6 +26,8 @@ private val monitoringGlobal = AvroMonitoringGlobal()
 private val worker = AvroWorker()
 private val dispatcher = InMemoryDispatcher()
 private val storage = InMemoryStorage()
+
+private lateinit var status: AvroJobStatus
 
 class AvroEngineTests : StringSpec({
     val jobTest = JobTestImpl()
@@ -50,7 +48,9 @@ class AvroEngineTests : StringSpec({
             j = client.dispatch<JobTest> { log() }
         }
         // check that job is terminated
-        storage.isTerminated(j)
+        storage.isTerminated(j) shouldBe true
+        // check that job is completed
+        status shouldBe AvroJobStatus.TERMINATED_COMPLETED
         // checks number of job processing
         JobTestImpl.log shouldBe "1"
     }
@@ -64,7 +64,9 @@ class AvroEngineTests : StringSpec({
             j = client.dispatch<JobTest> { log() }
         }
         // check that job is terminated
-        storage.isTerminated(j)
+        storage.isTerminated(j) shouldBe true
+        // check that job is completed
+        status shouldBe AvroJobStatus.TERMINATED_COMPLETED
         // checks number of job processing
         JobTestImpl.log shouldBe "0001"
     }
@@ -77,8 +79,10 @@ class AvroEngineTests : StringSpec({
             dispatcher.scope = this
             j = client.dispatch<JobTest> { log() }
         }
+        // check that job is not terminated
+        storage.isTerminated(j) shouldBe false
         // check that job is failed
-        storage.isFailed(j)
+        status shouldBe AvroJobStatus.RUNNING_ERROR
         // checks number of job processing
         JobTestImpl.log shouldBe "0"
     }
@@ -91,8 +95,10 @@ class AvroEngineTests : StringSpec({
             dispatcher.scope = this
             j = client.dispatch<JobTest> { log() }
         }
+        // check that job is not terminated
+        storage.isTerminated(j) shouldBe false
         // check that job is failed
-        storage.isFailed(j)
+        status shouldBe AvroJobStatus.RUNNING_ERROR
         // checks number of job processing
         JobTestImpl.log shouldBe "0000"
     }
@@ -113,6 +119,8 @@ class AvroEngineTests : StringSpec({
         }
         // check that job is terminated
         storage.isTerminated(j)
+        // check that job is completed
+        status shouldBe AvroJobStatus.TERMINATED_COMPLETED
         // checks number of job processing
         JobTestImpl.log shouldBe "0000001"
     }
@@ -128,8 +136,10 @@ class AvroEngineTests : StringSpec({
             delay(100)
             client.cancel(id = j.jobId.id)
         }
-        // check that job is completed
+        // check that job is terminated
         storage.isTerminated(j)
+        // check that job is completed
+        status shouldBe AvroJobStatus.TERMINATED_CANCELED
     }
 }) {
     init {
@@ -156,21 +166,12 @@ class AvroEngineTests : StringSpec({
 
         dispatcher.apply {
             jobEngineHandle = { jobEngine.handle(it) }
-            monitoringPerNameHandle = { monitoringPerName.handle(it) }
+            monitoringPerNameHandle = { avro ->
+                monitoringPerName.handle(avro)
+                avro.jobStatusUpdated?.let { status = it.newStatus }
+            }
             monitoringGlobalHandle = { monitoringGlobal.handle(it) }
             workerHandle = { worker.handle(it) }
         }
     }
 }
-
-private fun getAvroDispatchJob() = AvroConverter.addEnvelopeToJobEngineMessage(
-    TestFactory.random(AvroDispatchJob::class, mapOf("jobName" to "JobA"))
-)
-
-private fun getAvroRetryJob(id: String) = AvroConverter.addEnvelopeToJobEngineMessage(
-    TestFactory.random(AvroRetryJob::class, mapOf("jobId" to id))
-)
-
-private fun getAvroCancelJob(id: String) = AvroConverter.addEnvelopeToJobEngineMessage(
-    TestFactory.random(AvroCancelJob::class, mapOf("jobId" to id))
-)
