@@ -354,6 +354,8 @@ internal class AvroJobEngineTests : StringSpec({
         val o = engineHandle(stateIn, msgIn)
         checkShouldRetryJobAttempt(msgIn, stateIn, o)
     }
+
+    // TODO: add tests for retryJob with non-null parameters
 })
 
 private fun checkShouldDoNothing(o: EngineResults) {

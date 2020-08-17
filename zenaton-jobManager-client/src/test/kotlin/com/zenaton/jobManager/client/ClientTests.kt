@@ -104,6 +104,10 @@ class ClientTests : StringSpec({
             jobMeta = JobMeta().setParameterTypes(listOf(IdInterface::class.java.name))
         )
     }
+
+    // TODO: add tests for cancel method
+
+    // TODO: add tests for retry method
 })
 
 private interface FakeTask {
