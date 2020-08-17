@@ -1,5 +1,7 @@
 package com.zenaton.jobManager.tests.inMemory
 
+import com.zenaton.jobManager.common.data.Job
+import com.zenaton.jobManager.data.AvroJobStatus
 import com.zenaton.jobManager.engine.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
@@ -9,6 +11,14 @@ internal class InMemoryStorage : AvroStorage {
     var jobEngineStore: Map<String, AvroJobEngineState> = mapOf()
     var monitoringPerNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var monitoringGlobalStore: AvroMonitoringGlobalState? = null
+
+    fun isTerminated(job: Job): Boolean {
+        return jobEngineStore[job.jobId.id] == null
+    }
+
+    fun isFailed(job: Job): Boolean {
+        return jobEngineStore[job.jobId.id]?.jobStatus == AvroJobStatus.RUNNING_ERROR
+    }
 
     fun reset() {
         jobEngineStore = mapOf()

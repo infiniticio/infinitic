@@ -192,7 +192,15 @@ internal class AvroJobEngineTests : StringSpec({
                 "jobStatus" to JobStatus.RUNNING_ERROR
             )
         )
-        val msgIn = retryJob(mapOf("jobId" to stateIn.jobId))
+        val msgIn = retryJob(
+            mapOf(
+                "jobId" to stateIn.jobId,
+                "jobName" to null,
+                "jobInput" to null,
+                "jobMeta" to null,
+                "jobOptions" to null
+            )
+        )
         val o = engineHandle(stateIn, msgIn)
         verifyAll {
             o.storage.getState(msgIn.jobId)

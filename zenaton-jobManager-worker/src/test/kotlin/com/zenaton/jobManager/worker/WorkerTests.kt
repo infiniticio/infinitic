@@ -406,7 +406,7 @@ class WorkerTests : StringSpec({
 
     "Should throw when Worker.getContext() called outside of a processing thread " {
         shouldThrow<JobAttemptContextRetrievedOutsideOfProcessingThread> {
-            Worker.getContext()
+            Worker.context
         }
     }
 
@@ -453,7 +453,7 @@ internal class TestWithRetry {
 
 internal class TestWithBuggyRetry {
     @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext): Float?  = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
+    @Suppress("unused") fun getRetryDelay(context: JobAttemptContext): Float? = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
 }
 
 internal class TestWithBadRetryType {
@@ -466,14 +466,14 @@ internal class TestWithConstructor(val value: String) {
 }
 
 internal class TestWithContext() {
-    @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt() * Worker.getContext().jobAttemptIndex.int).toString()
+    @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt() * Worker.context.jobAttemptIndex.int).toString()
 }
 
 internal class TestWithTimeout() {
     @Suppress("unused") fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
-        return (i * j.toInt() * Worker.getContext().jobAttemptIndex.int).toString()
+        return (i * j.toInt() * Worker.context.jobAttemptIndex.int).toString()
     }
 }
 

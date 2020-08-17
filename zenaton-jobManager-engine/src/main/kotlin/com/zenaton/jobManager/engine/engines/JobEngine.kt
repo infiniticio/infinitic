@@ -56,8 +56,8 @@ class JobEngine {
             if (oldState == null)
                 dispatchJob(message as DispatchJob)
             else when (message) {
-                is CancelJob -> cancelJob(oldState)
-                is RetryJob -> retryJob(oldState)
+                is CancelJob -> cancelJob(oldState, message)
+                is RetryJob -> retryJob(oldState, message)
                 is RetryJobAttempt -> retryJobAttempt(oldState)
                 is JobAttemptFailed -> jobAttemptFailed(oldState, message)
                 is JobAttemptCompleted -> jobAttemptCompleted(oldState, message)
@@ -82,12 +82,13 @@ class JobEngine {
         }
     }
 
-    private fun cancelJob(oldState: JobEngineState): JobEngineState {
+    private fun cancelJob(oldState: JobEngineState, msg: CancelJob): JobEngineState {
         val state = oldState.copy(jobStatus = JobStatus.TERMINATED_CANCELED)
 
         // log event
         val tad = JobCanceled(
             jobId = state.jobId,
+            jobOutput = msg.jobOutput,
             jobMeta = state.jobMeta
         )
         dispatcher.toJobEngine(tad)
@@ -135,12 +136,16 @@ class JobEngine {
         return state
     }
 
-    private fun retryJob(oldState: JobEngineState): JobEngineState {
+    private fun retryJob(oldState: JobEngineState, msg: RetryJob): JobEngineState {
         val state = oldState.copy(
             jobStatus = JobStatus.RUNNING_WARNING,
             jobAttemptId = JobAttemptId(),
             jobAttemptRetry = JobAttemptRetry(0),
-            jobAttemptIndex = oldState.jobAttemptIndex + 1
+            jobAttemptIndex = oldState.jobAttemptIndex + 1,
+            jobName = msg.jobName ?: oldState.jobName,
+            jobInput = msg.jobInput ?: oldState.jobInput,
+            jobOptions = msg.jobOptions ?: oldState.jobOptions,
+            jobMeta = msg.jobMeta ?: oldState.jobMeta
         )
 
         // send job to workers

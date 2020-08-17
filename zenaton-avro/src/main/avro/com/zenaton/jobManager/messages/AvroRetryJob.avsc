@@ -7,6 +7,44 @@
       "name": "jobId",
       "type": "string",
       "logicalType": "uuid"
+    },
+    {
+      "name": "jobName",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "jobInput",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "com.zenaton.jobManager.data.AvroSerializedData"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "jobOptions",
+      "type": [
+        "null",
+        "com.zenaton.jobManager.data.AvroJobOptions"
+      ],
+      "default": null
+    },
+    {
+      "name": "jobMeta",
+      "type": [
+        "null",
+        {
+          "type": "map",
+          "values": "com.zenaton.jobManager.data.AvroSerializedData"
+        }
+      ],
+      "default": null
     }
   ]
 }

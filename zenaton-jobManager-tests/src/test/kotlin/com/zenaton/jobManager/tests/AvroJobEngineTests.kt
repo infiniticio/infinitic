@@ -7,7 +7,6 @@ import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringGlobal
 import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringPerName
 import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.common.data.Job
-import com.zenaton.jobManager.data.AvroJobStatus
 import com.zenaton.jobManager.tests.inMemory.InMemoryDispatcher
 import com.zenaton.jobManager.tests.inMemory.InMemoryStorage
 import com.zenaton.jobManager.messages.AvroCancelJob
@@ -20,6 +19,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import org.slf4j.Logger
 
 private val mockLogger = mockk<Logger>(relaxed = true)
@@ -32,8 +32,9 @@ private val dispatcher = InMemoryDispatcher()
 private val storage = InMemoryStorage()
 
 class AvroEngineTests : StringSpec({
-    val job = JobTestImpl()
-    Worker.register(JobTest::class.java.name, job)
+    val jobTest = JobTestImpl()
+    Worker.register<JobTest>(jobTest)
+    var j: Job
 
     beforeTest {
         storage.reset()
@@ -42,101 +43,94 @@ class AvroEngineTests : StringSpec({
 
     "Job succeeds at first try" {
         // job will succeed
-        job.behavior = { _, _ -> Status.SUCCESS }
+        jobTest.behavior = { _, _ -> Status.SUCCESS }
         // run system
         coroutineScope {
             dispatcher.scope = this
-            client.dispatch<JobTest> { log(1) }
+            j = client.dispatch<JobTest> { log() }
         }
+        // check that job is terminated
+        storage.isTerminated(j)
         // checks number of job processing
-        JobTestImpl.log shouldBe "1END"
+        JobTestImpl.log shouldBe "1"
     }
 
     "Job succeeds at 4th try" {
         // job will succeed only at the 4th try
-        job.behavior = { _ , retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS}
+        jobTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
         coroutineScope {
             dispatcher.scope = this
-            client.dispatch<JobTest> { log(1) }
+            j = client.dispatch<JobTest> { log() }
         }
+        // check that job is terminated
+        storage.isTerminated(j)
         // checks number of job processing
-        JobTestImpl.log shouldBe "1111END"
+        JobTestImpl.log shouldBe "0001"
     }
 
-    "Job fails" {
-        val j: Job
+    "Job fails at first try" {
         // job will succeed only at the 4th try
-        job.behavior = { _, _ -> Status.FAILED_WITHOUT_RETRY }
+        jobTest.behavior = { _, _ -> Status.FAILED_WITHOUT_RETRY }
         // run system
         coroutineScope {
             dispatcher.scope = this
-            j = client.dispatch<JobTest> { log(1) }
+            j = client.dispatch<JobTest> { log() }
         }
+        // check that job is failed
+        storage.isFailed(j)
         // checks number of job processing
-        JobTestImpl.log shouldBe "1"
-        // check that job is completed
-        storage.jobEngineStore[j.jobId.id]?.jobStatus shouldBe AvroJobStatus.RUNNING_ERROR
+        JobTestImpl.log shouldBe "0"
     }
 
     "Job fails after 4 tries " {
-        val j: Job
         // job will succeed only at the 4th try
-        job.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY }
+        jobTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY }
         // run system
         coroutineScope {
             dispatcher.scope = this
-            j = client.dispatch<JobTest> { log(1) }
+            j = client.dispatch<JobTest> { log() }
         }
+        // check that job is failed
+        storage.isFailed(j)
         // checks number of job processing
-        JobTestImpl.log shouldBe "1111"
-        // check that job is completed
-        storage.jobEngineStore[j.jobId.id]?.jobStatus shouldBe AvroJobStatus.RUNNING_ERROR
+        JobTestImpl.log shouldBe "0000"
     }
 
-//    "Job succeeds after manual retry" {
-//        // job will succeed only at the 4th try
-//        job.behavior = { index, retry ->
-//            if (index == 0)
-//                if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
-//            else
-//                Status.SUCCESS
-//        }
-//        // run system
-//        coroutineScope {
-//            dispatcher.scope = this
-//            j = client.dispatch<JobTest> { log(1) }
-//        }
-//        // checks number of job processing
-//        JobTestImpl.log shouldBe "1111"
-//        // run system
-//        val dispatch = getAvroDispatchJob()
-//        val retry = getAvroRetryJob(dispatch.jobId)
-//        coroutineScope {
-//            dispatcher.scope = this
-//            dispatcher.toJobEngine(dispatch)
-//            delay(100)
-//            dispatcher.toJobEngine(retry)
-//        }
-//        // check that job is completed
-//        storage.jobEngineStore[dispatch.jobId] shouldBe null
-//    }
-//
-//    "Job canceled during automatic retry" {
-//        // job will succeed only at the 4th try
-//        worker.behavior = { Status.FAILED_WITH_RETRY }
-//        // run system
-//        val dispatch = getAvroDispatchJob()
-//        val retry = getAvroCancelJob(dispatch.jobId)
-//        coroutineScope {
-//            dispatcher.scope = this
-//            dispatcher.toJobEngine(dispatch)
-//            delay(100)
-//            dispatcher.toJobEngine(retry)
-//        }
-//        // check that job is canceled
-//        storage.jobEngineStore[dispatch.jobId] shouldBe null
-//    }
+    "Job succeeds after manual retry" {
+        // job will succeed only at the 4th try
+        jobTest.behavior = { index, retry ->
+            if (index == 0)
+                if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
+            else if (retry < 2) Status.FAILED_WITH_RETRY else Status.SUCCESS
+        }
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            j = client.dispatch<JobTest> { log() }
+            delay(100)
+            client.retry(id = j.jobId.id)
+        }
+        // check that job is terminated
+        storage.isTerminated(j)
+        // checks number of job processing
+        JobTestImpl.log shouldBe "0000001"
+    }
+
+    "Job canceled during automatic retry" {
+        // job will succeed only at the 4th try
+        jobTest.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
+        // run system
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            j = client.dispatch<JobTest> { log() }
+            delay(100)
+            client.cancel(id = j.jobId.id)
+        }
+        // check that job is completed
+        storage.isTerminated(j)
+    }
 }) {
     init {
         client.dispatcher = Dispatcher(dispatcher)

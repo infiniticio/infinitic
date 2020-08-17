@@ -74,6 +74,7 @@ data class JobAttemptStarted(
 
 data class JobCanceled(
     override val jobId: JobId,
+    val jobOutput: JobOutput,
     val jobMeta: JobMeta
 ) : ForJobEngineMessage(jobId)
 
@@ -84,7 +85,11 @@ data class JobCompleted(
 ) : ForJobEngineMessage(jobId)
 
 data class RetryJob(
-    override val jobId: JobId
+    override val jobId: JobId,
+    val jobName: JobName?,
+    val jobInput: JobInput?,
+    val jobMeta: JobMeta?,
+    val jobOptions: JobOptions?
 ) : ForJobEngineMessage(jobId)
 
 data class RetryJobAttempt(

@@ -39,39 +39,51 @@ open class Worker {
 
     companion object {
 
+        // map jobName <> jobInstance
         private val registeredTasks = ConcurrentHashMap<String, Any>()
 
         // cf. https://www.baeldung.com/java-threadlocal
         private val contexts = ConcurrentHashMap<Long, JobAttemptContext>()
 
-        /**
-         * Use this method to register a task instance to use for a given name
-         */
-        fun register(name: String, job: Any) {
-            if (name.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInJobName(name)
+        private fun getContextKey() = Thread.currentThread().id
 
-            registeredTasks[name] = job
+        /**
+         * Use this to retrieve JobAttemptContext associated to current task
+         */
+        // TODO: currently running task in coroutines (instead of Thread) is not supported (as Context is mapped to threadId)
+        val context: JobAttemptContext
+            get() {
+                val key = getContextKey()
+                if (! contexts.containsKey(key)) throw JobAttemptContextRetrievedOutsideOfProcessingThread()
+
+                return contexts[key]!!
+            }
+
+        /**
+         * Use this method to register the task instance to use for a given name
+         */
+        fun register(jobName: String, jobInstance: Any) {
+            if (jobName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInJobName(jobName)
+
+            registeredTasks[jobName] = jobInstance
         }
 
         /**
          * Use this method to unregister a given name (mostly used in tests)
          */
-        fun unregister(name: String) {
-            registeredTasks.remove(name)
+        fun unregister(jobName: String) {
+            registeredTasks.remove(jobName)
         }
 
         /**
-         * Use this method to retrieve JobAttemptContext associated to a task
+         * Use this method to register the task instance to use for a given class
          */
-        // TODO: currently running task in coroutines (instead of Thread) is not supported (as Context is mapped to threadId)
-        fun getContext(): JobAttemptContext {
-            val key = getContextKey()
-            if (! contexts.containsKey(key)) throw JobAttemptContextRetrievedOutsideOfProcessingThread()
+        inline fun <reified T> register(jobInstance: Any) = register(T::class.java.name, jobInstance)
 
-            return contexts[key]!!
-        }
-
-        private fun getContextKey() = Thread.currentThread().id
+        /**
+         * Use this method to unregister a given class (mostly used in tests)
+         */
+        inline fun <reified T> unregister() = unregister(T::class.java.name)
     }
 
     fun handle(msg: ForWorkerMessage) {
@@ -256,7 +268,7 @@ open class Worker {
             }
     }
 
-    // TODO: currently method using "suspend" keywork are not supported
+    // TODO: currently method using "suspend" keyword are not supported
     private fun getMethod(job: Any, methodName: String, parameterCount: Int, parameterTypes: Array<Class<*>>?): Method {
         // Case where parameter types have been provided
         if (parameterTypes != null) return try {
