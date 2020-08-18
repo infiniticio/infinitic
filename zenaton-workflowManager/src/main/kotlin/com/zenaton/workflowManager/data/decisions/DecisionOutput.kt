@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data
+package com.zenaton.workflowManager.data.decisions
 
 import com.zenaton.workflowManager.data.properties.Property
 import com.zenaton.workflowManager.data.properties.PropertyKey

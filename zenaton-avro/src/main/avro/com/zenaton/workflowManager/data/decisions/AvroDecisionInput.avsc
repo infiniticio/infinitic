@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroDecisionInput",
-  "namespace": "com.zenaton.workflowManager.decisions",
+  "namespace": "com.zenaton.workflowManager.data.decisions",
   "fields": [
     {
       "name": "branches",

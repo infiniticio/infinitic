@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.avroConverter
 
-import com.zenaton.workflowManager.data.DecisionInput
-import com.zenaton.workflowManager.data.actions.Action
+import com.zenaton.workflowManager.data.decisions.DecisionInput
+import com.zenaton.workflowManager.data.commands.Command
 import com.zenaton.workflowManager.data.actions.AvroAction
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.states.WorkflowEngineState
@@ -38,19 +38,19 @@ class AvroConverterTests : ShouldSpec({
 
     context("Actions") {
         should("should all be avro-reversible") {
-            fun checkAction(klass: KClass<out Action>) {
+            fun checkAction(klass: KClass<out Command>) {
                 if (klass.isSealed) {
                     klass.sealedSubclasses.forEach { checkAction(it) }
                 } else {
                     val o1 = TestFactory.random(klass)
                     val o2 = AvroConverter.convertJson<AvroAction>(o1)
-                    val o3 = AvroConverter.convertJson<Action>(o2)
+                    val o3 = AvroConverter.convertJson<Command>(o2)
                     val o4 = AvroConverter.convertJson<AvroAction>(o3)
                     o1 shouldBe o3
                     o2 shouldBe o4
                 }
             }
-            checkAction(Action::class)
+            checkAction(Command::class)
         }
     }
 

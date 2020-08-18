@@ -7,7 +7,7 @@ import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorker.Status
-import com.zenaton.workflowManager.data.DecisionOutput
+import com.zenaton.workflowManager.data.decisions.DecisionOutput
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.properties.PropertyStore
 import com.zenaton.workflowManager.decisions.AvroDecisionInput

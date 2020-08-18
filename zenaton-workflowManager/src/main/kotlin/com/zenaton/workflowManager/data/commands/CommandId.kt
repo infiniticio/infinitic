@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data.actions
+package com.zenaton.workflowManager.data.commands
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
@@ -8,7 +8,7 @@ import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventId
 import com.zenaton.workflowManager.data.WorkflowId
 
-data class ActionId
+data class CommandId
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
 constructor(@get:JsonValue override val id: String) : IdInterface {
     constructor(jobId: JobId) : this(jobId.id)

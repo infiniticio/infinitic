@@ -3,9 +3,9 @@ package com.zenaton.workflowManager.messages
 import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobOutput
-import com.zenaton.workflowManager.data.DecisionId
-import com.zenaton.workflowManager.data.DecisionInput
-import com.zenaton.workflowManager.data.DecisionOutput
+import com.zenaton.workflowManager.data.decisions.DecisionId
+import com.zenaton.workflowManager.data.decisions.DecisionInput
+import com.zenaton.workflowManager.data.decisions.DecisionOutput
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventData
 import com.zenaton.workflowManager.data.EventName
@@ -36,16 +36,16 @@ data class ChildWorkflowCompleted(
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DecisionCompleted(
-    override val workflowId: WorkflowId,
-    val decisionId: DecisionId,
-    val decisionOutput: DecisionOutput
+        override val workflowId: WorkflowId,
+        val decisionId: DecisionId,
+        val decisionOutput: DecisionOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DecisionDispatched(
-    override val workflowId: WorkflowId,
-    val decisionId: DecisionId,
-    val workflowName: WorkflowName,
-    val decisionInput: DecisionInput
+        override val workflowId: WorkflowId,
+        val decisionId: DecisionId,
+        val workflowName: WorkflowName,
+        val decisionInput: DecisionInput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DelayCompleted(

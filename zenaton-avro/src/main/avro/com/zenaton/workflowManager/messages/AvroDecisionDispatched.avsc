@@ -19,7 +19,7 @@
     },
     {
       "name": "decisionInput",
-      "type": "com.zenaton.workflowManager.decisions.AvroDecisionInput"
+      "type": "com.zenaton.workflowManager.data.decisions.AvroDecisionInput"
     }
   ]
 }

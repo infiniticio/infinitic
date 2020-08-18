@@ -1,11 +1,11 @@
 {
   "type": "record",
-  "name": "AvroAction",
-  "namespace": "com.zenaton.workflowManager.data.actions",
+  "name": "AvroCommand",
+  "namespace": "com.zenaton.workflowManager.data.commands",
   "fields": [
     {
       "name": "type",
-      "type": "com.zenaton.workflowManager.data.actions.AvroActionType"
+      "type": "com.zenaton.workflowManager.data.commands.AvroCommandType"
     },
     {
       "name": "decidedAt",
@@ -17,7 +17,7 @@
     },
     {
       "name": "actionStatus",
-      "type": "com.zenaton.workflowManager.data.actions.ActionStatus"
+      "type": "com.zenaton.workflowManager.data.commands.CommandStatus"
     },
     {
       "name": "jobId",

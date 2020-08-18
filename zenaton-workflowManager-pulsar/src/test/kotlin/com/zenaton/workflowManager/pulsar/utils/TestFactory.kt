@@ -2,7 +2,7 @@ package com.zenaton.workflowManager.pulsar.utils
 
 import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.workflowManager.avroConverter.AvroConverter
-import com.zenaton.workflowManager.data.actions.ActionId
+import com.zenaton.workflowManager.data.commands.CommandId
 import com.zenaton.workflowManager.data.steps.AvroStepCriterion
 import com.zenaton.workflowManager.data.steps.StepCriterion
 import org.jeasy.random.EasyRandom
@@ -50,7 +50,7 @@ object TestFactory {
     }
 
     fun stepCriteria(): Map<String, StepCriterion> {
-        fun getStepId() = StepCriterion.Id(ActionId(JobId()))
+        fun getStepId() = StepCriterion.Id(CommandId(JobId()))
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()
