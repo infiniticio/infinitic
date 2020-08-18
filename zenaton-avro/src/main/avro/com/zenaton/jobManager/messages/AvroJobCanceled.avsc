@@ -9,6 +9,10 @@
       "logicalType": "uuid"
     },
     {
+      "name": "jobOutput",
+      "type": "com.zenaton.jobManager.data.AvroSerializedData"
+    },
+    {
       "name": "jobMeta",
       "type": {
         "type": "map",

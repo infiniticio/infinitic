@@ -12,11 +12,12 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
+//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.8")
 
     implementation(project(":zenaton-avro"))
     implementation(project(":zenaton-jobManager-common"))
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
     testImplementation("io.kotest:kotest-property-jvm:4.0.+")

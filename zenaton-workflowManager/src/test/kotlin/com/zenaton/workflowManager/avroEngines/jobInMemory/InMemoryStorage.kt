@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.avroEngines.jobInMemory
 
-import com.zenaton.jobManager.avroInterfaces.AvroStorage
+import com.zenaton.jobManager.engine.avroInterfaces.AvroStorage
 import com.zenaton.jobManager.states.AvroJobEngineState
 import com.zenaton.jobManager.states.AvroMonitoringGlobalState
 import com.zenaton.jobManager.states.AvroMonitoringPerNameState

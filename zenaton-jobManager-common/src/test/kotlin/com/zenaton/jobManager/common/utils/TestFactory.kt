@@ -1,6 +1,8 @@
 package com.zenaton.jobManager.common.utils
 
 import com.zenaton.common.data.SerializedData
+import com.zenaton.common.json.Json
+import com.zenaton.jobManager.common.exceptions.MultipleMethodCallsAtDispatch
 import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random
@@ -10,6 +12,12 @@ import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
 import org.jeasy.random.api.Randomizer
 
+fun main() {
+    val e = TestFactory.random(MultipleMethodCallsAtDispatch::class)
+    println(e.cause)
+    val s = Json.stringify(e)
+    println(s)
+}
 object TestFactory {
     private var seed = 0L
 

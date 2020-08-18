@@ -8,6 +8,7 @@ import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobMeta
 import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.data.JobOptions
 import com.zenaton.jobManager.common.data.JobStatus
 
 sealed class State
@@ -20,6 +21,7 @@ data class JobEngineState(
     var jobAttemptId: JobAttemptId,
     var jobAttemptIndex: JobAttemptIndex = JobAttemptIndex(0),
     var jobAttemptRetry: JobAttemptRetry = JobAttemptRetry(0),
+    val jobOptions: JobOptions,
     val jobMeta: JobMeta
 ) : State() {
     fun deepCopy() = AvroConverter.fromStorage(AvroConverter.toStorage(this))

@@ -2,7 +2,8 @@ package com.zenaton.jobManager.engines
 
 import com.zenaton.common.data.interfaces.plus
 import com.zenaton.jobManager.common.data.JobStatus
-import com.zenaton.jobManager.dispatcher.Dispatcher
+import com.zenaton.jobManager.engine.dispatcher.Dispatcher
+import com.zenaton.jobManager.engine.engines.JobEngine
 import com.zenaton.jobManager.common.messages.CancelJob
 import com.zenaton.jobManager.common.messages.DispatchJob
 import com.zenaton.jobManager.common.messages.ForJobEngineMessage
@@ -18,7 +19,7 @@ import com.zenaton.jobManager.common.messages.RetryJob
 import com.zenaton.jobManager.common.messages.RetryJobAttempt
 import com.zenaton.jobManager.common.messages.RunJob
 import com.zenaton.jobManager.common.states.JobEngineState
-import com.zenaton.jobManager.storages.JobEngineStateStorage
+import com.zenaton.jobManager.engine.storages.JobEngineStateStorage
 import com.zenaton.jobManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -109,7 +110,7 @@ internal fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage):
     return o
 }
 
-internal class AvroJobEngineTests : StringSpec({
+internal class JobEngineTests : StringSpec({
     "JobAttemptDispatched" {
         val stateIn = state()
         val msgIn = jobAttemptDispatched()
@@ -191,7 +192,15 @@ internal class AvroJobEngineTests : StringSpec({
                 "jobStatus" to JobStatus.RUNNING_ERROR
             )
         )
-        val msgIn = retryJob(mapOf("jobId" to stateIn.jobId))
+        val msgIn = retryJob(
+            mapOf(
+                "jobId" to stateIn.jobId,
+                "jobName" to null,
+                "jobInput" to null,
+                "jobMeta" to null,
+                "jobOptions" to null
+            )
+        )
         val o = engineHandle(stateIn, msgIn)
         verifyAll {
             o.storage.getState(msgIn.jobId)
@@ -345,6 +354,8 @@ internal class AvroJobEngineTests : StringSpec({
         val o = engineHandle(stateIn, msgIn)
         checkShouldRetryJobAttempt(msgIn, stateIn, o)
     }
+
+    // TODO: add tests for retryJob with non-null parameters
 })
 
 private fun checkShouldDoNothing(o: EngineResults) {
@@ -387,12 +398,10 @@ private fun checkConfirmVerified(o: EngineResults) {
 }
 
 private fun state(values: Map<String, Any?>? = null) = TestFactory.random(JobEngineState::class, values)
-
 private fun cancelJob(values: Map<String, Any?>? = null) = TestFactory.random(CancelJob::class, values)
 private fun dispatchJob(values: Map<String, Any?>? = null) = TestFactory.random(DispatchJob::class, values)
 private fun retryJob(values: Map<String, Any?>? = null) = TestFactory.random(RetryJob::class, values)
 private fun retryJobAttempt(values: Map<String, Any?>? = null) = TestFactory.random(RetryJobAttempt::class, values)
-
 private fun jobCompleted(values: Map<String, Any?>? = null) = TestFactory.random(JobCompleted::class, values)
 private fun jobCanceled(values: Map<String, Any?>? = null) = TestFactory.random(JobCanceled::class, values)
 private fun jobAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptDispatched::class, values)

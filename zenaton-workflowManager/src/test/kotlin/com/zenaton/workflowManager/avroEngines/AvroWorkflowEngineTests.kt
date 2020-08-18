@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.avroEngines
 
-import com.zenaton.jobManager.avroEngines.AvroJobEngine
-import com.zenaton.jobManager.avroEngines.AvroMonitoringGlobal
-import com.zenaton.jobManager.avroEngines.AvroMonitoringPerName
+import com.zenaton.jobManager.engine.avroClasses.AvroJobEngine
+import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringGlobal
+import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringPerName
 import com.zenaton.jobManager.common.avro.AvroConverter as AvroJobConverter
 import com.zenaton.jobManager.messages.AvroJobCompleted
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine

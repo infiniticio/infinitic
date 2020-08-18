@@ -2,12 +2,13 @@ package com.zenaton.jobManager.client
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.client.data.Job
+import com.zenaton.jobManager.common.data.Job
 import com.zenaton.jobManager.common.Constants
 import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.jobManager.common.data.JobInput
 import com.zenaton.jobManager.common.data.JobMeta
 import com.zenaton.jobManager.common.data.JobName
+import com.zenaton.jobManager.common.data.JobOptions
 import com.zenaton.jobManager.common.exceptions.ErrorDuringJsonDeserializationOfParameter
 import com.zenaton.jobManager.common.exceptions.ErrorDuringJsonSerializationOfParameter
 import com.zenaton.jobManager.common.exceptions.InconsistentJsonSerializationOfParameter
@@ -16,7 +17,12 @@ import com.zenaton.jobManager.common.messages.DispatchJob
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 
-class ProxyHandler(private val className: String, private val dispatcher: Dispatcher) : InvocationHandler {
+class ProxyHandler(
+    private val className: String,
+    private val dispatcher: Dispatcher,
+    private val jobOptions: JobOptions,
+    private val jobMeta: JobMeta
+) : InvocationHandler {
     private var jobId: JobId? = null
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
@@ -27,7 +33,8 @@ class ProxyHandler(private val className: String, private val dispatcher: Dispat
             jobId = jobId!!,
             jobName = JobName("$className${Constants.METHOD_DIVIDER}${method.name}"),
             jobInput = JobInput(args?.mapIndexed { index, value -> getSerializedData(method.parameters[index].name, value, method.parameterTypes[index], method.name, className) } ?: listOf()),
-            jobMeta = JobMeta.forParameterTypes(method.parameterTypes.map { it.name })
+            jobOptions = jobOptions,
+            jobMeta = jobMeta.setParameterTypes(method.parameterTypes.map { it.name })
         )
         dispatcher.toJobEngine(msg)
 
