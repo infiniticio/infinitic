@@ -55,7 +55,7 @@ class WorkerTests : StringSpec({
         val msg = getRunJob(TestWithoutRetry::class.java.name, input, types)
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
         // then
         slots.size shouldBe 2
@@ -78,7 +78,7 @@ class WorkerTests : StringSpec({
         val msg = getRunJob("${TestWithoutRetryAndExplicitMethod::class.java.name}::run", input, types)
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -101,7 +101,7 @@ class WorkerTests : StringSpec({
         val msg = getRunJob("${TestWithoutRetryAndExplicitMethod::class.java.name}::run", input, null)
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -133,7 +133,7 @@ class WorkerTests : StringSpec({
         Worker.register("blabla", TestWithoutRetry())
 
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
         // then
         slots.size shouldBe 2
@@ -157,7 +157,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -185,7 +185,7 @@ class WorkerTests : StringSpec({
         Worker.unregister("blabla")
 
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -211,7 +211,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -237,7 +237,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -262,7 +262,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -287,7 +287,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -312,7 +312,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -337,7 +337,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -362,7 +362,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -387,7 +387,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -418,7 +418,7 @@ class WorkerTests : StringSpec({
 
         // when
         coroutineScope {
-            worker.suspendingHandle(msg)
+            worker.handle(msg)
         }
 
         // then
@@ -475,10 +475,6 @@ internal class TestWithTimeout() {
 
         return (i * j.toInt() * Worker.context.jobAttemptIndex.int).toString()
     }
-}
-
-internal class TestWithSuspend() {
-    @Suppress("unused") suspend fun handle(i: Int, j: String) = (i * j.toInt()).toString()
 }
 
 private fun getRunJob(name: String, input: List<SerializedData>, types: List<String>?) = RunJob(

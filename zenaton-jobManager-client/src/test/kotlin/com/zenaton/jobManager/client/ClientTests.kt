@@ -108,6 +108,10 @@ class ClientTests : StringSpec({
     // TODO: add tests for cancel method
 
     // TODO: add tests for retry method
+
+    // TODO: add tests for options
+
+    // TODO: add tests for meta
 })
 
 private interface FakeTask {

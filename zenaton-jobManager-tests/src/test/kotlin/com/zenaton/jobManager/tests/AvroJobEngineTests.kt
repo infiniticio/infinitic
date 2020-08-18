@@ -1,7 +1,6 @@
 package com.zenaton.jobManager.tests
 
 import com.zenaton.jobManager.client.Client
-import com.zenaton.jobManager.client.Dispatcher
 import com.zenaton.jobManager.engine.avroClasses.AvroJobEngine
 import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringGlobal
 import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringPerName
@@ -10,7 +9,6 @@ import com.zenaton.jobManager.data.AvroJobStatus
 import com.zenaton.jobManager.tests.inMemory.InMemoryDispatcher
 import com.zenaton.jobManager.tests.inMemory.InMemoryStorage
 import com.zenaton.jobManager.worker.Worker
-import com.zenaton.jobManager.worker.avroClasses.AvroWorker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
@@ -23,7 +21,7 @@ private val client = Client()
 private val jobEngine = AvroJobEngine()
 private val monitoringPerName = AvroMonitoringPerName()
 private val monitoringGlobal = AvroMonitoringGlobal()
-private val worker = AvroWorker()
+private val worker = Worker()
 private val dispatcher = InMemoryDispatcher()
 private val storage = InMemoryStorage()
 
@@ -32,7 +30,7 @@ private lateinit var status: AvroJobStatus
 class AvroEngineTests : StringSpec({
     val jobTest = JobTestImpl()
     Worker.register<JobTest>(jobTest)
-    var j: Job
+    var job: Job
 
     beforeTest {
         storage.reset()
@@ -45,10 +43,10 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            j = client.dispatch<JobTest> { log() }
+            job = client.dispatch<JobTest> { log() }
         }
         // check that job is terminated
-        storage.isTerminated(j) shouldBe true
+        storage.isTerminated(job) shouldBe true
         // check that job is completed
         status shouldBe AvroJobStatus.TERMINATED_COMPLETED
         // checks number of job processing
@@ -61,10 +59,10 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            j = client.dispatch<JobTest> { log() }
+            job = client.dispatch<JobTest> { log() }
         }
         // check that job is terminated
-        storage.isTerminated(j) shouldBe true
+        storage.isTerminated(job) shouldBe true
         // check that job is completed
         status shouldBe AvroJobStatus.TERMINATED_COMPLETED
         // checks number of job processing
@@ -77,10 +75,10 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            j = client.dispatch<JobTest> { log() }
+            job = client.dispatch<JobTest> { log() }
         }
         // check that job is not terminated
-        storage.isTerminated(j) shouldBe false
+        storage.isTerminated(job) shouldBe false
         // check that job is failed
         status shouldBe AvroJobStatus.RUNNING_ERROR
         // checks number of job processing
@@ -93,10 +91,10 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            j = client.dispatch<JobTest> { log() }
+            job = client.dispatch<JobTest> { log() }
         }
         // check that job is not terminated
-        storage.isTerminated(j) shouldBe false
+        storage.isTerminated(job) shouldBe false
         // check that job is failed
         status shouldBe AvroJobStatus.RUNNING_ERROR
         // checks number of job processing
@@ -113,12 +111,12 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            j = client.dispatch<JobTest> { log() }
+            job = client.dispatch<JobTest> { log() }
             delay(100)
-            client.retry(id = j.jobId.id)
+            client.retry(id = job.jobId.id)
         }
         // check that job is terminated
-        storage.isTerminated(j)
+        storage.isTerminated(job)
         // check that job is completed
         status shouldBe AvroJobStatus.TERMINATED_COMPLETED
         // checks number of job processing
@@ -132,18 +130,18 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            j = client.dispatch<JobTest> { log() }
+            job = client.dispatch<JobTest> { log() }
             delay(100)
-            client.cancel(id = j.jobId.id)
+            client.cancel(id = job.jobId.id)
         }
         // check that job is terminated
-        storage.isTerminated(j)
+        storage.isTerminated(job)
         // check that job is completed
         status shouldBe AvroJobStatus.TERMINATED_CANCELED
     }
 }) {
     init {
-        client.dispatcher = Dispatcher(dispatcher)
+        client.setAvroDispatcher(dispatcher)
 
         jobEngine.apply {
             avroStorage = storage
@@ -162,7 +160,7 @@ class AvroEngineTests : StringSpec({
             logger = mockLogger
         }
 
-        worker.avroDispatcher = dispatcher
+        worker.setAvroDispatcher(dispatcher)
 
         dispatcher.apply {
             jobEngineHandle = { jobEngine.handle(it) }

@@ -110,7 +110,7 @@ internal fun engineHandle(stateIn: JobEngineState?, msgIn: ForJobEngineMessage):
     return o
 }
 
-internal class AvroJobEngineTests : StringSpec({
+internal class JobEngineTests : StringSpec({
     "JobAttemptDispatched" {
         val stateIn = state()
         val msgIn = jobAttemptDispatched()
@@ -398,12 +398,10 @@ private fun checkConfirmVerified(o: EngineResults) {
 }
 
 private fun state(values: Map<String, Any?>? = null) = TestFactory.random(JobEngineState::class, values)
-
 private fun cancelJob(values: Map<String, Any?>? = null) = TestFactory.random(CancelJob::class, values)
 private fun dispatchJob(values: Map<String, Any?>? = null) = TestFactory.random(DispatchJob::class, values)
 private fun retryJob(values: Map<String, Any?>? = null) = TestFactory.random(RetryJob::class, values)
 private fun retryJobAttempt(values: Map<String, Any?>? = null) = TestFactory.random(RetryJobAttempt::class, values)
-
 private fun jobCompleted(values: Map<String, Any?>? = null) = TestFactory.random(JobCompleted::class, values)
 private fun jobCanceled(values: Map<String, Any?>? = null) = TestFactory.random(JobCanceled::class, values)
 private fun jobAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.random(JobAttemptDispatched::class, values)

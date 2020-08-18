@@ -1,4 +1,4 @@
-package com.zenaton.jobManager.worker.avroInterfaces
+package com.zenaton.jobManager.client
 
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 

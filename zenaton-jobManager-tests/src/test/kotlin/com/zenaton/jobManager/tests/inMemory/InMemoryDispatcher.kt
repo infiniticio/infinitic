@@ -1,12 +1,12 @@
 package com.zenaton.jobManager.tests.inMemory
 
-import com.zenaton.jobManager.client.avroInterfaces.AvroDispatcher as AvroClientDispatcher
+import com.zenaton.jobManager.client.AvroDispatcher as AvroClientDispatcher
 import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher as AvroEngineDispatcher
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
-import com.zenaton.jobManager.worker.avroInterfaces.AvroDispatcher as AvroWorkerDispatcher
+import com.zenaton.jobManager.worker.AvroDispatcher as AvroWorkerDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

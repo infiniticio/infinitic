@@ -1,6 +1,7 @@
 package com.zenaton.jobManager.worker
 import com.zenaton.common.data.SerializedData
 import com.zenaton.jobManager.common.Constants
+import com.zenaton.jobManager.common.avro.AvroConverter
 import com.zenaton.jobManager.common.data.JobAttemptContext
 import com.zenaton.jobManager.common.data.JobAttemptError
 import com.zenaton.jobManager.common.data.JobInput
@@ -22,6 +23,7 @@ import com.zenaton.jobManager.common.messages.JobAttemptCompleted
 import com.zenaton.jobManager.common.messages.JobAttemptFailed
 import com.zenaton.jobManager.common.messages.JobAttemptStarted
 import com.zenaton.jobManager.common.messages.RunJob
+import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,7 +36,6 @@ import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 
 open class Worker {
-
     lateinit var dispatcher: Dispatcher
 
     companion object {
@@ -86,13 +87,17 @@ open class Worker {
         inline fun <reified T> unregister() = unregister(T::class.java.name)
     }
 
-    fun handle(msg: ForWorkerMessage) {
+    fun setAvroDispatcher(avroDispatcher: AvroDispatcher) {
+        dispatcher = Dispatcher(avroDispatcher)
+    }
+
+    fun handle(msg: AvroEnvelopeForWorker) {
         runBlocking {
-            suspendingHandle(msg)
+            handle(AvroConverter.fromWorkers(msg))
         }
     }
 
-    suspend fun suspendingHandle(msg: ForWorkerMessage) {
+    suspend fun handle(msg: ForWorkerMessage) {
         when (msg) {
             is RunJob -> {
                 // let engine know that we are processing the message
@@ -297,7 +302,7 @@ open class Worker {
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
-    private fun getDelayBeforeRetry(job: Any, context: JobAttemptContext): RetryDelayCommand {
+    private fun getDelayBeforeRetry(job: Any, context: JobAttemptContext): RetryDelay {
         val method = try {
             job::class.java.getMethod(Constants.DELAY_BEFORE_RETRY_METHOD, JobAttemptContext::class.java)
         } catch (e: NoSuchMethodException) {

@@ -16,12 +16,19 @@ import java.lang.reflect.Proxy
 class Client() {
     lateinit var dispatcher: Dispatcher
 
+    fun setAvroDispatcher(avroDispatcher: AvroDispatcher) {
+        dispatcher = Dispatcher(avroDispatcher)
+    }
+
+    /*
+     * Use this method to dispatch a job
+     * TODO: using class instance instead of interface is not supported
+     */
     inline fun <reified T> dispatch(
         options: JobOptions = JobOptions(),
         meta: JobMeta = JobMeta(),
         method: T.() -> Any?
     ): Job {
-        // TODO: using class instance instead of interface is not supported
         // handler will be where the actual job is done
         val handler = ProxyHandler(T::class.java.name, dispatcher, options, meta)
 
