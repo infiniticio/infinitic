@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
+  <sidebar-with-header-layout>
+    <template v-slot:header>
       <div class="flex-1 px-4 flex justify-between">
         <div class="flex-1 flex">
           <div class="w-full flex md:ml-0">
@@ -31,7 +31,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <main
       class="flex-1 relative z-0 overflow-y-auto pt-2 pb-6 focus:outline-none md:py-6"
@@ -45,7 +45,13 @@
           :loading="true"
         />
         <div v-else-if="error">
-          <server-error />
+          <h3
+            v-if="isNotFound(error)"
+            class="text-4xl leading-6 text-center font-medium text-gray-600 mt-12"
+          >
+            There is no task with identifier {{ id }}.
+          </h3>
+          <server-error v-else />
         </div>
         <div v-else-if="task">
           <div class="bg-white shadow overflow-hidden  sm:rounded-lg">
@@ -158,19 +164,21 @@
         </div>
       </div>
     </main>
-  </div>
+  </sidebar-with-header-layout>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import { getTaskDetails, Task, TaskAttemptTry } from "@/api";
+import SidebarWithHeaderLayout from "@/components/layouts/SidebarWithHeaderLayout.vue";
 import { PulseLoader } from "@saeris/vue-spinners";
 import ServerError from "@/components/errors/ServerError.vue";
+import { NotFoundError } from "@/api/errors";
 
 export default Vue.extend({
   name: "TaskDetails",
 
-  components: { PulseLoader, ServerError },
+  components: { SidebarWithHeaderLayout, PulseLoader, ServerError },
 
   props: {
     id: {
@@ -225,10 +233,20 @@ export default Vue.extend({
     },
 
     async searchTask() {
-      this.$router.push({
-        name: "TaskDetails",
-        params: { id: this.searchInput }
-      });
+      if (this.searchInput === "") {
+        this.$router.push({
+          name: "Tasks"
+        });
+      } else {
+        this.$router.push({
+          name: "TaskDetails",
+          params: { id: this.searchInput }
+        });
+      }
+    },
+
+    isNotFound(error: Error) {
+      return error instanceof NotFoundError;
     },
 
     formatDate(date: string | null): string {

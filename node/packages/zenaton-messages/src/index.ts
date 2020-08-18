@@ -2,12 +2,14 @@ import { typeForSchema, AvroRegistry } from './type';
 import path from 'path';
 
 export interface SerializedData {
-  serializedData: Buffer;
-  serializationType: string;
+  bytes: Buffer;
+  type: string;
+  meta: Map<string, Buffer>;
 }
 
 export type JobInput = SerializedData[];
 export type JobOutput = SerializedData;
+export type JobAttemptError = SerializedData;
 
 export type ForJobEngineMessageType =
   | 'CancelJob'
@@ -63,7 +65,7 @@ export type JobAttemptFailed = {
   jobAttemptId: string;
   jobAttemptRetry: number;
   jobAttemptIndex: number;
-  jobAttemptError: Buffer;
+  jobAttemptError: JobAttemptError;
   jobAttemptDelayBeforeRetry: number | null;
 };
 
@@ -192,7 +194,7 @@ export type ForWorkerMessage = RunJobMessage;
 const registry: AvroRegistry = {};
 
 export const SerializedData = typeForSchema<SerializedData>(
-  path.resolve(`${__dirname}/avro/common/data/AvroSerializedData.avsc`),
+  path.resolve(`${__dirname}/avro/jobManager/data/AvroSerializedData.avsc`),
   registry
 );
 

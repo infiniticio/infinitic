@@ -1,10 +1,15 @@
-name: Zenaton Node Packages CI
+name: Node Packages CI
+
 on:
   pull_request:
     branches:
       - master
     paths:
+      - ".github/workflows/node-packages-ci.yml"
       - "node/**"
+
+env:
+  PULSAR_VERSION: "2.6.0"
 
 jobs:
   build:
@@ -19,13 +24,28 @@ jobs:
         with:
           node-version: 12.x
 
+      - name: Use cached Pulsar lib
+        uses: actions/cache@v2
+        id: cache_libpulsar
+        with:
+          path: |
+            ~/libpulsar
+          key: ${{ runner.os }}-libpulsar-${{ env.PULSAR_VERSION }}
+
       - name: Install Pulsar lib
+        if: steps.cache_libpulsar.outputs.cache-hit != 'true'
         run: |
-          cd /tmp
-          curl -sL -o apache-pulsar-client.deb 'https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=pulsar/pulsar-2.6.0/DEB/apache-pulsar-client.deb'
-          curl -sL -o apache-pulsar-client-dev.deb 'https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=pulsar/pulsar-2.6.0/DEB/apache-pulsar-client-dev.deb'
-          sudo apt install -y ./apache-pulsar-client*.deb
-          rm apache-pulsar-client.deb
+          mkdir -p $HOME/libpulsar && cd $HOME/libpulsar
+          curl -sL -o apache-pulsar-client.deb 'https://archive.apache.org/dist/pulsar/pulsar-'"$PULSAR_VERSION"'/DEB/apache-pulsar-client.deb'
+          curl -sL -o apache-pulsar-client-dev.deb 'https://archive.apache.org/dist/pulsar/pulsar-'"$PULSAR_VERSION"'/DEB/apache-pulsar-client-dev.deb'
+          dpkg --extract ./apache-pulsar-client.deb .
+          dpkg --extract ./apache-pulsar-client-dev.deb .
+          rm apache-pulsar-client*.deb
+          ls -R .
+
+      - name: Copy Pulsar lib to /usr
+        run: |
+          sudo cp -r --force $HOME/libpulsar/usr /
 
       - name: Use cached node_modules
         uses: actions/cache@v2
@@ -38,37 +58,25 @@ jobs:
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Initialize Lerna
         run: |
           npx --no-install lerna bootstrap
           npx --no-install lerna link
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Initialize dist directories
         run: npx --no-install lerna exec -- mkdir dist
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Build
         run: npx --no-install lerna run build
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Lint
         run: npx --no-install lerna run lint
         working-directory: ./node
-        env:
-          CI: true
 
       - name: Test
         run: npx --no-install lerna run test -- --passWithNoTests --coverage
         working-directory: ./node
-        env:
-          CI: true

@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.avroEngines.jobInMemory
 
-import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForMonitoringPerName

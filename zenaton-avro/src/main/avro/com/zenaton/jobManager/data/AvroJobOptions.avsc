@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "AvroJobOptions",
+  "namespace": "com.zenaton.jobManager.data",
+  "fields": [
+    {
+      "name": "runningTimeout",
+      "type": ["null", "float"]
+    }
+  ]
+}

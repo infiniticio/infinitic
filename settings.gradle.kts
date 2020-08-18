@@ -1,8 +1,12 @@
 rootProject.name = "com.zenaton"
 
-include("zenaton-common")
-include("zenaton-jobManager")
-include("zenaton-jobManager-pulsar")
+include("zenaton-avro")
+include("zenaton-jobManager-common")
+include("zenaton-jobManager-worker")
+include("zenaton-jobManager-client")
+include("zenaton-jobManager-engine")
+include("zenaton-jobManager-engine-pulsar")
+include("zenaton-jobManager-tests")
 include("zenaton-rest-api")
 include("zenaton-workflowManager")
 include("zenaton-workflowManager-pulsar")

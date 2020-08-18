@@ -1,16 +1,19 @@
 package com.zenaton.workflowManager.avroEngines
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.avroEngines.AvroJobEngine
-import com.zenaton.jobManager.avroEngines.AvroMonitoringGlobal
-import com.zenaton.jobManager.avroEngines.AvroMonitoringPerName
 import com.zenaton.jobManager.messages.AvroDispatchJob
+import com.zenaton.jobManager.engine.avroClasses.AvroJobEngine
+import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringGlobal
+import com.zenaton.jobManager.engine.avroClasses.AvroMonitoringPerName
+import com.zenaton.jobManager.common.avro.AvroConverter as AvroJobConverter
 import com.zenaton.jobManager.messages.AvroJobCompleted
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
 import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorker.Status
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorkerDecision
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorkerTask
+import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryDispatcher as InMemoryJobDispatcher
+import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryStorage as InMemoryJobStorage
 import com.zenaton.workflowManager.avroEngines.jobInMemory.Task
 import com.zenaton.workflowManager.avroEngines.jobInMemory.WorkflowA
 import com.zenaton.workflowManager.avroEngines.workflowInMemory.InMemoryDispatcher
@@ -30,9 +33,6 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
 import org.slf4j.Logger
-import com.zenaton.jobManager.avroConverter.AvroConverter as AvroJobConverter
-import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryDispatcher as InMemoryJobDispatcher
-import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryStorage as InMemoryJobStorage
 
 private val mockLogger = mockk<Logger>(relaxed = true)
 
@@ -201,7 +201,7 @@ private fun catchTaskCompletion(msg: AvroEnvelopeForJobEngine): AvroEnvelopeForW
             .setWorkflowId(
                 job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]
                     ?.let { AvroJobConverter.fromAvroSerializedData(it) }
-                    ?.get()
+                    ?.deserialize() as String
             )
             .build()
     )
@@ -218,7 +218,7 @@ private fun catchDecisionCompletion(msg: AvroEnvelopeForJobEngine): AvroEnvelope
             .setWorkflowId(
                 job.jobMeta[WorkflowEngine.META_WORKFLOW_ID]
                     ?.let { AvroJobConverter.fromAvroSerializedData(it) }
-                    ?.get()
+                    ?.deserialize() as String
             )
             .build()
     )

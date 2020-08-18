@@ -47,8 +47,9 @@ export class Client {
         ? []
         : [
             {
-              serializedData: Buffer.from(JSON.stringify(input)),
-              serializationType: 'JSON',
+              bytes: Buffer.from(JSON.stringify(input)),
+              type: 'JSON',
+              meta: new Map(),
             },
           ];
     const message: DispatchJobMessage = {

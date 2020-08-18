@@ -1,10 +1,12 @@
 package com.zenaton.workflowManager.utils
 
-import com.zenaton.jobManager.data.JobId
+import com.zenaton.common.data.SerializedData
+import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.actions.ActionId
 import com.zenaton.workflowManager.data.steps.AvroStepCriterion
 import com.zenaton.workflowManager.data.steps.StepCriterion
+import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -29,7 +31,10 @@ object TestFactory {
         val parameters = EasyRandomParameters()
             .seed(seed)
             .scanClasspathForConcreteTypes(true)
+            .overrideDefaultInitialization(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
+            .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
+            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).nextPrintableString(10)) }
             .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStepCriterion(randomStepCriterion()) }
 
         values?.forEach {

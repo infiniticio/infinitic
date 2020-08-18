@@ -6,6 +6,12 @@ new Server({
   routes() {
     this.logging = true;
 
+    this.get("/info", () => {
+      return {
+        version: "0.1.0"
+      };
+    });
+
     this.get(
       "/task-types/",
       (): Array<TaskType> => {

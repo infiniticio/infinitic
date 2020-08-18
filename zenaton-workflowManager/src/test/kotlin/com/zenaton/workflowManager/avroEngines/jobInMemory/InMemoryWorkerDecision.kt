@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.avroEngines.jobInMemory
 
-import com.zenaton.common.data.AvroSerializedData
-import com.zenaton.jobManager.avroConverter.AvroConverter as AvroJobConverter
-import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.data.AvroSerializedData
+import com.zenaton.jobManager.common.avro.AvroConverter as AvroJobConverter
+import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.workflowManager.avroConverter.AvroConverter
@@ -32,11 +32,11 @@ internal class InMemoryWorkerDecision : InMemoryWorker {
         }
     }
 
-    fun runDecision(workflow: Workflow, branches: List<Branch>, properties: PropertyStore): DecisionOutput? {
+    private fun runDecision(workflow: Workflow, branches: List<Branch>, properties: PropertyStore): DecisionOutput? {
         return null
     }
 
     private fun getDecisionInput(data: AvroSerializedData) = AvroConverter.fromAvroDecisionInput(
-        AvroJobConverter.fromAvroSerializedData(data).getAvro<AvroDecisionInput>()
+        AvroJobConverter.fromAvroSerializedData(data).deserialize(AvroDecisionInput::class.java) as AvroDecisionInput
     )
 }

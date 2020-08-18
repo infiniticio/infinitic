@@ -7,15 +7,13 @@ import com.zenaton.api.task.messages.commands.DispatchJobCommand
 import com.zenaton.api.task.messages.events.*
 import com.zenaton.api.task.models.*
 import java.sql.Connection
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
 
 class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskRepository {
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z")
 
     override fun getById(id: String): Task? {
-        val sqlStatement = SqlStatement("""SELECT * FROM "public/default"."tasks-engine" WHERE jobid = ? ORDER BY __publish_time__ ASC""") {
+        val sqlStatement = SqlStatement("""SELECT *, __publish_time__ AT TIME ZONE 'UTC' AS "utc_publish_time" FROM "public/default"."tasks-engine" WHERE jobid = ? ORDER BY __publish_time__ ASC""") {
             it.setString(1, id)
         }
 
@@ -25,7 +23,7 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
                 JobMessage.Type.DISPATCH_JOB -> DispatchJobCommand(
                     jobId = it.getString(JobMessage.Fields.JOB_ID),
                     jobName = it.getString(DispatchJobCommand.Fields.JOB_NAME),
-                    sentAt = LocalDateTime.parse(it.getString(JobMessage.Fields.SENT_AT), dateTimeFormatter).atZone(ZoneId.of("UTC")).toInstant()
+                    sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
                 JobMessage.Type.RETRY_JOB -> null
                 JobMessage.Type.RETRY_JOB_ATTEMPT -> null
@@ -35,26 +33,26 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
                     attemptId = it.getString(JobAttemptCompletedEvent.Fields.ATTEMPT_ID),
                     attemptRetry = it.getInt(JobAttemptCompletedEvent.Fields.ATTEMPT_RETRY),
                     attemptIndex = it.getInt(JobAttemptCompletedEvent.Fields.ATTEMPT_INDEX),
-                    sentAt = LocalDateTime.parse(it.getString(JobMessage.Fields.SENT_AT), dateTimeFormatter).atZone(ZoneId.of("UTC")).toInstant()
+                    sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
                 JobMessage.Type.JOB_ATTEMPT_DISPATCHED -> JobAttemptDispatchedEvent(
                     attemptId = it.getString(JobAttemptDispatchedEvent.Fields.ATTEMPT_ID),
                     attemptRetry = it.getInt(JobAttemptDispatchedEvent.Fields.ATTEMPT_RETRY),
                     attemptIndex = it.getInt(JobAttemptDispatchedEvent.Fields.ATTEMPT_INDEX),
-                    sentAt = LocalDateTime.parse(it.getString(JobMessage.Fields.SENT_AT), dateTimeFormatter).atZone(ZoneId.of("UTC")).toInstant()
+                    sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
                 JobMessage.Type.JOB_ATTEMPT_FAILED -> JobAttemptFailedEvent(
                     attemptId = it.getString(JobAttemptFailedEvent.Fields.ATTEMPT_ID),
                     attemptRetry = it.getInt(JobAttemptFailedEvent.Fields.ATTEMPT_RETRY),
                     attemptIndex = it.getInt(JobAttemptFailedEvent.Fields.ATTEMPT_INDEX),
-                    sentAt = LocalDateTime.parse(it.getString(JobMessage.Fields.SENT_AT), dateTimeFormatter).atZone(ZoneId.of("UTC")).toInstant(),
+                    sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant(),
                     delayBeforeRetry = it.getFloat(JobAttemptFailedEvent.Fields.DELAY_BEFORE_RETRY)
                 )
                 JobMessage.Type.JOB_ATTEMPT_STARTED -> JobAttemptStartedEvent(
                     attemptId = it.getString(JobAttemptStartedEvent.Fields.ATTEMPT_ID),
                     attemptRetry = it.getInt(JobAttemptStartedEvent.Fields.ATTEMPT_RETRY),
                     attemptIndex = it.getInt(JobAttemptStartedEvent.Fields.ATTEMPT_INDEX),
-                    sentAt = LocalDateTime.parse(it.getString(JobMessage.Fields.SENT_AT), dateTimeFormatter).atZone(ZoneId.of("UTC")).toInstant()
+                    sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
                 JobMessage.Type.JOB_COMPLETED -> Unit
             }

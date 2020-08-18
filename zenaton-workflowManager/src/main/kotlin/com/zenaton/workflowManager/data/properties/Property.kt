@@ -3,7 +3,7 @@ package com.zenaton.workflowManager.data.properties
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import com.zenaton.common.data.SerializedData
-import com.zenaton.commons.data.interfaces.PropertyInterface
+import com.zenaton.jobManager.common.data.interfaces.PropertyInterface
 
 data class Property
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

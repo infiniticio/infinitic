@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "AvroMonitoringGlobalState",
+  "namespace": "com.zenaton.jobManager.states",
+  "fields": [
+    {
+      "name": "jobNames",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    }
+  ]
+}
+

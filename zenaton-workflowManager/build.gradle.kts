@@ -11,13 +11,14 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.apache.pulsar:pulsar-client:2.5.+")
     implementation("org.apache.pulsar:pulsar-functions-api:2.5.+")
-    implementation("org.apache.avro:avro:1.9.+")
+    implementation("org.apache.avro:avro:1.10.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
 
-    implementation(project(":zenaton-common"))
-    implementation(project(":zenaton-jobManager"))
+    implementation(project(":zenaton-avro"))
+    implementation(project(":zenaton-jobManager-engine"))
+    implementation(project(":zenaton-jobManager-common"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

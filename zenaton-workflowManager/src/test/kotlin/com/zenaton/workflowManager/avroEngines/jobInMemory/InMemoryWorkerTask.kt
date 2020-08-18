@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.avroEngines.jobInMemory
 
-import com.zenaton.jobManager.avroConverter.AvroConverter
-import com.zenaton.jobManager.avroInterfaces.AvroDispatcher
+import com.zenaton.jobManager.common.avro.AvroConverter
+import com.zenaton.jobManager.engine.avroInterfaces.AvroDispatcher
 import com.zenaton.jobManager.messages.AvroRunJob
 import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForWorker
 import com.zenaton.workflowManager.avroEngines.jobInMemory.InMemoryWorker.Status
