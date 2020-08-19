@@ -5,7 +5,7 @@ import com.zenaton.jobManager.common.data.JobId
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventId
 import com.zenaton.workflowManager.data.WorkflowId
-import com.zenaton.workflowManager.data.actions.ActionId
+import com.zenaton.workflowManager.data.commands.CommandId
 import com.zenaton.workflowManager.data.properties.Properties
 
 data class Step(
@@ -17,24 +17,24 @@ data class Step(
     fun isCompleted() = criterion.isCompleted()
 
     fun completeTask(jobId: JobId, properties: Properties): Boolean {
-        return complete(ActionId(jobId), properties)
+        return complete(CommandId(jobId), properties)
     }
 
     fun completeChildWorkflow(workflowId: WorkflowId, properties: Properties): Boolean {
-        return complete(ActionId(workflowId), properties)
+        return complete(CommandId(workflowId), properties)
     }
 
     fun completeDelay(delayId: DelayId, properties: Properties): Boolean {
-        return complete(ActionId(delayId), properties)
+        return complete(CommandId(delayId), properties)
     }
 
     fun completeEvent(eventId: EventId, properties: Properties): Boolean {
-        return complete(ActionId(eventId), properties)
+        return complete(CommandId(eventId), properties)
     }
 
-    private fun complete(actionId: ActionId, properties: Properties): Boolean {
+    private fun complete(commandId: CommandId, properties: Properties): Boolean {
         if (! isCompleted()) {
-            criterion.complete(actionId)
+            criterion.complete(commandId)
             if (criterion.isCompleted()) {
                 propertiesAfterCompletion = properties.copy()
                 return true

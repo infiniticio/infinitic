@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.states
 
 import com.zenaton.workflowManager.avroConverter.AvroConverter
-import com.zenaton.workflowManager.data.DecisionId
+import com.zenaton.workflowManager.data.decisions.DecisionId
 import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.properties.Properties

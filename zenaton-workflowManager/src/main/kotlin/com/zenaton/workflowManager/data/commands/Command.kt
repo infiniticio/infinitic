@@ -1,4 +1,4 @@
-package com.zenaton.workflowManager.data.actions
+package com.zenaton.workflowManager.data.commands
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
@@ -27,92 +27,92 @@ import com.zenaton.workflowManager.data.branches.BranchOutput
     JsonSubTypes.Type(value = SendEvent::class, name = "SEND_EVENT")
 )
 @JsonIgnoreProperties(ignoreUnknown = true)
-sealed class Action(
+sealed class Command(
     open val decidedAt: DateTime,
-    open val actionHash: ActionHash,
-    open val actionStatus: ActionStatus
+    open val commandHash: CommandHash,
+    open val actionStatus: CommandStatus
 )
 
 data class DispatchTask(
-    val jobId: JobId,
-    var jobOutput: JobOutput,
+    val taskId: JobId,
+    var taskOutput: JobOutput?,
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
-) : Action(decidedAt, actionHash, actionStatus)
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
+) : Command(decidedAt, commandHash, actionStatus)
 
 data class DispatchChildWorkflow(
     val childWorkflowId: WorkflowId,
-    var childWorkflowOutput: BranchOutput,
+    var childWorkflowOutput: BranchOutput?,
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
-) : Action(decidedAt, actionHash, actionStatus)
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
+) : Command(decidedAt, commandHash, actionStatus)
 
 data class WaitDelay(
     val delayId: DelayId,
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
-) : Action(decidedAt, actionHash, actionStatus)
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
+) : Command(decidedAt, commandHash, actionStatus)
 
 data class WaitEvent(
     val eventId: EventId,
     val eventName: EventName,
-    var eventData: EventData,
+    var eventData: EventData?,
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
-) : Action(decidedAt, actionHash, actionStatus)
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
+) : Command(decidedAt, commandHash, actionStatus)
 
 /**
  * InstantTask have already been processed by the Decider
  */
 data class InstantTask(
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override val actionStatus: ActionStatus,
+    override val commandHash: CommandHash,
+    override val actionStatus: CommandStatus,
     var jobOutput: JobOutput
-) : Action(decidedAt, actionHash, actionStatus)
+) : Command(decidedAt, commandHash, actionStatus)
 
 /**
- * EngineAction are processed right away by the Engine
+ * EngineCommand are processed right away by the Engine
  */
-sealed class EngineAction(
+sealed class EngineCommand(
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override val actionStatus: ActionStatus
-) : Action(decidedAt, actionHash, actionStatus)
+    override val commandHash: CommandHash,
+    override val actionStatus: CommandStatus
+) : Command(decidedAt, commandHash, actionStatus)
 
 data class PauseWorkflow(
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
-) : EngineAction(decidedAt, actionHash, actionStatus)
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
+) : EngineCommand(decidedAt, commandHash, actionStatus)
 
 data class ResumeWorkflow(
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
-) : EngineAction(decidedAt, actionHash, actionStatus)
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
+) : EngineCommand(decidedAt, commandHash, actionStatus)
 
 data class CompleteWorkflow(
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED,
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED,
     val workflowOutput: BranchOutput?
-) : EngineAction(decidedAt, actionHash, actionStatus)
+) : EngineCommand(decidedAt, commandHash, actionStatus)
 
 data class TerminateWorkflow(
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED
-) : EngineAction(decidedAt, actionHash, actionStatus)
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
+) : EngineCommand(decidedAt, commandHash, actionStatus)
 
 data class SendEvent(
     override val decidedAt: DateTime,
-    override val actionHash: ActionHash,
-    override var actionStatus: ActionStatus = ActionStatus.DISPATCHED,
+    override val commandHash: CommandHash,
+    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED,
     val eventName: EventName,
     var eventData: EventData?
-) : EngineAction(decidedAt, actionHash, actionStatus)
+) : EngineCommand(decidedAt, commandHash, actionStatus)

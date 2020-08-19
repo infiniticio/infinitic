@@ -1,14 +1,14 @@
 package com.zenaton.workflowManager.data.state
 
 import com.zenaton.jobManager.common.data.JobId
-import com.zenaton.workflowManager.data.actions.ActionId
+import com.zenaton.workflowManager.data.commands.CommandId
 import com.zenaton.workflowManager.data.steps.StepCriterion
 import com.zenaton.workflowManager.data.steps.StepCriterion.And
 import com.zenaton.workflowManager.data.steps.StepCriterion.Or
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStepId() = StepCriterion.Id(ActionId(JobId()))
+fun getStepId() = StepCriterion.Id(CommandId(JobId()))
 
 class StepCriterionTests : StringSpec({
     "Step should not be completed by default" {
@@ -22,7 +22,7 @@ class StepCriterionTests : StringSpec({
         val step = Or(listOf(stepA))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.actionId)
+        step.complete(stepA.commandId)
         step.isCompleted() shouldBe true
     }
 
@@ -31,7 +31,7 @@ class StepCriterionTests : StringSpec({
         val step = And(listOf(stepA))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.actionId)
+        step.complete(stepA.commandId)
         step.isCompleted() shouldBe true
     }
 
@@ -41,9 +41,9 @@ class StepCriterionTests : StringSpec({
         val step = And(listOf(stepA, stepB))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.actionId)
+        step.complete(stepA.commandId)
         step.isCompleted() shouldBe false
-        step.complete(stepB.actionId)
+        step.complete(stepB.commandId)
         step.isCompleted() shouldBe true
         step shouldBe And(listOf(stepA, stepB))
     }
@@ -54,7 +54,7 @@ class StepCriterionTests : StringSpec({
         val step = Or(listOf(stepA, stepB))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.actionId)
+        step.complete(stepA.commandId)
         step shouldBe Or(listOf(stepA))
     }
 
@@ -65,7 +65,7 @@ class StepCriterionTests : StringSpec({
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
         step.isCompleted() shouldBe false
-        step.complete(stepB.actionId)
+        step.complete(stepB.commandId)
         step shouldBe Or(listOf(stepB))
     }
 
@@ -76,9 +76,9 @@ class StepCriterionTests : StringSpec({
         val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.actionId)
+        step.complete(stepA.commandId)
         step.isCompleted() shouldBe false
-        step.complete(stepB.actionId)
+        step.complete(stepB.commandId)
         step shouldBe And(listOf(stepA, stepB))
     }
 
@@ -89,11 +89,11 @@ class StepCriterionTests : StringSpec({
         val step = And(listOf(stepA, And(listOf(stepB, stepC))))
 
         step.isCompleted() shouldBe false
-        step.complete(stepA.actionId)
+        step.complete(stepA.commandId)
         step.isCompleted() shouldBe false
-        step.complete(stepB.actionId)
+        step.complete(stepB.commandId)
         step.isCompleted() shouldBe false
-        step.complete(stepC.actionId)
+        step.complete(stepC.commandId)
         step.isCompleted() shouldBe true
         step shouldBe And(listOf(stepA, stepB, stepC))
     }
@@ -103,7 +103,7 @@ class StepCriterionTests : StringSpec({
         val stepB = getStepId()
         val step = Or(listOf(stepA, stepB))
 
-        step.complete(stepA.actionId)
+        step.complete(stepA.commandId)
         step shouldBe Or(listOf(stepA))
     }
 
@@ -113,7 +113,7 @@ class StepCriterionTests : StringSpec({
         val stepC = getStepId()
         val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.complete(stepB.actionId)
+        step.complete(stepB.commandId)
         step shouldBe Or(listOf(stepB))
     }
 
@@ -123,8 +123,8 @@ class StepCriterionTests : StringSpec({
         val stepC = getStepId()
         val step = Or(listOf(stepA, And(listOf(stepB, stepC))))
 
-        step.complete(stepB.actionId)
-        step.complete(stepC.actionId)
+        step.complete(stepB.commandId)
+        step.complete(stepC.commandId)
         step.isCompleted() shouldBe true
         step shouldBe Or(listOf(And(listOf(stepB, stepC))))
     }
@@ -135,7 +135,7 @@ class StepCriterionTests : StringSpec({
         val stepC = getStepId()
         val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.complete(stepB.actionId)
+        step.complete(stepB.commandId)
         step shouldBe And(listOf(stepA, stepB))
     }
 
@@ -146,8 +146,8 @@ class StepCriterionTests : StringSpec({
         val stepD = getStepId()
         val step = Or(listOf(stepA, And(listOf(stepB, Or(listOf(stepC, stepD))))))
 
-        step.complete(stepC.actionId)
-        step.complete(stepB.actionId)
+        step.complete(stepC.commandId)
+        step.complete(stepB.commandId)
         step shouldBe Or(listOf(And(listOf(stepB, stepC))))
     }
 })

@@ -4,18 +4,20 @@ import com.zenaton.common.data.DateTime
 import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
 import com.zenaton.jobManager.data.AvroSerializedData
-import com.zenaton.workflowManager.data.DecisionId
-import com.zenaton.workflowManager.data.DecisionInput
+import com.zenaton.workflowManager.data.decisions.DecisionId
+import com.zenaton.workflowManager.data.decisions.DecisionInput
+// import com.zenaton.workflowManager.data.decisions.DecisionOutput
 import com.zenaton.workflowManager.data.WorkflowId
 import com.zenaton.workflowManager.data.WorkflowName
-import com.zenaton.workflowManager.data.actions.Action
-import com.zenaton.workflowManager.data.actions.ActionId
-import com.zenaton.workflowManager.data.actions.AvroAction
+import com.zenaton.workflowManager.data.commands.Command
+import com.zenaton.workflowManager.data.commands.CommandId
 import com.zenaton.workflowManager.data.branches.AvroBranch
 import com.zenaton.workflowManager.data.branches.Branch
 import com.zenaton.workflowManager.data.branches.BranchId
 import com.zenaton.workflowManager.data.branches.BranchInput
 import com.zenaton.workflowManager.data.branches.BranchName
+import com.zenaton.workflowManager.data.commands.AvroCommand
+import com.zenaton.workflowManager.data.decisions.AvroDecisionInput
 import com.zenaton.workflowManager.data.properties.Properties
 import com.zenaton.workflowManager.data.properties.PropertyHash
 import com.zenaton.workflowManager.data.properties.PropertyKey
@@ -25,7 +27,6 @@ import com.zenaton.workflowManager.data.steps.AvroStepCriterionType
 import com.zenaton.workflowManager.data.steps.Step
 import com.zenaton.workflowManager.data.steps.StepCriterion
 import com.zenaton.workflowManager.data.steps.StepHash
-import com.zenaton.workflowManager.decisions.AvroDecisionInput
 import com.zenaton.workflowManager.messages.AvroCancelWorkflow
 import com.zenaton.workflowManager.messages.AvroChildWorkflowCanceled
 import com.zenaton.workflowManager.messages.AvroChildWorkflowCompleted
@@ -274,7 +275,7 @@ object AvroConverter {
      *  Decision Input
      */
 
-    fun toAvroDecisionInput(obj: DecisionInput) = AvroDecisionInput.newBuilder().apply {
+    fun toAvroDecisionInput(obj: DecisionInput): AvroDecisionInput = AvroDecisionInput.newBuilder().apply {
         branches = obj.branches.map { toAvroBranch(it) }
         store = convertJson(obj.store)
     }.build()
@@ -285,35 +286,48 @@ object AvroConverter {
     )
 
     /**
+     *  Decision Output
+     */
+
+//    fun toAvroDecisionOutput(obj: DecisionOutput): AvroDecisionOutput = AvroDecisionOutput.newBuilder().apply {
+//        branches = obj.branches.map { toAvroBranch(it) }
+//    }.build()
+//
+//    fun fromAvroDecisionOutput(avro: AvroDecisionOutput) = DecisionOuput(
+//        branches = avro.branches.map { fromAvroBranch(it) },
+//        store = convertJson(avro.store)
+//    )
+
+    /**
      *  StepCriteria
      */
 
     fun toAvroStepCriterion(obj: StepCriterion): AvroStepCriterion = when (obj) {
         is StepCriterion.Id -> AvroStepCriterion.newBuilder().apply {
             type = AvroStepCriterionType.ID
-            actionId = obj.actionId.id
-            actionStatus = obj.actionStatus
+            commandId = obj.commandId.id
+            commandStatus = obj.commandStatus
         }.build()
         is StepCriterion.Or -> AvroStepCriterion.newBuilder().apply {
             type = AvroStepCriterionType.OR
-            actionCriteria = obj.actionCriteria.map { toAvroStepCriterion(it) }
+            commandCriteria = obj.commandCriteria.map { toAvroStepCriterion(it) }
         }.build()
         is StepCriterion.And -> AvroStepCriterion.newBuilder().apply {
             type = AvroStepCriterionType.AND
-            actionCriteria = obj.actionCriteria.map { toAvroStepCriterion(it) }
+            commandCriteria = obj.commandCriteria.map { toAvroStepCriterion(it) }
         }.build()
     }
 
     fun fromAvroStepCriterion(avro: AvroStepCriterion): StepCriterion = when (avro.type) {
         AvroStepCriterionType.ID -> StepCriterion.Id(
-            actionId = ActionId(avro.actionId),
-            actionStatus = avro.actionStatus
+            commandId = CommandId(avro.commandId),
+            commandStatus = avro.commandStatus
         )
         AvroStepCriterionType.OR -> StepCriterion.Or(
-            actionCriteria = avro.actionCriteria.map { fromAvroStepCriterion(it) }
+            commandCriteria = avro.commandCriteria.map { fromAvroStepCriterion(it) }
         )
         AvroStepCriterionType.AND -> StepCriterion.And(
-            actionCriteria = avro.actionCriteria.map { fromAvroStepCriterion(it) }
+            commandCriteria = avro.commandCriteria.map { fromAvroStepCriterion(it) }
         )
         null -> throw Exception("this should not happen")
     }
@@ -344,7 +358,7 @@ object AvroConverter {
         propertiesAtStart = toAvroProperties(obj.propertiesAtStart)
         dispatchedAt = convertJson(obj.dispatchedAt)
         steps = obj.steps.map { toAvroStep(it) }
-        actions = obj.actions.map { convertJson<AvroAction>(it) }
+        commands = obj.commands.map { convertJson<AvroCommand>(it) }
     }.build()
 
     fun fromAvroBranch(avro: AvroBranch) = Branch(
@@ -354,7 +368,7 @@ object AvroConverter {
         propertiesAtStart = fromAvroProperties(avro.propertiesAtStart),
         dispatchedAt = DateTime(avro.dispatchedAt),
         steps = avro.steps.map { fromAvroStep(it) },
-        actions = avro.actions.map { convertJson<Action>(it) }
+        commands = avro.commands.map { convertJson<Command>(it) }
     )
 
     /**

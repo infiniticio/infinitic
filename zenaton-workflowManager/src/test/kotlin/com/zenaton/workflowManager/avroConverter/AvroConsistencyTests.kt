@@ -14,12 +14,12 @@ import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
 
 class AvroConsistencyTests : StringSpec({
-    ForWorkflowEngineMessage::class.sealedSubclasses.forEach {
-        val msg = TestFactory.random(it)
-        include(checkAvroConversionToEnvelopeForWorkflowEngine(msg))
-    }
-
-    checkAllSubTypesFromEnvelope<ForWorkflowEngineMessage>(this, AvroEnvelopeForWorkflowEngine())
+//    ForWorkflowEngineMessage::class.sealedSubclasses.forEach {
+//        val msg = TestFactory.random(it)
+//        include(checkAvroConversionToEnvelopeForWorkflowEngine(msg))
+//    }
+//
+//    checkAllSubTypesFromEnvelope<ForWorkflowEngineMessage>(this, AvroEnvelopeForWorkflowEngine())
 })
 
 fun checkAvroConversionToEnvelopeForWorkflowEngine(msg: ForWorkflowEngineMessage) = stringSpec {

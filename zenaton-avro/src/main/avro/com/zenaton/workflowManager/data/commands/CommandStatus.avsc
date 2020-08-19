@@ -1,7 +1,7 @@
 {
   "type": "enum",
-  "name": "ActionStatus",
-  "namespace": "com.zenaton.workflowManager.data.actions",
+  "name": "CommandStatus",
+  "namespace": "com.zenaton.workflowManager.data.commands",
   "symbols": [
     "DISPATCHED",
     "CANCELED",

@@ -38,10 +38,10 @@
       }
     },
     {
-      "name": "actions",
+      "name": "commands",
       "type": {
         "type": "array",
-        "items": "com.zenaton.workflowManager.data.actions.AvroAction"
+        "items": "com.zenaton.workflowManager.data.commands.AvroCommand"
       }
     }
   ]

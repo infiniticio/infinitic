@@ -8,5 +8,5 @@ import com.zenaton.jobManager.common.data.interfaces.PropertyInterface
 data class Property
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
 constructor(@get:JsonValue override val property: SerializedData) : PropertyInterface {
-    fun propertyHash() = PropertyHash(property.hash())
+    fun hash() = PropertyHash(property.hash())
 }

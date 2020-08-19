@@ -24,7 +24,7 @@ class Client() {
      * Use this method to dispatch a job
      * TODO: using class instance instead of interface is not supported
      */
-    inline fun <reified T> dispatch(
+    inline fun <reified T> dispatchJob(
         options: JobOptions = JobOptions(),
         meta: JobMeta = JobMeta(),
         method: T.() -> Any?
@@ -50,7 +50,7 @@ class Client() {
      * Use this method to manually retry a job
      * when a non-null parameter is provided, it will supersede current one
      */
-    fun retry(
+    fun retryJob(
         id: String,
         name: JobName? = null,
         input: JobInput? = null,
@@ -70,7 +70,7 @@ class Client() {
     /*
      * Use this method to manually cancel a job
      */
-    fun cancel(
+    fun cancelJob(
         id: String,
         output: Any? = null
     ) {

@@ -43,7 +43,7 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            job = client.dispatch<JobTest> { log() }
+            job = client.dispatchJob<JobTest> { log() }
         }
         // check that job is terminated
         storage.isTerminated(job) shouldBe true
@@ -59,7 +59,7 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            job = client.dispatch<JobTest> { log() }
+            job = client.dispatchJob<JobTest> { log() }
         }
         // check that job is terminated
         storage.isTerminated(job) shouldBe true
@@ -75,7 +75,7 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            job = client.dispatch<JobTest> { log() }
+            job = client.dispatchJob<JobTest> { log() }
         }
         // check that job is not terminated
         storage.isTerminated(job) shouldBe false
@@ -91,7 +91,7 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            job = client.dispatch<JobTest> { log() }
+            job = client.dispatchJob<JobTest> { log() }
         }
         // check that job is not terminated
         storage.isTerminated(job) shouldBe false
@@ -111,9 +111,9 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            job = client.dispatch<JobTest> { log() }
+            job = client.dispatchJob<JobTest> { log() }
             delay(100)
-            client.retry(id = job.jobId.id)
+            client.retryJob(id = job.jobId.id)
         }
         // check that job is terminated
         storage.isTerminated(job)
@@ -130,9 +130,9 @@ class AvroEngineTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            job = client.dispatch<JobTest> { log() }
+            job = client.dispatchJob<JobTest> { log() }
             delay(100)
-            client.cancel(id = job.jobId.id)
+            client.cancelJob(id = job.jobId.id)
         }
         // check that job is terminated
         storage.isTerminated(job)

@@ -7,12 +7,12 @@ import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventData
 import com.zenaton.workflowManager.data.EventName
 import com.zenaton.workflowManager.data.WorkflowId
-import com.zenaton.workflowManager.data.actions.Action
-import com.zenaton.workflowManager.data.actions.ActionStatus
-import com.zenaton.workflowManager.data.actions.DispatchChildWorkflow
-import com.zenaton.workflowManager.data.actions.DispatchTask
-import com.zenaton.workflowManager.data.actions.WaitDelay
-import com.zenaton.workflowManager.data.actions.WaitEvent
+import com.zenaton.workflowManager.data.commands.Command
+import com.zenaton.workflowManager.data.commands.CommandStatus
+import com.zenaton.workflowManager.data.commands.DispatchChildWorkflow
+import com.zenaton.workflowManager.data.commands.DispatchTask
+import com.zenaton.workflowManager.data.commands.WaitDelay
+import com.zenaton.workflowManager.data.commands.WaitEvent
 import com.zenaton.workflowManager.data.properties.Properties
 import com.zenaton.workflowManager.data.steps.Step
 
@@ -23,15 +23,15 @@ data class Branch(
     val propertiesAtStart: Properties = Properties(mapOf()),
     val dispatchedAt: DateTime = DateTime(),
     val steps: List<Step> = listOf(),
-    val actions: List<Action> = listOf()
+    val commands: List<Command> = listOf()
 ) {
     fun completeTask(jobId: JobId, jobOutput: JobOutput, properties: Properties): Boolean {
         // complete action if relevant
-        val task = actions
+        val task = commands
             .filterIsInstance<DispatchTask>()
-            .firstOrNull { a -> a.jobId == jobId && a.actionStatus != ActionStatus.COMPLETED }
-        task?.jobOutput = jobOutput
-        task?.actionStatus = ActionStatus.COMPLETED
+            .firstOrNull { a -> a.taskId == jobId && a.actionStatus != CommandStatus.COMPLETED }
+        task?.taskOutput = jobOutput
+        task?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
         return steps.last().completeTask(jobId, properties)
@@ -39,11 +39,11 @@ data class Branch(
 
     fun completeChildWorkflow(childWorkflowId: WorkflowId, childWorkflowOutput: BranchOutput, properties: Properties): Boolean {
         // complete action if relevant
-        val childWorkflow = actions
+        val childWorkflow = commands
             .filterIsInstance<DispatchChildWorkflow>()
-            .firstOrNull { a -> a.childWorkflowId == childWorkflowId && a.actionStatus != ActionStatus.COMPLETED }
+            .firstOrNull { a -> a.childWorkflowId == childWorkflowId && a.actionStatus != CommandStatus.COMPLETED }
         childWorkflow?.childWorkflowOutput = childWorkflowOutput
-        childWorkflow?.actionStatus = ActionStatus.COMPLETED
+        childWorkflow?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
         return steps.last().completeChildWorkflow(childWorkflowId, properties)
@@ -51,10 +51,10 @@ data class Branch(
 
     fun completeDelay(delayId: DelayId, properties: Properties): Boolean {
         // complete action if relevant
-        val delay = actions
+        val delay = commands
             .filterIsInstance<WaitDelay>()
-            .firstOrNull { a -> a.delayId == delayId && a.actionStatus != ActionStatus.COMPLETED }
-        delay?.actionStatus = ActionStatus.COMPLETED
+            .firstOrNull { a -> a.delayId == delayId && a.actionStatus != CommandStatus.COMPLETED }
+        delay?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
         return steps.last().completeDelay(delayId, properties)
@@ -62,11 +62,11 @@ data class Branch(
 
     fun completeEvent(eventName: EventName, eventData: EventData, properties: Properties): Boolean {
         // complete action if relevant
-        val event = actions
+        val event = commands
             .filterIsInstance<WaitEvent>()
-            .firstOrNull { a -> a.eventName == eventName && a.actionStatus != ActionStatus.COMPLETED }
+            .firstOrNull { a -> a.eventName == eventName && a.actionStatus != CommandStatus.COMPLETED }
         event ?.eventData = eventData
-        event ?.actionStatus = ActionStatus.COMPLETED
+        event ?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
         return if (event != null) steps.last().completeEvent(event.eventId, properties) else false

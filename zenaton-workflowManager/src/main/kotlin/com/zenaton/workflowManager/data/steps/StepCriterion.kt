@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.zenaton.workflowManager.data.actions.ActionId
-import com.zenaton.workflowManager.data.actions.ActionStatus
+import com.zenaton.workflowManager.data.commands.CommandId
+import com.zenaton.workflowManager.data.commands.CommandStatus
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
@@ -15,22 +15,22 @@ import com.zenaton.workflowManager.data.actions.ActionStatus
 )
 @JsonIgnoreProperties(ignoreUnknown = true)
 sealed class StepCriterion {
-    data class Id(val actionId: ActionId, var actionStatus: ActionStatus = ActionStatus.DISPATCHED) : StepCriterion()
-    data class And(var actionCriteria: List<StepCriterion>) : StepCriterion()
-    data class Or(var actionCriteria: List<StepCriterion>) : StepCriterion()
+    data class Id(val commandId: CommandId, var commandStatus: CommandStatus = CommandStatus.DISPATCHED) : StepCriterion()
+    data class And(var commandCriteria: List<StepCriterion>) : StepCriterion()
+    data class Or(var commandCriteria: List<StepCriterion>) : StepCriterion()
 
     @JsonIgnore
     fun isCompleted(): Boolean = when (this) {
-        is Id -> this.actionStatus == ActionStatus.COMPLETED
-        is And -> this.actionCriteria.all { s -> s.isCompleted() }
-        is Or -> this.actionCriteria.any { s -> s.isCompleted() }
+        is Id -> this.commandStatus == CommandStatus.COMPLETED
+        is And -> this.commandCriteria.all { s -> s.isCompleted() }
+        is Or -> this.commandCriteria.any { s -> s.isCompleted() }
     }
 
-    fun complete(actionId: ActionId): StepCriterion {
+    fun complete(commandId: CommandId): StepCriterion {
         when (this) {
-            is Id -> if (this.actionId == actionId) this.actionStatus = ActionStatus.COMPLETED
-            is And -> this.actionCriteria = this.actionCriteria.map { s -> s.complete(actionId) }
-            is Or -> this.actionCriteria = this.actionCriteria.map { s -> s.complete(actionId) }
+            is Id -> if (this.commandId == commandId) this.commandStatus = CommandStatus.COMPLETED
+            is And -> this.commandCriteria = this.commandCriteria.map { s -> s.complete(commandId) }
+            is Or -> this.commandCriteria = this.commandCriteria.map { s -> s.complete(commandId) }
         }
         return this.resolveOr().compose()
     }
@@ -38,13 +38,13 @@ sealed class StepCriterion {
     private fun resolveOr(): StepCriterion {
         when (this) {
             is Id -> Unit
-            is And -> this.actionCriteria = this.actionCriteria.map { s -> s.resolveOr() }
+            is And -> this.commandCriteria = this.commandCriteria.map { s -> s.resolveOr() }
             is Or ->
-                this.actionCriteria =
+                this.commandCriteria =
                     if (this.isCompleted())
-                        listOf(this.actionCriteria.first { s -> s.isCompleted() }.resolveOr())
+                        listOf(this.commandCriteria.first { s -> s.isCompleted() }.resolveOr())
                     else
-                        this.actionCriteria.map { s -> s.resolveOr() }
+                        this.commandCriteria.map { s -> s.resolveOr() }
         }
         return this
     }
@@ -52,21 +52,21 @@ sealed class StepCriterion {
     private fun compose(): StepCriterion {
         when (this) {
             is Id -> Unit
-            is And -> while (this.actionCriteria.any { s -> s is And || (s is Or && s.actionCriteria.count() == 1) }) {
-                this.actionCriteria = this.actionCriteria.fold(mutableListOf<StepCriterion>()) { l, s ->
+            is And -> while (this.commandCriteria.any { s -> s is And || (s is Or && s.commandCriteria.count() == 1) }) {
+                this.commandCriteria = this.commandCriteria.fold(mutableListOf<StepCriterion>()) { l, s ->
                     return@fold when (s) {
                         is Id -> { l.add(s); l }
-                        is And -> { l.addAll(s.actionCriteria); l }
-                        is Or -> { if (s.actionCriteria.count() == 1) l.addAll(s.actionCriteria) else l.add(s); l }
+                        is And -> { l.addAll(s.commandCriteria); l }
+                        is Or -> { if (s.commandCriteria.count() == 1) l.addAll(s.commandCriteria) else l.add(s); l }
                     }
                 }
             }
-            is Or -> while (this.actionCriteria.any { s -> s is Or || (s is And && s.actionCriteria.count() == 1) }) {
-                this.actionCriteria = this.actionCriteria.fold(mutableListOf<StepCriterion>()) { l, s ->
+            is Or -> while (this.commandCriteria.any { s -> s is Or || (s is And && s.commandCriteria.count() == 1) }) {
+                this.commandCriteria = this.commandCriteria.fold(mutableListOf<StepCriterion>()) { l, s ->
                     return@fold when (s) {
                         is Id -> { l.add(s); l }
-                        is And -> { if (s.actionCriteria.count() == 1) l.addAll(s.actionCriteria) else l.add(s); l }
-                        is Or -> { l.addAll(s.actionCriteria); l }
+                        is And -> { if (s.commandCriteria.count() == 1) l.addAll(s.commandCriteria) else l.add(s); l }
+                        is Or -> { l.addAll(s.commandCriteria); l }
                     }
                 }
             }
