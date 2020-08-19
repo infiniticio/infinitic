@@ -1,0 +1,10 @@
+{
+  "type": "enum",
+  "name": "AvroStepCriterionType",
+  "namespace": "io.infinitic.workflowManager.data.steps",
+  "symbols": [
+    "ID",
+    "OR",
+    "AND"
+  ]
+}

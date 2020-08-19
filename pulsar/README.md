@@ -44,6 +44,6 @@ Connect with user = `pulsar` and password = `pulsar`
 
 To obtain the service url of Pulsar *from the Pulsar Manager container*, do:
 ```sh
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' zenaton_pulsar_1
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' infinitic_pulsar_1
 ```
 you should obtain something like `172.18.0.2`. Then the service url to use for adding an environment is `http://172.18.0.2:8080`

@@ -23,7 +23,7 @@
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "name": "@zenaton/package-template",
+  "name": "@infinitic/package-template",
   "author": "Zenaton",
   "module": "dist/package-template.esm.js"
 }

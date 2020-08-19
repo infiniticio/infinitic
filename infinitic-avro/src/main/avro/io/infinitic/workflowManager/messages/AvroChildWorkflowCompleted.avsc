@@ -1,0 +1,21 @@
+{
+  "type": "record",
+  "name": "AvroChildWorkflowCompleted",
+  "namespace": "io.infinitic.workflowManager.messages",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "childWorkflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "childWorkflowOutput",
+      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+    }
+  ]
+}

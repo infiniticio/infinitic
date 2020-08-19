@@ -1,0 +1,138 @@
+{
+  "type": "record",
+  "name": "AvroEnvelopeForWorkflowEngine",
+  "namespace": "io.infinitic.workflowManager.messages.envelopes",
+  "fields": [
+    {
+      "name": "type",
+      "type": {
+        "type": "enum",
+        "name": "AvroForWorkflowEngineMessageType",
+        "symbols": [
+          "AvroCancelWorkflow",
+          "AvroChildWorkflowCanceled",
+          "AvroChildWorkflowCompleted",
+          "AvroDecisionCompleted",
+          "AvroDecisionDispatched",
+          "AvroDelayCompleted",
+          "AvroDispatchWorkflow",
+          "AvroEventReceived",
+          "AvroTaskCanceled",
+          "AvroTaskCompleted",
+          "AvroTaskDispatched",
+          "AvroWorkflowCanceled",
+          "AvroWorkflowCompleted"
+        ]
+      }
+    },
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "AvroCancelWorkflow",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroCancelWorkflow"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroChildWorkflowCanceled",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroChildWorkflowCanceled"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroChildWorkflowCompleted",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroChildWorkflowCompleted"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroDecisionCompleted",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroDecisionCompleted"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroDecisionDispatched",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroDecisionDispatched"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroDelayCompleted",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroDelayCompleted"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroDispatchWorkflow",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroDispatchWorkflow"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroEventReceived",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroEventReceived"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroTaskCanceled",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroTaskCanceled"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroTaskCompleted",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroTaskCompleted"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroTaskDispatched",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroTaskDispatched"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroWorkflowCanceled",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroWorkflowCanceled"
+      ],
+      "default": null
+    },
+    {
+      "name": "AvroWorkflowCompleted",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.messages.AvroWorkflowCompleted"
+      ],
+      "default": null
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "type": "record",
+  "name": "AvroTaskDispatched",
+  "namespace": "io.infinitic.workflowManager.messages",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskInput",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.taskManager.data.AvroSerializedData"
+      },
+      "default": []
+    }
+  ]
+}

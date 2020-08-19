@@ -2269,30 +2269,30 @@
     semver "^7.3.2"
     tsutils "^3.17.1"
 
-"@zenaton/client@file:packages/zenaton-client":
+"@infinitic/client@file:packages/infinitic-client":
   version "0.0.1"
   dependencies:
     "@types/uuid" "^8.0.0"
-    "@zenaton/messages" "^0.0.1"
+    "@infinitic/messages" "^0.0.1"
     p-limit "^3.0.1"
     pulsar-client "^1.1.0"
     uuid "^8.1.0"
 
-"@zenaton/examples@file:packages/zenaton-examples":
+"@infinitic/examples@file:packages/infinitic-examples":
   version "0.0.1"
   dependencies:
-    "@zenaton/client" "^0.0.1"
-    "@zenaton/worker" "^0.0.1"
+    "@infinitic/client" "^0.0.1"
+    "@infinitic/worker" "^0.0.1"
 
-"@zenaton/messages@file:packages/zenaton-messages":
+"@infinitic/messages@file:packages/infinitic-messages":
   version "0.0.1"
   dependencies:
     avsc "^5.4.21"
 
-"@zenaton/worker@file:packages/zenaton-worker":
+"@infinitic/worker@file:packages/infinitic-worker":
   version "0.0.1"
   dependencies:
-    "@zenaton/messages" "^0.0.1"
+    "@infinitic/messages" "^0.0.1"
     pulsar-client "^1.1.0"
 
 "@zkochan/cmd-shim@^3.1.0":

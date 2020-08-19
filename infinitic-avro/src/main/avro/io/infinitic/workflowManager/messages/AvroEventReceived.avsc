@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "AvroEventReceived",
+  "namespace": "io.infinitic.workflowManager.messages",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "eventName",
+      "type": "string"
+    },
+    {
+      "name": "eventData",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.taskManager.data.AvroSerializedData"
+      },
+      "default": []
+    }
+  ]
+}

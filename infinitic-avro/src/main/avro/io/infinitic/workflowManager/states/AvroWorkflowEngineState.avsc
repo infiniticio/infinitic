@@ -1,0 +1,62 @@
+{
+  "type": "record",
+  "name": "AvroWorkflowEngineState",
+  "namespace": "io.infinitic.workflowManager.states",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "parentWorkflowId",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "logicalType": "uuid"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "ongoingDecisionId",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "logicalType": "uuid"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "bufferedMessages",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine"
+      }
+    },
+    {
+      "name": "store",
+      "type": {
+        "type": "map",
+        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "runningBranches",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.workflowManager.data.branches.AvroBranch"
+      }
+    },
+    {
+      "name": "currentProperties",
+      "type": {
+        "type": "map",
+        "values": "string"
+      }
+    }
+  ]
+}

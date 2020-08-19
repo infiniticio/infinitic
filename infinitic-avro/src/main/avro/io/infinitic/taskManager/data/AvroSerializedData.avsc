@@ -1,0 +1,33 @@
+{
+  "type": "record",
+  "name": "AvroSerializedData",
+  "namespace": "io.infinitic.taskManager.data",
+  "fields": [
+    {
+      "name": "bytes",
+      "type": "bytes"
+    },
+    {
+      "name": "type",
+      "type": {
+        "type": "enum",
+        "name": "AvroSerializedDataType",
+        "symbols": [
+          "NULL",
+          "BYTES",
+          "JSON",
+          "AVRO",
+          "CUSTOM"
+        ]
+      }
+    },
+    {
+      "name": "meta",
+      "type": {
+        "type": "map",
+        "values": "bytes"
+      },
+      "default": {}
+    }
+  ]
+}

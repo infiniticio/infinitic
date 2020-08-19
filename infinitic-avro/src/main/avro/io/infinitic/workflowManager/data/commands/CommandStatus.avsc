@@ -1,0 +1,10 @@
+{
+  "type": "enum",
+  "name": "CommandStatus",
+  "namespace": "io.infinitic.workflowManager.data.commands",
+  "symbols": [
+    "DISPATCHED",
+    "CANCELED",
+    "COMPLETED"
+  ]
+}

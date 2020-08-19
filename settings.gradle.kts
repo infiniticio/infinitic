@@ -1,15 +1,15 @@
-rootProject.name = "com.zenaton"
+rootProject.name = "io.infinitic"
 
-include("zenaton-avro")
-include("zenaton-taskManager-common")
-include("zenaton-taskManager-worker")
-include("zenaton-taskManager-client")
-include("zenaton-taskManager-engine")
-include("zenaton-taskManager-engine-pulsar")
-include("zenaton-taskManager-tests")
-include("zenaton-rest-api")
-include("zenaton-workflowManager")
-include("zenaton-workflowManager-pulsar")
+include("infinitic-avro")
+include("infinitic-taskManager-common")
+include("infinitic-taskManager-worker")
+include("infinitic-taskManager-client")
+include("infinitic-taskManager-engine")
+include("infinitic-taskManager-engine-pulsar")
+include("infinitic-taskManager-tests")
+include("infinitic-rest-api")
+include("infinitic-workflowManager-engine")
+include("infinitic-workflowManager-engine-pulsar")
 
 pluginManagement {
     repositories {
