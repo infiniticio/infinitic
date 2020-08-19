@@ -35,13 +35,13 @@ jobs:
 
       - name: Add job manager to release
         run: |
-          cp $GITHUB_WORKSPACE/zenaton-taskManager-pulsar/build/libs/zenaton-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar ${{ steps.create-release-dir.outputs.release-dir }}
+          cp $GITHUB_WORKSPACE/infinitic-taskManager-pulsar/build/libs/infinitic-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar ${{ steps.create-release-dir.outputs.release-dir }}
 
       - name: Add schemas to release
         working-directory: ${{ runner.temp }}
         run: |
           mkdir build-schemas && cd $_
-          java -cp $GITHUB_WORKSPACE/zenaton-taskManager-pulsar/build/libs/zenaton-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar com.zenaton.taskManager.pulsar.utils.GenerateSchemaFilesKt
+          java -cp $GITHUB_WORKSPACE/infinitic-taskManager-pulsar/build/libs/infinitic-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar io.infinitic.taskManager.pulsar.utils.GenerateSchemaFilesKt
           mkdir ${{ steps.create-release-dir.outputs.release-dir }}/schemas
           mv build/schemas/* ${{ steps.create-release-dir.outputs.release-dir }}/schemas
           cd ..
@@ -49,7 +49,7 @@ jobs:
 
       - name: Add rest api to release
         run: |
-          cp $GITHUB_WORKSPACE/zenaton-rest-api/build/libs/zenaton-rest-api-${{ steps.detect-project-version.outputs.project-version }}-all.jar ${{ steps.create-release-dir.outputs.release-dir }}
+          cp $GITHUB_WORKSPACE/infinitic-rest-api/build/libs/infinitic-rest-api-${{ steps.detect-project-version.outputs.project-version }}-all.jar ${{ steps.create-release-dir.outputs.release-dir }}
 
       - name: Use Node 12
         uses: actions/setup-node@v1

@@ -1,0 +1,25 @@
+{
+  "type": "record",
+  "name": "AvroTaskAttemptStarted",
+  "namespace": "io.infinitic.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskAttemptId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskAttemptRetry",
+      "type": "int"
+    },
+    {
+      "name": "taskAttemptIndex",
+      "type": "int"
+    }
+  ]
+}

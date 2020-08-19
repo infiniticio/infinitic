@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "AvroTaskCreated",
+  "namespace": "io.infinitic.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskName",
+      "type": "string"
+    }
+  ]
+}

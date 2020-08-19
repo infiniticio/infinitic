@@ -9,10 +9,10 @@ services:
     volumes:
       - "pulsardata:/pulsar/data"
       - "pulsarconf:/pulsar/conf"
-      - "../zenaton-taskManager-engine-pulsar/build/libs:/zenaton/taskManager/libs:delegated"
-      - "../zenaton-taskManager-engine-pulsar/build/schemas:/zenaton/taskManager/schemas:delegated"
-      - "../zenaton-workflowManager-pulsar/build/libs:/zenaton/workflowManager/libs:delegated"
-      - "../zenaton-workflowManager-pulsar/build/schemas:/zenaton/workflowManager/schemas:delegated"
+      - "../infinitic-taskManager-engine-pulsar/build/libs:/infinitic/taskManager/libs:delegated"
+      - "../infinitic-taskManager-engine-pulsar/build/schemas:/infinitic/taskManager/schemas:delegated"
+      - "../infinitic-workflowManager-engine-pulsar/build/libs:/infinitic/workflowManager/libs:delegated"
+      - "../infinitic-workflowManager-engine-pulsar/build/schemas:/infinitic/workflowManager/schemas:delegated"
     ports:
       - "6650:6650"
       - "8080:8080"

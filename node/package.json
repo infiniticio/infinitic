@@ -19,9 +19,9 @@
     "packages/*"
   ],
   "dependencies": {
-    "@zenaton/messages": "file:packages/zenaton-messages",
-    "@zenaton/worker": "file:packages/zenaton-worker",
-    "@zenaton/client": "file:packages/zenaton-client",
-    "@zenaton/examples": "file:packages/zenaton-examples"
+    "@infinitic/messages": "file:packages/infinitic-messages",
+    "@infinitic/worker": "file:packages/infinitic-worker",
+    "@infinitic/client": "file:packages/infinitic-client",
+    "@infinitic/examples": "file:packages/infinitic-examples"
   }
 }

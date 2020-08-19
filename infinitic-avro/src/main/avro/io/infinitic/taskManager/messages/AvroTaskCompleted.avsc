@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "AvroTaskCompleted",
+  "namespace": "io.infinitic.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskOutput",
+      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+    },
+    {
+      "name": "taskMeta",
+      "type": {
+        "type": "map",
+        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+      }
+    }
+  ]
+}

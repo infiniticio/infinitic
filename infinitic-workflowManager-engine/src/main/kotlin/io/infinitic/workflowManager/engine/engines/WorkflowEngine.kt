@@ -1,0 +1,196 @@
+package io.infinitic.workflowManager.engine.engines
+
+import io.infinitic.taskManager.common.data.TaskId
+import io.infinitic.taskManager.common.data.TaskInput
+import io.infinitic.taskManager.common.data.TaskMeta
+import io.infinitic.taskManager.common.data.TaskName
+import io.infinitic.taskManager.common.data.TaskOptions
+import io.infinitic.taskManager.common.messages.DispatchTask
+import io.infinitic.workflowManager.engine.avroConverter.AvroConverter
+import io.infinitic.workflowManager.engine.data.decisions.DecisionId
+import io.infinitic.workflowManager.engine.data.decisions.DecisionInput
+import io.infinitic.workflowManager.engine.data.branches.Branch
+import io.infinitic.workflowManager.engine.data.branches.BranchName
+import io.infinitic.workflowManager.engine.data.properties.PropertyStore
+import io.infinitic.workflowManager.engine.states.WorkflowEngineState
+import io.infinitic.workflowManager.engine.storages.WorkflowEngineStateStorage
+import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
+import io.infinitic.workflowManager.engine.messages.CancelWorkflow
+import io.infinitic.workflowManager.engine.messages.ChildWorkflowCanceled
+import io.infinitic.workflowManager.engine.messages.ChildWorkflowCompleted
+import io.infinitic.workflowManager.engine.messages.DecisionCompleted
+import io.infinitic.workflowManager.engine.messages.DecisionDispatched
+import io.infinitic.workflowManager.engine.messages.DelayCompleted
+import io.infinitic.workflowManager.engine.messages.DispatchWorkflow
+import io.infinitic.workflowManager.engine.messages.EventReceived
+import io.infinitic.workflowManager.engine.messages.ForWorkflowEngineMessage
+import io.infinitic.workflowManager.engine.messages.TaskCanceled
+import io.infinitic.workflowManager.engine.messages.TaskCompleted
+import io.infinitic.workflowManager.engine.messages.TaskDispatched
+import io.infinitic.workflowManager.engine.messages.WorkflowCanceled
+import io.infinitic.workflowManager.engine.messages.WorkflowCompleted
+import org.slf4j.Logger
+
+class WorkflowEngine {
+    companion object {
+        const val META_WORKFLOW_ID = "workflowID"
+    }
+
+    lateinit var logger: Logger
+    lateinit var storage: WorkflowEngineStateStorage
+    lateinit var dispatcher: Dispatcher
+
+    fun handle(msg: ForWorkflowEngineMessage) {
+        // discard immediately messages that are not processed
+        when (msg) {
+            is DecisionDispatched -> return
+            is TaskDispatched -> return
+            is WorkflowCanceled -> return
+            is WorkflowCompleted -> return
+        }
+
+        // get associated state
+        val oldState = storage.getState(msg.workflowId)
+
+        // discard message it workflow is already terminated
+        if (oldState == null && msg !is DispatchWorkflow) return
+
+        // store message (except DecisionCompleted) if a decision is ongoing
+        if (oldState?.ongoingDecisionId != null && msg !is DecisionCompleted) {
+            val newState = bufferMessage(oldState, msg)
+            storage.updateState(msg.workflowId, newState, oldState)
+            return
+        }
+
+        val newState =
+            if (oldState == null)
+                dispatchWorkflow(msg as DispatchWorkflow)
+            else when (msg) {
+                is CancelWorkflow -> cancelWorkflow(oldState, msg)
+                is ChildWorkflowCanceled -> childWorkflowCanceled(oldState, msg)
+                is ChildWorkflowCompleted -> childWorkflowCompleted(oldState, msg)
+                is DecisionCompleted -> decisionCompleted(oldState, msg)
+                is DelayCompleted -> delayCompleted(oldState, msg)
+                is EventReceived -> eventReceived(oldState, msg)
+                is TaskCanceled -> taskCanceled(oldState, msg)
+                is TaskCompleted -> taskCompleted(oldState, msg)
+                else -> throw Exception("Unknown ForWorkflowEngineMessage: ${msg::class.qualifiedName}")
+            }
+
+        // store state if modified
+        if (newState != oldState) {
+            storage.updateState(msg.workflowId, newState, oldState)
+        }
+    }
+
+    private fun bufferMessage(state: WorkflowEngineState, msg: ForWorkflowEngineMessage): WorkflowEngineState {
+        // buffer this message to handle it after decision returns
+        // val bufferedMessages = oldState.bufferedMessages.add(msg)
+        // oldState.bufferedMessages.add(msg)
+        TODO()
+    }
+
+    private fun cancelWorkflow(state: WorkflowEngineState, msg: CancelWorkflow): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun childWorkflowCanceled(state: WorkflowEngineState, msg: ChildWorkflowCanceled): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun dispatchWorkflow(msg: DispatchWorkflow): WorkflowEngineState {
+        val state = WorkflowEngineState(workflowId = msg.workflowId)
+        val decisionId = DecisionId()
+        // define branch
+        val branch = Branch(
+            branchName = BranchName("handle"),
+            branchInput = msg.workflowInput
+        )
+        // initialize state
+        state.ongoingDecisionId = decisionId
+        state.runningBranches.add(branch)
+        // decision input
+        val decisionInput = DecisionInput(
+            branches = listOf(branch),
+            store = filterStore(state.store, listOf(branch))
+        )
+        // dispatch decision
+        dispatcher.toDeciders(
+            DispatchTask(
+                taskId = TaskId(decisionId.id),
+                taskName = TaskName(msg.workflowName.name),
+                taskInput = TaskInput.builder()
+                    .add(AvroConverter.toAvroDecisionInput(decisionInput))
+                    .build(),
+                taskOptions = TaskOptions(),
+                taskMeta = TaskMeta.builder()
+                    .add(META_WORKFLOW_ID, msg.workflowId.id)
+                    .build()
+            )
+        )
+        // log event
+        dispatcher.toWorkflowEngine(
+            DecisionDispatched(
+                decisionId = decisionId,
+                workflowId = msg.workflowId,
+                workflowName = msg.workflowName,
+                decisionInput = decisionInput
+            )
+        )
+
+        return state
+    }
+
+    private fun decisionCompleted(state: WorkflowEngineState, msg: DecisionCompleted): WorkflowEngineState {
+        TODO()
+//        DispatchTask(
+//            taskId = msg.taskId,
+//            taskName = msg.taskName,
+//            taskInput = msg.taskInput,
+//            taskMeta = TaskMeta.builder().add("workflowId", msg.workflowId.id).get()
+//        )
+    }
+
+    private fun delayCompleted(state: WorkflowEngineState, msg: DelayCompleted): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun taskCanceled(state: WorkflowEngineState, msg: TaskCanceled): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun taskCompleted(state: WorkflowEngineState, msg: TaskCompleted): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun childWorkflowCompleted(state: WorkflowEngineState, msg: ChildWorkflowCompleted): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun completeDelay(state: WorkflowEngineState, msg: DelayCompleted): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun eventReceived(state: WorkflowEngineState, msg: EventReceived): WorkflowEngineState {
+        TODO()
+    }
+
+    private fun filterStore(store: PropertyStore, branches: List<Branch>): PropertyStore {
+        // Retrieve properties at step at completion in branches
+        val listProperties1 = branches.flatMap {
+            b ->
+            b.steps.map { it.propertiesAfterCompletion }
+        }
+        // Retrieve properties when starting in branches
+        val listProperties2 = branches.map {
+            b ->
+            b.propertiesAtStart
+        }
+        // Retrieve List<PropertyHash?> relevant for branches
+        val listHashes = listProperties1.union(listProperties2).flatMap { it.properties.values }
+        // Keep only relevant keys
+        val properties = store.properties.filterKeys { listHashes.contains(it) }.toMutableMap()
+
+        return PropertyStore(properties)
+    }
+}

@@ -1,0 +1,38 @@
+{
+  "type": "record",
+  "name": "AvroStepCriterion",
+  "namespace": "io.infinitic.workflowManager.data.steps",
+  "fields": [
+    {
+      "name": "type",
+      "type": "io.infinitic.workflowManager.data.steps.AvroStepCriterionType"
+    },
+    {
+      "name": "commandId",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "commandStatus",
+      "type": [
+        "null",
+        "io.infinitic.workflowManager.data.commands.CommandStatus"
+      ],
+      "default": null
+    },
+    {
+      "name": "commandCriteria",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "io.infinitic.workflowManager.data.steps.AvroStepCriterion"
+        }
+      ],
+      "default": null
+    }
+  ]
+}

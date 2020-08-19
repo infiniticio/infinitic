@@ -1,0 +1,17 @@
+{
+  "type": "enum",
+  "name": "AvroCommandType",
+  "namespace": "io.infinitic.workflowManager.data.commands",
+  "symbols": [
+    "DISPATCH_TASK",
+    "DISPATCH_CHILD_WORKFLOW",
+    "WAIT_DELAY",
+    "WAIT_EVENT",
+    "RUN_INSTANT_TASK",
+    "PAUSE_WORKFLOW",
+    "RESUME_WORKFLOW",
+    "COMPLETE_WORKFLOW",
+    "TERMINATE_WORKFLOW",
+    "SEND_EVENT"
+  ]
+}

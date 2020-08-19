@@ -4,7 +4,7 @@ on:
     branches:
       - master
     paths:
-      - "zenaton-*/**"
+      - "infinitic-*/**"
 
 jobs:
   build:
