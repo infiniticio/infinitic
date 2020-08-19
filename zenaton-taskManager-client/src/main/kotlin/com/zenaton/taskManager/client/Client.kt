@@ -21,7 +21,7 @@ class Client() {
     }
 
     /*
-     * Use this method to dispatch a job
+     * Use this method to dispatch a task
      * TODO: using class instance instead of interface is not supported
      */
     inline fun <reified T> dispatchTask(
@@ -29,7 +29,7 @@ class Client() {
         meta: TaskMeta = TaskMeta(),
         method: T.() -> Any?
     ): Task {
-        // handler will be where the actual job is done
+        // handler will be where the actual task is done
         val handler = ProxyHandler(T::class.java.name, dispatcher, options, meta)
 
         // get a proxy for T
@@ -47,7 +47,7 @@ class Client() {
     }
 
     /*
-     * Use this method to manually retry a job
+     * Use this method to manually retry a task
      * when a non-null parameter is provided, it will supersede current one
      */
     fun retryTask(
@@ -68,7 +68,7 @@ class Client() {
     }
 
     /*
-     * Use this method to manually cancel a job
+     * Use this method to manually cancel a task
      */
     fun cancelTask(
         id: String,

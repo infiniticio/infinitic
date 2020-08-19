@@ -21,8 +21,8 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
             when (TaskMessage.Type.fromString(it.getString(TaskMessage.Fields.TYPE))) {
                 // Commands
                 TaskMessage.Type.DISPATCH_TASK -> DispatchTaskCommand(
-                    jobId = it.getString(TaskMessage.Fields.TASK_ID),
-                    jobName = it.getString(DispatchTaskCommand.Fields.JOB_NAME),
+                    taskId = it.getString(TaskMessage.Fields.TASK_ID),
+                    taskName = it.getString(DispatchTaskCommand.Fields.JOB_NAME),
                     sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
                 TaskMessage.Type.RETRY_TASK -> null
@@ -63,8 +63,8 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
         messages.forEach { message ->
             when (message) {
                 is DispatchTaskCommand -> {
-                    builder.id = message.jobId
-                    builder.name = message.jobName
+                    builder.id = message.taskId
+                    builder.name = message.taskName
                     builder.dispatchedAt = message.sentAt
                 }
                 is TaskAttemptCompletedEvent -> {

@@ -40,7 +40,7 @@ open class Worker {
 
     companion object {
 
-        // map jobName <> jobInstance
+        // map taskName <> taskInstance
         private val registeredTasks = ConcurrentHashMap<String, Any>()
 
         // cf. https://www.baeldung.com/java-threadlocal
@@ -63,23 +63,23 @@ open class Worker {
         /**
          * Use this method to register the task instance to use for a given name
          */
-        fun register(jobName: String, jobInstance: Any) {
-            if (jobName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(jobName)
+        fun register(taskName: String, taskInstance: Any) {
+            if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
 
-            registeredTasks[jobName] = jobInstance
+            registeredTasks[taskName] = taskInstance
         }
 
         /**
          * Use this method to unregister a given name (mostly used in tests)
          */
-        fun unregister(jobName: String) {
-            registeredTasks.remove(jobName)
+        fun unregister(taskName: String) {
+            registeredTasks.remove(taskName)
         }
 
         /**
          * Use this method to register the task instance to use for a given class
          */
-        inline fun <reified T> register(jobInstance: Any) = register(T::class.java.name, jobInstance)
+        inline fun <reified T> register(taskInstance: Any) = register(T::class.java.name, taskInstance)
 
         /**
          * Use this method to unregister a given class (mostly used in tests)
@@ -220,8 +220,8 @@ open class Worker {
     }
 
     private fun parse(msg: RunTask): TaskCommand {
-        val (jobName, methodName) = getClassAndMethodNames(msg)
-        val task = getTaskInstance(jobName)
+        val (taskName, methodName) = getClassAndMethodNames(msg)
+        val task = getTaskInstance(taskName)
         val parameterTypes = getMetaParameterTypes(msg)
         val method = getMethod(task, methodName, msg.taskInput.input.size, parameterTypes)
         val parameters = getParameters(task::class.java.name, methodName, msg.taskInput, parameterTypes ?: method.parameterTypes)
@@ -242,7 +242,7 @@ open class Worker {
         // return registered instance if any
         if (registeredTasks.containsKey(name)) return registeredTasks[name]!!
 
-        // if no instance is registered, try to instantiate this job
+        // if no instance is registered, try to instantiate this task
         val klass = getClass(name)
 
         return try {
@@ -290,14 +290,14 @@ open class Worker {
         return methods[0]
     }
 
-    private fun getParameters(jobName: String, methodName: String, input: TaskInput, parameterTypes: Array<Class<*>>): Array<Any?> {
+    private fun getParameters(taskName: String, methodName: String, input: TaskInput, parameterTypes: Array<Class<*>>): Array<Any?> {
         return try {
             input.input.mapIndexed {
                 index, serializedData ->
                 serializedData.deserialize(parameterTypes[index])
             }.toTypedArray()
         } catch (e: Exception) {
-            throw ExceptionDuringParametersDeserialization(jobName, methodName, input.input, parameterTypes.map { it.name })
+            throw ExceptionDuringParametersDeserialization(taskName, methodName, input.input, parameterTypes.map { it.name })
         }
     }
 
@@ -334,7 +334,7 @@ open class Worker {
     }
 
     private fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
-        val jobAttemptFailed = TaskAttemptFailed(
+        val taskAttemptFailed = TaskAttemptFailed(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
@@ -343,7 +343,7 @@ open class Worker {
             taskAttemptError = TaskAttemptError(error)
         )
 
-        dispatcher.toTaskEngine(jobAttemptFailed)
+        dispatcher.toTaskEngine(taskAttemptFailed)
     }
 
     private fun sendTaskCompleted(msg: RunTask, output: Any?) {

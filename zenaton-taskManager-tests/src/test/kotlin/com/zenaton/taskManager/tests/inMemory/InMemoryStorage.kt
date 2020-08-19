@@ -7,40 +7,40 @@ import com.zenaton.taskManager.states.AvroMonitoringGlobalState
 import com.zenaton.taskManager.states.AvroMonitoringPerNameState
 
 internal class InMemoryStorage : AvroStorage {
-    var jobEngineStore: Map<String, AvroTaskEngineState> = mapOf()
+    var taskEngineStore: Map<String, AvroTaskEngineState> = mapOf()
     var monitoringPerNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var monitoringGlobalStore: AvroMonitoringGlobalState? = null
 
     fun isTerminated(task: Task): Boolean {
-        return jobEngineStore[task.taskId.id] == null
+        return taskEngineStore[task.taskId.id] == null
     }
 
     fun reset() {
-        jobEngineStore = mapOf()
+        taskEngineStore = mapOf()
         monitoringPerNameStore = mapOf()
         monitoringGlobalStore = null
     }
 
-    override fun getTaskEngineState(jobId: String): AvroTaskEngineState? {
-        return jobEngineStore[jobId]
+    override fun getTaskEngineState(taskId: String): AvroTaskEngineState? {
+        return taskEngineStore[taskId]
     }
 
-    override fun updateTaskEngineState(jobId: String, newState: AvroTaskEngineState, oldState: AvroTaskEngineState?) {
-        jobEngineStore = jobEngineStore.plus(jobId to newState)
+    override fun updateTaskEngineState(taskId: String, newState: AvroTaskEngineState, oldState: AvroTaskEngineState?) {
+        taskEngineStore = taskEngineStore.plus(taskId to newState)
     }
 
-    override fun deleteTaskEngineState(jobId: String) {
-        jobEngineStore = jobEngineStore.minus(jobId)
+    override fun deleteTaskEngineState(taskId: String) {
+        taskEngineStore = taskEngineStore.minus(taskId)
     }
 
-    override fun getMonitoringPerNameState(jobName: String): AvroMonitoringPerNameState? = monitoringPerNameStore[jobName]
+    override fun getMonitoringPerNameState(taskName: String): AvroMonitoringPerNameState? = monitoringPerNameStore[taskName]
 
-    override fun updateMonitoringPerNameState(jobName: String, newState: AvroMonitoringPerNameState, oldState: AvroMonitoringPerNameState?) {
-        monitoringPerNameStore = monitoringPerNameStore.plus(jobName to newState)
+    override fun updateMonitoringPerNameState(taskName: String, newState: AvroMonitoringPerNameState, oldState: AvroMonitoringPerNameState?) {
+        monitoringPerNameStore = monitoringPerNameStore.plus(taskName to newState)
     }
 
-    override fun deleteMonitoringPerNameState(jobName: String) {
-        monitoringPerNameStore = monitoringPerNameStore.minus(jobName)
+    override fun deleteMonitoringPerNameState(taskName: String) {
+        monitoringPerNameStore = monitoringPerNameStore.minus(taskName)
     }
 
     override fun getMonitoringGlobalState(): AvroMonitoringGlobalState? = monitoringGlobalStore

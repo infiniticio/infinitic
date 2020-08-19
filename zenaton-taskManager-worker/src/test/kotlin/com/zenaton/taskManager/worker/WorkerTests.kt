@@ -174,7 +174,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe MultipleUseOfDividerInTaskName::class.java.name
     }
 
-    "Should throw ClassNotFoundDuringJobInstantiation when trying to process an unknown task" {
+    "Should throw ClassNotFoundDuringTaskInstantiation when trying to process an unknown task" {
         val input = listOf(2, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
@@ -202,7 +202,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe ClassNotFoundDuringTaskInstantiation::class.java.name
     }
 
-    "Should throw ErrorDuringJobInstantiation when if impossible to create new instance" {
+    "Should throw ErrorDuringTaskInstantiation when if impossible to create new instance" {
         val input = listOf(2, "3").map { SerializedData.from(it) }
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with

@@ -1,6 +1,6 @@
-# Job Engine on Pulsar
+# Task Engine on Pulsar
 
-An Apache Pulsar function responsible for running Zenaton jobs.
+An Apache Pulsar function responsible for running Zenaton tasks.
 
 ## Development
 
@@ -18,23 +18,23 @@ You can find the built JAR files in `./build/libs`.
 
 ## Usage
 
-Job Manager can be used for different usages, by prefixing certain topics
+Task Manager can be used for different usages, by prefixing certain topics
 
 > Note: -Prefix option can be used once and is remembered after
 
-### Install job manager for Tasks processing
+### Install task manager for Tasks processing
 
 ```shell script
 gradle install -Prefix=tasks
 ```
 
-### Install job manager for Decisions processing
+### Install task manager for Decisions processing
 
 ```shell script
 gradle install -Prefix=decisions
 ```
 
-## Update job manager (dev only)
+## Update task manager (dev only)
 
 ```shell script
 gradle update -Prefix=tasks
@@ -42,7 +42,7 @@ gradle update -Prefix=decisions
 
 ```
 
-## Delete job manager
+## Delete task manager
 
 ```shell script
 gradle delete  -Prefix=tasks

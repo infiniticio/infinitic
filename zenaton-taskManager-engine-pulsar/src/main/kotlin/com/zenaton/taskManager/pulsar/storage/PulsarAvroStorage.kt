@@ -12,27 +12,27 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
     // serializer injection
     var avroSerDe = AvroSerDe
 
-    override fun getTaskEngineState(jobId: String): AvroTaskEngineState? {
-        return context.getState(getEngineStateKey(jobId))?.let { avroSerDe.deserialize<AvroTaskEngineState>(it) }
+    override fun getTaskEngineState(taskId: String): AvroTaskEngineState? {
+        return context.getState(getEngineStateKey(taskId))?.let { avroSerDe.deserialize<AvroTaskEngineState>(it) }
     }
 
-    override fun updateTaskEngineState(jobId: String, newState: AvroTaskEngineState, oldState: AvroTaskEngineState?) {
-        context.putState(getEngineStateKey(jobId), avroSerDe.serialize(newState))
+    override fun updateTaskEngineState(taskId: String, newState: AvroTaskEngineState, oldState: AvroTaskEngineState?) {
+        context.putState(getEngineStateKey(taskId), avroSerDe.serialize(newState))
     }
 
-    override fun deleteTaskEngineState(jobId: String) {
-        context.deleteState(getEngineStateKey(jobId))
+    override fun deleteTaskEngineState(taskId: String) {
+        context.deleteState(getEngineStateKey(taskId))
     }
 
-    override fun getMonitoringPerNameState(jobName: String): AvroMonitoringPerNameState? =
-        context.getState(getMonitoringPerNameStateKey(jobName))?.let { avroSerDe.deserialize<AvroMonitoringPerNameState>(it) }
+    override fun getMonitoringPerNameState(taskName: String): AvroMonitoringPerNameState? =
+        context.getState(getMonitoringPerNameStateKey(taskName))?.let { avroSerDe.deserialize<AvroMonitoringPerNameState>(it) }
 
-    override fun updateMonitoringPerNameState(jobName: String, newState: AvroMonitoringPerNameState, oldState: AvroMonitoringPerNameState?) {
-        val counterOkKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.RUNNING_OK)
-        val counterWarningKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.RUNNING_WARNING)
-        val counterErrorKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.RUNNING_ERROR)
-        val counterCompletedKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.TERMINATED_COMPLETED)
-        val counterCanceledKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.TERMINATED_CANCELED)
+    override fun updateMonitoringPerNameState(taskName: String, newState: AvroMonitoringPerNameState, oldState: AvroMonitoringPerNameState?) {
+        val counterOkKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_OK)
+        val counterWarningKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_WARNING)
+        val counterErrorKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_ERROR)
+        val counterCompletedKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.TERMINATED_COMPLETED)
+        val counterCanceledKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.TERMINATED_CANCELED)
 
         // use counters to save state, to avoid race conditions
         val incrOk = newState.runningOkCount - (oldState?.runningOkCount ?: 0L)
@@ -49,7 +49,7 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
 
         // save state retrieved from counters
         val state = AvroMonitoringPerNameState.newBuilder().apply {
-            setTaskName(jobName)
+            setTaskName(taskName)
             runningOkCount = context.getCounter(counterOkKey)
             runningWarningCount = context.getCounter(counterWarningKey)
             runningErrorCount = context.getCounter(counterErrorKey)
@@ -57,7 +57,7 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
             terminatedCanceledCount = context.getCounter(counterCanceledKey)
         }.build()
 
-        context.putState(getMonitoringPerNameStateKey(jobName), avroSerDe.serialize(state))
+        context.putState(getMonitoringPerNameStateKey(taskName), avroSerDe.serialize(state))
     }
 
     private fun incrementCounter(key: String, amount: Long, force: Boolean = false) {
@@ -66,8 +66,8 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
         }
     }
 
-    override fun deleteMonitoringPerNameState(jobName: String) {
-        context.deleteState(getMonitoringPerNameStateKey(jobName))
+    override fun deleteMonitoringPerNameState(taskName: String) {
+        context.deleteState(getMonitoringPerNameStateKey(taskName))
     }
 
     override fun getMonitoringGlobalState(): AvroMonitoringGlobalState? {
@@ -82,8 +82,8 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
         context.deleteState(getMonitoringGlobalStateKey())
     }
 
-    fun getEngineStateKey(jobId: String) = "engine.state.$jobId"
+    fun getEngineStateKey(taskId: String) = "engine.state.$taskId"
     fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
-    fun getMonitoringPerNameStateKey(jobName: String) = "monitoringPerName.state.$jobName"
-    fun getMonitoringPerNameCounterKey(jobName: String, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${jobName.toLowerCase()}"
+    fun getMonitoringPerNameStateKey(taskName: String) = "monitoringPerName.state.$taskName"
+    fun getMonitoringPerNameCounterKey(taskName: String, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.toLowerCase()}"
 }

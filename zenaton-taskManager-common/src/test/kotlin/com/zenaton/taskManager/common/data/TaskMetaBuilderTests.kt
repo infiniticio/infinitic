@@ -5,8 +5,8 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import java.nio.ByteBuffer
 
-internal class JobMetaBuilderTests : StringSpec({
-    "JobMetaBuiler should build correct JobMeta" {
+internal class TaskMetaBuilderTests : StringSpec({
+    "TaskMetaBuiler should build correct TaskMeta" {
         // given
         val str = TestFactory.random(String::class)
         val bytes = TestFactory.random(ByteArray::class)

@@ -7,8 +7,8 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import java.nio.ByteBuffer
 
-internal class JobInputBuilderTests : StringSpec({
-    "JobInputBuilder should build correct JobInput" {
+internal class TaskInputBuilderTests : StringSpec({
+    "TaskInputBuilder should build correct TaskInput" {
         // given
         val state = TestFactory.random(TaskEngineState::class)
         val bytes = TestFactory.random(ByteArray::class)

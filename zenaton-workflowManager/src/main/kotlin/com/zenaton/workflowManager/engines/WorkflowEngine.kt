@@ -144,10 +144,10 @@ class WorkflowEngine {
     private fun decisionCompleted(state: WorkflowEngineState, msg: DecisionCompleted): WorkflowEngineState {
         TODO()
 //        DispatchTask(
-//            jobId = msg.taskId,
-//            jobName = msg.taskName,
-//            jobInput = msg.taskInput,
-//            jobMeta = JobMeta.builder().add("workflowId", msg.workflowId.id).get()
+//            taskId = msg.taskId,
+//            taskName = msg.taskName,
+//            taskInput = msg.taskInput,
+//            taskMeta = TaskMeta.builder().add("workflowId", msg.workflowId.id).get()
 //        )
     }
 
