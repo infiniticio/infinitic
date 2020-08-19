@@ -11,7 +11,6 @@ import com.zenaton.workflowManager.data.EventData
 import com.zenaton.workflowManager.data.EventId
 import com.zenaton.workflowManager.data.EventName
 import com.zenaton.workflowManager.data.WorkflowId
-import com.zenaton.workflowManager.data.commands.CommandStatus
 import com.zenaton.workflowManager.data.branches.BranchOutput
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")

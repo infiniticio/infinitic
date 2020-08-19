@@ -36,16 +36,16 @@ data class ChildWorkflowCompleted(
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DecisionCompleted(
-        override val workflowId: WorkflowId,
-        val decisionId: DecisionId,
-        val decisionOutput: DecisionOutput
+    override val workflowId: WorkflowId,
+    val decisionId: DecisionId,
+    val decisionOutput: DecisionOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DecisionDispatched(
-        override val workflowId: WorkflowId,
-        val decisionId: DecisionId,
-        val workflowName: WorkflowName,
-        val decisionInput: DecisionInput
+    override val workflowId: WorkflowId,
+    val decisionId: DecisionId,
+    val workflowName: WorkflowName,
+    val decisionInput: DecisionInput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DelayCompleted(

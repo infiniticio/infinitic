@@ -30,7 +30,7 @@ class ClientTests : StringSpec({
 
     "Should be able to dispatch method without parameter" {
         // when
-        val job = client.dispatch<FakeTask> { m1() }
+        val job = client.dispatchJob<FakeTask> { m1() }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -45,7 +45,7 @@ class ClientTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as parameter" {
         // when
-        val job = client.dispatch<FakeTask> { m1(0) }
+        val job = client.dispatchJob<FakeTask> { m1(0) }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -60,7 +60,7 @@ class ClientTests : StringSpec({
 
     "Should be able to dispatch a method with multiple definition" {
         // when
-        val job = client.dispatch<FakeTask> { m1("a") }
+        val job = client.dispatchJob<FakeTask> { m1("a") }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -75,7 +75,7 @@ class ClientTests : StringSpec({
 
     "Should be able to dispatch a method with multiple parameters" {
         // when
-        val job = client.dispatch<FakeTask> { m1(0, "a") }
+        val job = client.dispatchJob<FakeTask> { m1(0, "a") }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -91,7 +91,7 @@ class ClientTests : StringSpec({
     "Should be able to dispatch a method with an interface as parameter" {
         // when
         val jobId = JobId()
-        val job = client.dispatch<FakeTask> { m1(jobId) }
+        val job = client.dispatchJob<FakeTask> { m1(jobId) }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
