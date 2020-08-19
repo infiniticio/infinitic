@@ -5,7 +5,7 @@ import {
 } from 'pulsar-client';
 import {
   AvroEnvelopeForTaskEngine,
-  DispatchJobMessage,
+  DispatchTaskMessage,
   ForTaskEngineMessage,
   SerializedData,
 } from '@zenaton/messages';
@@ -37,12 +37,12 @@ export class Client {
   }
 
   async dispatchTask(
-    jobName: string,
+    taskName: string,
     input: any = null,
-    jobMeta: Map<string, SerializedData> = new Map()
+    taskMeta: Map<string, SerializedData> = new Map()
   ) {
-    const jobId = uuid();
-    const jobInput =
+    const taskId = uuid();
+    const taskInput =
       input == null
         ? []
         : [
@@ -52,14 +52,14 @@ export class Client {
               meta: new Map(),
             },
           ];
-    const message: DispatchJobMessage = {
-      jobId,
-      type: 'DispatchJob',
-      DispatchJob: {
-        jobId,
-        jobName,
-        jobInput,
-        jobMeta,
+    const message: DispatchTaskMessage = {
+      taskId,
+      type: 'DispatchTask',
+      DispatchTask: {
+        taskId,
+        taskName,
+        taskInput,
+        taskMeta,
       },
     };
 

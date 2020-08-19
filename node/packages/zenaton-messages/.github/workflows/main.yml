@@ -1,6 +1,6 @@
 name: CI
 on: [push]
-jobs:
+tasks:
   build:
     runs-on: ubuntu-latest
 
