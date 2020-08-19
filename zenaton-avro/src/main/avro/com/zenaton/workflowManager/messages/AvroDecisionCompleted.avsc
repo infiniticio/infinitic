@@ -15,7 +15,7 @@
     },
     {
       "name": "decisionOutput",
-      "type": "com.zenaton.jobManager.data.AvroSerializedData"
+      "type": "com.zenaton.taskManager.data.AvroSerializedData"
     }
   ]
 }

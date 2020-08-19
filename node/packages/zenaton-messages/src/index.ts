@@ -194,7 +194,7 @@ export type ForWorkerMessage = RunJobMessage;
 const registry: AvroRegistry = {};
 
 export const SerializedData = typeForSchema<SerializedData>(
-  path.resolve(`${__dirname}/avro/jobManager/data/AvroSerializedData.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/data/AvroSerializedData.avsc`),
   registry
 );
 
@@ -203,73 +203,73 @@ export const SerializedData = typeForSchema<SerializedData>(
 // ------------------------------------------------------------------------------------------------
 
 export const AvroCancelJob = typeForSchema<CancelJob>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroCancelJob.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroCancelJob.avsc`),
   registry
 );
 
 export const AvroDispatchJob = typeForSchema<DispatchJob>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroDispatchJob.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroDispatchJob.avsc`),
   registry
 );
 
 export const AvroRetryJob = typeForSchema<RetryJob>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroRetryJob.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroRetryJob.avsc`),
   registry
 );
 
 export const AvroRetryJobAttempt = typeForSchema<RetryJobAttempt>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroRetryJobAttempt.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroRetryJobAttempt.avsc`
   ),
   registry
 );
 
 export const AvroJobAttemptCompleted = typeForSchema<JobAttemptCompleted>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroJobAttemptCompleted.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroJobAttemptCompleted.avsc`
   ),
   registry
 );
 
 export const AvroJobAttemptDispatched = typeForSchema<JobAttemptDispatched>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroJobAttemptDispatched.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroJobAttemptDispatched.avsc`
   ),
   registry
 );
 
 export const AvroJobAttemptFailed = typeForSchema<JobAttemptFailed>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroJobAttemptFailed.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroJobAttemptFailed.avsc`
   ),
   registry
 );
 
 export const AvroJobAttemptStarted = typeForSchema<JobAttemptStarted>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroJobAttemptStarted.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroJobAttemptStarted.avsc`
   ),
   registry
 );
 
 export const AvroJobCanceled = typeForSchema<JobCanceled>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCanceled.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroJobCanceled.avsc`),
   registry
 );
 
 export const AvroJobCompleted = typeForSchema<JobCompleted>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCompleted.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroJobCompleted.avsc`),
   registry
 );
 
 export const AvroJobCreated = typeForSchema<JobCreated>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCreated.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroJobCreated.avsc`),
   registry
 );
 
 export const AvroEnvelopeForJobEngine = typeForSchema<ForJobEngineMessage>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/envelopes/AvroEnvelopeForJobEngine.avsc`
+    `${__dirname}/avro/taskManager/messages/envelopes/AvroEnvelopeForJobEngine.avsc`
   ),
   registry
 );
@@ -279,13 +279,13 @@ export const AvroEnvelopeForJobEngine = typeForSchema<ForJobEngineMessage>(
 // ------------------------------------------------------------------------------------------------
 
 export const AvroRunJob = typeForSchema<RunJob>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroRunJob.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroRunJob.avsc`),
   registry
 );
 
 export const AvroEnvelopeForWorker = typeForSchema<ForWorkerMessage>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/envelopes/AvroEnvelopeForWorker.avsc`
+    `${__dirname}/avro/taskManager/messages/envelopes/AvroEnvelopeForWorker.avsc`
   ),
   registry
 );

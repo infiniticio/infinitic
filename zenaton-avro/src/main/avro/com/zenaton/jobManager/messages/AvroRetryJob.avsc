@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroRetryJob",
-  "namespace": "com.zenaton.jobManager.messages",
+  "namespace": "com.zenaton.taskManager.messages",
   "fields": [
     {
       "name": "jobId",
@@ -22,7 +22,7 @@
         "null",
         {
           "type": "array",
-          "items": "com.zenaton.jobManager.data.AvroSerializedData"
+          "items": "com.zenaton.taskManager.data.AvroSerializedData"
         }
       ],
       "default": null
@@ -31,7 +31,7 @@
       "name": "jobOptions",
       "type": [
         "null",
-        "com.zenaton.jobManager.data.AvroJobOptions"
+        "com.zenaton.taskManager.data.AvroJobOptions"
       ],
       "default": null
     },
@@ -41,7 +41,7 @@
         "null",
         {
           "type": "map",
-          "values": "com.zenaton.jobManager.data.AvroSerializedData"
+          "values": "com.zenaton.taskManager.data.AvroSerializedData"
         }
       ],
       "default": null

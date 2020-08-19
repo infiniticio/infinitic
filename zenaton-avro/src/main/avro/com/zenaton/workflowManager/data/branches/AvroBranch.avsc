@@ -16,7 +16,7 @@
       "name": "branchInput",
       "type": {
         "type": "array",
-        "items": "com.zenaton.jobManager.data.AvroSerializedData"
+        "items": "com.zenaton.taskManager.data.AvroSerializedData"
       }
     },
     {

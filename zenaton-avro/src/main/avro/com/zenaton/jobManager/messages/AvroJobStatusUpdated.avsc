@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroJobStatusUpdated",
-  "namespace": "com.zenaton.jobManager.messages",
+  "namespace": "com.zenaton.taskManager.messages",
   "fields": [
     {
       "name": "jobId",
@@ -16,12 +16,12 @@
       "name": "oldStatus",
       "type": [
         "null",
-        "com.zenaton.jobManager.data.AvroJobStatus"
+        "com.zenaton.taskManager.data.AvroJobStatus"
       ]
     },
     {
       "name": "newStatus",
-      "type": "com.zenaton.jobManager.data.AvroJobStatus"
+      "type": "com.zenaton.taskManager.data.AvroJobStatus"
     }
   ]
 }

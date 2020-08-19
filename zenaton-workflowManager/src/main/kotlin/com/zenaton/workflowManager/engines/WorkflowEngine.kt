@@ -1,11 +1,11 @@
 package com.zenaton.workflowManager.engines
 
-import com.zenaton.jobManager.common.data.JobId
-import com.zenaton.jobManager.common.data.JobInput
-import com.zenaton.jobManager.common.data.JobMeta
-import com.zenaton.jobManager.common.data.JobName
-import com.zenaton.jobManager.common.data.JobOptions
-import com.zenaton.jobManager.common.messages.DispatchJob
+import com.zenaton.taskManager.common.data.JobId
+import com.zenaton.taskManager.common.data.JobInput
+import com.zenaton.taskManager.common.data.JobMeta
+import com.zenaton.taskManager.common.data.JobName
+import com.zenaton.taskManager.common.data.JobOptions
+import com.zenaton.taskManager.common.messages.DispatchJob
 import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.decisions.DecisionId
 import com.zenaton.workflowManager.data.decisions.DecisionInput

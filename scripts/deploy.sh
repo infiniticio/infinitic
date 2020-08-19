@@ -8,8 +8,8 @@ DEFAULT_PULSAR_NAMESPACE=default
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-JOB_MANAGER_JAR_PATH=$SCRIPT_DIR/../zenaton-jobManager-engine-pulsar/build/libs/zenaton-jobManager-engine-pulsar-1.0.0-SNAPSHOT-all.jar
-SCHEMA_FILES_PATH=./zenaton-jobManager-engine-pulsar/build/schemas
+JOB_MANAGER_JAR_PATH=$SCRIPT_DIR/../zenaton-taskManager-engine-pulsar/build/libs/zenaton-taskManager-engine-pulsar-1.0.0-SNAPSHOT-all.jar
+SCHEMA_FILES_PATH=./zenaton-taskManager-engine-pulsar/build/schemas
 
 tmp_dir=$(mktemp -d -t infinitic-deploy-XXXXXXXXXX)
 
@@ -123,7 +123,7 @@ else
 fi
 
 printf "Creating schema files ...\n"
-cd $tmp_dir && java -cp $JOB_MANAGER_JAR_PATH com.zenaton.jobManager.pulsar.utils.GenerateSchemaFilesKt
+cd $tmp_dir && java -cp $JOB_MANAGER_JAR_PATH com.zenaton.taskManager.pulsar.utils.GenerateSchemaFilesKt
 if [ $? -ne 0 ]; then
     print_error "Cannot generate schema files"
     print_error "$(cat <<-END
@@ -145,9 +145,9 @@ fi
 print_success "Successfully uploaded schemas to topics."
 
 printf "Deploying pulsar functions to the cluster ...\n"
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-engine --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.jobManager.pulsar.functions.JobEnginePulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-global --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-global --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.jobManager.pulsar.functions.MonitoringGlobalPulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-per-name --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-per-name --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.jobManager.pulsar.functions.MonitoringPerNamePulsarFunction --user-config '{"topicPrefix":"tasks"}'
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-engine --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.taskManager.pulsar.functions.JobEnginePulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-global --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-global --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.taskManager.pulsar.functions.MonitoringGlobalPulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-per-name --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-per-name --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.taskManager.pulsar.functions.MonitoringPerNamePulsarFunction --user-config '{"topicPrefix":"tasks"}'
 if [ $? -ne 0 ]; then
     print_error "Cannot deploy pulsar functions to the cluster."
     exit 1

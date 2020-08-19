@@ -17,8 +17,8 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     implementation(project(":zenaton-avro"))
-    implementation(project(":zenaton-jobManager-engine"))
-    implementation(project(":zenaton-jobManager-common"))
+    implementation(project(":zenaton-taskManager-engine"))
+    implementation(project(":zenaton-taskManager-common"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

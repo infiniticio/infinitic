@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroJobCanceled",
-  "namespace": "com.zenaton.jobManager.messages",
+  "namespace": "com.zenaton.taskManager.messages",
   "fields": [
     {
       "name": "jobId",
@@ -10,13 +10,13 @@
     },
     {
       "name": "jobOutput",
-      "type": "com.zenaton.jobManager.data.AvroSerializedData"
+      "type": "com.zenaton.taskManager.data.AvroSerializedData"
     },
     {
       "name": "jobMeta",
       "type": {
         "type": "map",
-        "values": "com.zenaton.jobManager.data.AvroSerializedData"
+        "values": "com.zenaton.taskManager.data.AvroSerializedData"
       }
     }
   ]

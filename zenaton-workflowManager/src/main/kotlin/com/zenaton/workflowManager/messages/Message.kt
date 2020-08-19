@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.messages
 
-import com.zenaton.jobManager.common.data.JobId
-import com.zenaton.jobManager.common.data.JobInput
-import com.zenaton.jobManager.common.data.JobOutput
+import com.zenaton.taskManager.common.data.JobId
+import com.zenaton.taskManager.common.data.JobInput
+import com.zenaton.taskManager.common.data.JobOutput
 import com.zenaton.workflowManager.data.decisions.DecisionId
 import com.zenaton.workflowManager.data.decisions.DecisionInput
 import com.zenaton.workflowManager.data.decisions.DecisionOutput

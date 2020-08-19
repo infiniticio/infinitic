@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroEnvelopeForJobEngine",
-    "namespace": "com.zenaton.jobManager.messages.envelopes",
+    "namespace": "com.zenaton.taskManager.messages.envelopes",
     "fields": [
         {
             "name": "type",
@@ -27,43 +27,43 @@
             "logicalType": "uuid"
         }, {
             "name": "DispatchJob",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroDispatchJob"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroDispatchJob"],
             "default": null
         }, {
             "name": "RetryJob",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroRetryJob"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroRetryJob"],
             "default": null
         }, {
             "name": "RetryJobAttempt",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroRetryJobAttempt"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroRetryJobAttempt"],
             "default": null
         }, {
             "name": "CancelJob",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroCancelJob"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroCancelJob"],
             "default": null
         }, {
             "name": "JobCanceled",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroJobCanceled"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroJobCanceled"],
             "default": null
         }, {
             "name": "JobCompleted",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroJobCompleted"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroJobCompleted"],
             "default": null
         }, {
             "name": "JobAttemptDispatched",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroJobAttemptDispatched"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroJobAttemptDispatched"],
             "default": null
         }, {
             "name": "JobAttemptCompleted",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroJobAttemptCompleted"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroJobAttemptCompleted"],
             "default": null
         }, {
             "name": "JobAttemptFailed",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroJobAttemptFailed"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroJobAttemptFailed"],
             "default": null
         }, {
             "name": "JobAttemptStarted",
-            "type": ["null", "com.zenaton.jobManager.messages.AvroJobAttemptStarted"],
+            "type": ["null", "com.zenaton.taskManager.messages.AvroJobAttemptStarted"],
             "default": null
         }
     ]

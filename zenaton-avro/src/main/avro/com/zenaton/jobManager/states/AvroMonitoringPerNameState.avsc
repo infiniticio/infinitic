@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroMonitoringPerNameState",
-  "namespace": "com.zenaton.jobManager.states",
+  "namespace": "com.zenaton.taskManager.states",
   "fields": [
     {
       "name": "jobName",

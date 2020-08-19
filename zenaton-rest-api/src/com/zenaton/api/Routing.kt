@@ -4,8 +4,8 @@ import com.zenaton.api.extensions.io.ktor.application.*
 import com.zenaton.api.support.BuildInfo
 import com.zenaton.api.task.repositories.TaskRepository
 import com.zenaton.common.avro.AvroSerDe
-import com.zenaton.jobManager.states.AvroMonitoringGlobalState
-import com.zenaton.jobManager.states.AvroMonitoringPerNameState
+import com.zenaton.taskManager.states.AvroMonitoringGlobalState
+import com.zenaton.taskManager.states.AvroMonitoringPerNameState
 import io.ktor.application.*
 import io.ktor.config.ApplicationConfig
 import io.ktor.features.NotFoundException

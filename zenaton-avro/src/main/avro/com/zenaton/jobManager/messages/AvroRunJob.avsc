@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroRunJob",
-  "namespace": "com.zenaton.jobManager.messages",
+  "namespace": "com.zenaton.taskManager.messages",
   "fields": [
     {
       "name": "jobId",
@@ -29,19 +29,19 @@
       "name": "jobInput",
       "type": {
         "type": "array",
-        "items": "com.zenaton.jobManager.data.AvroSerializedData"
+        "items": "com.zenaton.taskManager.data.AvroSerializedData"
       },
       "default": []
     },
     {
       "name": "jobOptions",
-      "type": "com.zenaton.jobManager.data.AvroJobOptions"
+      "type": "com.zenaton.taskManager.data.AvroJobOptions"
     },
     {
       "name": "jobMeta",
       "type": {
         "type": "map",
-        "values": "com.zenaton.jobManager.data.AvroSerializedData"
+        "values": "com.zenaton.taskManager.data.AvroSerializedData"
       }
     }
   ]

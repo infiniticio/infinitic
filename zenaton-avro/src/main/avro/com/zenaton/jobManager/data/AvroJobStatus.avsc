@@ -1,7 +1,7 @@
 {
   "type": "enum",
   "name": "AvroJobStatus",
-  "namespace": "com.zenaton.jobManager.data",
+  "namespace": "com.zenaton.taskManager.data",
   "symbols": [
     "RUNNING_OK",
     "RUNNING_WARNING",

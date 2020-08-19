@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroCancelJob",
-  "namespace": "com.zenaton.jobManager.messages",
+  "namespace": "com.zenaton.taskManager.messages",
   "fields": [
     {
       "name": "jobId",
@@ -10,7 +10,7 @@
     },
     {
       "name": "jobOutput",
-      "type": "com.zenaton.jobManager.data.AvroSerializedData"
+      "type": "com.zenaton.taskManager.data.AvroSerializedData"
     }
   ]
 }

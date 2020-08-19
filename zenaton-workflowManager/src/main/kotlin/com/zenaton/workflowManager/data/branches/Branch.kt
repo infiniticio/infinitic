@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.data.branches
 
 import com.zenaton.common.data.DateTime
-import com.zenaton.jobManager.common.data.JobId
-import com.zenaton.jobManager.common.data.JobOutput
+import com.zenaton.taskManager.common.data.JobId
+import com.zenaton.taskManager.common.data.JobOutput
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventData
 import com.zenaton.workflowManager.data.EventName

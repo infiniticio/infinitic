@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroJobOptions",
-  "namespace": "com.zenaton.jobManager.data",
+  "namespace": "com.zenaton.taskManager.data",
   "fields": [
     {
       "name": "runningTimeout",

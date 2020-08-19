@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroJobAttemptDispatched",
-  "namespace": "com.zenaton.jobManager.messages",
+  "namespace": "com.zenaton.taskManager.messages",
   "fields": [
     {
       "name": "jobId",

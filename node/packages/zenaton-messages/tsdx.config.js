@@ -6,12 +6,12 @@ module.exports = {
       copy({
         targets: [
           {
-            src: 'src/avro/jobManager/messages/envelopes/*.avsc',
-            dest: 'dist/avro/jobManager/messages/envelopes',
+            src: 'src/avro/taskManager/messages/envelopes/*.avsc',
+            dest: 'dist/avro/taskManager/messages/envelopes',
           },
           {
-            src: 'src/avro/jobManager/messages/*.avsc',
-            dest: 'dist/avro/jobManager/messages',
+            src: 'src/avro/taskManager/messages/*.avsc',
+            dest: 'dist/avro/taskManager/messages',
           },
           {
             src: 'src/avro/common/data/*.avsc',

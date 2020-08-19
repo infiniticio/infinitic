@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroJobAttemptFailed",
-  "namespace": "com.zenaton.jobManager.messages",
+  "namespace": "com.zenaton.taskManager.messages",
   "fields": [
     {
       "name": "jobId",
@@ -23,7 +23,7 @@
     },
     {
       "name": "jobAttemptError",
-      "type": "com.zenaton.jobManager.data.AvroSerializedData"
+      "type": "com.zenaton.taskManager.data.AvroSerializedData"
     },
     {
       "name": "jobAttemptDelayBeforeRetry",

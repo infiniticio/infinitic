@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.utils
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.taskManager.common.data.JobId
 import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.commands.CommandId
 import com.zenaton.workflowManager.data.steps.AvroStepCriterion

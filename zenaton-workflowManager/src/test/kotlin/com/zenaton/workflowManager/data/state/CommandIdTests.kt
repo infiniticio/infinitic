@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.data.state
 
-import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.taskManager.common.data.JobId
 import com.zenaton.workflowManager.data.commands.CommandId
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec

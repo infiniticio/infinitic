@@ -41,7 +41,7 @@
       "name": "store",
       "type": {
         "type": "map",
-        "values": "com.zenaton.jobManager.data.AvroSerializedData"
+        "values": "com.zenaton.taskManager.data.AvroSerializedData"
       }
     },
     {
