@@ -1,11 +1,11 @@
 package com.zenaton.workflowManager.engines
 
-import com.zenaton.taskManager.common.data.JobId
-import com.zenaton.taskManager.common.data.JobInput
-import com.zenaton.taskManager.common.data.JobMeta
-import com.zenaton.taskManager.common.data.JobName
-import com.zenaton.taskManager.common.data.JobOptions
-import com.zenaton.taskManager.common.messages.DispatchJob
+import com.zenaton.taskManager.common.data.TaskId
+import com.zenaton.taskManager.common.data.TaskInput
+import com.zenaton.taskManager.common.data.TaskMeta
+import com.zenaton.taskManager.common.data.TaskName
+import com.zenaton.taskManager.common.data.TaskOptions
+import com.zenaton.taskManager.common.messages.DispatchTask
 import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.decisions.DecisionId
 import com.zenaton.workflowManager.data.decisions.DecisionInput
@@ -116,14 +116,14 @@ class WorkflowEngine {
         )
         // dispatch decision
         dispatcher.toDeciders(
-            DispatchJob(
-                jobId = JobId(decisionId.id),
-                jobName = JobName(msg.workflowName.name),
-                jobInput = JobInput.builder()
+            DispatchTask(
+                taskId = TaskId(decisionId.id),
+                taskName = TaskName(msg.workflowName.name),
+                taskInput = TaskInput.builder()
                     .add(AvroConverter.toAvroDecisionInput(decisionInput))
                     .build(),
-                jobOptions = JobOptions(),
-                jobMeta = JobMeta.builder()
+                taskOptions = TaskOptions(),
+                taskMeta = TaskMeta.builder()
                     .add(META_WORKFLOW_ID, msg.workflowId.id)
                     .build()
             )
@@ -143,7 +143,7 @@ class WorkflowEngine {
 
     private fun decisionCompleted(state: WorkflowEngineState, msg: DecisionCompleted): WorkflowEngineState {
         TODO()
-//        DispatchJob(
+//        DispatchTask(
 //            jobId = msg.taskId,
 //            jobName = msg.taskName,
 //            jobInput = msg.taskInput,

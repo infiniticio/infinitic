@@ -3,7 +3,7 @@ package com.zenaton.taskManager.dispatcher
 import com.zenaton.taskManager.common.avro.AvroConverter
 import com.zenaton.taskManager.engine.avroInterfaces.AvroDispatcher
 import com.zenaton.taskManager.engine.dispatcher.Dispatcher
-import com.zenaton.taskManager.common.messages.ForJobEngineMessage
+import com.zenaton.taskManager.common.messages.ForTaskEngineMessage
 import com.zenaton.taskManager.common.messages.ForMonitoringGlobalMessage
 import com.zenaton.taskManager.common.messages.ForMonitoringPerNameMessage
 import com.zenaton.taskManager.common.messages.ForWorkerMessage
@@ -17,27 +17,27 @@ class DispatcherTests : StringSpec({
     val avroDispatcher = mockk<AvroDispatcher>(relaxed = true)
     val dispatcher = Dispatcher(avroDispatcher)
 
-    "Dispatcher.toJobEngine should send correct parameter" {
+    "Dispatcher.toTaskEngine should send correct parameter" {
         // given
-        val msg = TestFactory.random(ForJobEngineMessage::class)
+        val msg = TestFactory.random(ForTaskEngineMessage::class)
         val after = TestFactory.random(Float::class)
         // when
-        dispatcher.toJobEngine(msg, after)
+        dispatcher.toTaskEngine(msg, after)
         // then
         verify {
-            avroDispatcher.toJobEngine(AvroConverter.toJobEngine(msg), after)
+            avroDispatcher.toTaskEngine(AvroConverter.toTaskEngine(msg), after)
         }
         confirmVerified(avroDispatcher)
     }
 
-    "Dispatcher.toJobEngine should send correct default after parameter" {
+    "Dispatcher.toTaskEngine should send correct default after parameter" {
         // given
-        val msg = TestFactory.random(ForJobEngineMessage::class)
+        val msg = TestFactory.random(ForTaskEngineMessage::class)
         // when
-        dispatcher.toJobEngine(msg)
+        dispatcher.toTaskEngine(msg)
         // then
         verify {
-            avroDispatcher.toJobEngine(AvroConverter.toJobEngine(msg), 0F)
+            avroDispatcher.toTaskEngine(AvroConverter.toTaskEngine(msg), 0F)
         }
         confirmVerified(avroDispatcher)
     }

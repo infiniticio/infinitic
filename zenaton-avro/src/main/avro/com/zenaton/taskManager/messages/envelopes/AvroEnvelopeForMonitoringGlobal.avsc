@@ -1,0 +1,21 @@
+{
+    "type": "record",
+    "name": "AvroEnvelopeForMonitoringGlobal",
+    "namespace": "com.zenaton.taskManager.messages.envelopes",
+    "fields": [
+        {
+            "name": "type",
+            "type": {
+                "type": "enum",
+                "name": "AvroForMonitoringGlobalMessageType",
+                "symbols": [
+                    "TaskCreated"
+                ]
+            }
+        }, {
+            "name": "TaskCreated",
+            "type": ["null", "com.zenaton.taskManager.messages.AvroTaskCreated"],
+            "default": null
+        }
+    ]
+}

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.zenaton.common.data.DateTime
-import com.zenaton.taskManager.common.data.JobId
-import com.zenaton.taskManager.common.data.JobOutput
+import com.zenaton.taskManager.common.data.TaskId
+import com.zenaton.taskManager.common.data.TaskOutput
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventData
 import com.zenaton.workflowManager.data.EventId
@@ -34,8 +34,8 @@ sealed class Command(
 )
 
 data class DispatchTask(
-    val taskId: JobId,
-    var taskOutput: JobOutput?,
+    val taskId: TaskId,
+    var taskOutput: TaskOutput?,
     override val decidedAt: DateTime,
     override val commandHash: CommandHash,
     override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
@@ -72,7 +72,7 @@ data class InstantTask(
     override val decidedAt: DateTime,
     override val commandHash: CommandHash,
     override val actionStatus: CommandStatus,
-    var jobOutput: JobOutput
+    var taskOutput: TaskOutput
 ) : Command(decidedAt, commandHash, actionStatus)
 
 /**

@@ -1,11 +1,11 @@
 package com.zenaton.taskManager.common.avro
 
-import com.zenaton.taskManager.common.messages.ForJobEngineMessage
 import com.zenaton.taskManager.common.messages.ForMonitoringGlobalMessage
 import com.zenaton.taskManager.common.messages.ForMonitoringPerNameMessage
+import com.zenaton.taskManager.common.messages.ForTaskEngineMessage
 import com.zenaton.taskManager.common.messages.ForWorkerMessage
 import com.zenaton.taskManager.common.utils.TestFactory
-import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForWorker
@@ -20,8 +20,8 @@ import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
 
 class AvroConsistencyTests : StringSpec({
-    ForJobEngineMessage::class.sealedSubclasses.forEach {
-        include(checkAvroConversionToEnvelopeForJobEngine(TestFactory.random(it)))
+    ForTaskEngineMessage::class.sealedSubclasses.forEach {
+        include(checkAvroConversionToEnvelopeForTaskEngine(TestFactory.random(it)))
     }
 
     ForMonitoringPerNameMessage::class.sealedSubclasses.forEach {
@@ -38,15 +38,15 @@ class AvroConsistencyTests : StringSpec({
 
     // From Avro
     checkAllSubTypesFromEnvelope<ForWorkerMessage>(this, AvroEnvelopeForWorker())
-    checkAllSubTypesFromEnvelope<ForJobEngineMessage>(this, AvroEnvelopeForJobEngine())
+    checkAllSubTypesFromEnvelope<ForTaskEngineMessage>(this, AvroEnvelopeForTaskEngine())
     checkAllSubTypesFromEnvelope<ForMonitoringGlobalMessage>(this, AvroEnvelopeForMonitoringGlobal())
     checkAllSubTypesFromEnvelope<ForMonitoringPerNameMessage>(this, AvroEnvelopeForMonitoringPerName())
 })
 
-internal fun checkAvroConversionToEnvelopeForJobEngine(msg: ForJobEngineMessage) = stringSpec {
-    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForJobEngine::class.simpleName}" {
+internal fun checkAvroConversionToEnvelopeForTaskEngine(msg: ForTaskEngineMessage) = stringSpec {
+    "${msg::class.simpleName!!} should be convertible to ${AvroEnvelopeForTaskEngine::class.simpleName}" {
         shouldNotThrowAny {
-            AvroConverter.toJobEngine(msg)
+            AvroConverter.toTaskEngine(msg)
         }
     }
 }

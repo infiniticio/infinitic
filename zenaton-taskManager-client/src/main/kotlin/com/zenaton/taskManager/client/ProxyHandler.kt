@@ -2,41 +2,41 @@ package com.zenaton.taskManager.client
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.zenaton.common.data.SerializedData
-import com.zenaton.taskManager.common.data.Job
+import com.zenaton.taskManager.common.data.Task
 import com.zenaton.taskManager.common.Constants
-import com.zenaton.taskManager.common.data.JobId
-import com.zenaton.taskManager.common.data.JobInput
-import com.zenaton.taskManager.common.data.JobMeta
-import com.zenaton.taskManager.common.data.JobName
-import com.zenaton.taskManager.common.data.JobOptions
+import com.zenaton.taskManager.common.data.TaskId
+import com.zenaton.taskManager.common.data.TaskInput
+import com.zenaton.taskManager.common.data.TaskMeta
+import com.zenaton.taskManager.common.data.TaskName
+import com.zenaton.taskManager.common.data.TaskOptions
 import com.zenaton.taskManager.common.exceptions.ErrorDuringJsonDeserializationOfParameter
 import com.zenaton.taskManager.common.exceptions.ErrorDuringJsonSerializationOfParameter
 import com.zenaton.taskManager.common.exceptions.InconsistentJsonSerializationOfParameter
 import com.zenaton.taskManager.common.exceptions.MultipleMethodCallsAtDispatch
-import com.zenaton.taskManager.common.messages.DispatchJob
+import com.zenaton.taskManager.common.messages.DispatchTask
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 
 class ProxyHandler(
     private val className: String,
     private val dispatcher: Dispatcher,
-    private val jobOptions: JobOptions,
-    private val jobMeta: JobMeta
+    private val taskOptions: TaskOptions,
+    private val taskMeta: TaskMeta
 ) : InvocationHandler {
-    private var jobId: JobId? = null
+    private var taskId: TaskId? = null
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        if (jobId != null) throw MultipleMethodCallsAtDispatch(className)
+        if (taskId != null) throw MultipleMethodCallsAtDispatch(className)
 
-        jobId = JobId()
-        val msg = DispatchJob(
-            jobId = jobId!!,
-            jobName = JobName("$className${Constants.METHOD_DIVIDER}${method.name}"),
-            jobInput = JobInput(args?.mapIndexed { index, value -> getSerializedData(method.parameters[index].name, value, method.parameterTypes[index], method.name, className) } ?: listOf()),
-            jobOptions = jobOptions,
-            jobMeta = jobMeta.setParameterTypes(method.parameterTypes.map { it.name })
+        taskId = TaskId()
+        val msg = DispatchTask(
+            taskId = taskId!!,
+            taskName = TaskName("$className${Constants.METHOD_DIVIDER}${method.name}"),
+            taskInput = TaskInput(args?.mapIndexed { index, value -> getSerializedData(method.parameters[index].name, value, method.parameterTypes[index], method.name, className) } ?: listOf()),
+            taskOptions = taskOptions,
+            taskMeta = taskMeta.setParameterTypes(method.parameterTypes.map { it.name })
         )
-        dispatcher.toJobEngine(msg)
+        dispatcher.toTaskEngine(msg)
 
         return null
     }
@@ -62,5 +62,5 @@ class ProxyHandler(
         return data
     }
 
-    fun getJob() = jobId?.let { Job(it) }
+    fun getJob() = taskId?.let { Task(it) }
 }

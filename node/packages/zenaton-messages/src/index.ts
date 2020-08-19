@@ -11,7 +11,7 @@ export type JobInput = SerializedData[];
 export type JobOutput = SerializedData;
 export type JobAttemptError = SerializedData;
 
-export type ForJobEngineMessageType =
+export type ForTaskEngineMessageType =
   | 'CancelJob'
   | 'DispatchJob'
   | 'JobAttemptCompleted'
@@ -156,7 +156,7 @@ export interface JobDispatchedMessage {
   JobDispatched: JobCreated;
 }
 
-export type ForJobEngineMessage =
+export type ForTaskEngineMessage =
   | CancelJobMessage
   | DispatchJobMessage
   | RetryJobMessage
@@ -224,52 +224,52 @@ export const AvroRetryJobAttempt = typeForSchema<RetryJobAttempt>(
   registry
 );
 
-export const AvroJobAttemptCompleted = typeForSchema<JobAttemptCompleted>(
+export const AvroTaskAttemptCompleted = typeForSchema<JobAttemptCompleted>(
   path.resolve(
-    `${__dirname}/avro/taskManager/messages/AvroJobAttemptCompleted.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroTaskAttemptCompleted.avsc`
   ),
   registry
 );
 
-export const AvroJobAttemptDispatched = typeForSchema<JobAttemptDispatched>(
+export const AvroTaskAttemptDispatched = typeForSchema<JobAttemptDispatched>(
   path.resolve(
-    `${__dirname}/avro/taskManager/messages/AvroJobAttemptDispatched.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroTaskAttemptDispatched.avsc`
   ),
   registry
 );
 
-export const AvroJobAttemptFailed = typeForSchema<JobAttemptFailed>(
+export const AvroTaskAttemptFailed = typeForSchema<JobAttemptFailed>(
   path.resolve(
-    `${__dirname}/avro/taskManager/messages/AvroJobAttemptFailed.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroTaskAttemptFailed.avsc`
   ),
   registry
 );
 
-export const AvroJobAttemptStarted = typeForSchema<JobAttemptStarted>(
+export const AvroTaskAttemptStarted = typeForSchema<JobAttemptStarted>(
   path.resolve(
-    `${__dirname}/avro/taskManager/messages/AvroJobAttemptStarted.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroTaskAttemptStarted.avsc`
   ),
   registry
 );
 
-export const AvroJobCanceled = typeForSchema<JobCanceled>(
-  path.resolve(`${__dirname}/avro/taskManager/messages/AvroJobCanceled.avsc`),
+export const AvroTaskCanceled = typeForSchema<JobCanceled>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroTaskCanceled.avsc`),
   registry
 );
 
-export const AvroJobCompleted = typeForSchema<JobCompleted>(
-  path.resolve(`${__dirname}/avro/taskManager/messages/AvroJobCompleted.avsc`),
+export const AvroTaskCompleted = typeForSchema<JobCompleted>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroTaskCompleted.avsc`),
   registry
 );
 
-export const AvroJobCreated = typeForSchema<JobCreated>(
-  path.resolve(`${__dirname}/avro/taskManager/messages/AvroJobCreated.avsc`),
+export const AvroTaskCreated = typeForSchema<JobCreated>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroTaskCreated.avsc`),
   registry
 );
 
-export const AvroEnvelopeForJobEngine = typeForSchema<ForJobEngineMessage>(
+export const AvroEnvelopeForTaskEngine = typeForSchema<ForTaskEngineMessage>(
   path.resolve(
-    `${__dirname}/avro/taskManager/messages/envelopes/AvroEnvelopeForJobEngine.avsc`
+    `${__dirname}/avro/taskManager/messages/envelopes/AvroEnvelopeForTaskEngine.avsc`
   ),
   registry
 );

@@ -2,27 +2,27 @@ package com.zenaton.taskManager.worker
 import com.zenaton.common.data.SerializedData
 import com.zenaton.taskManager.common.Constants
 import com.zenaton.taskManager.common.avro.AvroConverter
-import com.zenaton.taskManager.common.data.JobAttemptContext
-import com.zenaton.taskManager.common.data.JobAttemptError
-import com.zenaton.taskManager.common.data.JobInput
-import com.zenaton.taskManager.common.data.JobOutput
-import com.zenaton.taskManager.common.exceptions.ClassNotFoundDuringJobInstantiation
+import com.zenaton.taskManager.common.data.TaskAttemptContext
+import com.zenaton.taskManager.common.data.TaskAttemptError
+import com.zenaton.taskManager.common.data.TaskInput
+import com.zenaton.taskManager.common.data.TaskOutput
+import com.zenaton.taskManager.common.exceptions.ClassNotFoundDuringTaskInstantiation
 import com.zenaton.taskManager.common.exceptions.RetryDelayHasWrongReturnType
-import com.zenaton.taskManager.common.exceptions.ErrorDuringJobInstantiation
+import com.zenaton.taskManager.common.exceptions.ErrorDuringTaskInstantiation
 import com.zenaton.taskManager.common.exceptions.ExceptionDuringParametersDeserialization
-import com.zenaton.taskManager.common.exceptions.InvalidUseOfDividerInJobName
-import com.zenaton.taskManager.common.exceptions.JobAttemptContextRetrievedOutsideOfProcessingThread
-import com.zenaton.taskManager.common.exceptions.JobAttemptContextSetFromExistingProcessingThread
-import com.zenaton.taskManager.common.exceptions.MultipleUseOfDividerInJobName
+import com.zenaton.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
+import com.zenaton.taskManager.common.exceptions.TaskAttemptContextRetrievedOutsideOfProcessingThread
+import com.zenaton.taskManager.common.exceptions.TaskAttemptContextSetFromExistingProcessingThread
+import com.zenaton.taskManager.common.exceptions.MultipleUseOfDividerInTaskName
 import com.zenaton.taskManager.common.exceptions.NoMethodFoundWithParameterCount
 import com.zenaton.taskManager.common.exceptions.NoMethodFoundWithParameterTypes
 import com.zenaton.taskManager.common.exceptions.ProcessingTimeout
 import com.zenaton.taskManager.common.exceptions.TooManyMethodsFoundWithParameterCount
 import com.zenaton.taskManager.common.messages.ForWorkerMessage
-import com.zenaton.taskManager.common.messages.JobAttemptCompleted
-import com.zenaton.taskManager.common.messages.JobAttemptFailed
-import com.zenaton.taskManager.common.messages.JobAttemptStarted
-import com.zenaton.taskManager.common.messages.RunJob
+import com.zenaton.taskManager.common.messages.TaskAttemptCompleted
+import com.zenaton.taskManager.common.messages.TaskAttemptFailed
+import com.zenaton.taskManager.common.messages.TaskAttemptStarted
+import com.zenaton.taskManager.common.messages.RunTask
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,18 +44,18 @@ open class Worker {
         private val registeredTasks = ConcurrentHashMap<String, Any>()
 
         // cf. https://www.baeldung.com/java-threadlocal
-        private val contexts = ConcurrentHashMap<Long, JobAttemptContext>()
+        private val contexts = ConcurrentHashMap<Long, TaskAttemptContext>()
 
         private fun getContextKey() = Thread.currentThread().id
 
         /**
-         * Use this to retrieve JobAttemptContext associated to current task
+         * Use this to retrieve TaskAttemptContext associated to current task
          */
         // TODO: currently running task in coroutines (instead of Thread) is not supported (as Context is mapped to threadId)
-        val context: JobAttemptContext
+        val context: TaskAttemptContext
             get() {
                 val key = getContextKey()
-                if (! contexts.containsKey(key)) throw JobAttemptContextRetrievedOutsideOfProcessingThread()
+                if (! contexts.containsKey(key)) throw TaskAttemptContextRetrievedOutsideOfProcessingThread()
 
                 return contexts[key]!!
             }
@@ -64,7 +64,7 @@ open class Worker {
          * Use this method to register the task instance to use for a given name
          */
         fun register(jobName: String, jobInstance: Any) {
-            if (jobName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInJobName(jobName)
+            if (jobName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(jobName)
 
             registeredTasks[jobName] = jobInstance
         }
@@ -99,7 +99,7 @@ open class Worker {
 
     suspend fun handle(msg: ForWorkerMessage) {
         when (msg) {
-            is RunJob -> {
+            is RunTask -> {
                 // let engine know that we are processing the message
                 sendTaskStarted(msg)
 
@@ -113,13 +113,13 @@ open class Worker {
                     return
                 }
 
-                val context = JobAttemptContext(
-                    jobId = msg.jobId,
-                    jobAttemptId = msg.jobAttemptId,
-                    jobAttemptIndex = msg.jobAttemptIndex,
-                    jobAttemptRetry = msg.jobAttemptRetry,
-                    jobMeta = msg.jobMeta,
-                    jobOptions = msg.jobOptions
+                val context = TaskAttemptContext(
+                    taskId = msg.taskId,
+                    taskAttemptId = msg.taskAttemptId,
+                    taskAttemptIndex = msg.taskAttemptIndex,
+                    taskAttemptRetry = msg.taskAttemptRetry,
+                    taskMeta = msg.taskMeta,
+                    taskOptions = msg.taskOptions
                 )
 
                 // the method invocation is done through a coroutine
@@ -172,17 +172,17 @@ open class Worker {
         }
     }
 
-    private fun setContext(key: Long, context: JobAttemptContext) {
-        if (contexts.containsKey(key)) throw JobAttemptContextSetFromExistingProcessingThread()
+    private fun setContext(key: Long, context: TaskAttemptContext) {
+        if (contexts.containsKey(key)) throw TaskAttemptContextSetFromExistingProcessingThread()
         contexts[key] = context
     }
 
     private fun delContext(key: Long) {
-        if (! contexts.containsKey(key)) throw JobAttemptContextSetFromExistingProcessingThread()
+        if (! contexts.containsKey(key)) throw TaskAttemptContextSetFromExistingProcessingThread()
         contexts.remove(key)
     }
 
-    private fun getRetryDelayAndFailTask(task: Any, msg: RunJob, parentJob: Job, contextKey: Long, context: JobAttemptContext) {
+    private fun getRetryDelayAndFailTask(task: Any, msg: RunTask, parentJob: Job, contextKey: Long, context: TaskAttemptContext) {
         when (val delay = getDelayBeforeRetry(task, context)) {
             is RetryDelayRetrieved -> {
                 println("delay=$delay")
@@ -197,9 +197,9 @@ open class Worker {
         }
     }
 
-    private fun completeTask(msg: RunJob, output: Any?, parentJob: Job, contextKey: Long) {
+    private fun completeTask(msg: RunTask, output: Any?, parentJob: Job, contextKey: Long) {
         // returning output
-        sendJobCompleted(msg, output)
+        sendTaskCompleted(msg, output)
 
         // removing context from static list
         delContext(contextKey)
@@ -208,7 +208,7 @@ open class Worker {
         parentJob.cancel()
     }
 
-    private fun failTask(msg: RunJob, e: Throwable?, delay: Float?, parentJob: Job, contextKey: Long) {
+    private fun failTask(msg: RunTask, e: Throwable?, delay: Float?, parentJob: Job, contextKey: Long) {
         // returning throwable
         sendTaskFailed(msg, e, delay)
 
@@ -219,22 +219,22 @@ open class Worker {
         parentJob.cancel()
     }
 
-    private fun parse(msg: RunJob): JobCommand {
+    private fun parse(msg: RunTask): TaskCommand {
         val (jobName, methodName) = getClassAndMethodNames(msg)
-        val job = getTaskInstance(jobName)
+        val task = getTaskInstance(jobName)
         val parameterTypes = getMetaParameterTypes(msg)
-        val method = getMethod(job, methodName, msg.jobInput.input.size, parameterTypes)
-        val parameters = getParameters(job::class.java.name, methodName, msg.jobInput, parameterTypes ?: method.parameterTypes)
+        val method = getMethod(task, methodName, msg.taskInput.input.size, parameterTypes)
+        val parameters = getParameters(task::class.java.name, methodName, msg.taskInput, parameterTypes ?: method.parameterTypes)
 
-        return JobCommand(job, method, parameters, msg.jobOptions)
+        return TaskCommand(task, method, parameters, msg.taskOptions)
     }
 
-    private fun getClassAndMethodNames(msg: RunJob): List<String> {
-        val parts = msg.jobName.name.split(Constants.METHOD_DIVIDER)
+    private fun getClassAndMethodNames(msg: RunTask): List<String> {
+        val parts = msg.taskName.name.split(Constants.METHOD_DIVIDER)
         return when (parts.size) {
             1 -> parts + Constants.METHOD_DEFAULT
             2 -> parts
-            else -> throw MultipleUseOfDividerInJobName(msg.jobName.name)
+            else -> throw MultipleUseOfDividerInTaskName(msg.taskName.name)
         }
     }
 
@@ -248,11 +248,11 @@ open class Worker {
         return try {
             klass.newInstance()
         } catch (e: Exception) {
-            throw ErrorDuringJobInstantiation(name)
+            throw ErrorDuringTaskInstantiation(name)
         }
     }
 
-    private fun getMetaParameterTypes(msg: RunJob) = msg.jobMeta.getParameterTypes()
+    private fun getMetaParameterTypes(msg: RunTask) = msg.taskMeta.getParameterTypes()
         ?.map { getClass(it) }
         ?.toTypedArray()
 
@@ -269,28 +269,28 @@ open class Worker {
             try {
                 Class.forName(name)
             } catch (e: ClassNotFoundException) {
-                throw ClassNotFoundDuringJobInstantiation(name)
+                throw ClassNotFoundDuringTaskInstantiation(name)
             }
     }
 
     // TODO: currently method using "suspend" keyword are not supported
-    private fun getMethod(job: Any, methodName: String, parameterCount: Int, parameterTypes: Array<Class<*>>?): Method {
+    private fun getMethod(task: Any, methodName: String, parameterCount: Int, parameterTypes: Array<Class<*>>?): Method {
         // Case where parameter types have been provided
         if (parameterTypes != null) return try {
-            job::class.java.getMethod(methodName, *parameterTypes)
+            task::class.java.getMethod(methodName, *parameterTypes)
         } catch (e: NoSuchMethodException) {
-            throw NoMethodFoundWithParameterTypes(job::class.java.name, methodName, parameterTypes.map { it.name })
+            throw NoMethodFoundWithParameterTypes(task::class.java.name, methodName, parameterTypes.map { it.name })
         }
 
         // if not, hopefully there is only one method with this name
-        val methods = job::class.javaObjectType.methods.filter { it.name == methodName && it.parameterCount == parameterCount }
-        if (methods.isEmpty()) throw NoMethodFoundWithParameterCount(job::class.java.name, methodName, parameterCount)
-        if (methods.size > 1) throw TooManyMethodsFoundWithParameterCount(job::class.java.name, methodName, parameterCount)
+        val methods = task::class.javaObjectType.methods.filter { it.name == methodName && it.parameterCount == parameterCount }
+        if (methods.isEmpty()) throw NoMethodFoundWithParameterCount(task::class.java.name, methodName, parameterCount)
+        if (methods.size > 1) throw TooManyMethodsFoundWithParameterCount(task::class.java.name, methodName, parameterCount)
 
         return methods[0]
     }
 
-    private fun getParameters(jobName: String, methodName: String, input: JobInput, parameterTypes: Array<Class<*>>): Array<Any?> {
+    private fun getParameters(jobName: String, methodName: String, input: TaskInput, parameterTypes: Array<Class<*>>): Array<Any?> {
         return try {
             input.input.mapIndexed {
                 index, serializedData ->
@@ -302,9 +302,9 @@ open class Worker {
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
-    private fun getDelayBeforeRetry(job: Any, context: JobAttemptContext): RetryDelay {
+    private fun getDelayBeforeRetry(task: Any, context: TaskAttemptContext): RetryDelay {
         val method = try {
-            job::class.java.getMethod(Constants.DELAY_BEFORE_RETRY_METHOD, JobAttemptContext::class.java)
+            task::class.java.getMethod(Constants.DELAY_BEFORE_RETRY_METHOD, TaskAttemptContext::class.java)
         } catch (e: NoSuchMethodException) {
             return RetryDelayRetrieved(null)
         }
@@ -312,49 +312,49 @@ open class Worker {
         val actualType = method.genericReturnType.typeName
         val expectedType = Float::class.javaObjectType.name
         if (actualType != expectedType) return RetryDelayFailed(
-            RetryDelayHasWrongReturnType(job::class.java.name, actualType, expectedType)
+            RetryDelayHasWrongReturnType(task::class.java.name, actualType, expectedType)
         )
 
         return try {
-            RetryDelayRetrieved(method.invoke(job, context) as Float?)
+            RetryDelayRetrieved(method.invoke(task, context) as Float?)
         } catch (e: InvocationTargetException) {
             RetryDelayFailed(e.cause)
         }
     }
 
-    private fun sendTaskStarted(msg: RunJob) {
-        val jobAttemptStarted = JobAttemptStarted(
-            jobId = msg.jobId,
-            jobAttemptId = msg.jobAttemptId,
-            jobAttemptRetry = msg.jobAttemptRetry,
-            jobAttemptIndex = msg.jobAttemptIndex
+    private fun sendTaskStarted(msg: RunTask) {
+        val taskAttemptStarted = TaskAttemptStarted(
+            taskId = msg.taskId,
+            taskAttemptId = msg.taskAttemptId,
+            taskAttemptRetry = msg.taskAttemptRetry,
+            taskAttemptIndex = msg.taskAttemptIndex
         )
 
-        dispatcher.toJobEngine(jobAttemptStarted)
+        dispatcher.toTaskEngine(taskAttemptStarted)
     }
 
-    private fun sendTaskFailed(msg: RunJob, error: Throwable?, delay: Float? = null) {
-        val jobAttemptFailed = JobAttemptFailed(
-            jobId = msg.jobId,
-            jobAttemptId = msg.jobAttemptId,
-            jobAttemptRetry = msg.jobAttemptRetry,
-            jobAttemptIndex = msg.jobAttemptIndex,
-            jobAttemptDelayBeforeRetry = delay,
-            jobAttemptError = JobAttemptError(error)
+    private fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
+        val jobAttemptFailed = TaskAttemptFailed(
+            taskId = msg.taskId,
+            taskAttemptId = msg.taskAttemptId,
+            taskAttemptRetry = msg.taskAttemptRetry,
+            taskAttemptIndex = msg.taskAttemptIndex,
+            taskAttemptDelayBeforeRetry = delay,
+            taskAttemptError = TaskAttemptError(error)
         )
 
-        dispatcher.toJobEngine(jobAttemptFailed)
+        dispatcher.toTaskEngine(jobAttemptFailed)
     }
 
-    private fun sendJobCompleted(msg: RunJob, output: Any?) {
-        val jobAttemptCompleted = JobAttemptCompleted(
-            jobId = msg.jobId,
-            jobAttemptId = msg.jobAttemptId,
-            jobAttemptRetry = msg.jobAttemptRetry,
-            jobAttemptIndex = msg.jobAttemptIndex,
-            jobOutput = JobOutput(SerializedData.from(output))
+    private fun sendTaskCompleted(msg: RunTask, output: Any?) {
+        val taskAttemptCompleted = TaskAttemptCompleted(
+            taskId = msg.taskId,
+            taskAttemptId = msg.taskAttemptId,
+            taskAttemptRetry = msg.taskAttemptRetry,
+            taskAttemptIndex = msg.taskAttemptIndex,
+            taskOutput = TaskOutput(SerializedData.from(output))
         )
 
-        dispatcher.toJobEngine(jobAttemptCompleted)
+        dispatcher.toTaskEngine(taskAttemptCompleted)
     }
 }

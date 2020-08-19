@@ -1,16 +1,16 @@
 package com.zenaton.taskManager.client
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.taskManager.common.data.Job
-import com.zenaton.taskManager.common.data.JobId
-import com.zenaton.taskManager.common.data.JobInput
-import com.zenaton.taskManager.common.data.JobMeta
-import com.zenaton.taskManager.common.data.JobName
-import com.zenaton.taskManager.common.data.JobOptions
-import com.zenaton.taskManager.common.data.JobOutput
+import com.zenaton.taskManager.common.data.Task
+import com.zenaton.taskManager.common.data.TaskId
+import com.zenaton.taskManager.common.data.TaskInput
+import com.zenaton.taskManager.common.data.TaskMeta
+import com.zenaton.taskManager.common.data.TaskName
+import com.zenaton.taskManager.common.data.TaskOptions
+import com.zenaton.taskManager.common.data.TaskOutput
 import com.zenaton.taskManager.common.exceptions.NoMethodCallAtDispatch
-import com.zenaton.taskManager.common.messages.CancelJob
-import com.zenaton.taskManager.common.messages.RetryJob
+import com.zenaton.taskManager.common.messages.CancelTask
+import com.zenaton.taskManager.common.messages.RetryTask
 import java.lang.reflect.Proxy
 
 class Client() {
@@ -24,11 +24,11 @@ class Client() {
      * Use this method to dispatch a job
      * TODO: using class instance instead of interface is not supported
      */
-    inline fun <reified T> dispatchJob(
-        options: JobOptions = JobOptions(),
-        meta: JobMeta = JobMeta(),
+    inline fun <reified T> dispatchTask(
+        options: TaskOptions = TaskOptions(),
+        meta: TaskMeta = TaskMeta(),
         method: T.() -> Any?
-    ): Job {
+    ): Task {
         // handler will be where the actual job is done
         val handler = ProxyHandler(T::class.java.name, dispatcher, options, meta)
 
@@ -50,34 +50,34 @@ class Client() {
      * Use this method to manually retry a job
      * when a non-null parameter is provided, it will supersede current one
      */
-    fun retryJob(
+    fun retryTask(
         id: String,
-        name: JobName? = null,
-        input: JobInput? = null,
-        options: JobOptions? = null,
-        meta: JobMeta? = null
+        name: TaskName? = null,
+        input: TaskInput? = null,
+        options: TaskOptions? = null,
+        meta: TaskMeta? = null
     ) {
-        val msg = RetryJob(
-            jobId = JobId(id),
-            jobName = name,
-            jobInput = input,
-            jobOptions = options,
-            jobMeta = meta
+        val msg = RetryTask(
+            taskId = TaskId(id),
+            taskName = name,
+            taskInput = input,
+            taskOptions = options,
+            taskMeta = meta
         )
-        dispatcher.toJobEngine(msg)
+        dispatcher.toTaskEngine(msg)
     }
 
     /*
      * Use this method to manually cancel a job
      */
-    fun cancelJob(
+    fun cancelTask(
         id: String,
         output: Any? = null
     ) {
-        val msg = CancelJob(
-            jobId = JobId(id),
-            jobOutput = JobOutput(SerializedData.from(output))
+        val msg = CancelTask(
+            taskId = TaskId(id),
+            taskOutput = TaskOutput(SerializedData.from(output))
         )
-        dispatcher.toJobEngine(msg)
+        dispatcher.toTaskEngine(msg)
     }
 }

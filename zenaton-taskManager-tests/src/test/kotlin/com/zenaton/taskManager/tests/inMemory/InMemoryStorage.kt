@@ -1,18 +1,18 @@
 package com.zenaton.taskManager.tests.inMemory
 
-import com.zenaton.taskManager.common.data.Job
+import com.zenaton.taskManager.common.data.Task
 import com.zenaton.taskManager.engine.avroInterfaces.AvroStorage
-import com.zenaton.taskManager.states.AvroJobEngineState
+import com.zenaton.taskManager.states.AvroTaskEngineState
 import com.zenaton.taskManager.states.AvroMonitoringGlobalState
 import com.zenaton.taskManager.states.AvroMonitoringPerNameState
 
 internal class InMemoryStorage : AvroStorage {
-    var jobEngineStore: Map<String, AvroJobEngineState> = mapOf()
+    var jobEngineStore: Map<String, AvroTaskEngineState> = mapOf()
     var monitoringPerNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var monitoringGlobalStore: AvroMonitoringGlobalState? = null
 
-    fun isTerminated(job: Job): Boolean {
-        return jobEngineStore[job.jobId.id] == null
+    fun isTerminated(task: Task): Boolean {
+        return jobEngineStore[task.taskId.id] == null
     }
 
     fun reset() {
@@ -21,15 +21,15 @@ internal class InMemoryStorage : AvroStorage {
         monitoringGlobalStore = null
     }
 
-    override fun getJobEngineState(jobId: String): AvroJobEngineState? {
+    override fun getTaskEngineState(jobId: String): AvroTaskEngineState? {
         return jobEngineStore[jobId]
     }
 
-    override fun updateJobEngineState(jobId: String, newState: AvroJobEngineState, oldState: AvroJobEngineState?) {
+    override fun updateTaskEngineState(jobId: String, newState: AvroTaskEngineState, oldState: AvroTaskEngineState?) {
         jobEngineStore = jobEngineStore.plus(jobId to newState)
     }
 
-    override fun deleteJobEngineState(jobId: String) {
+    override fun deleteTaskEngineState(jobId: String) {
         jobEngineStore = jobEngineStore.minus(jobId)
     }
 

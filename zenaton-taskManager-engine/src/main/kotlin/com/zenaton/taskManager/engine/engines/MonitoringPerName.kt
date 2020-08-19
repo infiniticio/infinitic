@@ -1,10 +1,10 @@
 package com.zenaton.taskManager.engine.engines
 
-import com.zenaton.taskManager.common.data.JobStatus
+import com.zenaton.taskManager.common.data.TaskStatus
 import com.zenaton.taskManager.engine.dispatcher.Dispatcher
 import com.zenaton.taskManager.common.messages.ForMonitoringPerNameMessage
-import com.zenaton.taskManager.common.messages.JobCreated
-import com.zenaton.taskManager.common.messages.JobStatusUpdated
+import com.zenaton.taskManager.common.messages.TaskCreated
+import com.zenaton.taskManager.common.messages.TaskStatusUpdated
 import com.zenaton.taskManager.common.states.MonitoringPerNameState
 import com.zenaton.taskManager.engine.storages.MonitoringPerNameStorage
 import org.slf4j.Logger
@@ -17,42 +17,42 @@ class MonitoringPerName {
     fun handle(message: ForMonitoringPerNameMessage) {
 
         // get associated state
-        val oldState = storage.getState(message.jobName)
-        val newState = oldState?.deepCopy() ?: MonitoringPerNameState(message.jobName)
+        val oldState = storage.getState(message.taskName)
+        val newState = oldState?.deepCopy() ?: MonitoringPerNameState(message.taskName)
 
         when (message) {
-            is JobStatusUpdated -> handleTaskStatusUpdated(message, newState)
+            is TaskStatusUpdated -> handleTaskStatusUpdated(message, newState)
         }
 
         // Update stored state if needed and existing
         if (newState != oldState) {
-            storage.updateState(message.jobName, newState, oldState)
+            storage.updateState(message.taskName, newState, oldState)
         }
 
         // It's a new task type
         if (oldState == null) {
-            val tsc = JobCreated(jobName = message.jobName)
+            val tsc = TaskCreated(taskName = message.taskName)
 
             dispatcher.toMonitoringGlobal(tsc)
         }
     }
 
-    private fun handleTaskStatusUpdated(message: JobStatusUpdated, state: MonitoringPerNameState) {
+    private fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MonitoringPerNameState) {
         when (message.oldStatus) {
-            JobStatus.RUNNING_OK -> state.runningOkCount--
-            JobStatus.RUNNING_WARNING -> state.runningWarningCount--
-            JobStatus.RUNNING_ERROR -> state.runningErrorCount--
-            JobStatus.TERMINATED_COMPLETED -> state.terminatedCompletedCount--
-            JobStatus.TERMINATED_CANCELED -> state.terminatedCanceledCount--
+            TaskStatus.RUNNING_OK -> state.runningOkCount--
+            TaskStatus.RUNNING_WARNING -> state.runningWarningCount--
+            TaskStatus.RUNNING_ERROR -> state.runningErrorCount--
+            TaskStatus.TERMINATED_COMPLETED -> state.terminatedCompletedCount--
+            TaskStatus.TERMINATED_CANCELED -> state.terminatedCanceledCount--
             else -> Unit
         }
 
         when (message.newStatus) {
-            JobStatus.RUNNING_OK -> state.runningOkCount++
-            JobStatus.RUNNING_WARNING -> state.runningWarningCount++
-            JobStatus.RUNNING_ERROR -> state.runningErrorCount++
-            JobStatus.TERMINATED_COMPLETED -> state.terminatedCompletedCount++
-            JobStatus.TERMINATED_CANCELED -> state.terminatedCanceledCount++
+            TaskStatus.RUNNING_OK -> state.runningOkCount++
+            TaskStatus.RUNNING_WARNING -> state.runningWarningCount++
+            TaskStatus.RUNNING_ERROR -> state.runningErrorCount++
+            TaskStatus.TERMINATED_COMPLETED -> state.terminatedCompletedCount++
+            TaskStatus.TERMINATED_CANCELED -> state.terminatedCanceledCount++
         }
     }
 }

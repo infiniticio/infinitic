@@ -1,10 +1,10 @@
 package com.zenaton.taskManager.engines
 
-import com.zenaton.taskManager.common.data.JobStatus
+import com.zenaton.taskManager.common.data.TaskStatus
 import com.zenaton.taskManager.engine.dispatcher.Dispatcher
 import com.zenaton.taskManager.engine.engines.MonitoringPerName
-import com.zenaton.taskManager.common.messages.JobCreated
-import com.zenaton.taskManager.common.messages.JobStatusUpdated
+import com.zenaton.taskManager.common.messages.TaskCreated
+import com.zenaton.taskManager.common.messages.TaskStatusUpdated
 import com.zenaton.taskManager.common.states.MonitoringPerNameState
 import com.zenaton.taskManager.engine.storages.MonitoringPerNameStorage
 import com.zenaton.taskManager.utils.TestFactory
@@ -25,16 +25,16 @@ class MonitoringPerNameTests : ShouldSpec({
             val dispatcher = mockk<Dispatcher>()
             val logger = mockk<Logger>()
             val msg = TestFactory.random(
-                JobStatusUpdated::class,
+                TaskStatusUpdated::class,
                 mapOf(
-                    "oldStatus" to JobStatus.RUNNING_OK,
-                    "newStatus" to JobStatus.RUNNING_ERROR
+                    "oldStatus" to TaskStatus.RUNNING_OK,
+                    "newStatus" to TaskStatus.RUNNING_ERROR
                 )
             )
-            val stateIn = TestFactory.random(MonitoringPerNameState::class, mapOf("taskName" to msg.jobName))
+            val stateIn = TestFactory.random(MonitoringPerNameState::class, mapOf("taskName" to msg.taskName))
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getState(msg.jobName) } returns stateIn
-            every { storage.updateState(msg.jobName, capture(stateOutSlot), any()) } just runs
+            every { storage.getState(msg.taskName) } returns stateIn
+            every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
 
             val monitoringPerName = MonitoringPerName()
             monitoringPerName.logger = logger
@@ -45,8 +45,8 @@ class MonitoringPerNameTests : ShouldSpec({
 
             val stateOut = stateOutSlot.captured
             verifyAll {
-                storage.getState(msg.jobName)
-                storage.updateState(msg.jobName, stateOut, stateIn)
+                storage.getState(msg.taskName)
+                storage.updateState(msg.taskName, stateOut, stateIn)
             }
             stateOut.runningErrorCount shouldBe stateIn.runningErrorCount + 1
             stateOut.runningOkCount shouldBe stateIn.runningOkCount - 1
@@ -57,16 +57,16 @@ class MonitoringPerNameTests : ShouldSpec({
             val dispatcher = mockk<Dispatcher>()
             val logger = mockk<Logger>()
             val msg = TestFactory.random(
-                JobStatusUpdated::class,
+                TaskStatusUpdated::class,
                 mapOf(
                     "oldStatus" to null,
-                    "newStatus" to JobStatus.RUNNING_OK
+                    "newStatus" to TaskStatus.RUNNING_OK
                 )
             )
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getState(msg.jobName) } returns null
-            every { storage.updateState(msg.jobName, capture(stateOutSlot), any()) } just runs
-            every { dispatcher.toMonitoringGlobal(any<JobCreated>()) } just runs
+            every { storage.getState(msg.taskName) } returns null
+            every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
+            every { dispatcher.toMonitoringGlobal(any<TaskCreated>()) } just runs
 
             val monitoringPerName = MonitoringPerName()
             monitoringPerName.logger = logger
@@ -77,9 +77,9 @@ class MonitoringPerNameTests : ShouldSpec({
             // then
             val stateOut = stateOutSlot.captured
             verifyAll {
-                storage.getState(msg.jobName)
-                storage.updateState(msg.jobName, stateOut, null)
-                dispatcher.toMonitoringGlobal(ofType<JobCreated>())
+                storage.getState(msg.taskName)
+                storage.updateState(msg.taskName, stateOut, null)
+                dispatcher.toMonitoringGlobal(ofType<TaskCreated>())
             }
         }
     }

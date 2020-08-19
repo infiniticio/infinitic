@@ -1,9 +1,9 @@
 package com.zenaton.taskManager.pulsar.storage
 
 import com.zenaton.common.avro.AvroSerDe
-import com.zenaton.taskManager.common.data.JobStatus
+import com.zenaton.taskManager.common.data.TaskStatus
 import com.zenaton.taskManager.engine.avroInterfaces.AvroStorage
-import com.zenaton.taskManager.states.AvroJobEngineState
+import com.zenaton.taskManager.states.AvroTaskEngineState
 import com.zenaton.taskManager.states.AvroMonitoringGlobalState
 import com.zenaton.taskManager.states.AvroMonitoringPerNameState
 import org.apache.pulsar.functions.api.Context
@@ -12,15 +12,15 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
     // serializer injection
     var avroSerDe = AvroSerDe
 
-    override fun getJobEngineState(jobId: String): AvroJobEngineState? {
-        return context.getState(getEngineStateKey(jobId))?.let { avroSerDe.deserialize<AvroJobEngineState>(it) }
+    override fun getTaskEngineState(jobId: String): AvroTaskEngineState? {
+        return context.getState(getEngineStateKey(jobId))?.let { avroSerDe.deserialize<AvroTaskEngineState>(it) }
     }
 
-    override fun updateJobEngineState(jobId: String, newState: AvroJobEngineState, oldState: AvroJobEngineState?) {
+    override fun updateTaskEngineState(jobId: String, newState: AvroTaskEngineState, oldState: AvroTaskEngineState?) {
         context.putState(getEngineStateKey(jobId), avroSerDe.serialize(newState))
     }
 
-    override fun deleteJobEngineState(jobId: String) {
+    override fun deleteTaskEngineState(jobId: String) {
         context.deleteState(getEngineStateKey(jobId))
     }
 
@@ -28,11 +28,11 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
         context.getState(getMonitoringPerNameStateKey(jobName))?.let { avroSerDe.deserialize<AvroMonitoringPerNameState>(it) }
 
     override fun updateMonitoringPerNameState(jobName: String, newState: AvroMonitoringPerNameState, oldState: AvroMonitoringPerNameState?) {
-        val counterOkKey = getMonitoringPerNameCounterKey(jobName, JobStatus.RUNNING_OK)
-        val counterWarningKey = getMonitoringPerNameCounterKey(jobName, JobStatus.RUNNING_WARNING)
-        val counterErrorKey = getMonitoringPerNameCounterKey(jobName, JobStatus.RUNNING_ERROR)
-        val counterCompletedKey = getMonitoringPerNameCounterKey(jobName, JobStatus.TERMINATED_COMPLETED)
-        val counterCanceledKey = getMonitoringPerNameCounterKey(jobName, JobStatus.TERMINATED_CANCELED)
+        val counterOkKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.RUNNING_OK)
+        val counterWarningKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.RUNNING_WARNING)
+        val counterErrorKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.RUNNING_ERROR)
+        val counterCompletedKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.TERMINATED_COMPLETED)
+        val counterCanceledKey = getMonitoringPerNameCounterKey(jobName, TaskStatus.TERMINATED_CANCELED)
 
         // use counters to save state, to avoid race conditions
         val incrOk = newState.runningOkCount - (oldState?.runningOkCount ?: 0L)
@@ -49,7 +49,7 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
 
         // save state retrieved from counters
         val state = AvroMonitoringPerNameState.newBuilder().apply {
-            setJobName(jobName)
+            setTaskName(jobName)
             runningOkCount = context.getCounter(counterOkKey)
             runningWarningCount = context.getCounter(counterWarningKey)
             runningErrorCount = context.getCounter(counterErrorKey)
@@ -85,5 +85,5 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
     fun getEngineStateKey(jobId: String) = "engine.state.$jobId"
     fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
     fun getMonitoringPerNameStateKey(jobName: String) = "monitoringPerName.state.$jobName"
-    fun getMonitoringPerNameCounterKey(jobName: String, jobStatus: JobStatus) = "monitoringPerName.counter.${jobStatus.toString().toLowerCase()}.${jobName.toLowerCase()}"
+    fun getMonitoringPerNameCounterKey(jobName: String, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${jobName.toLowerCase()}"
 }

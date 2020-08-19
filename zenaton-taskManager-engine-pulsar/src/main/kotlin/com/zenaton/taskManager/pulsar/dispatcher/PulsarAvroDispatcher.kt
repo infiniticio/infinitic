@@ -1,7 +1,7 @@
 package com.zenaton.taskManager.pulsar.dispatcher
 
 import com.zenaton.taskManager.engine.avroInterfaces.AvroDispatcher
-import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForWorker
@@ -14,7 +14,7 @@ import org.apache.pulsar.functions.api.Context
  */
 class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
 
-    private var prefix = "jobs"
+    private var prefix = "tasks"
 
     // With topics prefix, it is possible to have different instances of taskManager in same tenant/namespace
     // UserConfigValue are set when functions are deployed on topics
@@ -28,11 +28,11 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
      */
     override fun toWorkers(msg: AvroEnvelopeForWorker) {
         context
-            .newOutputMessage(Topic.WORKERS.get(prefix, msg.jobName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
+            .newOutputMessage(Topic.WORKERS.get(prefix, msg.taskName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
             .value(msg)
             .send()
-        context.logger.debug("===============JobManager====================")
-        context.logger.debug("Topic: ${Topic.WORKERS.get(prefix, msg.jobName)}")
+        context.logger.debug("===============TaskManager====================")
+        context.logger.debug("Topic: ${Topic.WORKERS.get(prefix, msg.taskName)}")
         context.logger.debug("Msg: $msg")
     }
 
@@ -44,7 +44,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
             .newOutputMessage(Topic.MONITORING_GLOBAL.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringGlobal::class.java))
             .value(msg)
             .send()
-        context.logger.debug("===============JobManager====================")
+        context.logger.debug("===============TaskManager====================")
         context.logger.debug("Topic: ${Topic.MONITORING_GLOBAL.get(prefix)}")
         context.logger.debug("Msg: $msg")
     }
@@ -55,22 +55,22 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
     override fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
         context
             .newOutputMessage(Topic.MONITORING_PER_NAME.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java))
-            .key(msg.jobName)
+            .key(msg.taskName)
             .value(msg)
             .send()
-        context.logger.debug("===============JobManager====================")
+        context.logger.debug("===============TaskManager====================")
         context.logger.debug("Topic: ${Topic.MONITORING_PER_NAME.get(prefix)}")
         context.logger.debug("Msg: $msg")
     }
 
     /**
-     *  Dispatch messages to JobManager Engine
+     *  Dispatch messages to TaskManager Engine
      */
-    override fun toJobEngine(msg: AvroEnvelopeForJobEngine, after: Float) {
+    override fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
 
         val msgBuilder = context
-            .newOutputMessage(Topic.JOB_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
-            .key(msg.jobId)
+            .newOutputMessage(Topic.TASK_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
+            .key(msg.taskId)
             .value(msg)
 
         if (after > 0F) {
@@ -78,8 +78,8 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
         }
         msgBuilder.send()
 
-        context.logger.debug("===============JobManager====================")
-        context.logger.debug("Topic: ${Topic.JOB_ENGINE.get(prefix)}")
+        context.logger.debug("===============TaskManager====================")
+        context.logger.debug("Topic: ${Topic.TASK_ENGINE.get(prefix)}")
         context.logger.debug("Msg: $msg")
     }
 }

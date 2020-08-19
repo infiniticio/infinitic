@@ -1,7 +1,7 @@
 package com.zenaton.taskManager.worker
 
-import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 
 interface AvroDispatcher {
-    fun toJobEngine(msg: AvroEnvelopeForJobEngine)
+    fun toTaskEngine(msg: AvroEnvelopeForTaskEngine)
 }

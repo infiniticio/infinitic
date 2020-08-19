@@ -35,7 +35,7 @@ fun Routing.root() {
         val state =
             pulsarAdmin.functions().getFunctionState(config.property("infinitic.pulsar.tenant").getString(), config.property("infinitic.pulsar.namespace").getString(), "infinitic-tasks-monitoring-global", "monitoringGlobal.state")?.let { AvroSerDe.deserialize<AvroMonitoringGlobalState>(ByteBuffer.wrap(it.stringValue.toByteArray())) } ?: return@get
 
-        val jobs = state.jobNames.map { object { val name = it } }
+        val jobs = state.taskNames.map { object { val name = it } }
 
         call.respond(jobs)
     }

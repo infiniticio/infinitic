@@ -1,10 +1,10 @@
 package com.zenaton.taskManager.common.avro
 
-import com.zenaton.taskManager.common.messages.ForJobEngineMessage
+import com.zenaton.taskManager.common.messages.ForTaskEngineMessage
 import com.zenaton.taskManager.common.messages.ForMonitoringGlobalMessage
 import com.zenaton.taskManager.common.messages.ForMonitoringPerNameMessage
 import com.zenaton.taskManager.common.messages.ForWorkerMessage
-import com.zenaton.taskManager.common.states.JobEngineState
+import com.zenaton.taskManager.common.states.TaskEngineState
 import com.zenaton.taskManager.common.states.MonitoringGlobalState
 import com.zenaton.taskManager.common.states.MonitoringPerNameState
 import com.zenaton.taskManager.common.utils.TestFactory
@@ -15,9 +15,9 @@ import io.kotest.matchers.shouldBe
 
 class AvroConverterTests : StringSpec({
 
-    "JobEngineState should be avro-reversible" {
+    "TaskEngineState should be avro-reversible" {
         // given
-        val state = TestFactory.random(JobEngineState::class)
+        val state = TestFactory.random(TaskEngineState::class)
         // when
         val avroState = AvroConverter.toStorage(state)
         val state2 = AvroConverter.fromStorage(avroState)
@@ -51,8 +51,8 @@ class AvroConverterTests : StringSpec({
         avroState2 shouldBe avroState
     }
 
-    ForJobEngineMessage::class.sealedSubclasses.forEach {
-        include(messagesToJobEngineShouldBeAvroReversible(TestFactory.random(it)))
+    ForTaskEngineMessage::class.sealedSubclasses.forEach {
+        include(messagesToTaskEngineShouldBeAvroReversible(TestFactory.random(it)))
     }
 
     ForMonitoringPerNameMessage::class.sealedSubclasses.forEach {
@@ -92,12 +92,12 @@ internal fun messagesToWorkersShouldBeAvroReversible(msg: ForWorkerMessage) = st
     }
 }
 
-internal fun messagesToJobEngineShouldBeAvroReversible(msg: ForJobEngineMessage) = stringSpec {
+internal fun messagesToTaskEngineShouldBeAvroReversible(msg: ForTaskEngineMessage) = stringSpec {
     "${msg::class.simpleName!!} should be avro-convertible" {
         shouldNotThrowAny {
-            val avroMsg = AvroConverter.toJobEngine(msg)
-            val msg2 = AvroConverter.fromJobEngine(avroMsg)
-            val avroMsg2 = AvroConverter.toJobEngine(msg2)
+            val avroMsg = AvroConverter.toTaskEngine(msg)
+            val msg2 = AvroConverter.fromTaskEngine(avroMsg)
+            val avroMsg2 = AvroConverter.toTaskEngine(msg2)
             msg shouldBe msg2
             avroMsg shouldBe avroMsg2
         }

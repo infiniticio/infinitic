@@ -20,14 +20,14 @@
       "type": "com.zenaton.workflowManager.data.commands.CommandStatus"
     },
     {
-      "name": "jobId",
+      "name": "taskId",
       "type": [
         "null",
         "string"
       ]
     },
     {
-      "name": "jobOutput",
+      "name": "taskOutput",
       "type": "com.zenaton.taskManager.data.AvroSerializedData"
     },
     {

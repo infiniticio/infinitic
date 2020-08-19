@@ -1,0 +1,24 @@
+{
+    "type": "record",
+    "name": "AvroEnvelopeForMonitoringPerName",
+    "namespace": "com.zenaton.taskManager.messages.envelopes",
+    "fields": [
+        {
+            "name": "type",
+            "type": {
+                "type": "enum",
+                "name": "AvroForMonitoringPerNameMessageType",
+                "symbols": [
+                    "TaskStatusUpdated"
+                ]
+            }
+        }, {
+            "name": "taskName",
+            "type": "string"
+        }, {
+            "name": "TaskStatusUpdated",
+            "type": ["null", "com.zenaton.taskManager.messages.AvroTaskStatusUpdated"],
+            "default": null
+        }
+    ]
+}

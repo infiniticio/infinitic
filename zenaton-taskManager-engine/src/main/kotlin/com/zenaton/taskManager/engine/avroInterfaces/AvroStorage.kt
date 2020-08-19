@@ -1,13 +1,13 @@
 package com.zenaton.taskManager.engine.avroInterfaces
 
-import com.zenaton.taskManager.states.AvroJobEngineState
+import com.zenaton.taskManager.states.AvroTaskEngineState
 import com.zenaton.taskManager.states.AvroMonitoringGlobalState
 import com.zenaton.taskManager.states.AvroMonitoringPerNameState
 
 interface AvroStorage {
-    fun getJobEngineState(jobId: String): AvroJobEngineState?
-    fun updateJobEngineState(jobId: String, newState: AvroJobEngineState, oldState: AvroJobEngineState?)
-    fun deleteJobEngineState(jobId: String)
+    fun getTaskEngineState(jobId: String): AvroTaskEngineState?
+    fun updateTaskEngineState(jobId: String, newState: AvroTaskEngineState, oldState: AvroTaskEngineState?)
+    fun deleteTaskEngineState(jobId: String)
 
     fun getMonitoringPerNameState(jobName: String): AvroMonitoringPerNameState?
     fun updateMonitoringPerNameState(jobName: String, newState: AvroMonitoringPerNameState, oldState: AvroMonitoringPerNameState?)

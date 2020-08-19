@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
 import com.zenaton.taskManager.common.Constants
-import com.zenaton.taskManager.common.data.JobOptions
+import com.zenaton.taskManager.common.data.TaskOptions
 
 /*
  *  @JsonIgnoreProperties and @JsonProperty annotations are here
@@ -118,21 +118,21 @@ class InconsistentJsonSerializationOfParameter(
  * Exceptions in worker
  ***********************/
 
-class InvalidUseOfDividerInJobName(
+class InvalidUseOfDividerInTaskName(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
-    msg = "Job name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider",
+    msg = "Task name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider",
     help = "You can not include \"${Constants.METHOD_DIVIDER}\" in your name's job, as it is also used as a divider between job's name and method"
 )
 
-class MultipleUseOfDividerInJobName(
+class MultipleUseOfDividerInTaskName(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
-    msg = "Job name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider more than once",
+    msg = "Task name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider more than once",
     help = "You can not include \"${Constants.METHOD_DIVIDER}\" more than once in your name's job, as it is also used as a divider between job's name and method"
 )
 
-class ErrorDuringJobInstantiation(
+class ErrorDuringTaskInstantiation(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Impossible to instantiate class \"$name\" using newInstance()",
@@ -141,7 +141,7 @@ class ErrorDuringJobInstantiation(
         "- using \"register\" method to provide an instance that will be used associated to \"$name\""
 )
 
-class ClassNotFoundDuringJobInstantiation(
+class ClassNotFoundDuringTaskInstantiation(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Impossible to find a Class associated to $name",
@@ -191,15 +191,15 @@ class ProcessingTimeout(
     @JsonProperty("delay") val delay: Float
 ) : UserExceptionInWorker(
     msg = "The processing of task \"$klass\" took more than $delay seconds",
-    help = "You can increase (or remove entirely) this constraint in the options ${JobOptions::javaClass.name}"
+    help = "You can increase (or remove entirely) this constraint in the options ${TaskOptions::javaClass.name}"
 )
 
-class JobAttemptContextRetrievedOutsideOfProcessingThread : UserExceptionInWorker(
+class TaskAttemptContextRetrievedOutsideOfProcessingThread : UserExceptionInWorker(
     msg = "Worker.getContext() can be used only in the same thread that invoked the task",
     help = "Check that your task do not try to retrieve its context from a new thread"
 )
 
-class JobAttemptContextSetFromExistingProcessingThread : UserExceptionInWorker(
+class TaskAttemptContextSetFromExistingProcessingThread : UserExceptionInWorker(
     msg = "A same thread can not process multiple tasks concurrently",
     help = "Check that you do not use the same thread for multiple concurrent task processing"
 )

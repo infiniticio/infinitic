@@ -135,7 +135,7 @@ END
 fi
 
 printf "Uploading schemas to topics ...\n"
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --filename build/schemas/AvroEnvelopeForJobEngine.schema && \
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --filename build/schemas/AvroEnvelopeForTaskEngine.schema && \
 pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-per-name --filename build/schemas/AvroEnvelopeForMonitoringPerName.schema && \
 pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-global --filename build/schemas/AvroEnvelopeForMonitoringGlobal.schema
 if [ $? -ne 0 ]; then
@@ -145,7 +145,7 @@ fi
 print_success "Successfully uploaded schemas to topics."
 
 printf "Deploying pulsar functions to the cluster ...\n"
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-engine --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.taskManager.pulsar.functions.JobEnginePulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-engine --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.taskManager.pulsar.functions.TaskEnginePulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
 pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-global --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-global --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.taskManager.pulsar.functions.MonitoringGlobalPulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
 pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-per-name --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-per-name --jar $JOB_MANAGER_JAR_PATH --classname com.zenaton.taskManager.pulsar.functions.MonitoringPerNamePulsarFunction --user-config '{"topicPrefix":"tasks"}'
 if [ $? -ne 0 ]; then

@@ -1,34 +1,34 @@
 package com.zenaton.taskManager.common.states
 
 import com.zenaton.taskManager.common.avro.AvroConverter
-import com.zenaton.taskManager.common.data.JobAttemptId
-import com.zenaton.taskManager.common.data.JobAttemptIndex
-import com.zenaton.taskManager.common.data.JobAttemptRetry
-import com.zenaton.taskManager.common.data.JobId
-import com.zenaton.taskManager.common.data.JobInput
-import com.zenaton.taskManager.common.data.JobMeta
-import com.zenaton.taskManager.common.data.JobName
-import com.zenaton.taskManager.common.data.JobOptions
-import com.zenaton.taskManager.common.data.JobStatus
+import com.zenaton.taskManager.common.data.TaskAttemptId
+import com.zenaton.taskManager.common.data.TaskAttemptIndex
+import com.zenaton.taskManager.common.data.TaskAttemptRetry
+import com.zenaton.taskManager.common.data.TaskId
+import com.zenaton.taskManager.common.data.TaskInput
+import com.zenaton.taskManager.common.data.TaskMeta
+import com.zenaton.taskManager.common.data.TaskName
+import com.zenaton.taskManager.common.data.TaskOptions
+import com.zenaton.taskManager.common.data.TaskStatus
 
 sealed class State
 
-data class JobEngineState(
-    val jobId: JobId,
-    val jobName: JobName,
-    val jobStatus: JobStatus,
-    val jobInput: JobInput,
-    var jobAttemptId: JobAttemptId,
-    var jobAttemptIndex: JobAttemptIndex = JobAttemptIndex(0),
-    var jobAttemptRetry: JobAttemptRetry = JobAttemptRetry(0),
-    val jobOptions: JobOptions,
-    val jobMeta: JobMeta
+data class TaskEngineState(
+    val taskId: TaskId,
+    val taskName: TaskName,
+    val taskStatus: TaskStatus,
+    val taskInput: TaskInput,
+    var taskAttemptId: TaskAttemptId,
+    var taskAttemptIndex: TaskAttemptIndex = TaskAttemptIndex(0),
+    var taskAttemptRetry: TaskAttemptRetry = TaskAttemptRetry(0),
+    val taskOptions: TaskOptions,
+    val taskMeta: TaskMeta
 ) : State() {
     fun deepCopy() = AvroConverter.fromStorage(AvroConverter.toStorage(this))
 }
 
 data class MonitoringPerNameState(
-    val jobName: JobName,
+    val taskName: TaskName,
     var runningOkCount: Long = 0,
     var runningWarningCount: Long = 0,
     var runningErrorCount: Long = 0,
@@ -39,7 +39,7 @@ data class MonitoringPerNameState(
 }
 
 data class MonitoringGlobalState(
-    val jobNames: MutableSet<JobName> = mutableSetOf()
+    val taskNames: MutableSet<TaskName> = mutableSetOf()
 ) : State() {
     fun deepCopy() = AvroConverter.fromStorage(AvroConverter.toStorage(this))
 }

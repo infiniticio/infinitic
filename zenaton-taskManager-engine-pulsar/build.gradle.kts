@@ -76,7 +76,7 @@ tasks.register("setSchemas") {
         createSchemaFiles()
         setPrefix("tasks")
         uploadSchemaToTopic(
-            name = "AvroEnvelopeForJobEngine",
+            name = "AvroEnvelopeForTaskEngine",
             topic = Topic.ENGINE.get()
         )
         uploadSchemaToTopic(
@@ -98,7 +98,7 @@ tasks.register("install") {
     doLast {
         setZenatonFunction(
             name = "infinitic-tasks-engine",
-            className = "JobEnginePulsarFunction",
+            className = "TaskEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "create"
         )
@@ -124,7 +124,7 @@ tasks.register("update") {
     doLast {
         setZenatonFunction(
             name = "infinitic-tasks-engine",
-            className = "JobEnginePulsarFunction",
+            className = "TaskEnginePulsarFunction",
             topicsIn = setOf(Topic.ENGINE.get()),
             action = "update"
         )

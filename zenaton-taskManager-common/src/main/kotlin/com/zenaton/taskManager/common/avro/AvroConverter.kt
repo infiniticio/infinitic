@@ -2,51 +2,51 @@ package com.zenaton.taskManager.common.avro
 
 import com.zenaton.common.data.SerializedData
 import com.zenaton.common.json.Json
-import com.zenaton.taskManager.common.messages.CancelJob
-import com.zenaton.taskManager.common.messages.DispatchJob
-import com.zenaton.taskManager.common.messages.ForJobEngineMessage
+import com.zenaton.taskManager.common.messages.CancelTask
+import com.zenaton.taskManager.common.messages.DispatchTask
+import com.zenaton.taskManager.common.messages.ForTaskEngineMessage
 import com.zenaton.taskManager.common.messages.ForMonitoringGlobalMessage
 import com.zenaton.taskManager.common.messages.ForMonitoringPerNameMessage
 import com.zenaton.taskManager.common.messages.ForWorkerMessage
-import com.zenaton.taskManager.common.messages.JobAttemptCompleted
-import com.zenaton.taskManager.common.messages.JobAttemptDispatched
-import com.zenaton.taskManager.common.messages.JobAttemptFailed
-import com.zenaton.taskManager.common.messages.JobAttemptStarted
-import com.zenaton.taskManager.common.messages.JobCanceled
-import com.zenaton.taskManager.common.messages.JobCompleted
-import com.zenaton.taskManager.common.messages.JobCreated
-import com.zenaton.taskManager.common.messages.JobStatusUpdated
+import com.zenaton.taskManager.common.messages.TaskAttemptCompleted
+import com.zenaton.taskManager.common.messages.TaskAttemptDispatched
+import com.zenaton.taskManager.common.messages.TaskAttemptFailed
+import com.zenaton.taskManager.common.messages.TaskAttemptStarted
+import com.zenaton.taskManager.common.messages.TaskCanceled
+import com.zenaton.taskManager.common.messages.TaskCompleted
+import com.zenaton.taskManager.common.messages.TaskCreated
+import com.zenaton.taskManager.common.messages.TaskStatusUpdated
 import com.zenaton.taskManager.common.messages.Message
-import com.zenaton.taskManager.common.messages.RetryJob
-import com.zenaton.taskManager.common.messages.RetryJobAttempt
-import com.zenaton.taskManager.common.messages.RunJob
-import com.zenaton.taskManager.common.states.JobEngineState
+import com.zenaton.taskManager.common.messages.RetryTask
+import com.zenaton.taskManager.common.messages.RetryTaskAttempt
+import com.zenaton.taskManager.common.messages.RunTask
+import com.zenaton.taskManager.common.states.TaskEngineState
 import com.zenaton.taskManager.common.states.MonitoringGlobalState
 import com.zenaton.taskManager.common.states.MonitoringPerNameState
 import com.zenaton.taskManager.common.states.State
 import com.zenaton.taskManager.data.AvroSerializedData
-import com.zenaton.taskManager.messages.AvroCancelJob
-import com.zenaton.taskManager.messages.AvroDispatchJob
-import com.zenaton.taskManager.messages.AvroJobAttemptCompleted
-import com.zenaton.taskManager.messages.AvroJobAttemptDispatched
-import com.zenaton.taskManager.messages.AvroJobAttemptFailed
-import com.zenaton.taskManager.messages.AvroJobAttemptStarted
-import com.zenaton.taskManager.messages.AvroJobCanceled
-import com.zenaton.taskManager.messages.AvroJobCompleted
-import com.zenaton.taskManager.messages.AvroJobCreated
-import com.zenaton.taskManager.messages.AvroJobStatusUpdated
-import com.zenaton.taskManager.messages.AvroRetryJob
-import com.zenaton.taskManager.messages.AvroRetryJobAttempt
-import com.zenaton.taskManager.messages.AvroRunJob
-import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.taskManager.messages.AvroCancelTask
+import com.zenaton.taskManager.messages.AvroDispatchTask
+import com.zenaton.taskManager.messages.AvroTaskAttemptCompleted
+import com.zenaton.taskManager.messages.AvroTaskAttemptDispatched
+import com.zenaton.taskManager.messages.AvroTaskAttemptFailed
+import com.zenaton.taskManager.messages.AvroTaskAttemptStarted
+import com.zenaton.taskManager.messages.AvroTaskCanceled
+import com.zenaton.taskManager.messages.AvroTaskCompleted
+import com.zenaton.taskManager.messages.AvroTaskCreated
+import com.zenaton.taskManager.messages.AvroTaskStatusUpdated
+import com.zenaton.taskManager.messages.AvroRetryTask
+import com.zenaton.taskManager.messages.AvroRetryTaskAttempt
+import com.zenaton.taskManager.messages.AvroRunTask
+import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import com.zenaton.taskManager.messages.envelopes.AvroForJobEngineMessageType
+import com.zenaton.taskManager.messages.envelopes.AvroForTaskEngineMessageType
 import com.zenaton.taskManager.messages.envelopes.AvroForMonitoringGlobalMessageType
 import com.zenaton.taskManager.messages.envelopes.AvroForMonitoringPerNameMessageType
 import com.zenaton.taskManager.messages.envelopes.AvroForWorkerMessageType
-import com.zenaton.taskManager.states.AvroJobEngineState
+import com.zenaton.taskManager.states.AvroTaskEngineState
 import com.zenaton.taskManager.states.AvroMonitoringGlobalState
 import com.zenaton.taskManager.states.AvroMonitoringPerNameState
 import org.apache.avro.specific.SpecificRecordBase
@@ -61,23 +61,23 @@ object AvroConverter {
      *  State <-> Avro State
      */
     fun fromStorage(avro: SpecificRecordBase) = when (avro) {
-        is AvroJobEngineState -> fromStorage(avro)
+        is AvroTaskEngineState -> fromStorage(avro)
         is AvroMonitoringGlobalState -> fromStorage(avro)
         is AvroMonitoringPerNameState -> fromStorage(avro)
         else -> throw Exception("Unknown SpecificRecordBase: ${avro::class.qualifiedName}")
     }
 
-    fun fromStorage(avro: AvroJobEngineState) = convertJson<JobEngineState>(avro)
+    fun fromStorage(avro: AvroTaskEngineState) = convertJson<TaskEngineState>(avro)
     fun fromStorage(avro: AvroMonitoringGlobalState) = convertJson<MonitoringGlobalState>(avro)
     fun fromStorage(avro: AvroMonitoringPerNameState) = convertJson<MonitoringPerNameState>(avro)
 
     fun toStorage(state: State) = when (state) {
-        is JobEngineState -> toStorage(state)
+        is TaskEngineState -> toStorage(state)
         is MonitoringGlobalState -> toStorage(state)
         is MonitoringPerNameState -> toStorage(state)
     }
 
-    fun toStorage(state: JobEngineState) = convertJson<AvroJobEngineState>(state)
+    fun toStorage(state: TaskEngineState) = convertJson<AvroTaskEngineState>(state)
     fun toStorage(state: MonitoringGlobalState) = convertJson<AvroMonitoringGlobalState>(state)
     fun toStorage(state: MonitoringPerNameState) = convertJson<AvroMonitoringPerNameState>(state)
 
@@ -85,85 +85,85 @@ object AvroConverter {
      *  Avro message <-> Avro Envelope
      */
 
-    fun addEnvelopeToJobEngineMessage(message: SpecificRecordBase): AvroEnvelopeForJobEngine {
-        val builder = AvroEnvelopeForJobEngine.newBuilder()
+    fun addEnvelopeToTaskEngineMessage(message: SpecificRecordBase): AvroEnvelopeForTaskEngine {
+        val builder = AvroEnvelopeForTaskEngine.newBuilder()
         when (message) {
-            is AvroCancelJob -> builder.apply {
-                jobId = message.jobId
-                cancelJob = message
-                type = AvroForJobEngineMessageType.CancelJob
+            is AvroCancelTask -> builder.apply {
+                taskId = message.taskId
+                cancelTask = message
+                type = AvroForTaskEngineMessageType.CancelTask
             }
-            is AvroDispatchJob -> builder.apply {
-                jobId = message.jobId
-                dispatchJob = message
-                type = AvroForJobEngineMessageType.DispatchJob
+            is AvroDispatchTask -> builder.apply {
+                taskId = message.taskId
+                dispatchTask = message
+                type = AvroForTaskEngineMessageType.DispatchTask
             }
-            is AvroRetryJob -> builder.apply {
-                jobId = message.jobId
-                retryJob = message
-                type = AvroForJobEngineMessageType.RetryJob
+            is AvroRetryTask -> builder.apply {
+                taskId = message.taskId
+                retryTask = message
+                type = AvroForTaskEngineMessageType.RetryTask
             }
-            is AvroRetryJobAttempt -> builder.apply {
-                jobId = message.jobId
-                retryJobAttempt = message
-                type = AvroForJobEngineMessageType.RetryJobAttempt
+            is AvroRetryTaskAttempt -> builder.apply {
+                taskId = message.taskId
+                retryTaskAttempt = message
+                type = AvroForTaskEngineMessageType.RetryTaskAttempt
             }
-            is AvroJobAttemptDispatched -> builder.apply {
-                jobId = message.jobId
-                jobAttemptDispatched = message
-                type = AvroForJobEngineMessageType.JobAttemptDispatched
+            is AvroTaskAttemptDispatched -> builder.apply {
+                taskId = message.taskId
+                taskAttemptDispatched = message
+                type = AvroForTaskEngineMessageType.TaskAttemptDispatched
             }
-            is AvroJobAttemptCompleted -> builder.apply {
-                jobId = message.jobId
-                jobAttemptCompleted = message
-                type = AvroForJobEngineMessageType.JobAttemptCompleted
+            is AvroTaskAttemptCompleted -> builder.apply {
+                taskId = message.taskId
+                taskAttemptCompleted = message
+                type = AvroForTaskEngineMessageType.TaskAttemptCompleted
             }
-            is AvroJobAttemptFailed -> builder.apply {
-                jobId = message.jobId
-                jobAttemptFailed = message
-                type = AvroForJobEngineMessageType.JobAttemptFailed
+            is AvroTaskAttemptFailed -> builder.apply {
+                taskId = message.taskId
+                taskAttemptFailed = message
+                type = AvroForTaskEngineMessageType.TaskAttemptFailed
             }
-            is AvroJobAttemptStarted -> builder.apply {
-                jobId = message.jobId
-                jobAttemptStarted = message
-                type = AvroForJobEngineMessageType.JobAttemptStarted
+            is AvroTaskAttemptStarted -> builder.apply {
+                taskId = message.taskId
+                taskAttemptStarted = message
+                type = AvroForTaskEngineMessageType.TaskAttemptStarted
             }
-            is AvroJobCanceled -> builder.apply {
-                jobId = message.jobId
-                jobCanceled = message
-                type = AvroForJobEngineMessageType.JobCanceled
+            is AvroTaskCanceled -> builder.apply {
+                taskId = message.taskId
+                taskCanceled = message
+                type = AvroForTaskEngineMessageType.TaskCanceled
             }
-            is AvroJobCompleted -> builder.apply {
-                jobId = message.jobId
-                jobCompleted = message
-                type = AvroForJobEngineMessageType.JobCompleted
+            is AvroTaskCompleted -> builder.apply {
+                taskId = message.taskId
+                taskCompleted = message
+                type = AvroForTaskEngineMessageType.TaskCompleted
             }
-            else -> throw Exception("Unknown AvroJobEngineMessage: ${message::class.qualifiedName}")
+            else -> throw Exception("Unknown AvroTaskEngineMessage: ${message::class.qualifiedName}")
         }
         return builder.build()
     }
 
-    fun removeEnvelopeFromJobEngineMessage(input: AvroEnvelopeForJobEngine): SpecificRecordBase = when (input.type) {
-        AvroForJobEngineMessageType.CancelJob -> input.cancelJob
-        AvroForJobEngineMessageType.DispatchJob -> input.dispatchJob
-        AvroForJobEngineMessageType.RetryJob -> input.retryJob
-        AvroForJobEngineMessageType.RetryJobAttempt -> input.retryJobAttempt
-        AvroForJobEngineMessageType.JobAttemptDispatched -> input.jobAttemptDispatched
-        AvroForJobEngineMessageType.JobAttemptCompleted -> input.jobAttemptCompleted
-        AvroForJobEngineMessageType.JobAttemptFailed -> input.jobAttemptFailed
-        AvroForJobEngineMessageType.JobAttemptStarted -> input.jobAttemptStarted
-        AvroForJobEngineMessageType.JobCanceled -> input.jobCanceled
-        AvroForJobEngineMessageType.JobCompleted -> input.jobCompleted
+    fun removeEnvelopeFromTaskEngineMessage(input: AvroEnvelopeForTaskEngine): SpecificRecordBase = when (input.type) {
+        AvroForTaskEngineMessageType.CancelTask -> input.cancelTask
+        AvroForTaskEngineMessageType.DispatchTask -> input.dispatchTask
+        AvroForTaskEngineMessageType.RetryTask -> input.retryTask
+        AvroForTaskEngineMessageType.RetryTaskAttempt -> input.retryTaskAttempt
+        AvroForTaskEngineMessageType.TaskAttemptDispatched -> input.taskAttemptDispatched
+        AvroForTaskEngineMessageType.TaskAttemptCompleted -> input.taskAttemptCompleted
+        AvroForTaskEngineMessageType.TaskAttemptFailed -> input.taskAttemptFailed
+        AvroForTaskEngineMessageType.TaskAttemptStarted -> input.taskAttemptStarted
+        AvroForTaskEngineMessageType.TaskCanceled -> input.taskCanceled
+        AvroForTaskEngineMessageType.TaskCompleted -> input.taskCompleted
         null -> throw Exception("Null type in $input")
     }
 
     private fun addEnvelopeToMonitoringPerNameMessage(message: SpecificRecordBase): AvroEnvelopeForMonitoringPerName {
         val builder = AvroEnvelopeForMonitoringPerName.newBuilder()
         when (message) {
-            is AvroJobStatusUpdated -> builder.apply {
-                jobName = message.jobName
-                jobStatusUpdated = message
-                type = AvroForMonitoringPerNameMessageType.JobStatusUpdated
+            is AvroTaskStatusUpdated -> builder.apply {
+                taskName = message.taskName
+                taskStatusUpdated = message
+                type = AvroForMonitoringPerNameMessageType.TaskStatusUpdated
             }
             else -> throw Exception("Unknown AvroMonitoringPerNameMessage: ${message::class.qualifiedName}")
         }
@@ -171,16 +171,16 @@ object AvroConverter {
     }
 
     private fun removeEnvelopeFromMonitoringPerNameMessage(input: AvroEnvelopeForMonitoringPerName): SpecificRecordBase = when (input.type) {
-        AvroForMonitoringPerNameMessageType.JobStatusUpdated -> input.jobStatusUpdated
+        AvroForMonitoringPerNameMessageType.TaskStatusUpdated -> input.taskStatusUpdated
         else -> throw Exception("Unknown AvroEnvelopeForMonitoringPerName: ${input::class.qualifiedName}")
     }
 
     private fun addEnvelopeToMonitoringGlobalMessage(message: SpecificRecordBase): AvroEnvelopeForMonitoringGlobal {
         val builder = AvroEnvelopeForMonitoringGlobal.newBuilder()
         when (message) {
-            is AvroJobCreated -> builder.apply {
-                jobCreated = message
-                type = AvroForMonitoringGlobalMessageType.JobCreated
+            is AvroTaskCreated -> builder.apply {
+                taskCreated = message
+                type = AvroForMonitoringGlobalMessageType.TaskCreated
             }
             else -> throw Exception("Unknown AvroMonitoringglobalMessage: ${message::class.qualifiedName}")
         }
@@ -188,17 +188,17 @@ object AvroConverter {
     }
 
     private fun removeEnvelopeFromMonitoringGlobalMessage(input: AvroEnvelopeForMonitoringGlobal): SpecificRecordBase = when (input.type) {
-        AvroForMonitoringGlobalMessageType.JobCreated -> input.jobCreated
+        AvroForMonitoringGlobalMessageType.TaskCreated -> input.taskCreated
         else -> throw Exception("Unknown AvroEnvelopeForMonitoringGlobal: ${input::class.qualifiedName}")
     }
 
     fun addEnvelopeToWorkerMessage(message: SpecificRecordBase): AvroEnvelopeForWorker {
         val builder = AvroEnvelopeForWorker.newBuilder()
         when (message) {
-            is AvroRunJob -> builder.apply {
-                jobName = message.jobName
-                runJob = message
-                type = AvroForWorkerMessageType.RunJob
+            is AvroRunTask -> builder.apply {
+                taskName = message.taskName
+                runTask = message
+                type = AvroForWorkerMessageType.RunTask
             }
             else -> throw Exception("Unknown AvroForWorkerMessage: ${message::class.qualifiedName}")
         }
@@ -206,18 +206,18 @@ object AvroConverter {
     }
 
     fun removeEnvelopeFromWorkerMessage(input: AvroEnvelopeForWorker): SpecificRecordBase = when (input.type!!) {
-        AvroForWorkerMessageType.RunJob -> input.runJob
+        AvroForWorkerMessageType.RunTask -> input.runTask
     }
 
     /**
      *  Message <-> Avro Envelope
      */
 
-    fun toJobEngine(message: ForJobEngineMessage): AvroEnvelopeForJobEngine =
-        addEnvelopeToJobEngineMessage(toAvroMessage(message))
+    fun toTaskEngine(message: ForTaskEngineMessage): AvroEnvelopeForTaskEngine =
+        addEnvelopeToTaskEngineMessage(toAvroMessage(message))
 
-    fun fromJobEngine(input: AvroEnvelopeForJobEngine) =
-        fromAvroMessage(removeEnvelopeFromJobEngineMessage(input)) as ForJobEngineMessage
+    fun fromTaskEngine(input: AvroEnvelopeForTaskEngine) =
+        fromAvroMessage(removeEnvelopeFromTaskEngineMessage(input)) as ForTaskEngineMessage
 
     fun toMonitoringPerName(message: ForMonitoringPerNameMessage): AvroEnvelopeForMonitoringPerName =
         addEnvelopeToMonitoringPerNameMessage(toAvroMessage(message))
@@ -242,65 +242,65 @@ object AvroConverter {
      */
 
     fun fromAvroMessage(avro: SpecificRecordBase) = when (avro) {
-        is AvroCancelJob -> fromAvroMessage(avro)
-        is AvroDispatchJob -> fromAvroMessage(avro)
-        is AvroJobAttemptCompleted -> fromAvroMessage(avro)
-        is AvroJobAttemptDispatched -> fromAvroMessage(avro)
-        is AvroJobAttemptFailed -> fromAvroMessage(avro)
-        is AvroJobAttemptStarted -> fromAvroMessage(avro)
-        is AvroJobCanceled -> fromAvroMessage(avro)
-        is AvroJobCompleted -> fromAvroMessage(avro)
-        is AvroJobCreated -> fromAvroMessage(avro)
-        is AvroJobStatusUpdated -> fromAvroMessage(avro)
-        is AvroRetryJob -> fromAvroMessage(avro)
-        is AvroRetryJobAttempt -> fromAvroMessage(avro)
-        is AvroRunJob -> fromAvroMessage(avro)
+        is AvroCancelTask -> fromAvroMessage(avro)
+        is AvroDispatchTask -> fromAvroMessage(avro)
+        is AvroTaskAttemptCompleted -> fromAvroMessage(avro)
+        is AvroTaskAttemptDispatched -> fromAvroMessage(avro)
+        is AvroTaskAttemptFailed -> fromAvroMessage(avro)
+        is AvroTaskAttemptStarted -> fromAvroMessage(avro)
+        is AvroTaskCanceled -> fromAvroMessage(avro)
+        is AvroTaskCompleted -> fromAvroMessage(avro)
+        is AvroTaskCreated -> fromAvroMessage(avro)
+        is AvroTaskStatusUpdated -> fromAvroMessage(avro)
+        is AvroRetryTask -> fromAvroMessage(avro)
+        is AvroRetryTaskAttempt -> fromAvroMessage(avro)
+        is AvroRunTask -> fromAvroMessage(avro)
         else -> throw Exception("Unknown SpecificRecordBase: ${avro::class.qualifiedName}")
     }
 
-    private fun fromAvroMessage(avro: AvroCancelJob) = convertJson<CancelJob>(avro)
-    private fun fromAvroMessage(avro: AvroDispatchJob) = convertJson<DispatchJob>(avro)
-    private fun fromAvroMessage(avro: AvroJobAttemptCompleted) = convertJson<JobAttemptCompleted>(avro)
-    private fun fromAvroMessage(avro: AvroJobAttemptDispatched) = convertJson<JobAttemptDispatched>(avro)
-    private fun fromAvroMessage(avro: AvroJobAttemptFailed) = convertJson<JobAttemptFailed>(avro)
-    private fun fromAvroMessage(avro: AvroJobAttemptStarted) = convertJson<JobAttemptStarted>(avro)
-    private fun fromAvroMessage(avro: AvroJobCanceled) = convertJson<JobCanceled>(avro)
-    private fun fromAvroMessage(avro: AvroJobCompleted) = convertJson<JobCompleted>(avro)
-    private fun fromAvroMessage(avro: AvroJobCreated) = convertJson<JobCreated>(avro)
-    private fun fromAvroMessage(avro: AvroJobStatusUpdated) = convertJson<JobStatusUpdated>(avro)
-    private fun fromAvroMessage(avro: AvroRetryJob) = convertJson<RetryJob>(avro)
-    private fun fromAvroMessage(avro: AvroRetryJobAttempt) = convertJson<RetryJobAttempt>(avro)
-    private fun fromAvroMessage(avro: AvroRunJob) = convertJson<RunJob>(avro)
+    private fun fromAvroMessage(avro: AvroCancelTask) = convertJson<CancelTask>(avro)
+    private fun fromAvroMessage(avro: AvroDispatchTask) = convertJson<DispatchTask>(avro)
+    private fun fromAvroMessage(avro: AvroTaskAttemptCompleted) = convertJson<TaskAttemptCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroTaskAttemptDispatched) = convertJson<TaskAttemptDispatched>(avro)
+    private fun fromAvroMessage(avro: AvroTaskAttemptFailed) = convertJson<TaskAttemptFailed>(avro)
+    private fun fromAvroMessage(avro: AvroTaskAttemptStarted) = convertJson<TaskAttemptStarted>(avro)
+    private fun fromAvroMessage(avro: AvroTaskCanceled) = convertJson<TaskCanceled>(avro)
+    private fun fromAvroMessage(avro: AvroTaskCompleted) = convertJson<TaskCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroTaskCreated) = convertJson<TaskCreated>(avro)
+    private fun fromAvroMessage(avro: AvroTaskStatusUpdated) = convertJson<TaskStatusUpdated>(avro)
+    private fun fromAvroMessage(avro: AvroRetryTask) = convertJson<RetryTask>(avro)
+    private fun fromAvroMessage(avro: AvroRetryTaskAttempt) = convertJson<RetryTaskAttempt>(avro)
+    private fun fromAvroMessage(avro: AvroRunTask) = convertJson<RunTask>(avro)
 
     fun toAvroMessage(msg: Message) = when (msg) {
-        is CancelJob -> toAvroMessage(msg)
-        is DispatchJob -> toAvroMessage(msg)
-        is JobAttemptCompleted -> toAvroMessage(msg)
-        is JobAttemptDispatched -> toAvroMessage(msg)
-        is JobAttemptFailed -> toAvroMessage(msg)
-        is JobAttemptStarted -> toAvroMessage(msg)
-        is JobCanceled -> toAvroMessage(msg)
-        is JobCompleted -> toAvroMessage(msg)
-        is JobCreated -> toAvroMessage(msg)
-        is JobStatusUpdated -> toAvroMessage(msg)
-        is RetryJob -> toAvroMessage(msg)
-        is RetryJobAttempt -> toAvroMessage(msg)
-        is RunJob -> toAvroMessage(msg)
+        is CancelTask -> toAvroMessage(msg)
+        is DispatchTask -> toAvroMessage(msg)
+        is TaskAttemptCompleted -> toAvroMessage(msg)
+        is TaskAttemptDispatched -> toAvroMessage(msg)
+        is TaskAttemptFailed -> toAvroMessage(msg)
+        is TaskAttemptStarted -> toAvroMessage(msg)
+        is TaskCanceled -> toAvroMessage(msg)
+        is TaskCompleted -> toAvroMessage(msg)
+        is TaskCreated -> toAvroMessage(msg)
+        is TaskStatusUpdated -> toAvroMessage(msg)
+        is RetryTask -> toAvroMessage(msg)
+        is RetryTaskAttempt -> toAvroMessage(msg)
+        is RunTask -> toAvroMessage(msg)
     }
 
-    private fun toAvroMessage(message: CancelJob) = convertJson<AvroCancelJob>(message)
-    private fun toAvroMessage(message: DispatchJob) = convertJson<AvroDispatchJob>(message)
-    private fun toAvroMessage(message: JobAttemptCompleted) = convertJson<AvroJobAttemptCompleted>(message)
-    private fun toAvroMessage(message: JobAttemptDispatched) = convertJson<AvroJobAttemptDispatched>(message)
-    private fun toAvroMessage(message: JobAttemptFailed) = convertJson<AvroJobAttemptFailed>(message)
-    private fun toAvroMessage(message: JobAttemptStarted) = convertJson<AvroJobAttemptStarted>(message)
-    private fun toAvroMessage(message: JobCanceled) = convertJson<AvroJobCanceled>(message)
-    private fun toAvroMessage(message: JobCompleted) = convertJson<AvroJobCompleted>(message)
-    private fun toAvroMessage(message: JobCreated) = convertJson<AvroJobCreated>(message)
-    private fun toAvroMessage(message: JobStatusUpdated) = convertJson<AvroJobStatusUpdated>(message)
-    private fun toAvroMessage(message: RetryJob) = convertJson<AvroRetryJob>(message)
-    private fun toAvroMessage(message: RetryJobAttempt) = convertJson<AvroRetryJobAttempt>(message)
-    private fun toAvroMessage(message: RunJob) = convertJson<AvroRunJob>(message)
+    private fun toAvroMessage(message: CancelTask) = convertJson<AvroCancelTask>(message)
+    private fun toAvroMessage(message: DispatchTask) = convertJson<AvroDispatchTask>(message)
+    private fun toAvroMessage(message: TaskAttemptCompleted) = convertJson<AvroTaskAttemptCompleted>(message)
+    private fun toAvroMessage(message: TaskAttemptDispatched) = convertJson<AvroTaskAttemptDispatched>(message)
+    private fun toAvroMessage(message: TaskAttemptFailed) = convertJson<AvroTaskAttemptFailed>(message)
+    private fun toAvroMessage(message: TaskAttemptStarted) = convertJson<AvroTaskAttemptStarted>(message)
+    private fun toAvroMessage(message: TaskCanceled) = convertJson<AvroTaskCanceled>(message)
+    private fun toAvroMessage(message: TaskCompleted) = convertJson<AvroTaskCompleted>(message)
+    private fun toAvroMessage(message: TaskCreated) = convertJson<AvroTaskCreated>(message)
+    private fun toAvroMessage(message: TaskStatusUpdated) = convertJson<AvroTaskStatusUpdated>(message)
+    private fun toAvroMessage(message: RetryTask) = convertJson<AvroRetryTask>(message)
+    private fun toAvroMessage(message: RetryTaskAttempt) = convertJson<AvroRetryTaskAttempt>(message)
+    private fun toAvroMessage(message: RunTask) = convertJson<AvroRunTask>(message)
 
     /**
      *  SerializedData to AvroSerializedData

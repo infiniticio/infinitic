@@ -1,6 +1,6 @@
 package com.zenaton.taskManager.common
 
-import com.zenaton.taskManager.common.data.JobAttemptContext
+import com.zenaton.taskManager.common.data.TaskAttemptContext
 
 interface Retryable {
     /**
@@ -9,5 +9,5 @@ interface Retryable {
      * <=0: no delay
      * null: no retry
      */
-    fun getRetryDelay(context: JobAttemptContext): Float?
+    fun getRetryDelay(context: TaskAttemptContext): Float?
 }

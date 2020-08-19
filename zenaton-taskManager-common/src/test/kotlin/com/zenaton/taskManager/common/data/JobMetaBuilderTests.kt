@@ -12,7 +12,7 @@ internal class JobMetaBuilderTests : StringSpec({
         val bytes = TestFactory.random(ByteArray::class)
         val buffer = TestFactory.random(ByteBuffer::class)
         // when
-        val out = JobMeta.builder()
+        val out = TaskMeta.builder()
             .add("key1", str)
             .add("key2", bytes)
             .add("key3", buffer)

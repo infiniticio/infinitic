@@ -1,7 +1,7 @@
 package com.zenaton.taskManager.pulsar.utils
 
 import com.zenaton.common.json.Json
-import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForWorker
@@ -24,7 +24,7 @@ fun main() {
     }
 
     listOf(
-        AvroEnvelopeForJobEngine::class,
+        AvroEnvelopeForTaskEngine::class,
         AvroEnvelopeForWorker::class,
         AvroEnvelopeForMonitoringPerName::class,
         AvroEnvelopeForMonitoringGlobal::class

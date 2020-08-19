@@ -1,0 +1,37 @@
+{
+  "type": "record",
+  "name": "AvroTaskAttemptFailed",
+  "namespace": "com.zenaton.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskAttemptId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskAttemptRetry",
+      "type": "int"
+    },
+    {
+      "name": "taskAttemptIndex",
+      "type": "int"
+    },
+    {
+      "name": "taskAttemptError",
+      "type": "com.zenaton.taskManager.data.AvroSerializedData"
+    },
+    {
+      "name": "taskAttemptDelayBeforeRetry",
+      "type": [
+        "null",
+        "float"
+      ],
+      "default": null
+    }
+  ]
+}

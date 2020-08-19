@@ -1,7 +1,7 @@
 package com.zenaton.taskManager.engine.engines
 
 import com.zenaton.taskManager.common.messages.ForMonitoringGlobalMessage
-import com.zenaton.taskManager.common.messages.JobCreated
+import com.zenaton.taskManager.common.messages.TaskCreated
 import com.zenaton.taskManager.common.states.MonitoringGlobalState
 import com.zenaton.taskManager.engine.storages.MonitoringGlobalStorage
 import org.slf4j.Logger
@@ -17,7 +17,7 @@ class MonitoringGlobal {
         val newState = oldState?.deepCopy() ?: MonitoringGlobalState()
 
         when (message) {
-            is JobCreated -> handleTaskTypeCreated(message, newState)
+            is TaskCreated -> handleTaskTypeCreated(message, newState)
         }
 
         // Update stored state if needed and existing
@@ -27,9 +27,9 @@ class MonitoringGlobal {
         }
     }
 
-    private fun handleTaskTypeCreated(message: JobCreated, state: MonitoringGlobalState) {
-        val added = state.jobNames.add(message.jobName)
+    private fun handleTaskTypeCreated(message: TaskCreated, state: MonitoringGlobalState) {
+        val added = state.taskNames.add(message.taskName)
 
-        if (!added) logger.warn("Trying to add a task %s already known in state %s", message.jobName, state)
+        if (!added) logger.warn("Trying to add a task %s already known in state %s", message.taskName, state)
     }
 }

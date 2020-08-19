@@ -1,7 +1,7 @@
 package com.zenaton.taskManager.common.data
 
-import com.zenaton.taskManager.states.AvroJobEngineState
-import com.zenaton.taskManager.common.states.JobEngineState
+import com.zenaton.taskManager.states.AvroTaskEngineState
+import com.zenaton.taskManager.common.states.TaskEngineState
 import com.zenaton.taskManager.common.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -10,12 +10,12 @@ import java.nio.ByteBuffer
 internal class JobInputBuilderTests : StringSpec({
     "JobInputBuilder should build correct JobInput" {
         // given
-        val state = TestFactory.random(JobEngineState::class)
+        val state = TestFactory.random(TaskEngineState::class)
         val bytes = TestFactory.random(ByteArray::class)
         val buffer = TestFactory.random(ByteBuffer::class)
-        val avro = TestFactory.random(AvroJobEngineState::class)
+        val avro = TestFactory.random(AvroTaskEngineState::class)
         // when
-        val out = JobInput.builder()
+        val out = TaskInput.builder()
             .add(null)
             .add(state)
             .add(bytes)

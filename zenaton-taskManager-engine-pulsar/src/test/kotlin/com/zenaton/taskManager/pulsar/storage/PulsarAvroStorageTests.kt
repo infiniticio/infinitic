@@ -2,9 +2,9 @@ package com.zenaton.taskManager.pulsar.storage
 
 import com.zenaton.common.avro.AvroSerDe
 import com.zenaton.taskManager.common.avro.AvroConverter
-import com.zenaton.taskManager.common.data.JobStatus
+import com.zenaton.taskManager.common.data.TaskStatus
 import com.zenaton.taskManager.pulsar.utils.TestFactory
-import com.zenaton.taskManager.states.AvroJobEngineState
+import com.zenaton.taskManager.states.AvroTaskEngineState
 import com.zenaton.taskManager.states.AvroMonitoringGlobalState
 import com.zenaton.taskManager.states.AvroMonitoringPerNameState
 import io.kotest.core.spec.style.ShouldSpec
@@ -23,16 +23,16 @@ import org.apache.pulsar.functions.api.Context
 class PulsarAvroStorageTests : ShouldSpec({
     context("PulsarAvroStorage.getEngineState") {
         should("return null when state does not exist") {
-            val jobId = TestFactory.random(String::class)
+            val taskId = TestFactory.random(String::class)
             // mocking
             val context = mockk<Context>()
             every { context.getState(any()) } returns null
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            val state = stateStorage.getJobEngineState(jobId)
+            val state = stateStorage.getTaskEngineState(taskId)
             // then
-            verify(exactly = 1) { context.getState("engine.state.$jobId") }
+            verify(exactly = 1) { context.getState("engine.state.$taskId") }
             confirmVerified(context)
             state shouldBe null
         }
@@ -40,14 +40,14 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("return state when state exists") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.random(AvroJobEngineState::class)
+            val stateIn = TestFactory.random(AvroTaskEngineState::class)
             every { context.getState(any()) } returns AvroSerDe.serialize(stateIn)
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            val stateOut = stateStorage.getJobEngineState(stateIn.jobId)
+            val stateOut = stateStorage.getTaskEngineState(stateIn.taskId)
             // then
-            verify(exactly = 1) { context.getState("engine.state.${stateIn.jobId}") }
+            verify(exactly = 1) { context.getState("engine.state.${stateIn.taskId}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }
@@ -57,16 +57,16 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("record state") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.random(AvroJobEngineState::class)
+            val stateIn = TestFactory.random(AvroTaskEngineState::class)
             every { context.putState(any(), any()) } returns Unit
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            stateStorage.updateJobEngineState(stateIn.jobId, stateIn, null)
+            stateStorage.updateTaskEngineState(stateIn.taskId, stateIn, null)
             // then
             verify(exactly = 1) {
                 context.putState(
-                    "engine.state.${stateIn.jobId}",
+                    "engine.state.${stateIn.taskId}",
                     AvroSerDe.serialize(stateIn)
                 )
             }
@@ -78,14 +78,14 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("delete state") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.random(AvroJobEngineState::class)
+            val stateIn = TestFactory.random(AvroTaskEngineState::class)
             every { context.deleteState(any()) } returns Unit
             // given
             val stageStorage = PulsarAvroStorage(context)
             // when
-            stageStorage.deleteJobEngineState(stateIn.jobId)
+            stageStorage.deleteTaskEngineState(stateIn.taskId)
             // then
-            verify(exactly = 1) { context.deleteState("engine.state.${stateIn.jobId}") }
+            verify(exactly = 1) { context.deleteState("engine.state.${stateIn.taskId}") }
             confirmVerified(context)
         }
     }
@@ -94,14 +94,14 @@ class PulsarAvroStorageTests : ShouldSpec({
 
         should("return null when state does not exist") {
             // given
-            val jobName = TestFactory.random(String::class)
+            val taskName = TestFactory.random(String::class)
             val context = mockk<Context>()
             every { context.getState(any()) } returns null
             // when
             val stateStorage = PulsarAvroStorage(context)
-            val state = stateStorage.getMonitoringPerNameState(jobName)
+            val state = stateStorage.getMonitoringPerNameState(taskName)
             // then
-            verify(exactly = 1) { context.getState("monitoringPerName.state.$jobName") }
+            verify(exactly = 1) { context.getState("monitoringPerName.state.$taskName") }
             confirmVerified(context)
             state shouldBe null
         }
@@ -113,9 +113,9 @@ class PulsarAvroStorageTests : ShouldSpec({
             every { context.getState(any()) } returns AvroSerDe.serialize(stateIn)
             // when
             val stateStorage = PulsarAvroStorage(context)
-            val stateOut = stateStorage.getMonitoringPerNameState(stateIn.jobName)
+            val stateOut = stateStorage.getMonitoringPerNameState(stateIn.taskName)
             // then
-            verify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.jobName}") }
+            verify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }
@@ -143,20 +143,20 @@ class PulsarAvroStorageTests : ShouldSpec({
             mockkObject(AvroConverter)
 
             val stateStorage = PulsarAvroStorage(context)
-            stateStorage.updateMonitoringPerNameState(newState.jobName, newState, null)
+            stateStorage.updateMonitoringPerNameState(newState.taskName, newState, null)
 
             verifyAll {
-                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_OK), newState.runningOkCount)
-                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_WARNING), newState.runningWarningCount)
-                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_ERROR), newState.runningErrorCount)
-                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_COMPLETED), newState.terminatedCompletedCount)
-                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_CANCELED), newState.terminatedCanceledCount)
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_OK))
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_WARNING))
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_ERROR))
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_CANCELED))
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_COMPLETED))
-                context.putState(stateStorage.getMonitoringPerNameStateKey(newState.jobName), ofType())
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_OK), newState.runningOkCount)
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_WARNING), newState.runningWarningCount)
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_ERROR), newState.runningErrorCount)
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.TERMINATED_COMPLETED), newState.terminatedCompletedCount)
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.TERMINATED_CANCELED), newState.terminatedCanceledCount)
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_OK))
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_WARNING))
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_ERROR))
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.TERMINATED_CANCELED))
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.TERMINATED_COMPLETED))
+                context.putState(stateStorage.getMonitoringPerNameStateKey(newState.taskName), ofType())
             }
 
             unmockkAll()
@@ -188,17 +188,17 @@ class PulsarAvroStorageTests : ShouldSpec({
             mockkObject(AvroConverter)
 
             val stateStorage = PulsarAvroStorage(context)
-            stateStorage.updateMonitoringPerNameState(newState.jobName, newState, oldState)
+            stateStorage.updateMonitoringPerNameState(newState.taskName, newState, oldState)
 
             verifyAll {
-                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_ERROR), newState.runningErrorCount - oldState.runningErrorCount)
-                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_CANCELED), newState.terminatedCanceledCount - oldState.terminatedCanceledCount)
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_OK))
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_WARNING))
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.RUNNING_ERROR))
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_CANCELED))
-                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.jobName, JobStatus.TERMINATED_COMPLETED))
-                context.putState(stateStorage.getMonitoringPerNameStateKey(newState.jobName), ofType())
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_ERROR), newState.runningErrorCount - oldState.runningErrorCount)
+                context.incrCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.TERMINATED_CANCELED), newState.terminatedCanceledCount - oldState.terminatedCanceledCount)
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_OK))
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_WARNING))
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_ERROR))
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.TERMINATED_CANCELED))
+                context.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.TERMINATED_COMPLETED))
+                context.putState(stateStorage.getMonitoringPerNameStateKey(newState.taskName), ofType())
             }
 
             unmockkAll()
@@ -213,9 +213,9 @@ class PulsarAvroStorageTests : ShouldSpec({
             every { context.deleteState(any()) } returns Unit
             // when
             val stateStorage = PulsarAvroStorage(context)
-            stateStorage.deleteMonitoringPerNameState(stateIn.jobName)
+            stateStorage.deleteMonitoringPerNameState(stateIn.taskName)
             // then
-            verify(exactly = 1) { context.deleteState(stateStorage.getMonitoringPerNameStateKey(stateIn.jobName)) }
+            verify(exactly = 1) { context.deleteState(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }
             confirmVerified(context)
         }
     }

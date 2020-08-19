@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.messages
 
-import com.zenaton.taskManager.common.data.JobId
-import com.zenaton.taskManager.common.data.JobInput
-import com.zenaton.taskManager.common.data.JobOutput
+import com.zenaton.taskManager.common.data.TaskId
+import com.zenaton.taskManager.common.data.TaskInput
+import com.zenaton.taskManager.common.data.TaskOutput
 import com.zenaton.workflowManager.data.decisions.DecisionId
 import com.zenaton.workflowManager.data.decisions.DecisionInput
 import com.zenaton.workflowManager.data.decisions.DecisionOutput
@@ -67,28 +67,28 @@ data class EventReceived(
 
 data class TaskCanceled(
     override val workflowId: WorkflowId,
-    val taskId: JobId,
-    val taskOutput: JobOutput?
+    val taskId: TaskId,
+    val taskOutput: TaskOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class TaskCompleted(
     override val workflowId: WorkflowId,
-    val taskId: JobId,
-    val taskOutput: JobOutput?
+    val taskId: TaskId,
+    val taskOutput: TaskOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class TaskDispatched(
     override val workflowId: WorkflowId,
-    val taskId: JobId,
-    val taskInput: JobInput?
+    val taskId: TaskId,
+    val taskInput: TaskInput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class WorkflowCanceled(
     override val workflowId: WorkflowId,
-    val workflowOutput: JobOutput?
+    val workflowOutput: TaskOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class WorkflowCompleted(
     override val workflowId: WorkflowId,
-    val workflowOutput: JobOutput?
+    val workflowOutput: TaskOutput?
 ) : ForWorkflowEngineMessage(workflowId)
