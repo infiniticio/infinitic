@@ -202,7 +202,7 @@ export const SerializedData = typeForSchema<SerializedData>(
   registry
 );
 
-export const AvroTaskOptions = typeForSchema<CancelTask>(
+export const TaskOptions = typeForSchema<TaskOptions>(
   path.resolve(`${__dirname}/avro/taskManager/data/AvroTaskOptions.avsc`),
   registry
 );

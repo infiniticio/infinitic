@@ -2,8 +2,8 @@ package com.zenaton.api.task.repositories
 
 import com.zenaton.api.extensions.java.sql.SqlStatement
 import com.zenaton.api.extensions.java.sql.query
-import com.zenaton.api.task.messages.JobMessage
-import com.zenaton.api.task.messages.commands.DispatchJobCommand
+import com.zenaton.api.task.messages.TaskMessage
+import com.zenaton.api.task.messages.commands.DispatchTaskCommand
 import com.zenaton.api.task.messages.events.*
 import com.zenaton.api.task.models.*
 import java.sql.Connection
@@ -13,48 +13,48 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z")
 
     override fun getById(id: String): Task? {
-        val sqlStatement = SqlStatement("""SELECT *, __publish_time__ AT TIME ZONE 'UTC' AS "utc_publish_time" FROM "public/default"."tasks-engine" WHERE jobid = ? ORDER BY __publish_time__ ASC""") {
+        val sqlStatement = SqlStatement("""SELECT *, __publish_time__ AT TIME ZONE 'UTC' AS "utc_publish_time" FROM "public/default"."tasks-engine" WHERE taskid = ? ORDER BY __publish_time__ ASC""") {
             it.setString(1, id)
         }
 
         val messages = prestoConnection.query(sqlStatement) {
-            when (JobMessage.Type.fromString(it.getString(JobMessage.Fields.TYPE))) {
+            when (TaskMessage.Type.fromString(it.getString(TaskMessage.Fields.TYPE))) {
                 // Commands
-                JobMessage.Type.DISPATCH_JOB -> DispatchJobCommand(
-                    jobId = it.getString(JobMessage.Fields.JOB_ID),
-                    jobName = it.getString(DispatchJobCommand.Fields.JOB_NAME),
+                TaskMessage.Type.DISPATCH_TASK -> DispatchTaskCommand(
+                    jobId = it.getString(TaskMessage.Fields.TASK_ID),
+                    jobName = it.getString(DispatchTaskCommand.Fields.JOB_NAME),
                     sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
-                JobMessage.Type.RETRY_JOB -> null
-                JobMessage.Type.RETRY_JOB_ATTEMPT -> null
-                JobMessage.Type.TIMEOUT_JOB_ATTEMPT -> null
+                TaskMessage.Type.RETRY_TASK -> null
+                TaskMessage.Type.RETRY_TASK_ATTEMPT -> null
+                TaskMessage.Type.TIMEOUT_TASK_ATTEMPT -> null
                 // Events
-                JobMessage.Type.JOB_ATTEMPT_COMPLETED -> JobAttemptCompletedEvent(
-                    attemptId = it.getString(JobAttemptCompletedEvent.Fields.ATTEMPT_ID),
-                    attemptRetry = it.getInt(JobAttemptCompletedEvent.Fields.ATTEMPT_RETRY),
-                    attemptIndex = it.getInt(JobAttemptCompletedEvent.Fields.ATTEMPT_INDEX),
+                TaskMessage.Type.TASK_ATTEMPT_COMPLETED -> TaskAttemptCompletedEvent(
+                    attemptId = it.getString(TaskAttemptCompletedEvent.Fields.ATTEMPT_ID),
+                    attemptRetry = it.getInt(TaskAttemptCompletedEvent.Fields.ATTEMPT_RETRY),
+                    attemptIndex = it.getInt(TaskAttemptCompletedEvent.Fields.ATTEMPT_INDEX),
                     sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
-                JobMessage.Type.JOB_ATTEMPT_DISPATCHED -> JobAttemptDispatchedEvent(
-                    attemptId = it.getString(JobAttemptDispatchedEvent.Fields.ATTEMPT_ID),
-                    attemptRetry = it.getInt(JobAttemptDispatchedEvent.Fields.ATTEMPT_RETRY),
-                    attemptIndex = it.getInt(JobAttemptDispatchedEvent.Fields.ATTEMPT_INDEX),
+                TaskMessage.Type.TASK_ATTEMPT_DISPATCHED -> TaskAttemptDispatchedEvent(
+                    attemptId = it.getString(TaskAttemptDispatchedEvent.Fields.ATTEMPT_ID),
+                    attemptRetry = it.getInt(TaskAttemptDispatchedEvent.Fields.ATTEMPT_RETRY),
+                    attemptIndex = it.getInt(TaskAttemptDispatchedEvent.Fields.ATTEMPT_INDEX),
                     sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
-                JobMessage.Type.JOB_ATTEMPT_FAILED -> JobAttemptFailedEvent(
-                    attemptId = it.getString(JobAttemptFailedEvent.Fields.ATTEMPT_ID),
-                    attemptRetry = it.getInt(JobAttemptFailedEvent.Fields.ATTEMPT_RETRY),
-                    attemptIndex = it.getInt(JobAttemptFailedEvent.Fields.ATTEMPT_INDEX),
+                TaskMessage.Type.TASK_ATTEMPT_FAILED -> TaskAttemptFailedEvent(
+                    attemptId = it.getString(TaskAttemptFailedEvent.Fields.ATTEMPT_ID),
+                    attemptRetry = it.getInt(TaskAttemptFailedEvent.Fields.ATTEMPT_RETRY),
+                    attemptIndex = it.getInt(TaskAttemptFailedEvent.Fields.ATTEMPT_INDEX),
                     sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant(),
-                    delayBeforeRetry = it.getFloat(JobAttemptFailedEvent.Fields.DELAY_BEFORE_RETRY)
+                    delayBeforeRetry = it.getFloat(TaskAttemptFailedEvent.Fields.DELAY_BEFORE_RETRY)
                 )
-                JobMessage.Type.JOB_ATTEMPT_STARTED -> JobAttemptStartedEvent(
-                    attemptId = it.getString(JobAttemptStartedEvent.Fields.ATTEMPT_ID),
-                    attemptRetry = it.getInt(JobAttemptStartedEvent.Fields.ATTEMPT_RETRY),
-                    attemptIndex = it.getInt(JobAttemptStartedEvent.Fields.ATTEMPT_INDEX),
+                TaskMessage.Type.TASK_ATTEMPT_STARTED -> TaskAttemptStartedEvent(
+                    attemptId = it.getString(TaskAttemptStartedEvent.Fields.ATTEMPT_ID),
+                    attemptRetry = it.getInt(TaskAttemptStartedEvent.Fields.ATTEMPT_RETRY),
+                    attemptIndex = it.getInt(TaskAttemptStartedEvent.Fields.ATTEMPT_INDEX),
                     sentAt = dateFormat.parse(it.getString("utc_publish_time")).toInstant()
                 )
-                JobMessage.Type.JOB_COMPLETED -> Unit
+                TaskMessage.Type.TASK_COMPLETED -> Unit
             }
         }.filterNotNull()
 
@@ -62,12 +62,12 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
 
         messages.forEach { message ->
             when (message) {
-                is DispatchJobCommand -> {
+                is DispatchTaskCommand -> {
                     builder.id = message.jobId
                     builder.name = message.jobName
                     builder.dispatchedAt = message.sentAt
                 }
-                is JobAttemptCompletedEvent -> {
+                is TaskAttemptCompletedEvent -> {
                     val attempt = builder.attempts.get(message.attemptId) ?: TaskAttempt.Builder().apply {
                         this.id = message.attemptId
                         this.index = message.attemptIndex
@@ -84,7 +84,7 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
                     builder.completedAt = builder.completedAt ?: message.sentAt
                     attemptTry.completedAt = message.sentAt
                 }
-                is JobAttemptDispatchedEvent -> {
+                is TaskAttemptDispatchedEvent -> {
                     val attempt = builder.attempts.get(message.attemptId) ?: TaskAttempt.Builder().apply {
                         this.id = message.attemptId
                         this.index = message.attemptIndex
@@ -100,7 +100,7 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
 
                     attemptTry.dispatchedAt = message.sentAt
                 }
-                is JobAttemptFailedEvent -> {
+                is TaskAttemptFailedEvent -> {
                     val attempt = builder.attempts.get(message.attemptId) ?: TaskAttempt.Builder().apply {
                         this.id = message.attemptId
                         this.index = message.attemptIndex
@@ -118,7 +118,7 @@ class PrestoJdbcTaskRepository(private val prestoConnection: Connection) : TaskR
                     attemptTry.failedAt = message.sentAt
                     attemptTry.delayBeforeRetry = message.delayBeforeRetry
                 }
-                is JobAttemptStartedEvent -> {
+                is TaskAttemptStartedEvent -> {
                     val attempt = builder.attempts.get(message.attemptId) ?: TaskAttempt.Builder().apply {
                         this.id = message.attemptId
                         this.index = message.attemptIndex

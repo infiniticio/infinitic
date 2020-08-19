@@ -43,7 +43,7 @@ class Client() {
         klass.method()
 
         // ask
-        return handler.getJob() ?: throw NoMethodCallAtDispatch(T::class.java.name)
+        return handler.getTask() ?: throw NoMethodCallAtDispatch(T::class.java.name)
     }
 
     /*

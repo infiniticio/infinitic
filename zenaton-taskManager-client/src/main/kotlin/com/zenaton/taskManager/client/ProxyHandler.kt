@@ -62,5 +62,5 @@ class ProxyHandler(
         return data
     }
 
-    fun getJob() = taskId?.let { Task(it) }
+    fun getTask() = taskId?.let { Task(it) }
 }

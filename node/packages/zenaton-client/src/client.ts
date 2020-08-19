@@ -8,6 +8,7 @@ import {
   DispatchTaskMessage,
   ForTaskEngineMessage,
   SerializedData,
+  TaskOptions,
 } from '@zenaton/messages';
 import { v4 as uuid } from 'uuid';
 import pLimit from 'p-limit';
@@ -39,7 +40,8 @@ export class Client {
   async dispatchTask(
     taskName: string,
     input: any = null,
-    taskMeta: Map<string, SerializedData> = new Map()
+    taskMeta: Map<string, SerializedData> = new Map(),
+    taskOptions: TaskOptions = { runningTimeout: null }
   ) {
     const taskId = uuid();
     const taskInput =
@@ -60,6 +62,7 @@ export class Client {
         taskName,
         taskInput,
         taskMeta,
+        taskOptions,
       },
     };
 
