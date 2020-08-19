@@ -1,10 +1,10 @@
 package io.infinitic.workflowManager.pulsar.utils
 
 import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.workflowManager.engine.avroConverter.AvroConverter
-import io.infinitic.workflowManager.engine.data.commands.CommandId
+import io.infinitic.workflowManager.common.avro.AvroConverter
+import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.data.steps.AvroStepCriterion
-import io.infinitic.workflowManager.engine.data.steps.StepCriterion
+import io.infinitic.workflowManager.common.data.steps.StepCriterion
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates

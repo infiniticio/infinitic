@@ -1,9 +1,9 @@
 package io.infinitic.workflowManager.engine.storages
 
-import io.infinitic.workflowManager.engine.avroConverter.AvroConverter
-import io.infinitic.workflowManager.engine.data.WorkflowId
+import io.infinitic.workflowManager.common.avro.AvroConverter
+import io.infinitic.workflowManager.common.data.WorkflowId
 import io.infinitic.workflowManager.engine.avroInterfaces.AvroStorage
-import io.infinitic.workflowManager.engine.states.WorkflowEngineState
+import io.infinitic.workflowManager.common.states.WorkflowEngineState
 
 class WorkflowEngineStateStorage(val avroStorage: AvroStorage) {
 

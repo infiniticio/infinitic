@@ -8,6 +8,7 @@ include("infinitic-taskManager-engine")
 include("infinitic-taskManager-engine-pulsar")
 include("infinitic-taskManager-tests")
 include("infinitic-rest-api")
+include("infinitic-workflowManager-common")
 include("infinitic-workflowManager-engine")
 include("infinitic-workflowManager-engine-pulsar")
 
