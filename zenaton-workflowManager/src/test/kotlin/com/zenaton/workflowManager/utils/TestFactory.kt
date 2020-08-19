@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.utils
 
 import com.zenaton.common.data.SerializedData
-import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.taskManager.common.data.TaskId
 import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.commands.CommandId
 import com.zenaton.workflowManager.data.steps.AvroStepCriterion
@@ -50,7 +50,7 @@ object TestFactory {
     }
 
     fun stepCriteria(): Map<String, StepCriterion> {
-        fun getStepId() = StepCriterion.Id(CommandId(JobId()))
+        fun getStepId() = StepCriterion.Id(CommandId(TaskId()))
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

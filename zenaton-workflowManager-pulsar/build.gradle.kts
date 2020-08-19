@@ -24,9 +24,9 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     implementation(project(":zenaton-avro"))
-    implementation(project(":zenaton-jobManager-common"))
-    implementation(project(":zenaton-jobManager-engine"))
-    implementation(project(":zenaton-jobManager-engine-pulsar"))
+    implementation(project(":zenaton-taskManager-common"))
+    implementation(project(":zenaton-taskManager-engine"))
+    implementation(project(":zenaton-taskManager-engine-pulsar"))
     implementation(project(":zenaton-workflowManager"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")

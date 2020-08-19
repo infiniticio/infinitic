@@ -4,8 +4,8 @@ import com.zenaton.api.extensions.io.ktor.application.*
 import com.zenaton.api.support.BuildInfo
 import com.zenaton.api.task.repositories.TaskRepository
 import com.zenaton.common.avro.AvroSerDe
-import com.zenaton.jobManager.states.AvroMonitoringGlobalState
-import com.zenaton.jobManager.states.AvroMonitoringPerNameState
+import com.zenaton.taskManager.states.AvroMonitoringGlobalState
+import com.zenaton.taskManager.states.AvroMonitoringPerNameState
 import io.ktor.application.*
 import io.ktor.config.ApplicationConfig
 import io.ktor.features.NotFoundException
@@ -35,9 +35,9 @@ fun Routing.root() {
         val state =
             pulsarAdmin.functions().getFunctionState(config.property("infinitic.pulsar.tenant").getString(), config.property("infinitic.pulsar.namespace").getString(), "infinitic-tasks-monitoring-global", "monitoringGlobal.state")?.let { AvroSerDe.deserialize<AvroMonitoringGlobalState>(ByteBuffer.wrap(it.stringValue.toByteArray())) } ?: return@get
 
-        val jobs = state.jobNames.map { object { val name = it } }
+        val tasks = state.taskNames.map { object { val name = it } }
 
-        call.respond(jobs)
+        call.respond(tasks)
     }
 
     get("/task-types/{name}/metrics") {

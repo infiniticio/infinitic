@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.data.state
 
-import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.taskManager.common.data.TaskId
 import com.zenaton.workflowManager.data.commands.CommandId
 import com.zenaton.workflowManager.data.steps.StepCriterion
 import com.zenaton.workflowManager.data.steps.StepCriterion.And
@@ -8,7 +8,7 @@ import com.zenaton.workflowManager.data.steps.StepCriterion.Or
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStepId() = StepCriterion.Id(CommandId(JobId()))
+fun getStepId() = StepCriterion.Id(CommandId(TaskId()))
 
 class StepCriterionTests : StringSpec({
     "Step should not be completed by default" {

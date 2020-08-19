@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "AvroTaskCanceled",
+  "namespace": "com.zenaton.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskOutput",
+      "type": "com.zenaton.taskManager.data.AvroSerializedData"
+    },
+    {
+      "name": "taskMeta",
+      "type": {
+        "type": "map",
+        "values": "com.zenaton.taskManager.data.AvroSerializedData"
+      }
+    }
+  ]
+}

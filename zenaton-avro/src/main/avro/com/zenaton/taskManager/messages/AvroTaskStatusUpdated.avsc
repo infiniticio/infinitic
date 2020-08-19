@@ -1,0 +1,27 @@
+{
+  "type": "record",
+  "name": "AvroTaskStatusUpdated",
+  "namespace": "com.zenaton.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskName",
+      "type": "string"
+    },
+    {
+      "name": "oldStatus",
+      "type": [
+        "null",
+        "com.zenaton.taskManager.data.AvroTaskStatus"
+      ]
+    },
+    {
+      "name": "newStatus",
+      "type": "com.zenaton.taskManager.data.AvroTaskStatus"
+    }
+  ]
+}

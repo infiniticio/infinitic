@@ -1,6 +1,6 @@
 package com.zenaton.workflowManager.pulsar.utils
 
-import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.taskManager.common.data.TaskId
 import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.data.commands.CommandId
 import com.zenaton.workflowManager.data.steps.AvroStepCriterion
@@ -14,7 +14,7 @@ import kotlin.random.Random
 import kotlin.reflect.KClass
 
 /*
- * Duplicate from com.zenaton.jobManager.utils
+ * Duplicate from com.zenaton.taskManager.utils
  * We should use java-test-fixtures but we can not
  * https://github.com/gradle/gradle/issues/11501
  */
@@ -50,7 +50,7 @@ object TestFactory {
     }
 
     fun stepCriteria(): Map<String, StepCriterion> {
-        fun getStepId() = StepCriterion.Id(CommandId(JobId()))
+        fun getStepId() = StepCriterion.Id(CommandId(TaskId()))
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

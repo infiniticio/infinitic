@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.data.branches
 
 import com.zenaton.common.data.DateTime
-import com.zenaton.jobManager.common.data.JobId
-import com.zenaton.jobManager.common.data.JobOutput
+import com.zenaton.taskManager.common.data.TaskId
+import com.zenaton.taskManager.common.data.TaskOutput
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventData
 import com.zenaton.workflowManager.data.EventName
@@ -25,16 +25,16 @@ data class Branch(
     val steps: List<Step> = listOf(),
     val commands: List<Command> = listOf()
 ) {
-    fun completeTask(jobId: JobId, jobOutput: JobOutput, properties: Properties): Boolean {
+    fun completeTask(taskId: TaskId, taskOutput: TaskOutput, properties: Properties): Boolean {
         // complete action if relevant
         val task = commands
             .filterIsInstance<DispatchTask>()
-            .firstOrNull { a -> a.taskId == jobId && a.actionStatus != CommandStatus.COMPLETED }
-        task?.taskOutput = jobOutput
+            .firstOrNull { a -> a.taskId == taskId && a.actionStatus != CommandStatus.COMPLETED }
+        task?.taskOutput = taskOutput
         task?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
-        return steps.last().completeTask(jobId, properties)
+        return steps.last().completeTask(taskId, properties)
     }
 
     fun completeChildWorkflow(childWorkflowId: WorkflowId, childWorkflowOutput: BranchOutput, properties: Properties): Boolean {

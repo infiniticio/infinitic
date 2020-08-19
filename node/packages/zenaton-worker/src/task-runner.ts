@@ -1,13 +1,13 @@
 import { Consumer, Producer } from 'pulsar-client';
 import { Task } from './task';
 import {
-  JobOutput,
+  TaskOutput,
   AvroEnvelopeForWorker,
-  RunJob,
-  AvroEnvelopeForJobEngine,
-  JobAttemptStartedMessage,
-  JobAttemptCompletedMessage,
-  JobAttemptFailedMessage,
+  RunTask,
+  AvroEnvelopeForTaskEngine,
+  TaskAttemptStartedMessage,
+  TaskAttemptCompletedMessage,
+  TaskAttemptFailedMessage,
 } from '@zenaton/messages';
 
 export class TaskRunner {
@@ -27,8 +27,8 @@ export class TaskRunner {
       );
 
       switch (decodedMessage.type) {
-        case 'RunJob':
-          await this.runTask(decodedMessage.RunJob);
+        case 'RunTask':
+          await this.runTask(decodedMessage.RunTask);
           this.pulsarConsumer.acknowledge(message);
           break;
       }
@@ -40,12 +40,12 @@ export class TaskRunner {
     await this.pulsarConsumer.close();
   }
 
-  private async runTask(message: RunJob) {
+  private async runTask(message: RunTask) {
     await this.notifyTaskAttemptStarted(message);
 
     let input: any;
-    if (message.jobInput.length > 0) {
-      input = JSON.parse(message.jobInput[0].bytes.toString());
+    if (message.taskInput.length > 0) {
+      input = JSON.parse(message.taskInput[0].bytes.toString());
     } else {
       input = undefined;
     }
@@ -64,63 +64,63 @@ export class TaskRunner {
     }
   }
 
-  private async notifyTaskAttemptStarted(message: RunJob) {
-    const toSend: JobAttemptStartedMessage = {
-      jobId: message.jobId,
-      type: 'JobAttemptStarted',
-      JobAttemptStarted: {
-        jobId: message.jobId,
-        jobAttemptId: message.jobAttemptId,
-        jobAttemptRetry: message.jobAttemptRetry,
-        jobAttemptIndex: message.jobAttemptIndex,
+  private async notifyTaskAttemptStarted(message: RunTask) {
+    const toSend: TaskAttemptStartedMessage = {
+      taskId: message.taskId,
+      type: 'TaskAttemptStarted',
+      TaskAttemptStarted: {
+        taskId: message.taskId,
+        taskAttemptId: message.taskAttemptId,
+        taskAttemptRetry: message.taskAttemptRetry,
+        taskAttemptIndex: message.taskAttemptIndex,
       },
     };
 
     this.pulsarProducer.send({
-      data: AvroEnvelopeForJobEngine.toBuffer(toSend),
+      data: AvroEnvelopeForTaskEngine.toBuffer(toSend),
     });
   }
 
-  private async notifyTaskAttemptCompleted(message: RunJob, output: unknown) {
-    let jobOutput: JobOutput | null;
+  private async notifyTaskAttemptCompleted(message: RunTask, output: unknown) {
+    let taskOutput: TaskOutput | null;
     if (output === null || output === undefined) {
-      jobOutput = null;
+      taskOutput = null;
     } else {
-      jobOutput = {
+      taskOutput = {
         bytes: Buffer.from(JSON.stringify(output)),
         type: 'JSON',
         meta: new Map(),
       };
     }
 
-    const toSend: JobAttemptCompletedMessage = {
-      jobId: message.jobId,
-      type: 'JobAttemptCompleted',
-      JobAttemptCompleted: {
-        jobId: message.jobId,
-        jobAttemptId: message.jobAttemptId,
-        jobAttemptRetry: message.jobAttemptRetry,
-        jobAttemptIndex: message.jobAttemptIndex,
-        jobOutput: jobOutput,
+    const toSend: TaskAttemptCompletedMessage = {
+      taskId: message.taskId,
+      type: 'TaskAttemptCompleted',
+      TaskAttemptCompleted: {
+        taskId: message.taskId,
+        taskAttemptId: message.taskAttemptId,
+        taskAttemptRetry: message.taskAttemptRetry,
+        taskAttemptIndex: message.taskAttemptIndex,
+        taskOutput: taskOutput,
       },
     };
 
     this.pulsarProducer.send({
-      data: AvroEnvelopeForJobEngine.toBuffer(toSend),
+      data: AvroEnvelopeForTaskEngine.toBuffer(toSend),
     });
   }
 
-  private async notifyTaskAttemptFailed(message: RunJob, error: Error) {
-    const toSend: JobAttemptFailedMessage = {
-      jobId: message.jobId,
-      type: 'JobAttemptFailed',
-      JobAttemptFailed: {
-        jobId: message.jobId,
-        jobAttemptId: message.jobAttemptId,
-        jobAttemptRetry: message.jobAttemptRetry,
-        jobAttemptIndex: message.jobAttemptIndex,
-        jobAttemptDelayBeforeRetry: null,
-        jobAttemptError: {
+  private async notifyTaskAttemptFailed(message: RunTask, error: Error) {
+    const toSend: TaskAttemptFailedMessage = {
+      taskId: message.taskId,
+      type: 'TaskAttemptFailed',
+      TaskAttemptFailed: {
+        taskId: message.taskId,
+        taskAttemptId: message.taskAttemptId,
+        taskAttemptRetry: message.taskAttemptRetry,
+        taskAttemptIndex: message.taskAttemptIndex,
+        taskAttemptDelayBeforeRetry: null,
+        taskAttemptError: {
           bytes: Buffer.from(JSON.stringify(error)),
           type: 'JSON',
           meta: new Map(),
@@ -129,7 +129,7 @@ export class TaskRunner {
     };
 
     this.pulsarProducer.send({
-      data: AvroEnvelopeForJobEngine.toBuffer(toSend),
+      data: AvroEnvelopeForTaskEngine.toBuffer(toSend),
     });
   }
 }

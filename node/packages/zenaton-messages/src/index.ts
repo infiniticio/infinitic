@@ -7,269 +7,278 @@ export interface SerializedData {
   meta: Map<string, Buffer>;
 }
 
-export type JobInput = SerializedData[];
-export type JobOutput = SerializedData;
-export type JobAttemptError = SerializedData;
+export type TaskInput = SerializedData[];
+export type TaskOutput = SerializedData;
+export type TaskAttemptError = SerializedData;
+export type TaskOptions = { runningTimeout: number | null };
 
-export type ForJobEngineMessageType =
-  | 'CancelJob'
-  | 'DispatchJob'
-  | 'JobAttemptCompleted'
-  | 'JobAttemptDispatched'
-  | 'JobAttemptFailed'
-  | 'JobAttemptStarted'
-  | 'JobCanceled'
-  | 'JobCompleted'
-  | 'RetryJob'
-  | 'RetryJobAttempt';
+export type ForTaskEngineMessageType =
+  | 'CancelTask'
+  | 'DispatchTask'
+  | 'TaskAttemptCompleted'
+  | 'TaskAttemptDispatched'
+  | 'TaskAttemptFailed'
+  | 'TaskAttemptStarted'
+  | 'TaskCanceled'
+  | 'TaskCompleted'
+  | 'RetryTask'
+  | 'RetryTaskAttempt';
 
-export type CancelJob = {
-  jobId: string;
+export type CancelTask = {
+  taskId: string;
 };
 
-export type DispatchJob = {
-  jobId: string;
-  jobName: string;
-  jobInput: JobInput;
-  jobMeta: Map<string, SerializedData>;
+export type DispatchTask = {
+  taskId: string;
+  taskName: string;
+  taskInput: TaskInput;
+  taskOptions: TaskOptions;
+  taskMeta: Map<string, SerializedData>;
 };
 
-export type RetryJob = {
-  jobId: string;
+export type RetryTask = {
+  taskId: string;
 };
 
-export type RetryJobAttempt = {
-  jobId: string;
-  jobAttemptId: string;
-  jobAttemptRetry: number;
-  jobAttemptIndex: number;
+export type RetryTaskAttempt = {
+  taskId: string;
+  taskAttemptId: string;
+  taskAttemptRetry: number;
+  taskAttemptIndex: number;
 };
 
-export type JobAttemptCompleted = {
-  jobId: string;
-  jobAttemptId: string;
-  jobAttemptRetry: number;
-  jobAttemptIndex: number;
-  jobOutput: JobOutput | null;
+export type TaskAttemptCompleted = {
+  taskId: string;
+  taskAttemptId: string;
+  taskAttemptRetry: number;
+  taskAttemptIndex: number;
+  taskOutput: TaskOutput | null;
 };
 
-export type JobAttemptDispatched = {
-  jobId: string;
-  jobAttemptId: string;
-  jobAttemptRetry: number;
-  jobAttemptIndex: number;
+export type TaskAttemptDispatched = {
+  taskId: string;
+  taskAttemptId: string;
+  taskAttemptRetry: number;
+  taskAttemptIndex: number;
 };
 
-export type JobAttemptFailed = {
-  jobId: string;
-  jobAttemptId: string;
-  jobAttemptRetry: number;
-  jobAttemptIndex: number;
-  jobAttemptError: JobAttemptError;
-  jobAttemptDelayBeforeRetry: number | null;
+export type TaskAttemptFailed = {
+  taskId: string;
+  taskAttemptId: string;
+  taskAttemptRetry: number;
+  taskAttemptIndex: number;
+  taskAttemptError: TaskAttemptError;
+  taskAttemptDelayBeforeRetry: number | null;
 };
 
-export type JobAttemptStarted = {
-  jobId: string;
-  jobAttemptId: string;
-  jobAttemptRetry: number;
-  jobAttemptIndex: number;
+export type TaskAttemptStarted = {
+  taskId: string;
+  taskAttemptId: string;
+  taskAttemptRetry: number;
+  taskAttemptIndex: number;
 };
 
-export type JobCanceled = {
-  jobId: string;
+export type TaskCanceled = {
+  taskId: string;
 };
 
-export type JobCompleted = {
-  jobId: string;
+export type TaskCompleted = {
+  taskId: string;
   sentAt: number;
-  jobOutput: JobOutput | null;
+  taskOutput: TaskOutput | null;
 };
 
-export type JobCreated = {
-  jobId: string;
+export type TaskCreated = {
+  taskId: string;
 };
 
-export interface CancelJobMessage {
-  type: 'CancelJob';
-  jobId: string;
-  CancelJob: CancelJob;
+export interface CancelTaskMessage {
+  type: 'CancelTask';
+  taskId: string;
+  CancelTask: CancelTask;
 }
 
-export interface DispatchJobMessage {
-  type: 'DispatchJob';
-  jobId: string;
-  DispatchJob: DispatchJob;
+export interface DispatchTaskMessage {
+  type: 'DispatchTask';
+  taskId: string;
+  DispatchTask: DispatchTask;
 }
 
-export interface RetryJobMessage {
-  type: 'RetryJob';
-  jobId: string;
-  RetryJob: RetryJob;
+export interface RetryTaskMessage {
+  type: 'RetryTask';
+  taskId: string;
+  RetryTask: RetryTask;
 }
 
-export interface RetryJobAttemptMessage {
-  type: 'RetryJobAttempt';
-  jobId: string;
-  RetryJobAttempt: RetryJobAttempt;
+export interface RetryTaskAttemptMessage {
+  type: 'RetryTaskAttempt';
+  taskId: string;
+  RetryTaskAttempt: RetryTaskAttempt;
 }
 
-export interface JobAttemptCompletedMessage {
-  type: 'JobAttemptCompleted';
-  jobId: string;
-  JobAttemptCompleted: JobAttemptCompleted;
+export interface TaskAttemptCompletedMessage {
+  type: 'TaskAttemptCompleted';
+  taskId: string;
+  TaskAttemptCompleted: TaskAttemptCompleted;
 }
 
-export interface JobAttemptDispatchedMessage {
-  type: 'JobAttemptDispatched';
-  jobId: string;
-  JobAttemptDispatched: JobAttemptDispatched;
+export interface TaskAttemptDispatchedMessage {
+  type: 'TaskAttemptDispatched';
+  taskId: string;
+  TaskAttemptDispatched: TaskAttemptDispatched;
 }
 
-export interface JobAttemptFailedMessage {
-  type: 'JobAttemptFailed';
-  jobId: string;
-  JobAttemptFailed: JobAttemptFailed;
+export interface TaskAttemptFailedMessage {
+  type: 'TaskAttemptFailed';
+  taskId: string;
+  TaskAttemptFailed: TaskAttemptFailed;
 }
 
-export interface JobAttemptStartedMessage {
-  type: 'JobAttemptStarted';
-  jobId: string;
-  JobAttemptStarted: JobAttemptStarted;
+export interface TaskAttemptStartedMessage {
+  type: 'TaskAttemptStarted';
+  taskId: string;
+  TaskAttemptStarted: TaskAttemptStarted;
 }
 
-export interface JobCanceledMessage {
-  type: 'JobCanceled';
-  jobId: string;
-  JobCanceled: JobCanceled;
+export interface TaskCanceledMessage {
+  type: 'TaskCanceled';
+  taskId: string;
+  TaskCanceled: TaskCanceled;
 }
 
-export interface JobCompletedMessage {
-  type: 'JobCompleted';
-  jobId: string;
-  JobCompleted: JobCompleted;
+export interface TaskCompletedMessage {
+  type: 'TaskCompleted';
+  taskId: string;
+  TaskCompleted: TaskCompleted;
 }
 
-export interface JobDispatchedMessage {
-  type: 'JobDispatched';
-  jobId: string;
-  JobDispatched: JobCreated;
+export interface TaskDispatchedMessage {
+  type: 'TaskDispatched';
+  taskId: string;
+  TaskDispatched: TaskCreated;
 }
 
-export type ForJobEngineMessage =
-  | CancelJobMessage
-  | DispatchJobMessage
-  | RetryJobMessage
-  | RetryJobAttemptMessage
-  | JobAttemptCompletedMessage
-  | JobAttemptDispatchedMessage
-  | JobAttemptFailedMessage
-  | JobAttemptStartedMessage
-  | JobCanceledMessage
-  | JobCompletedMessage
-  | JobDispatchedMessage;
+export type ForTaskEngineMessage =
+  | CancelTaskMessage
+  | DispatchTaskMessage
+  | RetryTaskMessage
+  | RetryTaskAttemptMessage
+  | TaskAttemptCompletedMessage
+  | TaskAttemptDispatchedMessage
+  | TaskAttemptFailedMessage
+  | TaskAttemptStartedMessage
+  | TaskCanceledMessage
+  | TaskCompletedMessage
+  | TaskDispatchedMessage;
 
-export type ForWorkerMessageType = 'RunJob';
+export type ForWorkerMessageType = 'RunTask';
 
-export type RunJob = {
-  jobId: string;
-  jobName: string;
-  jobInput: JobInput;
-  jobAttemptId: string;
-  jobAttemptRetry: number;
-  jobAttemptIndex: number;
+export type RunTask = {
+  taskId: string;
+  taskName: string;
+  taskInput: TaskInput;
+  taskAttemptId: string;
+  taskAttemptRetry: number;
+  taskAttemptIndex: number;
+  taskOptions: TaskOptions;
+  taskMeta: Map<string, SerializedData>;
 };
 
-export interface RunJobMessage {
-  type: 'RunJob';
-  RunJob: RunJob;
+export interface RunTaskMessage {
+  type: 'RunTask';
+  RunTask: RunTask;
 }
 
-export type ForWorkerMessage = RunJobMessage;
+export type ForWorkerMessage = RunTaskMessage;
 
 // ------------------------------------------------------------------------------------------------
-// Common definitions
+// Data definitions
 // ------------------------------------------------------------------------------------------------
 
 const registry: AvroRegistry = {};
 
 export const SerializedData = typeForSchema<SerializedData>(
-  path.resolve(`${__dirname}/avro/jobManager/data/AvroSerializedData.avsc`),
+  path.resolve(`${__dirname}/avro/taskManager/data/AvroSerializedData.avsc`),
+  registry
+);
+
+export const TaskOptions = typeForSchema<TaskOptions>(
+  path.resolve(`${__dirname}/avro/taskManager/data/AvroTaskOptions.avsc`),
   registry
 );
 
 // ------------------------------------------------------------------------------------------------
-// Job Engine messages definitions
+// Messages definitions
 // ------------------------------------------------------------------------------------------------
 
-export const AvroCancelJob = typeForSchema<CancelJob>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroCancelJob.avsc`),
+export const AvroCancelTask = typeForSchema<CancelTask>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroCancelTask.avsc`),
   registry
 );
 
-export const AvroDispatchJob = typeForSchema<DispatchJob>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroDispatchJob.avsc`),
+export const AvroDispatchTask = typeForSchema<DispatchTask>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroDispatchTask.avsc`),
   registry
 );
 
-export const AvroRetryJob = typeForSchema<RetryJob>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroRetryJob.avsc`),
+export const AvroRetryTask = typeForSchema<RetryTask>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroRetryTask.avsc`),
   registry
 );
 
-export const AvroRetryJobAttempt = typeForSchema<RetryJobAttempt>(
+export const AvroRetryTaskAttempt = typeForSchema<RetryTaskAttempt>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroRetryJobAttempt.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroRetryTaskAttempt.avsc`
   ),
   registry
 );
 
-export const AvroJobAttemptCompleted = typeForSchema<JobAttemptCompleted>(
+export const AvroTaskAttemptCompleted = typeForSchema<TaskAttemptCompleted>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroJobAttemptCompleted.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroTaskAttemptCompleted.avsc`
   ),
   registry
 );
 
-export const AvroJobAttemptDispatched = typeForSchema<JobAttemptDispatched>(
+export const AvroTaskAttemptDispatched = typeForSchema<TaskAttemptDispatched>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroJobAttemptDispatched.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroTaskAttemptDispatched.avsc`
   ),
   registry
 );
 
-export const AvroJobAttemptFailed = typeForSchema<JobAttemptFailed>(
+export const AvroTaskAttemptFailed = typeForSchema<TaskAttemptFailed>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroJobAttemptFailed.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroTaskAttemptFailed.avsc`
   ),
   registry
 );
 
-export const AvroJobAttemptStarted = typeForSchema<JobAttemptStarted>(
+export const AvroTaskAttemptStarted = typeForSchema<TaskAttemptStarted>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/AvroJobAttemptStarted.avsc`
+    `${__dirname}/avro/taskManager/messages/AvroTaskAttemptStarted.avsc`
   ),
   registry
 );
 
-export const AvroJobCanceled = typeForSchema<JobCanceled>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCanceled.avsc`),
+export const AvroTaskCanceled = typeForSchema<TaskCanceled>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroTaskCanceled.avsc`),
   registry
 );
 
-export const AvroJobCompleted = typeForSchema<JobCompleted>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCompleted.avsc`),
+export const AvroTaskCompleted = typeForSchema<TaskCompleted>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroTaskCompleted.avsc`),
   registry
 );
 
-export const AvroJobCreated = typeForSchema<JobCreated>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroJobCreated.avsc`),
+export const AvroTaskCreated = typeForSchema<TaskCreated>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroTaskCreated.avsc`),
   registry
 );
 
-export const AvroEnvelopeForJobEngine = typeForSchema<ForJobEngineMessage>(
+export const AvroEnvelopeForTaskEngine = typeForSchema<ForTaskEngineMessage>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/envelopes/AvroEnvelopeForJobEngine.avsc`
+    `${__dirname}/avro/taskManager/messages/envelopes/AvroEnvelopeForTaskEngine.avsc`
   ),
   registry
 );
@@ -278,14 +287,14 @@ export const AvroEnvelopeForJobEngine = typeForSchema<ForJobEngineMessage>(
 // Worker messages definitions
 // ------------------------------------------------------------------------------------------------
 
-export const AvroRunJob = typeForSchema<RunJob>(
-  path.resolve(`${__dirname}/avro/jobManager/messages/AvroRunJob.avsc`),
+export const AvroRunTask = typeForSchema<RunTask>(
+  path.resolve(`${__dirname}/avro/taskManager/messages/AvroRunTask.avsc`),
   registry
 );
 
 export const AvroEnvelopeForWorker = typeForSchema<ForWorkerMessage>(
   path.resolve(
-    `${__dirname}/avro/jobManager/messages/envelopes/AvroEnvelopeForWorker.avsc`
+    `${__dirname}/avro/taskManager/messages/envelopes/AvroEnvelopeForWorker.avsc`
   ),
   registry
 );

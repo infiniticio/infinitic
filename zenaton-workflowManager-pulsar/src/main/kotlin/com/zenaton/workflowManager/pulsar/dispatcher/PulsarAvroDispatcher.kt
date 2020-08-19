@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.pulsar.dispatcher
 
-import com.zenaton.jobManager.pulsar.dispatcher.Topic as JobTopic
-import com.zenaton.jobManager.messages.envelopes.AvroEnvelopeForJobEngine
+import com.zenaton.taskManager.pulsar.dispatcher.Topic as TaskTopic
+import com.zenaton.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import com.zenaton.workflowManager.avroInterfaces.AvroDispatcher
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import org.apache.pulsar.client.impl.schema.AvroSchema
@@ -26,27 +26,27 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
         context.logger.debug("Msg: $msg")
     }
 
-    override fun toDeciders(msg: AvroEnvelopeForJobEngine) {
+    override fun toDeciders(msg: AvroEnvelopeForTaskEngine) {
         val msgBuilder = context
-            .newOutputMessage(JobTopic.JOB_ENGINE.get("decisions"), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
-            .key(msg.jobId)
+            .newOutputMessage(TaskTopic.TASK_ENGINE.get("decisions"), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
+            .key(msg.taskId)
             .value(msg)
             .send()
 
         context.logger.debug("== WorkflowManager: dispatching ==")
-        context.logger.debug("To topic: ${JobTopic.JOB_ENGINE.get("decisions")}")
+        context.logger.debug("To topic: ${TaskTopic.TASK_ENGINE.get("decisions")}")
         context.logger.debug("Msg: $msg")
     }
 
-    override fun toWorkers(msg: AvroEnvelopeForJobEngine) {
+    override fun toWorkers(msg: AvroEnvelopeForTaskEngine) {
         val msgBuilder = context
-            .newOutputMessage(JobTopic.JOB_ENGINE.get("tasks"), AvroSchema.of(AvroEnvelopeForJobEngine::class.java))
-            .key(msg.jobId)
+            .newOutputMessage(TaskTopic.TASK_ENGINE.get("tasks"), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
+            .key(msg.taskId)
             .value(msg)
             .send()
 
         context.logger.debug("== WorkflowManager: dispatching ==")
-        context.logger.debug("To topic: ${JobTopic.JOB_ENGINE.get("tasks")}")
+        context.logger.debug("To topic: ${TaskTopic.TASK_ENGINE.get("tasks")}")
         context.logger.debug("Msg: $msg")
     }
 }

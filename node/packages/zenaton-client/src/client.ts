@@ -4,10 +4,11 @@ import {
   Producer as PulsarProducer,
 } from 'pulsar-client';
 import {
-  AvroEnvelopeForJobEngine,
-  DispatchJobMessage,
-  ForJobEngineMessage,
+  AvroEnvelopeForTaskEngine,
+  DispatchTaskMessage,
+  ForTaskEngineMessage,
   SerializedData,
+  TaskOptions,
 } from '@zenaton/messages';
 import { v4 as uuid } from 'uuid';
 import pLimit from 'p-limit';
@@ -37,12 +38,13 @@ export class Client {
   }
 
   async dispatchTask(
-    jobName: string,
+    taskName: string,
     input: any = null,
-    jobMeta: Map<string, SerializedData> = new Map()
+    taskMeta: Map<string, SerializedData> = new Map(),
+    taskOptions: TaskOptions = { runningTimeout: null }
   ) {
-    const jobId = uuid();
-    const jobInput =
+    const taskId = uuid();
+    const taskInput =
       input == null
         ? []
         : [
@@ -52,18 +54,19 @@ export class Client {
               meta: new Map(),
             },
           ];
-    const message: DispatchJobMessage = {
-      jobId,
-      type: 'DispatchJob',
-      DispatchJob: {
-        jobId,
-        jobName,
-        jobInput,
-        jobMeta,
+    const message: DispatchTaskMessage = {
+      taskId,
+      type: 'DispatchTask',
+      DispatchTask: {
+        taskId,
+        taskName,
+        taskInput,
+        taskMeta,
+        taskOptions,
       },
     };
 
-    this.dispatchForJobEngineMessage(message);
+    this.dispatchForTaskEngineMessage(message);
   }
 
   async close() {
@@ -75,11 +78,11 @@ export class Client {
     }
   }
 
-  private async dispatchForJobEngineMessage(message: ForJobEngineMessage) {
+  private async dispatchForTaskEngineMessage(message: ForTaskEngineMessage) {
     await this.initializeClientAndProducer();
 
     await this.pulsarProducer!.send({
-      data: AvroEnvelopeForJobEngine.toBuffer(message),
+      data: AvroEnvelopeForTaskEngine.toBuffer(message),
     });
   }
 

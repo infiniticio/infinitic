@@ -1,0 +1,31 @@
+{
+  "type": "record",
+  "name": "AvroMonitoringPerNameState",
+  "namespace": "com.zenaton.taskManager.states",
+  "fields": [
+    {
+      "name": "taskName",
+      "type": "string"
+    },
+    {
+      "name": "runningOkCount",
+      "type": "long"
+    },
+    {
+      "name": "runningWarningCount",
+      "type": "long"
+    },
+    {
+      "name": "runningErrorCount",
+      "type": "long"
+    },
+    {
+      "name": "terminatedCompletedCount",
+      "type": "long"
+    },
+    {
+      "name": "terminatedCanceledCount",
+      "type": "long"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "AvroTaskCreated",
+  "namespace": "com.zenaton.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskName",
+      "type": "string"
+    }
+  ]
+}

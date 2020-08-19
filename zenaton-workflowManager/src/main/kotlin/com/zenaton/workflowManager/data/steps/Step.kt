@@ -1,7 +1,7 @@
 package com.zenaton.workflowManager.data.steps
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.zenaton.jobManager.common.data.JobId
+import com.zenaton.taskManager.common.data.TaskId
 import com.zenaton.workflowManager.data.DelayId
 import com.zenaton.workflowManager.data.EventId
 import com.zenaton.workflowManager.data.WorkflowId
@@ -16,8 +16,8 @@ data class Step(
     @JsonIgnore
     fun isCompleted() = criterion.isCompleted()
 
-    fun completeTask(jobId: JobId, properties: Properties): Boolean {
-        return complete(CommandId(jobId), properties)
+    fun completeTask(taskId: TaskId, properties: Properties): Boolean {
+        return complete(CommandId(taskId), properties)
     }
 
     fun completeChildWorkflow(workflowId: WorkflowId, properties: Properties): Boolean {
