@@ -11,7 +11,7 @@ plugins {
 }
 
 application {
-    mainClassName = "io.infinitic.workflowManager.pulsar.utils.GenerateSchemaFilesKt"
+    mainClassName = "io.infinitic.workflowManager.engine.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 dependencies {
@@ -153,7 +153,7 @@ fun uploadSchemaToTopic(
 
 fun setZenatonFunction(
     className: String,
-    classNamespace: String = "io.infinitic.workflowManager.pulsar.functions",
+    classNamespace: String = "io.infinitic.workflowManager.engine.pulsar.functions",
     topicsIn: Set<String>,
     action: String,
     topicOut: String? = null,

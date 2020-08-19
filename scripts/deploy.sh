@@ -123,7 +123,7 @@ else
 fi
 
 printf "Creating schema files ...\n"
-cd $tmp_dir && java -cp $JOB_MANAGER_JAR_PATH io.infinitic.taskManager.pulsar.utils.GenerateSchemaFilesKt
+cd $tmp_dir && java -cp $JOB_MANAGER_JAR_PATH io.infinitic.taskManager.engine.pulsar.utils.GenerateSchemaFilesKt
 if [ $? -ne 0 ]; then
     print_error "Cannot generate schema files"
     print_error "$(cat <<-END
