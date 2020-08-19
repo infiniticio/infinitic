@@ -4,7 +4,6 @@ import com.zenaton.workflowManager.avroConverter.AvroConverter
 import com.zenaton.workflowManager.messages.ForWorkflowEngineMessage
 import com.zenaton.workflowManager.messages.Message
 import com.zenaton.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
-import com.zenaton.workflowManager.pulsar.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
