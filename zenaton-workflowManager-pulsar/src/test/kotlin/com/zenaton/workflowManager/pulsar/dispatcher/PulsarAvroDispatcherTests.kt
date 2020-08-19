@@ -23,10 +23,10 @@ import org.slf4j.Logger
 class PulsarAvroDispatcherTests : StringSpec({
     // From Message
     Message::class.sealedSubclasses.forEach {
-        val msg = TestFactory.random(it)
-        if (msg is ForWorkflowEngineMessage) {
-            include(checkMessageCanBeDispatched(msg))
-        }
+//        val msg = TestFactory.random(it)
+//        if (msg is ForWorkflowEngineMessage) {
+//            include(checkMessageCanBeDispatched(msg))
+//        }
     }
 })
 
