@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package io.infinitic.taskManager.worker
 
 import io.infinitic.common.data.SerializedData
@@ -48,7 +50,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should be able to run a default method with 2 parameters" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask(TestWithoutRetry::class.java.name, input, types)
@@ -66,12 +68,12 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = TaskOutput(SerializedData.from("6"))
+            taskOutput = TaskOutput("6")
         )
     }
 
     "Should be able to run an explicit method with 2 parameters" {
-        val input = listOf(3, "3").map { SerializedData.from(it) }
+        val input = arrayOf(3, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask("${TestWithoutRetryAndExplicitMethod::class.java.name}::run", input, types)
@@ -90,12 +92,12 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = TaskOutput(SerializedData.from("9"))
+            taskOutput = TaskOutput("9")
         )
     }
 
     "Should be able to run an explicit method with 2 parameters without parameterTypes" {
-        val input = listOf(4, "3").map { SerializedData.from(it) }
+        val input = arrayOf(4, "3")
         // with
         val msg = getRunTask("${TestWithoutRetryAndExplicitMethod::class.java.name}::run", input, null)
         // when
@@ -113,7 +115,7 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = TaskOutput(SerializedData.from("12"))
+            taskOutput = TaskOutput("12")
         )
     }
 
@@ -124,7 +126,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should be able to use a registered task name " {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask("blabla", input, types)
@@ -144,12 +146,12 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = TaskOutput(SerializedData.from("6"))
+            taskOutput = TaskOutput("6")
         )
     }
 
     "Should throw _root_ide_package_.io.infinitic.taskManager.common.exceptions.MultipleUseOfDividerInTaskNameme when trying to process an invalid task name " {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask("blabla::m1::m2", input, types)
@@ -175,7 +177,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should throw ClassNotFoundDuringTaskInstantiation when trying to process an unknown task" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask("blabla", input, types)
@@ -203,7 +205,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should throw ErrorDuringTaskInstantiation when if impossible to create new instance" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask(TestWithConstructor::class.java.name, input, types)
@@ -229,7 +231,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should throw NoMethodFoundWithParameterTypes  when trying to process an unknown method" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask("${TestWithoutRetry::class.java.name}::unknown", input, types)
@@ -255,7 +257,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         // with
         val msg = getRunTask("${TestWithoutRetry::class.java.name}::unknown", input, null)
 
@@ -280,7 +282,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         // with
         val msg = getRunTask("${TestWithoutRetry::class.java.name}::handle", input, null)
 
@@ -305,7 +307,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should retry with correct exception" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         // with
         val msg = getRunTask(TestWithRetry::class.java.name, input, null)
 
@@ -330,7 +332,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should throw RetryDelayReturnTypeError when getRetryDelay has wrong return type" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         // with
         val msg = getRunTask(TestWithBadRetryType::class.java.name, input, null)
 
@@ -355,7 +357,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should throw when getRetryDelay throw an exception" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         // with
         val msg = getRunTask(TestWithBuggyRetry::class.java.name, input, null)
 
@@ -380,7 +382,7 @@ class WorkerTests : StringSpec({
     }
 
     "Should be able to access context from task" {
-        val input = listOf(2, "3").map { SerializedData.from(it) }
+        val input = arrayOf(2, "3")
         // with
         val msg = getRunTask(TestWithContext::class.java.name, input, null)
 
@@ -399,7 +401,7 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = TaskOutput(SerializedData.from("72"))
+            taskOutput = TaskOutput("72")
         )
     }
 
@@ -410,8 +412,8 @@ class WorkerTests : StringSpec({
     }
 
     "Should throw ProcessingTimeout if processing time is too long" {
+        val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
-        val input = listOf(2, "3").map { SerializedData.from(it) }
         // with
         val msg = getRunTask(TestWithTimeout::class.java.name, input, types)
 
@@ -437,54 +439,54 @@ class WorkerTests : StringSpec({
 })
 
 internal class TestWithoutRetry {
-    @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt()).toString()
-    @Suppress("unused") fun handle(i: Int, j: Int) = (i * j).toString()
+    fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+    fun handle(i: Int, j: Int) = (i * j).toString()
 }
 
 internal class TestWithoutRetryAndExplicitMethod {
-    @Suppress("unused") fun run(i: Int, j: String) = (i * j.toInt()).toString()
+    fun run(i: Int, j: String) = (i * j.toInt()).toString()
 }
 
 internal class TestWithRetry {
-    @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    @Suppress("unused") fun getRetryDelay(context: TaskAttemptContext): Float? = if (context.exception is IllegalStateException) 3F else 0F
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+    fun getRetryDelay(context: TaskAttemptContext): Float? = if (context.exception is IllegalStateException) 3F else 0F
 }
 
 internal class TestWithBuggyRetry {
-    @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    @Suppress("unused") fun getRetryDelay(context: TaskAttemptContext): Float? = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+    fun getRetryDelay(context: TaskAttemptContext): Float? = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
 }
 
 internal class TestWithBadRetryType {
-    @Suppress("unused") fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    @Suppress("unused") fun getRetryDelay(context: TaskAttemptContext) = 3
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+    fun getRetryDelay(context: TaskAttemptContext) = 3
 }
 
 internal class TestWithConstructor(val value: String) {
-    @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+    fun handle(i: Int, j: String) = (i * j.toInt()).toString()
 }
 
 internal class TestWithContext() {
-    @Suppress("unused") fun handle(i: Int, j: String) = (i * j.toInt() * Worker.context.taskAttemptIndex.int).toString()
+    fun handle(i: Int, j: String) = (i * j.toInt() * Worker.context.taskAttemptIndex.int).toString()
 }
 
 internal class TestWithTimeout() {
-    @Suppress("unused") fun handle(i: Int, j: String): String {
+    fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
         return (i * j.toInt() * Worker.context.taskAttemptIndex.int).toString()
     }
 }
 
-private fun getRunTask(name: String, input: List<SerializedData>, types: List<String>?) = RunTask(
+private fun getRunTask(name: String, input: Array<out Any?>, types: List<String>?) = RunTask(
     taskId = TaskId(),
     taskAttemptId = TaskAttemptId(),
     taskAttemptIndex = TaskAttemptIndex(12),
     taskAttemptRetry = TaskAttemptRetry(7),
     taskName = TaskName(name),
-    taskInput = TaskInput(input),
+    taskInput = TaskInput(*input),
     taskOptions = TaskOptions(runningTimeout = .2F),
-    taskMeta = TaskMeta().setParameterTypes(types)
+    taskMeta = TaskMeta().withParameterTypes<TaskMeta>(types)
 )
 
 private fun getTaskAttemptStarted(msg: RunTask) = TaskAttemptStarted(

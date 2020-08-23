@@ -2,6 +2,6 @@ package io.infinitic.taskManager.client
 
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 
-interface AvroDispatcher {
+interface AvroTaskDispatcher {
     fun toTaskEngine(msg: AvroEnvelopeForTaskEngine)
 }

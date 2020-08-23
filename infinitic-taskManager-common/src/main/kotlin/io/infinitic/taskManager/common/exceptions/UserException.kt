@@ -61,10 +61,12 @@ class UnknownReturnClassDuringDeserialization(
  ***********************/
 
 class NoMethodCallAtDispatch(
-    @JsonProperty("name") val name: String
+    @JsonProperty("name") val name: String,
+    @JsonProperty("dispatch") val dispatch: String
+
 ) : UserExceptionInClient(
-    msg = "None method of $name has been provided to dispatch",
-    help = "Make sure you call a method of the provided interface within the curly braces - example: infinitic.dispatch<FooInterface> { barMethod(*args) }"
+    msg = "You must use a method of \"$name\" when using $dispatch method",
+    help = "Make sure to call one method of \"$name\" within the curly braces - example: client.$dispatch<Foo> { bar(*args) }"
 )
 
 class MultipleMethodCallsAtDispatch(
@@ -211,5 +213,12 @@ class ExceptionDuringParametersDeserialization(
     @JsonProperty("parameterTypes") val parameterTypes: List<String>
 ) : UserExceptionInWorker(
     msg = "Impossible to deserialize input \"$input\" with types \"$parameterTypes\" for method \"$taskName::$methodName\"",
+    help = ""
+)
+
+class CantUseJavaParameterTypesInMeta(
+    @JsonProperty("reserved") val reserved: String
+) : UserExceptionInWorker(
+    msg = "\"$reserved\" is as reserved keyword, you can not use it in your meta data",
     help = ""
 )

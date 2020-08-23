@@ -9,7 +9,6 @@ import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.workflowManager.common.data.DelayId
 import io.infinitic.workflowManager.common.data.EventData
 import io.infinitic.workflowManager.common.data.EventId
-import io.infinitic.workflowManager.common.data.commands.CommandHash
 import io.infinitic.workflowManager.common.data.EventName
 import io.infinitic.workflowManager.common.data.WorkflowId
 import io.infinitic.workflowManager.data.commands.CommandStatus

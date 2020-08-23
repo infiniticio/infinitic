@@ -10,14 +10,15 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
 import io.infinitic.taskManager.common.messages.CancelTask
+import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.RetryTask
 import java.lang.reflect.Proxy
 
-class Client() {
-    lateinit var dispatcher: Dispatcher
+open class Client() {
+    lateinit var taskDispatcher: TaskDispatcher
 
-    fun setAvroDispatcher(avroDispatcher: AvroDispatcher) {
-        dispatcher = Dispatcher(avroDispatcher)
+    open fun setDispatcher(avroDispatcher: AvroTaskDispatcher) {
+        taskDispatcher = TaskDispatcher(avroDispatcher)
     }
 
     /*
@@ -27,23 +28,33 @@ class Client() {
     inline fun <reified T> dispatchTask(
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
-        method: T.() -> Any?
+        apply: T.() -> Any?
     ): Task {
-        // handler will be where the actual task is done
-        val handler = ProxyHandler(T::class.java.name, dispatcher, options, meta)
-
         // get a proxy for T
+        val handler = ProxyHandler()
+
         val klass = Proxy.newProxyInstance(
             T::class.java.classLoader,
             kotlin.arrayOf(T::class.java),
             handler
         ) as T
 
-        // method call will actually be applied to handler through the proxy
-        klass.method()
+        // method call will actually be done through the proxy by handler
+        klass.apply()
 
-        // ask
-        return handler.getTask() ?: throw NoMethodCallAtDispatch(T::class.java.name)
+        // dispatch the workflow
+        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchTask")
+
+        val msg = DispatchTask(
+            taskId = TaskId(),
+            taskName = TaskName.from(method),
+            taskInput = TaskInput.from(method, handler.args),
+            taskOptions = options,
+            taskMeta = meta.withParametersTypesFrom(method)
+        )
+        taskDispatcher.toTaskEngine(msg)
+
+        return Task(msg.taskId)
     }
 
     /*
@@ -64,7 +75,7 @@ class Client() {
             taskOptions = options,
             taskMeta = meta
         )
-        dispatcher.toTaskEngine(msg)
+        taskDispatcher.toTaskEngine(msg)
     }
 
     /*
@@ -76,8 +87,8 @@ class Client() {
     ) {
         val msg = CancelTask(
             taskId = TaskId(id),
-            taskOutput = TaskOutput(SerializedData.from(output))
+            taskOutput = TaskOutput(output)
         )
-        dispatcher.toTaskEngine(msg)
+        taskDispatcher.toTaskEngine(msg)
     }
 }

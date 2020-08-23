@@ -10,8 +10,10 @@ import io.infinitic.workflowManager.common.data.DelayId
 import io.infinitic.workflowManager.common.data.EventData
 import io.infinitic.workflowManager.common.data.EventName
 import io.infinitic.workflowManager.common.data.WorkflowId
+import io.infinitic.workflowManager.common.data.WorkflowInput
+import io.infinitic.workflowManager.common.data.WorkflowMeta
 import io.infinitic.workflowManager.common.data.WorkflowName
-import io.infinitic.workflowManager.common.data.branches.BranchInput
+import io.infinitic.workflowManager.common.data.WorkflowOptions
 import io.infinitic.workflowManager.common.data.branches.BranchOutput
 
 sealed class Message
@@ -56,7 +58,9 @@ data class DelayCompleted(
 data class DispatchWorkflow(
     override val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val workflowInput: BranchInput
+    val workflowInput: WorkflowInput,
+    val workflowMeta: WorkflowMeta,
+    val workflowOptions: WorkflowOptions
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class EventReceived(

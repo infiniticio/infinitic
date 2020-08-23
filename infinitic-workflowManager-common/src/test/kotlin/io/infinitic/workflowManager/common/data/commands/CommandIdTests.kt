@@ -1,7 +1,6 @@
 package io.infinitic.workflowManager.common.data.commands
 
 import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldNotBe

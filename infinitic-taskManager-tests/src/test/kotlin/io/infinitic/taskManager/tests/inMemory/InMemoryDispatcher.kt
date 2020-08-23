@@ -1,6 +1,6 @@
 package io.infinitic.taskManager.tests.inMemory
 
-import io.infinitic.taskManager.client.AvroDispatcher as AvroClientDispatcher
+import io.infinitic.taskManager.client.AvroTaskDispatcher as AvroClientDispatcher
 import io.infinitic.taskManager.engine.avroInterfaces.AvroDispatcher as AvroEngineDispatcher
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal

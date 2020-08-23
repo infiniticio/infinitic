@@ -10,6 +10,7 @@ import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.common.data.decisions.DecisionId
 import io.infinitic.workflowManager.common.data.decisions.DecisionInput
 import io.infinitic.workflowManager.common.data.branches.Branch
+import io.infinitic.workflowManager.common.data.branches.BranchInput
 import io.infinitic.workflowManager.common.data.branches.BranchName
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
 import io.infinitic.workflowManager.common.states.WorkflowEngineState
@@ -104,7 +105,7 @@ class WorkflowEngine {
         // define branch
         val branch = Branch(
             branchName = BranchName("handle"),
-            branchInput = msg.workflowInput
+            branchInput = BranchInput(msg.workflowInput.input)
         )
         // initialize state
         state.ongoingDecisionId = decisionId
@@ -123,9 +124,7 @@ class WorkflowEngine {
                     .add(AvroConverter.toAvroDecisionInput(decisionInput))
                     .build(),
                 taskOptions = TaskOptions(),
-                taskMeta = TaskMeta.builder()
-                    .add(META_WORKFLOW_ID, msg.workflowId.id)
-                    .build()
+                taskMeta = TaskMeta().with(META_WORKFLOW_ID, msg.workflowId.id)
             )
         )
         // log event

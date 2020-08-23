@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.interfaces.PropertyInterface
-import io.infinitic.workflowManager.common.data.properties.PropertyHash
 
 data class Property
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

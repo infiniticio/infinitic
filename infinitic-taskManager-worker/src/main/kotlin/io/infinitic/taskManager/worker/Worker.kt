@@ -4,12 +4,10 @@ import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptContext
 import io.infinitic.taskManager.common.data.TaskAttemptError
-import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.taskManager.common.exceptions.ClassNotFoundDuringTaskInstantiation
 import io.infinitic.taskManager.common.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.taskManager.common.exceptions.ErrorDuringTaskInstantiation
-import io.infinitic.taskManager.common.exceptions.ExceptionDuringParametersDeserialization
 import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.TaskAttemptContextRetrievedOutsideOfProcessingThread
 import io.infinitic.taskManager.common.exceptions.TaskAttemptContextSetFromExistingProcessingThread
@@ -220,11 +218,13 @@ open class Worker {
     }
 
     private fun parse(msg: RunTask): TaskCommand {
+        println("1" + msg.taskInput.map { println(it)})
+        println("2" + msg.taskInput.size)
         val (taskName, methodName) = getClassAndMethodNames(msg)
         val task = getTaskInstance(taskName)
         val parameterTypes = getMetaParameterTypes(msg)
-        val method = getMethod(task, methodName, msg.taskInput.input.size, parameterTypes)
-        val parameters = getParameters(task::class.java.name, methodName, msg.taskInput, parameterTypes ?: method.parameterTypes)
+        val method = getMethod(task, methodName, msg.taskInput.size, parameterTypes)
+        val parameters = msg.taskInput.data
 
         return TaskCommand(task, method, parameters, msg.taskOptions)
     }
@@ -252,7 +252,7 @@ open class Worker {
         }
     }
 
-    private fun getMetaParameterTypes(msg: RunTask) = msg.taskMeta.getParameterTypes()
+    private fun getMetaParameterTypes(msg: RunTask) = msg.taskMeta.parameterTypes
         ?.map { getClass(it) }
         ?.toTypedArray()
 
@@ -290,17 +290,6 @@ open class Worker {
         return methods[0]
     }
 
-    private fun getParameters(taskName: String, methodName: String, input: TaskInput, parameterTypes: Array<Class<*>>): Array<Any?> {
-        return try {
-            input.input.mapIndexed {
-                index, serializedData ->
-                serializedData.deserialize(parameterTypes[index])
-            }.toTypedArray()
-        } catch (e: Exception) {
-            throw ExceptionDuringParametersDeserialization(taskName, methodName, input.input, parameterTypes.map { it.name })
-        }
-    }
-
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
     private fun getDelayBeforeRetry(task: Any, context: TaskAttemptContext): RetryDelay {
         val method = try {
@@ -334,6 +323,7 @@ open class Worker {
     }
 
     private fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
+        println("sendTaskFailed: $error")
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
@@ -352,7 +342,7 @@ open class Worker {
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
             taskAttemptIndex = msg.taskAttemptIndex,
-            taskOutput = TaskOutput(SerializedData.from(output))
+            taskOutput = TaskOutput(output)
         )
 
         dispatcher.toTaskEngine(taskAttemptCompleted)
