@@ -2,8 +2,10 @@ package io.infinitic.taskManager.common.utils
 
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
+import io.infinitic.taskManager.common.data.TaskAttemptError
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskOutput
+import io.infinitic.taskManager.common.exceptions.CantUseJavaParameterTypesInMeta
 import io.infinitic.taskManager.common.exceptions.MultipleMethodCallsAtDispatch
 import io.infinitic.taskManager.data.AvroSerializedData
 import io.infinitic.taskManager.data.AvroSerializedDataType
@@ -35,7 +37,6 @@ object TestFactory {
         // if not updated, 2 subsequents calls to this method would provide the same values
         seed++
 
-//        println("seed = $seed")
         val parameters = EasyRandomParameters()
             .seed(seed)
             .collectionSizeRange(1, 5)
@@ -62,6 +63,9 @@ object TestFactory {
                 TaskOutput(
                     Random(seed).nextPrintableString(10)
                 )
+            }
+            .randomize(TaskAttemptError::class.java) {
+                TaskAttemptError(CantUseJavaParameterTypesInMeta("foo"))
             }
 
         values?.forEach {

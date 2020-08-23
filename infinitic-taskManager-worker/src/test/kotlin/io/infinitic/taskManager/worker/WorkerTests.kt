@@ -173,7 +173,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe MultipleUseOfDividerInTaskName::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe MultipleUseOfDividerInTaskName::class.java.name
     }
 
     "Should throw ClassNotFoundDuringTaskInstantiation when trying to process an unknown task" {
@@ -201,7 +201,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe ClassNotFoundDuringTaskInstantiation::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe ClassNotFoundDuringTaskInstantiation::class.java.name
     }
 
     "Should throw ErrorDuringTaskInstantiation when if impossible to create new instance" {
@@ -227,7 +227,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe ErrorDuringTaskInstantiation::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe ErrorDuringTaskInstantiation::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterTypes  when trying to process an unknown method" {
@@ -253,7 +253,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe NoMethodFoundWithParameterTypes::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe NoMethodFoundWithParameterTypes::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -278,7 +278,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe NoMethodFoundWithParameterCount::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe NoMethodFoundWithParameterCount::class.java.name
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -303,7 +303,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe TooManyMethodsFoundWithParameterCount::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe TooManyMethodsFoundWithParameterCount::class.java.name
     }
 
     "Should retry with correct exception" {
@@ -328,7 +328,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe 3F
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe IllegalStateException::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe IllegalStateException::class.java.name
     }
 
     "Should throw RetryDelayReturnTypeError when getRetryDelay has wrong return type" {
@@ -353,7 +353,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe RetryDelayHasWrongReturnType::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe RetryDelayHasWrongReturnType::class.java.name
     }
 
     "Should throw when getRetryDelay throw an exception" {
@@ -378,7 +378,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe IllegalArgumentException::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe IllegalArgumentException::class.java.name
     }
 
     "Should be able to access context from task" {
@@ -434,7 +434,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.error.deserialize()!!::class.java.name shouldBe ProcessingTimeout::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe ProcessingTimeout::class.java.name
     }
 })
 

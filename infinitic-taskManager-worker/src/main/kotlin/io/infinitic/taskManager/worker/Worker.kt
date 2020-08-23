@@ -183,12 +183,10 @@ open class Worker {
     private fun getRetryDelayAndFailTask(task: Any, msg: RunTask, parentJob: Job, contextKey: Long, context: TaskAttemptContext) {
         when (val delay = getDelayBeforeRetry(task, context)) {
             is RetryDelayRetrieved -> {
-                println("delay=$delay")
                 // returning the original cause
                 failTask(msg, context.exception, delay.value, parentJob, contextKey)
             }
             is RetryDelayFailed -> {
-                println("delay=$delay")
                 // returning the error in getRetryDelay, without retry
                 failTask(msg, delay.e, null, parentJob, contextKey)
             }
@@ -218,8 +216,6 @@ open class Worker {
     }
 
     private fun parse(msg: RunTask): TaskCommand {
-        println("1" + msg.taskInput.map { println(it)})
-        println("2" + msg.taskInput.size)
         val (taskName, methodName) = getClassAndMethodNames(msg)
         val task = getTaskInstance(taskName)
         val parameterTypes = getMetaParameterTypes(msg)
@@ -323,7 +319,6 @@ open class Worker {
     }
 
     private fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
-        println("sendTaskFailed: $error")
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,

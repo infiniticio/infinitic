@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
 import io.infinitic.taskManager.common.Constants
+import io.infinitic.taskManager.common.data.Input
 import io.infinitic.taskManager.common.data.TaskOptions
 
 /*
@@ -37,7 +38,7 @@ sealed class UserExceptionInWorker(
  * Exceptions in common
  ***********************/
 
-class MissingMetaJavaClassDuringDeserialization(
+data class MissingMetaJavaClassDuringDeserialization(
     @JsonProperty("data") val data: SerializedData
 ) : UserExceptionInCommon(
     msg = "You can't deserialize SerializedData $data without explicitly providing return type if the data does not have one in its  \"${SerializedData.META_JAVA_CLASS}\" meta value",
@@ -46,7 +47,7 @@ class MissingMetaJavaClassDuringDeserialization(
         "- update your code to use \"deserialize(klass: Class<*>)\" method"
 )
 
-class UnknownReturnClassDuringDeserialization(
+data class UnknownReturnClassDuringDeserialization(
     @JsonProperty("data") val data: SerializedData,
     @JsonProperty("name") val name: String
 ) : UserExceptionInCommon(
@@ -60,7 +61,7 @@ class UnknownReturnClassDuringDeserialization(
  * Exceptions in client
  ***********************/
 
-class NoMethodCallAtDispatch(
+data class NoMethodCallAtDispatch(
     @JsonProperty("name") val name: String,
     @JsonProperty("dispatch") val dispatch: String
 
@@ -69,14 +70,14 @@ class NoMethodCallAtDispatch(
     help = "Make sure to call one method of \"$name\" within the curly braces - example: client.$dispatch<Foo> { bar(*args) }"
 )
 
-class MultipleMethodCallsAtDispatch(
+data class MultipleMethodCallsAtDispatch(
     @JsonProperty("name") val name: String
 ) : UserExceptionInClient(
     msg = "Only one method of $name can be dispatched at a time",
     help = "Make sure you call only one method of the provided interface within curly braces - multiple calls such as infinitic.dispatch<FooInterface> { barMethod(*args); bazMethod(*args) } is forbidden"
 )
 
-class ErrorDuringJsonSerializationOfParameter(
+data class ErrorDuringJsonSerializationOfParameter(
     @JsonProperty("parameterName") val parameterName: String,
     @JsonProperty("parameterValue") val parameterValue: Any?,
     @JsonProperty("parameterType") val parameterType: String,
@@ -89,7 +90,7 @@ class ErrorDuringJsonSerializationOfParameter(
         "- replacing $parameterType per simpler parameters in $className::$methodName\n"
 )
 
-class ErrorDuringJsonDeserializationOfParameter(
+data class ErrorDuringJsonDeserializationOfParameter(
     @JsonProperty("parameterName") val parameterName: String,
     @JsonProperty("parameterValue") val parameterValue: Any?,
     @JsonProperty("parameterType") val parameterType: String,
@@ -102,7 +103,7 @@ class ErrorDuringJsonDeserializationOfParameter(
         "- replacing $parameterType per simpler parameters in $className::$methodName\n"
 )
 
-class InconsistentJsonSerializationOfParameter(
+data class InconsistentJsonSerializationOfParameter(
     @JsonProperty("parameterName") val parameterName: String,
     @JsonProperty("parameterValue") val parameterValue: Any?,
     @JsonProperty("restoredValue") val restoredValue: Any?,
@@ -120,21 +121,21 @@ class InconsistentJsonSerializationOfParameter(
  * Exceptions in worker
  ***********************/
 
-class InvalidUseOfDividerInTaskName(
+data class InvalidUseOfDividerInTaskName(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Task name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider",
     help = "You can not include \"${Constants.METHOD_DIVIDER}\" in your name's job, as it is also used as a divider between job's name and method"
 )
 
-class MultipleUseOfDividerInTaskName(
+data class MultipleUseOfDividerInTaskName(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Task name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider more than once",
     help = "You can not include \"${Constants.METHOD_DIVIDER}\" more than once in your name's job, as it is also used as a divider between job's name and method"
 )
 
-class ErrorDuringTaskInstantiation(
+data class ErrorDuringTaskInstantiation(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Impossible to instantiate class \"$name\" using newInstance()",
@@ -143,7 +144,7 @@ class ErrorDuringTaskInstantiation(
         "- using \"register\" method to provide an instance that will be used associated to \"$name\""
 )
 
-class ClassNotFoundDuringTaskInstantiation(
+data class ClassNotFoundDuringTaskInstantiation(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Impossible to find a Class associated to $name",
@@ -152,7 +153,7 @@ class ClassNotFoundDuringTaskInstantiation(
         "- using register method to provide an instance that will be used associated to $name"
 )
 
-class NoMethodFoundWithParameterTypes(
+data class NoMethodFoundWithParameterTypes(
     @JsonProperty("klass") val klass: String,
     @JsonProperty("method") val method: String,
     @JsonProperty("parameterTypes") val parameterTypes: List<String>
@@ -161,25 +162,25 @@ class NoMethodFoundWithParameterTypes(
     help = "Make sure parameter types are consistent with your method definition"
 )
 
-class NoMethodFoundWithParameterCount(
+data class NoMethodFoundWithParameterCount(
     @JsonProperty("klass") val klass: String,
     @JsonProperty("method") val method: String,
-    @JsonProperty("parameterCount") parameterCount: Int
+    @JsonProperty("parameterCount") val parameterCount: Int
 ) : UserExceptionInWorker(
     msg = "No method \"$method\" with $parameterCount parameters found in \"$klass\" class",
     help = ""
 )
 
-class TooManyMethodsFoundWithParameterCount(
+data class TooManyMethodsFoundWithParameterCount(
     @JsonProperty("klass") val klass: String,
     @JsonProperty("method") val method: String,
-    @JsonProperty("parameterCount") parameterCount: Int
+    @JsonProperty("parameterCount") val parameterCount: Int
 ) : UserExceptionInWorker(
     msg = "Unable to decide which method \"$method\" with $parameterCount parameters to use in \"$klass\" job",
     help = ""
 )
 
-class RetryDelayHasWrongReturnType(
+data class RetryDelayHasWrongReturnType(
     @JsonProperty("klass") val klass: String,
     @JsonProperty("actualType") val actualType: String,
     @JsonProperty("expectedType") val expectedType: String
@@ -188,7 +189,7 @@ class RetryDelayHasWrongReturnType(
     help = "Please update your method definition to return a $expectedType (or null)"
 )
 
-class ProcessingTimeout(
+data class ProcessingTimeout(
     @JsonProperty("klass") val klass: String,
     @JsonProperty("delay") val delay: Float
 ) : UserExceptionInWorker(
@@ -196,17 +197,17 @@ class ProcessingTimeout(
     help = "You can increase (or remove entirely) this constraint in the options ${TaskOptions::javaClass.name}"
 )
 
-class TaskAttemptContextRetrievedOutsideOfProcessingThread : UserExceptionInWorker(
+data class TaskAttemptContextRetrievedOutsideOfProcessingThread(val unused: String? = null) : UserExceptionInWorker(
     msg = "Worker.getContext() can be used only in the same thread that invoked the task",
     help = "Check that your task do not try to retrieve its context from a new thread"
 )
 
-class TaskAttemptContextSetFromExistingProcessingThread : UserExceptionInWorker(
+data class TaskAttemptContextSetFromExistingProcessingThread(val unused: String? = null) : UserExceptionInWorker(
     msg = "A same thread can not process multiple tasks concurrently",
     help = "Check that you do not use the same thread for multiple concurrent task processing"
 )
 
-class ExceptionDuringParametersDeserialization(
+data class ExceptionDuringParametersDeserialization(
     @JsonProperty("taskName") val taskName: String,
     @JsonProperty("methodName") val methodName: String,
     @JsonProperty("input") val input: List<SerializedData>,
@@ -216,7 +217,7 @@ class ExceptionDuringParametersDeserialization(
     help = ""
 )
 
-class CantUseJavaParameterTypesInMeta(
+data class CantUseJavaParameterTypesInMeta(
     @JsonProperty("reserved") val reserved: String
 ) : UserExceptionInWorker(
     msg = "\"$reserved\" is as reserved keyword, you can not use it in your meta data",
