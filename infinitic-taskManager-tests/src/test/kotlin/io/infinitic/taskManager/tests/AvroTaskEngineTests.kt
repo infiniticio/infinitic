@@ -166,6 +166,7 @@ class AvroTaskEngineTests : StringSpec({
             taskEngineHandle = { taskEngine.handle(it) }
             monitoringPerNameHandle = { avro ->
                 monitoringPerName.handle(avro)
+                // update test status
                 avro.taskStatusUpdated?.let { status = it.newStatus }
             }
             monitoringGlobalHandle = { monitoringGlobal.handle(it) }

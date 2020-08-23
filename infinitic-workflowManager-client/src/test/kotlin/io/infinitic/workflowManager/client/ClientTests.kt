@@ -1,6 +1,14 @@
 package io.infinitic.workflowManager.client
 
 import io.infinitic.common.data.interfaces.IdInterface
+import io.infinitic.taskManager.client.TaskDispatcher
+import io.infinitic.taskManager.common.data.TaskId
+import io.infinitic.taskManager.common.data.TaskInput
+import io.infinitic.taskManager.common.data.TaskMeta
+import io.infinitic.taskManager.common.data.TaskName
+import io.infinitic.taskManager.common.data.TaskOptions
+import io.infinitic.taskManager.common.messages.DispatchTask
+import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
@@ -17,22 +25,29 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTests : StringSpec({
-    val dispatcher = mockk<WorkflowDispatcher>()
-    val slot = slot<ForWorkflowEngineMessage>()
-    every { dispatcher.toWorkflowEngine(capture(slot)) } just Runs
+    val taskDispatcher = mockk<TaskDispatcher>()
+    val taskSlot = slot<ForTaskEngineMessage>()
+    every { taskDispatcher.toTaskEngine(capture(taskSlot)) } just Runs
+
+    val workflowDispatcher = mockk<WorkflowDispatcher>()
+    val workflowSlot = slot<ForWorkflowEngineMessage>()
+    every { workflowDispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
+
     val client = Client()
-    client.workflowDispatcher = dispatcher
+    client.taskDispatcher = taskDispatcher
+    client.workflowDispatcher = workflowDispatcher
 
     beforeTest {
-        slot.clear()
+        taskSlot.clear()
+        workflowSlot.clear()
     }
 
-    "Should be able to dispatch method without parameter" {
+    "Should be able to dispatch a workflow without parameter" {
         // when
         val workflow = client.dispatchWorkflow<FakeWorkflow> { m1() }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        workflowSlot.isCaptured shouldBe true
+        val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowInput = WorkflowInput(),
@@ -42,29 +57,29 @@ class ClientTests : StringSpec({
         )
     }
 
-    "Should be able to dispatch a method with a primitive as parameter" {
+    "Should be able to dispatch a workflow with a primitive as parameter" {
         // when
         val workflow = client.dispatchWorkflow<FakeWorkflow> {
             m1(0)
         }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        workflowSlot.isCaptured shouldBe true
+        val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowInput = WorkflowInput(0),
             workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(Int::class.java.name))
+            workflowMeta = WorkflowMeta().withParameterTypes(listOf(Integer::class.java.name))
         )
     }
 
-    "Should be able to dispatch a method with multiple definition" {
+    "Should be able to dispatch a workflow with multiple method definition" {
         // when
         val workflow = client.dispatchWorkflow<FakeWorkflow> { m1("a") }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        workflowSlot.isCaptured shouldBe true
+        val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowInput = WorkflowInput("a"),
@@ -74,12 +89,12 @@ class ClientTests : StringSpec({
         )
     }
 
-    "Should be able to dispatch a method with multiple parameters" {
+    "Should be able to dispatch a workflow with multiple parameters" {
         // when
         val workflow = client.dispatchWorkflow<FakeWorkflow> { m1(0, "a") }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        workflowSlot.isCaptured shouldBe true
+        val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowInput = WorkflowInput(0, "a"),
@@ -89,13 +104,13 @@ class ClientTests : StringSpec({
         )
     }
 
-    "Should be able to dispatch a method with an interface as parameter" {
+    "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val workflowId = WorkflowId()
         val workflow = client.dispatchWorkflow<FakeWorkflow> { m1(workflowId) }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        workflowSlot.isCaptured shouldBe true
+        val msg = workflowSlot.captured
 
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
@@ -106,9 +121,101 @@ class ClientTests : StringSpec({
         )
     }
 
-    // TODO: add tests for cancel method
+    "Should be able to dispatch a task without parameter" {
+        // when
+        val task = client.dispatchTask<FakeTask> { m1() }
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+        msg shouldBe DispatchTask(
+            taskId = task.taskId,
+            taskInput = TaskInput(),
+            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta().withParameterTypes(listOf())
+        )
+    }
 
-    // TODO: add tests for retry method
+    "Should be able to dispatch a task with a primitive as parameter" {
+        // when
+        val task = client.dispatchTask<FakeTask> {
+            m1(0)
+        }
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+        msg shouldBe DispatchTask(
+            taskId = task.taskId,
+            taskInput = TaskInput(0),
+            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta().withParameterTypes(listOf(Integer::class.java.name))
+        )
+    }
+
+    "Should be able to dispatch a task with null as parameter" {
+        // when
+        val task = client.dispatchTask<FakeTask> {
+            m1(null)
+        }
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+        msg shouldBe DispatchTask(
+            taskId = task.taskId,
+            taskInput = TaskInput(null),
+            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta().withParameterTypes(listOf(Integer::class.java.name))
+        )
+    }
+
+    "Should be able to dispatch a task with multiple definition" {
+        // when
+        val task = client.dispatchTask<FakeTask> { m1("a") }
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+        msg shouldBe DispatchTask(
+            taskId = task.taskId,
+            taskInput = TaskInput("a"),
+            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta().withParameterTypes(listOf(String::class.java.name))
+        )
+    }
+
+    "Should be able to dispatch a task with multiple parameters" {
+        // when
+        val task = client.dispatchTask<FakeTask> { m1(0, "a") }
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+        msg shouldBe DispatchTask(
+            taskId = task.taskId,
+            taskInput = TaskInput(0, "a"),
+            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta().withParameterTypes(listOf(Int::class.java.name, String::class.java.name))
+        )
+    }
+
+    "Should be able to dispatch a task with an interface as parameter" {
+        // when
+        val taskId = TaskId()
+        val task = client.dispatchTask<FakeTask> { m1(taskId) }
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+
+        msg shouldBe DispatchTask(
+            taskId = task.taskId,
+            taskInput = TaskInput(taskId),
+            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta().withParameterTypes(listOf(IdInterface::class.java.name))
+        )
+    }
 
     // TODO: add tests for options
 
@@ -117,9 +224,17 @@ class ClientTests : StringSpec({
     // TODO: add tests for error cases
 })
 
+private interface FakeTask {
+    fun m1()
+    fun m1(i: Int?): String
+    fun m1(str: String): Any?
+    fun m1(p1: Int, p2: String): String
+    fun m1(id: IdInterface): String
+}
+
 private interface FakeWorkflow {
     fun m1()
-    fun m1(i: Int): String
+    fun m1(i: Int?): String
     fun m1(str: String): Any?
     fun m1(p1: Int, p2: String): String
     fun m1(id: IdInterface): String
