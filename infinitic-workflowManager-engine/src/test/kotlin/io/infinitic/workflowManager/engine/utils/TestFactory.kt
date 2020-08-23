@@ -2,10 +2,10 @@ package io.infinitic.workflowManager.engine.utils
 
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.workflowManager.engine.avroConverter.AvroConverter
-import io.infinitic.workflowManager.engine.data.commands.CommandId
+import io.infinitic.workflowManager.common.avro.AvroConverter
+import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.data.steps.AvroStepCriterion
-import io.infinitic.workflowManager.engine.data.steps.StepCriterion
+import io.infinitic.workflowManager.common.data.steps.StepCriterion
 import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random

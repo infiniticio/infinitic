@@ -23,7 +23,7 @@ object Json {
         abstract fun getMessage(): String
     }
 
-    fun stringify(msg: Any, pretty: Boolean = false): String = if (pretty) {
+    fun stringify(msg: Any?, pretty: Boolean = false): String = if (pretty) {
         mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
     } else {
         mapper.writeValueAsString(msg)

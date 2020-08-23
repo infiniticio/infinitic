@@ -6,7 +6,7 @@ import java.lang.reflect.Method
 internal data class TaskCommand(
     val job: Any,
     val method: Method,
-    val input: Array<Any?>,
+    val input: Array<out Any?>,
     val options: TaskOptions
 ) {
     override fun equals(other: Any?): Boolean {

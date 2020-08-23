@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":infinitic-taskManager-common"))
     implementation(project(":infinitic-taskManager-engine"))
     implementation(project(":infinitic-taskManager-engine-pulsar"))
+    implementation(project(":infinitic-workflowManager-common"))
     implementation(project(":infinitic-workflowManager-engine"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")

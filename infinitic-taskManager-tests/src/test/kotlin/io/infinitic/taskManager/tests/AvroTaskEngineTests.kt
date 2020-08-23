@@ -141,7 +141,7 @@ class AvroTaskEngineTests : StringSpec({
     }
 }) {
     init {
-        client.setAvroDispatcher(dispatcher)
+        client.setDispatcher(dispatcher)
 
         taskEngine.apply {
             avroStorage = storage

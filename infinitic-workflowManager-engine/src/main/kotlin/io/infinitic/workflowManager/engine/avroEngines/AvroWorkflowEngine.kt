@@ -1,6 +1,6 @@
 package io.infinitic.workflowManager.engine.avroEngines
 
-import io.infinitic.workflowManager.engine.avroConverter.AvroConverter
+import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.engine.storages.WorkflowEngineStateStorage

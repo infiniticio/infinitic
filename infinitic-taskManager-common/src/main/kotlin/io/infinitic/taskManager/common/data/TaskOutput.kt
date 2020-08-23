@@ -3,8 +3,15 @@ package io.infinitic.taskManager.common.data
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.data.interfaces.OutputInterface
 
-data class TaskOutput
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val output: SerializedData) : OutputInterface
+data class TaskOutput(override val data: Any?) : Output(data) {
+    @get:JsonValue val json get() = getSerialized()
+
+    companion object {
+        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+        fun fromSerialized(serializedData: SerializedData) =
+            TaskOutput(serializedData.deserialize()).apply {
+                this.serializedData = serializedData
+            }
+    }
+}

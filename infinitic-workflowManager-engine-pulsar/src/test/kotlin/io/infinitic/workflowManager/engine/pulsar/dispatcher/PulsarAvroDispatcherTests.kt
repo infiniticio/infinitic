@@ -1,8 +1,8 @@
 package com.zenaton.workflowManager.engine.pulsar.dispatcher
 
-import io.infinitic.workflowManager.engine.avroConverter.AvroConverter
-import io.infinitic.workflowManager.engine.messages.ForWorkflowEngineMessage
-import io.infinitic.workflowManager.engine.messages.Message
+import io.infinitic.workflowManager.common.avro.AvroConverter
+import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
+import io.infinitic.workflowManager.common.messages.Message
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec

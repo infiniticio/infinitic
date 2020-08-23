@@ -1,15 +1,12 @@
 package io.infinitic.taskManager.worker
-import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptContext
 import io.infinitic.taskManager.common.data.TaskAttemptError
-import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.taskManager.common.exceptions.ClassNotFoundDuringTaskInstantiation
 import io.infinitic.taskManager.common.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.taskManager.common.exceptions.ErrorDuringTaskInstantiation
-import io.infinitic.taskManager.common.exceptions.ExceptionDuringParametersDeserialization
 import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.TaskAttemptContextRetrievedOutsideOfProcessingThread
 import io.infinitic.taskManager.common.exceptions.TaskAttemptContextSetFromExistingProcessingThread
@@ -185,12 +182,10 @@ open class Worker {
     private fun getRetryDelayAndFailTask(task: Any, msg: RunTask, parentJob: Job, contextKey: Long, context: TaskAttemptContext) {
         when (val delay = getDelayBeforeRetry(task, context)) {
             is RetryDelayRetrieved -> {
-                println("delay=$delay")
                 // returning the original cause
                 failTask(msg, context.exception, delay.value, parentJob, contextKey)
             }
             is RetryDelayFailed -> {
-                println("delay=$delay")
                 // returning the error in getRetryDelay, without retry
                 failTask(msg, delay.e, null, parentJob, contextKey)
             }
@@ -223,8 +218,8 @@ open class Worker {
         val (taskName, methodName) = getClassAndMethodNames(msg)
         val task = getTaskInstance(taskName)
         val parameterTypes = getMetaParameterTypes(msg)
-        val method = getMethod(task, methodName, msg.taskInput.input.size, parameterTypes)
-        val parameters = getParameters(task::class.java.name, methodName, msg.taskInput, parameterTypes ?: method.parameterTypes)
+        val method = getMethod(task, methodName, msg.taskInput.size, parameterTypes)
+        val parameters = msg.taskInput.data
 
         return TaskCommand(task, method, parameters, msg.taskOptions)
     }
@@ -252,7 +247,7 @@ open class Worker {
         }
     }
 
-    private fun getMetaParameterTypes(msg: RunTask) = msg.taskMeta.getParameterTypes()
+    private fun getMetaParameterTypes(msg: RunTask) = msg.taskMeta.parameterTypes
         ?.map { getClass(it) }
         ?.toTypedArray()
 
@@ -288,17 +283,6 @@ open class Worker {
         if (methods.size > 1) throw TooManyMethodsFoundWithParameterCount(task::class.java.name, methodName, parameterCount)
 
         return methods[0]
-    }
-
-    private fun getParameters(taskName: String, methodName: String, input: TaskInput, parameterTypes: Array<Class<*>>): Array<Any?> {
-        return try {
-            input.input.mapIndexed {
-                index, serializedData ->
-                serializedData.deserialize(parameterTypes[index])
-            }.toTypedArray()
-        } catch (e: Exception) {
-            throw ExceptionDuringParametersDeserialization(taskName, methodName, input.input, parameterTypes.map { it.name })
-        }
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
@@ -352,7 +336,7 @@ open class Worker {
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
             taskAttemptIndex = msg.taskAttemptIndex,
-            taskOutput = TaskOutput(SerializedData.from(output))
+            taskOutput = TaskOutput(output)
         )
 
         dispatcher.toTaskEngine(taskAttemptCompleted)

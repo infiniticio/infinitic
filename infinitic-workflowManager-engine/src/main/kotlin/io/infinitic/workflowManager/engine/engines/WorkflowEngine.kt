@@ -6,34 +6,34 @@ import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
-import io.infinitic.workflowManager.engine.avroConverter.AvroConverter
-import io.infinitic.workflowManager.engine.data.decisions.DecisionId
-import io.infinitic.workflowManager.engine.data.decisions.DecisionInput
-import io.infinitic.workflowManager.engine.data.branches.Branch
-import io.infinitic.workflowManager.engine.data.branches.BranchName
-import io.infinitic.workflowManager.engine.data.properties.PropertyStore
-import io.infinitic.workflowManager.engine.states.WorkflowEngineState
+import io.infinitic.workflowManager.common.data.decisions.DecisionId
+import io.infinitic.workflowManager.common.data.decisions.DecisionInput
+import io.infinitic.workflowManager.common.data.branches.Branch
+import io.infinitic.workflowManager.common.data.branches.BranchInput
+import io.infinitic.workflowManager.common.data.branches.BranchName
+import io.infinitic.workflowManager.common.data.properties.PropertyStore
+import io.infinitic.workflowManager.common.states.WorkflowEngineState
 import io.infinitic.workflowManager.engine.storages.WorkflowEngineStateStorage
 import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
-import io.infinitic.workflowManager.engine.messages.CancelWorkflow
-import io.infinitic.workflowManager.engine.messages.ChildWorkflowCanceled
-import io.infinitic.workflowManager.engine.messages.ChildWorkflowCompleted
-import io.infinitic.workflowManager.engine.messages.DecisionCompleted
-import io.infinitic.workflowManager.engine.messages.DecisionDispatched
-import io.infinitic.workflowManager.engine.messages.DelayCompleted
-import io.infinitic.workflowManager.engine.messages.DispatchWorkflow
-import io.infinitic.workflowManager.engine.messages.EventReceived
-import io.infinitic.workflowManager.engine.messages.ForWorkflowEngineMessage
-import io.infinitic.workflowManager.engine.messages.TaskCanceled
-import io.infinitic.workflowManager.engine.messages.TaskCompleted
-import io.infinitic.workflowManager.engine.messages.TaskDispatched
-import io.infinitic.workflowManager.engine.messages.WorkflowCanceled
-import io.infinitic.workflowManager.engine.messages.WorkflowCompleted
+import io.infinitic.workflowManager.common.messages.CancelWorkflow
+import io.infinitic.workflowManager.common.messages.ChildWorkflowCanceled
+import io.infinitic.workflowManager.common.messages.ChildWorkflowCompleted
+import io.infinitic.workflowManager.common.messages.DecisionCompleted
+import io.infinitic.workflowManager.common.messages.DecisionDispatched
+import io.infinitic.workflowManager.common.messages.DelayCompleted
+import io.infinitic.workflowManager.common.messages.DispatchWorkflow
+import io.infinitic.workflowManager.common.messages.EventReceived
+import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
+import io.infinitic.workflowManager.common.messages.TaskCanceled
+import io.infinitic.workflowManager.common.messages.TaskCompleted
+import io.infinitic.workflowManager.common.messages.TaskDispatched
+import io.infinitic.workflowManager.common.messages.WorkflowCanceled
+import io.infinitic.workflowManager.common.messages.WorkflowCompleted
 import org.slf4j.Logger
 
 class WorkflowEngine {
     companion object {
-        const val META_WORKFLOW_ID = "workflowID"
+        const val META_WORKFLOW_ID = "workflowId"
     }
 
     lateinit var logger: Logger
@@ -47,6 +47,7 @@ class WorkflowEngine {
             is TaskDispatched -> return
             is WorkflowCanceled -> return
             is WorkflowCompleted -> return
+            else -> Unit
         }
 
         // get associated state
@@ -104,7 +105,7 @@ class WorkflowEngine {
         // define branch
         val branch = Branch(
             branchName = BranchName("handle"),
-            branchInput = msg.workflowInput
+            branchInput = BranchInput(msg.workflowInput.data)
         )
         // initialize state
         state.ongoingDecisionId = decisionId
@@ -119,13 +120,9 @@ class WorkflowEngine {
             DispatchTask(
                 taskId = TaskId(decisionId.id),
                 taskName = TaskName(msg.workflowName.name),
-                taskInput = TaskInput.builder()
-                    .add(AvroConverter.toAvroDecisionInput(decisionInput))
-                    .build(),
+                taskInput = TaskInput(decisionInput),
                 taskOptions = TaskOptions(),
-                taskMeta = TaskMeta.builder()
-                    .add(META_WORKFLOW_ID, msg.workflowId.id)
-                    .build()
+                taskMeta = TaskMeta().with(META_WORKFLOW_ID, msg.workflowId.id)
             )
         )
         // log event

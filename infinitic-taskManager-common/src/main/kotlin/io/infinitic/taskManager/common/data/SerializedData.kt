@@ -65,7 +65,6 @@ data class SerializedData(
         else -> throw Exception("Can't deserialize data with CUSTOM serialization")
     }
 
-//    inline fun <reified T>  deserialize(): T = deserialize(T::class.java) as T
     /**
      * @return deserialized value
      */

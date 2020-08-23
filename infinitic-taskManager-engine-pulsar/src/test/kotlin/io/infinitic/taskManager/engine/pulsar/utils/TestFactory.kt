@@ -1,5 +1,7 @@
 package io.infinitic.taskManager.engine.pulsar.utils
 
+import io.infinitic.taskManager.common.data.TaskInput
+import io.kotest.properties.nextPrintableString
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
@@ -28,6 +30,12 @@ object TestFactory {
         val parameters = EasyRandomParameters()
             .seed(seed)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
+            .randomize(TaskInput::class.java) {
+                TaskInput(
+                    Random(seed).nextBytes(10),
+                    Random(seed).nextPrintableString(10)
+                )
+            }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })

@@ -2,8 +2,11 @@ package io.infinitic.taskManager.common.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.data.interfaces.NameInterface
+import java.lang.reflect.Method
 
 data class TaskName
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val name: String) : NameInterface
+@JsonCreator constructor(@get:JsonValue override val name: String) : Name(name) {
+    companion object {
+        fun from(method: Method) = TaskName(Name.fromMethod(method))
+    }
+}

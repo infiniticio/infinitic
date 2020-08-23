@@ -3,29 +3,13 @@ package io.infinitic.taskManager.common.data
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.data.interfaces.MetaInterface
 
-data class TaskMeta
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val meta: MutableMap<String, SerializedData> = mutableMapOf()) : MetaInterface {
+data class TaskMeta(override val data: MutableMap<String, Any?> = mutableMapOf()) : Meta(data), MutableMap<String, Any?> by data {
+    @get:JsonValue val json get() = getSerialized()
+
     companion object {
-        const val META_PARAMETER_TYPES = "javaParameterTypes"
-
-        fun builder() = TaskMetaBuilder()
-    }
-
-    fun setParameterTypes(types: List<String>?, override: Boolean = false): TaskMeta {
-        if (override || !meta.containsKey(META_PARAMETER_TYPES)) {
-            types?.let {
-                meta[META_PARAMETER_TYPES] = SerializedData.from(types)
-            }
-        }
-
-        return this
-    }
-
-    fun getParameterTypes() = meta[META_PARAMETER_TYPES]?.let {
-        @Suppress("UNCHECKED_CAST")
-        it.deserialize(List::class.java) as List<String>
+        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+        fun fromSerialized(serialized: Map<String, SerializedData>) =
+            TaskMeta(deserialize(serialized)).apply { serializedData = serialized }
     }
 }
