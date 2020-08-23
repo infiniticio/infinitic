@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 
 abstract class Name(open val name: String) {
     companion object {
-        fun from(method: Method) = "${method.declaringClass.name}${Constants.METHOD_DIVIDER}${method.name}"
+        fun fromMethod(method: Method) = "${method.declaringClass.name}${Constants.METHOD_DIVIDER}${method.name}"
     }
 
     override fun toString() = name

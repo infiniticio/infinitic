@@ -1,24 +1,32 @@
 package io.infinitic.taskManager.common.data
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.exceptions.CantUseJavaParameterTypesInMeta
+import io.infinitic.taskManager.common.exceptions.CanNotUseJavaParameterTypesInMeta
 import java.lang.reflect.Method
 
-abstract class Meta(open val meta: MutableMap<String, SerializedData> = mutableMapOf()) {
+abstract class Meta(open val data: MutableMap<String, Any?> = mutableMapOf()) {
+    lateinit var serializedData: Map<String, SerializedData>
+
+    @Suppress("UNCHECKED_CAST")
+    val parameterTypes get() = data[META_PARAMETER_TYPES] as List<String>?
+
     companion object {
         const val META_PARAMETER_TYPES = "javaParameterTypes"
+
+        fun deserialize(serialized: Map<String, SerializedData>) =
+            serialized.mapValues { it.value.deserialize() } as MutableMap<String, Any?>
     }
 
-    val parameterTypes: List<String>?
-        get() = meta[META_PARAMETER_TYPES]?.let {
-            @Suppress("UNCHECKED_CAST")
-            it.deserialize(List::class.java) as List<String>?
-        }
+    fun getSerialized() = when {
+        this::serializedData.isInitialized -> serializedData
+        else -> data.mapValues { SerializedData.from(it.value) }
+    }
 
     fun <T : Meta> with(key: String, data: Any?): T {
-        if (key == META_PARAMETER_TYPES) throw CantUseJavaParameterTypesInMeta(META_PARAMETER_TYPES)
+        if (key == META_PARAMETER_TYPES) throw CanNotUseJavaParameterTypesInMeta(META_PARAMETER_TYPES)
 
-        meta[key] = SerializedData.from(data)
+        this.data[key] = data
 
         @Suppress("UNCHECKED_CAST")
         return this as T
@@ -28,8 +36,8 @@ abstract class Meta(open val meta: MutableMap<String, SerializedData> = mutableM
 
     fun <T : Meta> withParameterTypes(p: List<String>?): T {
         if (p != null) {
-            if (meta.containsKey(META_PARAMETER_TYPES)) throw CantUseJavaParameterTypesInMeta(META_PARAMETER_TYPES)
-            meta[META_PARAMETER_TYPES] = SerializedData.from(p)
+            if (data.containsKey(META_PARAMETER_TYPES)) throw CanNotUseJavaParameterTypesInMeta(META_PARAMETER_TYPES)
+            data[META_PARAMETER_TYPES] = p
         }
 
         @Suppress("UNCHECKED_CAST")

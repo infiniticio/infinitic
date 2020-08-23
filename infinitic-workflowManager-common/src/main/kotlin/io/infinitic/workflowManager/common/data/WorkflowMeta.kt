@@ -7,4 +7,4 @@ import io.infinitic.taskManager.common.data.Meta
 
 data class WorkflowMeta
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val meta: MutableMap<String, SerializedData> = mutableMapOf()) : Meta(meta)
+constructor(@get:JsonValue override val data: MutableMap<String, SerializedData> = mutableMapOf()) : Meta(data)

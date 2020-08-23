@@ -1,5 +1,4 @@
 package io.infinitic.taskManager.worker
-import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptContext

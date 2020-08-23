@@ -4,8 +4,9 @@ import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
 import io.infinitic.taskManager.common.data.TaskAttemptError
 import io.infinitic.taskManager.common.data.TaskInput
+import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.taskManager.common.exceptions.CantUseJavaParameterTypesInMeta
+import io.infinitic.taskManager.common.exceptions.CanNotUseJavaParameterTypesInMeta
 import io.infinitic.taskManager.common.exceptions.MultipleMethodCallsAtDispatch
 import io.infinitic.taskManager.data.AvroSerializedData
 import io.infinitic.taskManager.data.AvroSerializedDataType
@@ -65,7 +66,10 @@ object TestFactory {
                 )
             }
             .randomize(TaskAttemptError::class.java) {
-                TaskAttemptError(CantUseJavaParameterTypesInMeta("foo"))
+                TaskAttemptError(CanNotUseJavaParameterTypesInMeta("foo"))
+            }
+            .randomize(TaskMeta::class.java) {
+                TaskMeta(mutableMapOf("foo" to "bar"))
             }
 
         values?.forEach {

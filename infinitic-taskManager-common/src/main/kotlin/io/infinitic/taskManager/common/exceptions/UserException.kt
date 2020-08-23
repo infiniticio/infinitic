@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
 import io.infinitic.taskManager.common.Constants
-import io.infinitic.taskManager.common.data.Input
 import io.infinitic.taskManager.common.data.TaskOptions
 
 /*
@@ -217,7 +216,7 @@ data class ExceptionDuringParametersDeserialization(
     help = ""
 )
 
-data class CantUseJavaParameterTypesInMeta(
+data class CanNotUseJavaParameterTypesInMeta(
     @JsonProperty("reserved") val reserved: String
 ) : UserExceptionInWorker(
     msg = "\"$reserved\" is as reserved keyword, you can not use it in your meta data",

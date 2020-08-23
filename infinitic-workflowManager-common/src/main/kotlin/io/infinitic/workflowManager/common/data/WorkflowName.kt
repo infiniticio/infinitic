@@ -9,6 +9,6 @@ data class WorkflowName
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
 constructor(@get:JsonValue override val name: String) : Name(name) {
     companion object {
-        fun from(method: Method) = WorkflowName(Name.from(method))
+        fun from(method: Method) = WorkflowName(Name.fromMethod(method))
     }
 }

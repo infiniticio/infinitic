@@ -11,7 +11,7 @@ class TaskInput(override vararg val data: Any?) : Input(data), Collection<Any?> 
     companion object {
         @JvmStatic @JsonCreator
         fun fromSerialized(serialized: List<SerializedData>) =
-            TaskInput(*(serialized.map { it.deserialize() }.toTypedArray())).apply { serializedData = serialized }
+            TaskInput(*deserialize(serialized)).apply { serializedData = serialized }
 
         fun from(method: Method, data: Array<out Any>) =
             TaskInput(*data).apply { serializedData = getSerialized(method) }

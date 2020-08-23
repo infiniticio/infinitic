@@ -7,8 +7,13 @@ import io.infinitic.taskManager.common.exceptions.ErrorDuringJsonSerializationOf
 import io.infinitic.taskManager.common.exceptions.InconsistentJsonSerializationOfParameter
 import java.lang.reflect.Method
 
-abstract class Input(open vararg val data: Any?)  {
+abstract class Input(open vararg val data: Any?) {
     lateinit var serializedData: List<SerializedData>
+
+    companion object {
+        fun deserialize(serialized: List<SerializedData>) =
+            serialized.map { it.deserialize() }.toTypedArray()
+    }
 
     fun getSerialized(method: Method? = null) = when {
         this::serializedData.isInitialized -> serializedData

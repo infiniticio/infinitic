@@ -2,7 +2,6 @@
 
 package io.infinitic.taskManager.worker
 
-import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.TaskAttemptContext
 import io.infinitic.taskManager.common.data.TaskAttemptId
 import io.infinitic.taskManager.common.data.TaskAttemptIndex

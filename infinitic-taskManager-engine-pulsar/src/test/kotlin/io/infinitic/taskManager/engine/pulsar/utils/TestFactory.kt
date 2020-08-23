@@ -1,9 +1,6 @@
 package io.infinitic.taskManager.engine.pulsar.utils
 
-import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.TaskInput
-import io.infinitic.taskManager.data.AvroSerializedData
-import io.infinitic.taskManager.data.AvroSerializedDataType
 import io.kotest.properties.nextPrintableString
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters

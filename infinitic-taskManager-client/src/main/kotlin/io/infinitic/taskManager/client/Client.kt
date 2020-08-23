@@ -1,6 +1,5 @@
 package io.infinitic.taskManager.client
 
-import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.Task
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
