@@ -4,9 +4,9 @@ import io.infinitic.common.data.DateTime
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.workflowManager.common.data.DelayId
-import io.infinitic.workflowManager.common.data.EventData
-import io.infinitic.workflowManager.common.data.EventName
-import io.infinitic.workflowManager.common.data.WorkflowId
+import io.infinitic.workflowManager.common.data.events.EventData
+import io.infinitic.workflowManager.common.data.events.EventName
+import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.commands.Command
 import io.infinitic.workflowManager.data.commands.CommandStatus
 import io.infinitic.workflowManager.common.data.commands.DispatchChildWorkflow

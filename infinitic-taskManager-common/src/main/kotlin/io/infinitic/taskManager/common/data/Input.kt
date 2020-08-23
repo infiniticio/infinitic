@@ -56,15 +56,18 @@ abstract class Input(open vararg val data: Any?) {
         return data
     }
 
+    override fun hashCode(): Int {
+        return data.contentHashCode()
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
+
         other as Input
 
-        return data.contentDeepEquals((other as Input).data)
-    }
+        if (!data.contentDeepEquals(other.data)) return false
 
-    override fun hashCode(): Int {
-        return data.contentHashCode()
+        return true
     }
 }

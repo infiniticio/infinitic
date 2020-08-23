@@ -1,6 +1,5 @@
 package io.infinitic.taskManager.common.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.exceptions.CanNotUseJavaParameterTypesInMeta
 import java.lang.reflect.Method

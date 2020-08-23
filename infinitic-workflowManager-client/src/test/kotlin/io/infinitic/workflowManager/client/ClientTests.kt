@@ -1,12 +1,11 @@
 package io.infinitic.workflowManager.client
 
-import io.infinitic.common.data.SerializedData
 import io.infinitic.common.data.interfaces.IdInterface
-import io.infinitic.workflowManager.common.data.WorkflowId
-import io.infinitic.workflowManager.common.data.WorkflowInput
-import io.infinitic.workflowManager.common.data.WorkflowMeta
-import io.infinitic.workflowManager.common.data.WorkflowName
-import io.infinitic.workflowManager.common.data.WorkflowOptions
+import io.infinitic.workflowManager.common.data.workflows.WorkflowId
+import io.infinitic.workflowManager.common.data.workflows.WorkflowInput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
+import io.infinitic.workflowManager.common.data.workflows.WorkflowName
+import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
 import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
@@ -36,7 +35,7 @@ class ClientTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(listOf()),
+            workflowInput = WorkflowInput(),
             workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta().withParameterTypes(listOf())
@@ -53,7 +52,7 @@ class ClientTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(listOf(SerializedData.from(0))),
+            workflowInput = WorkflowInput(0),
             workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta().withParameterTypes(listOf(Int::class.java.name))
@@ -68,7 +67,7 @@ class ClientTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(listOf(SerializedData.from("a"))),
+            workflowInput = WorkflowInput("a"),
             workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta().withParameterTypes(listOf(String::class.java.name))
@@ -83,7 +82,7 @@ class ClientTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(listOf(SerializedData.from(0), SerializedData.from("a"))),
+            workflowInput = WorkflowInput(0, "a"),
             workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta().withParameterTypes(listOf(Int::class.java.name, String::class.java.name))
@@ -100,7 +99,7 @@ class ClientTests : StringSpec({
 
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(listOf(SerializedData.from(workflowId))),
+            workflowInput = WorkflowInput(workflowId),
             workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta().withParameterTypes(listOf(IdInterface::class.java.name))

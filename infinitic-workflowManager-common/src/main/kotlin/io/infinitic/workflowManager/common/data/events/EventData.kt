@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.common.data
+package io.infinitic.workflowManager.common.data.events
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue

@@ -2,7 +2,7 @@ package io.infinitic.workflowManager.common.states
 
 import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.common.data.decisions.DecisionId
-import io.infinitic.workflowManager.common.data.WorkflowId
+import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.branches.Branch
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyStore

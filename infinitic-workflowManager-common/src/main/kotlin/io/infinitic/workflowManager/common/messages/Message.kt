@@ -7,13 +7,13 @@ import io.infinitic.workflowManager.common.data.decisions.DecisionId
 import io.infinitic.workflowManager.common.data.decisions.DecisionInput
 import io.infinitic.workflowManager.common.data.decisions.DecisionOutput
 import io.infinitic.workflowManager.common.data.DelayId
-import io.infinitic.workflowManager.common.data.EventData
-import io.infinitic.workflowManager.common.data.EventName
-import io.infinitic.workflowManager.common.data.WorkflowId
-import io.infinitic.workflowManager.common.data.WorkflowInput
-import io.infinitic.workflowManager.common.data.WorkflowMeta
-import io.infinitic.workflowManager.common.data.WorkflowName
-import io.infinitic.workflowManager.common.data.WorkflowOptions
+import io.infinitic.workflowManager.common.data.events.EventData
+import io.infinitic.workflowManager.common.data.events.EventName
+import io.infinitic.workflowManager.common.data.workflows.WorkflowId
+import io.infinitic.workflowManager.common.data.workflows.WorkflowInput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
+import io.infinitic.workflowManager.common.data.workflows.WorkflowName
+import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.data.branches.BranchOutput
 
 sealed class Message

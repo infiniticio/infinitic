@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.common.data
+package io.infinitic.workflowManager.common.data.workflows
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
@@ -9,6 +9,6 @@ data class WorkflowName
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
 constructor(@get:JsonValue override val name: String) : Name(name) {
     companion object {
-        fun from(method: Method) = WorkflowName(Name.fromMethod(method))
+        fun from(method: Method) = WorkflowName(fromMethod(method))
     }
 }

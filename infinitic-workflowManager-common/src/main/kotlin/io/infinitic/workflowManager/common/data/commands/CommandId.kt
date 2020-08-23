@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.interfaces.IdInterface
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.workflowManager.common.data.DelayId
-import io.infinitic.workflowManager.common.data.EventId
-import io.infinitic.workflowManager.common.data.WorkflowId
+import io.infinitic.workflowManager.common.data.events.EventId
+import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 
 data class CommandId
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

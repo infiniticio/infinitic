@@ -1,20 +1,17 @@
 package io.infinitic.workflowManager.common.avro
 
 import io.infinitic.common.data.DateTime
-import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
-import io.infinitic.taskManager.data.AvroSerializedData
 import io.infinitic.workflowManager.common.data.decisions.DecisionId
 import io.infinitic.workflowManager.common.data.decisions.DecisionInput
 // import io.infinitic.workflowManager.common.data.decisions.DecisionOutput
-import io.infinitic.workflowManager.common.data.WorkflowId
-import io.infinitic.workflowManager.common.data.WorkflowName
+import io.infinitic.workflowManager.common.data.workflows.WorkflowId
+import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.commands.Command
 import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.data.branches.AvroBranch
 import io.infinitic.workflowManager.common.data.branches.Branch
 import io.infinitic.workflowManager.common.data.branches.BranchId
-import io.infinitic.workflowManager.common.data.branches.BranchInput
 import io.infinitic.workflowManager.common.data.branches.BranchName
 import io.infinitic.workflowManager.data.commands.AvroCommand
 import io.infinitic.workflowManager.data.decisions.AvroDecisionInput
@@ -354,7 +351,7 @@ object AvroConverter {
     fun toAvroBranch(obj: Branch): AvroBranch = AvroBranch.newBuilder().apply {
         branchId = obj.branchId.id
         branchName = obj.branchName.name
-        branchInput = obj.branchInput.input.map { convertJson<AvroSerializedData>(it) }
+        branchInput = convertJson(obj.branchInput)
         propertiesAtStart = toAvroProperties(obj.propertiesAtStart)
         dispatchedAt = convertJson(obj.dispatchedAt)
         steps = obj.steps.map { toAvroStep(it) }
@@ -364,7 +361,7 @@ object AvroConverter {
     fun fromAvroBranch(avro: AvroBranch) = Branch(
         branchId = BranchId(avro.branchId),
         branchName = BranchName(avro.branchName),
-        branchInput = BranchInput(avro.branchInput.map { convertJson<SerializedData>(it) }),
+        branchInput = convertJson(avro.branchInput),
         propertiesAtStart = fromAvroProperties(avro.propertiesAtStart),
         dispatchedAt = DateTime(avro.dispatchedAt),
         steps = avro.steps.map { fromAvroStep(it) },
@@ -386,5 +383,5 @@ object AvroConverter {
     /**
      *  Mapping function by Json serialization/deserialization
      */
-    inline fun <reified T : Any> convertJson(from: Any): T = Json.parse(Json.stringify(from))
+    inline fun <reified T : Any> convertJson(from: Any?): T = Json.parse(Json.stringify(from))
 }

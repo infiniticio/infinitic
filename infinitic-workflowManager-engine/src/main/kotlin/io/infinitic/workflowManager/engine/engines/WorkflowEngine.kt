@@ -6,7 +6,6 @@ import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
-import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.common.data.decisions.DecisionId
 import io.infinitic.workflowManager.common.data.decisions.DecisionInput
 import io.infinitic.workflowManager.common.data.branches.Branch
@@ -34,7 +33,7 @@ import org.slf4j.Logger
 
 class WorkflowEngine {
     companion object {
-        const val META_WORKFLOW_ID = "workflowID"
+        const val META_WORKFLOW_ID = "workflowId"
     }
 
     lateinit var logger: Logger
@@ -48,6 +47,7 @@ class WorkflowEngine {
             is TaskDispatched -> return
             is WorkflowCanceled -> return
             is WorkflowCompleted -> return
+            else -> Unit
         }
 
         // get associated state
@@ -105,7 +105,7 @@ class WorkflowEngine {
         // define branch
         val branch = Branch(
             branchName = BranchName("handle"),
-            branchInput = BranchInput(msg.workflowInput.input)
+            branchInput = BranchInput(msg.workflowInput.data)
         )
         // initialize state
         state.ongoingDecisionId = decisionId
@@ -120,9 +120,7 @@ class WorkflowEngine {
             DispatchTask(
                 taskId = TaskId(decisionId.id),
                 taskName = TaskName(msg.workflowName.name),
-                taskInput = TaskInput.builder()
-                    .add(AvroConverter.toAvroDecisionInput(decisionInput))
-                    .build(),
+                taskInput = TaskInput(decisionInput),
                 taskOptions = TaskOptions(),
                 taskMeta = TaskMeta().with(META_WORKFLOW_ID, msg.workflowId.id)
             )

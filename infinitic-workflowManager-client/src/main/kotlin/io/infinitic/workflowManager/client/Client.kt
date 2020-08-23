@@ -3,11 +3,11 @@ package io.infinitic.workflowManager.client
 import io.infinitic.taskManager.client.ProxyHandler
 import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
 import io.infinitic.workflowManager.common.data.Workflow
-import io.infinitic.workflowManager.common.data.WorkflowId
-import io.infinitic.workflowManager.common.data.WorkflowInput
-import io.infinitic.workflowManager.common.data.WorkflowMeta
-import io.infinitic.workflowManager.common.data.WorkflowName
-import io.infinitic.workflowManager.common.data.WorkflowOptions
+import io.infinitic.workflowManager.common.data.workflows.WorkflowId
+import io.infinitic.workflowManager.common.data.workflows.WorkflowInput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
+import io.infinitic.workflowManager.common.data.workflows.WorkflowName
+import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
 import java.lang.reflect.Proxy
 import io.infinitic.taskManager.client.Client as TaskClient
