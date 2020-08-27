@@ -20,7 +20,6 @@ import io.infinitic.taskManager.common.exceptions.NoMethodFoundWithParameterCoun
 import io.infinitic.taskManager.common.exceptions.NoMethodFoundWithParameterTypes
 import io.infinitic.taskManager.common.exceptions.ProcessingTimeout
 import io.infinitic.taskManager.common.exceptions.RetryDelayHasWrongReturnType
-import io.infinitic.taskManager.common.exceptions.TaskAttemptContextRetrievedOutsideOfProcessingThread
 import io.infinitic.taskManager.common.exceptions.TooManyMethodsFoundWithParameterCount
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.taskManager.common.messages.RunTask
@@ -32,12 +31,8 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class WorkerTests : StringSpec({
@@ -128,7 +123,7 @@ class WorkerTests : StringSpec({
         // when
         Worker.register("blabla", TestWithoutRetry())
         launch { worker.runTask(msg) }.join()
-       // then
+        // then
         slots.size shouldBe 2
 
         slots[0] shouldBe getTaskAttemptStarted(msg)

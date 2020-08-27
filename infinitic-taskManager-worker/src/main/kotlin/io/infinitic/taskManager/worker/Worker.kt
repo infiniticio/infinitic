@@ -4,12 +4,6 @@ import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptContext
 import io.infinitic.taskManager.common.data.TaskAttemptError
-import io.infinitic.taskManager.common.data.TaskAttemptId
-import io.infinitic.taskManager.common.data.TaskAttemptIndex
-import io.infinitic.taskManager.common.data.TaskAttemptRetry
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskMeta
-import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.taskManager.common.exceptions.ClassNotFoundDuringTaskInstantiation
 import io.infinitic.taskManager.common.exceptions.ErrorDuringTaskInstantiation
@@ -25,9 +19,7 @@ import io.infinitic.taskManager.common.messages.TaskAttemptCompleted
 import io.infinitic.taskManager.common.messages.TaskAttemptFailed
 import io.infinitic.taskManager.common.messages.TaskAttemptStarted
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive

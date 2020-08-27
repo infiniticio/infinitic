@@ -19,6 +19,7 @@ import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -27,7 +28,7 @@ import io.mockk.slot
 class ClientTests : StringSpec({
     val taskDispatcher = mockk<TaskDispatcher>()
     val taskSlot = slot<ForTaskEngineMessage>()
-    every { taskDispatcher.toTaskEngine(capture(taskSlot)) } just Runs
+    coEvery { taskDispatcher.toTaskEngine(capture(taskSlot)) } just Runs
 
     val workflowDispatcher = mockk<WorkflowDispatcher>()
     val workflowSlot = slot<ForWorkflowEngineMessage>()
