@@ -11,7 +11,7 @@ import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
-import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
@@ -19,7 +19,7 @@ import io.mockk.slot
 class ClientTests : StringSpec({
     val dispatcher = mockk<TaskDispatcher>()
     val slot = slot<ForTaskEngineMessage>()
-    every { dispatcher.toTaskEngine(capture(slot)) } just Runs
+    coEvery { dispatcher.toTaskEngine(capture(slot)) } just Runs
     val client = Client()
     client.taskDispatcher = dispatcher
 

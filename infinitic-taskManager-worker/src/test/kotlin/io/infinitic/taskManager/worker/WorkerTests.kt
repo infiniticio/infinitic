@@ -31,15 +31,19 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 class WorkerTests : StringSpec({
     val dispatcher = mockk<Dispatcher>()
     val slots = mutableListOf<ForTaskEngineMessage>()
-    every { dispatcher.toTaskEngine(capture(slots)) } just Runs
+    coEvery { dispatcher.toTaskEngine(capture(slots)) } just Runs
     val worker = Worker()
     worker.dispatcher = dispatcher
 
@@ -54,9 +58,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask(TestWithoutRetry::class.java.name, input, types)
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
 
@@ -77,10 +79,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("${TestWithoutRetryAndExplicitMethod::class.java.name}::run", input, types)
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
 
@@ -100,10 +99,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("${TestWithoutRetryAndExplicitMethod::class.java.name}::run", input, null)
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
 
@@ -131,11 +127,8 @@ class WorkerTests : StringSpec({
         val msg = getRunTask("blabla", input, types)
         // when
         Worker.register("blabla", TestWithoutRetry())
-
-        coroutineScope {
-            worker.handle(msg)
-        }
-        // then
+        launch { worker.runTask(msg) }.join()
+       // then
         slots.size shouldBe 2
 
         slots[0] shouldBe getTaskAttemptStarted(msg)
@@ -154,17 +147,11 @@ class WorkerTests : StringSpec({
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask("blabla::m1::m2", input, types)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -180,14 +167,9 @@ class WorkerTests : StringSpec({
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask("blabla", input, types)
-
         // when
         Worker.unregister("blabla")
-
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
 
@@ -208,17 +190,11 @@ class WorkerTests : StringSpec({
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask(TestWithConstructor::class.java.name, input, types)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -234,17 +210,11 @@ class WorkerTests : StringSpec({
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask("${TestWithoutRetry::class.java.name}::unknown", input, types)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -259,17 +229,11 @@ class WorkerTests : StringSpec({
         val input = arrayOf(2, "3")
         // with
         val msg = getRunTask("${TestWithoutRetry::class.java.name}::unknown", input, null)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -284,17 +248,11 @@ class WorkerTests : StringSpec({
         val input = arrayOf(2, "3")
         // with
         val msg = getRunTask("${TestWithoutRetry::class.java.name}::handle", input, null)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -309,17 +267,11 @@ class WorkerTests : StringSpec({
         val input = arrayOf(2, "3")
         // with
         val msg = getRunTask(TestWithRetry::class.java.name, input, null)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -334,17 +286,11 @@ class WorkerTests : StringSpec({
         val input = arrayOf(2, "3")
         // with
         val msg = getRunTask(TestWithBadRetryType::class.java.name, input, null)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -359,17 +305,11 @@ class WorkerTests : StringSpec({
         val input = arrayOf(2, "3")
         // with
         val msg = getRunTask(TestWithBuggyRetry::class.java.name, input, null)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -384,17 +324,11 @@ class WorkerTests : StringSpec({
         val input = arrayOf(2, "3")
         // with
         val msg = getRunTask(TestWithContext::class.java.name, input, null)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         slots[1] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
@@ -404,28 +338,16 @@ class WorkerTests : StringSpec({
         )
     }
 
-    "Should throw when Worker.getContext() called outside of a processing thread " {
-        shouldThrow<TaskAttemptContextRetrievedOutsideOfProcessingThread> {
-            Worker.context
-        }
-    }
-
     "Should throw ProcessingTimeout if processing time is too long" {
         val input = arrayOf(2, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
         val msg = getRunTask(TestWithTimeout::class.java.name, input, types)
-
         // when
-        coroutineScope {
-            worker.handle(msg)
-        }
-
+        launch { worker.runTask(msg) }.join()
         // then
         slots.size shouldBe 2
-
         slots[0] shouldBe getTaskAttemptStarted(msg)
-
         (slots[1] is TaskAttemptFailed) shouldBe true
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
@@ -466,14 +388,18 @@ internal class TestWithConstructor(val value: String) {
 }
 
 internal class TestWithContext() {
-    fun handle(i: Int, j: String) = (i * j.toInt() * Worker.context.taskAttemptIndex.int).toString()
+    lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String) = (i * j.toInt() * context.taskAttemptIndex.int).toString()
 }
 
 internal class TestWithTimeout() {
+    lateinit var context: TaskAttemptContext
+
     fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
-        return (i * j.toInt() * Worker.context.taskAttemptIndex.int).toString()
+        return (i * j.toInt() * context.taskAttemptIndex.int).toString()
     }
 }
 

@@ -13,7 +13,6 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.8")
 
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-taskManager-common"))
