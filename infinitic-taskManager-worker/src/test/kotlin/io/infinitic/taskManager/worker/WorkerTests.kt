@@ -364,18 +364,22 @@ internal class TestWithoutRetryAndExplicitMethod {
 }
 
 internal class TestWithRetry {
+    lateinit var context: TaskAttemptContext
+
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    fun getRetryDelay(context: TaskAttemptContext): Float? = if (context.exception is IllegalStateException) 3F else 0F
+    fun getRetryDelay(): Float? = if (context.exception is IllegalStateException) 3F else 0F
 }
 
 internal class TestWithBuggyRetry {
+    lateinit var context: TaskAttemptContext
+
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    fun getRetryDelay(context: TaskAttemptContext): Float? = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
+    fun getRetryDelay(): Float? = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
 }
 
 internal class TestWithBadRetryType {
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
-    fun getRetryDelay(context: TaskAttemptContext) = 3
+    fun getRetryDelay() = 3
 }
 
 internal class TestWithConstructor(val value: String) {
@@ -383,7 +387,7 @@ internal class TestWithConstructor(val value: String) {
 }
 
 internal class TestWithContext() {
-    lateinit var context: TaskAttemptContext
+    private lateinit var context: TaskAttemptContext
 
     fun handle(i: Int, j: String) = (i * j.toInt() * context.taskAttemptIndex.int).toString()
 }

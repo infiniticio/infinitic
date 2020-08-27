@@ -29,7 +29,7 @@ class TaskTestImpl {
         }
     }
 
-    fun getRetryDelay(context: TaskAttemptContext): Float? = when (behavior(context.taskAttemptIndex.int, context.taskAttemptRetry.int)) {
+    fun getRetryDelay(): Float? = when (behavior(context.taskAttemptIndex.int, context.taskAttemptRetry.int)) {
         Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> 0F
         else -> null
     }

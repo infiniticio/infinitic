@@ -157,7 +157,7 @@ open class Worker {
     }
 
     private suspend fun getRetryDelayAndFailTask(task: Any, msg: RunTask, context: TaskAttemptContext) {
-        when (val delay = getDelayBeforeRetry(task, context)) {
+        when (val delay = getDelayBeforeRetry(task)) {
             is RetryDelayRetrieved -> {
                 // returning the original cause
                 sendTaskFailed(msg, context.exception, delay.value)
@@ -241,9 +241,9 @@ open class Worker {
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
-    private fun getDelayBeforeRetry(task: Any, context: TaskAttemptContext): RetryDelay {
+    private fun getDelayBeforeRetry(task: Any): RetryDelay {
         val method = try {
-            task::class.java.getMethod(Constants.DELAY_BEFORE_RETRY_METHOD, TaskAttemptContext::class.java)
+            task::class.java.getMethod(Constants.DELAY_BEFORE_RETRY_METHOD)
         } catch (e: NoSuchMethodException) {
             return RetryDelayRetrieved(null)
         }
@@ -255,7 +255,7 @@ open class Worker {
         )
 
         return try {
-            RetryDelayRetrieved(method.invoke(task, context) as Float?)
+            RetryDelayRetrieved(method.invoke(task) as Float?)
         } catch (e: InvocationTargetException) {
             RetryDelayFailed(e.cause)
         }
