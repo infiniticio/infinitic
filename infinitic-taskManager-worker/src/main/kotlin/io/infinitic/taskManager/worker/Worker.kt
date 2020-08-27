@@ -149,11 +149,14 @@ open class Worker {
     }
 
     private fun setTaskTaskContext(task: Any, context: TaskAttemptContext) {
-        val p = task::class.memberProperties.find {
+        task::class.memberProperties.find {
             it.returnType.javaType.typeName == TaskAttemptContext::class.java.name
+        }?.javaField?.apply {
+            val accessible = isAccessible
+            isAccessible = true
+            set(task, context)
+            isAccessible = accessible
         }
-
-        p?.javaField?.set(task, context)
     }
 
     private suspend fun getRetryDelayAndFailTask(task: Any, msg: RunTask, context: TaskAttemptContext) {

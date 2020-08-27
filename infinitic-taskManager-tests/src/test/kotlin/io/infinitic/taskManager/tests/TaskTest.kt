@@ -7,7 +7,7 @@ interface TaskTest {
 }
 
 class TaskTestImpl {
-    lateinit var context: TaskAttemptContext
+    private lateinit var context: TaskAttemptContext
     lateinit var behavior: (index: Int, retry: Int) -> Status
 
     companion object {

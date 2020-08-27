@@ -387,7 +387,7 @@ internal class TestWithConstructor(val value: String) {
 }
 
 internal class TestWithContext() {
-    lateinit var context: TaskAttemptContext
+    private lateinit var context: TaskAttemptContext
 
     fun handle(i: Int, j: String) = (i * j.toInt() * context.taskAttemptIndex.int).toString()
 }
