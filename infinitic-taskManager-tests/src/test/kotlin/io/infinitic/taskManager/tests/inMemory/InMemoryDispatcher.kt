@@ -16,7 +16,7 @@ internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher, 
     lateinit var taskEngineHandle: (msg: AvroEnvelopeForTaskEngine) -> Unit
     lateinit var monitoringPerNameHandle: (msg: AvroEnvelopeForMonitoringPerName) -> Unit
     lateinit var monitoringGlobalHandle: (msg: AvroEnvelopeForMonitoringGlobal) -> Unit
-    lateinit var workerHandle: (msg: AvroEnvelopeForWorker) -> Unit
+    lateinit var workerHandle: suspend (msg: AvroEnvelopeForWorker) -> Unit
     lateinit var scope: CoroutineScope
 
     override fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
@@ -28,7 +28,7 @@ internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher, 
         }
     }
 
-    override fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) = toTaskEngine(msg, 0F)
+    override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) = toTaskEngine(msg, 0F)
 
     override fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
         scope.launch {

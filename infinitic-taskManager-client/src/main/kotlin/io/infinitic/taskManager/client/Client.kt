@@ -24,7 +24,7 @@ open class Client() {
      * Use this method to dispatch a task
      * TODO: using class instance instead of interface is not supported
      */
-    inline fun <reified T> dispatchTask(
+    suspend inline fun <reified T> dispatchTask(
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
         apply: T.() -> Any?
@@ -60,7 +60,7 @@ open class Client() {
      * Use this method to manually retry a task
      * when a non-null parameter is provided, it will supersede current one
      */
-    fun retryTask(
+    suspend fun retryTask(
         id: String,
         name: TaskName? = null,
         input: TaskInput? = null,
@@ -80,7 +80,7 @@ open class Client() {
     /*
      * Use this method to manually cancel a task
      */
-    fun cancelTask(
+    suspend fun cancelTask(
         id: String,
         output: Any? = null
     ) {

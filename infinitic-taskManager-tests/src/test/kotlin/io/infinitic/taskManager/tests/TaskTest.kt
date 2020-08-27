@@ -1,13 +1,13 @@
 package io.infinitic.taskManager.tests
 
 import io.infinitic.taskManager.common.data.TaskAttemptContext
-import io.infinitic.taskManager.worker.Worker
 
 interface TaskTest {
     fun log()
 }
 
 class TaskTestImpl {
+    lateinit var context: TaskAttemptContext
     lateinit var behavior: (index: Int, retry: Int) -> Status
 
     companion object {
@@ -15,7 +15,6 @@ class TaskTestImpl {
     }
 
     fun log() {
-        val context = Worker.context
         val status = behavior(context.taskAttemptIndex.int, context.taskAttemptRetry.int)
 
         log += when (status) {
@@ -30,7 +29,7 @@ class TaskTestImpl {
         }
     }
 
-    fun getRetryDelay(context: TaskAttemptContext): Float? = when (behavior(context.taskAttemptIndex.int, context.taskAttemptRetry.int)) {
+    fun getRetryDelay(): Float? = when (behavior(context.taskAttemptIndex.int, context.taskAttemptRetry.int)) {
         Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> 0F
         else -> null
     }
