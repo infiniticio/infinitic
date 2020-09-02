@@ -1,6 +1,5 @@
 package io.infinitic.taskManager.client
 
-import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import io.infinitic.taskManager.common.exceptions.MultipleMethodCallsAtDispatch
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -16,7 +15,7 @@ class ProxyHandler : InvocationHandler {
         this.args = args ?: arrayOf()
 
         // explicit cast needed for all primitives
-        return when(method.returnType.name) {
+        return when (method.returnType.name) {
             "long" -> 0L
             "int" -> 0.toInt()
             "short" -> 0.toShort()
