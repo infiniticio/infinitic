@@ -12,7 +12,7 @@ import io.infinitic.workflowManager.common.data.events.EventId
 import io.infinitic.workflowManager.common.data.events.EventName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.data.commands.CommandStatus
-import io.infinitic.workflowManager.common.data.branches.BranchOutput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodOutput
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
@@ -44,7 +44,7 @@ data class DispatchTask(
 
 data class DispatchChildWorkflow(
     val childWorkflowId: WorkflowId,
-    var childWorkflowOutput: BranchOutput?,
+    var childWorkflowOutput: WorkflowMethodOutput?,
     override val decidedAt: DateTime,
     override val commandHash: CommandHash,
     override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
@@ -101,7 +101,7 @@ data class CompleteWorkflow(
     override val decidedAt: DateTime,
     override val commandHash: CommandHash,
     override var actionStatus: CommandStatus = CommandStatus.DISPATCHED,
-    val workflowOutput: BranchOutput?
+    val workflowOutput: WorkflowMethodOutput?
 ) : EngineCommand(decidedAt, commandHash, actionStatus)
 
 data class TerminateWorkflow(

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
 
-data class TaskOutput(override val data: Any?) : Output(data) {
+data class TaskOutput(override val data: Any?) : Data(data) {
     @get:JsonValue val json get() = getSerialized()
 
     companion object {

@@ -1,6 +1,6 @@
 package io.infinitic.taskManager.client
 
-import io.infinitic.taskManager.common.data.Task
+import io.infinitic.taskManager.common.data.TaskInstance
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
@@ -16,19 +16,19 @@ import java.lang.reflect.Proxy
 open class Client() {
     lateinit var taskDispatcher: TaskDispatcher
 
-    open fun setDispatcher(avroDispatcher: AvroTaskDispatcher) {
+    open fun setTaskDispatcher(avroDispatcher: AvroTaskDispatcher) {
         taskDispatcher = TaskDispatcher(avroDispatcher)
     }
 
     /*
      * Use this method to dispatch a task
-     * TODO: using class instance instead of interface is not supported
+     * TODO: using class instead of interface is not supported
      */
     suspend inline fun <reified T> dispatchTask(
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
         apply: T.() -> Any?
-    ): Task {
+    ): TaskInstance {
         // get a proxy for T
         val handler = ProxyHandler()
 
@@ -53,7 +53,7 @@ open class Client() {
         )
         taskDispatcher.toTaskEngine(msg)
 
-        return Task(msg.taskId)
+        return TaskInstance(msg.taskId)
     }
 
     /*

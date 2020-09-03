@@ -4,6 +4,10 @@
   "namespace": "io.infinitic.workflowManager.data.decisions",
   "fields": [
     {
+      "name": "workflowName",
+      "type": "string"
+    },
+    {
       "name": "branches",
       "type": {
         "type": "array",

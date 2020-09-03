@@ -14,15 +14,18 @@ import io.infinitic.workflowManager.common.data.commands.DispatchTask
 import io.infinitic.workflowManager.common.data.commands.WaitDelay
 import io.infinitic.workflowManager.common.data.commands.WaitEvent
 import io.infinitic.workflowManager.common.data.properties.Properties
-import io.infinitic.workflowManager.common.data.steps.Step
+import io.infinitic.workflowManager.common.data.steps.BlockingStep
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodOutput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodInput
 
 data class Branch(
-    val branchId: BranchId = BranchId(),
-    val branchName: BranchName,
-    val branchInput: BranchInput,
-    val propertiesAtStart: Properties = Properties(mapOf()),
+    val branchId: BranchId,
+    val workflowMethod: WorkflowMethod,
+    val workflowMethodInput: WorkflowMethodInput,
+    val propertiesAtStart: Properties,
     val dispatchedAt: DateTime = DateTime(),
-    val steps: List<Step> = listOf(),
+    val blockingSteps: List<BlockingStep>,
     val commands: List<Command> = listOf()
 ) {
     fun completeTask(taskId: TaskId, taskOutput: TaskOutput, properties: Properties): Boolean {
@@ -34,10 +37,10 @@ data class Branch(
         task?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
-        return steps.last().completeTask(taskId, properties)
+        return blockingSteps.last().completeTask(taskId, properties)
     }
 
-    fun completeChildWorkflow(childWorkflowId: WorkflowId, childWorkflowOutput: BranchOutput, properties: Properties): Boolean {
+    fun completeChildWorkflow(childWorkflowId: WorkflowId, childWorkflowOutput: WorkflowMethodOutput, properties: Properties): Boolean {
         // complete action if relevant
         val childWorkflow = commands
             .filterIsInstance<DispatchChildWorkflow>()
@@ -46,7 +49,7 @@ data class Branch(
         childWorkflow?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
-        return steps.last().completeChildWorkflow(childWorkflowId, properties)
+        return blockingSteps.last().completeChildWorkflow(childWorkflowId, properties)
     }
 
     fun completeDelay(delayId: DelayId, properties: Properties): Boolean {
@@ -57,7 +60,7 @@ data class Branch(
         delay?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
-        return steps.last().completeDelay(delayId, properties)
+        return blockingSteps.last().completeDelay(delayId, properties)
     }
 
     fun completeEvent(eventName: EventName, eventData: EventData, properties: Properties): Boolean {
@@ -69,6 +72,6 @@ data class Branch(
         event ?.actionStatus = CommandStatus.COMPLETED
 
         // does this task complete the current step?
-        return if (event != null) steps.last().completeEvent(event.eventId, properties) else false
+        return if (event != null) blockingSteps.last().completeEvent(event.eventId, properties) else false
     }
 }

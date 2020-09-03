@@ -2,10 +2,11 @@ package io.infinitic.workflowManager.client
 
 import io.infinitic.taskManager.client.ProxyHandler
 import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
-import io.infinitic.workflowManager.common.data.Workflow
+import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowInput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
@@ -18,7 +19,7 @@ class Client() : TaskClient() {
     /*
      * Use this method to provide an actual implementation of AvroWorkflowDispatcher
      */
-    fun setDispatcher(avroDispatcher: AvroWorkflowDispatcher) {
+    fun setWorkflowDispatcher(avroDispatcher: AvroWorkflowDispatcher) {
         workflowDispatcher = WorkflowDispatcher(avroDispatcher)
     }
 
@@ -30,7 +31,7 @@ class Client() : TaskClient() {
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta(),
         apply: T.() -> Any?
-    ): Workflow {
+    ): WorkflowInstance {
         // get a proxy for T
         val handler = ProxyHandler()
 
@@ -48,13 +49,14 @@ class Client() : TaskClient() {
 
         val msg = DispatchWorkflow(
             workflowId = WorkflowId(),
-            workflowName = WorkflowName.from(method),
-            workflowInput = WorkflowInput.from(method, handler.args),
-            workflowMeta = meta.withParametersTypesFrom(method),
+            workflowName = WorkflowName(T::class.java.name),
+            workflowMethod = WorkflowMethod.from(method),
+            workflowMethodInput = WorkflowMethodInput.from(method, handler.args),
+            workflowMeta = meta,
             workflowOptions = options
         )
         workflowDispatcher.toWorkflowEngine(msg)
 
-        return Workflow(msg.workflowId)
+        return WorkflowInstance(msg.workflowId)
     }
 }

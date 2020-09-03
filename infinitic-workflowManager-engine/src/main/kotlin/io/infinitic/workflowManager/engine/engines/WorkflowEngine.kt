@@ -6,11 +6,11 @@ import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
-import io.infinitic.workflowManager.common.data.decisions.DecisionId
-import io.infinitic.workflowManager.common.data.decisions.DecisionInput
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.branches.Branch
-import io.infinitic.workflowManager.common.data.branches.BranchInput
-import io.infinitic.workflowManager.common.data.branches.BranchName
+import io.infinitic.workflowManager.common.data.branches.BranchId
+import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
 import io.infinitic.workflowManager.common.states.WorkflowEngineState
 import io.infinitic.workflowManager.engine.storages.WorkflowEngineStateStorage
@@ -57,7 +57,7 @@ class WorkflowEngine {
         if (oldState == null && msg !is DispatchWorkflow) return
 
         // store message (except DecisionCompleted) if a decision is ongoing
-        if (oldState?.ongoingDecisionId != null && msg !is DecisionCompleted) {
+        if (oldState?.ongoingWorkflowTaskId != null && msg !is DecisionCompleted) {
             val newState = bufferMessage(oldState, msg)
             storage.updateState(msg.workflowId, newState, oldState)
             return
@@ -101,24 +101,28 @@ class WorkflowEngine {
 
     private fun dispatchWorkflow(msg: DispatchWorkflow): WorkflowEngineState {
         val state = WorkflowEngineState(workflowId = msg.workflowId)
-        val decisionId = DecisionId()
+        val workflowTaskId = WorkflowTaskId()
         // define branch
         val branch = Branch(
-            branchName = BranchName("handle"),
-            branchInput = BranchInput(msg.workflowInput.data)
+            branchId = BranchId(),
+            workflowMethod = msg.workflowMethod,
+            workflowMethodInput = msg.workflowMethodInput,
+            propertiesAtStart = Properties(mapOf()),
+            blockingSteps = listOf()
         )
         // initialize state
-        state.ongoingDecisionId = decisionId
+        state.ongoingWorkflowTaskId = workflowTaskId
         state.runningBranches.add(branch)
         // decision input
-        val decisionInput = DecisionInput(
+        val decisionInput = WorkflowTaskInput(
+            workflowName = msg.workflowName,
             branches = listOf(branch),
             store = filterStore(state.store, listOf(branch))
         )
         // dispatch decision
         dispatcher.toDeciders(
             DispatchTask(
-                taskId = TaskId(decisionId.id),
+                taskId = TaskId(workflowTaskId.id),
                 taskName = TaskName(msg.workflowName.name),
                 taskInput = TaskInput(decisionInput),
                 taskOptions = TaskOptions(),
@@ -128,10 +132,10 @@ class WorkflowEngine {
         // log event
         dispatcher.toWorkflowEngine(
             DecisionDispatched(
-                decisionId = decisionId,
+                workflowTaskId = workflowTaskId,
                 workflowId = msg.workflowId,
                 workflowName = msg.workflowName,
-                decisionInput = decisionInput
+                workflowTaskInput = decisionInput
             )
         )
 
@@ -176,7 +180,7 @@ class WorkflowEngine {
         // Retrieve properties at step at completion in branches
         val listProperties1 = branches.flatMap {
             b ->
-            b.steps.map { it.propertiesAfterCompletion }
+            b.blockingSteps.map { it.propertiesAfterCompletion }
         }
         // Retrieve properties when starting in branches
         val listProperties2 = branches.map {

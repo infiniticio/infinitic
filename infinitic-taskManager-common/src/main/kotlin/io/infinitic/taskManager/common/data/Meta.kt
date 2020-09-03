@@ -1,7 +1,7 @@
 package io.infinitic.taskManager.common.data
 
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.exceptions.CanNotUseJavaParameterTypesInMeta
+import io.infinitic.taskManager.common.exceptions.CanNotUseJavaReservedKeywordInMeta
 import java.lang.reflect.Method
 
 abstract class Meta(open val data: MutableMap<String, Any?> = mutableMapOf()) {
@@ -23,7 +23,7 @@ abstract class Meta(open val data: MutableMap<String, Any?> = mutableMapOf()) {
     }
 
     fun <T : Meta> with(key: String, data: Any?): T {
-        if (key == META_PARAMETER_TYPES) throw CanNotUseJavaParameterTypesInMeta(META_PARAMETER_TYPES)
+        if (key == META_PARAMETER_TYPES) throw CanNotUseJavaReservedKeywordInMeta(META_PARAMETER_TYPES)
 
         this.data[key] = data
 
@@ -35,7 +35,7 @@ abstract class Meta(open val data: MutableMap<String, Any?> = mutableMapOf()) {
 
     fun <T : Meta> withParameterTypes(p: List<String>?): T {
         if (p != null) {
-            if (data.containsKey(META_PARAMETER_TYPES)) throw CanNotUseJavaParameterTypesInMeta(META_PARAMETER_TYPES)
+            if (data.containsKey(META_PARAMETER_TYPES)) throw CanNotUseJavaReservedKeywordInMeta(META_PARAMETER_TYPES)
             data[META_PARAMETER_TYPES] = p
         }
 

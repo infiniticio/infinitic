@@ -9,14 +9,21 @@
       "logicalType": "uuid"
     },
     {
-      "name": "branchName",
+      "name": "methodName",
       "type": "string"
     },
     {
-      "name": "branchInput",
+      "name": "methodInput",
       "type": {
         "type": "array",
         "items": "io.infinitic.taskManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "methodParameterTypes",
+      "type": {
+        "type": "array",
+        "items": "string"
       }
     },
     {

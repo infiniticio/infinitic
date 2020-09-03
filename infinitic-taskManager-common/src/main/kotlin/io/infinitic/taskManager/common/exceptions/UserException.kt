@@ -136,7 +136,7 @@ data class MultipleUseOfDividerInTaskName(
     help = "You can not include \"${Constants.METHOD_DIVIDER}\" more than once in your name's job, as it is also used as a divider between job's name and method"
 )
 
-data class ErrorDuringTaskInstantiation(
+data class ErrorDuringInstantiation(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Impossible to instantiate class \"$name\" using newInstance()",
@@ -145,7 +145,7 @@ data class ErrorDuringTaskInstantiation(
         "- using \"register\" method to provide an instance that will be used associated to \"$name\""
 )
 
-data class ClassNotFoundDuringTaskInstantiation(
+data class ClassNotFoundDuringInstantiation(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Impossible to find a Class associated to $name",
@@ -177,7 +177,7 @@ data class TooManyMethodsFoundWithParameterCount(
     @JsonProperty("method") val method: String,
     @JsonProperty("parameterCount") val parameterCount: Int
 ) : UserExceptionInWorker(
-    msg = "Unable to decide which method \"$method\" with $parameterCount parameters to use in \"$klass\" job",
+    msg = "Unable to decide which method \"$method\" with $parameterCount parameters to use in \"$klass\" class",
     help = ""
 )
 
@@ -198,16 +198,6 @@ data class ProcessingTimeout(
     help = "You can increase (or remove entirely) this constraint in the options ${TaskOptions::javaClass.name}"
 )
 
-data class TaskAttemptContextRetrievedOutsideOfProcessingThread(val unused: String? = null) : UserExceptionInWorker(
-    msg = "Worker.getContext() can be used only in the same thread that invoked the task",
-    help = "Check that your task do not try to retrieve its context from a new thread"
-)
-
-data class TaskAttemptContextSetFromExistingProcessingThread(val unused: String? = null) : UserExceptionInWorker(
-    msg = "A same thread can not process multiple tasks concurrently",
-    help = "Check that you do not use the same thread for multiple concurrent task processing"
-)
-
 data class ExceptionDuringParametersDeserialization(
     @JsonProperty("taskName") val taskName: String,
     @JsonProperty("methodName") val methodName: String,
@@ -218,7 +208,7 @@ data class ExceptionDuringParametersDeserialization(
     help = ""
 )
 
-data class CanNotUseJavaParameterTypesInMeta(
+data class CanNotUseJavaReservedKeywordInMeta(
     @JsonProperty("reserved") val reserved: String
 ) : UserExceptionInWorker(
     msg = "\"$reserved\" is as reserved keyword, you can not use it in your meta data",

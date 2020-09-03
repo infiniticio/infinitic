@@ -1,6 +1,6 @@
 package io.infinitic.taskManager.tests.inMemory
 
-import io.infinitic.taskManager.common.data.Task
+import io.infinitic.taskManager.common.data.TaskInstance
 import io.infinitic.taskManager.engine.avroInterfaces.AvroStorage
 import io.infinitic.taskManager.states.AvroTaskEngineState
 import io.infinitic.taskManager.states.AvroMonitoringGlobalState
@@ -11,8 +11,8 @@ internal class InMemoryStorage : AvroStorage {
     var monitoringPerNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var monitoringGlobalStore: AvroMonitoringGlobalState? = null
 
-    fun isTerminated(task: Task): Boolean {
-        return taskEngineStore[task.taskId.id] == null
+    fun isTerminated(taskInstance: TaskInstance): Boolean {
+        return taskEngineStore[taskInstance.taskId.id] == null
     }
 
     fun reset() {

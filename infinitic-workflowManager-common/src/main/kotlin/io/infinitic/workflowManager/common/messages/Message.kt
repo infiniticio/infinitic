@@ -3,18 +3,19 @@ package io.infinitic.workflowManager.common.messages
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.workflowManager.common.data.decisions.DecisionId
-import io.infinitic.workflowManager.common.data.decisions.DecisionInput
-import io.infinitic.workflowManager.common.data.decisions.DecisionOutput
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.workflowManager.common.data.DelayId
 import io.infinitic.workflowManager.common.data.events.EventData
 import io.infinitic.workflowManager.common.data.events.EventName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowInput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
-import io.infinitic.workflowManager.common.data.branches.BranchOutput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodOutput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod
 
 sealed class Message
 
@@ -22,32 +23,32 @@ sealed class ForWorkflowEngineMessage(open val workflowId: WorkflowId) : Message
 
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
-    val workflowOutput: BranchOutput?
+    val workflowOutput: WorkflowMethodOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childWorkflowOutput: BranchOutput?
+    val childWorkflowOutput: WorkflowMethodOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childWorkflowOutput: BranchOutput?
+    val childWorkflowOutput: WorkflowMethodOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DecisionCompleted(
     override val workflowId: WorkflowId,
-    val decisionId: DecisionId,
-    val decisionOutput: DecisionOutput
+    val workflowTaskId: WorkflowTaskId,
+    val workflowTaskOutput: WorkflowTaskOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DecisionDispatched(
     override val workflowId: WorkflowId,
-    val decisionId: DecisionId,
+    val workflowTaskId: WorkflowTaskId,
     val workflowName: WorkflowName,
-    val decisionInput: DecisionInput
+    val workflowTaskInput: WorkflowTaskInput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DelayCompleted(
@@ -58,7 +59,8 @@ data class DelayCompleted(
 data class DispatchWorkflow(
     override val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val workflowInput: WorkflowInput,
+    val workflowMethod: WorkflowMethod,
+    val workflowMethodInput: WorkflowMethodInput,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : ForWorkflowEngineMessage(workflowId)

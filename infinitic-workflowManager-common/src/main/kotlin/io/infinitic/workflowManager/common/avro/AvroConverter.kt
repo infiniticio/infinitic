@@ -2,8 +2,8 @@ package io.infinitic.workflowManager.common.avro
 
 import io.infinitic.common.data.DateTime
 import io.infinitic.common.json.Json
-import io.infinitic.workflowManager.common.data.decisions.DecisionId
-import io.infinitic.workflowManager.common.data.decisions.DecisionInput
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 // import io.infinitic.workflowManager.common.data.decisions.DecisionOutput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
@@ -12,16 +12,15 @@ import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.data.branches.AvroBranch
 import io.infinitic.workflowManager.common.data.branches.Branch
 import io.infinitic.workflowManager.common.data.branches.BranchId
-import io.infinitic.workflowManager.common.data.branches.BranchName
 import io.infinitic.workflowManager.data.commands.AvroCommand
 import io.infinitic.workflowManager.data.decisions.AvroDecisionInput
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyHash
-import io.infinitic.workflowManager.common.data.properties.PropertyKey
+import io.infinitic.workflowManager.common.data.properties.PropertyName
 import io.infinitic.workflowManager.data.steps.AvroStep
 import io.infinitic.workflowManager.data.steps.AvroStepCriterion
 import io.infinitic.workflowManager.data.steps.AvroStepCriterionType
-import io.infinitic.workflowManager.common.data.steps.Step
+import io.infinitic.workflowManager.common.data.steps.BlockingStep
 import io.infinitic.workflowManager.common.data.steps.StepCriterion
 import io.infinitic.workflowManager.common.data.steps.StepHash
 import io.infinitic.workflowManager.messages.AvroCancelWorkflow
@@ -69,7 +68,7 @@ object AvroConverter {
     fun fromStorage(avro: AvroWorkflowEngineState) = WorkflowEngineState(
         workflowId = WorkflowId(avro.workflowId),
         parentWorkflowId = if (avro.parentWorkflowId == null) null else WorkflowId(avro.parentWorkflowId),
-        ongoingDecisionId = if (avro.ongoingDecisionId == null) null else DecisionId(avro.ongoingDecisionId),
+        ongoingWorkflowTaskId = if (avro.ongoingDecisionId == null) null else WorkflowTaskId(avro.ongoingDecisionId),
         bufferedMessages = avro.bufferedMessages.map { fromWorkflowEngine(it) }.toMutableList(),
         store = convertJson(avro.store),
         runningBranches = avro.runningBranches.map { fromAvroBranch(it) }.toMutableList(),
@@ -80,7 +79,7 @@ object AvroConverter {
         .newBuilder()
         .setWorkflowId(state.workflowId.id)
         .setParentWorkflowId(state.parentWorkflowId?.id)
-        .setOngoingDecisionId(state.ongoingDecisionId?.id)
+        .setOngoingDecisionId(state.ongoingWorkflowTaskId?.id)
         .setBufferedMessages(state.bufferedMessages.map { toWorkflowEngine(it) })
         .setStore(convertJson(state.store))
         .setRunningBranches(state.runningBranches.map { toAvroBranch(it) })
@@ -226,10 +225,10 @@ object AvroConverter {
     private fun fromAvroMessage(avro: AvroWorkflowCompleted) = convertJson<WorkflowCompleted>(avro)
 
     fun fromAvroMessage(avro: AvroDecisionDispatched) = DecisionDispatched(
-        decisionId = DecisionId(avro.decisionId),
+        workflowTaskId = WorkflowTaskId(avro.decisionId),
         workflowId = WorkflowId(avro.workflowId),
         workflowName = WorkflowName(avro.workflowName),
-        decisionInput = fromAvroDecisionInput(avro.decisionInput)
+        workflowTaskInput = fromAvroDecisionInput(avro.decisionInput)
     )
 
     fun toAvroMessage(message: Message): SpecificRecordBase = when (message) {
@@ -262,22 +261,24 @@ object AvroConverter {
     private fun toAvroMessage(message: WorkflowCompleted) = convertJson<AvroWorkflowCompleted>(message)
 
     fun toAvroMessage(message: DecisionDispatched) = AvroDecisionDispatched.newBuilder().apply {
-        decisionId = message.decisionId.id
+        decisionId = message.workflowTaskId.id
         workflowId = message.workflowId.id
         workflowName = message.workflowName.name
-        decisionInput = toAvroDecisionInput(message.decisionInput)
+        decisionInput = toAvroDecisionInput(message.workflowTaskInput)
     }.build()
 
     /**
      *  Decision Input
      */
 
-    fun toAvroDecisionInput(obj: DecisionInput): AvroDecisionInput = AvroDecisionInput.newBuilder().apply {
+    fun toAvroDecisionInput(obj: WorkflowTaskInput): AvroDecisionInput = AvroDecisionInput.newBuilder().apply {
+        workflowName = obj.workflowName.name
         branches = obj.branches.map { toAvroBranch(it) }
         store = convertJson(obj.store)
     }.build()
 
-    fun fromAvroDecisionInput(avro: AvroDecisionInput) = DecisionInput(
+    fun fromAvroDecisionInput(avro: AvroDecisionInput) = WorkflowTaskInput(
+        workflowName = WorkflowName(avro.workflowName),
         branches = avro.branches.map { fromAvroBranch(it) },
         store = convertJson(avro.store)
     )
@@ -332,13 +333,13 @@ object AvroConverter {
     /**
      *  Steps
      */
-    fun toAvroStep(obj: Step): AvroStep = AvroStep.newBuilder().apply {
+    fun toAvroStep(obj: BlockingStep): AvroStep = AvroStep.newBuilder().apply {
         stepHash = obj.stepHash.hash
         criterion = toAvroStepCriterion(obj.criterion)
         propertiesAfterCompletion = convertJson(obj.propertiesAfterCompletion)
     }.build()
 
-    fun fromAvroStep(avro: AvroStep) = Step(
+    fun fromAvroStep(avro: AvroStep) = BlockingStep(
         stepHash = StepHash(avro.stepHash),
         criterion = fromAvroStepCriterion(avro.criterion),
         propertiesAfterCompletion = convertJson(avro.propertiesAfterCompletion)
@@ -350,21 +351,21 @@ object AvroConverter {
 
     fun toAvroBranch(obj: Branch): AvroBranch = AvroBranch.newBuilder().apply {
         branchId = obj.branchId.id
-        branchName = obj.branchName.name
-        branchInput = convertJson(obj.branchInput)
+        methodName = convertJson(obj.workflowMethod)
+        methodInput = convertJson(obj.workflowMethodInput)
         propertiesAtStart = toAvroProperties(obj.propertiesAtStart)
         dispatchedAt = convertJson(obj.dispatchedAt)
-        steps = obj.steps.map { toAvroStep(it) }
+        steps = obj.blockingSteps.map { toAvroStep(it) }
         commands = obj.commands.map { convertJson<AvroCommand>(it) }
     }.build()
 
     fun fromAvroBranch(avro: AvroBranch) = Branch(
         branchId = BranchId(avro.branchId),
-        branchName = BranchName(avro.branchName),
-        branchInput = convertJson(avro.branchInput),
+        workflowMethod = convertJson(avro.methodName),
+        workflowMethodInput = convertJson(avro.methodInput),
         propertiesAtStart = fromAvroProperties(avro.propertiesAtStart),
         dispatchedAt = DateTime(avro.dispatchedAt),
-        steps = avro.steps.map { fromAvroStep(it) },
+        blockingSteps = avro.steps.map { fromAvroStep(it) },
         commands = avro.commands.map { convertJson<Command>(it) }
     )
 
@@ -377,7 +378,7 @@ object AvroConverter {
     fun fromAvroProperties(avro: Map<String, String>) = Properties(
         avro
             .mapValues { PropertyHash(it.value) }
-            .mapKeys { PropertyKey(it.key) }
+            .mapKeys { PropertyName(it.key) }
     )
 
     /**

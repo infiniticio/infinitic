@@ -12,8 +12,8 @@ import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.taskManager.common.exceptions.ClassNotFoundDuringTaskInstantiation
-import io.infinitic.taskManager.common.exceptions.ErrorDuringTaskInstantiation
+import io.infinitic.taskManager.common.exceptions.ClassNotFoundDuringInstantiation
+import io.infinitic.taskManager.common.exceptions.ErrorDuringInstantiation
 import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.MultipleUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.NoMethodFoundWithParameterCount
@@ -177,7 +177,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.data!!::class.java.name shouldBe ClassNotFoundDuringTaskInstantiation::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe ClassNotFoundDuringInstantiation::class.java.name
     }
 
     "Should throw ErrorDuringTaskInstantiation when if impossible to create new instance" {
@@ -197,7 +197,7 @@ class WorkerTests : StringSpec({
         fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.data!!::class.java.name shouldBe ErrorDuringTaskInstantiation::class.java.name
+        fail.taskAttemptError.data!!::class.java.name shouldBe ErrorDuringInstantiation::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterTypes  when trying to process an unknown method" {

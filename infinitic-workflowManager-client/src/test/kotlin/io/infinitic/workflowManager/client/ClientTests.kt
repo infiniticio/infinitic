@@ -10,8 +10,9 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowInput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
@@ -51,10 +52,11 @@ class ClientTests : StringSpec({
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowMethod = WorkflowMethod("m1", listOf()),
+            workflowMethodInput = WorkflowMethodInput(),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf())
+            workflowMeta = WorkflowMeta()
         )
     }
 
@@ -68,10 +70,11 @@ class ClientTests : StringSpec({
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(0),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowMethod = WorkflowMethod("m1", listOf(Integer::class.java.name)),
+            workflowMethodInput = WorkflowMethodInput(0),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(Integer::class.java.name))
+            workflowMeta = WorkflowMeta()
         )
     }
 
@@ -83,10 +86,11 @@ class ClientTests : StringSpec({
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput("a"),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowMethod = WorkflowMethod("m1", listOf(String::class.java.name)),
+            workflowMethodInput = WorkflowMethodInput("a"),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(String::class.java.name))
+            workflowMeta = WorkflowMeta()
         )
     }
 
@@ -98,27 +102,29 @@ class ClientTests : StringSpec({
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(0, "a"),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowMethod = WorkflowMethod("m1", listOf(Int::class.java.name, String::class.java.name)),
+            workflowMethodInput = WorkflowMethodInput(0, "a"),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(Int::class.java.name, String::class.java.name))
+            workflowMeta = WorkflowMeta()
         )
     }
 
     "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val workflowId = WorkflowId()
-        val workflow = client.dispatchWorkflow<FakeWorkflow> { m1(workflowId) }
+        val instance = client.dispatchWorkflow<FakeWorkflow> { m1(workflowId) }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
 
         msg shouldBe DispatchWorkflow(
-            workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(workflowId),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowId = instance.workflowId,
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowMethod = WorkflowMethod("m1", listOf(IdInterface::class.java.name)),
+            workflowMethodInput = WorkflowMethodInput(workflowId),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(IdInterface::class.java.name))
+            workflowMeta = WorkflowMeta()
         )
     }
 
