@@ -145,9 +145,9 @@ fi
 print_success "Successfully uploaded schemas to topics."
 
 printf "Deploying pulsar functions to the cluster ...\n"
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-engine --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --jar $JOB_MANAGER_JAR_PATH --classname io.infinitic.taskManager.pulsar.functions.TaskEnginePulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-global --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-global --jar $JOB_MANAGER_JAR_PATH --classname io.infinitic.taskManager.pulsar.functions.MonitoringGlobalPulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-per-name --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-per-name --jar $JOB_MANAGER_JAR_PATH --classname io.infinitic.taskManager.pulsar.functions.MonitoringPerNamePulsarFunction --user-config '{"topicPrefix":"tasks"}'
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-engine --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --jar $JOB_MANAGER_JAR_PATH --classname io.infinitic.taskManager.engine.pulsar.functions.TaskEnginePulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-global --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-global --jar $JOB_MANAGER_JAR_PATH --classname io.infinitic.taskManager.engine.pulsar.functions.MonitoringGlobalPulsarFunction --user-config '{"topicPrefix":"tasks"}' && \
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL functions create --fqfn $PULSAR_TENANT/$PULSAR_NAMESPACE/infinitic-tasks-monitoring-per-name --inputs $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-per-name --jar $JOB_MANAGER_JAR_PATH --classname io.infinitic.taskManager.engine.pulsar.functions.MonitoringPerNamePulsarFunction --user-config '{"topicPrefix":"tasks"}'
 if [ $? -ne 0 ]; then
     print_error "Cannot deploy pulsar functions to the cluster."
     exit 1

@@ -11,7 +11,7 @@ plugins {
 }
 
 application {
-    mainClassName = "io.infinitic.taskManager.pulsar.utils.GenerateSchemaFilesKt"
+    mainClassName = "io.infinitic.taskManager.engine.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 dependencies {
@@ -196,7 +196,7 @@ enum class Topic {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    val cmd = "java -cp ./build/libs/$jar io.infinitic.taskManager.pulsar.utils.GenerateSchemaFilesKt"
+    val cmd = "java -cp ./build/libs/$jar io.infinitic.taskManager.engine.pulsar.utils.GenerateSchemaFilesKt"
     return exec(cmd)
 }
 
@@ -215,7 +215,7 @@ fun uploadSchemaToTopic(
 fun setZenatonFunction(
     name: String,
     className: String,
-    classNamespace: String = "io.infinitic.taskManager.pulsar.functions",
+    classNamespace: String = "io.infinitic.taskManager.engine.pulsar.functions",
     topicsIn: Set<String>,
     action: String,
     topicOut: String? = null,
