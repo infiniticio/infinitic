@@ -14,6 +14,17 @@ class ProxyHandler : InvocationHandler {
         this.method = method
         this.args = args ?: arrayOf()
 
-        return null
+        // explicit cast needed for all primitives
+        return when (method.returnType.name) {
+            "long" -> 0L
+            "int" -> 0.toInt()
+            "short" -> 0.toShort()
+            "byte" -> 0.toByte()
+            "double" -> 0.toDouble()
+            "float" -> 0.toFloat()
+            "char" -> 0.toChar()
+            "boolean" -> false
+            else -> null
+        }
     }
 }
