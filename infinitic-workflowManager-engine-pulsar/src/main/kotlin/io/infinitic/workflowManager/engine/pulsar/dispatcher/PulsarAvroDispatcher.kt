@@ -28,7 +28,7 @@ class PulsarAvroDispatcher(val context: Context) : AvroDispatcher {
 
     override fun toDeciders(msg: AvroEnvelopeForTaskEngine) {
         val msgBuilder = context
-            .newOutputMessage(TaskTopic.TASK_ENGINE.get("decisions"), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
+            .newOutputMessage   (TaskTopic.TASK_ENGINE.get("decisions"), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
             .key(msg.taskId)
             .value(msg)
             .send()

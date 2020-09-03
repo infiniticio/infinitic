@@ -70,10 +70,12 @@ data class NoMethodCallAtDispatch(
 )
 
 data class MultipleMethodCallsAtDispatch(
-    @JsonProperty("name") val name: String
+    @JsonProperty("name") val name: String,
+    @JsonProperty("method1") val method1: String,
+    @JsonProperty("method2") val method2: String
 ) : UserExceptionInClient(
-    msg = "Only one method of $name can be dispatched at a time",
-    help = "Make sure you call only one method of the provided interface within curly braces - multiple calls such as infinitic.dispatch<FooInterface> { barMethod(*args); bazMethod(*args) } is forbidden"
+    msg = "Only one method of \"$name\" can be dispatched at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
+    help = "Make sure you call only one method of the provided interface within curly braces - multiple calls such as client.dispatch<FooInterface> { barMethod(*args); bazMethod(*args) } is forbidden"
 )
 
 data class ErrorDuringJsonSerializationOfParameter(

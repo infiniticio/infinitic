@@ -9,12 +9,14 @@ class ProxyHandler : InvocationHandler {
     lateinit var args: Array<out Any>
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        if (this.method != null) throw MultipleMethodCallsAtDispatch(method.declaringClass.name)
+        // invoke should called only once per ProxyHandler instance
+        if (this.method != null) throw MultipleMethodCallsAtDispatch(method.declaringClass.name, this.method!!.name, method.name)
 
+        // methods and args are stored for later use
         this.method = method
         this.args = args ?: arrayOf()
 
-        // explicit cast needed for all primitives
+        // explicit cast needed for all primitive types
         return when (method.returnType.name) {
             "long" -> 0L
             "int" -> 0.toInt()
