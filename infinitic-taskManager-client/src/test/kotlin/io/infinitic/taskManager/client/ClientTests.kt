@@ -123,6 +123,22 @@ class ClientTests : StringSpec({
         )
     }
 
+    "Should be able to dispatch a method with a primitive as return value" {
+        // when
+        val task = client.dispatchTask<FakeTask> { m2() }
+        // then
+        slot.isCaptured shouldBe true
+        val msg = slot.captured
+
+        msg shouldBe DispatchTask(
+            taskId = task.taskId,
+            taskInput = TaskInput(),
+            taskName = TaskName("${FakeTask::class.java.name}::m2"),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta().withParameterTypes(listOf())
+        )
+    }
+
     // TODO: add tests for cancel method
 
     // TODO: add tests for retry method
@@ -139,5 +155,6 @@ private interface FakeTask {
     fun m1(i: Int): String
     fun m1(str: String?): Any?
     fun m1(p1: Int, p2: String): String
-    fun m1(id: IdInterface): String
+    fun m1(id: IdInterface): TaskId
+    fun m2(): Boolean
 }
