@@ -108,7 +108,7 @@ class WorkflowEngine {
             workflowMethod = msg.workflowMethod,
             workflowMethodInput = msg.workflowMethodInput,
             propertiesAtStart = Properties(mapOf()),
-            blockingSteps = listOf()
+            pastSteps = listOf()
         )
         // initialize state
         state.ongoingWorkflowTaskId = workflowTaskId
@@ -180,7 +180,7 @@ class WorkflowEngine {
         // Retrieve properties at step at completion in branches
         val listProperties1 = branches.flatMap {
             b ->
-            b.blockingSteps.map { it.propertiesAfterCompletion }
+            b.pastSteps.map { it.propertiesAfterCompletion }
         }
         // Retrieve properties when starting in branches
         val listProperties2 = branches.map {

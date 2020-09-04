@@ -1,22 +1,23 @@
 package io.infinitic.workflowManager.worker
 
 interface WorkflowA {
-    fun test1(): String
+    fun test1(i: Int): String
 }
 
 interface TaskA {
-    fun log()
+//    @Throws(Throwable::class)
+    fun log(i: Int) = i + 1
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
-    private val task = taskProxy<TaskA>()
+    private val task = proxy<TaskA>()
 
-    override fun test1(): String {
-        task.log()
-        task.log()
-        task.log()
+    override fun test1(i: Int): String {
+        var j = task.log(i)
+        j += task.log(j)
+        j += task.log(j)
 
-        return "ok"
+        return j.toString()
     }
 }
 

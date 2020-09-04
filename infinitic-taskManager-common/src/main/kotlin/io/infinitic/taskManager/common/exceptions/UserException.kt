@@ -16,7 +16,7 @@ import io.infinitic.taskManager.common.data.TaskOptions
 sealed class UserException(
     open val msg: String,
     open val help: String
-) : Exception("$msg.\n$help")
+) : RuntimeException("$msg.\n$help") // Must be an unchecked exception, to avoid UndeclaredThrowableException when thrown from a proxy
 
 sealed class UserExceptionInCommon(
     override val msg: String,

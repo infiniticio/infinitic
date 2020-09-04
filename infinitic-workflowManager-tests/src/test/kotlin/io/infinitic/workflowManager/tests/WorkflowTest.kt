@@ -7,7 +7,7 @@ interface WorkflowA {
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
-    private val task = taskProxy<TaskTest>()
+    private val task = proxy<TaskTest>()
 
     override fun test1(): String {
         task.log()

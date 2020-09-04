@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 sealed class UserException(
     open val msg: String,
     open val help: String
-) : Exception("$msg.\n$help")
+) : RuntimeException("$msg.\n$help") // Must be an unchecked exception, to avoid UndeclaredThrowableException when thrown from a proxy
 
 sealed class UserExceptionInCommon(
     override val msg: String,
@@ -47,4 +47,13 @@ data class WorkflowTaskContextNotInitialized(
 ) : UserExceptionInWorker(
     msg = "\"context\" property not initialized in $name",
     help = "If you need to test your workflow, please initialize the context property by an instance of $context"
+)
+
+data class WorkflowUpdatedWhileRunning(
+    @JsonProperty("workflowName") val workflowName: String,
+    @JsonProperty("workflowMethodName") val workflowMethodName: String,
+    @JsonProperty("index") val index: Int
+) : UserExceptionInWorker(
+    msg = "Definition of workflow \"$workflowName\" has been updated since its launch (detected at command $index in $workflowMethodName)",
+    help = "You can either kill this instance or revert its previous definition to be able to resume it"
 )

@@ -8,6 +8,10 @@
       "type": "string"
     },
     {
+      "name": "workflowId",
+      "type": "string"
+    },
+    {
       "name": "branches",
       "type": {
         "type": "array",

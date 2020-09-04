@@ -8,7 +8,7 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.properties.Properties
 
-data class BlockingStep(
+data class PastStep(
     val stepHash: StepHash,
     val criterion: StepCriterion,
     var propertiesAfterCompletion: Properties
