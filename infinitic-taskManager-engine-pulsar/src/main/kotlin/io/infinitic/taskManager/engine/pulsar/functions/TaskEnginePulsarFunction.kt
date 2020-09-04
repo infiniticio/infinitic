@@ -1,8 +1,8 @@
 package io.infinitic.taskManager.engine.pulsar.functions
 
+import io.infinitic.taskManager.dispatcher.pulsar.PulsarDispatcher
 import io.infinitic.taskManager.engine.avroClasses.AvroTaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
-import io.infinitic.taskManager.engine.pulsar.dispatcher.PulsarAvroDispatcher
 import io.infinitic.taskManager.engine.pulsar.storage.PulsarAvroStorage
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -17,7 +17,7 @@ class TaskEnginePulsarFunction : Function<AvroEnvelopeForTaskEngine, Void> {
         try {
             engine.logger = ctx.logger
             engine.avroStorage = PulsarAvroStorage(ctx)
-            engine.avroDispatcher = PulsarAvroDispatcher(ctx)
+            engine.avroDispatcher = PulsarDispatcher.forPulsarFunctionContext(ctx)
 
             engine.handle(input)
         } catch (e: Exception) {

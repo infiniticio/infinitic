@@ -1,8 +1,8 @@
-package io.infinitic.workflowManager.pulsar.functions
+package io.infinitic.workflowManager.engine.pulsar.functions
 
 import io.infinitic.workflowManager.engine.avroEngines.AvroWorkflowEngine
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
-import com.zenaton.workflowManager.engine.pulsar.dispatcher.PulsarAvroDispatcher
+import io.infinitic.workflowManager.pulsar.functions.WorkflowEnginePulsarFunction
 import io.infinitic.workflowManager.pulsar.storage.PulsarAvroStorage
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -40,7 +40,6 @@ class WorkflowEnginePulsarFunctionTests : StringSpec({
         // then
         engineFunction.logger shouldBe context.logger
         (engineFunction.avroStorage as PulsarAvroStorage).context shouldBe context
-        (engineFunction.avroDispatcher as PulsarAvroDispatcher).context shouldBe context
         verify(exactly = 1) { engineFunction.handle(avroMsg) }
     }
 })

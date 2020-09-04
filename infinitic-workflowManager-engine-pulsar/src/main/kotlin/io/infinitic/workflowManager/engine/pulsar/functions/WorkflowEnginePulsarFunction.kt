@@ -1,6 +1,6 @@
 package io.infinitic.workflowManager.pulsar.functions
 
-import com.zenaton.workflowManager.engine.pulsar.dispatcher.PulsarAvroDispatcher
+import io.infinitic.workflowManager.dispatcher.pulsar.PulsarDispatcher
 import io.infinitic.workflowManager.engine.avroEngines.AvroWorkflowEngine
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.infinitic.workflowManager.pulsar.storage.PulsarAvroStorage
@@ -17,7 +17,7 @@ class WorkflowEnginePulsarFunction : Function<AvroEnvelopeForWorkflowEngine, Voi
         try {
             engine.logger = ctx.logger
             engine.avroStorage = PulsarAvroStorage(ctx)
-            engine.avroDispatcher = PulsarAvroDispatcher(ctx)
+            engine.avroDispatcher = PulsarDispatcher.forPulsarFunctionContext(ctx)
 
             engine.handle(input)
         } catch (e: Exception) {

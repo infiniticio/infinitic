@@ -2,7 +2,6 @@ package io.infinitic.taskManager.engine.pulsar.functions
 
 import io.infinitic.taskManager.engine.avroClasses.AvroTaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
-import io.infinitic.taskManager.engine.pulsar.dispatcher.PulsarAvroDispatcher
 import io.infinitic.taskManager.engine.pulsar.storage.PulsarAvroStorage
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -44,7 +43,6 @@ class TaskEnginePulsarFunctionTests : StringSpec({
         // then
         engineFunction.logger shouldBe context.logger
         (engineFunction.avroStorage as PulsarAvroStorage).context shouldBe context
-        (engineFunction.avroDispatcher as PulsarAvroDispatcher).context shouldBe context
         verify(exactly = 1) { engineFunction.handle(avroMsg) }
     }
 })
