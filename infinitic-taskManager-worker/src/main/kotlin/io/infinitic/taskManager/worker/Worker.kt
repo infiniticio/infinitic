@@ -19,14 +19,18 @@ import io.infinitic.taskManager.common.messages.TaskAttemptCompleted
 import io.infinitic.taskManager.common.messages.TaskAttemptFailed
 import io.infinitic.taskManager.common.messages.TaskAttemptStarted
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
@@ -108,11 +112,12 @@ open class Worker {
             return@withContext
         }
 
-        val scope = this
+        val scope = CoroutineScope(coroutineContext + Job())
         // running timeout delay if needed
         if (options.runningTimeout != null && options.runningTimeout!! > 0F) {
-            launch {
+            scope.launch {
                 delay((1000 * options.runningTimeout!!).toLong())
+                ensureActive()
                 // update context with the cause (to be potentially used in getRetryDelay method)
                 taskAttemptContext.exception = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
                 // returning a timeout
@@ -122,29 +127,28 @@ open class Worker {
             }
         }
 
-        try {
+        val taskJob = scope.async {
             val output = method.invoke(task, *parameters)
-            if (isActive) {
-                // isActive below checks that the coroutine has not been canceled by timeout
-                sendTaskCompleted(msg, output)
-            }
+            ensureActive()
+            sendTaskCompleted(msg, output)
+            // cancel everything else
+            scope.cancel()
+        }
+
+        try {
+            taskJob.await()
         } catch (e: InvocationTargetException) {
-            if (isActive) {
-                // update context with the cause (to be potentially used in getRetryDelay method)
-                taskAttemptContext.exception = e.cause
-                // retrieve delay before retry
-                getRetryDelayAndFailTask(task, msg, taskAttemptContext)
-            }
+            // update context with the cause (to be potentially used in getRetryDelay method)
+            taskAttemptContext.exception = e.cause
+            // retrieve delay before retry
+            getRetryDelayAndFailTask(task, msg, taskAttemptContext)
+        } catch (e: CancellationException) {
+            // Do nothing as the failure is already reported by the timeout coroutine when cancel happens
         } catch (e: Exception) {
-            if (isActive) {
-                // returning the exception (no retry)
-                sendTaskFailed(msg, e, null)
-            }
+            // returning the exception (no retry)
+            sendTaskFailed(msg, e, null)
         } finally {
-            if (isActive) {
-                // cancel everything else
-                scope.cancel()
-            }
+            scope.coroutineContext[Job]?.join()
         }
     }
 
