@@ -71,10 +71,13 @@ open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroCl
     }
 
     companion object {
+        private const val TOPIC_PREFIX = "topicPrefix"
+
         fun forPulsarClient(pulsarClient: PulsarClient): PulsarDispatcher = PulsarDispatcher(PulsarClientWrapper(pulsarClient))
+
         fun forPulsarFunctionContext(pulsarFunctionContext: Context): PulsarDispatcher {
             val dispatcher = PulsarDispatcher(PulsarFunctionContextWrapper(pulsarFunctionContext))
-            val requestedPrefix = pulsarFunctionContext.getUserConfigValue("topicPrefix")
+            val requestedPrefix = pulsarFunctionContext.getUserConfigValue(TOPIC_PREFIX)
             if (requestedPrefix.isPresent) {
                 dispatcher.usePrefix(requestedPrefix.get().toString())
             }
