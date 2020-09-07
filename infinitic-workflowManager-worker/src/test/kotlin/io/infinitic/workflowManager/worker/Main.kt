@@ -5,7 +5,6 @@ import io.infinitic.common.data.interfaces.plus
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.workflowManager.common.data.commands.CommandIndex
-import io.infinitic.workflowManager.common.data.commands.PastCommand
 import io.infinitic.workflowManager.common.data.commands.TaskDispatched
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
@@ -27,7 +26,7 @@ fun main() = runBlocking<Unit> {
     fun test() = try {
         val output = w.test1(1)
         println("output: $output")
-    } catch(e: NewStepException) {
+    } catch (e: NewStepException) {
         val pastCommands = w.branchContext.pastCommands + w.branchContext.newCommands.map {
             println("newCommand: $it")
             TaskDispatched(
@@ -42,9 +41,9 @@ fun main() = runBlocking<Unit> {
         w.branchContext = w.branchContext.copy(
             pastCommands = pastCommands
         )
-    } catch(e: KnownStepException) {
+    } catch (e: KnownStepException) {
         val pastCommands = w.branchContext.pastCommands.mapTo(mutableListOf()) {
-            when(it) {
+            when (it) {
                 is TaskDispatched -> it.copy(
                     commandStatus = CommandStatus.COMPLETED,
                     taskOutput = TaskOutput(1)

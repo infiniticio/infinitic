@@ -116,6 +116,7 @@ class WorkflowEngine {
         // decision input
         val decisionInput = WorkflowTaskInput(
             workflowName = msg.workflowName,
+            workflowId = msg.workflowId,
             branches = listOf(branch),
             store = filterStore(state.store, listOf(branch))
         )

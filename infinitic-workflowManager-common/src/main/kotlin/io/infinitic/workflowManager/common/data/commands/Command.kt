@@ -1,11 +1,9 @@
 package io.infinitic.workflowManager.common.data.commands
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
-import io.infinitic.common.json.Json
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod

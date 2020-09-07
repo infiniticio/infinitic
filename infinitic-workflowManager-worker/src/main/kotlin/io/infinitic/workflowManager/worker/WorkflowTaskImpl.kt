@@ -10,7 +10,6 @@ import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.workflowManager.worker.data.BranchContext
 import io.infinitic.workflowManager.worker.exceptions.NewStepException
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.UndeclaredThrowableException
 
 class WorkflowTaskImpl : WorkflowTask {
     override fun handle(input: WorkflowTaskInput): WorkflowTaskOutput {

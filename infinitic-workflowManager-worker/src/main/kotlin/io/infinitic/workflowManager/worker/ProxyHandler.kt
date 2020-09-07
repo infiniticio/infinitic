@@ -17,7 +17,7 @@ import java.lang.reflect.Method
 
 class ProxyHandler(val getBranchContext: () -> BranchContext) : InvocationHandler {
 
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any?  {
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val branchContext = getBranchContext()
         // increment current command index
         val currentCommandIndex = branchContext.currentCommandIndex++
@@ -43,7 +43,7 @@ class ProxyHandler(val getBranchContext: () -> BranchContext) : InvocationHandle
                     throw WorkflowUpdatedWhileRunning(branchContext.workflowName.name, method.name, currentCommandIndex.int)
                 }
                 // this command is already known => do nothing
-                when(pastCommand.commandStatus) {
+                when (pastCommand.commandStatus) {
                     CommandStatus.DISPATCHED -> throw KnownStepException()
                     CommandStatus.CANCELED, CommandStatus.COMPLETED -> {
                         // set new properties
@@ -56,11 +56,13 @@ class ProxyHandler(val getBranchContext: () -> BranchContext) : InvocationHandle
             // this is a new command, we add it to the newCommands list
             currentCommandIndex == maxPastCommandIndex + 1 -> {
 //                println("new: $currentCommandIndex")
-                branchContext.newCommands.add(HashedCommand(
-                    command = currentCommand,
-                    commandIndex = currentCommandIndex,
-                    commandHash = currentCommandHash
-                ))
+                branchContext.newCommands.add(
+                    HashedCommand(
+                        command = currentCommand,
+                        commandIndex = currentCommandIndex,
+                        commandHash = currentCommandHash
+                    )
+                )
                 throw NewStepException()
             }
             // hopefully it's not a bug but an error by the user
