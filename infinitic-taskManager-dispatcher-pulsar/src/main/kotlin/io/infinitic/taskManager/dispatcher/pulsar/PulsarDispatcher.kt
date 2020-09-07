@@ -34,15 +34,7 @@ open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroCl
         }
     }
 
-    override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) {
-        withContext(Dispatchers.IO) {
-            wrapper
-                .newMessage(Topic.TASK_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
-                .key(msg.taskId)
-                .value(msg)
-                .send()
-        }
-    }
+    override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) = toTaskEngine(msg, 0F)
 
     override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
         withContext(Dispatchers.IO) {
