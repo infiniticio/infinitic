@@ -14,7 +14,7 @@ class MonitoringPerName {
     lateinit var storage: MonitoringPerNameStorage
     lateinit var dispatcher: Dispatcher
 
-    fun handle(message: ForMonitoringPerNameMessage) {
+    suspend fun handle(message: ForMonitoringPerNameMessage) {
 
         // get associated state
         val oldState = storage.getState(message.taskName)

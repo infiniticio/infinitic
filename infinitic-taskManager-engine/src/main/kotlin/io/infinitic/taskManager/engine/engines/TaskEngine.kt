@@ -28,7 +28,7 @@ class TaskEngine {
     lateinit var storage: TaskEngineStateStorage
     lateinit var dispatcher: Dispatcher
 
-    fun handle(message: ForTaskEngineMessage) {
+    suspend fun handle(message: ForTaskEngineMessage) {
         // immediately discard messages that are non managed
         when (message) {
             is TaskAttemptDispatched -> return
@@ -82,7 +82,7 @@ class TaskEngine {
         }
     }
 
-    private fun cancelTask(oldState: TaskEngineState, msg: CancelTask): TaskEngineState {
+    private suspend fun cancelTask(oldState: TaskEngineState, msg: CancelTask): TaskEngineState {
         val state = oldState.copy(taskStatus = TaskStatus.TERMINATED_CANCELED)
 
         // log event
@@ -99,7 +99,7 @@ class TaskEngine {
         return state
     }
 
-    private fun dispatchTask(msg: DispatchTask): TaskEngineState {
+    private suspend fun dispatchTask(msg: DispatchTask): TaskEngineState {
         // init a state
         val state = TaskEngineState(
             taskId = msg.taskId,
@@ -136,7 +136,7 @@ class TaskEngine {
         return state
     }
 
-    private fun retryTask(oldState: TaskEngineState, msg: RetryTask): TaskEngineState {
+    private suspend fun retryTask(oldState: TaskEngineState, msg: RetryTask): TaskEngineState {
         val state = oldState.copy(
             taskStatus = TaskStatus.RUNNING_WARNING,
             taskAttemptId = TaskAttemptId(),
@@ -173,7 +173,7 @@ class TaskEngine {
         return state
     }
 
-    private fun retryTaskAttempt(oldState: TaskEngineState): TaskEngineState {
+    private suspend fun retryTaskAttempt(oldState: TaskEngineState): TaskEngineState {
         val state = oldState.copy(
             taskStatus = TaskStatus.RUNNING_WARNING,
             taskAttemptRetry = oldState.taskAttemptRetry + 1
@@ -204,7 +204,7 @@ class TaskEngine {
         return state
     }
 
-    private fun taskAttemptCompleted(oldState: TaskEngineState, msg: TaskAttemptCompleted): TaskEngineState {
+    private suspend fun taskAttemptCompleted(oldState: TaskEngineState, msg: TaskAttemptCompleted): TaskEngineState {
         val state = oldState.copy(taskStatus = TaskStatus.TERMINATED_COMPLETED)
 
         // log event
@@ -221,11 +221,11 @@ class TaskEngine {
         return state
     }
 
-    private fun taskAttemptFailed(oldState: TaskEngineState, msg: TaskAttemptFailed): TaskEngineState {
+    private suspend fun taskAttemptFailed(oldState: TaskEngineState, msg: TaskAttemptFailed): TaskEngineState {
         return delayRetryTaskAttempt(oldState, delay = msg.taskAttemptDelayBeforeRetry)
     }
 
-    private fun delayRetryTaskAttempt(oldState: TaskEngineState, delay: Float?): TaskEngineState {
+    private suspend fun delayRetryTaskAttempt(oldState: TaskEngineState, delay: Float?): TaskEngineState {
         // no retry
         if (delay == null) return oldState.copy(taskStatus = TaskStatus.RUNNING_ERROR)
         // immediate retry

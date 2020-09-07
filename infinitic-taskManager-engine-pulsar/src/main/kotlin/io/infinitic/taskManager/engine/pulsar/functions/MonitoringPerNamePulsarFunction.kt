@@ -1,9 +1,10 @@
 package io.infinitic.taskManager.engine.pulsar.functions
 
+import io.infinitic.taskManager.dispatcher.pulsar.PulsarDispatcher
 import io.infinitic.taskManager.engine.avroClasses.AvroMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.taskManager.engine.pulsar.dispatcher.PulsarAvroDispatcher
 import io.infinitic.taskManager.engine.pulsar.storage.PulsarAvroStorage
+import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
@@ -11,13 +12,13 @@ class MonitoringPerNamePulsarFunction : Function<AvroEnvelopeForMonitoringPerNam
 
     var monitoring = AvroMonitoringPerName()
 
-    override fun process(input: AvroEnvelopeForMonitoringPerName, context: Context?): Void? {
+    override fun process(input: AvroEnvelopeForMonitoringPerName, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
             monitoring.logger = ctx.logger
             monitoring.avroStorage = PulsarAvroStorage(ctx)
-            monitoring.avroDispatcher = PulsarAvroDispatcher(ctx)
+            monitoring.avroDispatcher = PulsarDispatcher.forPulsarFunctionContext(ctx)
 
             monitoring.handle(input)
         } catch (e: Exception) {
@@ -25,6 +26,6 @@ class MonitoringPerNamePulsarFunction : Function<AvroEnvelopeForMonitoringPerNam
             throw e
         }
 
-        return null
+        return@runBlocking null
     }
 }

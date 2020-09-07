@@ -11,11 +11,12 @@ plugins {
 }
 
 application {
-    mainClassName = "io.infinitic.taskManager.engine.pulsar.utils.GenerateSchemaFilesKt"
+    mainClassName = "io.infinitic.taskManager.dispatcher.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     implementation("org.apache.pulsar:pulsar-client:2.5.+")
     implementation("org.apache.pulsar:pulsar-functions-api:2.5.+")
     implementation("org.apache.avro:avro:1.10.+")
@@ -26,6 +27,7 @@ dependencies {
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-taskManager-common"))
     implementation(project(":infinitic-taskManager-engine"))
+    implementation(project(":infinitic-taskManager-dispatcher-pulsar"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
