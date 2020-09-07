@@ -25,11 +25,13 @@ open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroCl
         return this
     }
 
-    override fun toWorkers(msg: AvroEnvelopeForWorker) {
-        wrapper
-            .newMessage(Topic.WORKERS.get(prefix, msg.taskName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
-            .value(msg)
-            .send()
+    override suspend fun toWorkers(msg: AvroEnvelopeForWorker) {
+        withContext(Dispatchers.IO) {
+            wrapper
+                .newMessage(Topic.WORKERS.get(prefix, msg.taskName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
+                .value(msg)
+                .send()
+        }
     }
 
     override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) {
@@ -42,32 +44,38 @@ open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroCl
         }
     }
 
-    override fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
-        val messageBuilder = wrapper
-            .newMessage(Topic.TASK_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
-            .key(msg.taskId)
-            .value(msg)
+    override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
+        withContext(Dispatchers.IO) {
+            val messageBuilder = wrapper
+                .newMessage(Topic.TASK_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
+                .key(msg.taskId)
+                .value(msg)
 
-        if (after > 0F) {
-            messageBuilder.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
+            if (after > 0F) {
+                messageBuilder.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
+            }
+
+            messageBuilder.send()
         }
-
-        messageBuilder.send()
     }
 
-    override fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal) {
-        wrapper
-            .newMessage(Topic.MONITORING_GLOBAL.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringGlobal::class.java))
-            .value(msg)
-            .send()
+    override suspend fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal) {
+        withContext(Dispatchers.IO) {
+            wrapper
+                .newMessage(Topic.MONITORING_GLOBAL.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringGlobal::class.java))
+                .value(msg)
+                .send()
+        }
     }
 
-    override fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
-        wrapper
-            .newMessage(Topic.MONITORING_PER_NAME.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java))
-            .key(msg.taskName)
-            .value(msg)
-            .send()
+    override suspend fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
+        withContext(Dispatchers.IO) {
+            wrapper
+                .newMessage(Topic.MONITORING_PER_NAME.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java))
+                .key(msg.taskName)
+                .value(msg)
+                .send()
+        }
     }
 
     companion object {

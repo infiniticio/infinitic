@@ -8,9 +8,9 @@ import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
 import io.infinitic.taskManager.common.messages.ForWorkerMessage
 import io.infinitic.taskManager.engine.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
+import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.mockk
-import io.mockk.verify
 
 class DispatcherTests : StringSpec({
     val avroDispatcher = mockk<AvroDispatcher>(relaxed = true)
@@ -23,7 +23,7 @@ class DispatcherTests : StringSpec({
         // when
         dispatcher.toTaskEngine(msg, after)
         // then
-        verify {
+        coVerify {
             avroDispatcher.toTaskEngine(AvroConverter.toTaskEngine(msg), after)
         }
         confirmVerified(avroDispatcher)
@@ -35,7 +35,7 @@ class DispatcherTests : StringSpec({
         // when
         dispatcher.toTaskEngine(msg)
         // then
-        verify {
+        coVerify {
             avroDispatcher.toTaskEngine(AvroConverter.toTaskEngine(msg), 0F)
         }
         confirmVerified(avroDispatcher)
@@ -47,7 +47,7 @@ class DispatcherTests : StringSpec({
         // when
         dispatcher.toMonitoringPerName(msg)
         // then
-        verify {
+        coVerify {
             avroDispatcher.toMonitoringPerName(AvroConverter.toMonitoringPerName(msg))
         }
         confirmVerified(avroDispatcher)
@@ -59,7 +59,7 @@ class DispatcherTests : StringSpec({
         // when
         dispatcher.toMonitoringGlobal(msg)
         // then
-        verify {
+        coVerify {
             avroDispatcher.toMonitoringGlobal(AvroConverter.toMonitoringGlobal(msg))
         }
         confirmVerified(avroDispatcher)
@@ -71,7 +71,7 @@ class DispatcherTests : StringSpec({
         // when
         dispatcher.toWorkers(msg)
         // then
-        verify {
+        coVerify {
             avroDispatcher.toWorkers(AvroConverter.toWorkers(msg))
         }
         confirmVerified(avroDispatcher)

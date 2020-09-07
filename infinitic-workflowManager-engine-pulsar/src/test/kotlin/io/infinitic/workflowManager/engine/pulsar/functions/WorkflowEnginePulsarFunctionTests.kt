@@ -8,11 +8,12 @@ import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
-import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 
 class WorkflowEnginePulsarFunctionTests : StringSpec({
@@ -30,7 +31,7 @@ class WorkflowEnginePulsarFunctionTests : StringSpec({
         val context = mockk<Context>()
         every { context.logger } returns mockk<org.slf4j.Logger>(relaxed = true)
         val engineFunction = spyk(AvroWorkflowEngine())
-        every { engineFunction.handle(any()) } just Runs
+        coEvery { engineFunction.handle(any()) } just Runs
         val avroMsg = mockk<AvroEnvelopeForWorkflowEngine>()
         // given
         val fct = WorkflowEnginePulsarFunction()
@@ -40,6 +41,6 @@ class WorkflowEnginePulsarFunctionTests : StringSpec({
         // then
         engineFunction.logger shouldBe context.logger
         (engineFunction.avroStorage as PulsarAvroStorage).context shouldBe context
-        verify(exactly = 1) { engineFunction.handle(avroMsg) }
+        coVerify(exactly = 1) { engineFunction.handle(avroMsg) }
     }
 })

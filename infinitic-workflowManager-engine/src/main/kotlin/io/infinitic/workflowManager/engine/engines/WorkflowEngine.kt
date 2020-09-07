@@ -40,7 +40,7 @@ class WorkflowEngine {
     lateinit var storage: WorkflowEngineStateStorage
     lateinit var dispatcher: Dispatcher
 
-    fun handle(msg: ForWorkflowEngineMessage) {
+    suspend fun handle(msg: ForWorkflowEngineMessage) {
         // discard immediately messages that are not processed
         when (msg) {
             is DecisionDispatched -> return
@@ -99,7 +99,7 @@ class WorkflowEngine {
         TODO()
     }
 
-    private fun dispatchWorkflow(msg: DispatchWorkflow): WorkflowEngineState {
+    private suspend fun dispatchWorkflow(msg: DispatchWorkflow): WorkflowEngineState {
         val state = WorkflowEngineState(workflowId = msg.workflowId)
         val decisionId = DecisionId()
         // define branch

@@ -16,6 +16,7 @@ application {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     implementation("org.apache.pulsar:pulsar-client:2.5.+")
     implementation("org.apache.pulsar:pulsar-functions-api:2.5.+")
     implementation("org.apache.avro:avro:1.10.+")

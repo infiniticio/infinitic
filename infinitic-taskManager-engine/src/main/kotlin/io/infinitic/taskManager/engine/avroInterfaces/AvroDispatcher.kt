@@ -6,8 +6,8 @@ import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerN
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
 
 interface AvroDispatcher {
-    fun toWorkers(msg: AvroEnvelopeForWorker)
-    fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float = 0f)
-    fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal)
-    fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName)
+    suspend fun toWorkers(msg: AvroEnvelopeForWorker)
+    suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float = 0f)
+    suspend fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal)
+    suspend fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName)
 }

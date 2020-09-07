@@ -16,7 +16,7 @@ class AvroWorkflowEngine {
 
     var engine = WorkflowEngine()
 
-    fun handle(input: AvroEnvelopeForWorkflowEngine) {
+    suspend fun handle(input: AvroEnvelopeForWorkflowEngine) {
         engine.logger = logger
         engine.storage = WorkflowEngineStateStorage(avroStorage)
         engine.dispatcher = Dispatcher(avroDispatcher)

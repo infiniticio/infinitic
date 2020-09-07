@@ -7,11 +7,12 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
-import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 import java.util.Optional
 
@@ -34,7 +35,7 @@ class AvroMonitoringPerNameTests : ShouldSpec({
             every { context.logger } returns mockk<org.slf4j.Logger>(relaxed = true)
             every { context.getUserConfigValue("topicPrefix") } returns topicPrefixValue
             val monitoringFunction = spyk<AvroMonitoringPerName>()
-            every { monitoringFunction.handle(any()) } just Runs
+            coEvery { monitoringFunction.handle(any()) } just Runs
             val avroMsg = mockk<AvroEnvelopeForMonitoringPerName>()
             // given
             val fct = MonitoringPerNamePulsarFunction()
@@ -44,7 +45,7 @@ class AvroMonitoringPerNameTests : ShouldSpec({
             // then
             monitoringFunction.logger shouldBe context.logger
             (monitoringFunction.avroStorage as PulsarAvroStorage).context shouldBe context
-            verify(exactly = 1) { monitoringFunction.handle(avroMsg) }
+            coVerify(exactly = 1) { monitoringFunction.handle(avroMsg) }
         }
     }
 })
