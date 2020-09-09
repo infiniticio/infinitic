@@ -1,5 +1,6 @@
 rootProject.name = "io.infinitic"
 
+include("infinitic-storage-api")
 include("infinitic-avro")
 include("infinitic-taskManager-common")
 include("infinitic-taskManager-worker")
