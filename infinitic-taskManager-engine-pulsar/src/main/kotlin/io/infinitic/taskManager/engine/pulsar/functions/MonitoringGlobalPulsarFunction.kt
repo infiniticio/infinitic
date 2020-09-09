@@ -2,7 +2,7 @@ package io.infinitic.taskManager.engine.pulsar.functions
 
 import io.infinitic.taskManager.engine.avroClasses.AvroMonitoringGlobal
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
-import io.infinitic.taskManager.engine.pulsar.storage.PulsarAvroStorage
+import io.infinitic.taskManager.storage.pulsar.PulsarStorage
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
@@ -15,7 +15,7 @@ class MonitoringGlobalPulsarFunction : Function<AvroEnvelopeForMonitoringGlobal,
 
         try {
             monitoring.logger = ctx.logger
-            monitoring.avroStorage = PulsarAvroStorage(ctx)
+            monitoring.avroStorage = PulsarStorage(ctx)
 
             monitoring.handle(input)
         } catch (e: Exception) {

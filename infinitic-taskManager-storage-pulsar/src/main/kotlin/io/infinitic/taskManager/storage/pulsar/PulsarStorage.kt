@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.engine.pulsar.storage
+package io.infinitic.taskManager.storage.pulsar
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.taskManager.common.data.TaskStatus
@@ -8,7 +8,7 @@ import io.infinitic.taskManager.states.AvroMonitoringGlobalState
 import io.infinitic.taskManager.states.AvroMonitoringPerNameState
 import org.apache.pulsar.functions.api.Context
 
-class PulsarAvroStorage(val context: Context) : AvroStorage {
+class PulsarStorage(val context: Context) : AvroStorage {
     // serializer injection
     var avroSerDe = AvroSerDe
 
@@ -82,8 +82,8 @@ class PulsarAvroStorage(val context: Context) : AvroStorage {
         context.deleteState(getMonitoringGlobalStateKey())
     }
 
-    fun getEngineStateKey(taskId: String) = "engine.state.$taskId"
-    fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
-    fun getMonitoringPerNameStateKey(taskName: String) = "monitoringPerName.state.$taskName"
-    fun getMonitoringPerNameCounterKey(taskName: String, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.toLowerCase()}"
+    private fun getEngineStateKey(taskId: String) = "engine.state.$taskId"
+    private fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
+    internal fun getMonitoringPerNameStateKey(taskName: String) = "monitoringPerName.state.$taskName"
+    internal fun getMonitoringPerNameCounterKey(taskName: String, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.toLowerCase()}"
 }

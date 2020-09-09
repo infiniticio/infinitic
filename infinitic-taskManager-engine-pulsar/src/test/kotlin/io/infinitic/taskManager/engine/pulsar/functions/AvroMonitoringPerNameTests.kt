@@ -2,7 +2,7 @@ package io.infinitic.taskManager.engine.pulsar.functions
 
 import io.infinitic.taskManager.engine.avroClasses.AvroMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.taskManager.engine.pulsar.storage.PulsarAvroStorage
+import io.infinitic.taskManager.storage.pulsar.PulsarStorage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -44,7 +44,7 @@ class AvroMonitoringPerNameTests : ShouldSpec({
             fct.process(avroMsg, context)
             // then
             monitoringFunction.logger shouldBe context.logger
-            (monitoringFunction.avroStorage as PulsarAvroStorage).context shouldBe context
+            (monitoringFunction.avroStorage as PulsarStorage).context shouldBe context
             coVerify(exactly = 1) { monitoringFunction.handle(avroMsg) }
         }
     }

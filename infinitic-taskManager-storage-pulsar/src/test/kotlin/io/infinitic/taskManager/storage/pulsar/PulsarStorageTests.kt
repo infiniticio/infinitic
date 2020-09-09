@@ -1,12 +1,12 @@
-package io.infinitic.taskManager.engine.pulsar.storage
+package io.infinitic.taskManager.storage.pulsar
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskStatus
-import io.infinitic.taskManager.engine.pulsar.utils.TestFactory
 import io.infinitic.taskManager.states.AvroTaskEngineState
 import io.infinitic.taskManager.states.AvroMonitoringGlobalState
 import io.infinitic.taskManager.states.AvroMonitoringPerNameState
+import io.infinitic.taskManager.storage.pulsar.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified
@@ -20,15 +20,15 @@ import io.mockk.verify
 import io.mockk.verifyAll
 import org.apache.pulsar.functions.api.Context
 
-class PulsarAvroStorageTests : ShouldSpec({
-    context("PulsarAvroStorage.getEngineState") {
+class PulsarStorageTests : ShouldSpec({
+    context("PulsarStorage.getEngineState") {
         should("return null when state does not exist") {
             val taskId = TestFactory.random(String::class)
             // mocking
             val context = mockk<Context>()
             every { context.getState(any()) } returns null
             // given
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             // when
             val state = stateStorage.getTaskEngineState(taskId)
             // then
@@ -43,7 +43,7 @@ class PulsarAvroStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(AvroTaskEngineState::class)
             every { context.getState(any()) } returns AvroSerDe.serialize(stateIn)
             // given
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             // when
             val stateOut = stateStorage.getTaskEngineState(stateIn.taskId)
             // then
@@ -53,14 +53,14 @@ class PulsarAvroStorageTests : ShouldSpec({
         }
     }
 
-    context("PulsarAvroStorage.updateEngineState") {
+    context("PulsarStorage.updateEngineState") {
         should("record state") {
             // mocking
             val context = mockk<Context>()
             val stateIn = TestFactory.random(AvroTaskEngineState::class)
             every { context.putState(any(), any()) } returns Unit
             // given
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             // when
             stateStorage.updateTaskEngineState(stateIn.taskId, stateIn, null)
             // then
@@ -74,14 +74,14 @@ class PulsarAvroStorageTests : ShouldSpec({
         }
     }
 
-    context("PulsarAvroStorage.deleteEngineState") {
+    context("PulsarStorage.deleteEngineState") {
         should("delete state") {
             // mocking
             val context = mockk<Context>()
             val stateIn = TestFactory.random(AvroTaskEngineState::class)
             every { context.deleteState(any()) } returns Unit
             // given
-            val stageStorage = PulsarAvroStorage(context)
+            val stageStorage = PulsarStorage(context)
             // when
             stageStorage.deleteTaskEngineState(stateIn.taskId)
             // then
@@ -90,7 +90,7 @@ class PulsarAvroStorageTests : ShouldSpec({
         }
     }
 
-    context("PulsarAvroStorage.getMonitoringPerNameState") {
+    context("PulsarStorage.getMonitoringPerNameState") {
 
         should("return null when state does not exist") {
             // given
@@ -98,7 +98,7 @@ class PulsarAvroStorageTests : ShouldSpec({
             val context = mockk<Context>()
             every { context.getState(any()) } returns null
             // when
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             val state = stateStorage.getMonitoringPerNameState(taskName)
             // then
             verify(exactly = 1) { context.getState("monitoringPerName.state.$taskName") }
@@ -112,7 +112,7 @@ class PulsarAvroStorageTests : ShouldSpec({
             val context = mockk<Context>()
             every { context.getState(any()) } returns AvroSerDe.serialize(stateIn)
             // when
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             val stateOut = stateStorage.getMonitoringPerNameState(stateIn.taskName)
             // then
             verify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName}") }
@@ -121,7 +121,7 @@ class PulsarAvroStorageTests : ShouldSpec({
         }
     }
 
-    context("PulsarAvroStorage.updateMonitoringPerNameState") {
+    context("PulsarStorage.updateMonitoringPerNameState") {
 
         should("initializes all counters when old state is null and save state") {
             val context = mockk<Context>()
@@ -142,7 +142,7 @@ class PulsarAvroStorageTests : ShouldSpec({
 
             mockkObject(AvroConverter)
 
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             stateStorage.updateMonitoringPerNameState(newState.taskName, newState, null)
 
             verifyAll {
@@ -187,7 +187,7 @@ class PulsarAvroStorageTests : ShouldSpec({
 
             mockkObject(AvroConverter)
 
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             stateStorage.updateMonitoringPerNameState(newState.taskName, newState, oldState)
 
             verifyAll {
@@ -205,14 +205,14 @@ class PulsarAvroStorageTests : ShouldSpec({
         }
     }
 
-    context("PulsarAvroStorage.deleteMonitoringPerNameState") {
+    context("PulsarStorage.deleteMonitoringPerNameState") {
         should("should delete state") {
             // given
             val stateIn = TestFactory.random(AvroMonitoringPerNameState::class)
             val context = mockk<Context>()
             every { context.deleteState(any()) } returns Unit
             // when
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             stateStorage.deleteMonitoringPerNameState(stateIn.taskName)
             // then
             verify(exactly = 1) { context.deleteState(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }
@@ -220,13 +220,13 @@ class PulsarAvroStorageTests : ShouldSpec({
         }
     }
 
-    context("PulsarAvroStorage.getMonitoringGlobalState") {
+    context("PulsarStorage.getMonitoringGlobalState") {
         should("return null when state does not exist") {
             // mocking
             val context = mockk<Context>()
             every { context.getState(any()) } returns null
             // given
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             // when
             val state = stateStorage.getMonitoringGlobalState()
             // then
@@ -241,7 +241,7 @@ class PulsarAvroStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(AvroMonitoringGlobalState::class)
             every { context.getState(any()) } returns AvroSerDe.serialize(stateIn)
             // given
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             // when
             val stateOut = stateStorage.getMonitoringGlobalState()
             // then
@@ -251,14 +251,14 @@ class PulsarAvroStorageTests : ShouldSpec({
         }
     }
 
-    context("PulsarAvroStorage.updateMonitoringGlobalState") {
+    context("PulsarStorage.updateMonitoringGlobalState") {
         should("record state") {
             // mocking
             val context = mockk<Context>()
             val stateIn = TestFactory.random(AvroMonitoringGlobalState::class)
             every { context.putState(any(), any()) } returns Unit
             // given
-            val stateStorage = PulsarAvroStorage(context)
+            val stateStorage = PulsarStorage(context)
             // when
             stateStorage.updateMonitoringGlobalState(stateIn, null)
             // then
@@ -272,13 +272,13 @@ class PulsarAvroStorageTests : ShouldSpec({
         }
     }
 
-    context("PulsarAvroStorage.deleteMonitoringGlobalState") {
+    context("PulsarStorage.deleteMonitoringGlobalState") {
         should("delete state") {
             // mocking
             val context = mockk<Context>()
             every { context.deleteState(any()) } returns Unit
             // given
-            val stageStorage = PulsarAvroStorage(context)
+            val stageStorage = PulsarStorage(context)
             // when
             stageStorage.deleteMonitoringGlobalState()
             // then
