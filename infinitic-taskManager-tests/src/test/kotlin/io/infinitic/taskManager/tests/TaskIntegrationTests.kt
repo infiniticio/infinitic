@@ -163,7 +163,8 @@ class TaskIntegrationTests : StringSpec({
         worker.setAvroDispatcher(dispatcher)
 
         dispatcher.apply {
-            taskEngineHandle = { taskEngine.handle(it) }
+            taskEngineHandle = {
+                taskEngine.handle(it) }
             monitoringPerNameHandle = { avro ->
                 monitoringPerName.handle(avro)
                 // update test status

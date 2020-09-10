@@ -16,7 +16,7 @@ class AvroMonitoringPerName {
 
     private val monitoring = MonitoringPerName()
 
-    fun handle(input: AvroEnvelopeForMonitoringPerName) {
+    suspend fun handle(input: AvroEnvelopeForMonitoringPerName) {
         monitoring.logger = logger
         monitoring.storage = MonitoringPerNameStorage(avroStorage)
         monitoring.dispatcher = Dispatcher(avroDispatcher)

@@ -9,19 +9,19 @@ import io.infinitic.taskManager.common.messages.ForWorkerMessage
 
 class Dispatcher(private val avroDispatcher: AvroDispatcher) {
 
-    fun toTaskEngine(msg: ForTaskEngineMessage, after: Float = 0f) {
+    suspend fun toTaskEngine(msg: ForTaskEngineMessage, after: Float = 0f) {
         avroDispatcher.toTaskEngine(AvroConverter.toTaskEngine(msg), after)
     }
 
-    fun toMonitoringPerName(msg: ForMonitoringPerNameMessage) {
+    suspend fun toMonitoringPerName(msg: ForMonitoringPerNameMessage) {
         avroDispatcher.toMonitoringPerName(AvroConverter.toMonitoringPerName(msg))
     }
 
-    fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
+    suspend fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
         avroDispatcher.toMonitoringGlobal(AvroConverter.toMonitoringGlobal(msg))
     }
 
-    fun toWorkers(msg: ForWorkerMessage) {
+    suspend fun toWorkers(msg: ForWorkerMessage) {
         avroDispatcher.toWorkers(AvroConverter.toWorkers(msg))
     }
 }

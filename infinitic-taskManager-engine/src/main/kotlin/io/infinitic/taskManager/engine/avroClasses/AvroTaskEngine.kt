@@ -16,7 +16,8 @@ class AvroTaskEngine {
 
     private val engine = TaskEngine()
 
-    fun handle(input: AvroEnvelopeForTaskEngine) {
+    suspend fun handle(input: AvroEnvelopeForTaskEngine) {
+
         engine.logger = logger
         engine.storage = TaskEngineStateStorage(avroStorage)
         engine.dispatcher = Dispatcher(avroDispatcher)

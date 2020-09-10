@@ -9,6 +9,8 @@ import io.infinitic.taskManager.engine.storages.MonitoringPerNameStorage
 import io.infinitic.taskManager.engine.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.coEvery
+import io.mockk.coVerifyAll
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -65,7 +67,7 @@ class MonitoringPerNameTests : ShouldSpec({
             val stateOutSlot = slot<MonitoringPerNameState>()
             every { storage.getState(msg.taskName) } returns null
             every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
-            every { dispatcher.toMonitoringGlobal(any<TaskCreated>()) } just runs
+            coEvery { dispatcher.toMonitoringGlobal(any<TaskCreated>()) } just runs
 
             val monitoringPerName = MonitoringPerName()
             monitoringPerName.logger = logger
@@ -75,7 +77,7 @@ class MonitoringPerNameTests : ShouldSpec({
             monitoringPerName.handle(msg)
             // then
             val stateOut = stateOutSlot.captured
-            verifyAll {
+            coVerifyAll {
                 storage.getState(msg.taskName)
                 storage.updateState(msg.taskName, stateOut, null)
                 dispatcher.toMonitoringGlobal(ofType<TaskCreated>())
