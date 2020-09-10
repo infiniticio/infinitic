@@ -2,12 +2,12 @@ package io.infinitic.workflowManager.common.data.steps
 
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.workflowManager.common.data.commands.CommandId
-import io.infinitic.workflowManager.common.data.steps.StepCriterion.And
-import io.infinitic.workflowManager.common.data.steps.StepCriterion.Or
+import io.infinitic.workflowManager.common.data.steps.Step.And
+import io.infinitic.workflowManager.common.data.steps.Step.Or
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStepId() = StepCriterion.Id(CommandId(TaskId()))
+fun getStepId() = Step.Id(CommandId(TaskId()))
 
 class StepCriterionTests : StringSpec({
     "Step should not be completed by default" {

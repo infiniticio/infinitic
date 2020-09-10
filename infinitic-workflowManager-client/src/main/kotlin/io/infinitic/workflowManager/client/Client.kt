@@ -1,12 +1,12 @@
 package io.infinitic.workflowManager.client
 
-import io.infinitic.taskManager.client.ProxyHandler
+import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodInput
+import io.infinitic.workflowManager.common.data.methods.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod
+import io.infinitic.workflowManager.common.data.methods.Method
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
@@ -33,7 +33,7 @@ class Client() : TaskClient() {
         apply: T.() -> Any?
     ): WorkflowInstance {
         // get a proxy for T
-        val handler = ProxyHandler()
+        val handler = MethodProxyHandler()
 
         val klass = Proxy.newProxyInstance(
             T::class.java.classLoader,
@@ -50,8 +50,8 @@ class Client() : TaskClient() {
         val msg = DispatchWorkflow(
             workflowId = WorkflowId(),
             workflowName = WorkflowName(T::class.java.name),
-            workflowMethod = WorkflowMethod.from(method),
-            workflowMethodInput = WorkflowMethodInput.from(method, handler.args),
+            method = Method.from(method),
+            methodInput = MethodInput.from(method, handler.args),
             workflowMeta = meta,
             workflowOptions = options
         )

@@ -1,20 +1,17 @@
-package io.infinitic.workflowManager.common.data.steps
+package io.infinitic.workflowManager.engine.engines
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.workflowManager.common.data.DelayId
-import io.infinitic.workflowManager.common.data.events.EventId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.commands.CommandId
+import io.infinitic.workflowManager.common.data.events.EventId
 import io.infinitic.workflowManager.common.data.properties.Properties
+import io.infinitic.workflowManager.common.data.steps.Step
+import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 
-data class PastStep(
-    val stepHash: StepHash,
-    val criterion: StepCriterion,
-    var propertiesAfterCompletion: Properties
-) {
+class StepEngine(private val step: Step) {
     @JsonIgnore
-    fun isCompleted() = criterion.isCompleted()
+    fun isCompleted() = step.isCompleted()
 
     fun completeTask(taskId: TaskId, properties: Properties): Boolean {
         return complete(CommandId(taskId), properties)
@@ -34,9 +31,10 @@ data class PastStep(
 
     private fun complete(commandId: CommandId, properties: Properties): Boolean {
         if (! isCompleted()) {
-            criterion.complete(commandId)
-            if (criterion.isCompleted()) {
-                propertiesAfterCompletion = properties.copy()
+            step.complete(commandId)
+            if (step.isCompleted()) {
+//                    propertiesAfterCompletion = properties.copy()
+                TODO()
                 return true
             }
         }

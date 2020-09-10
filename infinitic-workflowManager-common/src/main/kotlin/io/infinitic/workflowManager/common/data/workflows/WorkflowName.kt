@@ -2,7 +2,7 @@ package io.infinitic.workflowManager.common.data.workflows
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.taskManager.common.data.Name
+import io.infinitic.taskManager.common.data.bases.Name
 
 data class WorkflowName
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

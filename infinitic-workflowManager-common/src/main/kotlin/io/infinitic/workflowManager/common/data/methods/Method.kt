@@ -1,13 +1,13 @@
-package io.infinitic.workflowManager.common.data.workflows
+package io.infinitic.workflowManager.common.data.methods
 
 import java.lang.reflect.Method
 
-data class WorkflowMethod(
+data class Method(
     val workflowMethodName: String,
     val workflowMethodParameterTypes: List<String>?
 ) {
     companion object {
-        fun from(method: Method) = WorkflowMethod(
+        fun from(method: Method) = Method(
             workflowMethodName = method.name,
             workflowMethodParameterTypes = method.parameterTypes.map { it.name }
         )

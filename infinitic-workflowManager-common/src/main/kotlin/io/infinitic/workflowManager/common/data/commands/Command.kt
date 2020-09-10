@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskName
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodInput
+import io.infinitic.workflowManager.common.data.methods.Method
+import io.infinitic.workflowManager.common.data.methods.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
@@ -24,75 +24,56 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 //    JsonSubTypes.Type(value = SendEvent::class, name = "SEND_EVENT")
 )
 @JsonIgnoreProperties(ignoreUnknown = true)
-
-data class HashedCommand(
-    val command: Command,
-    val commandHash: CommandHash,
-    val commandIndex: CommandIndex
-)
-
-sealed class Command(
-    open val commandIndex: CommandIndex
-) {
-    fun hash(): CommandHash {
-//        println(Json.stringify(this))
-        val hash = CommandHash(SerializedData.from(this).hash())
-//        println(hash)
-        return hash
-    }
+sealed class Command {
+    fun hash() = CommandHash(SerializedData.from(this).hash())
 }
 
+/**
+ * DeferCommands are asynchronously processed by Workers
+ */
+
+sealed class DeferCommand : Command()
+
 data class DispatchTask(
-    override val commandIndex: CommandIndex,
     val taskName: TaskName,
     val taskInput: TaskInput
-) : Command(commandIndex)
+) : DeferCommand()
 
 data class DispatchChildWorkflow(
-    override val commandIndex: CommandIndex,
     val childWorkflowName: WorkflowName,
-    val childWorkflowMethod: WorkflowMethod,
-    val childWorkflowMethodInput: WorkflowMethodInput
-) : Command(commandIndex)
+    val childMethod: Method,
+    val childMethodInput: MethodInput
+) : DeferCommand()
 
-// data class WaitDelay(
-//    override val commandIndex: CommandIndex
-// ) : Command(commandIndex)
+// data class DispatchTimer(
+// ) : DeferCommand()
 //
-// data class WaitEvent(
-//    override val commandIndex: CommandIndex
-// ) : EngineCommand(commandIndex)
+// data class DispatchReceiver(
+// ) : DeferCommand()
 
 /**
- * InstantTask have already been processed by the Decider
+ * InlineTask are processed within WorkflowTasks
  */
-// data class RunInstantTask(
-//    override val commandIndex: CommandIndex
-// ) : Command(commandIndex)
+// data class RunInlineTask(
+// ) : Command()
 
 /**
- * EngineCommand are processed right away by the Engine
+ * EngineCommand are processed by the Engine
  */
 // sealed class EngineCommand(
-//    override val commandIndex: CommandIndex
-// ) : Command(commandIndex)
+// ) : Command()
 //
 // data class PauseWorkflow(
-//    override val commandIndex: CommandIndex
-// ) : EngineCommand(commandIndex)
+// ) : EngineCommand()
 //
 // data class ResumeWorkflow(
-//    override val commandIndex: CommandIndex
-// ) : EngineCommand(commandIndex)
+// ) : EngineCommand()
 //
 // data class CompleteWorkflow(
-//    override val commandIndex: CommandIndex
-// ) : EngineCommand(commandIndex)
+// ) : EngineCommand()
 //
 // data class TerminateWorkflow(
-//    override val commandIndex: CommandIndex
-// ) : EngineCommand(commandIndex)
+// ) : EngineCommand()
 //
 // data class SendEvent(
-//    override val commandIndex: CommandIndex
-// ) : EngineCommand(commandIndex)
+// ) : EngineCommand()

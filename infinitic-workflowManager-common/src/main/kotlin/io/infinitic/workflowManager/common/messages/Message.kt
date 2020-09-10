@@ -10,12 +10,12 @@ import io.infinitic.workflowManager.common.data.DelayId
 import io.infinitic.workflowManager.common.data.events.EventData
 import io.infinitic.workflowManager.common.data.events.EventName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodInput
+import io.infinitic.workflowManager.common.data.methods.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodOutput
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod
+import io.infinitic.workflowManager.common.data.methods.MethodOutput
+import io.infinitic.workflowManager.common.data.methods.Method
 
 sealed class Message
 
@@ -23,19 +23,19 @@ sealed class ForWorkflowEngineMessage(open val workflowId: WorkflowId) : Message
 
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
-    val workflowOutput: WorkflowMethodOutput?
+    val output: MethodOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childWorkflowOutput: WorkflowMethodOutput?
+    val childOutput: MethodOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childWorkflowOutput: WorkflowMethodOutput?
+    val childOutput: MethodOutput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class DecisionCompleted(
@@ -59,8 +59,8 @@ data class DelayCompleted(
 data class DispatchWorkflow(
     override val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val workflowMethod: WorkflowMethod,
-    val workflowMethodInput: WorkflowMethodInput,
+    val method: Method,
+    val methodInput: MethodInput,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : ForWorkflowEngineMessage(workflowId)

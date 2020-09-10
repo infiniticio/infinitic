@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.common.data
+package io.infinitic.taskManager.common.data.bases
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.data.SerializedData

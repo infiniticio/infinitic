@@ -13,20 +13,19 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     private val task = proxy<TaskA>()
 
     override fun test1(i: Int): String {
-        var j = task.log(i)
-        j += task.log(j)
-        j += task.log(j)
-
+        var j = ""
+//        var j = task.log(i)
+//        j += task.log(j)
+//        j += task.log(j)
+//
+        val s = async(task) { log(i) }
+        task.log(i)
         return j.toString()
     }
 }
 
-class TaskAImpl {
+class TaskAImpl : TaskA {
     companion object {
         var log = ""
-    }
-
-    fun log() {
-        log += "A"
     }
 }

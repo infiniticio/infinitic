@@ -11,7 +11,7 @@ import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
 import io.infinitic.taskManager.common.messages.CancelTask
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.RetryTask
-import java.lang.reflect.Proxy
+import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 
 open class Client() {
     lateinit var taskDispatcher: TaskDispatcher
@@ -30,13 +30,10 @@ open class Client() {
         apply: T.() -> Any?
     ): TaskInstance {
         // get a proxy for T
-        val handler = ProxyHandler()
+        val handler = MethodProxyHandler()
 
-        val klass = Proxy.newProxyInstance(
-            T::class.java.classLoader,
-            kotlin.arrayOf(T::class.java),
-            handler
-        ) as T
+        // get a proxy instance
+        val klass = handler.instance<T>()
 
         // method call will actually be done through the proxy by handler
         klass.apply()

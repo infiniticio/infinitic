@@ -1,6 +1,5 @@
 package io.infinitic.workflowManager.client
 
-import io.infinitic.common.data.interfaces.IdInterface
 import io.infinitic.taskManager.client.TaskDispatcher
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
@@ -10,9 +9,9 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethodInput
+import io.infinitic.workflowManager.common.data.methods.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMethod
+import io.infinitic.workflowManager.common.data.methods.Method
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
@@ -53,8 +52,8 @@ class ClientTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowMethod = WorkflowMethod("m1", listOf()),
-            workflowMethodInput = WorkflowMethodInput(),
+            method = Method("m1", listOf()),
+            methodInput = MethodInput(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -71,8 +70,8 @@ class ClientTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowMethod = WorkflowMethod("m1", listOf(Integer::class.java.name)),
-            workflowMethodInput = WorkflowMethodInput(0),
+            method = Method("m1", listOf(Integer::class.java.name)),
+            methodInput = MethodInput(0),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -87,8 +86,8 @@ class ClientTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowMethod = WorkflowMethod("m1", listOf(String::class.java.name)),
-            workflowMethodInput = WorkflowMethodInput("a"),
+            method = Method("m1", listOf(String::class.java.name)),
+            methodInput = MethodInput("a"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -103,8 +102,8 @@ class ClientTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowMethod = WorkflowMethod("m1", listOf(Int::class.java.name, String::class.java.name)),
-            workflowMethodInput = WorkflowMethodInput(0, "a"),
+            method = Method("m1", listOf(Int::class.java.name, String::class.java.name)),
+            methodInput = MethodInput(0, "a"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -121,8 +120,8 @@ class ClientTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = instance.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowMethod = WorkflowMethod("m1", listOf(IdInterface::class.java.name)),
-            workflowMethodInput = WorkflowMethodInput(workflowId),
+            method = Method("m1", listOf(CharSequence::class.java.name)),
+            methodInput = MethodInput(workflowId),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -220,7 +219,7 @@ class ClientTests : StringSpec({
             taskInput = TaskInput(taskId),
             taskName = TaskName("${FakeTask::class.java.name}::m1"),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf(IdInterface::class.java.name))
+            taskMeta = TaskMeta().withParameterTypes(listOf(CharSequence::class.java.name))
         )
     }
 
@@ -236,7 +235,7 @@ private interface FakeTask {
     fun m1(i: Int?): String
     fun m1(str: String): Any?
     fun m1(p1: Int, p2: String): String
-    fun m1(id: IdInterface): String
+    fun m1(id: CharSequence): String
 }
 
 private interface FakeWorkflow {
@@ -244,5 +243,5 @@ private interface FakeWorkflow {
     fun m1(i: Int?): String
     fun m1(str: String): Any?
     fun m1(p1: Int, p2: String): String
-    fun m1(id: IdInterface): String
+    fun m1(id: CharSequence): String
 }

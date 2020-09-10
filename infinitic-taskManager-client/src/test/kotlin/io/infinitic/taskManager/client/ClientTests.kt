@@ -1,6 +1,5 @@
 package io.infinitic.taskManager.client
 
-import io.infinitic.common.data.interfaces.IdInterface
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
@@ -108,18 +107,18 @@ class ClientTests : StringSpec({
 
     "Should be able to dispatch a method with an interface as parameter" {
         // when
-        val taskId = TaskId()
-        val task = client.dispatchTask<FakeTask> { m1(taskId) }
+        val fake = FakeClass()
+        val task = client.dispatchTask<FakeTask> { m1(fake) }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
 
         msg shouldBe DispatchTask(
             taskId = task.taskId,
-            taskInput = TaskInput(taskId),
+            taskInput = TaskInput(fake),
             taskName = TaskName("${FakeTask::class.java.name}::m1"),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf(IdInterface::class.java.name))
+            taskMeta = TaskMeta().withParameterTypes(listOf(FakeInterface::class.java.name))
         )
     }
 
@@ -150,11 +149,14 @@ class ClientTests : StringSpec({
     // TODO: add tests for error cases
 })
 
+private interface FakeInterface
+private data class FakeClass(val i: Int ? = 0) : FakeInterface
+
 private interface FakeTask {
     fun m1()
     fun m1(i: Int): String
     fun m1(str: String?): Any?
     fun m1(p1: Int, p2: String): String
-    fun m1(id: IdInterface): TaskId
+    fun m1(id: FakeInterface): TaskId
     fun m2(): Boolean
 }

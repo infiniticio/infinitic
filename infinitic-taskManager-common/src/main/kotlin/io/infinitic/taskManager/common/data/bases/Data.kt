@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.common.data
+package io.infinitic.taskManager.common.data.bases
 
 import io.infinitic.common.data.SerializedData
 

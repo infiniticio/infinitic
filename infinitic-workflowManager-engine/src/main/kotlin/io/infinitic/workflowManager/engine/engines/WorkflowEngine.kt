@@ -8,8 +8,8 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.workflowManager.common.data.branches.Branch
-import io.infinitic.workflowManager.common.data.branches.BranchId
+import io.infinitic.workflowManager.common.data.methods.Branch
+import io.infinitic.workflowManager.common.data.methods.MethodId
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
 import io.infinitic.workflowManager.common.states.WorkflowEngineState
@@ -104,9 +104,9 @@ class WorkflowEngine {
         val workflowTaskId = WorkflowTaskId()
         // define branch
         val branch = Branch(
-            branchId = BranchId(),
-            workflowMethod = msg.workflowMethod,
-            workflowMethodInput = msg.workflowMethodInput,
+            workflowMethodId = MethodId(),
+            workflowMethod = msg.method,
+            workflowMethodInput = msg.methodInput,
             propertiesAtStart = Properties(mapOf()),
             pastSteps = listOf()
         )

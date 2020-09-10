@@ -52,8 +52,8 @@ data class WorkflowTaskContextNotInitialized(
 data class WorkflowUpdatedWhileRunning(
     @JsonProperty("workflowName") val workflowName: String,
     @JsonProperty("workflowMethodName") val workflowMethodName: String,
-    @JsonProperty("index") val index: Int
+    @JsonProperty("position") val position: String
 ) : UserExceptionInWorker(
-    msg = "Definition of workflow \"$workflowName\" has been updated since its launch (detected at command $index in $workflowMethodName)",
+    msg = "Definition of workflow \"$workflowName\" has been updated since its launch (detected at position $position in $workflowMethodName)",
     help = "You can either kill this instance or revert its previous definition to be able to resume it"
 )

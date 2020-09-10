@@ -1,5 +1,9 @@
 package io.infinitic.workflowManager.common.data.workflows
 
 data class WorkflowOptions(
-    val runningTimeout: Float? = null
+    val workflowIntegrityCheckMode: WorkflowIntegrityCheckMode = WorkflowIntegrityCheckMode.ALL
 )
+
+enum class WorkflowIntegrityCheckMode {
+    NONE, SIMPLE_NAME_ONLY, ALL
+}
