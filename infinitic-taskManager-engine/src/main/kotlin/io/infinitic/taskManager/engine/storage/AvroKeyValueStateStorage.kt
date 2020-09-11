@@ -36,17 +36,17 @@ class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
     }
 
     override fun getMonitoringPerNameState(taskName: TaskName): MonitoringPerNameState? {
-        return storage.getState(getMonitoringPerNameStateKey(taskName.name))
+        return storage.getState(getMonitoringPerNameStateKey(taskName))
             ?.let { AvroSerDe.deserialize<AvroMonitoringPerNameState>(it) }
             ?.let { AvroConverter.fromStorage(it) }
     }
 
     override fun updateMonitoringPerNameState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
-        val counterOkKey = getMonitoringPerNameCounterKey(taskName.name, TaskStatus.RUNNING_OK)
-        val counterWarningKey = getMonitoringPerNameCounterKey(taskName.name, TaskStatus.RUNNING_WARNING)
-        val counterErrorKey = getMonitoringPerNameCounterKey(taskName.name, TaskStatus.RUNNING_ERROR)
-        val counterCompletedKey = getMonitoringPerNameCounterKey(taskName.name, TaskStatus.TERMINATED_COMPLETED)
-        val counterCanceledKey = getMonitoringPerNameCounterKey(taskName.name, TaskStatus.TERMINATED_CANCELED)
+        val counterOkKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_OK)
+        val counterWarningKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_WARNING)
+        val counterErrorKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_ERROR)
+        val counterCompletedKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.TERMINATED_COMPLETED)
+        val counterCanceledKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.TERMINATED_CANCELED)
 
         // use counters to save state, to avoid race conditions
         val incrOk = newState.runningOkCount - (oldState?.runningOkCount ?: 0L)
@@ -71,11 +71,11 @@ class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
             terminatedCanceledCount = storage.getCounter(counterCanceledKey)
         }.build()
 
-        storage.putState(getMonitoringPerNameStateKey(taskName.name), AvroSerDe.serialize(state))
+        storage.putState(getMonitoringPerNameStateKey(taskName), AvroSerDe.serialize(state))
     }
 
     override fun deleteMonitoringPerNameState(taskName: TaskName) {
-        storage.deleteState(getMonitoringPerNameStateKey(taskName.name))
+        storage.deleteState(getMonitoringPerNameStateKey(taskName))
     }
 
     override fun getTaskEngineState(taskId: TaskId): TaskEngineState? {
@@ -101,7 +101,7 @@ class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
     }
 
     private fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
-    private fun getMonitoringPerNameStateKey(taskName: String) = "monitoringPerName.state.$taskName"
-    private fun getMonitoringPerNameCounterKey(taskName: String, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.toLowerCase()}"
+    internal fun getMonitoringPerNameStateKey(taskName: TaskName) = "monitoringPerName.state.${taskName.name}"
+    internal fun getMonitoringPerNameCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.name.toLowerCase()}"
     private fun getEngineStateKey(taskId: String) = "engine.state.$taskId"
 }
