@@ -15,10 +15,10 @@ import io.infinitic.taskManager.common.states.TaskEngineState
  *
  * This state storage is not suitable for production because it is not persistent.
  */
-class InMemoryStateStorage : StateStorage {
-    var taskEngineStore: Map<String, TaskEngineState> = mapOf()
-    var monitoringPerNameStore: Map<String, MonitoringPerNameState> = mapOf()
-    var monitoringGlobalStore: MonitoringGlobalState? = null
+open class InMemoryStateStorage : StateStorage {
+    protected var taskEngineStore: Map<String, TaskEngineState> = mapOf()
+    protected var monitoringPerNameStore: Map<String, MonitoringPerNameState> = mapOf()
+    protected var monitoringGlobalStore: MonitoringGlobalState? = null
 
     override fun updateMonitoringGlobalState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
         monitoringGlobalStore = newState
