@@ -28,7 +28,7 @@ dependencies {
     implementation(project(":infinitic-taskManager-common"))
     implementation(project(":infinitic-taskManager-engine"))
     implementation(project(":infinitic-taskManager-dispatcher-pulsar"))
-    implementation(project(":infinitic-taskManager-storage-pulsar"))
+    implementation(project(":infinitic-storage-pulsar"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

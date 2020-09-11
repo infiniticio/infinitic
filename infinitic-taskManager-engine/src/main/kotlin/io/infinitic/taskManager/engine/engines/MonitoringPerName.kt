@@ -6,18 +6,18 @@ import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
 import io.infinitic.taskManager.common.messages.TaskCreated
 import io.infinitic.taskManager.common.messages.TaskStatusUpdated
 import io.infinitic.taskManager.common.states.MonitoringPerNameState
-import io.infinitic.taskManager.engine.storages.MonitoringPerNameStorage
+import io.infinitic.taskManager.engine.storage.StateStorage
 import org.slf4j.Logger
 
 class MonitoringPerName {
     lateinit var logger: Logger
-    lateinit var storage: MonitoringPerNameStorage
+    lateinit var storage: StateStorage
     lateinit var dispatcher: Dispatcher
 
     suspend fun handle(message: ForMonitoringPerNameMessage) {
 
         // get associated state
-        val oldState = storage.getState(message.taskName)
+        val oldState = storage.getMonitoringPerNameState(message.taskName)
         val newState = oldState?.deepCopy() ?: MonitoringPerNameState(message.taskName)
 
         when (message) {
@@ -26,7 +26,7 @@ class MonitoringPerName {
 
         // Update stored state if needed and existing
         if (newState != oldState) {
-            storage.updateState(message.taskName, newState, oldState)
+            storage.updateMonitoringPerNameState(message.taskName, newState, oldState)
         }
 
         // It's a new task type
