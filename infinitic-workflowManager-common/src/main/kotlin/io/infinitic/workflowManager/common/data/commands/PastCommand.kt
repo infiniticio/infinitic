@@ -23,4 +23,3 @@ data class PastCommand(
                     newCommand.commandHash == commandHash
             }
 }
-

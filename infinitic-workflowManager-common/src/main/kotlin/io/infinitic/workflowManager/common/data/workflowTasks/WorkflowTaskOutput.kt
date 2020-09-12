@@ -5,6 +5,6 @@ import io.infinitic.workflowManager.common.data.properties.PropertyValue
 import io.infinitic.workflowManager.common.data.properties.PropertyName
 
 data class WorkflowTaskOutput(
-        val commands: List<PastCommand> = listOf(),
-        val updatedProperties: Map<PropertyName, PropertyValue> = mapOf()
+    val commands: List<PastCommand> = listOf(),
+    val updatedProperties: Map<PropertyName, PropertyValue> = mapOf()
 )

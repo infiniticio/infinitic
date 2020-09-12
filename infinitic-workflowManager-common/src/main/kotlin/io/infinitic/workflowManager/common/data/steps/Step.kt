@@ -24,7 +24,7 @@ import kotlin.Int.Companion.MIN_VALUE
 @JsonIgnoreProperties(ignoreUnknown = true)
 sealed class Step {
 
-    abstract fun stepStatus(index: WorkflowTaskIndex) : StepStatus
+    abstract fun stepStatus(index: WorkflowTaskIndex): StepStatus
 
     fun hash() = StepHash(SerializedData.from(this).hash())
 
@@ -43,16 +43,18 @@ sealed class Step {
                     is CommandStatusOngoing -> {
                         StepStatusOngoing()
                     }
-                    is CommandStatusCanceled -> if (index < status.cancellationWorkflowTaskIndex) {
-                        StepStatusOngoing()
-                    } else {
-                        StepStatusCanceled(status.result, status.cancellationWorkflowTaskIndex)
-                    }
-                    is CommandStatusCompleted -> if (index < status.completionWorkflowTaskIndex) {
-                        StepStatusOngoing()
-                    } else {
-                        StepStatusCompleted(status.result, status.completionWorkflowTaskIndex)
-                    }
+                    is CommandStatusCanceled ->
+                        if (index < status.cancellationWorkflowTaskIndex) {
+                            StepStatusOngoing()
+                        } else {
+                            StepStatusCanceled(status.result, status.cancellationWorkflowTaskIndex)
+                        }
+                    is CommandStatusCompleted ->
+                        if (index < status.completionWorkflowTaskIndex) {
+                            StepStatusOngoing()
+                        } else {
+                            StepStatusCompleted(status.result, status.completionWorkflowTaskIndex)
+                        }
                 }
             }
         }
@@ -62,24 +64,24 @@ sealed class Step {
 
         override fun stepStatus(index: WorkflowTaskIndex): StepStatus {
             val statuses = steps.map { it.stepStatus(index) }
-            if (statuses.any { it is StepStatusOngoing} ) return StepStatusOngoing()
+            if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing()
 
             val results = statuses.map {
-                when(it) {
+                when (it) {
                     is StepStatusOngoing -> null
                     is StepStatusCompleted -> it.result
                     is StepStatusCanceled -> it.result
                 }
             }
             val maxIndex = statuses.map {
-                when(it) {
+                when (it) {
                     is StepStatusOngoing -> WorkflowTaskIndex(MIN_VALUE)
                     is StepStatusCompleted -> it.completionWorkflowTaskIndex
                     is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
                 }
             }.max()!!
 
-            if (statuses.all { it is StepStatusCompleted} ) return StepStatusCompleted(results, maxIndex)
+            if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(results, maxIndex)
 
             return StepStatusCanceled(results, maxIndex)
         }
@@ -89,18 +91,18 @@ sealed class Step {
         override fun stepStatus(index: WorkflowTaskIndex): StepStatus {
             val statuses = steps.map { it.stepStatus(index) }
             // if all steps are ongoing then returns StepStatusOngoing
-            if (statuses.all { it is StepStatusOngoing} ) return StepStatusOngoing()
+            if (statuses.all { it is StepStatusOngoing }) return StepStatusOngoing()
             // find first step not ongoing
             // TODO (Presumably rare case) to be exact we should be able to differentiate the first one in case of deferred completed or cancelled at the same index
             val minStep = statuses.minBy {
-                when(it) {
+                when (it) {
                     is StepStatusOngoing -> WorkflowTaskIndex(MAX_VALUE)
                     is StepStatusCompleted -> it.completionWorkflowTaskIndex
                     is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
                 }
             }!!
 
-            return when(minStep) {
+            return when (minStep) {
                 is StepStatusOngoing -> throw RuntimeException("This should not happen")
                 is StepStatusCompleted -> StepStatusCompleted(minStep.result, minStep.completionWorkflowTaskIndex)
                 is StepStatusCanceled -> StepStatusCanceled(minStep.result, minStep.cancellationWorkflowTaskIndex)

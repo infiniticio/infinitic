@@ -7,11 +7,11 @@ data class NewCommand(
     val command: Command,
     val commandSimpleName: CommandSimpleName,
     val commandStringPosition: StringPosition,
-    val commandType: CommandType = when(command) {
+    val commandType: CommandType = when (command) {
         is DispatchTask -> CommandType.TASK
         is DispatchChildWorkflow -> CommandType.CHILD_WORKFLOW
         is DispatchTimer -> CommandType.TIMER
         is DispatchReceiver -> CommandType.RECEIVER
     },
     val commandHash: CommandHash = command.hash()
-    )
+)

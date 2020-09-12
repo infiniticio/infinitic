@@ -44,5 +44,3 @@ data class DispatchTimer(
 data class DispatchReceiver(
     val klass: String
 ) : Command()
-
-

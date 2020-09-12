@@ -33,7 +33,7 @@ class MethodExecutionContext(
     private var currentMethodPosition: MethodPosition = MethodPosition(null, -1)
 
     // when method is processed, this value will change each time a step is completed
-    private var currentWorkflowTaskIndex : WorkflowTaskIndex = WorkflowTaskIndex(0)
+    private var currentWorkflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0)
 
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
@@ -126,9 +126,9 @@ class MethodExecutionContext(
             is StepStatusOngoing ->
                 throw KnownStepException()
             is StepStatusCompleted ->
-                if(currentWorkflowTaskIndex < stepStatus.completionWorkflowTaskIndex) throw KnownStepException()
+                if (currentWorkflowTaskIndex < stepStatus.completionWorkflowTaskIndex) throw KnownStepException()
             is StepStatusCanceled ->
-                if(currentWorkflowTaskIndex < stepStatus.cancellationWorkflowTaskIndex) throw KnownStepException()
+                if (currentWorkflowTaskIndex < stepStatus.cancellationWorkflowTaskIndex) throw KnownStepException()
         }
         // update workflow instance properties
         val properties = pastStep.workflowPropertiesAfterCompletion.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
@@ -144,7 +144,7 @@ class MethodExecutionContext(
     internal fun <T> result(deferred: Deferred<T>): T {
         await(deferred)
         // if we are here, then we know that this deferred is completed or canceled
-        return when(val status = deferred.step.stepStatus(currentWorkflowTaskIndex)) {
+        return when (val status = deferred.step.stepStatus(currentWorkflowTaskIndex)) {
             is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN")
             is StepStatusCompleted -> status.result as T
             is StepStatusCanceled -> status.result as T
@@ -154,7 +154,7 @@ class MethodExecutionContext(
     /*
      * Deferred status()
      */
-    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when(deferred.step.stepStatus(currentWorkflowTaskIndex)) {
+    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatus(currentWorkflowTaskIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
@@ -170,7 +170,8 @@ class MethodExecutionContext(
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.method.methodName}",
-                "${currentMethodPosition.stringPosition}")
+                "${currentMethodPosition.stringPosition}"
+            )
         }
 
         return pastCommand
@@ -186,7 +187,8 @@ class MethodExecutionContext(
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.method.methodName}",
-                "${currentMethodPosition.stringPosition}")
+                "${currentMethodPosition.stringPosition}"
+            )
         }
 
         return pastStep

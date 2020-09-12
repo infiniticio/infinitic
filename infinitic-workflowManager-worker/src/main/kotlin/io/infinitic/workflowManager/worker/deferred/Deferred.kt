@@ -4,17 +4,20 @@ import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.exceptions.MixingDeferredFromDifferentWorkflowMethodExecution
 import io.infinitic.workflowManager.worker.data.MethodExecutionContext
 
-data class Deferred<out T>(val step : Step, internal val methodExecutionContext: MethodExecutionContext) {
+data class Deferred<out T>(
+    internal val step: Step,
+    internal val methodExecutionContext: MethodExecutionContext
+) {
 
-    fun await() : Deferred<T> = methodExecutionContext.await(this)
+    fun await(): Deferred<T> = methodExecutionContext.await(this)
 
-    fun result() : T = methodExecutionContext.result(this)
+    fun result(): T = methodExecutionContext.result(this)
 
-    fun status() : DeferredStatus = methodExecutionContext.status(this)
+    fun status(): DeferredStatus = methodExecutionContext.status(this)
 }
 
 // infix functions to compose Deferred
-infix fun <T> Deferred<T>.or(other: Deferred<T>)=
+infix fun <T> Deferred<T>.or(other: Deferred<T>) =
     Deferred<T>(Step.Or(listOf(this.step, other.step)), getMethodExecutionContext(this, other))
 @JvmName("andT0") infix fun <T> Deferred<T>.and(other: Deferred<T>) =
     Deferred<List<T>>(Step.And(listOf(this.step, other.step)), getMethodExecutionContext(this, other))

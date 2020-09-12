@@ -1,11 +1,5 @@
 package io.infinitic.workflowManager.common.data.steps
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.workflowManager.common.data.DelayId
-import io.infinitic.workflowManager.common.data.events.EventId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.instructions.PastInstruction
 import io.infinitic.workflowManager.common.data.instructions.StringPosition
 import io.infinitic.workflowManager.common.data.properties.Properties

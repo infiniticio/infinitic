@@ -2,7 +2,6 @@ package io.infinitic.workflowManager.common.exceptions
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import io.infinitic.taskManager.common.exceptions.UserExceptionInClient
 
 /*
  *  @JsonIgnoreProperties and @JsonProperty annotations are here

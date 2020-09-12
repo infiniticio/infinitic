@@ -3,7 +3,6 @@ package io.infinitic.workflowManager.worker
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.taskManager.common.parser.getNewInstancePerName
-import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.parser.setPropertiesToObject
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskOutput

@@ -15,7 +15,6 @@ import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
-import io.infinitic.workflowManager.worker.deferred.DeferredId
 import io.infinitic.workflowManager.worker.deferred.DeferredIdd
 import kotlinx.coroutines.runBlocking
 
@@ -24,14 +23,12 @@ fun main() = runBlocking<Unit> {
     val d1 = DeferredIdd<String>("qwerty")
     val d2 = DeferredIdd<String>("asdfgh")
 
-
-
     val methodRun = MethodRun(
-        methodId =  MethodId(),
+        methodId = MethodId(),
         methodName = MethodName.from(WorkflowA::class.java.methods.first { it.name == "test1" }),
         methodInput = MethodInput(0),
-        methodPropertiesAtStart=  Properties(mapOf<PropertyName, PropertyHash>()),
-        methodPastInstructions =  listOf<PastInstruction>()
+        methodPropertiesAtStart = Properties(mapOf<PropertyName, PropertyHash>()),
+        methodPastInstructions = listOf<PastInstruction>()
     )
 
     val input = WorkflowTaskInput(
@@ -39,7 +36,7 @@ fun main() = runBlocking<Unit> {
         workflowName = WorkflowName(WorkflowAImpl::class.java.name),
         workflowOptions = WorkflowOptions(),
         workflowPropertyStore = PropertyStore(mutableMapOf<PropertyHash, PropertyValue>()),
-        workflowTaskIndex =  WorkflowTaskIndex(0),
+        workflowTaskIndex = WorkflowTaskIndex(0),
         method = methodRun
     )
 
