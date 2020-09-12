@@ -57,7 +57,7 @@ class WorkflowEngine {
         if (oldState == null && msg !is DispatchWorkflow) return
 
         // store message (except DecisionCompleted) if a decision is ongoing
-        if (oldState?.ongoingWorkflowTaskId != null && msg !is DecisionCompleted) {
+        if (oldState?.currentWorkflowTaskId != null && msg !is DecisionCompleted) {
             val newState = bufferMessage(oldState, msg)
             storage.updateState(msg.workflowId, newState, oldState)
             return
@@ -105,20 +105,20 @@ class WorkflowEngine {
         // define branch
         val branch = Branch(
             workflowMethodId = MethodId(),
-            workflowMethod = msg.method,
+            workflowMethod = msg.methodName,
             workflowMethodInput = msg.methodInput,
             propertiesAtStart = Properties(mapOf()),
             pastSteps = listOf()
         )
         // initialize state
-        state.ongoingWorkflowTaskId = workflowTaskId
-        state.runningBranches.add(branch)
+        state.currentWorkflowTaskId = workflowTaskId
+        state.currentMethodRuns.add(branch)
         // decision input
         val decisionInput = WorkflowTaskInput(
             workflowName = msg.workflowName,
             workflowId = msg.workflowId,
             branches = listOf(branch),
-            store = filterStore(state.store, listOf(branch))
+            store = filterStore(state.propertyStore, listOf(branch))
         )
         // dispatch decision
         dispatcher.toDeciders(

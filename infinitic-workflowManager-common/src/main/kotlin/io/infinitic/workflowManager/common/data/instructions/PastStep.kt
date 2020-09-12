@@ -10,14 +10,16 @@ import io.infinitic.workflowManager.common.data.commands.NewCommand
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.data.steps.StepHash
-import io.infinitic.workflowManager.common.data.workflows.WorkflowIntegrityCheckMode
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.workflowManager.common.data.workflows.WorkflowChangeCheckMode
 
-data class PastStep(
-    val stepPosition: Position,
-    val stepHash: StepHash,
+class PastStep(
+    override val pastPosition: PastPosition,
     val step: Step,
-    var propertiesAfterCompletion: Properties
-) : PastInstruction(stepPosition) {
+    val stepHash: StepHash,
+    var workflowPropertiesAfterCompletion: Properties,
+    val completedFromWorkflowTaskIndex: WorkflowTaskIndex
+) : PastInstruction(pastPosition) {
     @JsonIgnore fun isCompleted() = step.isCompleted()
 
     fun completeTask(taskId: TaskId, properties: Properties): Boolean {
@@ -40,14 +42,14 @@ data class PastStep(
         if (! isCompleted()) {
             step.complete(commandId)
             if (step.isCompleted()) {
-                propertiesAfterCompletion = properties.copy()
+                workflowPropertiesAfterCompletion = properties.copy()
                 return true
             }
         }
         return false
     }
 
-    override fun isSimilarTo(newCommand: NewCommand, mode: WorkflowIntegrityCheckMode): Boolean {
+    override fun isSimilarTo(newCommand: NewCommand, mode: WorkflowChangeCheckMode): Boolean {
         TODO("Not yet implemented")
     }
 }

@@ -8,5 +8,5 @@ abstract class Name(open val name: String) : CharSequence by name, Comparable<St
         fun fromMethod(method: Method) = "${method.declaringClass.name}${Constants.METHOD_DIVIDER}${method.name}"
     }
 
-    override fun toString() = name
+    final override fun toString() = name
 }

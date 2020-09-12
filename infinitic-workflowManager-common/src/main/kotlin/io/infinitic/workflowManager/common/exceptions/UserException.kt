@@ -2,6 +2,7 @@ package io.infinitic.workflowManager.common.exceptions
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import io.infinitic.taskManager.common.exceptions.UserExceptionInClient
 
 /*
  *  @JsonIgnoreProperties and @JsonProperty annotations are here
@@ -56,4 +57,11 @@ data class WorkflowUpdatedWhileRunning(
 ) : UserExceptionInWorker(
     msg = "Definition of workflow \"$workflowName\" has been updated since its launch (detected at position $position in $workflowMethodName)",
     help = "You can either kill this instance or revert its previous definition to be able to resume it"
+)
+
+data class NoMethodCallAtAsync(
+    @JsonProperty("name") val name: String
+) : UserExceptionInWorker(
+    msg = "You must use a method of \"$name\" when using \"async\" method",
+    help = "Make sure to call exactly one method of \"$name\" within the curly braces - example: async(foo) { bar(*args) }"
 )

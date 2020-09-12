@@ -1,12 +1,12 @@
 package io.infinitic.workflowManager.client
 
 import io.infinitic.taskManager.common.proxies.MethodProxyHandler
-import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
+import io.infinitic.taskManager.common.exceptions.NoMethodCall
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.methods.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
-import io.infinitic.workflowManager.common.data.methods.Method
+import io.infinitic.workflowManager.common.data.methods.MethodName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
@@ -45,12 +45,12 @@ class Client() : TaskClient() {
         klass.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchWorkflow")
+        val method = handler.method ?: throw NoMethodCall(T::class.java.name, "dispatchWorkflow")
 
         val msg = DispatchWorkflow(
             workflowId = WorkflowId(),
             workflowName = WorkflowName(T::class.java.name),
-            method = Method.from(method),
+            methodName = MethodName.from(method),
             methodInput = MethodInput.from(method, handler.args),
             workflowMeta = meta,
             workflowOptions = options

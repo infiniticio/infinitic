@@ -17,51 +17,43 @@ class WorkflowTaskImpl : WorkflowTask {
         // get  instance workflow by name
         val workflowInstance = getNewInstancePerName("${input.workflowName}") as Workflow
 
-        // invoke methods
-        for (branch in input.branches) {
-            // set branch initial properties
-            val properties = branch.propertiesAtStart.mapValues { input.store[it.value] }
-            setPropertiesToObject(workflowInstance, properties)
+        // set initial properties
+        val properties = input.method.methodPropertiesAtStart.mapValues { input.workflowPropertyStore[it.value] }
+        setPropertiesToObject(workflowInstance, properties)
 
-            // get method
-            val method = if (branch.workflowMethod.workflowMethodParameterTypes == null) {
-                getMethodPerNameAndParameterCount(
-                    workflowInstance,
-                    branch.workflowMethod.workflowMethodName,
-                    branch.workflowMethodInput.size
-                )
-            } else {
-                getMethodPerNameAndParameterTypes(
-                    workflowInstance,
-                    branch.workflowMethod.workflowMethodName,
-                    branch.workflowMethod.workflowMethodParameterTypes!!
-                )
-            }
-
-            // set branchContext
-            val methodContext = MethodContext(
-                workflowName = input.workflowName,
-                workflowId = input.workflowId,
-                workflowOptions = input.workflowOptions,
-                pastInstructions = branch.pastInstructions
+        // get method
+        val method = if (input.method.methodName.methodParameterTypes == null) {
+            getMethodPerNameAndParameterCount(
+                workflowInstance,
+                input.method.methodName.methodName,
+                input.method.methodInput.size
             )
-            workflowInstance.setMethodContext(methodContext)
-            // run it
-            val output = try {
-                method.invoke(workflowInstance, *branch.workflowMethodInput.data)
-            } catch (e: InvocationTargetException) {
-                when (e.cause) {
-                    is NewStepException -> {
-                        methodContext.newStep = Step.Id((e.cause as NewStepException).newCommand.commandId)
-                    }
-                    is KnownStepException -> Unit
-                    else -> throw e.cause!!
+        } else {
+            getMethodPerNameAndParameterTypes(
+                workflowInstance,
+                input.method.methodName.methodName,
+                input.method.methodName.methodParameterTypes!!
+            )
+        }
+
+        // set methodContext
+        val methodContext = MethodContext(input, workflowInstance)
+        workflowInstance.methodContext = methodContext
+
+        // run it
+        val output = try {
+            method.invoke(workflowInstance, *input.method.methodInput.data)
+        } catch (e: InvocationTargetException) {
+            when (e.cause) {
+                is NewStepException -> {
+                    methodContext.newStep = Step.Id((e.cause as NewStepException).newCommand.commandId)
                 }
-            } finally {
-                // send WorkflowTaskOutput(workflowId, newStep, newCommands)
+                is KnownStepException -> Unit
+                else -> throw e.cause!!
             }
         }
-        // run method
+
+        // send WorkflowTaskOutput(workflowId, newStep, newCommands)
         return WorkflowTaskOutput()
     }
 }

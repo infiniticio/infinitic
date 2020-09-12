@@ -20,6 +20,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 //
         val s = async(task) { log(i) }
         task.log(i)
+
         return j.toString()
     }
 }

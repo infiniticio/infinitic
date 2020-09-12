@@ -1,30 +1,56 @@
 package io.infinitic.workflowManager.worker
 
+import io.infinitic.workflowManager.common.data.instructions.PastInstruction
+import io.infinitic.workflowManager.common.data.methods.MethodName
+import io.infinitic.workflowManager.common.data.methods.MethodId
+import io.infinitic.workflowManager.common.data.methods.MethodInput
+import io.infinitic.workflowManager.common.data.methods.MethodRun
+import io.infinitic.workflowManager.common.data.properties.Properties
+import io.infinitic.workflowManager.common.data.properties.PropertyHash
+import io.infinitic.workflowManager.common.data.properties.PropertyName
+import io.infinitic.workflowManager.common.data.properties.PropertyStore
+import io.infinitic.workflowManager.common.data.properties.PropertyValue
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
-import io.infinitic.workflowManager.worker.data.MethodContext
-import io.infinitic.workflowManager.worker.exceptions.KnownStepException
-import io.infinitic.workflowManager.worker.exceptions.NewStepException
+import io.infinitic.workflowManager.worker.Deferred.Deferred
+import io.infinitic.workflowManager.worker.Deferred.DeferredId
+import io.infinitic.workflowManager.worker.Deferred.DeferredIdd
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking<Unit> {
 
-    val w = WorkflowAImpl()
-    w.setMethodContext(
-        MethodContext(
-            workflowName = WorkflowName(""),
-            workflowId = WorkflowId(),
-            workflowOptions = WorkflowOptions(),
-            pastInstructions = listOf()
-        )
+    val d1 = DeferredIdd<String>("qwerty")
+    val d2 = DeferredIdd<String>("asdfgh")
+
+
+
+    val methodRun = MethodRun(
+        methodId =  MethodId(),
+        methodName = MethodName.from(WorkflowA::class.java.methods.first { it.name == "test1" }),
+        methodInput = MethodInput(0),
+        methodPropertiesAtStart=  Properties(mapOf<PropertyName, PropertyHash>()),
+        methodPastInstructions =  listOf<PastInstruction>()
     )
 
-    fun test() = try {
-        val output = w.test1(1)
-        println("output: $output")
-    } catch (e: NewStepException) {
-        println(e)
+    val input = WorkflowTaskInput(
+        workflowId = WorkflowId(),
+        workflowName = WorkflowName(WorkflowAImpl::class.java.name),
+        workflowOptions = WorkflowOptions(),
+        workflowPropertyStore = PropertyStore(mutableMapOf<PropertyHash, PropertyValue>()),
+        workflowTaskIndex =  WorkflowTaskIndex(0),
+        method = methodRun
+    )
+
+//    WorkflowTaskImpl().handle(input)
+
+//    fun test() = try {
+//        val output = w.test1(1)
+//        println("output: $output")
+//    } catch (e: NewStepException) {
+//        println(e)
 //        val pastInstructions = w.getBranchContext().pastInstructions + w.getBranchContext().newCommands.map {
 //            println("newCommand: $it")
 //            TaskDispatched(
@@ -38,8 +64,8 @@ fun main() = runBlocking<Unit> {
 //        w.setBranchContext(w.getBranchContext().copy(
 //            pastInstructions = pastInstructions
 //        ))
-    } catch (e: KnownStepException) {
-        println(e)
+//    } catch (e: KnownStepException) {
+//        println(e)
 
 //        val pastInstructions = w.getBranchContext().pastInstructions.mapTo(mutableListOf()) {
 //            when (it) {
@@ -53,16 +79,16 @@ fun main() = runBlocking<Unit> {
 //        w.setBranchContext(w.getBranchContext().copy(
 //            pastInstructions = pastInstructions
 //        ))
-    } finally {
+//    } finally {
 //        w.setBranchContext(w.getBranchContext().copy(
 //            currentPosition = Position(null, -1),
 //            newCommands = mutableListOf()
 //        ))
 //
 //        println("context ${w.getBranchContext().pastInstructions}")
-    }
+//    }
 
-    test()
+//    test()
 //    test()
 //    test()
 //    test()

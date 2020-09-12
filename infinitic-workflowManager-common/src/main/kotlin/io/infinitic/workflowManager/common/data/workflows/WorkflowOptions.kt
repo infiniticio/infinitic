@@ -1,9 +1,9 @@
 package io.infinitic.workflowManager.common.data.workflows
 
 data class WorkflowOptions(
-    val workflowIntegrityCheckMode: WorkflowIntegrityCheckMode = WorkflowIntegrityCheckMode.ALL
+    val workflowChangeCheckMode: WorkflowChangeCheckMode = WorkflowChangeCheckMode.ALL
 )
 
-enum class WorkflowIntegrityCheckMode {
+enum class WorkflowChangeCheckMode {
     NONE, SIMPLE_NAME_ONLY, ALL
 }

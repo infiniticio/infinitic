@@ -15,25 +15,25 @@ import io.infinitic.workflowManager.data.commands.CommandStatus
 )
 @JsonIgnoreProperties(ignoreUnknown = true)
 sealed class Step {
-    data class Id(val commandId: CommandId, var commandStatus: CommandStatus = CommandStatus.DISPATCHED) : Step()
+    data class Id(val commandId: CommandId, var status: () -> Status) : Step()
     data class And(var commands: List<Step>) : Step()
     data class Or(var commands: List<Step>) : Step()
 
     @JsonIgnore
     fun isCompleted(): Boolean = when (this) {
-        is Id -> this.commandStatus == CommandStatus.COMPLETED
+        is Id -> status() in listOf(Status.COMPLETED, Status.CANCELED)
         is And -> this.commands.all { s -> s.isCompleted() }
         is Or -> this.commands.any { s -> s.isCompleted() }
     }
 
-    fun complete(commandId: CommandId): Step {
-        when (this) {
-            is Id -> if (this.commandId == commandId) this.commandStatus = CommandStatus.COMPLETED
-            is And -> this.commands = this.commands.map { s -> s.complete(commandId) }
-            is Or -> this.commands = this.commands.map { s -> s.complete(commandId) }
-        }
-        return this.resolveOr().compose()
-    }
+//    fun complete(commandId: CommandId): Step {
+//        when (this) {
+//            is Id -> if (this.commandId == commandId) this.isTerminated = CommandStatus.COMPLETED
+//            is And -> this.commands = this.commands.map { s -> s.complete(commandId) }
+//            is Or -> this.commands = this.commands.map { s -> s.complete(commandId) }
+//        }
+//        return this.resolveOr().compose()
+//    }
 
     private fun resolveOr(): Step {
         when (this) {
@@ -72,5 +72,15 @@ sealed class Step {
             }
         }
         return this
+    }
+
+    enum class Status {
+        ONGOING,
+        CANCELED {
+            lateinit var output: Any
+        },
+        COMPLETED{
+            lateinit var output: Any
+        }
     }
 }

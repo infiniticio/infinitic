@@ -7,7 +7,7 @@ import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
+import io.infinitic.taskManager.common.exceptions.NoMethodCall
 import io.infinitic.taskManager.common.messages.CancelTask
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.RetryTask
@@ -39,7 +39,7 @@ open class Client() {
         klass.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchTask")
+        val method = handler.method ?: throw NoMethodCall(T::class.java.name, "dispatchTask")
 
         val msg = DispatchTask(
             taskId = TaskId(),

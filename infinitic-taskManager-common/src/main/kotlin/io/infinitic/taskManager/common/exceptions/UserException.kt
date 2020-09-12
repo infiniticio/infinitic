@@ -65,7 +65,7 @@ data class NoMethodCallAtDispatch(
     @JsonProperty("dispatch") val dispatch: String
 
 ) : UserExceptionInClient(
-    msg = "You must use a method of \"$name\" when using $dispatch method",
+    msg = "You must use a method of \"$name\" when using \"$dispatch\" method",
     help = "Make sure to call one method of \"$name\" within the curly braces - example: client.$dispatch<Foo> { bar(*args) }"
 )
 

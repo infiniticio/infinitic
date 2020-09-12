@@ -15,7 +15,7 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.data.methods.MethodOutput
-import io.infinitic.workflowManager.common.data.methods.Method
+import io.infinitic.workflowManager.common.data.methods.MethodName
 
 sealed class Message
 
@@ -59,7 +59,7 @@ data class DelayCompleted(
 data class DispatchWorkflow(
     override val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val method: Method,
+    val methodName: MethodName,
     val methodInput: MethodInput,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
