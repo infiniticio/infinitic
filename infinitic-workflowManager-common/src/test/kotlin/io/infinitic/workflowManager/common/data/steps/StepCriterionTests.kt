@@ -7,7 +7,7 @@ import io.infinitic.workflowManager.common.data.steps.Step.Or
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStepId() = Step.Id(CommandId(TaskId()))
+fun getStepId() = Step.Id(CommandId(TaskId())) { Status.ONGOING }
 
 class StepCriterionTests : StringSpec({
     "Step should not be completed by default" {

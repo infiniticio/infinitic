@@ -5,7 +5,7 @@ import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.workflowManager.common.data.DelayId
 import io.infinitic.workflowManager.common.data.events.EventData
 import io.infinitic.workflowManager.common.data.events.EventName
-import io.infinitic.workflowManager.common.data.instructions.PastStep
+import io.infinitic.workflowManager.common.data.steps.PastStep
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.methods.MethodOutput

@@ -1,17 +1,17 @@
 package io.infinitic.workflowManager.common.data.methods
 
-import io.infinitic.workflowManager.common.data.instructions.PastPosition
+import io.infinitic.workflowManager.common.data.instructions.StringPosition
 
 data class MethodPosition(
     val parent: MethodPosition?,
     val index: Int
 ) {
-    val pastPosition: PastPosition = when (parent) {
-        null -> PastPosition("$index")
-        else -> PastPosition("${parent.pastPosition}.$index")
+    val stringPosition: StringPosition = when (parent) {
+        null -> StringPosition("$index")
+        else -> StringPosition("${parent.stringPosition}.$index")
     }
 
-    override fun toString() = "$pastPosition"
+    override fun toString() = "$stringPosition"
 
     fun next() = MethodPosition(parent, index + 1)
 

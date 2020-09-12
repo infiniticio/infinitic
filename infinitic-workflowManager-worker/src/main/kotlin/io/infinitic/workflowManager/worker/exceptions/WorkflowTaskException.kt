@@ -4,6 +4,6 @@ import io.infinitic.workflowManager.common.data.commands.NewCommand
 
 sealed class WorkflowTaskException : RuntimeException()
 
-data class NewStepException(val newCommand: NewCommand) : WorkflowTaskException()
+class NewStepException() : WorkflowTaskException()
 
 class KnownStepException : WorkflowTaskException()

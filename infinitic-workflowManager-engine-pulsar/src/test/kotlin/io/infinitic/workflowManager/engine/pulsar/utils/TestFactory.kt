@@ -50,7 +50,7 @@ object TestFactory {
     }
 
     fun stepCriteria(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(TaskId()))
+        fun getStepId() = Step.Id(CommandId(TaskId())) { Status.ONGOING }
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

@@ -7,7 +7,7 @@ import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.parser.setPropertiesToObject
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.workflowManager.worker.data.MethodContext
+import io.infinitic.workflowManager.worker.data.MethodExecutionContext
 import io.infinitic.workflowManager.worker.exceptions.KnownStepException
 import io.infinitic.workflowManager.worker.exceptions.NewStepException
 import java.lang.reflect.InvocationTargetException
@@ -37,17 +37,15 @@ class WorkflowTaskImpl : WorkflowTask {
         }
 
         // set methodContext
-        val methodContext = MethodContext(input, workflowInstance)
-        workflowInstance.methodContext = methodContext
+        val methodContext = MethodExecutionContext(input, workflowInstance)
+        workflowInstance.methodExecutionContext = methodContext
 
         // run it
         val output = try {
             method.invoke(workflowInstance, *input.method.methodInput.data)
         } catch (e: InvocationTargetException) {
             when (e.cause) {
-                is NewStepException -> {
-                    methodContext.newStep = Step.Id((e.cause as NewStepException).newCommand.commandId)
-                }
+                is NewStepException -> Unit
                 is KnownStepException -> Unit
                 else -> throw e.cause!!
             }

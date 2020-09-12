@@ -15,9 +15,8 @@ import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
-import io.infinitic.workflowManager.worker.Deferred.Deferred
-import io.infinitic.workflowManager.worker.Deferred.DeferredId
-import io.infinitic.workflowManager.worker.Deferred.DeferredIdd
+import io.infinitic.workflowManager.worker.deferred.DeferredId
+import io.infinitic.workflowManager.worker.deferred.DeferredIdd
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking<Unit> {
