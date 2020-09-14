@@ -1,7 +1,7 @@
 package io.infinitic.workflowManager.client
 
 import io.infinitic.taskManager.common.proxies.MethodProxyHandler
-import io.infinitic.taskManager.common.exceptions.NoMethodCall
+import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
@@ -45,7 +45,7 @@ class Client() : TaskClient() {
         klass.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCall(T::class.java.name, "dispatchWorkflow")
+        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchWorkflow")
 
         val msg = DispatchWorkflow(
             workflowId = WorkflowId(),

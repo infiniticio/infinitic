@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "AvroStepId",
+  "namespace": "io.infinitic.workflowManager.data.steps",
+  "fields": [
+    {
+      "name": "commandId",
+      "type":  "string"
+    }
+  ]
+}

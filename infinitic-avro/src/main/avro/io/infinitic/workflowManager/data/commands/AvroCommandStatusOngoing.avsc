@@ -1,0 +1,6 @@
+{
+  "type": "record",
+  "name": "AvroCommandStatusOngoing",
+  "namespace": "io.infinitic.workflowManager.data.commands",
+  "fields": []
+}

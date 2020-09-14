@@ -20,7 +20,7 @@
       "default": null
     },
     {
-      "name": "ongoingDecisionId",
+      "name": "currentWorkflowTaskId",
       "type": [
         "null",
         {
@@ -31,24 +31,14 @@
       "default": null
     },
     {
-      "name": "bufferedMessages",
-      "type": {
-        "type": "array",
-        "items": "io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine"
-      }
+      "name": "currentWorkflowTaskIndex",
+      "type": "int"
     },
     {
-      "name": "store",
-      "type": {
-        "type": "map",
-        "values": "io.infinitic.taskManager.data.AvroSerializedData"
-      }
-    },
-    {
-      "name": "runningBranches",
+      "name": "currentMethodRuns",
       "type": {
         "type": "array",
-        "items": "io.infinitic.workflowManager.data.branches.AvroBranch"
+        "items": "io.infinitic.workflowManager.data.methodRuns.AvroMethodRun"
       }
     },
     {
@@ -56,6 +46,20 @@
       "type": {
         "type": "map",
         "values": "string"
+      }
+    },
+    {
+      "name": "propertyStore",
+      "type": {
+        "type": "map",
+        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "bufferedMessages",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine"
       }
     }
   ]

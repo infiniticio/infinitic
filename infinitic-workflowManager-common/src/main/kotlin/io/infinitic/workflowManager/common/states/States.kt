@@ -16,7 +16,7 @@ data class WorkflowEngineState(
     var currentWorkflowTaskId: WorkflowTaskId? = null,
     var currentWorkflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(-1),
     val currentMethodRuns: MutableList<MethodRun> = mutableListOf(),
-    val currentProperties: Properties = Properties(mapOf()),
+    val currentProperties: Properties = Properties(mutableMapOf()),
     val propertyStore: PropertyStore = PropertyStore(mutableMapOf()),
     val bufferedMessages: MutableList<ForWorkflowEngineMessage> = mutableListOf()
 ) : State()

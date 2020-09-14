@@ -35,7 +35,7 @@ object TestFactory {
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).nextPrintableString(10)) }
-            .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStepCriterion(randomStepCriterion()) }
+            .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStep(randomStepCriterion()) }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })

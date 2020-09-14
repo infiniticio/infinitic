@@ -4,7 +4,7 @@ import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandSimpleName
-import io.infinitic.workflowManager.common.data.commands.DispatchAsyncBranch
+import io.infinitic.workflowManager.common.data.commands.StartAsync
 import io.infinitic.workflowManager.common.data.commands.DispatchTask
 import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 import io.infinitic.workflowManager.common.data.commands.NewCommand
@@ -109,7 +109,7 @@ class MethodRunContext(
         positionNext()
 
         // set a new command
-        val dispatch = DispatchAsyncBranch()
+        val dispatch = StartAsync()
         // create instruction that *may* be sent to engine
         val newCommand = NewCommand(
             command = dispatch,

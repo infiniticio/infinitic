@@ -18,7 +18,7 @@ import io.infinitic.taskManager.common.messages.RetryTask
 import io.infinitic.taskManager.common.messages.RetryTaskAttempt
 import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.states.TaskEngineState
-import io.infinitic.taskManager.engine.storages.TaskEngineStateStorage
+import io.infinitic.taskManager.engine.storage.StateStorage
 import io.infinitic.taskManager.engine.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -37,7 +37,7 @@ import org.slf4j.Logger
 
 internal class EngineResults {
     lateinit var dispatcher: Dispatcher
-    lateinit var storage: TaskEngineStateStorage
+    lateinit var storage: StateStorage
     lateinit var logger: Logger
     var state: TaskEngineState? = null
     var workerMessage: ForWorkerMessage? = null
@@ -57,7 +57,7 @@ internal fun engineHandle(stateIn: TaskEngineState?, msgIn: ForTaskEngineMessage
     val state: TaskEngineState? = stateIn?.deepCopy()
     // mocking
     val logger = mockk<Logger>()
-    val storage = mockk<TaskEngineStateStorage>()
+    val storage = mockk<StateStorage>()
     val dispatcher = mockk<Dispatcher>()
     val stateSlot = slot<TaskEngineState>()
     val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
@@ -72,9 +72,9 @@ internal fun engineHandle(stateIn: TaskEngineState?, msgIn: ForTaskEngineMessage
     val taskStatusUpdatedSlot = slot<TaskStatusUpdated>()
     every { logger.error(any(), msgIn, stateIn) } just Runs
     every { logger.warn(any(), msgIn, stateIn) } just Runs
-    every { storage.getState(any()) } returns state
-    every { storage.updateState(any(), capture(stateSlot), any()) } just Runs
-    every { storage.deleteState(any()) } just Runs
+    every { storage.getTaskEngineState(any()) } returns state
+    every { storage.updateTaskEngineState(any(), capture(stateSlot), any()) } just Runs
+    every { storage.deleteTaskEngineState(any()) } just Runs
     coEvery { dispatcher.toWorkers(capture(workerMessageSlot)) } just Runs
     coEvery { dispatcher.toTaskEngine(capture(retryTaskAttemptSlot), capture(retryTaskAttemptDelaySlot)) } just Runs
     coEvery { dispatcher.toTaskEngine(capture(taskAttemptCompletedSlot)) } just Runs
@@ -145,9 +145,9 @@ internal class TaskEngineTests : StringSpec({
         val msgIn = cancelTask(mapOf("taskId" to stateIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         coVerifyOrder {
-            o.storage.getState(msgIn.taskId)
+            o.storage.getTaskEngineState(msgIn.taskId)
             o.dispatcher.toTaskEngine(o.taskCanceled!!)
-            o.storage.deleteState(msgIn.taskId)
+            o.storage.deleteTaskEngineState(msgIn.taskId)
             o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -161,10 +161,10 @@ internal class TaskEngineTests : StringSpec({
         val msgIn = dispatchTask()
         val o = engineHandle(null, msgIn)
         coVerifyOrder {
-            o.storage.getState(msgIn.taskId)
+            o.storage.getTaskEngineState(msgIn.taskId)
             o.dispatcher.toWorkers(o.workerMessage!!)
             o.dispatcher.toTaskEngine(o.taskAttemptDispatched!!)
-            o.storage.updateState(msgIn.taskId, o.state!!, null)
+            o.storage.updateTaskEngineState(msgIn.taskId, o.state!!, null)
             o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -204,10 +204,10 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerifyAll {
-            o.storage.getState(msgIn.taskId)
+            o.storage.getTaskEngineState(msgIn.taskId)
             o.dispatcher.toWorkers(o.workerMessage!!)
             o.dispatcher.toTaskEngine(o.taskAttemptDispatched!!)
-            o.storage.updateState(msgIn.taskId, o.state!!, stateIn)
+            o.storage.updateTaskEngineState(msgIn.taskId, o.state!!, stateIn)
             o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -253,9 +253,9 @@ internal class TaskEngineTests : StringSpec({
         val msgIn = taskAttemptCompleted(mapOf("taskId" to stateIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         coVerifyOrder {
-            o.storage.getState(msgIn.taskId)
+            o.storage.getTaskEngineState(msgIn.taskId)
             o.dispatcher.toTaskEngine(o.taskCompleted!!)
-            o.storage.deleteState(msgIn.taskId)
+            o.storage.deleteTaskEngineState(msgIn.taskId)
             o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -281,8 +281,8 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerifyOrder {
-            o.storage.getState(msgIn.taskId)
-            o.storage.updateState(msgIn.taskId, o.state!!, stateIn)
+            o.storage.getTaskEngineState(msgIn.taskId)
+            o.storage.updateTaskEngineState(msgIn.taskId, o.state!!, stateIn)
             o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -304,9 +304,9 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerifyOrder {
-            o.storage.getState(msgIn.taskId)
+            o.storage.getTaskEngineState(msgIn.taskId)
             o.dispatcher.toTaskEngine(o.retryTaskAttempt!!, o.retryTaskAttemptDelay!!)
-            o.storage.updateState(msgIn.taskId, o.state!!, stateIn)
+            o.storage.updateTaskEngineState(msgIn.taskId, o.state!!, stateIn)
             o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
@@ -365,10 +365,10 @@ private fun checkShouldDoNothing(o: EngineResults) {
 
 private fun checkShouldRetryTaskAttempt(msgIn: ForTaskEngineMessage, stateIn: TaskEngineState, o: EngineResults) {
     coVerifyOrder {
-        o.storage.getState(msgIn.taskId)
+        o.storage.getTaskEngineState(msgIn.taskId)
         o.dispatcher.toWorkers(o.workerMessage!!)
         o.dispatcher.toTaskEngine(o.taskAttemptDispatched!!)
-        o.storage.updateState(msgIn.taskId, o.state!!, stateIn)
+        o.storage.updateTaskEngineState(msgIn.taskId, o.state!!, stateIn)
         o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
     }
     checkConfirmVerified(o)

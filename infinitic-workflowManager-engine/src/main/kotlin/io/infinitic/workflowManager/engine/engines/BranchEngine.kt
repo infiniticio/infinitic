@@ -9,6 +9,7 @@ import io.infinitic.workflowManager.common.data.steps.PastStep
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
+import io.infinitic.workflowManager.common.messages.TaskDispatched
 import io.infinitic.workflowManager.data.commands.CommandStatus
 
 class BranchEngine(val branch: Branch) {
@@ -16,7 +17,7 @@ class BranchEngine(val branch: Branch) {
         // complete action if relevant
         branch.pastInstructions
             .filterIsInstance<TaskDispatched>()
-            .firstOrNull { a -> a.taskId == taskId && a.commandStatus != CommandStatus.COMPLETED }
+            .firstOrNull { a: TaskDispatched -> a.taskId == taskId && a.commandStatus != CommandStatus.COMPLETED }
             ?.apply {
                 this.taskOutput = taskOutput
                 commandStatus = CommandStatus.COMPLETED

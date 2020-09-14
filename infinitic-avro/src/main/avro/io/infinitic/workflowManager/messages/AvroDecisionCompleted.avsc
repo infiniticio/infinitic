@@ -9,11 +9,6 @@
       "logicalType": "uuid"
     },
     {
-      "name": "decisionId",
-      "type": "string",
-      "logicalType": "uuid"
-    },
-    {
       "name": "decisionOutput",
       "type": "io.infinitic.taskManager.data.AvroSerializedData"
     }

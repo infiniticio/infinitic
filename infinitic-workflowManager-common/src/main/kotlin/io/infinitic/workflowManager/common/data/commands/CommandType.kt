@@ -1,9 +1,9 @@
 package io.infinitic.workflowManager.common.data.commands
 
 enum class CommandType {
-    TASK,
-    WORKFLOW,
-    TIMER,
-    RECEIVER,
-    ASYNC
+    DISPATCH_TASK,
+    DISPATCH_WORKFLOW,
+    DISPATCH_TIMER,
+    DISPATCH_RECEIVER,
+    START_ASYNC
 }

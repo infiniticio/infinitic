@@ -1,0 +1,41 @@
+{
+  "type": "record",
+  "name": "AvroNewCommand",
+  "namespace": "io.infinitic.workflowManager.data.commands",
+  "fields": [
+    {
+      "name": "commandId",
+      "type": "string"
+    },
+    {
+      "name": "command",
+      "type": [
+        "io.infinitic.workflowManager.data.commands.AvroCommandDispatchTask",
+        "io.infinitic.workflowManager.data.commands.AvroCommandDispatchWorkflow",
+        "io.infinitic.workflowManager.data.commands.AvroCommandDispatchTimer",
+        "io.infinitic.workflowManager.data.commands.AvroCommandDispatchReceiver",
+        "io.infinitic.workflowManager.data.commands.AvroCommandStartAsync"
+      ]
+    },
+    {
+      "name": "commandSimpleName",
+      "type": "string"
+    },
+    {
+      "name": "commandPosition",
+      "type": "string"
+    },
+    {
+      "name": "commandStatus",
+      "type": [
+        "io.infinitic.workflowManager.data.commands.AvroCommandStatusOngoing",
+        "io.infinitic.workflowManager.data.commands.AvroCommandStatusCompleted",
+        "io.infinitic.workflowManager.data.commands.AvroCommandStatusCanceled"
+      ]
+    },
+    {
+      "name": "commandHash",
+      "type": "string"
+    }
+  ]
+}

@@ -20,12 +20,12 @@ import io.infinitic.taskManager.common.messages.RetryTaskAttempt
 import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.messages.interfaces.TaskAttemptMessage
 import io.infinitic.taskManager.common.states.TaskEngineState
-import io.infinitic.taskManager.engine.storages.TaskEngineStateStorage
+import io.infinitic.taskManager.engine.storage.StateStorage
 import org.slf4j.Logger
 
 class TaskEngine {
     lateinit var logger: Logger
-    lateinit var storage: TaskEngineStateStorage
+    lateinit var storage: StateStorage
     lateinit var dispatcher: Dispatcher
 
     suspend fun handle(message: ForTaskEngineMessage) {
@@ -39,7 +39,7 @@ class TaskEngine {
         }
 
         // get current state
-        val oldState = storage.getState(message.taskId)
+        val oldState = storage.getTaskEngineState(message.taskId)
 
         if (oldState != null) {
             // discard message (except TaskAttemptCompleted) if state has already evolved
@@ -66,7 +66,7 @@ class TaskEngine {
 
         // Update stored state if needed and existing
         if (newState != oldState && !newState.taskStatus.isTerminated) {
-            storage.updateState(message.taskId, newState, oldState)
+            storage.updateTaskEngineState(message.taskId, newState, oldState)
         }
 
         // Send TaskStatusUpdated if needed
@@ -94,7 +94,7 @@ class TaskEngine {
         dispatcher.toTaskEngine(tad)
 
         // Delete stored state
-        storage.deleteState(state.taskId)
+        storage.deleteTaskEngineState(state.taskId)
 
         return state
     }
@@ -216,7 +216,7 @@ class TaskEngine {
         dispatcher.toTaskEngine(tc)
 
         // Delete stored state
-        storage.deleteState(state.taskId)
+        storage.deleteTaskEngineState(state.taskId)
 
         return state
     }

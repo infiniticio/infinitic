@@ -1,0 +1,26 @@
+{
+  "type": "record",
+  "name": "AvroNewStep",
+  "namespace": "io.infinitic.workflowManager.data.steps",
+  "fields": [
+    {
+      "name": "stepId",
+      "type": "string"
+    },
+    {
+      "name": "step",
+      "type": [
+        "io.infinitic.workflowManager.data.steps.AvroStepId",
+        "io.infinitic.workflowManager.data.steps.AvroStepLogical"
+      ]
+    },
+    {
+      "name": "stepPosition",
+      "type": "string"
+    },
+    {
+      "name": "stepHash",
+      "type": "string"
+    }
+  ]
+}

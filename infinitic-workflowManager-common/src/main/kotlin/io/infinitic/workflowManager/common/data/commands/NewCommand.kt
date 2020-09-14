@@ -9,11 +9,11 @@ data class NewCommand(
     val commandStringPosition: StringPosition,
     val commandStatus: CommandStatus = CommandStatusOngoing(),
     val commandType: CommandType = when (command) {
-        is DispatchTask -> CommandType.TASK
-        is DispatchChildWorkflow -> CommandType.WORKFLOW
-        is DispatchTimer -> CommandType.TIMER
-        is DispatchReceiver -> CommandType.RECEIVER
-        is DispatchAsyncBranch -> CommandType.ASYNC
+        is DispatchTask -> CommandType.DISPATCH_TASK
+        is DispatchWorkflow -> CommandType.DISPATCH_WORKFLOW
+        is DispatchTimer -> CommandType.DISPATCH_TIMER
+        is DispatchReceiver -> CommandType.DISPATCH_RECEIVER
+        is StartAsync -> CommandType.START_ASYNC
     },
     val commandHash: CommandHash = command.hash()
 )

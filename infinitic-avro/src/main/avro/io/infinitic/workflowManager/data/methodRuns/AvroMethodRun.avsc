@@ -1,0 +1,40 @@
+{
+  "type": "record",
+  "name": "AvroMethodRun",
+  "namespace": "io.infinitic.workflowManager.data.methodRuns",
+  "fields": [
+    {
+      "name": "methodRunId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "methodName",
+      "type": "io.infinitic.workflowManager.data.methodRuns.AvroMethodName"
+    },
+    {
+      "name": "methodInput",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.taskManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "methodPropertiesAtStart",
+      "type": {
+        "type": "map",
+        "values": "string"
+      }
+    },
+    {
+      "name": "methodPastInstructions",
+      "type": {
+        "type": "array",
+        "items": [
+          "io.infinitic.workflowManager.data.steps.AvroPastStep",
+          "io.infinitic.workflowManager.data.commands.AvroPastCommand"
+        ]
+      }
+    }
+  ]
+}

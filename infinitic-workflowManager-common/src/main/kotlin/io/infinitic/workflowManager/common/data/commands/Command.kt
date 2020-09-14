@@ -13,8 +13,8 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(value = DispatchTask::class, name = "DISPATCH_TASK"),
-    JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
-    JsonSubTypes.Type(value = DispatchAsyncBranch::class, name = "DISPATCH_ASYNC_BRANCH"),
+    JsonSubTypes.Type(value = DispatchWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
+    JsonSubTypes.Type(value = StartAsync::class, name = "DISPATCH_ASYNC_BRANCH"),
     JsonSubTypes.Type(value = DispatchTimer::class, name = "DISPATCH_TIMER"),
     JsonSubTypes.Type(value = DispatchReceiver::class, name = "DISPATCH_RECEIVER")
 )
@@ -32,13 +32,13 @@ class DispatchTask(
     val taskInput: TaskInput
 ) : Command()
 
-class DispatchChildWorkflow(
+class DispatchWorkflow(
     val childWorkflowName: WorkflowName,
     val childMethodName: MethodName,
     val childMethodInput: MethodInput
 ) : Command()
 
-class DispatchAsyncBranch(
+class StartAsync(
 ) : Command()
 
 class DispatchTimer(
