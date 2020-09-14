@@ -8,7 +8,7 @@ import io.infinitic.workflowManager.common.data.events.EventName
 import io.infinitic.workflowManager.common.data.steps.PastStep
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.methods.MethodOutput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.data.commands.CommandStatus
 
 class BranchEngine(val branch: Branch) {

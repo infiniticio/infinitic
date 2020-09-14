@@ -10,12 +10,12 @@ import io.infinitic.workflowManager.common.data.DelayId
 import io.infinitic.workflowManager.common.data.events.EventData
 import io.infinitic.workflowManager.common.data.events.EventName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.methods.MethodInput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
-import io.infinitic.workflowManager.common.data.methods.MethodOutput
-import io.infinitic.workflowManager.common.data.methods.MethodName
+import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodName
 
 sealed class Message
 

@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.common.data.methods
+package io.infinitic.workflowManager.common.data.methodRuns
 
 import java.lang.reflect.Method
 

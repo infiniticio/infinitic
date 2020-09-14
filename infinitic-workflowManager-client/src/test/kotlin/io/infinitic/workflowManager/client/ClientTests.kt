@@ -9,9 +9,9 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.methods.MethodInput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
-import io.infinitic.workflowManager.common.data.methods.MethodName
+import io.infinitic.workflowManager.common.data.methodRuns.MethodName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow

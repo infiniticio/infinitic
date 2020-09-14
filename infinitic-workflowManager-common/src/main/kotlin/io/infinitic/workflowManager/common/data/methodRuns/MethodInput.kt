@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.common.data.methods
+package io.infinitic.workflowManager.common.data.methodRuns
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue

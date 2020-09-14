@@ -4,9 +4,9 @@ import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 import io.infinitic.taskManager.common.exceptions.NoMethodCall
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.methods.MethodInput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
-import io.infinitic.workflowManager.common.data.methods.MethodName
+import io.infinitic.workflowManager.common.data.methodRuns.MethodName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow

@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.common.data.methods
+package io.infinitic.workflowManager.common.data.methodRuns
 
 import io.infinitic.workflowManager.common.data.instructions.StringPosition
 
@@ -17,5 +17,5 @@ data class MethodPosition(
 
     fun up() = parent
 
-    fun down() = MethodPosition(this, -1)
+    fun down() = MethodPosition(parent, -1)
 }

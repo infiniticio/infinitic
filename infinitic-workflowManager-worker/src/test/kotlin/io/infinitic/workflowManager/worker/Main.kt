@@ -1,10 +1,10 @@
 package io.infinitic.workflowManager.worker
 
 import io.infinitic.workflowManager.common.data.instructions.PastInstruction
-import io.infinitic.workflowManager.common.data.methods.MethodName
-import io.infinitic.workflowManager.common.data.methods.MethodId
-import io.infinitic.workflowManager.common.data.methods.MethodInput
-import io.infinitic.workflowManager.common.data.methods.MethodRun
+import io.infinitic.workflowManager.common.data.methodRuns.MethodName
+import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
+import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyHash
 import io.infinitic.workflowManager.common.data.properties.PropertyName
@@ -24,7 +24,7 @@ fun main() = runBlocking<Unit> {
     val d2 = DeferredIdd<String>("asdfgh")
 
     val methodRun = MethodRun(
-        methodId = MethodId(),
+        methodRunId = MethodRunId(),
         methodName = MethodName.from(WorkflowA::class.java.methods.first { it.name == "test1" }),
         methodInput = MethodInput(0),
         methodPropertiesAtStart = Properties(mapOf<PropertyName, PropertyHash>()),
@@ -37,7 +37,7 @@ fun main() = runBlocking<Unit> {
         workflowOptions = WorkflowOptions(),
         workflowPropertyStore = PropertyStore(mutableMapOf<PropertyHash, PropertyValue>()),
         workflowTaskIndex = WorkflowTaskIndex(0),
-        method = methodRun
+        methodRun = methodRun
     )
 
 //    WorkflowTaskImpl().handle(input)

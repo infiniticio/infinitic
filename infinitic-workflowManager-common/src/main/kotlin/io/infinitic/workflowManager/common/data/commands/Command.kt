@@ -6,14 +6,15 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskName
-import io.infinitic.workflowManager.common.data.methods.MethodName
-import io.infinitic.workflowManager.common.data.methods.MethodInput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodName
+import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(value = DispatchTask::class, name = "DISPATCH_TASK"),
     JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
+    JsonSubTypes.Type(value = DispatchAsyncBranch::class, name = "DISPATCH_ASYNC_BRANCH"),
     JsonSubTypes.Type(value = DispatchTimer::class, name = "DISPATCH_TIMER"),
     JsonSubTypes.Type(value = DispatchReceiver::class, name = "DISPATCH_RECEIVER")
 )
@@ -26,21 +27,25 @@ sealed class Command {
  * Commands are asynchronously processed
  */
 
-data class DispatchTask(
+class DispatchTask(
     val taskName: TaskName,
     val taskInput: TaskInput
 ) : Command()
 
-data class DispatchChildWorkflow(
+class DispatchChildWorkflow(
     val childWorkflowName: WorkflowName,
     val childMethodName: MethodName,
     val childMethodInput: MethodInput
 ) : Command()
 
-data class DispatchTimer(
+class DispatchAsyncBranch(
+) : Command()
+
+class DispatchTimer(
     val duration: Int
 ) : Command()
 
-data class DispatchReceiver(
+class DispatchReceiver(
     val klass: String
 ) : Command()
+

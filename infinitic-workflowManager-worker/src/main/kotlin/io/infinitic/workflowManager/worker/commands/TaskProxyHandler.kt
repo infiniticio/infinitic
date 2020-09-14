@@ -1,17 +1,17 @@
 package io.infinitic.workflowManager.worker.commands
 
-import io.infinitic.workflowManager.worker.data.MethodExecutionContext
+import io.infinitic.workflowManager.worker.data.MethodRunContext
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
-class TaskProxyHandler(private val methodExecutionContext: () -> MethodExecutionContext) : InvocationHandler {
+class TaskProxyHandler(private val methodRunContext: () -> MethodRunContext) : InvocationHandler {
 
     /*
      * implements the synchronous processing of a task or child workflow
      */
     override fun invoke(proxy: Any?, method: Method, args: Array<out Any>?): Any? =
-        methodExecutionContext()
+        methodRunContext()
             .dispatch(method, args ?: arrayOf(), method.returnType)
             .result()
 

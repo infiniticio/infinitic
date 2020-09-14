@@ -2,7 +2,7 @@ package io.infinitic.workflowManager.common.states
 
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.methods.MethodRun
+import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskIndex

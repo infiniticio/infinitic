@@ -2,11 +2,14 @@ package io.infinitic.workflowManager.worker.data
 
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskName
+import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandSimpleName
+import io.infinitic.workflowManager.common.data.commands.DispatchAsyncBranch
 import io.infinitic.workflowManager.common.data.commands.DispatchTask
-import io.infinitic.workflowManager.common.data.methods.MethodPosition
+import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 import io.infinitic.workflowManager.common.data.commands.NewCommand
 import io.infinitic.workflowManager.common.data.commands.PastCommand
+import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.steps.NewStep
 import io.infinitic.workflowManager.common.data.steps.PastStep
 import io.infinitic.workflowManager.common.data.steps.Step
@@ -25,7 +28,7 @@ import io.infinitic.workflowManager.worker.exceptions.NewStepException
 import java.lang.RuntimeException
 import java.lang.reflect.Method
 
-class MethodExecutionContext(
+class MethodRunContext(
     private val workflowTaskInput: WorkflowTaskInput,
     private val workflowInstance: Workflow
 ) {
@@ -38,8 +41,11 @@ class MethodExecutionContext(
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
 
-    // new step (if any) discovered during execution the method
-    var newStep: NewStep? = null
+    // new steps (if any) discovered during execution the method
+    var newSteps: MutableList<NewStep> = mutableListOf()
+
+    // new workflow properties
+    var methodOutput: MethodOutput? = null
 
     /*
      * Go to next position within the same branch
@@ -65,7 +71,6 @@ class MethodExecutionContext(
     /*
      * Command dispatching:
      * we check is this command is already known
-     *
      */
     fun <S> dispatch(method: Method, args: Array<out Any>, type: Class<S>): Deferred<S> {
         // increment position
@@ -96,6 +101,49 @@ class MethodExecutionContext(
     }
 
     /*
+     * Async Branch dispatching:
+     * we check is this command is already known
+     */
+    internal fun <S> async(branch: () -> S): Deferred<S> {
+        // increment position
+        positionNext()
+
+        // set a new command
+        val dispatch = DispatchAsyncBranch()
+        // create instruction that *may* be sent to engine
+        val newCommand = NewCommand(
+            command = dispatch,
+            commandSimpleName = CommandSimpleName("Async"),
+            commandStringPosition = currentMethodPosition.stringPosition
+        )
+
+        val pastCommand = getPastCommandSimilarTo(newCommand)
+
+        if (pastCommand == null) {
+            // if this is a new command, we add it to the newCommands list
+            newCommands.add(newCommand)
+            // run async branch
+            positionDown()
+            val commandOutput = try {
+                CommandOutput(branch())
+            } catch(e: Exception) {
+                when (e) {
+                    is NewStepException -> null
+                    is KnownStepException -> null
+                    else -> throw e
+                }
+            }
+            positionUp()
+            // and returns a Deferred with an ongoing step
+            return Deferred<S>(Step.Id.from(newCommand), this)
+        } else {
+            // else ew return a Deferred linked to pastCommand
+            return Deferred<S>(Step.Id.from(pastCommand), this)
+        }
+    }
+
+
+    /*
      * Deferred await
      */
     internal fun <T> await(deferred: Deferred<T>): Deferred<T> {
@@ -112,8 +160,8 @@ class MethodExecutionContext(
         if (pastStep == null) {
             // if this deferred is still ongoing,
             if (newStep.step.stepStatus(currentWorkflowTaskIndex) is StepStatusOngoing) {
-                // we create a new step
-                this.newStep = newStep
+                // we add a new step
+                newSteps.add(newStep)
                 // and stop here
                 throw NewStepException()
             }
@@ -162,14 +210,14 @@ class MethodExecutionContext(
 
     private fun getPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
-        val pastCommand = workflowTaskInput.method.methodPastInstructions
+        val pastCommand = workflowTaskInput.methodRun.methodPastInstructions
             .find { it is PastCommand && it.stringPosition == currentMethodPosition.stringPosition } as PastCommand?
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskInput.workflowOptions.workflowChangeCheckMode)) {
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
-                "${workflowTaskInput.method.methodName}",
+                "${workflowTaskInput.methodRun.methodName}",
                 "${currentMethodPosition.stringPosition}"
             )
         }
@@ -179,14 +227,14 @@ class MethodExecutionContext(
 
     private fun getPastStepSimilarTo(newStep: NewStep): PastStep? {
         // find pastCommand in current position
-        val pastStep = workflowTaskInput.method.methodPastInstructions
+        val pastStep = workflowTaskInput.methodRun.methodPastInstructions
             .find { it is PastStep && it.stringPosition == currentMethodPosition.stringPosition } as PastStep?
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
-                "${workflowTaskInput.method.methodName}",
+                "${workflowTaskInput.methodRun.methodName}",
                 "${currentMethodPosition.stringPosition}"
             )
         }
