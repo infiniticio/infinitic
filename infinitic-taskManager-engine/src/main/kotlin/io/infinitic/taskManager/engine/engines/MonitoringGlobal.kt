@@ -3,17 +3,17 @@ package io.infinitic.taskManager.engine.engines
 import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
 import io.infinitic.taskManager.common.messages.TaskCreated
 import io.infinitic.taskManager.common.states.MonitoringGlobalState
-import io.infinitic.taskManager.engine.storages.MonitoringGlobalStorage
+import io.infinitic.taskManager.engine.storage.StateStorage
 import org.slf4j.Logger
 
 class MonitoringGlobal {
     lateinit var logger: Logger
-    lateinit var storage: MonitoringGlobalStorage
+    lateinit var storage: StateStorage
 
     fun handle(message: ForMonitoringGlobalMessage) {
 
         // get associated state
-        val oldState = storage.getState()
+        val oldState = storage.getMonitoringGlobalState()
         val newState = oldState?.deepCopy() ?: MonitoringGlobalState()
 
         when (message) {
@@ -22,7 +22,7 @@ class MonitoringGlobal {
 
         // Update stored state if needed and existing
         if (newState != oldState) {
-            storage.updateState(newState, oldState)
+            storage.updateMonitoringGlobalState(newState, oldState)
             logger.info("MonitoringPerNameState: from%s to%s", oldState, newState)
         }
     }
