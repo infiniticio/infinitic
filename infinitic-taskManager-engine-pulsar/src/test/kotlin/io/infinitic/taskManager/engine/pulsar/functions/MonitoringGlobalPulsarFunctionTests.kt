@@ -1,12 +1,17 @@
 package io.infinitic.taskManager.engine.pulsar.functions
 
 import io.infinitic.taskManager.common.avro.AvroConverter
+import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
+import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.taskManager.engine.engines.MonitoringGlobal
+import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -28,22 +33,26 @@ class MonitoringGlobalPulsarFunctionTests : ShouldSpec({
         }
 
         should("call metrics with correct parameters") {
-            // mocking
+            // mocking Context
             val context = mockk<Context>()
             every { context.logger } returns mockk()
-            val monitoringFunction = spyk<MonitoringGlobal>()
-            every { monitoringFunction.handle(any()) } just Runs
+
+            // Mocking avro conversion
             val avroMsg = mockk<AvroEnvelopeForMonitoringGlobal>()
+            val msg = mockk<ForMonitoringGlobalMessage>()
             mockkObject(AvroConverter)
-            every { AvroConverter.fromMonitoringGlobal(any()) } returns mockk()
-            // given
-            val fct = MonitoringGlobalPulsarFunction()
-            fct.monitoring = monitoringFunction
+            every { AvroConverter.fromMonitoringGlobal(avroMsg) } returns msg
+
+            // Mocking Task Engine
+            val monitoringGlobal = mockk<MonitoringGlobal>()
+            val monitoringGlobalPulsarFunction = spyk<MonitoringGlobalPulsarFunction>()
+            every { monitoringGlobalPulsarFunction.getMonitoringGlobal(context) } returns monitoringGlobal
+            coEvery { monitoringGlobal.handle(msg) } just Runs
+
             // when
-            fct.process(avroMsg, context)
+            monitoringGlobalPulsarFunction.process(avroMsg, context)
             // then
-            monitoringFunction.logger shouldBe context.logger
-            verify(exactly = 1) { monitoringFunction.handle(any()) }
+            verify(exactly = 1) { monitoringGlobal.handle(msg) }
             unmockkAll()
         }
     }

@@ -35,7 +35,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             // when
             val state = stateStorage.getTaskEngineState(taskId)
             // then
-            verify(exactly = 1) { storage.getState("engine.state.${taskId.id}") }
+            verify(exactly = 1) { storage.getState("engine.state.$taskId") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -50,7 +50,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             // when
             val stateOut = stateStorage.getTaskEngineState(stateIn.taskId)
             // then
-            verify(exactly = 1) { context.getState("engine.state.${stateIn.taskId.id}") }
+            verify(exactly = 1) { context.getState("engine.state.${stateIn.taskId}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }
@@ -69,7 +69,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             // then
             verify(exactly = 1) {
                 context.putState(
-                    "engine.state.${stateIn.taskId.id}",
+                    "engine.state.${stateIn.taskId}",
                     byteBufferRepresentation(stateIn)
                 )
             }
@@ -88,7 +88,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             // when
             stageStorage.deleteTaskEngineState(stateIn.taskId)
             // then
-            verify(exactly = 1) { context.deleteState("engine.state.${stateIn.taskId.id}") }
+            verify(exactly = 1) { context.deleteState("engine.state.${stateIn.taskId}") }
             confirmVerified(context)
         }
     }
@@ -104,7 +104,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val stateStorage = AvroKeyValueStateStorage(context)
             val state = stateStorage.getMonitoringPerNameState(taskName)
             // then
-            verify(exactly = 1) { context.getState("monitoringPerName.state.${taskName.name}") }
+            verify(exactly = 1) { context.getState("monitoringPerName.state.${taskName}") }
             confirmVerified(context)
             state shouldBe null
         }
@@ -118,7 +118,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val stateStorage = AvroKeyValueStateStorage(context)
             val stateOut = stateStorage.getMonitoringPerNameState(stateIn.taskName)
             // then
-            verify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName.name}") }
+            verify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }

@@ -63,7 +63,7 @@ class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
 
         // save state retrieved from counters
         val state = AvroMonitoringPerNameState.newBuilder().apply {
-            setTaskName(taskName.name)
+            setTaskName("$taskName")
             runningOkCount = storage.getCounter(counterOkKey)
             runningWarningCount = storage.getCounter(counterWarningKey)
             runningErrorCount = storage.getCounter(counterErrorKey)
@@ -79,7 +79,7 @@ class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
     }
 
     override fun getTaskEngineState(taskId: TaskId): TaskEngineState? {
-        return storage.getState(getEngineStateKey(taskId.id))
+        return storage.getState(getEngineStateKey("$taskId"))
             ?.let { AvroSerDe.deserialize<AvroTaskEngineState>(it) }
             ?.let { AvroConverter.fromStorage(it) }
     }
@@ -87,11 +87,11 @@ class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
     override fun updateTaskEngineState(taskId: TaskId, newState: TaskEngineState, oldState: TaskEngineState?) {
         AvroConverter.toStorage(newState)
             .let { AvroSerDe.serialize(it) }
-            .let { storage.putState(getEngineStateKey(taskId.id), it) }
+            .let { storage.putState(getEngineStateKey("$taskId"), it) }
     }
 
     override fun deleteTaskEngineState(taskId: TaskId) {
-        storage.deleteState(getEngineStateKey(taskId.id))
+        storage.deleteState(getEngineStateKey("$taskId"))
     }
 
     private fun incrementCounter(key: String, amount: Long, force: Boolean = false) {
@@ -101,7 +101,7 @@ class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
     }
 
     private fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
-    internal fun getMonitoringPerNameStateKey(taskName: TaskName) = "monitoringPerName.state.${taskName.name}"
-    internal fun getMonitoringPerNameCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.name.toLowerCase()}"
+    internal fun getMonitoringPerNameStateKey(taskName: TaskName) = "monitoringPerName.state.${taskName}"
+    internal fun getMonitoringPerNameCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.toString().toLowerCase()}"
     private fun getEngineStateKey(taskId: String) = "engine.state.$taskId"
 }

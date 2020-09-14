@@ -19,7 +19,7 @@ class WorkflowTaskImpl : WorkflowTask {
         val workflowInstance = getNewInstancePerName("${input.workflowName}") as Workflow
 
         // set initial properties
-        val properties = input.methodRun.methodPropertiesAtStart.mapValues { input.workflowPropertyStore[it.value] }
+        val properties = input.methodRun.propertiesAtMethodStart.mapValues { input.workflowPropertyStore[it.value] }
         setPropertiesToObject(workflowInstance, properties)
 
         // get method
@@ -47,7 +47,7 @@ class WorkflowTaskImpl : WorkflowTask {
             input.methodRun.methodRunId,
             methodRunContext.newCommands,
             methodRunContext.newSteps,
-            input.methodRun.methodPropertiesAtStart,
+            input.methodRun.propertiesAtMethodStart,
             input.workflowPropertyStore,
             methodOutput
         )

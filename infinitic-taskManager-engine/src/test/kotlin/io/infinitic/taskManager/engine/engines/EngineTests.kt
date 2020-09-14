@@ -85,10 +85,7 @@ internal fun engineHandle(stateIn: TaskEngineState?, msgIn: ForTaskEngineMessage
     coEvery { dispatcher.toTaskEngine(capture(taskCompletedSlot)) } just Runs
     coEvery { dispatcher.toMonitoringPerName(capture(taskStatusUpdatedSlot)) } just Runs
     // given
-    val engine = TaskEngine()
-    engine.logger = logger
-    engine.storage = storage
-    engine.dispatcher = dispatcher
+    val engine = TaskEngine(storage, dispatcher)
     // when
     engine.handle(msgIn)
     // then

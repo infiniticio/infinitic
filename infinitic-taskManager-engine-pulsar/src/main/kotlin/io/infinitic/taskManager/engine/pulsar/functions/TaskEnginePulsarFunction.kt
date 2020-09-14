@@ -13,24 +13,25 @@ import org.apache.pulsar.functions.api.Function
 
 class TaskEnginePulsarFunction : Function<AvroEnvelopeForTaskEngine, Void> {
 
-    var engine = TaskEngine()
-
     override fun process(input: AvroEnvelopeForTaskEngine, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         val message = AvroConverter.fromTaskEngine(input)
 
         try {
-            engine.logger = ctx.logger
-            engine.storage = AvroKeyValueStateStorage(PulsarFunctionStorage(ctx))
-            engine.dispatcher = Dispatcher(PulsarDispatcher.forPulsarFunctionContext(ctx))
-
-            engine.handle(message)
+            getTaskEngine(ctx).handle(message)
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, input)
             throw e
         }
 
         null
+    }
+
+    internal fun getTaskEngine(ctx: Context): TaskEngine {
+        val storage = AvroKeyValueStateStorage(PulsarFunctionStorage(ctx))
+        val dispatcher = Dispatcher(PulsarDispatcher.forPulsarFunctionContext(ctx))
+
+        return TaskEngine(storage, dispatcher)
     }
 }

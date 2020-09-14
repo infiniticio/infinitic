@@ -9,11 +9,10 @@ import io.infinitic.taskManager.common.states.MonitoringPerNameState
 import io.infinitic.taskManager.engine.storage.StateStorage
 import org.slf4j.Logger
 
-class MonitoringPerName {
-    lateinit var logger: Logger
-    lateinit var storage: StateStorage
-    lateinit var dispatcher: Dispatcher
-
+class MonitoringPerName(
+    val storage: StateStorage,
+    val dispatcher: Dispatcher
+) {
     suspend fun handle(message: ForMonitoringPerNameMessage) {
 
         // get associated state

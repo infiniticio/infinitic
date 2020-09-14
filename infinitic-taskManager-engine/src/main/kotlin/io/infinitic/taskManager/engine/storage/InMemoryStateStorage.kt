@@ -25,27 +25,27 @@ open class InMemoryStateStorage : StateStorage {
     }
 
     override fun getMonitoringPerNameState(taskName: TaskName): MonitoringPerNameState? {
-        return monitoringPerNameStore[taskName.name]
+        return monitoringPerNameStore["$taskName"]
     }
 
     override fun updateMonitoringPerNameState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
-        monitoringPerNameStore = monitoringPerNameStore.plus(taskName.name to newState)
+        monitoringPerNameStore = monitoringPerNameStore.plus("$taskName" to newState)
     }
 
     override fun deleteMonitoringPerNameState(taskName: TaskName) {
-        monitoringPerNameStore = monitoringPerNameStore.minus(taskName.name)
+        monitoringPerNameStore = monitoringPerNameStore.minus("$taskName")
     }
 
     override fun getTaskEngineState(taskId: TaskId): TaskEngineState? {
-        return taskEngineStore[taskId.id]
+        return taskEngineStore["$taskId"]
     }
 
     override fun updateTaskEngineState(taskId: TaskId, newState: TaskEngineState, oldState: TaskEngineState?) {
-        taskEngineStore = taskEngineStore.plus(taskId.id to newState)
+        taskEngineStore = taskEngineStore.plus("$taskId" to newState)
     }
 
     override fun deleteTaskEngineState(taskId: TaskId) {
-        taskEngineStore = taskEngineStore.minus(taskId.id)
+        taskEngineStore = taskEngineStore.minus("$taskId")
     }
 
     override fun getMonitoringGlobalState(): MonitoringGlobalState? = monitoringGlobalStore

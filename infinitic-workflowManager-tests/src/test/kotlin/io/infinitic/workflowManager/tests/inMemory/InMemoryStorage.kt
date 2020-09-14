@@ -7,10 +7,10 @@ import io.infinitic.taskManager.states.AvroMonitoringGlobalState
 import io.infinitic.taskManager.states.AvroMonitoringPerNameState
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.engine.avroInterfaces.AvroStorage as AvroWorkflowStorage
-import io.infinitic.workflowManager.states.AvroWorkflowEngineState
+import io.infinitic.workflowManager.states.AvroWorkfloState
 
 internal class InMemoryStorage : AvroTaskStorage, AvroWorkflowStorage {
-    var workflowEngineStore: Map<String, AvroWorkflowEngineState> = mapOf()
+    var workflowEngineStore: Map<String, AvroWorkfloState> = mapOf()
     var taskEngineStore: Map<String, AvroTaskEngineState> = mapOf()
     var monitoringPerNameStore: Map<String, AvroMonitoringPerNameState> = mapOf()
     var monitoringGlobalStore: AvroMonitoringGlobalState? = null
@@ -30,15 +30,15 @@ internal class InMemoryStorage : AvroTaskStorage, AvroWorkflowStorage {
         monitoringGlobalStore = null
     }
 
-    override fun getWorkflowEngineState(workflowId: String): AvroWorkflowEngineState? {
+    override fun getWorkflowState(workflowId: String): AvroWorkfloState? {
         return workflowEngineStore[workflowId]
     }
 
-    override fun updateWorkflowEngineState(workflowId: String, newState: AvroWorkflowEngineState, oldState: AvroWorkflowEngineState?) {
+    override fun updateWorkflowState(workflowId: String, newState: AvroWorkfloState, oldState: AvroWorkfloState?) {
         workflowEngineStore = workflowEngineStore.plus(workflowId to newState)
     }
 
-    override fun deleteWorkflowEngineState(workflowId: String) {
+    override fun deleteWorkflowState(workflowId: String) {
         workflowEngineStore = workflowEngineStore.minus(workflowId)
     }
 

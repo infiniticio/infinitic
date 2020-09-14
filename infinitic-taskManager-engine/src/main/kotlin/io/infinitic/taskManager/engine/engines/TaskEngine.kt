@@ -23,11 +23,10 @@ import io.infinitic.taskManager.common.states.TaskEngineState
 import io.infinitic.taskManager.engine.storage.StateStorage
 import org.slf4j.Logger
 
-class TaskEngine {
-    lateinit var logger: Logger
-    lateinit var storage: StateStorage
-    lateinit var dispatcher: Dispatcher
-
+class TaskEngine(
+    val storage: StateStorage,
+    val dispatcher: Dispatcher
+) {
     suspend fun handle(message: ForTaskEngineMessage) {
         // immediately discard messages that are non managed
         when (message) {

@@ -3,7 +3,7 @@ package io.infinitic.workflowManager.engine.avroEngines
 import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
-import io.infinitic.workflowManager.engine.storages.WorkflowEngineStateStorage
+import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 import io.infinitic.workflowManager.engine.avroInterfaces.AvroDispatcher
 import io.infinitic.workflowManager.engine.avroInterfaces.AvroStorage
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
@@ -18,7 +18,7 @@ class AvroWorkflowEngine {
 
     suspend fun handle(input: AvroEnvelopeForWorkflowEngine) {
         engine.logger = logger
-        engine.storage = WorkflowEngineStateStorage(avroStorage)
+        engine.storage = WorkflowStateStorage(avroStorage)
         engine.dispatcher = Dispatcher(avroDispatcher)
 
         engine.handle(AvroConverter.fromWorkflowEngine(input))

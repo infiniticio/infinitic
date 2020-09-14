@@ -37,10 +37,7 @@ class MonitoringPerNameTests : ShouldSpec({
             every { storage.getMonitoringPerNameState(msg.taskName) } returns stateIn
             every { storage.updateMonitoringPerNameState(msg.taskName, capture(stateOutSlot), any()) } just runs
 
-            val monitoringPerName = MonitoringPerName()
-            monitoringPerName.logger = logger
-            monitoringPerName.storage = storage
-            monitoringPerName.dispatcher = dispatcher
+            val monitoringPerName = MonitoringPerName(storage, dispatcher)
 
             monitoringPerName.handle(msg)
 
@@ -69,10 +66,8 @@ class MonitoringPerNameTests : ShouldSpec({
             every { storage.updateMonitoringPerNameState(msg.taskName, capture(stateOutSlot), any()) } just runs
             coEvery { dispatcher.toMonitoringGlobal(any<TaskCreated>()) } just runs
 
-            val monitoringPerName = MonitoringPerName()
-            monitoringPerName.logger = logger
-            monitoringPerName.storage = storage
-            monitoringPerName.dispatcher = dispatcher
+            val monitoringPerName = MonitoringPerName(storage, dispatcher)
+
             // when
             monitoringPerName.handle(msg)
             // then

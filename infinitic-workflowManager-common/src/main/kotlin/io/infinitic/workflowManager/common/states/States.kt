@@ -10,12 +10,12 @@ import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
 
 sealed class State
 
-data class WorkflowEngineState(
+data class WorkflowState(
     val workflowId: WorkflowId,
     var parentWorkflowId: WorkflowId? = null,
     var currentWorkflowTaskId: WorkflowTaskId? = null,
     var currentWorkflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(-1),
-    val currentMethodRuns: MutableList<MethodRun> = mutableListOf(),
+    val currentMethodRuns: MutableList<MethodRun>,
     val currentProperties: Properties = Properties(mutableMapOf()),
     val propertyStore: PropertyStore = PropertyStore(mutableMapOf()),
     val bufferedMessages: MutableList<ForWorkflowEngineMessage> = mutableListOf()

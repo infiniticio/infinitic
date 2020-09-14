@@ -174,7 +174,7 @@ open class Worker {
     }
 
     private fun parse(msg: RunTask): TaskCommand {
-        val (taskName, methodName) = getClassAndMethodName(msg.taskName.name)
+        val (taskName, methodName) = getClassAndMethodName("${msg.taskName}")
         val task = getTaskInstance(taskName)
         val parameterTypes = msg.taskMeta.parameterTypes
         val method = if (parameterTypes == null) {

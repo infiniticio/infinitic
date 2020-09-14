@@ -10,23 +10,24 @@ import org.apache.pulsar.functions.api.Function
 
 class MonitoringGlobalPulsarFunction : Function<AvroEnvelopeForMonitoringGlobal, Void> {
 
-    var monitoring = MonitoringGlobal()
-
     override fun process(input: AvroEnvelopeForMonitoringGlobal, context: Context?): Void? {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         val message = AvroConverter.fromMonitoringGlobal(input)
 
         try {
-            monitoring.logger = ctx.logger
-            monitoring.storage = AvroKeyValueStateStorage(PulsarFunctionStorage(ctx))
-
-            monitoring.handle(message)
+            getMonitoringGlobal(ctx).handle(message)
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, input)
             throw e
         }
 
         return null
+    }
+
+    internal fun getMonitoringGlobal(ctx: Context): MonitoringGlobal {
+        val storage = AvroKeyValueStateStorage(PulsarFunctionStorage(ctx))
+
+        return MonitoringGlobal(storage)
     }
 }

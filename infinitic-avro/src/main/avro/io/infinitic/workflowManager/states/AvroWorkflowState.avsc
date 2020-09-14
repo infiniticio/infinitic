@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "AvroWorkflowEngineState",
+  "name": "AvroWorkflowState",
   "namespace": "io.infinitic.workflowManager.states",
   "fields": [
     {

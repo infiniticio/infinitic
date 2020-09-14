@@ -1,8 +1,5 @@
 package io.infinitic.workflowManager.tests
 
-import io.infinitic.taskManager.engine.avroClasses.AvroTaskEngine
-import io.infinitic.taskManager.engine.avroClasses.AvroMonitoringGlobal
-import io.infinitic.taskManager.engine.avroClasses.AvroMonitoringPerName
 import io.infinitic.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcher
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorage

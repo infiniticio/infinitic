@@ -2,7 +2,7 @@ package io.infinitic.workflowManager.pulsar.storage
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.workflowManager.pulsar.utils.TestFactory
-import io.infinitic.workflowManager.states.AvroWorkflowEngineState
+import io.infinitic.workflowManager.states.AvroWorkfloState
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified
@@ -21,7 +21,7 @@ class PulsarAvroStorageTests : ShouldSpec({
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            val state = stateStorage.getWorkflowEngineState(workflowId)
+            val state = stateStorage.getWorkflowState(workflowId)
             // then
             verify(exactly = 1) { context.getState("engine.state.$workflowId") }
             confirmVerified(context)
@@ -31,12 +31,12 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("return state when state exists") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.random(AvroWorkflowEngineState::class)
+            val stateIn = TestFactory.random(AvroWorkfloState::class)
             every { context.getState(any()) } returns AvroSerDe.serialize(stateIn)
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            val stateOut = stateStorage.getWorkflowEngineState(stateIn.workflowId)
+            val stateOut = stateStorage.getWorkflowState(stateIn.workflowId)
             // then
             verify(exactly = 1) { context.getState("engine.state.${stateIn.workflowId}") }
             confirmVerified(context)
@@ -48,12 +48,12 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("record state") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.random(AvroWorkflowEngineState::class)
+            val stateIn = TestFactory.random(AvroWorkfloState::class)
             every { context.putState(any(), any()) } returns Unit
             // given
             val stateStorage = PulsarAvroStorage(context)
             // when
-            stateStorage.updateWorkflowEngineState(stateIn.workflowId, stateIn, null)
+            stateStorage.updateWorkflowState(stateIn.workflowId, stateIn, null)
             // then
             verify(exactly = 1) {
                 context.putState(
@@ -69,12 +69,12 @@ class PulsarAvroStorageTests : ShouldSpec({
         should("delete state") {
             // mocking
             val context = mockk<Context>()
-            val stateIn = TestFactory.random(AvroWorkflowEngineState::class)
+            val stateIn = TestFactory.random(AvroWorkfloState::class)
             every { context.deleteState(any()) } returns Unit
             // given
             val stageStorage = PulsarAvroStorage(context)
             // when
-            stageStorage.deleteWorkflowEngineState(stateIn.workflowId)
+            stageStorage.deleteWorkflowState(stateIn.workflowId)
             // then
             verify(exactly = 1) { context.deleteState("engine.state.${stateIn.workflowId}") }
             confirmVerified(context)

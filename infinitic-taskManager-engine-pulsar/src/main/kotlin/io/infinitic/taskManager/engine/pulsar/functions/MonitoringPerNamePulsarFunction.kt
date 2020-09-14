@@ -13,24 +13,25 @@ import org.apache.pulsar.functions.api.Function
 
 class MonitoringPerNamePulsarFunction : Function<AvroEnvelopeForMonitoringPerName, Void> {
 
-    var monitoring = MonitoringPerName()
-
     override fun process(input: AvroEnvelopeForMonitoringPerName, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         val message = AvroConverter.fromMonitoringPerName(input)
 
         try {
-            monitoring.logger = ctx.logger
-            monitoring.storage = AvroKeyValueStateStorage(PulsarFunctionStorage(ctx))
-            monitoring.dispatcher = Dispatcher(PulsarDispatcher.forPulsarFunctionContext(ctx))
-
-            monitoring.handle(message)
+           getMonitoringPerName(ctx).handle(message)
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, input)
             throw e
         }
 
         null
+    }
+
+    internal fun getMonitoringPerName(context: Context): MonitoringPerName {
+        val storage = AvroKeyValueStateStorage(PulsarFunctionStorage(context))
+        val dispatcher = Dispatcher(PulsarDispatcher.forPulsarFunctionContext(context))
+
+        return  MonitoringPerName(storage, dispatcher)
     }
 }

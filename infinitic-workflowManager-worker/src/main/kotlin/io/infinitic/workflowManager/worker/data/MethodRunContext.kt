@@ -210,7 +210,7 @@ class MethodRunContext(
 
     private fun getPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
-        val pastCommand = workflowTaskInput.methodRun.methodPastInstructions
+        val pastCommand = workflowTaskInput.methodRun.pastInstructionsInMethod
             .find { it is PastCommand && it.stringPosition == currentMethodPosition.stringPosition } as PastCommand?
 
         // if it exists, check it has not changed
@@ -227,7 +227,7 @@ class MethodRunContext(
 
     private fun getPastStepSimilarTo(newStep: NewStep): PastStep? {
         // find pastCommand in current position
-        val pastStep = workflowTaskInput.methodRun.methodPastInstructions
+        val pastStep = workflowTaskInput.methodRun.pastInstructionsInMethod
             .find { it is PastStep && it.stringPosition == currentMethodPosition.stringPosition } as PastStep?
 
         // if it exists, check it has not changed

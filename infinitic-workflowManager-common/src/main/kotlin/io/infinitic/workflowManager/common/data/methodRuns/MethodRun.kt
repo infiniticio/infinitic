@@ -7,6 +7,6 @@ data class MethodRun(
     val methodRunId: MethodRunId,
     val methodName: MethodName,
     val methodInput: MethodInput,
-    val methodPropertiesAtStart: Properties,
-    val methodPastInstructions: List<PastInstruction>
+    val propertiesAtMethodStart: Properties = Properties(),
+    val pastInstructionsInMethod: List<PastInstruction> = listOf()
 )

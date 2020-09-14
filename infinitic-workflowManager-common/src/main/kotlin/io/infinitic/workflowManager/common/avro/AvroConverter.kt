@@ -18,11 +18,11 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.messages.CancelWorkflow
 import io.infinitic.workflowManager.common.messages.ChildWorkflowCanceled
 import io.infinitic.workflowManager.common.messages.ChildWorkflowCompleted
-import io.infinitic.workflowManager.common.messages.DecisionCompleted
+import io.infinitic.workflowManager.common.messages.WorkflowTaskCompleted
 import io.infinitic.workflowManager.common.messages.DecisionDispatched
-import io.infinitic.workflowManager.common.messages.DelayCompleted
+import io.infinitic.workflowManager.common.messages.TimerCompleted
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
-import io.infinitic.workflowManager.common.messages.EventReceived
+import io.infinitic.workflowManager.common.messages.ObjectReceived
 import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
 import io.infinitic.workflowManager.common.messages.Message
 import io.infinitic.workflowManager.common.messages.TaskCanceled
@@ -30,7 +30,7 @@ import io.infinitic.workflowManager.common.messages.TaskCompleted
 import io.infinitic.workflowManager.common.messages.TaskDispatched
 import io.infinitic.workflowManager.common.messages.WorkflowCanceled
 import io.infinitic.workflowManager.common.messages.WorkflowCompleted
-import io.infinitic.workflowManager.common.states.WorkflowEngineState
+import io.infinitic.workflowManager.common.states.WorkflowState
 import io.infinitic.workflowManager.data.commands.AvroPastCommand
 import io.infinitic.workflowManager.data.methodRuns.AvroMethodRun
 import io.infinitic.workflowManager.data.steps.AvroPastStep
@@ -50,7 +50,7 @@ import io.infinitic.workflowManager.messages.AvroWorkflowCanceled
 import io.infinitic.workflowManager.messages.AvroWorkflowCompleted
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.infinitic.workflowManager.messages.envelopes.AvroForWorkflowEngineMessageType
-import io.infinitic.workflowManager.states.AvroWorkflowEngineState
+import io.infinitic.workflowManager.states.AvroWorkfloState
 import org.apache.avro.specific.SpecificRecordBase
 
 // import io.infinitic.workflowManager.common.data.decisions.DecisionOutput
@@ -63,7 +63,7 @@ object AvroConverter {
 //    /**
 //     *  State <-> Avro State
 //     */
-    fun fromStorage(avro: AvroWorkflowEngineState) = WorkflowEngineState(
+    fun fromStorage(avro: AvroWorkfloState) = WorkflowState(
         workflowId = WorkflowId(avro.workflowId),
         parentWorkflowId =  avro.parentWorkflowId?.let { WorkflowId(it) },
         currentWorkflowTaskId = avro.currentWorkflowTaskId?.let { WorkflowTaskId(it) },
@@ -74,7 +74,7 @@ object AvroConverter {
         bufferedMessages = avro.bufferedMessages .map { fromWorkflowEngine(it) }.toMutableList()
     )
 
-    fun toStorage(state: WorkflowEngineState) = AvroWorkflowEngineState
+    fun toStorage(state: WorkflowState) = AvroWorkfloState
         .newBuilder()
         .setWorkflowId("${state.workflowId}")
         .setParentWorkflowId(state.parentWorkflowId?.toString())
@@ -214,10 +214,10 @@ object AvroConverter {
     private fun fromAvroMessage(avro: AvroCancelWorkflow) = convertJson<CancelWorkflow>(avro)
     private fun fromAvroMessage(avro: AvroChildWorkflowCanceled) = convertJson<ChildWorkflowCanceled>(avro)
     private fun fromAvroMessage(avro: AvroChildWorkflowCompleted) = convertJson<ChildWorkflowCompleted>(avro)
-    private fun fromAvroMessage(avro: AvroDecisionCompleted) = convertJson<DecisionCompleted>(avro)
-    private fun fromAvroMessage(avro: AvroDelayCompleted) = convertJson<DelayCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroDecisionCompleted) = convertJson<WorkflowTaskCompleted>(avro)
+    private fun fromAvroMessage(avro: AvroDelayCompleted) = convertJson<TimerCompleted>(avro)
     private fun fromAvroMessage(avro: AvroDispatchWorkflow) = convertJson<DispatchWorkflow>(avro)
-    private fun fromAvroMessage(avro: AvroEventReceived) = convertJson<EventReceived>(avro)
+    private fun fromAvroMessage(avro: AvroEventReceived) = convertJson<ObjectReceived>(avro)
     private fun fromAvroMessage(avro: AvroTaskCanceled) = convertJson<TaskCanceled>(avro)
     private fun fromAvroMessage(avro: AvroTaskCompleted) = convertJson<TaskCompleted>(avro)
     private fun fromAvroMessage(avro: AvroTaskDispatched) = convertJson<TaskDispatched>(avro)
@@ -235,11 +235,11 @@ object AvroConverter {
         is CancelWorkflow -> toAvroMessage(message)
         is ChildWorkflowCanceled -> toAvroMessage(message)
         is ChildWorkflowCompleted -> toAvroMessage(message)
-        is DecisionCompleted -> toAvroMessage(message)
+        is WorkflowTaskCompleted -> toAvroMessage(message)
         is DecisionDispatched -> toAvroMessage(message)
-        is DelayCompleted -> toAvroMessage(message)
+        is TimerCompleted -> toAvroMessage(message)
         is DispatchWorkflow -> toAvroMessage(message)
-        is EventReceived -> toAvroMessage(message)
+        is ObjectReceived -> toAvroMessage(message)
         is TaskCanceled -> toAvroMessage(message)
         is TaskCompleted -> toAvroMessage(message)
         is TaskDispatched -> toAvroMessage(message)
@@ -250,10 +250,10 @@ object AvroConverter {
     private fun toAvroMessage(message: CancelWorkflow) = convertJson<AvroCancelWorkflow>(message)
     private fun toAvroMessage(message: ChildWorkflowCanceled) = convertJson<AvroChildWorkflowCanceled>(message)
     private fun toAvroMessage(message: ChildWorkflowCompleted) = convertJson<AvroChildWorkflowCompleted>(message)
-    private fun toAvroMessage(message: DecisionCompleted) = convertJson<AvroDecisionCompleted>(message)
-    private fun toAvroMessage(message: DelayCompleted) = convertJson<AvroDelayCompleted>(message)
+    private fun toAvroMessage(message: WorkflowTaskCompleted) = convertJson<AvroDecisionCompleted>(message)
+    private fun toAvroMessage(message: TimerCompleted) = convertJson<AvroDelayCompleted>(message)
     private fun toAvroMessage(message: DispatchWorkflow) = convertJson<AvroDispatchWorkflow>(message)
-    private fun toAvroMessage(message: EventReceived) = convertJson<AvroEventReceived>(message)
+    private fun toAvroMessage(message: ObjectReceived) = convertJson<AvroEventReceived>(message)
     private fun toAvroMessage(message: TaskCanceled) = convertJson<AvroTaskCanceled>(message)
     private fun toAvroMessage(message: TaskCompleted) = convertJson<AvroTaskCompleted>(message)
     private fun toAvroMessage(message: TaskDispatched) = convertJson<AvroTaskDispatched>(message)
@@ -366,8 +366,8 @@ object AvroConverter {
         methodRunId = "${obj.methodRunId}"
         methodName = convertJson(obj.methodName)
         methodInput = convertJson(obj.methodInput)
-        methodPropertiesAtStart = toAvroProperties(obj.methodPropertiesAtStart)
-        methodPastInstructions = obj.methodPastInstructions.map {
+        methodPropertiesAtStart = toAvroProperties(obj.propertiesAtMethodStart)
+        methodPastInstructions = obj.pastInstructionsInMethod.map {
             when(it) {
                 is PastCommand -> convertJson<AvroPastCommand>(it)
                 is PastStep -> convertJson<AvroPastStep>(it)
@@ -380,8 +380,8 @@ object AvroConverter {
         methodRunId = MethodRunId(avro.methodRunId),
         methodName = convertJson(avro.methodName),
         methodInput = convertJson(avro.methodInput),
-        methodPropertiesAtStart = fromAvroProperties(avro.methodPropertiesAtStart),
-        methodPastInstructions = avro.methodPastInstructions.map {
+        propertiesAtMethodStart = fromAvroProperties(avro.methodPropertiesAtStart),
+        pastInstructionsInMethod = avro.methodPastInstructions.map {
             when(it) {
                 is AvroPastCommand -> convertJson<PastCommand>(it)
                 is AvroPastStep -> convertJson<PastStep>(it)

@@ -12,7 +12,6 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun test1(): String {
         task.log()
         task.log()
-        task.log()
 
         return "ok"
     }

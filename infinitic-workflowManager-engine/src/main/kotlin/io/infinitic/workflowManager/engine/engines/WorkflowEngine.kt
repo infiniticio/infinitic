@@ -8,21 +8,21 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.workflowManager.common.data.methodRuns.Branch
+import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
-import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
-import io.infinitic.workflowManager.common.states.WorkflowEngineState
-import io.infinitic.workflowManager.engine.storages.WorkflowEngineStateStorage
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.workflowManager.common.states.WorkflowState
+import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
 import io.infinitic.workflowManager.common.messages.CancelWorkflow
 import io.infinitic.workflowManager.common.messages.ChildWorkflowCanceled
 import io.infinitic.workflowManager.common.messages.ChildWorkflowCompleted
-import io.infinitic.workflowManager.common.messages.DecisionCompleted
+import io.infinitic.workflowManager.common.messages.WorkflowTaskCompleted
 import io.infinitic.workflowManager.common.messages.DecisionDispatched
-import io.infinitic.workflowManager.common.messages.DelayCompleted
+import io.infinitic.workflowManager.common.messages.TimerCompleted
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
-import io.infinitic.workflowManager.common.messages.EventReceived
+import io.infinitic.workflowManager.common.messages.ObjectReceived
 import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
 import io.infinitic.workflowManager.common.messages.TaskCanceled
 import io.infinitic.workflowManager.common.messages.TaskCompleted
@@ -37,11 +37,11 @@ class WorkflowEngine {
     }
 
     lateinit var logger: Logger
-    lateinit var storage: WorkflowEngineStateStorage
+    lateinit var storage: WorkflowStateStorage
     lateinit var dispatcher: Dispatcher
 
     suspend fun handle(msg: ForWorkflowEngineMessage) {
-        // discard immediately messages that are not processed
+        // discard immediately irrelevant messages
         when (msg) {
             is DecisionDispatched -> return
             is TaskDispatched -> return
@@ -51,133 +51,138 @@ class WorkflowEngine {
         }
 
         // get associated state
-        val oldState = storage.getState(msg.workflowId)
+        val state = storage.getState(msg.workflowId)
 
         // discard message it workflow is already terminated
-        if (oldState == null && msg !is DispatchWorkflow) return
+        if (state == null && msg !is DispatchWorkflow) return
 
-        // store message (except DecisionCompleted) if a decision is ongoing
-        if (oldState?.currentWorkflowTaskId != null && msg !is DecisionCompleted) {
-            val newState = bufferMessage(oldState, msg)
-            storage.updateState(msg.workflowId, newState, oldState)
+        // if a workflow task is ongoing then store message (except DecisionCompleted)
+        if (state?.currentWorkflowTaskId != null && msg !is WorkflowTaskCompleted) {
+            // buffer this message
+            state.bufferedMessages.add(msg)
+            // update state
+            storage.updateState(msg.workflowId, state)
+
             return
         }
 
-        val newState =
-            if (oldState == null)
-                dispatchWorkflow(msg as DispatchWorkflow)
-            else when (msg) {
-                is CancelWorkflow -> cancelWorkflow(oldState, msg)
-                is ChildWorkflowCanceled -> childWorkflowCanceled(oldState, msg)
-                is ChildWorkflowCompleted -> childWorkflowCompleted(oldState, msg)
-                is DecisionCompleted -> decisionCompleted(oldState, msg)
-                is DelayCompleted -> delayCompleted(oldState, msg)
-                is EventReceived -> eventReceived(oldState, msg)
-                is TaskCanceled -> taskCanceled(oldState, msg)
-                is TaskCompleted -> taskCompleted(oldState, msg)
-                else -> throw Exception("Unknown ForWorkflowEngineMessage: ${msg::class.qualifiedName}")
-            }
-
-        // store state if modified
-        if (newState != oldState) {
-            storage.updateState(msg.workflowId, newState, oldState)
+        if (state == null)
+            dispatchWorkflow(msg as DispatchWorkflow)
+        else when (msg) {
+            is CancelWorkflow -> cancelWorkflow(state, msg)
+            is ChildWorkflowCanceled -> childWorkflowCanceled(state, msg)
+            is ChildWorkflowCompleted -> childWorkflowCompleted(state, msg)
+            is WorkflowTaskCompleted -> WorkflowTaskCompleted().handle(state, msg)
+            is TimerCompleted -> timerCompleted(state, msg)
+            is ObjectReceived -> objectReceived(state, msg)
+            is TaskCanceled -> taskCanceled(state, msg)
+            is TaskCompleted -> taskCompleted(state, msg)
+            else -> throw RuntimeException("Unknown ForWorkflowEngineMessage: ${msg::class.qualifiedName}")
         }
+
+//        // store state if modified
+//        if (newState != oldState) {
+//            storage.updateState(msg.workflowId, newState, oldState)
+//        }
     }
 
-    private fun bufferMessage(state: WorkflowEngineState, msg: ForWorkflowEngineMessage): WorkflowEngineState {
-        // buffer this message to handle it after decision returns
-        // val bufferedMessages = oldState.bufferedMessages.add(msg)
-        // oldState.bufferedMessages.add(msg)
+    private fun cancelWorkflow(state: WorkflowState, msg: CancelWorkflow): WorkflowState {
         TODO()
     }
 
-    private fun cancelWorkflow(state: WorkflowEngineState, msg: CancelWorkflow): WorkflowEngineState {
+    private fun childWorkflowCanceled(state: WorkflowState, msg: ChildWorkflowCanceled): WorkflowState {
         TODO()
     }
 
-    private fun childWorkflowCanceled(state: WorkflowEngineState, msg: ChildWorkflowCanceled): WorkflowEngineState {
-        TODO()
-    }
+    private suspend fun dispatchWorkflow(msg: DispatchWorkflow) {
 
-    private suspend fun dispatchWorkflow(msg: DispatchWorkflow): WorkflowEngineState {
-        val state = WorkflowEngineState(workflowId = msg.workflowId)
-        val workflowTaskId = WorkflowTaskId()
-        // define branch
-        val branch = Branch(
-            workflowMethodId = MethodRunId(),
-            workflowMethod = msg.methodName,
-            workflowMethodInput = msg.methodInput,
-            propertiesAtStart = Properties(mapOf()),
-            pastSteps = listOf()
+        // defines method to run
+        val methodRun = MethodRun(
+            methodRunId = MethodRunId(),
+            methodName = msg.methodName,
+            methodInput = msg.methodInput
         )
-        // initialize state
-        state.currentWorkflowTaskId = workflowTaskId
-        state.currentMethodRuns.add(branch)
-        // decision input
-        val decisionInput = WorkflowTaskInput(
-            workflowName = msg.workflowName,
+
+        // defines workflow task input
+        val workflowTaskInput = WorkflowTaskInput(
             workflowId = msg.workflowId,
-            branches = listOf(branch),
-            store = filterStore(state.propertyStore, listOf(branch))
+            workflowName = msg.workflowName,
+            workflowOptions = msg.workflowOptions,
+            workflowPropertyStore = PropertyStore(), // filterStore(state.propertyStore, listOf(methodRun))
+            workflowTaskIndex = WorkflowTaskIndex(0),
+            methodRun = methodRun
         )
-        // dispatch decision
-        dispatcher.toDeciders(
-            DispatchTask(
-                taskId = TaskId(workflowTaskId.id),
-                taskName = TaskName(msg.workflowName.name),
-                taskInput = TaskInput(decisionInput),
-                taskOptions = TaskOptions(),
-                taskMeta = TaskMeta().with(META_WORKFLOW_ID, msg.workflowId.id)
-            )
+
+        // defines workflow task
+        val workflowTaskId = WorkflowTaskId()
+
+        val workflowTask = DispatchTask(
+            taskId = TaskId("$workflowTaskId"),
+            taskName = TaskName("${msg.workflowName}"),
+            taskInput = TaskInput(workflowTaskInput),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta().with(META_WORKFLOW_ID, "${msg.workflowId}")
         )
+
+        // dispatch workflow task
+        dispatcher.toDeciders(workflowTask)
+
         // log event
         dispatcher.toWorkflowEngine(
             DecisionDispatched(
                 workflowTaskId = workflowTaskId,
                 workflowId = msg.workflowId,
                 workflowName = msg.workflowName,
-                workflowTaskInput = decisionInput
+                workflowTaskInput = workflowTaskInput
             )
         )
 
-        return state
+        // initialize state
+        val state = WorkflowState(
+            workflowId = msg.workflowId,
+            currentWorkflowTaskId = workflowTaskId,
+            currentMethodRuns = mutableListOf(methodRun)
+        )
+
+        storage.createState(msg.workflowId, state)
     }
 
-    private fun decisionCompleted(state: WorkflowEngineState, msg: DecisionCompleted): WorkflowEngineState {
-        TODO()
-//        DispatchTask(
-//            taskId = msg.taskId,
-//            taskName = msg.taskName,
-//            taskInput = msg.taskInput,
-//            taskMeta = TaskMeta.builder().add("workflowId", msg.workflowId.id).get()
-//        )
+    private fun workflowTaskCompleted(state: WorkflowState, msg: WorkflowTaskCompleted): WorkflowState {
+        val workflowTaskOutput = msg.workflowTaskOutput
+        // add new commands to MethodRun
+
+        // add new steps to MethodRun
+
+        // update current workflow properties
+
+        // is methodRun is completed, filter state
+
+        // apply buffered messages
+
+        // update state
     }
 
-    private fun delayCompleted(state: WorkflowEngineState, msg: DelayCompleted): WorkflowEngineState {
-        TODO()
-    }
-
-    private fun taskCanceled(state: WorkflowEngineState, msg: TaskCanceled): WorkflowEngineState {
-        TODO()
-    }
-
-    private fun taskCompleted(state: WorkflowEngineState, msg: TaskCompleted): WorkflowEngineState {
-        TODO()
-    }
-
-    private fun childWorkflowCompleted(state: WorkflowEngineState, msg: ChildWorkflowCompleted): WorkflowEngineState {
-        TODO()
-    }
-
-    private fun completeDelay(state: WorkflowEngineState, msg: DelayCompleted): WorkflowEngineState {
+    private fun timerCompleted(state: WorkflowState, msg: TimerCompleted): WorkflowState {
         TODO()
     }
 
-    private fun eventReceived(state: WorkflowEngineState, msg: EventReceived): WorkflowEngineState {
+    private fun taskCanceled(state: WorkflowState, msg: TaskCanceled): WorkflowState {
         TODO()
     }
 
-    private fun filterStore(store: PropertyStore, branches: List<Branch>): PropertyStore {
+    private fun taskCompleted(state: WorkflowState, msg: TaskCompleted): WorkflowState {
+        TODO()
+    }
+
+    private fun childWorkflowCompleted(state: WorkflowState, msg: ChildWorkflowCompleted): WorkflowState {
+        TODO()
+    }
+
+    private fun objectReceived(state: WorkflowState, msg: ObjectReceived): WorkflowState {
+        TODO()
+    }
+
+    private fun filterStore(store: PropertyStore, branches: List<MethodRun>): PropertyStore {
         // Retrieve properties at step at completion in branches
         val listProperties1 = branches.flatMap {
             b ->

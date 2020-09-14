@@ -27,8 +27,8 @@ fun main() = runBlocking<Unit> {
         methodRunId = MethodRunId(),
         methodName = MethodName.from(WorkflowA::class.java.methods.first { it.name == "test1" }),
         methodInput = MethodInput(0),
-        methodPropertiesAtStart = Properties(mapOf<PropertyName, PropertyHash>()),
-        methodPastInstructions = listOf<PastInstruction>()
+        propertiesAtMethodStart = Properties(mapOf<PropertyName, PropertyHash>()),
+        pastInstructionsInMethod = listOf<PastInstruction>()
     )
 
     val input = WorkflowTaskInput(

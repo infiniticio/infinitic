@@ -20,13 +20,13 @@ import org.slf4j.Logger
 
 private val mockLogger = mockk<Logger>(relaxed = true)
 private val client = Client()
-private val taskEngine = TaskEngine()
-private val monitoringPerName = MonitoringPerName()
-private val monitoringGlobal = MonitoringGlobal()
 private val worker = Worker()
 private val testAvroDispatcher = InMemoryDispatcher()
 private val testDispatcher = Dispatcher(testAvroDispatcher)
 private val testStorage = InMemoryStorage()
+private val taskEngine = TaskEngine(testStorage, testDispatcher)
+private val monitoringPerName = MonitoringPerName(testStorage, testDispatcher)
+private val monitoringGlobal = MonitoringGlobal(testStorage)
 
 private lateinit var status: AvroTaskStatus
 
@@ -116,7 +116,7 @@ class TaskIntegrationTests : StringSpec({
             testAvroDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
             delay(100)
-            client.retryTask(id = task.taskId.id)
+            client.retryTask(id = "${task.taskId}")
         }
         // check that task is terminated
         testStorage.isTerminated(task)
@@ -135,7 +135,7 @@ class TaskIntegrationTests : StringSpec({
             testAvroDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
             delay(100)
-            client.cancelTask(id = task.taskId.id)
+            client.cancelTask(id = "${task.taskId}")
         }
         // check that task is terminated
         testStorage.isTerminated(task)
@@ -145,23 +145,6 @@ class TaskIntegrationTests : StringSpec({
 }) {
     init {
         client.setTaskDispatcher(testAvroDispatcher)
-
-        taskEngine.apply {
-            storage = testStorage
-            dispatcher = testDispatcher
-            logger = mockLogger
-        }
-
-        monitoringPerName.apply {
-            storage = testStorage
-            dispatcher = testDispatcher
-            logger = mockLogger
-        }
-
-        monitoringGlobal.apply {
-            storage = testStorage
-            logger = mockLogger
-        }
 
         worker.setAvroDispatcher(testAvroDispatcher)
 

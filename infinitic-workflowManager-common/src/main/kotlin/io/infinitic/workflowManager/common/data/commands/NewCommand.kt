@@ -10,7 +10,7 @@ data class NewCommand(
     val commandStatus: CommandStatus = CommandStatusOngoing(),
     val commandType: CommandType = when (command) {
         is DispatchTask -> CommandType.DISPATCH_TASK
-        is DispatchWorkflow -> CommandType.DISPATCH_WORKFLOW
+        is DispatchChildWorkflow -> CommandType.DISPATCH_WORKFLOW
         is DispatchTimer -> CommandType.DISPATCH_TIMER
         is DispatchReceiver -> CommandType.DISPATCH_RECEIVER
         is StartAsync -> CommandType.START_ASYNC
