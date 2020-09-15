@@ -1,22 +1,23 @@
 package io.infinitic.taskManager.engine.dispatcher
 
 import io.infinitic.taskManager.common.avro.AvroConverter
-import io.infinitic.taskManager.engine.avroInterfaces.AvroDispatcher
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
 import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
 import io.infinitic.taskManager.common.messages.ForWorkerMessage
+import io.infinitic.taskManager.engine.dispatcher.transport.AvroTransport
 import io.infinitic.taskManager.engine.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.mockk
+import io.infinitic.taskManager.engine.dispatcher.AvroDispatcher as AvroDispatcher
 
-class DispatcherTests : StringSpec({
-    val avroDispatcher = mockk<AvroDispatcher>(relaxed = true)
-    val dispatcher = EngineDispatcher(avroDispatcher)
+class AvroDispatcherTests : StringSpec({
+    val transport = mockk<AvroTransport>(relaxed = true)
+    val dispatcher = AvroDispatcher(transport)
 
-    "Dispatcher.toTaskEngine should send correct parameter" {
+    "AvroDispatcher.toTaskEngine should send correct parameter" {
         // given
         val msg = TestFactory.random(ForTaskEngineMessage::class)
         val after = TestFactory.random(Float::class)
@@ -24,56 +25,56 @@ class DispatcherTests : StringSpec({
         dispatcher.toTaskEngine(msg, after)
         // then
         coVerify {
-            avroDispatcher.toTaskEngine(AvroConverter.toTaskEngine(msg), after)
+            transport.toTaskEngine(AvroConverter.toTaskEngine(msg), after)
         }
-        confirmVerified(avroDispatcher)
+        confirmVerified(transport)
     }
 
-    "Dispatcher.toTaskEngine should send correct default after parameter" {
+    "AvroDispatcher.toTaskEngine should send correct default after parameter" {
         // given
         val msg = TestFactory.random(ForTaskEngineMessage::class)
         // when
         dispatcher.toTaskEngine(msg)
         // then
         coVerify {
-            avroDispatcher.toTaskEngine(AvroConverter.toTaskEngine(msg), 0F)
+            transport.toTaskEngine(AvroConverter.toTaskEngine(msg), 0F)
         }
-        confirmVerified(avroDispatcher)
+        confirmVerified(transport)
     }
 
-    "Dispatcher.toMonitoringPerName should send correct parameter" {
+    "AvroDispatcher.toMonitoringPerName should send correct parameter" {
         // given
         val msg = TestFactory.random(ForMonitoringPerNameMessage::class)
         // when
         dispatcher.toMonitoringPerName(msg)
         // then
         coVerify {
-            avroDispatcher.toMonitoringPerName(AvroConverter.toMonitoringPerName(msg))
+            transport.toMonitoringPerName(AvroConverter.toMonitoringPerName(msg))
         }
-        confirmVerified(avroDispatcher)
+        confirmVerified(transport)
     }
 
-    "Dispatcher.toMonitoringGlobal should send correct parameter" {
+    "AvroDispatcher.toMonitoringGlobal should send correct parameter" {
         // given
         val msg = TestFactory.random(ForMonitoringGlobalMessage::class)
         // when
         dispatcher.toMonitoringGlobal(msg)
         // then
         coVerify {
-            avroDispatcher.toMonitoringGlobal(AvroConverter.toMonitoringGlobal(msg))
+            transport.toMonitoringGlobal(AvroConverter.toMonitoringGlobal(msg))
         }
-        confirmVerified(avroDispatcher)
+        confirmVerified(transport)
     }
 
-    "Dispatcher.toWorkers should send correct parameter" {
+    "AvroDispatcher.toWorkers should send correct parameter" {
         // given
         val msg = TestFactory.random(ForWorkerMessage::class)
         // when
         dispatcher.toWorkers(msg)
         // then
         coVerify {
-            avroDispatcher.toWorkers(AvroConverter.toWorkers(msg))
+            transport.toWorkers(AvroConverter.toWorkers(msg))
         }
-        confirmVerified(avroDispatcher)
+        confirmVerified(transport)
     }
 })

@@ -2,7 +2,6 @@ package io.infinitic.taskManager.engine.engines
 
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.taskManager.common.data.TaskStatus
-import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
 import io.infinitic.taskManager.common.messages.CancelTask
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
@@ -18,6 +17,7 @@ import io.infinitic.taskManager.common.messages.RetryTask
 import io.infinitic.taskManager.common.messages.RetryTaskAttempt
 import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.states.TaskEngineState
+import io.infinitic.taskManager.engine.dispatcher.Dispatcher
 import io.infinitic.taskManager.engine.storage.TaskStateStorage
 import io.infinitic.taskManager.engine.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
@@ -36,7 +36,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 
 internal class EngineResults {
-    lateinit var dispatcher: EngineDispatcher
+    lateinit var dispatcher: Dispatcher
     lateinit var storage: TaskStateStorage
     lateinit var logger: Logger
     var state: TaskEngineState? = null
@@ -58,7 +58,7 @@ internal fun engineHandle(stateIn: TaskEngineState?, msgIn: ForTaskEngineMessage
     // mocking
     val logger = mockk<Logger>()
     val storage = mockk<TaskStateStorage>()
-    val dispatcher = mockk<EngineDispatcher>()
+    val dispatcher = mockk<Dispatcher>()
     val stateSlot = slot<TaskEngineState>()
     val taskAttemptCompletedSlot = slot<TaskAttemptCompleted>()
     val taskAttemptDispatchedSlot = slot<TaskAttemptDispatched>()

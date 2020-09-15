@@ -1,12 +1,11 @@
-package io.infinitic.taskManager.engine.avroInterfaces
+package io.infinitic.taskManager.engine.dispatcher.transport
 
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
 
-// TODO: Remove
-interface AvroDispatcher {
+interface AvroTransport {
     suspend fun toWorkers(msg: AvroEnvelopeForWorker)
     suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float = 0f)
     suspend fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal)

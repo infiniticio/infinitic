@@ -9,6 +9,7 @@ import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.MultipleUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.ProcessingTimeout
 import io.infinitic.taskManager.common.exceptions.RetryDelayHasWrongReturnType
+import io.infinitic.taskManager.common.messages.ForWorkerMessage
 import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.messages.TaskAttemptCompleted
 import io.infinitic.taskManager.common.messages.TaskAttemptFailed
@@ -69,6 +70,10 @@ open class Worker(val workerDispatcher: WorkerDispatcher) {
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
         is RunTask -> runTask(msg)
+    }
+
+    suspend fun handle(message: ForWorkerMessage) = when (message) {
+        is RunTask -> runTask(message)
     }
 
     suspend fun runTask(msg: RunTask) = withContext(Dispatchers.Default) {
