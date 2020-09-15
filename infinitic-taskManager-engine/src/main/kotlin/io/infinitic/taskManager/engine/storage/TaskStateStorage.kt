@@ -7,12 +7,12 @@ import io.infinitic.taskManager.common.states.MonitoringPerNameState
 import io.infinitic.taskManager.common.states.TaskEngineState
 
 /**
- * StateStorage implementations are responsible for storing the different state objects used by the engine.
+ * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
  *
  * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
  * transformed before being stored. These details are left to the different implementations.
  */
-interface StateStorage {
+interface TaskStateStorage {
     fun getMonitoringGlobalState(): MonitoringGlobalState?
     fun updateMonitoringGlobalState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?)
     fun deleteMonitoringGlobalState()

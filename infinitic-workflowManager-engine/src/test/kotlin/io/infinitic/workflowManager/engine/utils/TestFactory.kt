@@ -2,10 +2,9 @@ package io.infinitic.workflowManager.engine.utils
 
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.common.data.commands.CommandId
-import io.infinitic.workflowManager.data.steps.AvroStepCriterion
 import io.infinitic.workflowManager.common.data.steps.Step
+import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random
@@ -35,7 +34,7 @@ object TestFactory {
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).nextPrintableString(10)) }
-            .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStep(randomStepCriterion()) }
+//            .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStep(randomStepCriterion()) }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })
@@ -50,7 +49,7 @@ object TestFactory {
     }
 
     fun stepCriteria(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(TaskId())) { Status.ONGOING }
+        fun getStepId() = Step.Id(CommandId(TaskId())) { StepStatusOngoing() }
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

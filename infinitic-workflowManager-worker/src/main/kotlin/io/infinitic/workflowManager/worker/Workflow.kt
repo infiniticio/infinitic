@@ -6,8 +6,6 @@ import io.infinitic.workflowManager.common.exceptions.WorkflowTaskContextNotInit
 import io.infinitic.workflowManager.worker.deferred.Deferred
 import io.infinitic.workflowManager.worker.commands.TaskProxyHandler
 import io.infinitic.workflowManager.worker.data.MethodRunContext
-import io.infinitic.workflowManager.worker.exceptions.KnownStepException
-import io.infinitic.workflowManager.worker.exceptions.NewStepException
 
 abstract class Workflow {
     var methodRunContext: MethodRunContext? = null

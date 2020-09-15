@@ -2,14 +2,10 @@ package io.infinitic.taskManager.engine.pulsar.functions
 
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
-import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
-import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -20,7 +16,6 @@ import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import org.apache.pulsar.functions.api.Context
-import java.util.Optional
 
 class MonitoringPerNamePulsarFunctionTests : ShouldSpec({
     context("MonitoringPerNamePulsarFunctionTests.process") {

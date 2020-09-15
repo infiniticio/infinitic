@@ -1,10 +1,9 @@
 package io.infinitic.workflowManager.pulsar.utils
 
 import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.common.data.commands.CommandId
-import io.infinitic.workflowManager.data.steps.AvroStepCriterion
 import io.infinitic.workflowManager.common.data.steps.Step
+import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
@@ -35,7 +34,7 @@ object TestFactory {
             .collectionSizeRange(1, 5)
             .scanClasspathForConcreteTypes(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
-            .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStep(randomStepCriterion()) }
+//            .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStep(randomStepCriterion()) }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })
@@ -50,7 +49,7 @@ object TestFactory {
     }
 
     fun stepCriteria(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(TaskId())) { Status.ONGOING }
+        fun getStepId() = Step.Id(CommandId(TaskId())) { StepStatusOngoing() }
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

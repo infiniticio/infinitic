@@ -16,11 +16,10 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTests : StringSpec({
-    val dispatcher = mockk<TaskDispatcher>()
+    val dispatcher = mockk<ClientDispatcher>()
     val slot = slot<ForTaskEngineMessage>()
     coEvery { dispatcher.toTaskEngine(capture(slot)) } just Runs
-    val client = Client()
-    client.taskDispatcher = dispatcher
+    val client = Client(dispatcher)
 
     beforeTest {
         slot.clear()

@@ -14,7 +14,7 @@ import io.mockk.mockk
 
 class DispatcherTests : StringSpec({
     val avroDispatcher = mockk<AvroDispatcher>(relaxed = true)
-    val dispatcher = Dispatcher(avroDispatcher)
+    val dispatcher = EngineDispatcher(avroDispatcher)
 
     "Dispatcher.toTaskEngine should send correct parameter" {
         // given

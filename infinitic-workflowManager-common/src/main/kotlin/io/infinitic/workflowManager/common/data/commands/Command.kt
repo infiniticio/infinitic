@@ -38,8 +38,7 @@ class DispatchChildWorkflow(
     val childMethodInput: MethodInput
 ) : Command()
 
-class StartAsync(
-) : Command()
+class StartAsync() : Command()
 
 class DispatchTimer(
     val duration: Int
@@ -48,4 +47,3 @@ class DispatchTimer(
 class DispatchReceiver(
     val klass: String
 ) : Command()
-

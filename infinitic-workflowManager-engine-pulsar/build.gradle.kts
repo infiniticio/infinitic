@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":infinitic-workflowManager-common"))
     implementation(project(":infinitic-workflowManager-engine"))
     implementation(project(":infinitic-workflowManager-dispatcher-pulsar"))
+    implementation(project(":infinitic-storage-pulsar"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

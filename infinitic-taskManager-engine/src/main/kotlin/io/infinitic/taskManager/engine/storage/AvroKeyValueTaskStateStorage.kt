@@ -17,7 +17,7 @@ import io.infinitic.taskManager.states.AvroTaskEngineState
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
+class AvroKeyValueTaskStateStorage(private val storage: Storage) : TaskStateStorage {
     override fun getMonitoringGlobalState(): MonitoringGlobalState? {
         return storage
             .getState(getMonitoringGlobalStateKey())
@@ -100,8 +100,8 @@ class AvroKeyValueStateStorage(private val storage: Storage) : StateStorage {
         }
     }
 
-    private fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
-    internal fun getMonitoringPerNameStateKey(taskName: TaskName) = "monitoringPerName.state.${taskName}"
+    internal fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
+    internal fun getMonitoringPerNameStateKey(taskName: TaskName) = "monitoringPerName.state.$taskName"
     internal fun getMonitoringPerNameCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.toString().toLowerCase()}"
-    private fun getEngineStateKey(taskId: String) = "engine.state.$taskId"
+    internal fun getEngineStateKey(taskId: String) = "engine.state.$taskId"
 }

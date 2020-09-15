@@ -3,9 +3,9 @@ package io.infinitic.taskManager.engine.pulsar.functions
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.dispatcher.pulsar.PulsarDispatcher
-import io.infinitic.taskManager.engine.dispatcher.Dispatcher
+import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
-import io.infinitic.taskManager.engine.storage.AvroKeyValueStateStorage
+import io.infinitic.taskManager.engine.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
@@ -19,7 +19,7 @@ class MonitoringPerNamePulsarFunction : Function<AvroEnvelopeForMonitoringPerNam
         val message = AvroConverter.fromMonitoringPerName(input)
 
         try {
-           getMonitoringPerName(ctx).handle(message)
+            getMonitoringPerName(ctx).handle(message)
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, input)
             throw e
@@ -29,9 +29,9 @@ class MonitoringPerNamePulsarFunction : Function<AvroEnvelopeForMonitoringPerNam
     }
 
     internal fun getMonitoringPerName(context: Context): MonitoringPerName {
-        val storage = AvroKeyValueStateStorage(PulsarFunctionStorage(context))
-        val dispatcher = Dispatcher(PulsarDispatcher.forPulsarFunctionContext(context))
+        val storage = AvroKeyValueTaskStateStorage(PulsarFunctionStorage(context))
+        val dispatcher = EngineDispatcher(PulsarDispatcher.forPulsarFunctionContext(context))
 
-        return  MonitoringPerName(storage, dispatcher)
+        return MonitoringPerName(storage, dispatcher)
     }
 }

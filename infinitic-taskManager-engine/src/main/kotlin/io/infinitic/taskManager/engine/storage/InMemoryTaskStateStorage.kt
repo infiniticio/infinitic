@@ -15,13 +15,19 @@ import io.infinitic.taskManager.common.states.TaskEngineState
  *
  * This state storage is not suitable for production because it is not persistent.
  */
-open class InMemoryStateStorage : StateStorage {
-    protected var taskEngineStore: Map<String, TaskEngineState> = mapOf()
-    protected var monitoringPerNameStore: Map<String, MonitoringPerNameState> = mapOf()
-    protected var monitoringGlobalStore: MonitoringGlobalState? = null
+open class InMemoryTaskStateStorage : TaskStateStorage {
+    var taskEngineStore: MutableMap<String, TaskEngineState> = mutableMapOf()
+    var monitoringPerNameStore: MutableMap<String, MonitoringPerNameState> = mutableMapOf()
+    var monitoringGlobalStore: MonitoringGlobalState? = null
 
-    override fun updateMonitoringGlobalState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
-        monitoringGlobalStore = newState
+    override fun getTaskEngineState(taskId: TaskId) = taskEngineStore["$taskId"]
+
+    override fun updateTaskEngineState(taskId: TaskId, newState: TaskEngineState, oldState: TaskEngineState?) {
+        taskEngineStore["$taskId"] = newState
+    }
+
+    override fun deleteTaskEngineState(taskId: TaskId) {
+        taskEngineStore.remove("$taskId")
     }
 
     override fun getMonitoringPerNameState(taskName: TaskName): MonitoringPerNameState? {
@@ -29,28 +35,25 @@ open class InMemoryStateStorage : StateStorage {
     }
 
     override fun updateMonitoringPerNameState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
-        monitoringPerNameStore = monitoringPerNameStore.plus("$taskName" to newState)
+        monitoringPerNameStore["$taskName"] = newState
     }
 
     override fun deleteMonitoringPerNameState(taskName: TaskName) {
-        monitoringPerNameStore = monitoringPerNameStore.minus("$taskName")
+        monitoringPerNameStore.remove("$taskName")
     }
 
-    override fun getTaskEngineState(taskId: TaskId): TaskEngineState? {
-        return taskEngineStore["$taskId"]
+    override fun updateMonitoringGlobalState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
+        monitoringGlobalStore = newState
     }
-
-    override fun updateTaskEngineState(taskId: TaskId, newState: TaskEngineState, oldState: TaskEngineState?) {
-        taskEngineStore = taskEngineStore.plus("$taskId" to newState)
-    }
-
-    override fun deleteTaskEngineState(taskId: TaskId) {
-        taskEngineStore = taskEngineStore.minus("$taskId")
-    }
-
-    override fun getMonitoringGlobalState(): MonitoringGlobalState? = monitoringGlobalStore
+    override fun getMonitoringGlobalState() = monitoringGlobalStore
 
     override fun deleteMonitoringGlobalState() {
+        monitoringGlobalStore = null
+    }
+
+    fun reset() {
+        taskEngineStore.clear()
+        monitoringPerNameStore.clear()
         monitoringGlobalStore = null
     }
 }

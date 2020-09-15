@@ -126,7 +126,7 @@ class MethodRunContext(
             positionDown()
             val commandOutput = try {
                 CommandOutput(branch())
-            } catch(e: Exception) {
+            } catch (e: Exception) {
                 when (e) {
                     is NewStepException -> null
                     is KnownStepException -> null
@@ -141,7 +141,6 @@ class MethodRunContext(
             return Deferred<S>(Step.Id.from(pastCommand), this)
         }
     }
-
 
     /*
      * Deferred await

@@ -33,8 +33,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-open class Worker {
-    lateinit var dispatcher: Dispatcher
+open class Worker(val workerDispatcher: WorkerDispatcher) {
 
     companion object {
 
@@ -66,10 +65,6 @@ open class Worker {
          * Use this method to unregister a given class (mostly used in tests)
          */
         inline fun <reified T> unregister() = unregister(T::class.java.name)
-    }
-
-    fun setAvroDispatcher(avroDispatcher: AvroDispatcher) {
-        dispatcher = Dispatcher(avroDispatcher)
     }
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
@@ -232,7 +227,7 @@ open class Worker {
             taskAttemptIndex = msg.taskAttemptIndex
         )
 
-        dispatcher.toTaskEngine(taskAttemptStarted)
+        workerDispatcher.toTaskEngine(taskAttemptStarted)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
@@ -245,7 +240,7 @@ open class Worker {
             taskAttemptError = TaskAttemptError(error)
         )
 
-        dispatcher.toTaskEngine(taskAttemptFailed)
+        workerDispatcher.toTaskEngine(taskAttemptFailed)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -257,6 +252,6 @@ open class Worker {
             taskOutput = TaskOutput(output)
         )
 
-        dispatcher.toTaskEngine(taskAttemptCompleted)
+        workerDispatcher.toTaskEngine(taskAttemptCompleted)
     }
 }

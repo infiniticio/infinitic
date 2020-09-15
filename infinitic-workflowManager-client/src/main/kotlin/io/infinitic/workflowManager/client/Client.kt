@@ -1,5 +1,6 @@
 package io.infinitic.workflowManager.client
 
+import io.infinitic.taskManager.client.ClientDispatcher as TaskClientDispatcher
 import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
@@ -13,21 +14,23 @@ import io.infinitic.workflowManager.common.messages.DispatchWorkflow
 import java.lang.reflect.Proxy
 import io.infinitic.taskManager.client.Client as TaskClient
 
-class Client() : TaskClient() {
-    lateinit var workflowDispatcher: WorkflowDispatcher
+class Client(
+    val taskDispatcher: TaskClientDispatcher,
+    val workflowDispatcher: WorkflowDispatcher
+) : TaskClient(taskDispatcher) {
 
-    /*
-     * Use this method to provide an actual implementation of AvroWorkflowDispatcher
-     */
-    fun setWorkflowDispatcher(avroDispatcher: AvroWorkflowDispatcher) {
-        workflowDispatcher = WorkflowDispatcher(avroDispatcher)
-    }
+//    /*
+//     * Use this method to provide an actual implementation of AvroWorkflowDispatcher
+//     */
+//    fun setWorkflowDispatcher(avroDispatcher: AvroWorkflowDispatcher) {
+//        workflowDispatcher = WorkflowDispatcher(avroDispatcher)
+//    }
 
     /*
      * Use this method to dispatch a task
      * TODO: using class instance instead of interface is not supported
      */
-    inline fun <reified T> dispatchWorkflow(
+    suspend inline fun <reified T> dispatchWorkflow(
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta(),
         apply: T.() -> Any?

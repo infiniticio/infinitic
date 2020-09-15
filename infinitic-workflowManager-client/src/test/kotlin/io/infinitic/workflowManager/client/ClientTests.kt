@@ -1,6 +1,6 @@
 package io.infinitic.workflowManager.client
 
-import io.infinitic.taskManager.client.TaskDispatcher
+import io.infinitic.taskManager.client.ClientDispatcher
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
@@ -20,23 +20,20 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTests : StringSpec({
-    val taskDispatcher = mockk<TaskDispatcher>()
+    val taskDispatcher = mockk<ClientDispatcher>()
     val taskSlot = slot<ForTaskEngineMessage>()
     coEvery { taskDispatcher.toTaskEngine(capture(taskSlot)) } just Runs
 
     val workflowDispatcher = mockk<WorkflowDispatcher>()
     val workflowSlot = slot<ForWorkflowEngineMessage>()
-    every { workflowDispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
+    coEvery { workflowDispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
 
-    val client = Client()
-    client.taskDispatcher = taskDispatcher
-    client.workflowDispatcher = workflowDispatcher
+    val client = Client(taskDispatcher, workflowDispatcher)
 
     beforeTest {
         taskSlot.clear()

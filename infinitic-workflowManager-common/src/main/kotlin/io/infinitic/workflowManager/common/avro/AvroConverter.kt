@@ -50,7 +50,7 @@ import io.infinitic.workflowManager.messages.AvroWorkflowCanceled
 import io.infinitic.workflowManager.messages.AvroWorkflowCompleted
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.infinitic.workflowManager.messages.envelopes.AvroForWorkflowEngineMessageType
-import io.infinitic.workflowManager.states.AvroWorkfloState
+import io.infinitic.workflowManager.states.AvroWorkflowState
 import org.apache.avro.specific.SpecificRecordBase
 
 // import io.infinitic.workflowManager.common.data.decisions.DecisionOutput
@@ -63,18 +63,18 @@ object AvroConverter {
 //    /**
 //     *  State <-> Avro State
 //     */
-    fun fromStorage(avro: AvroWorkfloState) = WorkflowState(
+    fun fromStorage(avro: AvroWorkflowState) = WorkflowState(
         workflowId = WorkflowId(avro.workflowId),
-        parentWorkflowId =  avro.parentWorkflowId?.let { WorkflowId(it) },
+        parentWorkflowId = avro.parentWorkflowId?.let { WorkflowId(it) },
         currentWorkflowTaskId = avro.currentWorkflowTaskId?.let { WorkflowTaskId(it) },
         currentWorkflowTaskIndex = WorkflowTaskIndex(avro.currentWorkflowTaskIndex),
         currentMethodRuns = avro.currentMethodRuns.map { fromAvroMethodRun(it) }.toMutableList(),
         currentProperties = convertJson(avro.currentProperties),
         propertyStore = convertJson(avro.propertyStore),
-        bufferedMessages = avro.bufferedMessages .map { fromWorkflowEngine(it) }.toMutableList()
+        bufferedMessages = avro.bufferedMessages.map { fromWorkflowEngine(it) }.toMutableList()
     )
 
-    fun toStorage(state: WorkflowState) = AvroWorkfloState
+    fun toStorage(state: WorkflowState) = AvroWorkflowState
         .newBuilder()
         .setWorkflowId("${state.workflowId}")
         .setParentWorkflowId(state.parentWorkflowId?.toString())
@@ -306,7 +306,6 @@ object AvroConverter {
      *  StepCriteria
      */
 
-
 //    fun toAvroStepId(obj: Step.Id): AvroStepId = when (obj) {
 //        is Step.Id -> AvroStep.newBuilder().apply {
 //            type = AvroStepType.ID
@@ -368,7 +367,7 @@ object AvroConverter {
         methodInput = convertJson(obj.methodInput)
         methodPropertiesAtStart = toAvroProperties(obj.propertiesAtMethodStart)
         methodPastInstructions = obj.pastInstructionsInMethod.map {
-            when(it) {
+            when (it) {
                 is PastCommand -> convertJson<AvroPastCommand>(it)
                 is PastStep -> convertJson<AvroPastStep>(it)
                 else -> throw RuntimeException()
@@ -382,7 +381,7 @@ object AvroConverter {
         methodInput = convertJson(avro.methodInput),
         propertiesAtMethodStart = fromAvroProperties(avro.methodPropertiesAtStart),
         pastInstructionsInMethod = avro.methodPastInstructions.map {
-            when(it) {
+            when (it) {
                 is AvroPastCommand -> convertJson<PastCommand>(it)
                 is AvroPastStep -> convertJson<PastStep>(it)
                 else -> throw RuntimeException()

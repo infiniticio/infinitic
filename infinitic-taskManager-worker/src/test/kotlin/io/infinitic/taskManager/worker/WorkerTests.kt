@@ -36,11 +36,10 @@ import io.mockk.mockk
 import kotlinx.coroutines.launch
 
 class WorkerTests : StringSpec({
-    val dispatcher = mockk<Dispatcher>()
+    val dispatcher = mockk<WorkerDispatcher>()
     val slots = mutableListOf<ForTaskEngineMessage>()
     coEvery { dispatcher.toTaskEngine(capture(slots)) } just Runs
-    val worker = Worker()
-    worker.dispatcher = dispatcher
+    val worker = Worker(dispatcher)
 
     // ensure slots are emptied between each test
     beforeTest {

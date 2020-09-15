@@ -13,12 +13,7 @@ import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.RetryTask
 import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 
-open class Client() {
-    lateinit var taskDispatcher: TaskDispatcher
-
-    open fun setTaskDispatcher(avroDispatcher: AvroTaskDispatcher) {
-        taskDispatcher = TaskDispatcher(avroDispatcher)
-    }
+open class Client(val clientDispatcher: ClientDispatcher) {
 
     /*
      * Use this method to dispatch a task
@@ -48,7 +43,7 @@ open class Client() {
             taskOptions = options,
             taskMeta = meta.withParametersTypesFrom(method)
         )
-        taskDispatcher.toTaskEngine(msg)
+        clientDispatcher.toTaskEngine(msg)
 
         return TaskInstance(msg.taskId)
     }
@@ -71,7 +66,7 @@ open class Client() {
             taskOptions = options,
             taskMeta = meta
         )
-        taskDispatcher.toTaskEngine(msg)
+        clientDispatcher.toTaskEngine(msg)
     }
 
     /*
@@ -85,6 +80,6 @@ open class Client() {
             taskId = TaskId(id),
             taskOutput = TaskOutput(output)
         )
-        taskDispatcher.toTaskEngine(msg)
+        clientDispatcher.toTaskEngine(msg)
     }
 }

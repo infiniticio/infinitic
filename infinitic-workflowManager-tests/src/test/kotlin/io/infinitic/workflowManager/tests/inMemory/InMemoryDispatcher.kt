@@ -21,15 +21,15 @@ internal class InMemoryDispatcher :
     AvroWorkflowEngineDispatcher,
     AvroWorkflowClientDispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
-    lateinit var workflowEngineHandle: (msg: AvroEnvelopeForWorkflowEngine) -> Unit
-    lateinit var taskEngineHandle: (msg: AvroEnvelopeForTaskEngine) -> Unit
-    lateinit var monitoringPerNameHandle: (msg: AvroEnvelopeForMonitoringPerName) -> Unit
-    lateinit var monitoringGlobalHandle: (msg: AvroEnvelopeForMonitoringGlobal) -> Unit
+    lateinit var workflowEngineHandle: suspend (msg: AvroEnvelopeForWorkflowEngine) -> Unit
+    lateinit var taskEngineHandle: suspend (msg: AvroEnvelopeForTaskEngine) -> Unit
+    lateinit var monitoringPerNameHandle: suspend (msg: AvroEnvelopeForMonitoringPerName) -> Unit
+    lateinit var monitoringGlobalHandle: suspend (msg: AvroEnvelopeForMonitoringGlobal) -> Unit
     lateinit var workerHandle: suspend (msg: AvroEnvelopeForWorker) -> Unit
 
     lateinit var scope: CoroutineScope
 
-    override fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine, after: Float) {
+    override suspend fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine, after: Float) {
         scope.launch {
             if (after > 0F) {
                 delay((1000 * after).toLong())
@@ -38,25 +38,25 @@ internal class InMemoryDispatcher :
         }
     }
 
-    override fun toDeciders(msg: AvroEnvelopeForTaskEngine) {
+    override suspend fun toDeciders(msg: AvroEnvelopeForTaskEngine) {
         scope.launch {
             taskEngineHandle(msg)
         }
     }
 
-    override fun toWorkers(msg: AvroEnvelopeForTaskEngine) {
+    override suspend fun toWorkers(msg: AvroEnvelopeForTaskEngine) {
         scope.launch {
             taskEngineHandle(msg)
         }
     }
 
-    override fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine) {
+    override suspend fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine) {
         scope.launch {
             workflowEngineHandle(msg)
         }
     }
 
-    override fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
+    override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
         scope.launch {
             if (after > 0F) {
                 delay((1000 * after).toLong())
@@ -67,19 +67,19 @@ internal class InMemoryDispatcher :
 
     override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) = toTaskEngine(msg, 0F)
 
-    override fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
+    override suspend fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
         scope.launch {
             monitoringPerNameHandle(msg)
         }
     }
 
-    override fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal) {
+    override suspend fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal) {
         scope.launch {
             monitoringGlobalHandle(msg)
         }
     }
 
-    override fun toWorkers(msg: AvroEnvelopeForWorker) {
+    override suspend fun toWorkers(msg: AvroEnvelopeForWorker) {
         scope.launch {
             workerHandle(msg)
         }

@@ -1,11 +1,11 @@
 package io.infinitic.taskManager.engine.engines
 
 import io.infinitic.taskManager.common.data.TaskStatus
-import io.infinitic.taskManager.engine.dispatcher.Dispatcher
+import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
 import io.infinitic.taskManager.common.messages.TaskCreated
 import io.infinitic.taskManager.common.messages.TaskStatusUpdated
 import io.infinitic.taskManager.common.states.MonitoringPerNameState
-import io.infinitic.taskManager.engine.storage.StateStorage
+import io.infinitic.taskManager.engine.storage.TaskStateStorage
 import io.infinitic.taskManager.engine.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -22,8 +22,8 @@ import org.slf4j.Logger
 class MonitoringPerNameTests : ShouldSpec({
     context("TaskMetrics.handle") {
         should("should update TaskMetricsState when receiving TaskStatusUpdate message") {
-            val storage = mockk<StateStorage>()
-            val dispatcher = mockk<Dispatcher>()
+            val storage = mockk<TaskStateStorage>()
+            val dispatcher = mockk<EngineDispatcher>()
             val logger = mockk<Logger>()
             val msg = TestFactory.random(
                 TaskStatusUpdated::class,
@@ -51,8 +51,8 @@ class MonitoringPerNameTests : ShouldSpec({
         }
 
         should("dispatch message when discovering a new task type") {
-            val storage = mockk<StateStorage>()
-            val dispatcher = mockk<Dispatcher>()
+            val storage = mockk<TaskStateStorage>()
+            val dispatcher = mockk<EngineDispatcher>()
             val logger = mockk<Logger>()
             val msg = TestFactory.random(
                 TaskStatusUpdated::class,

@@ -3,11 +3,10 @@ package io.infinitic.taskManager.engine.engines
 import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
 import io.infinitic.taskManager.common.messages.TaskCreated
 import io.infinitic.taskManager.common.states.MonitoringGlobalState
-import io.infinitic.taskManager.engine.storage.StateStorage
-import org.slf4j.Logger
+import io.infinitic.taskManager.engine.storage.TaskStateStorage
 
 class MonitoringGlobal(
-    val storage: StateStorage
+    val storage: TaskStateStorage
 ) {
     fun handle(message: ForMonitoringGlobalMessage) {
 

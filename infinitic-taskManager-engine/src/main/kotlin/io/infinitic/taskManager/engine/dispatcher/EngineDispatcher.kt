@@ -7,7 +7,7 @@ import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.taskManager.common.messages.ForWorkerMessage
 
-class Dispatcher(private val avroDispatcher: AvroDispatcher) {
+class EngineDispatcher(private val avroDispatcher: AvroDispatcher) {
 
     suspend fun toTaskEngine(msg: ForTaskEngineMessage, after: Float = 0f) {
         avroDispatcher.toTaskEngine(AvroConverter.toTaskEngine(msg), after)

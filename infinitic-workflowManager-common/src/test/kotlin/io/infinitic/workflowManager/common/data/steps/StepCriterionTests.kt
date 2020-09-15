@@ -1,15 +1,8 @@
 package io.infinitic.workflowManager.common.data.steps
 
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.workflowManager.common.data.commands.CommandId
-import io.infinitic.workflowManager.common.data.steps.Step.And
-import io.infinitic.workflowManager.common.data.steps.Step.Or
-import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
-
-//fun getStepId() = Step.Id(CommandId(TaskId())) { Status.ONGOING }
+// fun getStepId() = Step.Id(CommandId(TaskId())) { Status.ONGOING }
 //
-//class StepCriterionTests : StringSpec({
+// class StepCriterionTests : StringSpec({
 //    "Step should not be completed by default" {
 //        val step = getStepId()
 //
@@ -149,4 +142,4 @@ import io.kotest.matchers.shouldBe
 //        step.complete(stepB.commandId)
 //        step shouldBe Or(listOf(And(listOf(stepB, stepC))))
 //    }
-//})
+// })

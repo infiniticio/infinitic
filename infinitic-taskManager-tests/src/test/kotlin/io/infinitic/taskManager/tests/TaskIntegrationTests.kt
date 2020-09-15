@@ -1,29 +1,29 @@
 package io.infinitic.taskManager.tests
 
 import io.infinitic.taskManager.client.Client
+import io.infinitic.taskManager.client.ClientDispatcher
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskInstance
 import io.infinitic.taskManager.data.AvroTaskStatus
-import io.infinitic.taskManager.engine.dispatcher.Dispatcher
+import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
 import io.infinitic.taskManager.engine.engines.MonitoringGlobal
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcher
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorage
+import io.infinitic.taskManager.worker.WorkerDispatcher
 import io.infinitic.taskManager.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import org.slf4j.Logger
 
-private val mockLogger = mockk<Logger>(relaxed = true)
-private val client = Client()
-private val worker = Worker()
 private val testAvroDispatcher = InMemoryDispatcher()
-private val testDispatcher = Dispatcher(testAvroDispatcher)
+private val testDispatcher = EngineDispatcher(testAvroDispatcher)
 private val testStorage = InMemoryStorage()
+
+private val client = Client(ClientDispatcher(testAvroDispatcher))
+private val worker = Worker(WorkerDispatcher(testAvroDispatcher))
 private val taskEngine = TaskEngine(testStorage, testDispatcher)
 private val monitoringPerName = MonitoringPerName(testStorage, testDispatcher)
 private val monitoringGlobal = MonitoringGlobal(testStorage)
@@ -144,21 +144,25 @@ class TaskIntegrationTests : StringSpec({
     }
 }) {
     init {
-        client.setTaskDispatcher(testAvroDispatcher)
-
-        worker.setAvroDispatcher(testAvroDispatcher)
-
         testAvroDispatcher.apply {
-            taskEngineHandle = {
-                taskEngine.handle(AvroConverter.fromTaskEngine(it))
-            }
-            monitoringPerNameHandle = { avro ->
-                monitoringPerName.handle(AvroConverter.fromMonitoringPerName(avro))
-                // update test status
-                avro.taskStatusUpdated?.let { status = it.newStatus }
-            }
-            monitoringGlobalHandle = { monitoringGlobal.handle(AvroConverter.fromMonitoringGlobal(it)) }
-            workerHandle = { worker.handle(it) }
+            taskEngineHandle =
+                {
+                    taskEngine.handle(AvroConverter.fromTaskEngine(it))
+                }
+            monitoringPerNameHandle =
+                { avro ->
+                    monitoringPerName.handle(AvroConverter.fromMonitoringPerName(avro))
+                    // update test status
+                    avro.taskStatusUpdated?.let { status = it.newStatus }
+                }
+            monitoringGlobalHandle =
+                {
+                    monitoringGlobal.handle(AvroConverter.fromMonitoringGlobal(it))
+                }
+            workerHandle =
+                {
+                    worker.handle(it)
+                }
         }
     }
 }
