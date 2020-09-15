@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "AvroMethodName",
+  "namespace": "io.infinitic.workflowManager.data.methodRuns",
+  "fields": [
+    {
+      "name": "methodName",
+      "type": "string"
+    },
+    {
+      "name": "methodParameterTypes",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    }
+  ]
+}

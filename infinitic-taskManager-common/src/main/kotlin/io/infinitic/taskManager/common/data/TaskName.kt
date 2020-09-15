@@ -2,6 +2,7 @@ package io.infinitic.taskManager.common.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
+import io.infinitic.taskManager.common.data.bases.Name
 import java.lang.reflect.Method
 
 data class TaskName

@@ -1,7 +1,6 @@
 package io.infinitic.workflowManager.client
 
-import io.infinitic.common.data.interfaces.IdInterface
-import io.infinitic.taskManager.client.TaskDispatcher
+import io.infinitic.taskManager.client.ClientDispatcher
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
@@ -10,8 +9,9 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowInput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
+import io.infinitic.workflowManager.common.data.methodRuns.MethodName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
@@ -20,23 +20,20 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTests : StringSpec({
-    val taskDispatcher = mockk<TaskDispatcher>()
+    val taskDispatcher = mockk<ClientDispatcher>()
     val taskSlot = slot<ForTaskEngineMessage>()
     coEvery { taskDispatcher.toTaskEngine(capture(taskSlot)) } just Runs
 
     val workflowDispatcher = mockk<WorkflowDispatcher>()
     val workflowSlot = slot<ForWorkflowEngineMessage>()
-    every { workflowDispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
+    coEvery { workflowDispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
 
-    val client = Client()
-    client.taskDispatcher = taskDispatcher
-    client.workflowDispatcher = workflowDispatcher
+    val client = Client(taskDispatcher, workflowDispatcher)
 
     beforeTest {
         taskSlot.clear()
@@ -51,10 +48,11 @@ class ClientTests : StringSpec({
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodName = MethodName("m1", listOf()),
+            methodInput = MethodInput(),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf())
+            workflowMeta = WorkflowMeta()
         )
     }
 
@@ -68,10 +66,11 @@ class ClientTests : StringSpec({
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(0),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodName = MethodName("m1", listOf(Integer::class.java.name)),
+            methodInput = MethodInput(0),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(Integer::class.java.name))
+            workflowMeta = WorkflowMeta()
         )
     }
 
@@ -83,10 +82,11 @@ class ClientTests : StringSpec({
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput("a"),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodName = MethodName("m1", listOf(String::class.java.name)),
+            methodInput = MethodInput("a"),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(String::class.java.name))
+            workflowMeta = WorkflowMeta()
         )
     }
 
@@ -98,27 +98,29 @@ class ClientTests : StringSpec({
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(0, "a"),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodName = MethodName("m1", listOf(Int::class.java.name, String::class.java.name)),
+            methodInput = MethodInput(0, "a"),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(Int::class.java.name, String::class.java.name))
+            workflowMeta = WorkflowMeta()
         )
     }
 
     "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val workflowId = WorkflowId()
-        val workflow = client.dispatchWorkflow<FakeWorkflow> { m1(workflowId) }
+        val instance = client.dispatchWorkflow<FakeWorkflow> { m1(workflowId) }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
 
         msg shouldBe DispatchWorkflow(
-            workflowId = workflow.workflowId,
-            workflowInput = WorkflowInput(workflowId),
-            workflowName = WorkflowName("${FakeWorkflow::class.java.name}::m1"),
+            workflowId = instance.workflowId,
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodName = MethodName("m1", listOf(CharSequence::class.java.name)),
+            methodInput = MethodInput(workflowId),
             workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta().withParameterTypes(listOf(IdInterface::class.java.name))
+            workflowMeta = WorkflowMeta()
         )
     }
 
@@ -214,7 +216,7 @@ class ClientTests : StringSpec({
             taskInput = TaskInput(taskId),
             taskName = TaskName("${FakeTask::class.java.name}::m1"),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf(IdInterface::class.java.name))
+            taskMeta = TaskMeta().withParameterTypes(listOf(CharSequence::class.java.name))
         )
     }
 
@@ -230,7 +232,7 @@ private interface FakeTask {
     fun m1(i: Int?): String
     fun m1(str: String): Any?
     fun m1(p1: Int, p2: String): String
-    fun m1(id: IdInterface): String
+    fun m1(id: CharSequence): String
 }
 
 private interface FakeWorkflow {
@@ -238,5 +240,5 @@ private interface FakeWorkflow {
     fun m1(i: Int?): String
     fun m1(str: String): Any?
     fun m1(p1: Int, p2: String): String
-    fun m1(id: IdInterface): String
+    fun m1(id: CharSequence): String
 }

@@ -4,7 +4,7 @@ import io.infinitic.common.data.interfaces.plus
 import io.infinitic.taskManager.common.data.TaskAttemptId
 import io.infinitic.taskManager.common.data.TaskAttemptRetry
 import io.infinitic.taskManager.common.data.TaskStatus
-import io.infinitic.taskManager.engine.dispatcher.Dispatcher
+import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
 import io.infinitic.taskManager.common.messages.CancelTask
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
@@ -20,14 +20,12 @@ import io.infinitic.taskManager.common.messages.RetryTaskAttempt
 import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.messages.interfaces.TaskAttemptMessage
 import io.infinitic.taskManager.common.states.TaskEngineState
-import io.infinitic.taskManager.engine.storage.StateStorage
-import org.slf4j.Logger
+import io.infinitic.taskManager.engine.storage.TaskStateStorage
 
-class TaskEngine {
-    lateinit var logger: Logger
-    lateinit var storage: StateStorage
-    lateinit var dispatcher: Dispatcher
-
+class TaskEngine(
+    val storage: TaskStateStorage,
+    val dispatcher: EngineDispatcher
+) {
     suspend fun handle(message: ForTaskEngineMessage) {
         // immediately discard messages that are non managed
         when (message) {

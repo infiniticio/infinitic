@@ -1,19 +1,21 @@
 package io.infinitic.workflowManager.engine.pulsar.functions
 
-import io.infinitic.workflowManager.engine.avroEngines.AvroWorkflowEngine
+import io.infinitic.workflowManager.common.avro.AvroConverter
+import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
+import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.infinitic.workflowManager.pulsar.functions.WorkflowEnginePulsarFunction
-import io.infinitic.workflowManager.pulsar.storage.PulsarAvroStorage
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.spyk
+import io.mockk.unmockkAll
 import org.apache.pulsar.functions.api.Context
 
 class WorkflowEnginePulsarFunctionTests : StringSpec({
@@ -27,20 +29,27 @@ class WorkflowEnginePulsarFunctionTests : StringSpec({
     }
 
     "WorkflowEnginePulsarFunction should call engine with correct parameters" {
-        // mocking
+        // mocking Pulsar Context
         val context = mockk<Context>()
-        every { context.logger } returns mockk<org.slf4j.Logger>(relaxed = true)
-        val engineFunction = spyk(AvroWorkflowEngine())
-        coEvery { engineFunction.handle(any()) } just Runs
+        every { context.logger } returns mockk()
+
+        // Mocking avro conversion
         val avroMsg = mockk<AvroEnvelopeForWorkflowEngine>()
-        // given
-        val fct = WorkflowEnginePulsarFunction()
-        fct.engine = engineFunction
+        val msg = mockk<ForWorkflowEngineMessage>()
+        mockkObject(AvroConverter)
+        every { AvroConverter.fromWorkflowEngine(avroMsg) } returns msg
+
+        // Mocking Task Engine
+        val workflowEngine = mockk<WorkflowEngine>()
+        val workflowEnginePulsarFunction = spyk<WorkflowEnginePulsarFunction>()
+        every { workflowEnginePulsarFunction.getWorkflowEngine(context) } returns workflowEngine
+        coEvery { workflowEngine.handle(msg) } just Runs
+
         // when
-        fct.process(avroMsg, context)
+        workflowEnginePulsarFunction.process(avroMsg, context)
         // then
-        engineFunction.logger shouldBe context.logger
-        (engineFunction.avroStorage as PulsarAvroStorage).context shouldBe context
-        coVerify(exactly = 1) { engineFunction.handle(avroMsg) }
+        coVerify(exactly = 1) { workflowEngine.handle(msg) }
+
+        unmockkAll()
     }
 })

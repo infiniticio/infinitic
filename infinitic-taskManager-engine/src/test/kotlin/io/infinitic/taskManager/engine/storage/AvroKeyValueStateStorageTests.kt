@@ -31,11 +31,11 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val storage = mockk<Storage>()
             every { storage.getState(any()) } returns null
             // given
-            val stateStorage = AvroKeyValueStateStorage(storage)
+            val stateStorage = AvroKeyValueTaskStateStorage(storage)
             // when
             val state = stateStorage.getTaskEngineState(taskId)
             // then
-            verify(exactly = 1) { storage.getState("engine.state.${taskId.id}") }
+            verify(exactly = 1) { storage.getState("engine.state.$taskId") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -46,11 +46,11 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(TaskEngineState::class)
             every { context.getState(any()) } returns byteBufferRepresentation(stateIn)
             // given
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             // when
             val stateOut = stateStorage.getTaskEngineState(stateIn.taskId)
             // then
-            verify(exactly = 1) { context.getState("engine.state.${stateIn.taskId.id}") }
+            verify(exactly = 1) { context.getState("engine.state.${stateIn.taskId}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }
@@ -63,13 +63,13 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(TaskEngineState::class)
             every { context.putState(any(), any()) } returns Unit
             // given
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             // when
             stateStorage.updateTaskEngineState(stateIn.taskId, stateIn, null)
             // then
             verify(exactly = 1) {
                 context.putState(
-                    "engine.state.${stateIn.taskId.id}",
+                    "engine.state.${stateIn.taskId}",
                     byteBufferRepresentation(stateIn)
                 )
             }
@@ -84,11 +84,11 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(TaskEngineState::class)
             every { context.deleteState(any()) } returns Unit
             // given
-            val stageStorage = AvroKeyValueStateStorage(context)
+            val stageStorage = AvroKeyValueTaskStateStorage(context)
             // when
             stageStorage.deleteTaskEngineState(stateIn.taskId)
             // then
-            verify(exactly = 1) { context.deleteState("engine.state.${stateIn.taskId.id}") }
+            verify(exactly = 1) { context.deleteState("engine.state.${stateIn.taskId}") }
             confirmVerified(context)
         }
     }
@@ -101,10 +101,10 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val context = mockk<Storage>()
             every { context.getState(any()) } returns null
             // when
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             val state = stateStorage.getMonitoringPerNameState(taskName)
             // then
-            verify(exactly = 1) { context.getState("monitoringPerName.state.${taskName.name}") }
+            verify(exactly = 1) { context.getState("monitoringPerName.state.$taskName") }
             confirmVerified(context)
             state shouldBe null
         }
@@ -115,10 +115,10 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val context = mockk<Storage>()
             every { context.getState(any()) } returns byteBufferRepresentation(stateIn)
             // when
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             val stateOut = stateStorage.getMonitoringPerNameState(stateIn.taskName)
             // then
-            verify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName.name}") }
+            verify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }
@@ -145,7 +145,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
 
             mockkObject(AvroConverter)
 
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             stateStorage.updateMonitoringPerNameState(newState.taskName, newState, null)
 
             verifyAll {
@@ -190,7 +190,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
 
             mockkObject(AvroConverter)
 
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             stateStorage.updateMonitoringPerNameState(newState.taskName, newState, oldState)
 
             verifyAll {
@@ -215,7 +215,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val context = mockk<Storage>()
             every { context.deleteState(any()) } returns Unit
             // when
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             stateStorage.deleteMonitoringPerNameState(stateIn.taskName)
             // then
             verify(exactly = 1) { context.deleteState(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }
@@ -229,7 +229,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val context = mockk<Storage>()
             every { context.getState(any()) } returns null
             // given
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             // when
             val state = stateStorage.getMonitoringGlobalState()
             // then
@@ -244,7 +244,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
             every { context.getState(any()) } returns byteBufferRepresentation(stateIn)
             // given
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             // when
             val stateOut = stateStorage.getMonitoringGlobalState()
             // then
@@ -261,7 +261,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
             every { context.putState(any(), any()) } returns Unit
             // given
-            val stateStorage = AvroKeyValueStateStorage(context)
+            val stateStorage = AvroKeyValueTaskStateStorage(context)
             // when
             stateStorage.updateMonitoringGlobalState(stateIn, null)
             // then
@@ -281,7 +281,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             val context = mockk<Storage>()
             every { context.deleteState(any()) } returns Unit
             // given
-            val stageStorage = AvroKeyValueStateStorage(context)
+            val stageStorage = AvroKeyValueTaskStateStorage(context)
             // when
             stageStorage.deleteMonitoringGlobalState()
             // then

@@ -82,7 +82,7 @@ data class SerializedData(
     }
 
     fun hash(): String {
-        // MD5 implementation
+        // MD5 implementation, enough to avoid collision in practical cases
         val md = MessageDigest.getInstance("MD5")
         return BigInteger(1, md.digest(bytes)).toString(16).padStart(32, '0')
     }

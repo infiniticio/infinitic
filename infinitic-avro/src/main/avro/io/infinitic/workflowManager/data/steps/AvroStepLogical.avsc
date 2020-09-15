@@ -1,0 +1,28 @@
+{
+  "type": "record",
+  "name": "AvroStepLogical",
+  "namespace": "io.infinitic.workflowManager.data.steps",
+  "fields": [
+    {
+      "name": "type",
+      "type": {
+        "type": "enum",
+        "name": "AvroStepLogicalType",
+        "symbols": [
+          "AND",
+          "OR"
+        ]
+      }
+    },
+    {
+      "name": "steps",
+      "type": {
+        "type": "array",
+        "items": [
+          "io.infinitic.workflowManager.data.steps.AvroStepId",
+          "io.infinitic.workflowManager.data.steps.AvroStepLogical"
+        ]
+      }
+    }
+  ]
+}

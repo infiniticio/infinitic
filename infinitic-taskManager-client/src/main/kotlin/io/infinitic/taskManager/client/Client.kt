@@ -1,6 +1,6 @@
 package io.infinitic.taskManager.client
 
-import io.infinitic.taskManager.common.data.Task
+import io.infinitic.taskManager.common.data.TaskInstance
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
@@ -11,32 +11,24 @@ import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
 import io.infinitic.taskManager.common.messages.CancelTask
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.RetryTask
-import java.lang.reflect.Proxy
+import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 
-open class Client() {
-    lateinit var taskDispatcher: TaskDispatcher
-
-    open fun setDispatcher(avroDispatcher: AvroTaskDispatcher) {
-        taskDispatcher = TaskDispatcher(avroDispatcher)
-    }
+open class Client(val clientDispatcher: ClientDispatcher) {
 
     /*
      * Use this method to dispatch a task
-     * TODO: using class instance instead of interface is not supported
+     * TODO: using class instead of interface is not supported
      */
     suspend inline fun <reified T> dispatchTask(
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
         apply: T.() -> Any?
-    ): Task {
+    ): TaskInstance {
         // get a proxy for T
-        val handler = ProxyHandler()
+        val handler = MethodProxyHandler()
 
-        val klass = Proxy.newProxyInstance(
-            T::class.java.classLoader,
-            kotlin.arrayOf(T::class.java),
-            handler
-        ) as T
+        // get a proxy instance
+        val klass = handler.instance<T>()
 
         // method call will actually be done through the proxy by handler
         klass.apply()
@@ -51,9 +43,9 @@ open class Client() {
             taskOptions = options,
             taskMeta = meta.withParametersTypesFrom(method)
         )
-        taskDispatcher.toTaskEngine(msg)
+        clientDispatcher.toTaskEngine(msg)
 
-        return Task(msg.taskId)
+        return TaskInstance(msg.taskId)
     }
 
     /*
@@ -74,7 +66,7 @@ open class Client() {
             taskOptions = options,
             taskMeta = meta
         )
-        taskDispatcher.toTaskEngine(msg)
+        clientDispatcher.toTaskEngine(msg)
     }
 
     /*
@@ -88,6 +80,6 @@ open class Client() {
             taskId = TaskId(id),
             taskOutput = TaskOutput(output)
         )
-        taskDispatcher.toTaskEngine(msg)
+        clientDispatcher.toTaskEngine(msg)
     }
 }

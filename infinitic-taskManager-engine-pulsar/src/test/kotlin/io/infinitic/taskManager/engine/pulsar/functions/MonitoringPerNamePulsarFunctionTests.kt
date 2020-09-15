@@ -1,11 +1,11 @@
 package io.infinitic.taskManager.engine.pulsar.functions
 
 import io.infinitic.taskManager.common.avro.AvroConverter
+import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -16,7 +16,6 @@ import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import org.apache.pulsar.functions.api.Context
-import java.util.Optional
 
 class MonitoringPerNamePulsarFunctionTests : ShouldSpec({
     context("MonitoringPerNamePulsarFunctionTests.process") {
@@ -30,25 +29,26 @@ class MonitoringPerNamePulsarFunctionTests : ShouldSpec({
         }
 
         should("call metrics with correct parameters") {
-            // mocking
-            val topicPrefixValue = mockk<Optional<Any>>()
-            every { topicPrefixValue.isPresent } returns false
+            // mocking Context
             val context = mockk<Context>()
-            every { context.logger } returns mockk(relaxed = true)
-            every { context.getUserConfigValue("topicPrefix") } returns topicPrefixValue
-            val monitoringFunction = spyk<MonitoringPerName>()
-            coEvery { monitoringFunction.handle(any()) } just Runs
+            every { context.logger } returns mockk()
+
+            // Mocking avro conversion
             val avroMsg = mockk<AvroEnvelopeForMonitoringPerName>()
+            val msg = mockk<ForMonitoringPerNameMessage>()
             mockkObject(AvroConverter)
-            every { AvroConverter.fromMonitoringPerName(any()) } returns mockk()
-            // given
-            val fct = MonitoringPerNamePulsarFunction()
-            fct.monitoring = monitoringFunction
+            every { AvroConverter.fromMonitoringPerName(avroMsg) } returns msg
+
+            // Mocking Monitoring Per Name
+            val monitoringPerName = mockk<MonitoringPerName>()
+            val monitoringPerNamePulsarFunction = spyk<MonitoringPerNamePulsarFunction>()
+            every { monitoringPerNamePulsarFunction.getMonitoringPerName(context) } returns monitoringPerName
+            coEvery { monitoringPerName.handle(msg) } just Runs
+
             // when
-            fct.process(avroMsg, context)
+            monitoringPerNamePulsarFunction.process(avroMsg, context)
             // then
-            monitoringFunction.logger shouldBe context.logger
-            coVerify(exactly = 1) { monitoringFunction.handle(any()) }
+            coVerify(exactly = 1) { monitoringPerName.handle(msg) }
             unmockkAll()
         }
     }

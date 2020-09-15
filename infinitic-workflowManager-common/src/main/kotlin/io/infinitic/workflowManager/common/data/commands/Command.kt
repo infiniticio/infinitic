@@ -3,117 +3,47 @@ package io.infinitic.workflowManager.common.data.commands
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import io.infinitic.common.data.DateTime
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.workflowManager.common.data.DelayId
-import io.infinitic.workflowManager.common.data.events.EventData
-import io.infinitic.workflowManager.common.data.events.EventId
-import io.infinitic.workflowManager.common.data.events.EventName
-import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.data.commands.CommandStatus
-import io.infinitic.workflowManager.common.data.branches.BranchOutput
+import io.infinitic.common.data.SerializedData
+import io.infinitic.taskManager.common.data.TaskInput
+import io.infinitic.taskManager.common.data.TaskName
+import io.infinitic.workflowManager.common.data.methodRuns.MethodName
+import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
+import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(value = DispatchTask::class, name = "DISPATCH_TASK"),
     JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
-    JsonSubTypes.Type(value = WaitDelay::class, name = "WAIT_DELAY"),
-    JsonSubTypes.Type(value = WaitEvent::class, name = "WAIT_EVENT"),
-    JsonSubTypes.Type(value = InstantTask::class, name = "RUN_INSTANT_TASK"),
-    JsonSubTypes.Type(value = PauseWorkflow::class, name = "PAUSE_WORKFLOW"),
-    JsonSubTypes.Type(value = ResumeWorkflow::class, name = "RESUME_WORKFLOW"),
-    JsonSubTypes.Type(value = CompleteWorkflow::class, name = "COMPLETE_WORKFLOW"),
-    JsonSubTypes.Type(value = TerminateWorkflow::class, name = "TERMINATE_WORKFLOW"),
-    JsonSubTypes.Type(value = SendEvent::class, name = "SEND_EVENT")
+    JsonSubTypes.Type(value = StartAsync::class, name = "DISPATCH_ASYNC_BRANCH"),
+    JsonSubTypes.Type(value = DispatchTimer::class, name = "DISPATCH_TIMER"),
+    JsonSubTypes.Type(value = DispatchReceiver::class, name = "DISPATCH_RECEIVER")
 )
 @JsonIgnoreProperties(ignoreUnknown = true)
-sealed class Command(
-    open val decidedAt: DateTime,
-    open val commandHash: CommandHash,
-    open val actionStatus: CommandStatus
-)
-
-data class DispatchTask(
-    val taskId: TaskId,
-    var taskOutput: TaskOutput?,
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
-) : Command(decidedAt, commandHash, actionStatus)
-
-data class DispatchChildWorkflow(
-    val childWorkflowId: WorkflowId,
-    var childWorkflowOutput: BranchOutput?,
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
-) : Command(decidedAt, commandHash, actionStatus)
-
-data class WaitDelay(
-    val delayId: DelayId,
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
-) : Command(decidedAt, commandHash, actionStatus)
-
-data class WaitEvent(
-    val eventId: EventId,
-    val eventName: EventName,
-    var eventData: EventData?,
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
-) : Command(decidedAt, commandHash, actionStatus)
+sealed class Command {
+    fun hash() = CommandHash(SerializedData.from(this).hash())
+}
 
 /**
- * InstantTask have already been processed by the Decider
+ * Commands are asynchronously processed
  */
-data class InstantTask(
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override val actionStatus: CommandStatus,
-    var taskOutput: TaskOutput
-) : Command(decidedAt, commandHash, actionStatus)
 
-/**
- * EngineCommand are processed right away by the Engine
- */
-sealed class EngineCommand(
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override val actionStatus: CommandStatus
-) : Command(decidedAt, commandHash, actionStatus)
+class DispatchTask(
+    val taskName: TaskName,
+    val taskInput: TaskInput
+) : Command()
 
-data class PauseWorkflow(
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
-) : EngineCommand(decidedAt, commandHash, actionStatus)
+class DispatchChildWorkflow(
+    val childWorkflowName: WorkflowName,
+    val childMethodName: MethodName,
+    val childMethodInput: MethodInput
+) : Command()
 
-data class ResumeWorkflow(
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
-) : EngineCommand(decidedAt, commandHash, actionStatus)
+class StartAsync() : Command()
 
-data class CompleteWorkflow(
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED,
-    val workflowOutput: BranchOutput?
-) : EngineCommand(decidedAt, commandHash, actionStatus)
+class DispatchTimer(
+    val duration: Int
+) : Command()
 
-data class TerminateWorkflow(
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED
-) : EngineCommand(decidedAt, commandHash, actionStatus)
-
-data class SendEvent(
-    override val decidedAt: DateTime,
-    override val commandHash: CommandHash,
-    override var actionStatus: CommandStatus = CommandStatus.DISPATCHED,
-    val eventName: EventName,
-    var eventData: EventData?
-) : EngineCommand(decidedAt, commandHash, actionStatus)
+class DispatchReceiver(
+    val klass: String
+) : Command()

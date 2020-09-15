@@ -6,7 +6,7 @@ import io.infinitic.taskManager.common.data.TaskAttemptError
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.taskManager.common.exceptions.CanNotUseJavaParameterTypesInMeta
+import io.infinitic.taskManager.common.exceptions.CanNotUseJavaReservedKeywordInMeta
 import io.infinitic.taskManager.common.exceptions.MultipleMethodCallsAtDispatch
 import io.infinitic.taskManager.data.AvroSerializedData
 import io.infinitic.taskManager.data.AvroSerializedDataType
@@ -66,7 +66,7 @@ object TestFactory {
                 )
             }
             .randomize(TaskAttemptError::class.java) {
-                TaskAttemptError(CanNotUseJavaParameterTypesInMeta("foo"))
+                TaskAttemptError(CanNotUseJavaReservedKeywordInMeta("foo"))
             }
             .randomize(TaskMeta::class.java) {
                 TaskMeta(mutableMapOf("foo" to "bar"))

@@ -1,11 +1,6 @@
 package io.infinitic.workflowManager.engine.avroConverter
 
-import io.infinitic.workflowManager.common.avro.AvroConverter
-import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
-import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.core.spec.style.shouldSpec
-import io.kotest.matchers.shouldBe
 
 class AvroConverterTests : ShouldSpec({
 //    context("WorkflowStateEngine") {
@@ -79,16 +74,16 @@ class AvroConverterTests : ShouldSpec({
 //    }
 })
 
-fun messagesToWorkflowEngineShouldBeAvroReversible(msg: ForWorkflowEngineMessage) = shouldSpec {
-    context(msg::class.simpleName!!) {
-        should("should be avro-convertible") {
-            shouldNotThrowAny {
-                val avroMsg = AvroConverter.toWorkflowEngine(msg)
-                val msg2 = AvroConverter.fromWorkflowEngine(avroMsg)
-                val avroMsg2 = AvroConverter.toWorkflowEngine(msg2)
-                msg shouldBe msg2
-                avroMsg shouldBe avroMsg2
-            }
-        }
-    }
-}
+// fun messagesToWorkflowEngineShouldBeAvroReversible(msg: ForWorkflowEngineMessage) = shouldSpec {
+//    context(msg::class.simpleName!!) {
+//        should("should be avro-convertible") {
+//            shouldNotThrowAny {
+//                val avroMsg = AvroConverter.toWorkflowEngine(msg)
+//                val msg2 = AvroConverter.fromWorkflowEngine(avroMsg)
+//                val avroMsg2 = AvroConverter.toWorkflowEngine(msg2)
+//                msg shouldBe msg2
+//                avroMsg shouldBe avroMsg2
+//            }
+//        }
+//    }
+// }

@@ -1,0 +1,6 @@
+{
+  "type": "record",
+  "name": "AvroStepStatusOngoing",
+  "namespace": "io.infinitic.workflowManager.data.steps",
+  "fields": []
+}

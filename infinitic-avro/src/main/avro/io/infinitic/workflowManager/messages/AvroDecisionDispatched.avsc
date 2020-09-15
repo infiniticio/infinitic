@@ -9,7 +9,7 @@
       "logicalType": "uuid"
     },
     {
-      "name": "decisionId",
+      "name": "workflowTaskId",
       "type": "string",
       "logicalType": "uuid"
     },
@@ -18,8 +18,8 @@
       "type": "string"
     },
     {
-      "name": "decisionInput",
-      "type": "io.infinitic.workflowManager.data.decisions.AvroDecisionInput"
+      "name": "workflowTaskInput",
+      "type": "io.infinitic.workflowManager.data.workflowTasks.AvroWorkflowTaskInput"
     }
   ]
 }

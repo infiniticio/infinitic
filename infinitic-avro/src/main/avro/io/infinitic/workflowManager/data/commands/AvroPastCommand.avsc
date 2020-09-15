@@ -1,0 +1,92 @@
+{
+  "type": "record",
+  "name": "AvroPastCommand",
+  "namespace": "io.infinitic.workflowManager.data.commands",
+  "fields": [
+    {
+      "name": "position",
+      "type": "string"
+    },
+    {
+      "name": "commandType",
+      "type": "io.infinitic.workflowManager.data.commands.AvroCommandType"
+    },
+    {
+      "name": "commandId",
+      "type": "string"
+    },
+    {
+      "name": "commandHash",
+      "type": "string"
+    },
+    {
+      "name": "commandSimpleName",
+      "type": "string"
+    },
+    {
+      "name": "commandStatus",
+      "type": [
+        "io.infinitic.workflowManager.data.commands.AvroCommandStatusOngoing",
+        "io.infinitic.workflowManager.data.commands.AvroCommandStatusCompleted",
+        "io.infinitic.workflowManager.data.commands.AvroCommandStatusCanceled"
+      ]
+    },
+    {
+      "name": "taskId",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "name": "taskOutput",
+      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+    },
+    {
+      "name": "childWorkflowId",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "name": "childWorkflowOutput",
+      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+    },
+    {
+      "name": "delayId",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "name": "eventId",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "name": "eventName",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "name": "eventData",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "io.infinitic.taskManager.data.AvroSerializedData"
+        }
+      ]
+    },
+    {
+      "name": "workflowOutput",
+      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+    }
+  ]
+}

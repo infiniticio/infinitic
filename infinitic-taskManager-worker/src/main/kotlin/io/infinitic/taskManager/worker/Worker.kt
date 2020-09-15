@@ -5,19 +5,17 @@ import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptContext
 import io.infinitic.taskManager.common.data.TaskAttemptError
 import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.taskManager.common.exceptions.ClassNotFoundDuringTaskInstantiation
-import io.infinitic.taskManager.common.exceptions.ErrorDuringTaskInstantiation
 import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.MultipleUseOfDividerInTaskName
-import io.infinitic.taskManager.common.exceptions.NoMethodFoundWithParameterCount
-import io.infinitic.taskManager.common.exceptions.NoMethodFoundWithParameterTypes
 import io.infinitic.taskManager.common.exceptions.ProcessingTimeout
 import io.infinitic.taskManager.common.exceptions.RetryDelayHasWrongReturnType
-import io.infinitic.taskManager.common.exceptions.TooManyMethodsFoundWithParameterCount
 import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.messages.TaskAttemptCompleted
 import io.infinitic.taskManager.common.messages.TaskAttemptFailed
 import io.infinitic.taskManager.common.messages.TaskAttemptStarted
+import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterCount
+import io.infinitic.taskManager.common.parser.getNewInstancePerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,15 +27,13 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-open class Worker {
-    lateinit var dispatcher: Dispatcher
+open class Worker(val workerDispatcher: WorkerDispatcher) {
 
     companion object {
 
@@ -69,10 +65,6 @@ open class Worker {
          * Use this method to unregister a given class (mostly used in tests)
          */
         inline fun <reified T> unregister() = unregister(T::class.java.name)
-    }
-
-    fun setAvroDispatcher(avroDispatcher: AvroDispatcher) {
-        dispatcher = Dispatcher(avroDispatcher)
     }
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
@@ -153,11 +145,14 @@ open class Worker {
     }
 
     private fun setTaskTaskContext(task: Any, context: TaskAttemptContext) {
-        val p = task::class.memberProperties.find {
+        task::class.memberProperties.find {
             it.returnType.javaType.typeName == TaskAttemptContext::class.java.name
+        }?.javaField?.apply {
+            val accessible = isAccessible
+            isAccessible = true
+            set(task, context)
+            isAccessible = accessible
         }
-
-        p?.javaField?.set(task, context)
     }
 
     private suspend fun getRetryDelayAndFailTask(task: Any, msg: RunTask, context: TaskAttemptContext) {
@@ -174,21 +169,24 @@ open class Worker {
     }
 
     private fun parse(msg: RunTask): TaskCommand {
-        val (taskName, methodName) = getClassAndMethodNames(msg)
+        val (taskName, methodName) = getClassAndMethodName("${msg.taskName}")
         val task = getTaskInstance(taskName)
-        val parameterTypes = getMetaParameterTypes(msg)
-        val method = getMethod(task, methodName, msg.taskInput.size, parameterTypes)
-        val parameters = msg.taskInput.data
+        val parameterTypes = msg.taskMeta.parameterTypes
+        val method = if (parameterTypes == null) {
+            getMethodPerNameAndParameterCount(task, methodName, msg.taskInput.size)
+        } else {
+            getMethodPerNameAndParameterTypes(task, methodName, parameterTypes)
+        }
 
-        return TaskCommand(task, method, parameters, msg.taskOptions)
+        return TaskCommand(task, method, msg.taskInput.data, msg.taskOptions)
     }
 
-    private fun getClassAndMethodNames(msg: RunTask): List<String> {
-        val parts = msg.taskName.name.split(Constants.METHOD_DIVIDER)
+    private fun getClassAndMethodName(name: String): List<String> {
+        val parts = name.split(Constants.METHOD_DIVIDER)
         return when (parts.size) {
             1 -> parts + Constants.METHOD_DEFAULT
             2 -> parts
-            else -> throw MultipleUseOfDividerInTaskName(msg.taskName.name)
+            else -> throw MultipleUseOfDividerInTaskName(name)
         }
     }
 
@@ -197,51 +195,7 @@ open class Worker {
         if (registeredTasks.containsKey(name)) return registeredTasks[name]!!
 
         // if no instance is registered, try to instantiate this task
-        val klass = getClass(name)
-
-        return try {
-            klass.newInstance()
-        } catch (e: Exception) {
-            throw ErrorDuringTaskInstantiation(name)
-        }
-    }
-
-    private fun getMetaParameterTypes(msg: RunTask) = msg.taskMeta.parameterTypes
-        ?.map { getClass(it) }
-        ?.toTypedArray()
-
-    private fun getClass(name: String) = when (name) {
-        "bytes" -> Byte::class.java
-        "short" -> Short::class.java
-        "int" -> Int::class.java
-        "long" -> Long::class.java
-        "float" -> Float::class.java
-        "double" -> Double::class.java
-        "boolean" -> Boolean::class.java
-        "char" -> Character::class.java
-        else ->
-            try {
-                Class.forName(name)
-            } catch (e: ClassNotFoundException) {
-                throw ClassNotFoundDuringTaskInstantiation(name)
-            }
-    }
-
-    // TODO: currently "suspend" methods are not supported
-    private fun getMethod(task: Any, methodName: String, parameterCount: Int, parameterTypes: Array<Class<*>>?): Method {
-        // Case where parameter types have been provided
-        if (parameterTypes != null) return try {
-            task::class.java.getMethod(methodName, *parameterTypes)
-        } catch (e: NoSuchMethodException) {
-            throw NoMethodFoundWithParameterTypes(task::class.java.name, methodName, parameterTypes.map { it.name })
-        }
-
-        // if not, hopefully there is only one method with this name
-        val methods = task::class.javaObjectType.methods.filter { it.name == methodName && it.parameterCount == parameterCount }
-        if (methods.isEmpty()) throw NoMethodFoundWithParameterCount(task::class.java.name, methodName, parameterCount)
-        if (methods.size > 1) throw TooManyMethodsFoundWithParameterCount(task::class.java.name, methodName, parameterCount)
-
-        return methods[0]
+        return getNewInstancePerName(name)
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
@@ -273,7 +227,7 @@ open class Worker {
             taskAttemptIndex = msg.taskAttemptIndex
         )
 
-        dispatcher.toTaskEngine(taskAttemptStarted)
+        workerDispatcher.toTaskEngine(taskAttemptStarted)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
@@ -286,7 +240,7 @@ open class Worker {
             taskAttemptError = TaskAttemptError(error)
         )
 
-        dispatcher.toTaskEngine(taskAttemptFailed)
+        workerDispatcher.toTaskEngine(taskAttemptFailed)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -298,6 +252,6 @@ open class Worker {
             taskOutput = TaskOutput(output)
         )
 
-        dispatcher.toTaskEngine(taskAttemptCompleted)
+        workerDispatcher.toTaskEngine(taskAttemptCompleted)
     }
 }

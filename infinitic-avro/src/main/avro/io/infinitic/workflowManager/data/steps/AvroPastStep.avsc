@@ -1,0 +1,41 @@
+{
+  "type": "record",
+  "name": "AvroPastStep",
+  "namespace": "io.infinitic.workflowManager.data.steps",
+  "fields": [
+    {
+      "name": "stepPosition",
+      "type": "string"
+    },
+    {
+      "name": "step",
+      "type": [
+        "io.infinitic.workflowManager.data.steps.AvroStepId",
+        "io.infinitic.workflowManager.data.steps.AvroStepLogical"
+      ]
+    },
+    {
+      "name": "stepHash",
+      "type": "string"
+    },
+    {
+      "name": "stepStatus",
+      "type": [
+        "io.infinitic.workflowManager.data.steps.AvroStepStatusOngoing",
+        "io.infinitic.workflowManager.data.steps.AvroStepStatusCompleted",
+        "io.infinitic.workflowManager.data.steps.AvroStepStatusCanceled"
+      ]
+    },
+    {
+      "name": "workflowPropertiesAfterCompletion",
+      "type": {
+        "type": "map",
+        "values": "string"
+      }
+    },
+    {
+      "name": "completedFromWorkflowTaskIndex",
+      "type": "int"
+    }
+  ]
+}

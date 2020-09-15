@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "AvroCommandDispatchTask",
+  "namespace": "io.infinitic.workflowManager.data.commands",
+  "fields": [
+    {
+      "name": "taskName",
+      "type": "string"
+    },
+    {
+      "name": "taskInput",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.taskManager.data.AvroSerializedData"
+      }
+    }
+  ]
+}

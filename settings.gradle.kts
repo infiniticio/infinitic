@@ -13,9 +13,11 @@ include("infinitic-taskManager-tests")
 include("infinitic-taskManager-dispatcher-pulsar")
 include("infinitic-rest-api")
 include("infinitic-workflowManager-common")
+include("infinitic-workflowManager-worker")
 include("infinitic-workflowManager-client")
 include("infinitic-workflowManager-engine")
 include("infinitic-workflowManager-engine-pulsar")
+include("infinitic-workflowManager-tests")
 include("infinitic-workflowManager-dispatcher-pulsar")
 
 pluginManagement {
