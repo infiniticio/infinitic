@@ -1,6 +1,6 @@
 package io.infinitic.workflowManager.client
 
-import io.infinitic.taskManager.client.ClientDispatcher as TaskClientDispatcher
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
@@ -15,7 +15,7 @@ import java.lang.reflect.Proxy
 import io.infinitic.taskManager.client.Client as TaskClient
 
 class Client(
-    val taskDispatcher: TaskClientDispatcher,
+    val taskDispatcher: Dispatcher,
     val workflowDispatcher: WorkflowDispatcher
 ) : TaskClient(taskDispatcher) {
 

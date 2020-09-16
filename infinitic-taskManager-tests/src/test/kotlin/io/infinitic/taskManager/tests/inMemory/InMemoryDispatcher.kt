@@ -1,6 +1,5 @@
 package io.infinitic.taskManager.tests.inMemory
 
-import io.infinitic.taskManager.client.AvroTaskDispatcher as AvroClientDispatcher
 import io.infinitic.taskManager.engine.avroInterfaces.AvroDispatcher as AvroEngineDispatcher
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
@@ -12,7 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // TODO: Remove. The Other InMemoryDispatcher can be used instead
-internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher, AvroClientDispatcher {
+internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var taskEngineHandle: suspend (msg: AvroEnvelopeForTaskEngine) -> Unit
     lateinit var monitoringPerNameHandle: suspend (msg: AvroEnvelopeForMonitoringPerName) -> Unit

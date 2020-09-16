@@ -1,7 +1,6 @@
 package io.infinitic.taskManager.tests
 
 import io.infinitic.taskManager.client.Client
-import io.infinitic.taskManager.client.ClientDispatcher
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskInstance
 import io.infinitic.taskManager.common.data.TaskStatus
@@ -20,12 +19,12 @@ import kotlinx.coroutines.delay
 
 private val testAvroDispatcher = InMemoryDispatcher()
 private val testStorage = InMemoryStorage()
-private val testEngineDispatcher = io.infinitic.messaging.api.dispatcher.InMemoryDispatcher()
+private val testDispatcher = io.infinitic.messaging.api.dispatcher.InMemoryDispatcher()
 
-private val client = Client(ClientDispatcher(testAvroDispatcher))
+private val client = Client(testDispatcher)
 private val worker = Worker(WorkerDispatcher(testAvroDispatcher))
-private val taskEngine = TaskEngine(testStorage, testEngineDispatcher)
-private val monitoringPerName = MonitoringPerName(testStorage, testEngineDispatcher)
+private val taskEngine = TaskEngine(testStorage, testDispatcher)
+private val monitoringPerName = MonitoringPerName(testStorage, testDispatcher)
 private val monitoringGlobal = MonitoringGlobal(testStorage)
 
 private lateinit var status: TaskStatus
@@ -46,7 +45,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             testAvroDispatcher.scope = this
-            testEngineDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
         // check that task is terminated
@@ -63,7 +62,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             testAvroDispatcher.scope = this
-            testEngineDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
         // check that task is terminated
@@ -80,7 +79,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             testAvroDispatcher.scope = this
-            testEngineDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
         // check that task is not terminated
@@ -97,7 +96,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             testAvroDispatcher.scope = this
-            testEngineDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
         // check that task is not terminated
@@ -118,7 +117,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             testAvroDispatcher.scope = this
-            testEngineDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
             delay(100)
             client.retryTask(id = "${task.taskId}")
@@ -138,7 +137,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             testAvroDispatcher.scope = this
-            testEngineDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
             delay(100)
             client.cancelTask(id = "${task.taskId}")
@@ -169,7 +168,7 @@ class TaskIntegrationTests : StringSpec({
                 }
         }
 
-        testEngineDispatcher.apply {
+        testDispatcher.apply {
             taskEngineHandle = {
                 taskEngine.handle(it)
             }

@@ -1,6 +1,6 @@
 package io.infinitic.workflowManager.client
 
-import io.infinitic.taskManager.client.ClientDispatcher
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
@@ -25,7 +25,7 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTests : StringSpec({
-    val taskDispatcher = mockk<ClientDispatcher>()
+    val taskDispatcher = mockk<Dispatcher>()
     val taskSlot = slot<ForTaskEngineMessage>()
     coEvery { taskDispatcher.toTaskEngine(capture(taskSlot)) } just Runs
 

@@ -13,10 +13,9 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
-import io.infinitic.taskManager.client.AvroTaskDispatcher as AvroClientDispatcher
 import io.infinitic.taskManager.worker.AvroDispatcher as AvroWorkerDispatcher
 
-open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroClientDispatcher, AvroWorkerDispatcher, AvroCompatibleTransport {
+open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroWorkerDispatcher, AvroCompatibleTransport {
     private var prefix = "tasks"
 
     fun usePrefix(newPrefix: String): PulsarDispatcher {
