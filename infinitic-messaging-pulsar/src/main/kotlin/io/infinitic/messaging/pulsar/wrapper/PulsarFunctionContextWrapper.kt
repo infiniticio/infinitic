@@ -1,6 +1,6 @@
-package io.infinitic.taskManager.dispatcher.pulsar.wrapper
+package io.infinitic.messaging.pulsar.wrapper
 
-import io.infinitic.taskManager.dispatcher.pulsar.Wrapper
+import io.infinitic.messaging.pulsar.Wrapper
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.functions.api.Context

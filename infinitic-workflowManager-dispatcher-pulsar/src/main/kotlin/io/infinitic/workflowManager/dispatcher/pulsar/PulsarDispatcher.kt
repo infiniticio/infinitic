@@ -1,8 +1,8 @@
 package io.infinitic.workflowManager.dispatcher.pulsar
 
-import io.infinitic.taskManager.dispatcher.pulsar.Wrapper
-import io.infinitic.taskManager.dispatcher.pulsar.wrapper.PulsarClientWrapper
-import io.infinitic.taskManager.dispatcher.pulsar.wrapper.PulsarFunctionContextWrapper
+import io.infinitic.messaging.pulsar.Wrapper
+import io.infinitic.messaging.pulsar.wrapper.PulsarClientWrapper
+import io.infinitic.messaging.pulsar.wrapper.PulsarFunctionContextWrapper
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.workflowManager.engine.avroInterfaces.AvroDispatcher
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
@@ -12,7 +12,7 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
-import io.infinitic.taskManager.dispatcher.pulsar.PulsarDispatcher as BaseDispatcher
+import io.infinitic.messaging.pulsar.PulsarDispatcher as BaseDispatcher
 
 class PulsarDispatcher(wrapper: Wrapper) : BaseDispatcher(wrapper), AvroDispatcher {
 

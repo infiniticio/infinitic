@@ -3,7 +3,7 @@ package io.infinitic.taskManager.engine.pulsar.functions
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
 import io.infinitic.taskManager.common.avro.AvroConverter
-import io.infinitic.taskManager.dispatcher.pulsar.PulsarDispatcher
+import io.infinitic.messaging.pulsar.PulsarDispatcher
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName

@@ -1,8 +1,8 @@
-package io.infinitic.taskManager.dispatcher.pulsar
+package io.infinitic.messaging.pulsar
 
 import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
-import io.infinitic.taskManager.dispatcher.pulsar.wrapper.PulsarClientWrapper
-import io.infinitic.taskManager.dispatcher.pulsar.wrapper.PulsarFunctionContextWrapper
+import io.infinitic.messaging.pulsar.wrapper.PulsarClientWrapper
+import io.infinitic.messaging.pulsar.wrapper.PulsarFunctionContextWrapper
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine

@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.dispatcher.pulsar.utils
+package io.infinitic.messaging.pulsar.utils
 
 import io.infinitic.taskManager.common.data.TaskInput
 import io.kotest.properties.nextPrintableString

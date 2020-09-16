@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.dispatcher.pulsar
+package io.infinitic.messaging.pulsar
 
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.TypedMessageBuilder

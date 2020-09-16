@@ -1,6 +1,6 @@
 package io.infinitic.taskManager.worker.pulsar.functions
 
-import io.infinitic.taskManager.dispatcher.pulsar.PulsarDispatcher
+import io.infinitic.messaging.pulsar.PulsarDispatcher
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.taskManager.worker.WorkerDispatcher
 import io.infinitic.taskManager.worker.Worker

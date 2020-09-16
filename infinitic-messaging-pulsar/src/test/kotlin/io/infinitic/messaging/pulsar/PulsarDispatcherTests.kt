@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.dispatcher.pulsar
+package io.infinitic.messaging.pulsar
 
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
@@ -9,7 +9,7 @@ import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import io.infinitic.taskManager.dispatcher.pulsar.utils.TestFactory
+import io.infinitic.messaging.pulsar.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
