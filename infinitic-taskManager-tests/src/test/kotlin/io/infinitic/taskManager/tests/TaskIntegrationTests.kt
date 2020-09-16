@@ -1,14 +1,12 @@
 package io.infinitic.taskManager.tests
 
 import io.infinitic.taskManager.client.Client
-import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskInstance
 import io.infinitic.taskManager.common.data.TaskStatus
 import io.infinitic.taskManager.common.messages.TaskStatusUpdated
 import io.infinitic.taskManager.engine.engines.MonitoringGlobal
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.engines.TaskEngine
-import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcher
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorage
 import io.infinitic.taskManager.worker.Worker
 import io.kotest.core.spec.style.StringSpec
@@ -16,7 +14,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 
-private val testAvroDispatcher = InMemoryDispatcher()
 private val testStorage = InMemoryStorage()
 private val testDispatcher = io.infinitic.messaging.api.dispatcher.InMemoryDispatcher()
 
@@ -43,7 +40,6 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, _ -> Status.SUCCESS }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
             testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
@@ -60,7 +56,6 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
             testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
@@ -77,7 +72,6 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, _ -> Status.FAILED_WITHOUT_RETRY }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
             testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
@@ -94,7 +88,6 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
             testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
@@ -115,7 +108,6 @@ class TaskIntegrationTests : StringSpec({
         }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
             testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
             delay(100)
@@ -135,7 +127,6 @@ class TaskIntegrationTests : StringSpec({
         // run system
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
             testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
             delay(100)
@@ -148,25 +139,6 @@ class TaskIntegrationTests : StringSpec({
     }
 }) {
     init {
-        testAvroDispatcher.apply {
-            taskEngineHandle =
-                {
-                    taskEngine.handle(AvroConverter.fromTaskEngine(it))
-                }
-            monitoringPerNameHandle =
-                {
-                    monitoringPerName.handle(AvroConverter.fromMonitoringPerName(it))
-                }
-            monitoringGlobalHandle =
-                {
-                    monitoringGlobal.handle(AvroConverter.fromMonitoringGlobal(it))
-                }
-            workerHandle =
-                {
-                    worker.handle(it)
-                }
-        }
-
         testDispatcher.apply {
             taskEngineHandle = {
                 taskEngine.handle(it)
