@@ -16,6 +16,7 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.methodRuns.MethodName
+import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
 
 sealed class Message
 
@@ -34,6 +35,7 @@ data class ChildWorkflowCanceled(
 
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
+    val methodRunId: MethodRunId,
     val childWorkflowId: WorkflowId,
     val childOutput: MethodOutput?
 ) : ForWorkflowEngineMessage(workflowId)
@@ -58,6 +60,8 @@ data class TimerCompleted(
 
 data class DispatchWorkflow(
     override val workflowId: WorkflowId,
+    var parentWorkflowId: WorkflowId? = null,
+    var parentMethodRunId: MethodRunId? = null,
     val workflowName: WorkflowName,
     val methodName: MethodName,
     val methodInput: MethodInput,
@@ -73,25 +77,28 @@ data class ObjectReceived(
 
 data class TaskCanceled(
     override val workflowId: WorkflowId,
+    val methodRunId: MethodRunId,
     val taskId: TaskId,
-    val taskOutput: TaskOutput?
+    val taskOutput: TaskOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class TaskCompleted(
     override val workflowId: WorkflowId,
+    val methodRunId: MethodRunId,
     val taskId: TaskId,
-    val taskOutput: TaskOutput?
+    val taskOutput: TaskOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class TaskDispatched(
     override val workflowId: WorkflowId,
+    val methodRunId: MethodRunId,
     val taskId: TaskId,
     val taskInput: TaskInput?
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class WorkflowCanceled(
     override val workflowId: WorkflowId,
-    val workflowOutput: TaskOutput?
+    val workflowOutput: TaskOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class WorkflowCompleted(

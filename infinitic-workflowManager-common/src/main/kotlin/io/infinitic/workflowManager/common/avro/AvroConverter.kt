@@ -1,17 +1,17 @@
 package io.infinitic.workflowManager.common.avro
 
 import io.infinitic.common.json.Json
-import io.infinitic.workflowManager.common.data.commands.PastCommand
+import io.infinitic.workflowManager.common.data.instructions.PastCommand
 import io.infinitic.workflowManager.common.data.instructions.StringPosition
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyHash
 import io.infinitic.workflowManager.common.data.properties.PropertyName
-import io.infinitic.workflowManager.common.data.steps.PastStep
+import io.infinitic.workflowManager.common.data.instructions.PastStep
 import io.infinitic.workflowManager.common.data.steps.StepHash
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowEventIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
@@ -67,7 +67,7 @@ object AvroConverter {
         workflowId = WorkflowId(avro.workflowId),
         parentWorkflowId = avro.parentWorkflowId?.let { WorkflowId(it) },
         currentWorkflowTaskId = avro.currentWorkflowTaskId?.let { WorkflowTaskId(it) },
-        currentWorkflowTaskIndex = WorkflowTaskIndex(avro.currentWorkflowTaskIndex),
+        currentEventIndex = WorkflowEventIndex(avro.currentWorkflowTaskIndex),
         currentMethodRuns = avro.currentMethodRuns.map { fromAvroMethodRun(it) }.toMutableList(),
         currentProperties = convertJson(avro.currentProperties),
         propertyStore = convertJson(avro.propertyStore),
@@ -79,7 +79,7 @@ object AvroConverter {
         .setWorkflowId("${state.workflowId}")
         .setParentWorkflowId(state.parentWorkflowId?.toString())
         .setCurrentWorkflowTaskId("${state.currentWorkflowTaskId}")
-        .setCurrentWorkflowTaskIndex(convertJson(state.currentWorkflowTaskIndex))
+        .setCurrentWorkflowTaskIndex(convertJson(state.currentEventIndex))
         .setCurrentMethodRuns(state.currentMethodRuns.map { toAvroMethodRun(it) })
         .setCurrentProperties(convertJson(state.currentProperties))
         .setPropertyStore(convertJson(state.propertyStore))
@@ -276,7 +276,7 @@ object AvroConverter {
         workflowName = "${obj.workflowName}"
         workflowOptions = convertJson(obj.workflowOptions)
         workflowPropertyStore = convertJson(obj.workflowPropertyStore)
-        workflowTaskIndex = convertJson(obj.workflowTaskIndex)
+        workflowTaskIndex = convertJson(obj.workflowEventIndex)
         methoRun = toAvroMethodRun(obj.methodRun)
     }.build()
 
@@ -285,7 +285,7 @@ object AvroConverter {
         workflowName = WorkflowName(avro.workflowName),
         workflowOptions = convertJson(avro.workflowOptions),
         workflowPropertyStore = convertJson(avro.workflowOptions),
-        workflowTaskIndex = WorkflowTaskIndex(avro.workflowTaskIndex),
+        workflowEventIndex = WorkflowEventIndex(avro.workflowTaskIndex),
         methodRun = fromAvroMethodRun(avro.methoRun)
     )
 
@@ -345,7 +345,7 @@ object AvroConverter {
         stepHash = "${obj.stepHash}"
         stepStatus = convertJson(obj.stepStatus)
         workflowPropertiesAfterCompletion = convertJson(obj.workflowPropertiesAfterCompletion)
-        completedFromWorkflowTaskIndex = convertJson(obj.completedFromWorkflowTaskIndex)
+        completedFromWorkflowTaskIndex = convertJson(obj.completionWorkflowEventIndex)
     }.build()
 
     fun fromAvroPastStep(avro: AvroPastStep) = PastStep(
@@ -354,7 +354,7 @@ object AvroConverter {
         stepHash = StepHash(avro.stepHash),
         stepStatus = convertJson(avro.stepStatus),
         workflowPropertiesAfterCompletion = convertJson(avro.workflowPropertiesAfterCompletion),
-        completedFromWorkflowTaskIndex = WorkflowTaskIndex(avro.completedFromWorkflowTaskIndex)
+        completionWorkflowEventIndex = WorkflowEventIndex(avro.completedFromWorkflowTaskIndex)
     )
 
     /**

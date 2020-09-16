@@ -11,7 +11,7 @@ data class WorkflowTaskInput(
     val workflowName: WorkflowName,
     val workflowOptions: WorkflowOptions,
     val workflowPropertyStore: PropertyStore,
-    val workflowTaskIndex: WorkflowTaskIndex,
+    val workflowEventIndex: WorkflowEventIndex,
 
     val methodRun: MethodRun
 )

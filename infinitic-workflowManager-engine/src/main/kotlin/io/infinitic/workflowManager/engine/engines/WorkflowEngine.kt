@@ -28,6 +28,7 @@ class WorkflowEngine(
 
     companion object {
         const val META_WORKFLOW_ID = "workflowId"
+        const val META_METHOD_RUN_ID = "methodRunId"
     }
 
     suspend fun handle(msg: ForWorkflowEngineMessage) {

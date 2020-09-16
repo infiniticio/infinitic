@@ -1,6 +1,7 @@
 package io.infinitic.workflowManager.worker.data
 
 import io.infinitic.taskManager.common.data.TaskInput
+import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandSimpleName
@@ -8,15 +9,15 @@ import io.infinitic.workflowManager.common.data.commands.StartAsync
 import io.infinitic.workflowManager.common.data.commands.DispatchTask
 import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 import io.infinitic.workflowManager.common.data.commands.NewCommand
-import io.infinitic.workflowManager.common.data.commands.PastCommand
+import io.infinitic.workflowManager.common.data.instructions.PastCommand
 import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.steps.NewStep
-import io.infinitic.workflowManager.common.data.steps.PastStep
+import io.infinitic.workflowManager.common.data.instructions.PastStep
 import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.data.steps.StepStatusCanceled
 import io.infinitic.workflowManager.common.data.steps.StepStatusCompleted
 import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowEventIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflowManager.common.parser.setPropertiesToObject
@@ -36,7 +37,7 @@ class MethodRunContext(
     private var currentMethodPosition: MethodPosition = MethodPosition(null, -1)
 
     // when method is processed, this value will change each time a step is completed
-    private var currentWorkflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0)
+    private var emulateWorkflowEventIndex: WorkflowEventIndex = WorkflowEventIndex(0)
 
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
@@ -78,8 +79,10 @@ class MethodRunContext(
         // set current command
         val dispatch = DispatchTask(
             taskName = TaskName.from(method),
-            taskInput = TaskInput(*args)
+            taskInput = TaskInput.from(method, args),
+            taskMeta = TaskMeta().withParametersTypesFrom(method)
         )
+
         // create instruction that may be sent to engine
         val newCommand = NewCommand(
             command = dispatch,
@@ -158,7 +161,7 @@ class MethodRunContext(
         // if this is really a new step, we check it directly
         if (pastStep == null) {
             // if this deferred is still ongoing,
-            if (newStep.step.stepStatus(currentWorkflowTaskIndex) is StepStatusOngoing) {
+            if (newStep.step.stepStatus(emulateWorkflowEventIndex) is StepStatusOngoing) {
                 // we add a new step
                 newSteps.add(newStep)
                 // and stop here
@@ -173,12 +176,12 @@ class MethodRunContext(
             is StepStatusOngoing ->
                 throw KnownStepException()
             is StepStatusCompleted ->
-                if (currentWorkflowTaskIndex < stepStatus.completionWorkflowTaskIndex) throw KnownStepException()
+                if (emulateWorkflowEventIndex < stepStatus.completionWorkflowEventIndex) throw KnownStepException()
             is StepStatusCanceled ->
-                if (currentWorkflowTaskIndex < stepStatus.cancellationWorkflowTaskIndex) throw KnownStepException()
+                if (emulateWorkflowEventIndex < stepStatus.cancellationWorkflowEventIndex) throw KnownStepException()
         }
         // update workflow instance properties
-        val properties = pastStep.workflowPropertiesAfterCompletion.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
+        val properties = pastStep.workflowPropertiesAfterCompletion!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
         setPropertiesToObject(workflowInstance, properties)
         // continue
         return deferred
@@ -191,7 +194,7 @@ class MethodRunContext(
     internal fun <T> result(deferred: Deferred<T>): T {
         await(deferred)
         // if we are here, then we know that this deferred is completed or canceled
-        return when (val status = deferred.step.stepStatus(currentWorkflowTaskIndex)) {
+        return when (val status = deferred.step.stepStatus(emulateWorkflowEventIndex)) {
             is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN")
             is StepStatusCompleted -> status.result as T
             is StepStatusCanceled -> status.result as T
@@ -201,7 +204,7 @@ class MethodRunContext(
     /*
      * Deferred status()
      */
-    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatus(currentWorkflowTaskIndex)) {
+    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatus(emulateWorkflowEventIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
