@@ -1,9 +1,9 @@
 package io.infinitic.taskManager.engine.pulsar.functions
 
+import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.dispatcher.pulsar.PulsarDispatcher
-import io.infinitic.taskManager.engine.dispatcher.AvroEngineDispatcher
 import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.engine.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
@@ -30,7 +30,7 @@ class TaskEnginePulsarFunction : Function<AvroEnvelopeForTaskEngine, Void> {
 
     internal fun getTaskEngine(ctx: Context): TaskEngine {
         val storage = AvroKeyValueTaskStateStorage(PulsarFunctionStorage(ctx))
-        val dispatcher = AvroEngineDispatcher(PulsarDispatcher.forPulsarFunctionContext(ctx))
+        val dispatcher = AvroDispatcher(PulsarDispatcher.forPulsarFunctionContext(ctx))
 
         return TaskEngine(storage, dispatcher)
     }

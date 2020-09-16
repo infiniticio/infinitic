@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.engine.dispatcher
+package io.infinitic.messaging.api.dispatcher
 
 import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
 import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class InMemoryEngineDispatcher() : EngineDispatcher {
+class InMemoryDispatcher() : Dispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var taskEngineHandle: suspend (msg: ForTaskEngineMessage) -> Unit
     lateinit var monitoringPerNameHandle: suspend (msg: ForMonitoringPerNameMessage) -> Unit

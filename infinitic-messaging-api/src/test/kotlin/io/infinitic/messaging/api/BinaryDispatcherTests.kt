@@ -1,19 +1,20 @@
-package io.infinitic.taskManager.engine.dispatcher
+package io.infinitic.messaging.api
 
+import io.infinitic.messaging.api.dispatcher.BinaryDispatcher
+import io.infinitic.messaging.api.dispatcher.transport.BinaryCompatibleTransport
+import io.infinitic.messaging.api.utils.TestFactory
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
 import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
 import io.infinitic.taskManager.common.messages.ForWorkerMessage
-import io.infinitic.taskManager.engine.dispatcher.transport.BinaryTransport
-import io.infinitic.taskManager.engine.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.mockk
 
 class BinaryDispatcherTests : StringSpec({
-    val transport = mockk<BinaryTransport>(relaxed = true)
-    val dispatcher = BinaryEngineDispatcher(transport)
+    val transport = mockk<BinaryCompatibleTransport>(relaxed = true)
+    val dispatcher = BinaryDispatcher(transport)
 
     "BinaryDispatcher.toTaskEngine should send correct parameter" {
         // given
@@ -51,7 +52,6 @@ class BinaryDispatcherTests : StringSpec({
         }
         confirmVerified(transport)
     }
-
     "BinaryDispatcher.toMonitoringGlobal should send correct parameter" {
         // given
         val msg = TestFactory.random(ForMonitoringGlobalMessage::class)

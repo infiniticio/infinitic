@@ -11,6 +11,7 @@ import io.infinitic.taskManager.worker.AvroDispatcher as AvroWorkerDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+// TODO: Remove. The Other InMemoryDispatcher can be used instead
 internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher, AvroClientDispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var taskEngineHandle: suspend (msg: AvroEnvelopeForTaskEngine) -> Unit

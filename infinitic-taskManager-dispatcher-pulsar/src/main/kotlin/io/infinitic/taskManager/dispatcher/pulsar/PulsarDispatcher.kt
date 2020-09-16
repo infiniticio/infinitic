@@ -1,8 +1,8 @@
 package io.infinitic.taskManager.dispatcher.pulsar
 
+import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
 import io.infinitic.taskManager.dispatcher.pulsar.wrapper.PulsarClientWrapper
 import io.infinitic.taskManager.dispatcher.pulsar.wrapper.PulsarFunctionContextWrapper
-import io.infinitic.taskManager.engine.dispatcher.transport.AvroTransport
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 import io.infinitic.taskManager.client.AvroTaskDispatcher as AvroClientDispatcher
 import io.infinitic.taskManager.worker.AvroDispatcher as AvroWorkerDispatcher
 
-open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroClientDispatcher, AvroWorkerDispatcher, AvroTransport {
+open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroClientDispatcher, AvroWorkerDispatcher, AvroCompatibleTransport {
     private var prefix = "tasks"
 
     fun usePrefix(newPrefix: String): PulsarDispatcher {

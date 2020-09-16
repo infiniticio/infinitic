@@ -25,7 +25,7 @@ private val dispatcher = InMemoryDispatcher()
 private val storage = InMemoryStorage()
 
 private val testAvroDispatcher = InMemoryDispatcher()
-private val testTaskDispatcher = io.infinitic.taskManager.engine.dispatcher.InMemoryEngineDispatcher()
+private val testTaskDispatcher = io.infinitic.messaging.api.dispatcher.InMemoryDispatcher()
 private val testWorkflowDispatcher = WorkflowEngineDispatcher(testAvroDispatcher)
 private val testStorage = InMemoryStorage()
 
