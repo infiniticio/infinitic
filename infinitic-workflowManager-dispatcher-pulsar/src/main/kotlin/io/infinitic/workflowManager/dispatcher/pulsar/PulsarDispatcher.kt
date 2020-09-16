@@ -12,7 +12,7 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
-import io.infinitic.messaging.pulsar.PulsarDispatcher as BaseDispatcher
+import io.infinitic.messaging.pulsar.PulsarTransport as BaseDispatcher
 
 class PulsarDispatcher(wrapper: Wrapper) : BaseDispatcher(wrapper), AvroDispatcher {
 

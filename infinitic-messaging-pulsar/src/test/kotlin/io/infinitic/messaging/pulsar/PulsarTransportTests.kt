@@ -26,7 +26,7 @@ import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
 import java.util.Optional
 
-class PulsarDispatcherTests : StringSpec({
+class PulsarTransportTests : StringSpec({
     ForTaskEngineMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToEngineTopic(TestFactory.random(it)))
     }
@@ -57,7 +57,7 @@ private fun shouldBeAbleToSendMessageToEngineTopic(msg: ForTaskEngineMessage) = 
         every { builder.key(any()) } returns builder
         every { builder.send() } returns mockk<MessageId>()
         // when
-        PulsarDispatcher.forPulsarFunctionContext(context).toTaskEngine(avro)
+        PulsarTransport.forPulsarFunctionContext(context).toTaskEngine(avro)
         // then
         verifyAll {
             context.newOutputMessage(Topic.TASK_ENGINE.get(prefix), slotSchema.captured)
@@ -87,7 +87,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: ForMonitoring
         every { builder.key(avro.taskName) } returns builder
         every { builder.send() } returns mockk<MessageId>()
         // when
-        PulsarDispatcher.forPulsarFunctionContext(context).toMonitoringPerName(avro)
+        PulsarTransport.forPulsarFunctionContext(context).toMonitoringPerName(avro)
         // then
         verifyAll {
             context.newOutputMessage(Topic.MONITORING_PER_NAME.get(prefix), slotSchema.captured)
@@ -118,7 +118,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: ForMonitoringG
         every { builder.key(any()) } returns builder
         every { builder.send() } returns mockk<MessageId>()
         // when
-        PulsarDispatcher.forPulsarFunctionContext(context).toMonitoringGlobal(avro)
+        PulsarTransport.forPulsarFunctionContext(context).toMonitoringGlobal(avro)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         verify {
@@ -145,7 +145,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: ForWorkerMessage) = stri
         every { builder.value(any()) } returns builder
         every { builder.send() } returns mockk<MessageId>()
         // when
-        PulsarDispatcher.forPulsarFunctionContext(context).toWorkers(avro)
+        PulsarTransport.forPulsarFunctionContext(context).toWorkers(avro)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         verify {

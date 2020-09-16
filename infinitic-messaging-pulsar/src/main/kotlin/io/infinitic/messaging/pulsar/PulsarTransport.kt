@@ -14,10 +14,10 @@ import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
 
-open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroCompatibleTransport {
+open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCompatibleTransport {
     private var prefix = "tasks"
 
-    fun usePrefix(newPrefix: String): PulsarDispatcher {
+    fun usePrefix(newPrefix: String): PulsarTransport {
         prefix = newPrefix
 
         return this
@@ -69,10 +69,10 @@ open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroCo
     companion object {
         private const val TOPIC_PREFIX = "topicPrefix"
 
-        fun forPulsarClient(pulsarClient: PulsarClient): PulsarDispatcher = PulsarDispatcher(PulsarClientWrapper(pulsarClient))
+        fun forPulsarClient(pulsarClient: PulsarClient): PulsarTransport = PulsarTransport(PulsarClientWrapper(pulsarClient))
 
-        fun forPulsarFunctionContext(pulsarFunctionContext: Context): PulsarDispatcher {
-            val dispatcher = PulsarDispatcher(PulsarFunctionContextWrapper(pulsarFunctionContext))
+        fun forPulsarFunctionContext(pulsarFunctionContext: Context): PulsarTransport {
+            val dispatcher = PulsarTransport(PulsarFunctionContextWrapper(pulsarFunctionContext))
             val requestedPrefix = pulsarFunctionContext.getUserConfigValue(TOPIC_PREFIX)
             if (requestedPrefix.isPresent) {
                 dispatcher.usePrefix(requestedPrefix.get().toString())
