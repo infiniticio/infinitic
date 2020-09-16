@@ -12,6 +12,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     testImplementation(project(":infinitic-avro"))
+    testImplementation(project(":infinitic-messaging-api"))
     testImplementation(project(":infinitic-taskManager-common"))
     testImplementation(project(":infinitic-taskManager-engine"))
     testImplementation(project(":infinitic-taskManager-client"))

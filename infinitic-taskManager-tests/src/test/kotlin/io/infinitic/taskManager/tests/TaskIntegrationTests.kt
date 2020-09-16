@@ -1,34 +1,29 @@
 package io.infinitic.taskManager.tests
 
 import io.infinitic.taskManager.client.Client
-import io.infinitic.taskManager.client.ClientDispatcher
-import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskInstance
-import io.infinitic.taskManager.data.AvroTaskStatus
-import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
+import io.infinitic.taskManager.common.data.TaskStatus
+import io.infinitic.taskManager.common.messages.TaskStatusUpdated
 import io.infinitic.taskManager.engine.engines.MonitoringGlobal
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.engines.TaskEngine
-import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcher
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorage
-import io.infinitic.taskManager.worker.WorkerDispatcher
 import io.infinitic.taskManager.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 
-private val testAvroDispatcher = InMemoryDispatcher()
-private val testDispatcher = EngineDispatcher(testAvroDispatcher)
 private val testStorage = InMemoryStorage()
+private val testDispatcher = io.infinitic.messaging.api.dispatcher.InMemoryDispatcher()
 
-private val client = Client(ClientDispatcher(testAvroDispatcher))
-private val worker = Worker(WorkerDispatcher(testAvroDispatcher))
+private val client = Client(testDispatcher)
+private val worker = Worker(testDispatcher)
 private val taskEngine = TaskEngine(testStorage, testDispatcher)
 private val monitoringPerName = MonitoringPerName(testStorage, testDispatcher)
 private val monitoringGlobal = MonitoringGlobal(testStorage)
 
-private lateinit var status: AvroTaskStatus
+private lateinit var status: TaskStatus
 
 class TaskIntegrationTests : StringSpec({
     val taskTest = TaskTestImpl()
@@ -45,13 +40,13 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, _ -> Status.SUCCESS }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
         // check that task is terminated
         testStorage.isTerminated(task) shouldBe true
         // check that task is completed
-        status shouldBe AvroTaskStatus.TERMINATED_COMPLETED
+        status shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
         TaskTestImpl.log shouldBe "1"
     }
@@ -61,13 +56,13 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
         // check that task is terminated
         testStorage.isTerminated(task) shouldBe true
         // check that task is completed
-        status shouldBe AvroTaskStatus.TERMINATED_COMPLETED
+        status shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
         TaskTestImpl.log shouldBe "0001"
     }
@@ -77,13 +72,13 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, _ -> Status.FAILED_WITHOUT_RETRY }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
         // check that task is not terminated
         testStorage.isTerminated(task) shouldBe false
         // check that task is failed
-        status shouldBe AvroTaskStatus.RUNNING_ERROR
+        status shouldBe TaskStatus.RUNNING_ERROR
         // checks number of task processing
         TaskTestImpl.log shouldBe "0"
     }
@@ -93,13 +88,13 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
         }
         // check that task is not terminated
         testStorage.isTerminated(task) shouldBe false
         // check that task is failed
-        status shouldBe AvroTaskStatus.RUNNING_ERROR
+        status shouldBe TaskStatus.RUNNING_ERROR
         // checks number of task processing
         TaskTestImpl.log shouldBe "0000"
     }
@@ -113,7 +108,7 @@ class TaskIntegrationTests : StringSpec({
         }
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
             delay(100)
             client.retryTask(id = "${task.taskId}")
@@ -121,7 +116,7 @@ class TaskIntegrationTests : StringSpec({
         // check that task is terminated
         testStorage.isTerminated(task)
         // check that task is completed
-        status shouldBe AvroTaskStatus.TERMINATED_COMPLETED
+        status shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
         TaskTestImpl.log shouldBe "0000001"
     }
@@ -132,7 +127,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         // run system
         coroutineScope {
-            testAvroDispatcher.scope = this
+            testDispatcher.scope = this
             task = client.dispatchTask<TaskTest> { log() }
             delay(100)
             client.cancelTask(id = "${task.taskId}")
@@ -140,29 +135,28 @@ class TaskIntegrationTests : StringSpec({
         // check that task is terminated
         testStorage.isTerminated(task)
         // check that task is completed
-        status shouldBe AvroTaskStatus.TERMINATED_CANCELED
+        status shouldBe TaskStatus.TERMINATED_CANCELED
     }
 }) {
     init {
-        testAvroDispatcher.apply {
-            taskEngineHandle =
-                {
-                    taskEngine.handle(AvroConverter.fromTaskEngine(it))
+        testDispatcher.apply {
+            taskEngineHandle = {
+                taskEngine.handle(it)
+            }
+            monitoringPerNameHandle = {
+                monitoringPerName.handle(it)
+                when (it) {
+                    is TaskStatusUpdated -> {
+                        status = it.newStatus
+                    }
                 }
-            monitoringPerNameHandle =
-                { avro ->
-                    monitoringPerName.handle(AvroConverter.fromMonitoringPerName(avro))
-                    // update test status
-                    avro.taskStatusUpdated?.let { status = it.newStatus }
-                }
-            monitoringGlobalHandle =
-                {
-                    monitoringGlobal.handle(AvroConverter.fromMonitoringGlobal(it))
-                }
-            workerHandle =
-                {
-                    worker.handle(it)
-                }
+            }
+            monitoringGlobalHandle = {
+                monitoringGlobal.handle(it)
+            }
+            workerHandle = {
+                worker.handle(it)
+            }
         }
     }
 }

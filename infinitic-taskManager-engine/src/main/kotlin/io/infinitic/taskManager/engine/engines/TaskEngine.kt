@@ -1,10 +1,10 @@
 package io.infinitic.taskManager.engine.engines
 
 import io.infinitic.common.data.interfaces.plus
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.data.TaskAttemptId
 import io.infinitic.taskManager.common.data.TaskAttemptRetry
 import io.infinitic.taskManager.common.data.TaskStatus
-import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
 import io.infinitic.taskManager.common.messages.CancelTask
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
@@ -24,7 +24,7 @@ import io.infinitic.taskManager.engine.storage.TaskStateStorage
 
 class TaskEngine(
     val storage: TaskStateStorage,
-    val dispatcher: EngineDispatcher
+    val dispatcher: Dispatcher
 ) {
     suspend fun handle(message: ForTaskEngineMessage) {
         // immediately discard messages that are non managed

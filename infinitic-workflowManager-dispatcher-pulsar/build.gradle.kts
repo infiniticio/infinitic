@@ -14,7 +14,7 @@ dependencies {
     implementation("org.apache.avro:avro:1.10.+")
 
     implementation(project(":infinitic-avro"))
-    api(project(":infinitic-taskManager-dispatcher-pulsar"))
+    api(project(":infinitic-messaging-pulsar"))
     api(project(":infinitic-workflowManager-engine"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")

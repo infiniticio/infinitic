@@ -1,5 +1,6 @@
 package io.infinitic.taskManager.client
 
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
@@ -16,7 +17,7 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTests : StringSpec({
-    val dispatcher = mockk<ClientDispatcher>()
+    val dispatcher = mockk<Dispatcher>()
     val slot = slot<ForTaskEngineMessage>()
     coEvery { dispatcher.toTaskEngine(capture(slot)) } just Runs
     val client = Client(dispatcher)

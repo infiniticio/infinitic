@@ -1,5 +1,6 @@
 package io.infinitic.taskManager.client
 
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.data.TaskInstance
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
@@ -13,7 +14,7 @@ import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.RetryTask
 import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 
-open class Client(val clientDispatcher: ClientDispatcher) {
+open class Client(val clientDispatcher: Dispatcher) {
 
     /*
      * Use this method to dispatch a task

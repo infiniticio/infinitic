@@ -1,5 +1,6 @@
 package io.infinitic.taskManager.worker
 
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptContext
@@ -9,6 +10,7 @@ import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.MultipleUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.ProcessingTimeout
 import io.infinitic.taskManager.common.exceptions.RetryDelayHasWrongReturnType
+import io.infinitic.taskManager.common.messages.ForWorkerMessage
 import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.messages.TaskAttemptCompleted
 import io.infinitic.taskManager.common.messages.TaskAttemptFailed
@@ -33,7 +35,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-open class Worker(val workerDispatcher: WorkerDispatcher) {
+open class Worker(val workerDispatcher: Dispatcher) {
 
     companion object {
 
@@ -69,6 +71,10 @@ open class Worker(val workerDispatcher: WorkerDispatcher) {
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
         is RunTask -> runTask(msg)
+    }
+
+    suspend fun handle(message: ForWorkerMessage) = when (message) {
+        is RunTask -> runTask(message)
     }
 
     suspend fun runTask(msg: RunTask) = withContext(Dispatchers.Default) {

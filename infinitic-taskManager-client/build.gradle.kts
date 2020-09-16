@@ -13,6 +13,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
 
+    api(project(":infinitic-messaging-api"))
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-taskManager-common"))
 

@@ -27,7 +27,7 @@ dependencies {
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-taskManager-common"))
     implementation(project(":infinitic-taskManager-engine"))
-    implementation(project(":infinitic-taskManager-dispatcher-pulsar"))
+    implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage-pulsar"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
