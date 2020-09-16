@@ -6,12 +6,11 @@ import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlob
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import kotlinx.coroutines.CoroutineScope
-import io.infinitic.taskManager.worker.AvroDispatcher as AvroWorkerDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // TODO: Remove. The Other InMemoryDispatcher can be used instead
-internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher {
+internal class InMemoryDispatcher : AvroEngineDispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var taskEngineHandle: suspend (msg: AvroEnvelopeForTaskEngine) -> Unit
     lateinit var monitoringPerNameHandle: suspend (msg: AvroEnvelopeForMonitoringPerName) -> Unit
@@ -27,8 +26,6 @@ internal class InMemoryDispatcher : AvroWorkerDispatcher, AvroEngineDispatcher {
             taskEngineHandle(msg)
         }
     }
-
-    override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) = toTaskEngine(msg, 0F)
 
     override suspend fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
         scope.launch {

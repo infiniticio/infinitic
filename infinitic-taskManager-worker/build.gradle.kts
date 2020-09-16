@@ -16,6 +16,7 @@ dependencies {
 
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-taskManager-common"))
+    implementation(project(":infinitic-messaging-api"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

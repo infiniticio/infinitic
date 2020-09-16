@@ -8,7 +8,6 @@ import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcher
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorage
 import io.infinitic.taskManager.worker.Worker
-import io.infinitic.taskManager.worker.WorkerDispatcher
 import io.infinitic.workflowManager.common.avro.AvroConverter as WorkflowAvroConverter
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.engine.dispatcher.Dispatcher as WorkflowEngineDispatcher
@@ -29,7 +28,7 @@ private val testWorkflowDispatcher = WorkflowEngineDispatcher(testAvroDispatcher
 private val testStorage = InMemoryStorage()
 
 private val client = io.infinitic.taskManager.client.Client(testTaskDispatcher)
-private val worker = Worker(WorkerDispatcher(testAvroDispatcher))
+private val worker = Worker(testTaskDispatcher)
 private val taskEngine = TaskEngine(testStorage, testTaskDispatcher)
 private val monitoringPerName = MonitoringPerName(testStorage, testTaskDispatcher)
 private val monitoringGlobal = MonitoringGlobal(testStorage)

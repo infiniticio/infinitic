@@ -1,5 +1,6 @@
 package io.infinitic.taskManager.worker
 
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptContext
@@ -34,7 +35,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-open class Worker(val workerDispatcher: WorkerDispatcher) {
+open class Worker(val workerDispatcher: Dispatcher) {
 
     companion object {
 

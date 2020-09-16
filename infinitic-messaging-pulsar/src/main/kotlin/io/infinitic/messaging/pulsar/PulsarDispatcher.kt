@@ -13,9 +13,8 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
-import io.infinitic.taskManager.worker.AvroDispatcher as AvroWorkerDispatcher
 
-open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroWorkerDispatcher, AvroCompatibleTransport {
+open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroCompatibleTransport {
     private var prefix = "tasks"
 
     fun usePrefix(newPrefix: String): PulsarDispatcher {
@@ -32,8 +31,6 @@ open class PulsarDispatcher constructor(protected val wrapper: Wrapper) : AvroWo
                 .send()
         }
     }
-
-    override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) = toTaskEngine(msg, 0F)
 
     override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
         withContext(Dispatchers.IO) {

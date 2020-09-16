@@ -6,7 +6,6 @@ import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlob
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.workflowManager.engine.avroInterfaces.AvroDispatcher as AvroWorkflowEngineDispatcher
-import io.infinitic.taskManager.worker.AvroDispatcher as AvroWorkerDispatcher
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.infinitic.workflowManager.client.AvroWorkflowDispatcher as AvroWorkflowClientDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -14,7 +13,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 internal class InMemoryDispatcher :
-    AvroWorkerDispatcher,
     AvroTaskEngineDispatcher,
     AvroWorkflowEngineDispatcher,
     AvroWorkflowClientDispatcher {
@@ -62,8 +60,6 @@ internal class InMemoryDispatcher :
             taskEngineHandle(msg)
         }
     }
-
-    override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine) = toTaskEngine(msg, 0F)
 
     override suspend fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
         scope.launch {

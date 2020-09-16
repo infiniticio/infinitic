@@ -10,7 +10,6 @@ import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcher
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorage
-import io.infinitic.taskManager.worker.WorkerDispatcher
 import io.infinitic.taskManager.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -22,7 +21,7 @@ private val testStorage = InMemoryStorage()
 private val testDispatcher = io.infinitic.messaging.api.dispatcher.InMemoryDispatcher()
 
 private val client = Client(testDispatcher)
-private val worker = Worker(WorkerDispatcher(testAvroDispatcher))
+private val worker = Worker(testDispatcher)
 private val taskEngine = TaskEngine(testStorage, testDispatcher)
 private val monitoringPerName = MonitoringPerName(testStorage, testDispatcher)
 private val monitoringGlobal = MonitoringGlobal(testStorage)

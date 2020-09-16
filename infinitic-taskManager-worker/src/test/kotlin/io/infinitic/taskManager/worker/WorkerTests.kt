@@ -2,6 +2,7 @@
 
 package io.infinitic.taskManager.worker
 
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.data.TaskAttemptContext
 import io.infinitic.taskManager.common.data.TaskAttemptId
 import io.infinitic.taskManager.common.data.TaskAttemptIndex
@@ -36,7 +37,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.launch
 
 class WorkerTests : StringSpec({
-    val dispatcher = mockk<WorkerDispatcher>()
+    val dispatcher = mockk<Dispatcher>()
     val slots = mutableListOf<ForTaskEngineMessage>()
     coEvery { dispatcher.toTaskEngine(capture(slots)) } just Runs
     val worker = Worker(dispatcher)
