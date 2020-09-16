@@ -7,10 +7,9 @@ import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
-import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowEventIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.messages.DecisionDispatched
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
@@ -19,14 +18,15 @@ import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
-class DispatchWorkflowHandler(
+class DispatchWorkflowHandler  (
     private val storage: WorkflowStateStorage,
     private val dispatcher: Dispatcher
-) {
+) : MsgHandler() {
     suspend fun handle(msg: DispatchWorkflow) {
         // defines method to run
         val methodRun = MethodRun(
-            methodRunId = MethodRunId(),
+            parentWorkflowId = msg.parentWorkflowId,
+            parentMethodRunId = msg.parentMethodRunId,
             methodName = msg.methodName,
             methodInput = msg.methodInput
         )
@@ -37,7 +37,7 @@ class DispatchWorkflowHandler(
             workflowName = msg.workflowName,
             workflowOptions = msg.workflowOptions,
             workflowPropertyStore = PropertyStore(), // filterStore(state.propertyStore, listOf(methodRun))
-            workflowTaskIndex = WorkflowTaskIndex(0),
+            workflowEventIndex = WorkflowEventIndex(0),
             methodRun = methodRun
         )
 

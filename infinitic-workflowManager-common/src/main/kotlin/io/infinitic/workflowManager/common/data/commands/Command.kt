@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.TaskInput
+import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.workflowManager.common.data.methodRuns.MethodName
 import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
@@ -29,7 +30,8 @@ sealed class Command {
 
 class DispatchTask(
     val taskName: TaskName,
-    val taskInput: TaskInput
+    val taskInput: TaskInput,
+    val taskMeta: TaskMeta
 ) : Command()
 
 class DispatchChildWorkflow(
