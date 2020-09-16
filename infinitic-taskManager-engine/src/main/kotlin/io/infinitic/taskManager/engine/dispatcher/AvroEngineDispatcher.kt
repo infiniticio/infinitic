@@ -7,7 +7,7 @@ import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
 import io.infinitic.taskManager.common.messages.ForWorkerMessage
 import io.infinitic.taskManager.engine.dispatcher.transport.AvroTransport
 
-class AvroDispatcher(private val transport: AvroTransport) : Dispatcher {
+class AvroEngineDispatcher(private val transport: AvroTransport) : EngineDispatcher {
     override suspend fun toTaskEngine(msg: ForTaskEngineMessage, after: Float) {
         msg
             .let { AvroConverter.toTaskEngine(it) }

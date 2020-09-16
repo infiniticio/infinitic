@@ -20,7 +20,7 @@ import kotlinx.coroutines.delay
 
 private val testAvroDispatcher = InMemoryDispatcher()
 private val testStorage = InMemoryStorage()
-private val testEngineDispatcher = io.infinitic.taskManager.engine.dispatcher.InMemoryDispatcher()
+private val testEngineDispatcher = io.infinitic.taskManager.engine.dispatcher.InMemoryEngineDispatcher()
 
 private val client = Client(ClientDispatcher(testAvroDispatcher))
 private val worker = Worker(WorkerDispatcher(testAvroDispatcher))

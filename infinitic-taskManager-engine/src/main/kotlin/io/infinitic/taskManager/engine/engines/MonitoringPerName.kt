@@ -5,12 +5,12 @@ import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
 import io.infinitic.taskManager.common.messages.TaskCreated
 import io.infinitic.taskManager.common.messages.TaskStatusUpdated
 import io.infinitic.taskManager.common.states.MonitoringPerNameState
-import io.infinitic.taskManager.engine.dispatcher.Dispatcher
+import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
 import io.infinitic.taskManager.engine.storage.TaskStateStorage
 
 class MonitoringPerName(
     val storage: TaskStateStorage,
-    val dispatcher: Dispatcher
+    val dispatcher: EngineDispatcher
 ) {
     suspend fun handle(message: ForMonitoringPerNameMessage) {
 

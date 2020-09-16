@@ -13,7 +13,7 @@ import io.mockk.mockk
 
 class BinaryDispatcherTests : StringSpec({
     val transport = mockk<BinaryTransport>(relaxed = true)
-    val dispatcher = BinaryDispatcher(transport)
+    val dispatcher = BinaryEngineDispatcher(transport)
 
     "BinaryDispatcher.toTaskEngine should send correct parameter" {
         // given

@@ -19,12 +19,12 @@ import io.infinitic.taskManager.common.messages.RetryTaskAttempt
 import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.messages.interfaces.TaskAttemptMessage
 import io.infinitic.taskManager.common.states.TaskEngineState
-import io.infinitic.taskManager.engine.dispatcher.Dispatcher
+import io.infinitic.taskManager.engine.dispatcher.EngineDispatcher
 import io.infinitic.taskManager.engine.storage.TaskStateStorage
 
 class TaskEngine(
     val storage: TaskStateStorage,
-    val dispatcher: Dispatcher
+    val dispatcher: EngineDispatcher
 ) {
     suspend fun handle(message: ForTaskEngineMessage) {
         // immediately discard messages that are non managed

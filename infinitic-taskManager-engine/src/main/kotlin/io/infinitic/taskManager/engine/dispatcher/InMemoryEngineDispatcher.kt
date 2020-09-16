@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class InMemoryDispatcher() : Dispatcher {
+class InMemoryEngineDispatcher() : EngineDispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var taskEngineHandle: suspend (msg: ForTaskEngineMessage) -> Unit
     lateinit var monitoringPerNameHandle: suspend (msg: ForMonitoringPerNameMessage) -> Unit

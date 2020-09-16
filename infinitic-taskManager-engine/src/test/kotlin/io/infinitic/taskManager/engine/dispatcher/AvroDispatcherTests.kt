@@ -11,7 +11,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.mockk
-import io.infinitic.taskManager.engine.dispatcher.AvroDispatcher as AvroDispatcher
+import io.infinitic.taskManager.engine.dispatcher.AvroEngineDispatcher as AvroDispatcher
 
 class AvroDispatcherTests : StringSpec({
     val transport = mockk<AvroTransport>(relaxed = true)
