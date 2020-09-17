@@ -17,7 +17,7 @@ import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.data.steps.StepStatusCanceled
 import io.infinitic.workflowManager.common.data.steps.StepStatusCompleted
 import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowEventIndex
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflowManager.common.parser.setPropertiesToObject
@@ -37,7 +37,7 @@ class MethodRunContext(
     private var currentMethodPosition: MethodPosition = MethodPosition(null, -1)
 
     // when method is processed, this value will change each time a step is completed
-    private var emulateWorkflowEventIndex: WorkflowEventIndex = WorkflowEventIndex(0)
+    private var emulateWorkflowMessageIndex: WorkflowMessageIndex = WorkflowMessageIndex(0)
 
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
@@ -161,7 +161,7 @@ class MethodRunContext(
         // if this is really a new step, we check it directly
         if (pastStep == null) {
             // if this deferred is still ongoing,
-            if (newStep.step.stepStatus(emulateWorkflowEventIndex) is StepStatusOngoing) {
+            if (newStep.step.stepStatusAtMessageIndex(emulateWorkflowMessageIndex) is StepStatusOngoing) {
                 // we add a new step
                 newSteps.add(newStep)
                 // and stop here
@@ -176,12 +176,12 @@ class MethodRunContext(
             is StepStatusOngoing ->
                 throw KnownStepException()
             is StepStatusCompleted ->
-                if (emulateWorkflowEventIndex < stepStatus.completionWorkflowEventIndex) throw KnownStepException()
+                if (emulateWorkflowMessageIndex < stepStatus.completionWorkflowMessageIndex) throw KnownStepException()
             is StepStatusCanceled ->
-                if (emulateWorkflowEventIndex < stepStatus.cancellationWorkflowEventIndex) throw KnownStepException()
+                if (emulateWorkflowMessageIndex < stepStatus.cancellationWorkflowMessageIndex) throw KnownStepException()
         }
         // update workflow instance properties
-        val properties = pastStep.workflowPropertiesAfterCompletion!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
+        val properties = pastStep.propertiesAtTermination!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
         setPropertiesToObject(workflowInstance, properties)
         // continue
         return deferred
@@ -194,7 +194,7 @@ class MethodRunContext(
     internal fun <T> result(deferred: Deferred<T>): T {
         await(deferred)
         // if we are here, then we know that this deferred is completed or canceled
-        return when (val status = deferred.step.stepStatus(emulateWorkflowEventIndex)) {
+        return when (val status = deferred.step.stepStatusAtMessageIndex(emulateWorkflowMessageIndex)) {
             is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN")
             is StepStatusCompleted -> status.result as T
             is StepStatusCanceled -> status.result as T
@@ -204,7 +204,7 @@ class MethodRunContext(
     /*
      * Deferred status()
      */
-    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatus(emulateWorkflowEventIndex)) {
+    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(emulateWorkflowMessageIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
@@ -212,7 +212,7 @@ class MethodRunContext(
 
     private fun getPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
-        val pastCommand = workflowTaskInput.methodRun.pastInstructionsInMethod
+        val pastCommand = workflowTaskInput.methodRun.pastInstructions
             .find { it is PastCommand && it.stringPosition == currentMethodPosition.stringPosition } as PastCommand?
 
         // if it exists, check it has not changed
@@ -229,7 +229,7 @@ class MethodRunContext(
 
     private fun getPastStepSimilarTo(newStep: NewStep): PastStep? {
         // find pastCommand in current position
-        val pastStep = workflowTaskInput.methodRun.pastInstructionsInMethod
+        val pastStep = workflowTaskInput.methodRun.pastInstructions
             .find { it is PastStep && it.stringPosition == currentMethodPosition.stringPosition } as PastStep?
 
         // if it exists, check it has not changed

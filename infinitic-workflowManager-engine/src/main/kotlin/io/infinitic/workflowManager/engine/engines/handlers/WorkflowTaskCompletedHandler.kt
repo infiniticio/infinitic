@@ -2,7 +2,6 @@ package io.infinitic.workflowManager.engine.engines.handlers
 
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskMeta
-import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.taskManager.common.messages.DispatchTask as DispatchWork
 import io.infinitic.workflowManager.common.data.commands.CommandType
@@ -12,7 +11,6 @@ import io.infinitic.workflowManager.common.data.commands.DispatchTask
 import io.infinitic.workflowManager.common.data.commands.DispatchTimer
 import io.infinitic.workflowManager.common.data.instructions.PastCommand
 import io.infinitic.workflowManager.common.data.commands.StartAsync
-import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
 import io.infinitic.workflowManager.common.data.instructions.PastStep
 import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import io.infinitic.workflowManager.common.messages.ChildWorkflowCompleted
@@ -23,17 +21,17 @@ import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
 class WorkflowTaskCompletedHandler(
-    val storage: WorkflowStateStorage,
-    val dispatcher: Dispatcher
-) : MsgHandler() {
-    suspend fun handle(state: WorkflowState, msg: WorkflowTaskCompleted) {
+    override val storage: WorkflowStateStorage,
+    override val dispatcher: Dispatcher
+) : MsgHandler(storage, dispatcher) {
+    suspend fun handle(state: WorkflowState, msg: WorkflowTaskCompleted): WorkflowState {
         val workflowTaskOutput = msg.workflowTaskOutput
         val methodRun = getMethodRun(state, workflowTaskOutput.methodRunId)
         // add new commands to past instructions
         workflowTaskOutput.newCommands.map {
             val commandId = it.commandId
 
-            val commandType = when(val command = it.command) {
+            val commandType = when (val command = it.command) {
                 is DispatchTask -> {
                     // send task to task engine
                     val task = DispatchWork(
@@ -54,23 +52,27 @@ class WorkflowTaskCompletedHandler(
                 is DispatchReceiver -> TODO()
             }
             // add this command to past instruction
-            methodRun.pastInstructionsInMethod.plus(PastCommand(
-                stringPosition = it.commandStringPosition,
-                commandType = commandType,
-                commandId = commandId,
-                commandHash = it.commandHash,
-                commandSimpleName = it.commandSimpleName,
-                commandStatus = CommandStatusOngoing()
-            ))
+            methodRun.pastInstructions.plus(
+                PastCommand(
+                    stringPosition = it.commandStringPosition,
+                    commandType = commandType,
+                    commandId = commandId,
+                    commandHash = it.commandHash,
+                    commandSimpleName = it.commandSimpleName,
+                    commandStatus = CommandStatusOngoing()
+                )
+            )
         }
         // add new steps to past instructions
         workflowTaskOutput.newSteps.map {
-            methodRun.pastInstructionsInMethod.plus(PastStep(
-                stringPosition = it.stepStringPosition,
-                step = it.step,
-                stepHash = it.stepHash,
-                stepStatus = StepStatusOngoing()
-            ))
+            methodRun.pastInstructions.plus(
+                PastStep(
+                    stringPosition = it.stepStringPosition,
+                    step = it.step,
+                    stepHash = it.stepHash,
+                    stepStatus = StepStatusOngoing()
+                )
+            )
         }
 
         // update current workflow properties
@@ -85,24 +87,22 @@ class WorkflowTaskCompletedHandler(
 
             // tell parent workflow if any
             methodRun.parentWorkflowId?.let {
-                dispatcher.toWorkflowEngine(ChildWorkflowCompleted(
-                    workflowId = methodRun.parentWorkflowId!!,
-                    methodRunId = methodRun.parentMethodRunId!!,
-                    childWorkflowId = state.workflowId,
-                    childOutput = workflowTaskOutput.methodOutput
-                ))
+                dispatcher.toWorkflowEngine(
+                    ChildWorkflowCompleted(
+                        workflowId = methodRun.parentWorkflowId!!,
+                        childWorkflowId = state.workflowId,
+                        childOutput = workflowTaskOutput.methodOutput
+                    )
+                )
             }
         }
 
         // if everything is completed in methodRun then filter state
-        if (methodRun.pastInstructionsInMethod.all { it.isTerminated() }) {
+        if (methodRun.pastInstructions.all { it.isTerminated() }) {
             // TODO("filter workflow if unused properties")
             state.currentMethodRuns.remove(methodRun)
         }
 
-        // apply buffered messages
-
-        // update state
-        storage.updateState(state.workflowId, state)
+        return state
     }
 }

@@ -9,24 +9,23 @@ import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowEventIndex
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.workflowManager.common.messages.DecisionDispatched
+import io.infinitic.workflowManager.common.messages.WorkflowTaskDispatched
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
 import io.infinitic.workflowManager.common.states.WorkflowState
 import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
-class DispatchWorkflowHandler  (
-    private val storage: WorkflowStateStorage,
-    private val dispatcher: Dispatcher
-) : MsgHandler() {
-    suspend fun handle(msg: DispatchWorkflow) {
+class DispatchWorkflowHandler(
+    override val storage: WorkflowStateStorage,
+    override val dispatcher: Dispatcher
+) : MsgHandler(storage, dispatcher) {
+    suspend fun handle(msg: DispatchWorkflow): WorkflowState {
         // defines method to run
         val methodRun = MethodRun(
             parentWorkflowId = msg.parentWorkflowId,
-            parentMethodRunId = msg.parentMethodRunId,
             methodName = msg.methodName,
             methodInput = msg.methodInput
         )
@@ -37,7 +36,7 @@ class DispatchWorkflowHandler  (
             workflowName = msg.workflowName,
             workflowOptions = msg.workflowOptions,
             workflowPropertyStore = PropertyStore(), // filterStore(state.propertyStore, listOf(methodRun))
-            workflowEventIndex = WorkflowEventIndex(0),
+            workflowMessageIndex = WorkflowMessageIndex(0),
             methodRun = methodRun
         )
 
@@ -57,7 +56,7 @@ class DispatchWorkflowHandler  (
 
         // log event
         dispatcher.toWorkflowEngine(
-            DecisionDispatched(
+            WorkflowTaskDispatched(
                 workflowTaskId = workflowTaskId,
                 workflowId = msg.workflowId,
                 workflowName = msg.workflowName,
@@ -66,12 +65,12 @@ class DispatchWorkflowHandler  (
         )
 
         // initialize state
-        val state = WorkflowState(
+        return WorkflowState(
             workflowId = msg.workflowId,
+            workflowName = msg.workflowName,
+            workflowOptions = msg.workflowOptions,
             currentWorkflowTaskId = workflowTaskId,
             currentMethodRuns = mutableListOf(methodRun)
         )
-
-        storage.createState(msg.workflowId, state)
     }
 }

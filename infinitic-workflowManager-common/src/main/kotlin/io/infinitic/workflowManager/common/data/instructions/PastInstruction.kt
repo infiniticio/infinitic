@@ -17,7 +17,7 @@ import io.infinitic.workflowManager.common.data.steps.StepStatus
 import io.infinitic.workflowManager.common.data.steps.StepStatusCanceled
 import io.infinitic.workflowManager.common.data.steps.StepStatusCompleted
 import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowEventIndex
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflows.WorkflowChangeCheckMode
 
 sealed class PastInstruction(
@@ -54,27 +54,25 @@ data class PastStep(
     val step: Step,
     val stepHash: StepHash,
     var stepStatus: StepStatus = StepStatusOngoing(),
-    var workflowPropertiesAfterCompletion: Properties? = null,
-    var completionWorkflowEventIndex: WorkflowEventIndex? = null
+    var propertiesAtTermination: Properties? = null,
+    var workflowMessageIndexAtTermination: WorkflowMessageIndex? = null
 ) : PastInstruction(stringPosition) {
 
     @JsonIgnore
-    override fun isTerminated() = this.stepStatus is StepStatusCompleted || this.stepStatus is StepStatusCanceled
+    override fun isTerminated() = stepStatus is StepStatusCompleted || stepStatus is StepStatusCanceled
 
+    fun terminateBy(pastCommand: PastCommand, properties: Properties): Boolean {
+        if (isTerminated()) return false
 
-    fun completeCommand(commandId: CommandId, properties: Properties): Boolean {
-        return complete(commandId, properties)
-    }
-
-    private fun complete(commandId: CommandId, properties: Properties): Boolean {
-        if (! isTerminated()) {
-            step.complete(commandId)
-            if (step.isCompleted()) {
-                workflowPropertiesAfterCompletion = properties.copy()
-                return true
+        step.updateWith(pastCommand)
+        stepStatus = step.stepStatus()
+        return when (stepStatus) {
+            is StepStatusOngoing -> false
+            is StepStatusCanceled, is StepStatusCompleted -> {
+                propertiesAtTermination = properties
+                true
             }
         }
-        return false
     }
 
     fun isSimilarTo(newStep: NewStep) = newStep.stepHash == stepHash
