@@ -1,5 +1,6 @@
 package io.infinitic.workflowManager.engine.engines.handlers
 
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
@@ -16,7 +17,6 @@ import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import io.infinitic.workflowManager.common.messages.ChildWorkflowCompleted
 import io.infinitic.workflowManager.common.messages.WorkflowTaskCompleted
 import io.infinitic.workflowManager.common.states.WorkflowState
-import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
@@ -42,7 +42,7 @@ class WorkflowTaskCompletedHandler(
                             .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, "${msg.workflowId}")
                             .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
                     )
-                    dispatcher.toWorkers(task)
+                    dispatcher.toTaskEngine(task)
                     // returns type
                     CommandType.DISPATCH_TASK
                 }

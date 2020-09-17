@@ -30,7 +30,7 @@ dependencies {
     implementation(project(":infinitic-taskManager-engine-pulsar"))
     implementation(project(":infinitic-workflowManager-common"))
     implementation(project(":infinitic-workflowManager-engine"))
-    implementation(project(":infinitic-workflowManager-dispatcher-pulsar"))
+    implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage-pulsar"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")

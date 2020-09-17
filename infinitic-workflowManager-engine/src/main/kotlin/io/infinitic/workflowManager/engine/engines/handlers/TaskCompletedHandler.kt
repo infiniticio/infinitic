@@ -1,5 +1,6 @@
 package io.infinitic.workflowManager.engine.engines.handlers
 
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.commands.CommandStatusCompleted
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
@@ -7,7 +8,6 @@ import io.infinitic.workflowManager.common.data.instructions.PastCommand
 import io.infinitic.workflowManager.common.data.instructions.PastStep
 import io.infinitic.workflowManager.common.messages.TaskCompleted
 import io.infinitic.workflowManager.common.states.WorkflowState
-import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
 class TaskCompletedHandler(

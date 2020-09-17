@@ -1,6 +1,9 @@
 package io.infinitic.messaging.pulsar
 
 enum class Topic {
+    WORKFLOW_ENGINE {
+        override fun get(prefix: String, name: String?) = "workflows"
+    },
     TASK_ENGINE {
         override fun get(prefix: String, name: String?) = "$prefix-engine"
     },
@@ -12,9 +15,6 @@ enum class Topic {
     },
     MONITORING_GLOBAL {
         override fun get(prefix: String, name: String?) = "$prefix-monitoring-global"
-    },
-    WORKFLOW_ENGINE {
-        override fun get(prefix: String, name: String?) = "workflows"
     },
     DELAYS {
         override fun get(prefix: String, name: String?) = "delays"

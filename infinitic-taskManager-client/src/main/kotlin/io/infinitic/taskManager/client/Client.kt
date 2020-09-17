@@ -14,7 +14,7 @@ import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.taskManager.common.messages.RetryTask
 import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 
-open class Client(val clientDispatcher: Dispatcher) {
+open class Client(open val dispatcher: Dispatcher) {
 
     /*
      * Use this method to dispatch a task
@@ -44,7 +44,7 @@ open class Client(val clientDispatcher: Dispatcher) {
             taskOptions = options,
             taskMeta = meta.withParametersTypesFrom(method)
         )
-        clientDispatcher.toTaskEngine(msg)
+        dispatcher.toTaskEngine(msg)
 
         return TaskInstance(msg.taskId)
     }
@@ -67,7 +67,7 @@ open class Client(val clientDispatcher: Dispatcher) {
             taskOptions = options,
             taskMeta = meta
         )
-        clientDispatcher.toTaskEngine(msg)
+        dispatcher.toTaskEngine(msg)
     }
 
     /*
@@ -81,6 +81,6 @@ open class Client(val clientDispatcher: Dispatcher) {
             taskId = TaskId(id),
             taskOutput = TaskOutput(output)
         )
-        clientDispatcher.toTaskEngine(msg)
+        dispatcher.toTaskEngine(msg)
     }
 }

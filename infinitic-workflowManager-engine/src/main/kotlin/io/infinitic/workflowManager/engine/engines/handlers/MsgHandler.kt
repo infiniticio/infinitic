@@ -1,5 +1,6 @@
 package io.infinitic.workflowManager.engine.engines.handlers
 
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskInput
 import io.infinitic.taskManager.common.data.TaskMeta
@@ -12,7 +13,6 @@ import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.messages.WorkflowTaskDispatched
 import io.infinitic.workflowManager.common.states.WorkflowState
-import io.infinitic.workflowManager.engine.dispatcher.Dispatcher
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
@@ -46,7 +46,7 @@ abstract class MsgHandler(
         )
 
         // dispatch workflow task
-        dispatcher.toDeciders(workflowTask)
+        dispatcher.toTaskEngine(workflowTask)
 
         // log event
         dispatcher.toWorkflowEngine(

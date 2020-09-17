@@ -41,7 +41,7 @@ class WorkflowTaskImpl : WorkflowTask {
             }
         }
 
-        TODO("Properties updates")
+        //TODO("Properties updates")
         return WorkflowTaskOutput(
             input.workflowId,
             input.methodRun.methodRunId,

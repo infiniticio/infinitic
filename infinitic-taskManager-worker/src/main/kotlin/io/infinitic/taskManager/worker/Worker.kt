@@ -35,7 +35,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-open class Worker(val workerDispatcher: Dispatcher) {
+open class Worker(val dispatcher: Dispatcher) {
 
     companion object {
 
@@ -233,7 +233,7 @@ open class Worker(val workerDispatcher: Dispatcher) {
             taskAttemptIndex = msg.taskAttemptIndex
         )
 
-        workerDispatcher.toTaskEngine(taskAttemptStarted)
+        dispatcher.toTaskEngine(taskAttemptStarted)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
@@ -246,7 +246,7 @@ open class Worker(val workerDispatcher: Dispatcher) {
             taskAttemptError = TaskAttemptError(error)
         )
 
-        workerDispatcher.toTaskEngine(taskAttemptFailed)
+        dispatcher.toTaskEngine(taskAttemptFailed)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -258,6 +258,6 @@ open class Worker(val workerDispatcher: Dispatcher) {
             taskOutput = TaskOutput(output)
         )
 
-        workerDispatcher.toTaskEngine(taskAttemptCompleted)
+        dispatcher.toTaskEngine(taskAttemptCompleted)
     }
 }
