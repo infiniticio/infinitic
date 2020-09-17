@@ -11,7 +11,7 @@ class InMemoryStorageTest(
     val workflowStateStorage: InMemoryWorkflowStateStorage = InMemoryWorkflowStateStorage(),
     val taskStateStorage: InMemoryTaskStateStorage = InMemoryTaskStateStorage()
 ) : WorkflowStateStorage by workflowStateStorage, TaskStateStorage by taskStateStorage {
-    fun isTerminated(task: TaskInstance): Boolean = taskStateStorage.getTaskEngineState(task.taskId) == null
+    fun isTerminated(taskInstance: TaskInstance): Boolean = taskStateStorage.getTaskEngineState(taskInstance.taskId) == null
     fun isTerminated(workflowInstance: WorkflowInstance): Boolean = workflowStateStorage.getState(workflowInstance.workflowId) == null
 
     fun reset() {

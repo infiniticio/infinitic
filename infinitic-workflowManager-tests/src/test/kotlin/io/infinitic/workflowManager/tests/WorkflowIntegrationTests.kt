@@ -38,7 +38,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowAImpl> { test1() }
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { test1() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
