@@ -366,6 +366,7 @@ object AvroConverter {
      */
 
     fun toAvroMethodRun(obj: MethodRun): AvroMethodRun = AvroMethodRun.newBuilder().apply {
+        isMain = obj.isMain
         methodRunId = "${obj.methodRunId}"
         methodName = convertJson(obj.methodName)
         methodInput = convertJson(obj.methodInput)
@@ -380,6 +381,7 @@ object AvroConverter {
     }.build()
 
     fun fromAvroMethodRun(avro: AvroMethodRun) = MethodRun(
+        isMain = avro.isMain,
         methodRunId = MethodRunId(avro.methodRunId),
         methodName = convertJson(avro.methodName),
         methodInput = convertJson(avro.methodInput),
@@ -390,7 +392,7 @@ object AvroConverter {
                 is AvroPastStep -> convertJson<PastStep>(it)
                 else -> throw RuntimeException()
             }
-        }
+        }.toMutableList()
     )
 
     /**

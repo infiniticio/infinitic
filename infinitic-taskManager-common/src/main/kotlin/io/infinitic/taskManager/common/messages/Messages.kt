@@ -80,6 +80,7 @@ data class TaskCanceled(
 
 data class TaskCompleted(
     override val taskId: TaskId,
+    val taskName: TaskName,
     val taskOutput: TaskOutput,
     val taskMeta: TaskMeta
 ) : ForTaskEngineMessage(taskId)

@@ -1,15 +1,9 @@
 package io.infinitic.workflowManager.tests
 
 interface TaskTest {
-    fun log()
+    fun concat(str1: String, str2:String): String
 }
 
-class TaskTestImpl {
-    companion object {
-        var log = ""
-    }
-
-    fun log() {
-        log += "1"
-    }
+class TaskTestImpl: TaskTest {
+    override fun concat(str1: String, str2:String) = str1 + str2
 }

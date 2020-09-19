@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
+import io.infinitic.common.json.Json
 import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.commands.CommandStatus
 import io.infinitic.workflowManager.common.data.commands.CommandStatusCanceled
@@ -33,12 +34,17 @@ sealed class Step {
 
     abstract fun stepStatusAtMessageIndex(index: WorkflowMessageIndex): StepStatus
 
-    fun hash() = StepHash(SerializedData.from(this).hash())
+    /*
+     * hash function is defined to exclude commandStatus and provide a hopefully unique hash linked to the structure of the step
+     */
+    abstract fun hash(): StepHash
 
     data class Id(
         val commandId: CommandId,
         var commandStatus: CommandStatus
     ) : Step() {
+
+        override fun hash() = StepHash(SerializedData.from(commandId).hash())
 
         @JsonIgnore
         override fun isTerminatedAtMessageIndex(index: WorkflowMessageIndex) = when (stepStatusAtMessageIndex(index)) {
@@ -71,6 +77,8 @@ sealed class Step {
 
     data class And(var steps: List<Step>) : Step() {
 
+        override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
+
         @JsonIgnore
         override fun isTerminatedAtMessageIndex(index: WorkflowMessageIndex) = this.steps.all { s -> s.isTerminatedAtMessageIndex(index) }
 
@@ -100,6 +108,8 @@ sealed class Step {
     }
 
     data class Or(var steps: List<Step>) : Step() {
+
+        override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
         @JsonIgnore
         override fun isTerminatedAtMessageIndex(index: WorkflowMessageIndex) = this.steps.any { s -> s.isTerminatedAtMessageIndex(index) }

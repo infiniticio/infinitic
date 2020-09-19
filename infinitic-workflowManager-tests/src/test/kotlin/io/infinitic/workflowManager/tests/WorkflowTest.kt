@@ -10,9 +10,12 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     private val task = proxy<TaskTest>()
 
     override fun test1(): String {
-        task.log()
-        task.log()
+        var str = ""
 
-        return "ok"
+        str = task.concat(str, "1")
+        str = task.concat(str, "2")
+        str = task.concat(str, "3")
+
+        return str
     }
 }

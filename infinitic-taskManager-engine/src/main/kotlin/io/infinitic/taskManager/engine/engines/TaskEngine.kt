@@ -208,6 +208,7 @@ class TaskEngine(
         // log event
         val tc = TaskCompleted(
             taskId = state.taskId,
+            taskName = state.taskName,
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )

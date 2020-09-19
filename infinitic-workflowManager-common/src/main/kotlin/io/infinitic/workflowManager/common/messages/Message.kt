@@ -102,5 +102,5 @@ data class WorkflowCanceled(
 
 data class WorkflowCompleted(
     override val workflowId: WorkflowId,
-    val workflowOutput: TaskOutput?
+    val workflowOutput: MethodOutput
 ) : ForWorkflowEngineMessage(workflowId)

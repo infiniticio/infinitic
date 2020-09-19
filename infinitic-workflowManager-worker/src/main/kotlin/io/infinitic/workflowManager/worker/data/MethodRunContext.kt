@@ -7,12 +7,12 @@ import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandSimpleName
 import io.infinitic.workflowManager.common.data.commands.StartAsync
 import io.infinitic.workflowManager.common.data.commands.DispatchTask
-import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 import io.infinitic.workflowManager.common.data.commands.NewCommand
 import io.infinitic.workflowManager.common.data.instructions.PastCommand
-import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.steps.NewStep
 import io.infinitic.workflowManager.common.data.instructions.PastStep
+import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
+import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.data.steps.StepStatusCanceled
 import io.infinitic.workflowManager.common.data.steps.StepStatusCompleted
@@ -37,7 +37,7 @@ class MethodRunContext(
     private var currentMethodPosition: MethodPosition = MethodPosition(null, -1)
 
     // when method is processed, this value will change each time a step is completed
-    private var emulateWorkflowMessageIndex: WorkflowMessageIndex = WorkflowMessageIndex(0)
+    private var emulatedWorkflowMessageIndex: WorkflowMessageIndex = WorkflowMessageIndex(0)
 
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
@@ -158,10 +158,11 @@ class MethodRunContext(
         )
         val pastStep = getPastStepSimilarTo(newStep)
 
-        // if this is really a new step, we check it directly
+        // if this is really a new step, we check its status based on current workflow message index
         if (pastStep == null) {
+            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(emulatedWorkflowMessageIndex)
             // if this deferred is still ongoing,
-            if (newStep.step.stepStatusAtMessageIndex(emulateWorkflowMessageIndex) is StepStatusOngoing) {
+            if (deferred.stepStatus is StepStatusOngoing) {
                 // we add a new step
                 newSteps.add(newStep)
                 // and stop here
@@ -171,18 +172,16 @@ class MethodRunContext(
             return deferred
         }
 
-        // check is pastStep is completed
-        when (val stepStatus = pastStep.stepStatus) {
-            is StepStatusOngoing ->
-                throw KnownStepException()
-            is StepStatusCompleted ->
-                if (emulateWorkflowMessageIndex < stepStatus.completionWorkflowMessageIndex) throw KnownStepException()
-            is StepStatusCanceled ->
-                if (emulateWorkflowMessageIndex < stepStatus.cancellationWorkflowMessageIndex) throw KnownStepException()
-        }
+        // set status
+        deferred.stepStatus = pastStep.stepStatus
+
+        // if ongoing, we stop here (here we do not check index as it's a known step)
+        if(deferred.stepStatus is StepStatusOngoing ) throw KnownStepException()
+
         // update workflow instance properties
         val properties = pastStep.propertiesAtTermination!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
         setPropertiesToObject(workflowInstance, properties)
+
         // continue
         return deferred
     }
@@ -194,8 +193,8 @@ class MethodRunContext(
     internal fun <T> result(deferred: Deferred<T>): T {
         await(deferred)
         // if we are here, then we know that this deferred is completed or canceled
-        return when (val status = deferred.step.stepStatusAtMessageIndex(emulateWorkflowMessageIndex)) {
-            is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN")
+        return when (val status = deferred.stepStatus) {
+            is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN: asking result of an ongoing deferred")
             is StepStatusCompleted -> status.result as T
             is StepStatusCanceled -> status.result as T
         }
@@ -204,7 +203,7 @@ class MethodRunContext(
     /*
      * Deferred status()
      */
-    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(emulateWorkflowMessageIndex)) {
+    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(emulatedWorkflowMessageIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED

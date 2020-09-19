@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.worker
+package io.infinitic.workflowManager.common.data.workflowTasks
 
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskOutput

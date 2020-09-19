@@ -4,9 +4,10 @@ import io.infinitic.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.taskManager.worker.Worker
+import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
-import io.infinitic.workflowManager.worker.WorkflowTask
-import io.infinitic.workflowManager.worker.WorkflowTaskImpl
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
+import io.infinitic.workflowManager.worker.data.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
@@ -24,17 +25,18 @@ private lateinit var status: AvroTaskStatus
 class TaskIntegrationTests : StringSpec({
     val taskTest = TaskTestImpl()
     val workflowTask = WorkflowTaskImpl()
+    val workflowA = WorkflowAImpl()
     Worker.register<TaskTest>(taskTest)
     Worker.register<WorkflowTask>(workflowTask)
+    Worker.register<WorkflowA>(workflowA)
 
     var workflowInstance: WorkflowInstance
 
     beforeTest {
         storage.reset()
-        TaskTestImpl.log = ""
     }
 
-    "Task succeeds at first try" {
+    "Simple Sequential Workflow" {
         // run system
         coroutineScope {
             dispatcher.scope = this
@@ -43,6 +45,6 @@ class TaskIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        TaskTestImpl.log shouldBe "11"
+        dispatcher.workflowOutput shouldBe MethodOutput("123")
     }
 })

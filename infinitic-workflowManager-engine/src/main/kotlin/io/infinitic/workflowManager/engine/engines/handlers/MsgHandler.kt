@@ -9,6 +9,7 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.messages.WorkflowTaskDispatched
@@ -17,7 +18,6 @@ import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
 abstract class MsgHandler(
-    open val storage: WorkflowStateStorage,
     open val dispatcher: Dispatcher
 ) {
     protected fun getMethodRun(state: WorkflowState, methodRunId: MethodRunId) =
@@ -39,10 +39,12 @@ abstract class MsgHandler(
 
         val workflowTask = DispatchTask(
             taskId = TaskId("$workflowTaskId"),
-            taskName = TaskName("${state.workflowName}"),
+            taskName = TaskName(WorkflowTask::class.java.name),
             taskInput = TaskInput(workflowTaskInput),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().with(WorkflowEngine.META_WORKFLOW_ID, "${state.workflowId}")
+            taskMeta = TaskMeta()
+                .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, "${state.workflowId}")
+                .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
         )
 
         // dispatch workflow task

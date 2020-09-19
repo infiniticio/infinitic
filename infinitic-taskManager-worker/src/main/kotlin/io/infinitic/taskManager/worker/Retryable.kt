@@ -1,6 +1,4 @@
-package io.infinitic.taskManager.common
-
-import io.infinitic.taskManager.common.data.TaskAttemptContext
+package io.infinitic.taskManager.worker
 
 interface Retryable {
     /**
@@ -9,5 +7,5 @@ interface Retryable {
      * <=0: no delay
      * null: no retry
      */
-    fun getRetryDelay(context: TaskAttemptContext): Float?
+    fun getRetryDelay(): Float?
 }

@@ -11,10 +11,9 @@ import io.infinitic.workflowManager.common.states.WorkflowState
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
 class TaskCompletedHandler(
-    override val storage: WorkflowStateStorage,
     override val dispatcher: Dispatcher
-) : MsgHandler(storage, dispatcher) {
-    suspend fun handle(state: WorkflowState, msg: TaskCompleted): WorkflowState {
+) : MsgHandler(dispatcher) {
+    suspend fun handle(state: WorkflowState, msg: TaskCompleted) {
         val methodRun = getMethodRun(state, msg.methodRunId)
 
         // update command status
@@ -24,7 +23,7 @@ class TaskCompletedHandler(
             .first { it.commandId == commandId }
 
         // do nothing if this command is not ongoing (could have been canceled)
-        if (pastCommand.commandStatus !is CommandStatusOngoing) return state
+        if (pastCommand.commandStatus !is CommandStatusOngoing) return
 
         // update command status
         pastCommand.commandStatus = CommandStatusCompleted(msg.taskOutput.data, state.currentMessageIndex)
@@ -38,6 +37,11 @@ class TaskCompletedHandler(
         if (justCompleted) {
             dispatchWorkflowTask(state, methodRun)
         }
-        return state
+
+        // if everything is completed in methodRun then filter state
+        if (methodRun.methodOutput != null && methodRun.pastInstructions.all { it.isTerminated() }) {
+            // TODO("filter workflow if unused properties")
+            state.currentMethodRuns.remove(methodRun)
+        }
     }
 }

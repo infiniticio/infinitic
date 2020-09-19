@@ -9,6 +9,10 @@
       "logicalType": "uuid"
     },
     {
+      "name": "isMain",
+      "type": "boolean"
+    },
+    {
       "name": "methodName",
       "type": "io.infinitic.workflowManager.data.methodRuns.AvroMethodName"
     },

@@ -66,30 +66,30 @@ class WorkflowEngine(
         }
 
         // process this message
-        state = processMessage(state, msg)
+        processMessage(state, msg)
         // process all buffered messages
         while (
-            state != null && // if workflow is not terminated
+            state.currentMethodRuns.size > 0 && // if workflow is not terminated
             state.currentWorkflowTaskId == null && // if a workflowTask is not ongoing
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
             val bufferedMsg = state.bufferedMessages.removeAt(0)
-            state = processMessage(state, bufferedMsg)
+            processMessage(state, bufferedMsg)
         }
 
         // update state
-        if (state == null) {
+        if (state.currentMethodRuns.size == 0 ) {
             storage.deleteState(msg.workflowId)
         } else {
             storage.updateState(msg.workflowId, state)
         }
     }
 
-    private suspend fun processMessage(state: WorkflowState, msg: ForWorkflowEngineMessage): WorkflowState {
+    private suspend fun processMessage(state: WorkflowState, msg: ForWorkflowEngineMessage) {
         // increment message index
         state.currentMessageIndex++
         //
-        return when (msg) {
+        when (msg) {
             is CancelWorkflow -> cancelWorkflow(state, msg)
             is ChildWorkflowCanceled -> childWorkflowCanceled(state, msg)
             is ChildWorkflowCompleted -> childWorkflowCompleted(state, msg)
@@ -103,13 +103,13 @@ class WorkflowEngine(
     }
 
     private suspend fun dispatchWorkflow(msg: DispatchWorkflow) =
-        DispatchWorkflowHandler(storage, dispatcher).handle(msg)
+        DispatchWorkflowHandler(dispatcher).handle(msg)
 
     private suspend fun workflowTaskCompleted(state: WorkflowState, msg: WorkflowTaskCompleted) =
-        WorkflowTaskCompletedHandler(storage, dispatcher).handle(state, msg)
+        WorkflowTaskCompletedHandler(dispatcher).handle(state, msg)
 
     private suspend fun taskCompleted(state: WorkflowState, msg: TaskCompleted) =
-        TaskCompletedHandler(storage, dispatcher).handle(state, msg)
+        TaskCompletedHandler(dispatcher).handle(state, msg)
 
     private suspend fun cancelWorkflow(state: WorkflowState, msg: CancelWorkflow): WorkflowState {
         TODO()

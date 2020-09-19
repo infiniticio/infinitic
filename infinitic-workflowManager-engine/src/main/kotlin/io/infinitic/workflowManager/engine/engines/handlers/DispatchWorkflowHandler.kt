@@ -9,6 +9,7 @@ import io.infinitic.taskManager.common.data.TaskOptions
 import io.infinitic.taskManager.common.messages.DispatchTask
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
@@ -19,12 +20,12 @@ import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
 class DispatchWorkflowHandler(
-    override val storage: WorkflowStateStorage,
     override val dispatcher: Dispatcher
-) : MsgHandler(storage, dispatcher) {
+) : MsgHandler(dispatcher) {
     suspend fun handle(msg: DispatchWorkflow): WorkflowState {
         // defines method to run
         val methodRun = MethodRun(
+            isMain = true,
             parentWorkflowId = msg.parentWorkflowId,
             methodName = msg.methodName,
             methodInput = msg.methodInput
@@ -45,10 +46,12 @@ class DispatchWorkflowHandler(
 
         val workflowTask = DispatchTask(
             taskId = TaskId("$workflowTaskId"),
-            taskName = TaskName("${msg.workflowName}"),
+            taskName = TaskName(WorkflowTask::class.java.name),
             taskInput = TaskInput(workflowTaskInput),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().with(WorkflowEngine.META_WORKFLOW_ID, "${msg.workflowId}")
+            taskMeta = TaskMeta()
+                .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, "${msg.workflowId}")
+                .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
         )
 
         // dispatch workflow task
