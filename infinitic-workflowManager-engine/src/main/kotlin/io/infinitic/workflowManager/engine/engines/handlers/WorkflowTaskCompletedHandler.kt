@@ -115,7 +115,7 @@ class WorkflowTaskCompletedHandler(
         pastStartAsync.commandStatus = CommandStatusCompleted(command.asyncOutput.data, currentMessageIndex)
     }
 
-    private suspend fun dispatchTask(methodRun: MethodRun, newCommand: NewCommand, workflowId: WorkflowId){
+    private suspend fun dispatchTask(methodRun: MethodRun, newCommand: NewCommand, workflowId: WorkflowId) {
         val command = newCommand.command as DispatchTaskInWorkflow
         // send task to task engine
         val task = DispatchTask(
@@ -143,6 +143,4 @@ class WorkflowTaskCompletedHandler(
             )
         )
     }
-
-
 }

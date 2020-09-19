@@ -13,14 +13,11 @@ import io.infinitic.workflowManager.common.data.commands.NewCommand
 import io.infinitic.workflowManager.common.data.instructions.PastCommand
 import io.infinitic.workflowManager.common.data.steps.NewStep
 import io.infinitic.workflowManager.common.data.instructions.PastStep
-import io.infinitic.workflowManager.common.data.methodRuns.MethodInstructionIndex
-import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.data.steps.StepStatusCanceled
 import io.infinitic.workflowManager.common.data.steps.StepStatusCompleted
 import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflowManager.common.parser.setPropertiesToObject
@@ -131,7 +128,7 @@ class MethodRunContext(
         deferred.stepStatus = pastStep.stepStatus
 
         // throw KnownStepException if ongoing else else update message index
-        methodPosition.messageIndex = when(val stepStatus = deferred.stepStatus) {
+        methodPosition.messageIndex = when (val stepStatus = deferred.stepStatus) {
             is StepStatusOngoing -> throw KnownStepException()
             is StepStatusCompleted -> stepStatus.completionWorkflowMessageIndex
             is StepStatusCanceled -> stepStatus.cancellationWorkflowMessageIndex
@@ -173,7 +170,7 @@ class MethodRunContext(
             return Deferred<S>(Step.Id.from(newCommand), this)
         } else {
             // branch is processed only if not yet completed or canceled
-            if(pastCommand.commandStatus is CommandStatusOngoing) {
+            if (pastCommand.commandStatus is CommandStatusOngoing) {
                 runAsync(branch)
             }
 
@@ -204,7 +201,7 @@ class MethodRunContext(
         positionUp()
 
         // if the branch is completed, then we send a special command to the engine
-        if(commandOutput != null) {
+        if (commandOutput != null) {
             // create instruction that *may* be sent to engine
             val newCommand = NewCommand(
                 command = EndAsync(commandOutput),

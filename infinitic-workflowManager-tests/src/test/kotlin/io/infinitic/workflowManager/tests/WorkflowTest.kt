@@ -7,6 +7,7 @@ interface WorkflowA {
     fun seq1(): String
     fun seq2(): String
     fun seq3(): String
+    fun seq4(): String
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -42,5 +43,18 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         str = task.concat(str, "3")
 
         return str + d.result() // should be "23ba"
+    }
+
+    override fun seq4(): String {
+        var str = ""
+
+        val d = async {
+            val s = task.reverse("ab")
+            task.concat(s, "c")
+        }
+        str = task.concat(str, "2")
+        str = task.concat(str, "3")
+
+        return str + d.result() // should be "23bac"
     }
 }

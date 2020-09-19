@@ -8,5 +8,4 @@ interface TaskTest {
 class TaskTestImpl : TaskTest {
     override fun concat(str1: String, str2: String) = str1 + str2
     override fun reverse(str: String) = str.reversed()
-
 }

@@ -84,4 +84,16 @@ class TaskIntegrationTests : StringSpec({
         // checks number of task processing
         dispatcher.workflowOutput shouldBe MethodOutput("23ba")
     }
+
+    "Sequential Workflow with an async branch with 2 tasks" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq4() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe MethodOutput("23bac")
+    }
 })
