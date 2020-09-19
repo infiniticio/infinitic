@@ -73,4 +73,9 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
         monitoringGlobalHandle = { monitoringGlobal.handle(it) }
         workerHandle = { worker.handle(it) }
     }
+
+    fun reset() {
+        taskStatus = null
+        workflowOutput = null
+    }
 }

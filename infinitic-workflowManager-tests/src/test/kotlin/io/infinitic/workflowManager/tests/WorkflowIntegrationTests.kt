@@ -7,7 +7,7 @@ import io.infinitic.taskManager.worker.Worker
 import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
-import io.infinitic.workflowManager.worker.data.WorkflowTaskImpl
+import io.infinitic.workflowManager.worker.workflowTasks.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
@@ -34,17 +34,42 @@ class TaskIntegrationTests : StringSpec({
 
     beforeTest {
         storage.reset()
+        dispatcher.reset()
+    }
+
+    "empty Workflow" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { empty() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe MethodOutput("void")
     }
 
     "Simple Sequential Workflow" {
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { test1() }
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq1() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
         dispatcher.workflowOutput shouldBe MethodOutput("123")
+    }
+
+    "Sequential Workflow with an async task" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq2() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe MethodOutput("23ba")
     }
 })

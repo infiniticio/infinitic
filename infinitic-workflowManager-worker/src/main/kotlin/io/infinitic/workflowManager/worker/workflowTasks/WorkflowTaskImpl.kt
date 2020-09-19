@@ -1,17 +1,16 @@
-package io.infinitic.workflowManager.worker.data
+package io.infinitic.workflowManager.worker.workflowTasks
 
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.taskManager.worker.TaskAttemptContext
 import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
-import io.infinitic.workflowManager.worker.exceptions.KnownStepException
-import io.infinitic.workflowManager.worker.exceptions.NewStepException
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.workflowManager.common.parser.setPropertiesToObject
 import io.infinitic.workflowManager.worker.Workflow
+import io.infinitic.workflowManager.worker.data.MethodRunContext
 import java.lang.reflect.InvocationTargetException
 
 class WorkflowTaskImpl : WorkflowTask {

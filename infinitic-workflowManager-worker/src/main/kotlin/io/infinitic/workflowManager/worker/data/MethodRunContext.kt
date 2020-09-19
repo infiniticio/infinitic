@@ -24,8 +24,8 @@ import io.infinitic.workflowManager.common.parser.setPropertiesToObject
 import io.infinitic.workflowManager.worker.deferred.Deferred
 import io.infinitic.workflowManager.worker.Workflow
 import io.infinitic.workflowManager.worker.deferred.DeferredStatus
-import io.infinitic.workflowManager.worker.exceptions.KnownStepException
-import io.infinitic.workflowManager.worker.exceptions.NewStepException
+import io.infinitic.workflowManager.worker.workflowTasks.KnownStepException
+import io.infinitic.workflowManager.worker.workflowTasks.NewStepException
 import java.lang.RuntimeException
 import java.lang.reflect.Method
 
@@ -104,6 +104,51 @@ class MethodRunContext(
     }
 
     /*
+     * Deferred await
+     */
+    internal fun <T> await(deferred: Deferred<T>): Deferred<T> {
+        // increment position
+        positionNext()
+        // create a new step
+        val newStep = NewStep(
+            step = deferred.step,
+            stepStringPosition = currentMethodPosition.stringPosition
+        )
+        val pastStep = getPastStepSimilarTo(newStep)
+
+        // if this is really a new step, we check its status based on current workflow message index
+        if (pastStep == null) {
+            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(emulatedWorkflowMessageIndex)
+            // if this deferred is still ongoing,
+            if (deferred.stepStatus is StepStatusOngoing) {
+                // we add a new step
+                newSteps.add(newStep)
+                // and stop here
+                throw NewStepException()
+            }
+            // if this deferred is already terminated, we continue
+            return deferred
+        }
+
+        // set status
+        deferred.stepStatus = pastStep.stepStatus
+
+        // throw KnownStepException if ongoing else else update emulatedWorkflowMessageIndex
+        emulatedWorkflowMessageIndex = when(val stepStatus = deferred.stepStatus) {
+            is StepStatusOngoing -> throw KnownStepException()
+            is StepStatusCompleted -> stepStatus.completionWorkflowMessageIndex
+            is StepStatusCanceled -> stepStatus.cancellationWorkflowMessageIndex
+        }
+
+        // update workflow instance properties
+        val properties = pastStep.propertiesAtTermination!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
+        setPropertiesToObject(workflowInstance, properties)
+
+        // continue
+        return deferred
+    }
+
+    /*
      * Async Branch dispatching:
      * we check is this command is already known
      */
@@ -146,58 +191,13 @@ class MethodRunContext(
     }
 
     /*
-     * Deferred await
-     */
-    internal fun <T> await(deferred: Deferred<T>): Deferred<T> {
-        // increment position
-        positionNext()
-        // create a new step
-        val newStep = NewStep(
-            step = deferred.step,
-            stepStringPosition = currentMethodPosition.stringPosition
-        )
-        val pastStep = getPastStepSimilarTo(newStep)
-
-        // if this is really a new step, we check its status based on current workflow message index
-        if (pastStep == null) {
-            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(emulatedWorkflowMessageIndex)
-            // if this deferred is still ongoing,
-            if (deferred.stepStatus is StepStatusOngoing) {
-                // we add a new step
-                newSteps.add(newStep)
-                // and stop here
-                throw NewStepException()
-            }
-            // if this deferred is already terminated, we continue
-            return deferred
-        }
-
-        // set status
-        deferred.stepStatus = pastStep.stepStatus
-
-        // if ongoing, we stop here (here we do not check index as it's a known step)
-        if (deferred.stepStatus is StepStatusOngoing) throw KnownStepException()
-
-        // update workflow instance properties
-        val properties = pastStep.propertiesAtTermination!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
-        setPropertiesToObject(workflowInstance, properties)
-
-        // continue
-        return deferred
-    }
-
-    /*
      * Deferred result()
      */
     @Suppress("UNCHECKED_CAST")
-    internal fun <T> result(deferred: Deferred<T>): T {
-        await(deferred)
-        // if we are here, then we know that this deferred is completed or canceled
-        return when (val status = deferred.stepStatus) {
-            is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN: asking result of an ongoing deferred")
-            is StepStatusCompleted -> status.result as T
-            is StepStatusCanceled -> status.result as T
-        }
+    internal fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
+        is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN: asking result of an ongoing deferred")
+        is StepStatusCompleted -> status.result as T
+        is StepStatusCanceled -> status.result as T
     }
 
     /*
