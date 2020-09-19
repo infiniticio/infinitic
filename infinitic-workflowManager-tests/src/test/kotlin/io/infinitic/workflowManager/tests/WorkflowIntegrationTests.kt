@@ -4,7 +4,6 @@ import io.infinitic.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.taskManager.worker.Worker
-import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
 import io.infinitic.workflowManager.worker.workflowTasks.WorkflowTaskImpl
@@ -46,7 +45,7 @@ class TaskIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe MethodOutput("void")
+        dispatcher.workflowOutput shouldBe "void"
     }
 
     "Simple Sequential Workflow" {
@@ -58,7 +57,7 @@ class TaskIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe MethodOutput("123")
+        dispatcher.workflowOutput shouldBe "123"
     }
 
     "Sequential Workflow with an async task" {
@@ -70,7 +69,7 @@ class TaskIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe MethodOutput("23ba")
+        dispatcher.workflowOutput shouldBe "23ba"
     }
 
     "Sequential Workflow with an async branch" {
@@ -82,7 +81,7 @@ class TaskIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe MethodOutput("23ba")
+        dispatcher.workflowOutput shouldBe "23ba"
     }
 
     "Sequential Workflow with an async branch with 2 tasks" {
@@ -94,6 +93,30 @@ class TaskIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe MethodOutput("23bac")
+        dispatcher.workflowOutput shouldBe "23bac"
+    }
+
+    "Or step with 3 async tasks" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { or1() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe "ba"
+    }
+
+    "And step with 3 async tasks" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { and1() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe listOf("ba", "dc", "fe")
     }
 })

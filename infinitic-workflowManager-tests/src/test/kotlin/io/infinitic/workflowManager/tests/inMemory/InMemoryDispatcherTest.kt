@@ -9,7 +9,6 @@ import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.worker.Worker
 import io.infinitic.workflowManager.client.Client
-import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
@@ -29,14 +28,14 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
     val monitoringGlobal = MonitoringGlobal(storage)
 
     var taskStatus: TaskStatus? = null
-    var workflowOutput: MethodOutput? = null
+    var workflowOutput: Any? = null
 
     init {
         workflowEngineHandle = {
             workflowEngine.handle(it)
 
             when (it) {
-                is WorkflowCompleted -> { workflowOutput = it.workflowOutput }
+                is WorkflowCompleted -> { workflowOutput = it.workflowOutput.data }
             }
         }
         taskEngineHandle = {

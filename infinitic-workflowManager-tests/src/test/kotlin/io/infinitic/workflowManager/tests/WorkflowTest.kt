@@ -1,6 +1,8 @@
 package io.infinitic.workflowManager.tests
 
 import io.infinitic.workflowManager.worker.Workflow
+import io.infinitic.workflowManager.worker.deferred.and
+import io.infinitic.workflowManager.worker.deferred.or
 
 interface WorkflowA {
     fun empty(): String
@@ -8,6 +10,8 @@ interface WorkflowA {
     fun seq2(): String
     fun seq3(): String
     fun seq4(): String
+    fun or1(): String
+    fun and1(): List<String>
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -56,5 +60,21 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         str = task.concat(str, "3")
 
         return str + d.result() // should be "23bac"
+    }
+
+    override fun or1(): String {
+        val d1 = async(task) { reverse("ab") }
+        val d2 = async(task) { reverse("cd") }
+        val d3 = async(task) { reverse("ef") }
+
+        return (d1 or d2 or d3).result() // should be "ba"
+    }
+
+    override fun and1(): List<String> {
+        val d1 = async(task) { reverse("ab") }
+        val d2 = async(task) { reverse("cd") }
+        val d3 = async(task) { reverse("ef") }
+
+        return (d1 and d2 and d3).result() // should be listOf("ba","dc","fe")
     }
 }
