@@ -1,6 +1,5 @@
 package io.infinitic.messaging.api.dispatcher
 
-import io.infinitic.common.json.Json
 import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
 import io.infinitic.taskManager.common.avro.AvroConverter as TaskAvroConverter
 import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage

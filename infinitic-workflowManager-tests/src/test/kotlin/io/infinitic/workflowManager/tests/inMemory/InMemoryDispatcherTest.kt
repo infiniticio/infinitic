@@ -1,8 +1,6 @@
 package io.infinitic.taskManager.tests.inMemory
 
 import io.infinitic.messaging.api.dispatcher.InMemoryDispatcher
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.taskManager.common.data.TaskStatus
 import io.infinitic.taskManager.common.messages.TaskCompleted
 import io.infinitic.taskManager.common.messages.TaskStatusUpdated

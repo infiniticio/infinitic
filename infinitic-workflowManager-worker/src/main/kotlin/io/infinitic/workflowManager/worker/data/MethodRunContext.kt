@@ -176,7 +176,7 @@ class MethodRunContext(
         deferred.stepStatus = pastStep.stepStatus
 
         // if ongoing, we stop here (here we do not check index as it's a known step)
-        if(deferred.stepStatus is StepStatusOngoing ) throw KnownStepException()
+        if (deferred.stepStatus is StepStatusOngoing) throw KnownStepException()
 
         // update workflow instance properties
         val properties = pastStep.propertiesAtTermination!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }

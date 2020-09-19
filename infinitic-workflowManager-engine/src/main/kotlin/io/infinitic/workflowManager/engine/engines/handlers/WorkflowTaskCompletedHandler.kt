@@ -19,7 +19,6 @@ import io.infinitic.workflowManager.common.messages.WorkflowCompleted
 import io.infinitic.workflowManager.common.messages.WorkflowTaskCompleted
 import io.infinitic.workflowManager.common.states.WorkflowState
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
-import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
 class WorkflowTaskCompletedHandler(
     override val dispatcher: Dispatcher
@@ -90,10 +89,12 @@ class WorkflowTaskCompletedHandler(
 
             // if this is the main method, it means the workflow is completed
             if (methodRun.isMain) {
-                dispatcher.toWorkflowEngine(WorkflowCompleted(
-                    workflowId = state.workflowId,
-                    workflowOutput = methodRun.methodOutput!!
-                ))
+                dispatcher.toWorkflowEngine(
+                    WorkflowCompleted(
+                        workflowId = state.workflowId,
+                        workflowOutput = methodRun.methodOutput!!
+                    )
+                )
             }
 
             // tell parent workflow if any
@@ -113,5 +114,5 @@ class WorkflowTaskCompletedHandler(
             // TODO("filter workflow if unused properties")
             state.currentMethodRuns.remove(methodRun)
         }
-     }
+    }
 }

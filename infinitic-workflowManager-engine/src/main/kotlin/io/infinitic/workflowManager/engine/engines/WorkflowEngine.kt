@@ -78,7 +78,7 @@ class WorkflowEngine(
         }
 
         // update state
-        if (state.currentMethodRuns.size == 0 ) {
+        if (state.currentMethodRuns.size == 0) {
             storage.deleteState(msg.workflowId)
         } else {
             storage.updateState(msg.workflowId, state)

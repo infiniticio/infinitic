@@ -2,7 +2,6 @@ package io.infinitic.workflowManager.worker.data
 
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.taskManager.common.parser.getNewInstancePerName
 import io.infinitic.taskManager.worker.TaskAttemptContext
 import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
@@ -16,7 +15,7 @@ import io.infinitic.workflowManager.worker.Workflow
 import java.lang.reflect.InvocationTargetException
 
 class WorkflowTaskImpl : WorkflowTask {
-    lateinit var taskAttemptContext : TaskAttemptContext
+    lateinit var taskAttemptContext: TaskAttemptContext
 
     override fun handle(input: WorkflowTaskInput): WorkflowTaskOutput {
         // get  instance workflow by name
@@ -45,7 +44,7 @@ class WorkflowTaskImpl : WorkflowTask {
             }
         }
 
-        //TODO("Properties updates")
+        // TODO("Properties updates")
         return WorkflowTaskOutput(
             input.workflowId,
             input.methodRun.methodRunId,

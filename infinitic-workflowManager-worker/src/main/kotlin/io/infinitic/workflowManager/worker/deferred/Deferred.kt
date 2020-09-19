@@ -9,7 +9,7 @@ data class Deferred<out T>(
     internal val step: Step,
     internal val methodRunContext: MethodRunContext
 ) {
-    internal lateinit var stepStatus : StepStatus
+    internal lateinit var stepStatus: StepStatus
 
     fun await(): Deferred<T> = methodRunContext.await(this)
 

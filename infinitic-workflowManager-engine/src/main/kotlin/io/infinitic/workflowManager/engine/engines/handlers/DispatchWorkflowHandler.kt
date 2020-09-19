@@ -17,7 +17,6 @@ import io.infinitic.workflowManager.common.messages.WorkflowTaskDispatched
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
 import io.infinitic.workflowManager.common.states.WorkflowState
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
-import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 
 class DispatchWorkflowHandler(
     override val dispatcher: Dispatcher
