@@ -370,7 +370,8 @@ object AvroConverter {
         methodRunId = "${obj.methodRunId}"
         methodName = convertJson(obj.methodName)
         methodInput = convertJson(obj.methodInput)
-        methodPropertiesAtStart = toAvroProperties(obj.propertiesAtMethodStart)
+        messageIndexAtStart = obj.messageIndexAtStart.int
+        methodPropertiesAtStart = toAvroProperties(obj.propertiesAtStart)
         methodPastInstructions = obj.pastInstructions.map {
             when (it) {
                 is PastCommand -> convertJson<AvroPastCommand>(it)
@@ -385,7 +386,8 @@ object AvroConverter {
         methodRunId = MethodRunId(avro.methodRunId),
         methodName = convertJson(avro.methodName),
         methodInput = convertJson(avro.methodInput),
-        propertiesAtMethodStart = fromAvroProperties(avro.methodPropertiesAtStart),
+        messageIndexAtStart = WorkflowMessageIndex(avro.messageIndexAtStart),
+        propertiesAtStart = fromAvroProperties(avro.methodPropertiesAtStart),
         pastInstructions = avro.methodPastInstructions.map {
             when (it) {
                 is AvroPastCommand -> convertJson<PastCommand>(it)

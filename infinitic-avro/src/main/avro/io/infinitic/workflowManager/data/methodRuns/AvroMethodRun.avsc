@@ -24,6 +24,12 @@
       }
     },
     {
+      "name": "messageIndexAtStart",
+      "type": {
+        "type": "int"
+      }
+    },
+    {
       "name": "methodPropertiesAtStart",
       "type": {
         "type": "map",

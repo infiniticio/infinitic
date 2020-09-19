@@ -27,7 +27,8 @@ class DispatchWorkflowHandler(
             isMain = true,
             parentWorkflowId = msg.parentWorkflowId,
             methodName = msg.methodName,
-            methodInput = msg.methodInput
+            methodInput = msg.methodInput,
+            messageIndexAtStart = WorkflowMessageIndex(0)
         )
 
         // defines workflow task input

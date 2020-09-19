@@ -14,6 +14,7 @@ data class NewCommand(
         is DispatchTimer -> CommandType.DISPATCH_TIMER
         is DispatchReceiver -> CommandType.DISPATCH_RECEIVER
         is StartAsync -> CommandType.START_ASYNC
+        is EndAsync -> CommandType.END_ASYNC
     },
     val commandHash: CommandHash = command.hash()
 )

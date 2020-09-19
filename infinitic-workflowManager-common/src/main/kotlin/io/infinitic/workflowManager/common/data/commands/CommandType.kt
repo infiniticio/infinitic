@@ -5,5 +5,6 @@ enum class CommandType {
     DISPATCH_WORKFLOW,
     DISPATCH_TIMER,
     DISPATCH_RECEIVER,
-    START_ASYNC
+    START_ASYNC,
+    END_ASYNC
 }
