@@ -9,6 +9,10 @@
       "logicalType": "uuid"
     },
     {
+      "name": "taskName",
+      "type": "string"
+    },
+    {
       "name": "taskOutput",
       "type": "io.infinitic.taskManager.data.AvroSerializedData"
     },

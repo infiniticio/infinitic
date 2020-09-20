@@ -376,7 +376,6 @@ object AvroConverter {
             when (it) {
                 is PastCommand -> convertJson<AvroPastCommand>(it)
                 is PastStep -> convertJson<AvroPastStep>(it)
-                else -> throw RuntimeException()
             }
         }
     }.build()

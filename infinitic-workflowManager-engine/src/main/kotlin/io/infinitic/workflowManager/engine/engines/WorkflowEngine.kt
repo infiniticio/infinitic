@@ -48,7 +48,7 @@ class WorkflowEngine(
         // if no state (can happen for a newly created workflow or a terminated workflow)
         if (state == null) {
             if (msg is DispatchWorkflow) {
-                state = dispatchWorkflow(msg as DispatchWorkflow)
+                state = dispatchWorkflow(msg)
                 storage.createState(msg.workflowId, state)
             }
             // discard all other types of message as this workflow is already terminated

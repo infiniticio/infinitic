@@ -11,6 +11,7 @@ interface WorkflowA {
     fun seq3(): String
     fun seq4(): String
     fun or1(): String
+    fun or2(): Any
     fun and1(): List<String>
 }
 
@@ -67,7 +68,15 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         val d2 = async(task) { reverse("cd") }
         val d3 = async(task) { reverse("ef") }
 
-        return (d1 or d2 or d3).result() // should be "ba"
+        return (d1 or d2 or d3).result() // should be "ba" TODO: make this test deterministic
+    }
+
+    override fun or2(): Any {
+        val d1 = async(task) { reverse("ab") }
+        val d2 = async(task) { reverse("cd") }
+        val d3 = async(task) { reverse("ef") }
+
+        return ((d1 and d2) or d3).result() // should be listOf("ba","dc") TODO: make this test deterministic
     }
 
     override fun and1(): List<String> {

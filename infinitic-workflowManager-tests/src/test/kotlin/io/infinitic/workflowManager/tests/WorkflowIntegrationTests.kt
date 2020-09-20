@@ -108,6 +108,18 @@ class TaskIntegrationTests : StringSpec({
         dispatcher.workflowOutput shouldBe "ba"
     }
 
+    "Combined And/Or step with 3 async tasks" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { or2() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe listOf("ba", "dc")
+    }
+
     "And step with 3 async tasks" {
         // run system
         coroutineScope {

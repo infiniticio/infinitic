@@ -37,8 +37,6 @@ class WorkflowTaskCompletedHandler(
         val methodRun = getMethodRun(state, workflowTaskOutput.methodRunId)
         // add new commands to past instructions
         workflowTaskOutput.newCommands.map {
-            val commandId = it.commandId
-
             when (val command = it.command) {
                 is DispatchTaskInWorkflow -> dispatchTask(methodRun, it, msg.workflowId)
                 is DispatchChildWorkflow -> TODO()
