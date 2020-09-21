@@ -1,0 +1,27 @@
+{
+  "type": "record",
+  "name": "AvroStepStatus",
+  "namespace": "io.infinitic.workflowManager.data.steps",
+  "fields": [
+    {
+      "name": "status",
+      "type": "string"
+    },
+    {
+      "name": "result",
+      "type":  [
+        "null",
+        "io.infinitic.taskManager.data.AvroSerializedData"
+      ],
+      "default": null
+    },
+    {
+      "name": "workflowMessageIndex",
+      "type":  [
+        "null",
+        "int"
+      ],
+      "default": null
+    }
+  ]
+}

@@ -53,23 +53,23 @@ sealed class Step {
         }
 
         override fun stepStatusAtMessageIndex(index: WorkflowMessageIndex) = when (commandStatus) {
-            is CommandStatusOngoing -> StepStatusOngoing()
+            is CommandStatusOngoing -> StepStatusOngoing
             is CommandStatusCompleted -> with(commandStatus as CommandStatusCompleted) {
                 when (index >= this.completionWorkflowMessageIndex) {
-                    true -> StepStatusCompleted(this.result, this.completionWorkflowMessageIndex)
-                    false -> StepStatusOngoing()
+                    true -> StepStatusCompleted(StepOutput(this.completionResult.data), this.completionWorkflowMessageIndex)
+                    false -> StepStatusOngoing
                 }
             }
             is CommandStatusCanceled -> with(commandStatus as CommandStatusCanceled) {
                 when (index >= this.cancellationWorkflowMessageIndex) {
-                    true -> StepStatusCanceled(this.result, this.cancellationWorkflowMessageIndex)
-                    false -> StepStatusOngoing()
+                    true -> StepStatusCanceled(StepOutput(this.cancellationResult.data), this.cancellationWorkflowMessageIndex)
+                    false -> StepStatusOngoing
                 }
             }
         }
 
         companion object {
-            fun from(newCommand: NewCommand) = Id(newCommand.commandId, CommandStatusOngoing())
+            fun from(newCommand: NewCommand) = Id(newCommand.commandId, CommandStatusOngoing)
             fun from(pastCommand: PastCommand) = Id(pastCommand.commandId, pastCommand.commandStatus)
         }
     }
@@ -83,13 +83,13 @@ sealed class Step {
 
         override fun stepStatusAtMessageIndex(index: WorkflowMessageIndex): StepStatus {
             val statuses = steps.map { it.stepStatusAtMessageIndex(index) }
-            if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing()
+            if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing
 
             val results = statuses.map {
                 when (it) {
-                    is StepStatusOngoing -> null
-                    is StepStatusCompleted -> it.result
-                    is StepStatusCanceled -> it.result
+                    is StepStatusOngoing -> throw Exception("This should not happen")
+                    is StepStatusCompleted -> it.completionResult
+                    is StepStatusCanceled -> it.cancellationResult
                 }
             }
             val maxIndex = statuses.map {
@@ -100,9 +100,9 @@ sealed class Step {
                 }
             }.max()!!
 
-            if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(results, maxIndex)
+            if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(StepOutput(results.map { it.data }), maxIndex)
 
-            return StepStatusCanceled(results, maxIndex)
+            return StepStatusCanceled(StepOutput(results.map { it.data }), maxIndex)
         }
     }
 
@@ -116,7 +116,7 @@ sealed class Step {
         override fun stepStatusAtMessageIndex(index: WorkflowMessageIndex): StepStatus {
             val statuses = steps.map { it.stepStatusAtMessageIndex(index) }
             // if all steps are ongoing then returns StepStatusOngoing
-            if (statuses.all { it is StepStatusOngoing }) return StepStatusOngoing()
+            if (statuses.all { it is StepStatusOngoing }) return StepStatusOngoing
             // find first step not ongoing
             val minStep = statuses.minBy {
                 when (it) {
@@ -128,8 +128,8 @@ sealed class Step {
 
             return when (minStep) {
                 is StepStatusOngoing -> throw RuntimeException("This should not happen")
-                is StepStatusCompleted -> StepStatusCompleted(minStep.result, minStep.completionWorkflowMessageIndex)
-                is StepStatusCanceled -> StepStatusCanceled(minStep.result, minStep.cancellationWorkflowMessageIndex)
+                is StepStatusCompleted -> StepStatusCompleted(minStep.completionResult, minStep.completionWorkflowMessageIndex)
+                is StepStatusCanceled -> StepStatusCanceled(minStep.cancellationResult, minStep.cancellationWorkflowMessageIndex)
             }
         }
     }

@@ -5,6 +5,7 @@ import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.taskManager.common.messages.DispatchTask
+import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandStatusCompleted
 import io.infinitic.workflowManager.common.data.commands.CommandType
 import io.infinitic.workflowManager.common.data.commands.DispatchChildWorkflow
@@ -53,7 +54,7 @@ class WorkflowTaskCompletedHandler(
                     stringPosition = it.stepStringPosition,
                     step = it.step,
                     stepHash = it.stepHash,
-                    stepStatus = StepStatusOngoing()
+                    stepStatus = StepStatusOngoing
                 )
             )
         }
@@ -110,7 +111,7 @@ class WorkflowTaskCompletedHandler(
                 it.commandType == CommandType.START_ASYNC
         } as PastCommand
         // past command completed
-        pastStartAsync.commandStatus = CommandStatusCompleted(command.asyncOutput.data, currentMessageIndex)
+        pastStartAsync.commandStatus = CommandStatusCompleted(CommandOutput(command.asyncOutput.data), currentMessageIndex)
     }
 
     private suspend fun dispatchTask(methodRun: MethodRun, newCommand: NewCommand, workflowId: WorkflowId) {
@@ -137,7 +138,7 @@ class WorkflowTaskCompletedHandler(
                 commandId = newCommand.commandId,
                 commandHash = newCommand.commandHash,
                 commandSimpleName = newCommand.commandSimpleName,
-                commandStatus = CommandStatusOngoing()
+                commandStatus = CommandStatusOngoing
             )
         )
     }

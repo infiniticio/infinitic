@@ -53,7 +53,7 @@ data class PastStep(
     override val stringPosition: StringPosition,
     val step: Step,
     val stepHash: StepHash,
-    var stepStatus: StepStatus = StepStatusOngoing(),
+    var stepStatus: StepStatus = StepStatusOngoing,
     var propertiesAtTermination: Properties? = null,
     var workflowMessageIndexAtTermination: WorkflowMessageIndex? = null
 ) : PastInstruction(stringPosition) {

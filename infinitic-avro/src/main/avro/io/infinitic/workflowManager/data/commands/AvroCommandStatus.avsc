@@ -1,0 +1,27 @@
+{
+  "type": "record",
+  "name": "AvroCommandStatus",
+  "namespace": "io.infinitic.workflowManager.data.commands",
+  "fields": [
+    {
+      "name": "status",
+      "type": "string"
+    },
+    {
+      "name": "result",
+      "type":  [
+        "null",
+        "io.infinitic.taskManager.data.AvroSerializedData"
+      ],
+      "default": null
+    },
+    {
+      "name": "workflowMessageIndex",
+      "type":  [
+        "null",
+        "int"
+      ],
+      "default": null
+    }
+  ]
+}

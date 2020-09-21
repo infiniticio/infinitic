@@ -9,10 +9,7 @@
     },
     {
       "name": "step",
-      "type": [
-        "io.infinitic.workflowManager.data.steps.AvroStepId",
-        "io.infinitic.workflowManager.data.steps.AvroStepLogical"
-      ]
+      "type": "io.infinitic.workflowManager.data.steps.AvroStep"
     },
     {
       "name": "stepHash",
@@ -20,11 +17,7 @@
     },
     {
       "name": "stepStatus",
-      "type": [
-        "io.infinitic.workflowManager.data.steps.AvroStepStatusOngoing",
-        "io.infinitic.workflowManager.data.steps.AvroStepStatusCompleted",
-        "io.infinitic.workflowManager.data.steps.AvroStepStatusCanceled"
-      ]
+      "type": "io.infinitic.workflowManager.data.steps.AvroStepStatus"
     },
     {
       "name": "workflowPropertiesAfterCompletion",

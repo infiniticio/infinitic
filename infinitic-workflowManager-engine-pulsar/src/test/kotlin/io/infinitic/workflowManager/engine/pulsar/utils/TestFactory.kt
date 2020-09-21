@@ -49,7 +49,7 @@ object TestFactory {
     }
 
     fun step(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(TaskId()), CommandStatusOngoing())
+        fun getStepId() = Step.Id(CommandId(TaskId()), CommandStatusOngoing)
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

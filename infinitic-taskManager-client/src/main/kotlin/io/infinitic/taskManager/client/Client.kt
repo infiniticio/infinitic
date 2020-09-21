@@ -18,13 +18,13 @@ open class Client(open val dispatcher: Dispatcher) {
 
     /*
      * Use this method to dispatch a task
-     * TODO: using class instead of interface is not supported
      */
     suspend inline fun <reified T> dispatchTask(
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
         apply: T.() -> Any?
     ): TaskInstance {
+        // TODO: using class instead of interface is not supported (CGLIB or JavaAssist could be used)
         // get a proxy for T
         val handler = MethodProxyHandler()
 

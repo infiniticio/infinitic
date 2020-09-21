@@ -2,6 +2,7 @@ package io.infinitic.workflowManager.engine.engines.handlers
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.workflowManager.common.data.commands.CommandId
+import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandStatusCompleted
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.workflowManager.common.data.instructions.PastCommand
@@ -25,7 +26,10 @@ class TaskCompletedHandler(
         if (pastCommand.commandStatus !is CommandStatusOngoing) return
 
         // update command status
-        pastCommand.commandStatus = CommandStatusCompleted(msg.taskOutput.data, state.currentMessageIndex)
+        pastCommand.commandStatus = CommandStatusCompleted(
+            CommandOutput(msg.taskOutput.data),
+            state.currentMessageIndex
+        )
 
         // update steps
         val justCompleted = methodRun.pastInstructions

@@ -306,10 +306,6 @@ object AvroConverter {
 //         store = convertJson(avro.store)
 //     )
 
-    /**
-     *  StepCriteria
-     */
-
 //    fun toAvroStepId(obj: Step.Id): AvroStepId = when (obj) {
 //        is Step.Id -> AvroStep.newBuilder().apply {
 //            type = AvroStepType.ID

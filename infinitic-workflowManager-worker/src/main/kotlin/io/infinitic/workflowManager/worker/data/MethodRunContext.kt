@@ -45,21 +45,21 @@ class MethodRunContext(
     /*
      * Go to next position within the same branch
      */
-    fun positionNext() {
+    private fun positionNext() {
         methodPosition = methodPosition.next()
     }
 
     /*
      * Go to parent branch, this is done at the end of a async { ... } function
      */
-    fun positionUp(): Boolean {
-        methodPosition.up()?.let { methodPosition = it; return true } ?: return false
+    private fun positionUp() {
+        methodPosition.up()?.let { methodPosition = it }
     }
 
     /*
      * Go to child branch, this is done at the start of a async { ... } function
      */
-    fun positionDown() {
+    private fun positionDown() {
         methodPosition = methodPosition.down()
     }
 
@@ -218,8 +218,8 @@ class MethodRunContext(
     @Suppress("UNCHECKED_CAST")
     internal fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
         is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN: asking result of an ongoing deferred")
-        is StepStatusCompleted -> status.result as T
-        is StepStatusCanceled -> status.result as T
+        is StepStatusCompleted -> status.completionResult.data as T
+        is StepStatusCanceled -> status.cancellationResult.data as T
     }
 
     /*

@@ -1,7 +1,6 @@
 package io.infinitic.workflowManager.common.utils
 
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.workflowManager.common.data.steps.Step
@@ -23,6 +22,8 @@ object TestFactory {
         return this
     }
 
+    inline fun <reified T : Any> random(values: Map<String, Any?>? = null) = random(T::class, values)
+
     fun <T : Any> random(klass: KClass<T>, values: Map<String, Any?>? = null): T {
         // if not updated, 2 subsequents calls to this method would provide the same values
         seed++
@@ -31,10 +32,12 @@ object TestFactory {
             .seed(seed)
             .scanClasspathForConcreteTypes(true)
             .overrideDefaultInitialization(true)
+            // for "Any" parameter, provides a String
+            .randomize(Any::class.java) { Random(seed).nextPrintableString(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).nextPrintableString(10)) }
-//            .randomize(AvroStepCriterion::class.java) { AvroConverter.toAvroStepCriterion(randomStepCriterion()) }
+//            .randomize(AvroStep::class.java) { AvroConverter.toAvroStep(randomStep()) }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })
@@ -43,13 +46,13 @@ object TestFactory {
         return EasyRandom(parameters).nextObject(klass.java)
     }
 
-    fun randomStepCriterion(): Step {
-        val criteria = stepCriteria().values.toList()
-        return criteria[Random.nextInt(until = criteria.size - 1)]
+    fun randomStep(): Step {
+        val steps = steps().values.toList()
+        return steps[Random.nextInt(until = steps.size - 1)]
     }
 
-    fun stepCriteria(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(TaskId()), CommandStatusOngoing())
+    fun steps(): Map<String, Step> {
+        fun getStepId() = Step.Id(CommandId(), CommandStatusOngoing)
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()
