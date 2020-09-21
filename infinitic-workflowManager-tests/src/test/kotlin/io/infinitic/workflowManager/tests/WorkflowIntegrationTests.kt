@@ -8,6 +8,7 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
 import io.infinitic.workflowManager.worker.workflowTasks.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
@@ -21,7 +22,7 @@ private val client = dispatcher.client
 
 private lateinit var status: AvroTaskStatus
 
-class TaskIntegrationTests : StringSpec({
+class WorkflowIntegrationTests : StringSpec({
     val taskTest = TaskTestImpl()
     val workflowTask = WorkflowTaskImpl()
     val workflowA = WorkflowAImpl()
@@ -105,7 +106,7 @@ class TaskIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe "ba"
+        dispatcher.workflowOutput shouldBeIn listOf("ba", "dc", "fe")
     }
 
     "Combined And/Or step with 3 async tasks" {
@@ -117,7 +118,7 @@ class TaskIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe listOf("ba", "dc")
+        dispatcher.workflowOutput shouldBeIn listOf(listOf("ba", "dc"), "fe")
     }
 
     "And step with 3 async tasks" {
