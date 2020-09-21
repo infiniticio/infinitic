@@ -35,7 +35,7 @@ class TaskCompletedHandler(
         val justCompleted = methodRun.pastInstructions
             .filterIsInstance<PastStep>()
             .map { it.terminateBy(pastCommand, state.currentProperties) }
-            .any { it }
+            .any() // any[} must be applied only after having applied terminateBy to all elements
 
         if (justCompleted) {
             dispatchWorkflowTask(state, methodRun)
