@@ -1,10 +1,12 @@
 package io.infinitic.workflowManager.engine.avroConverter
 
 import io.infinitic.workflowManager.common.avro.AvroConverter
+import io.infinitic.workflowManager.common.data.commands.Command
 import io.infinitic.workflowManager.common.data.commands.CommandStatus
 import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.data.steps.StepStatus
 import io.infinitic.workflowManager.common.utils.TestFactory
+import io.infinitic.workflowManager.data.commands.AvroCommand
 import io.infinitic.workflowManager.data.commands.AvroCommandStatus
 import io.infinitic.workflowManager.data.steps.AvroStep
 import io.infinitic.workflowManager.data.steps.AvroStepStatus
@@ -53,6 +55,34 @@ class AvroConverterTests : ShouldSpec({
             }
         }
     }
+
+    context("Command") {
+        Command::class.sealedSubclasses.forEach {
+            should("${it.simpleName} be avro-convertible") {
+                val obj1 = TestFactory.random(it)
+                val avro1 = AvroConverter.convertJson<AvroCommand>(obj1)
+                val obj2 = AvroConverter.convertJson<Command>(avro1)
+                val avro2 = AvroConverter.convertJson<AvroCommand>(obj2)
+
+                obj1 shouldBe obj2
+                avro1 shouldBe avro2
+            }
+        }
+    }
+
+//    context("PastInstruction") {
+//        PastInstruction::class.sealedSubclasses.forEach {
+//            should("${it.simpleName} be avro-convertible") {
+//                val obj1 = TestFactory.random(it)
+//                val avro1 = AvroConverter.convertJson<AvroCommand>(obj1)
+//                val obj2 = AvroConverter.convertJson<Command>(avro1)
+//                val avro2 = AvroConverter.convertJson<AvroCommand>(obj2)
+//
+//                obj1 shouldBe obj2
+//                avro1 shouldBe avro2
+//            }
+//        }
+//    }
 
 //    context("WorkflowState") {
 //        should("should be avro-reversible") {

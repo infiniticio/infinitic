@@ -151,7 +151,7 @@ class MethodRunContext(
         positionNext()
 
         // set a new command
-        val dispatch = StartAsync()
+        val dispatch = StartAsync
         // create instruction that *may* be sent to engine
         val newCommand = NewCommand(
             command = dispatch,

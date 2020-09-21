@@ -14,7 +14,7 @@ class MethodInput(override vararg val data: Any?) : Input(data), Collection<Any?
         fun fromSerialized(serialized: List<SerializedData>) =
             MethodInput(*(serialized.map { it.deserialize() }.toTypedArray())).apply { serializedData = serialized }
 
-        fun from(m: Method, data: Array<out Any>) =
-            MethodInput(*data).apply { serializedData = getSerialized(m) }
+        fun from(method: Method, data: Array<out Any>) =
+            MethodInput(*data).apply { serializedData = getSerialized(method) }
     }
 }

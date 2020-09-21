@@ -19,7 +19,7 @@ import org.apache.avro.generic.GenericRecord
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase
 
-class AvroConsistencyTests : StringSpec({
+class AvroMessageTests : StringSpec({
     ForTaskEngineMessage::class.sealedSubclasses.forEach {
         include(checkAvroConversionToEnvelopeForTaskEngine(TestFactory.random(it)))
     }

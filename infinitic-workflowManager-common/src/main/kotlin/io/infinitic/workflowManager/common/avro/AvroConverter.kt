@@ -2,14 +2,12 @@ package io.infinitic.workflowManager.common.avro
 
 import io.infinitic.common.json.Json
 import io.infinitic.workflowManager.common.data.instructions.PastCommand
-import io.infinitic.workflowManager.common.data.instructions.StringPosition
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyHash
 import io.infinitic.workflowManager.common.data.properties.PropertyName
 import io.infinitic.workflowManager.common.data.instructions.PastStep
-import io.infinitic.workflowManager.common.data.steps.StepHash
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
@@ -336,26 +334,26 @@ object AvroConverter {
 //        null -> throw Exception("this should not happen")
 //    }
 
-    /**
-     *  Steps
-     */
-    fun toAvroPastStep(obj: PastStep): AvroPastStep = AvroPastStep.newBuilder().apply {
-        stepPosition = "${obj.stringPosition}"
-        step = convertJson(obj.step)
-        stepHash = "${obj.stepHash}"
-        stepStatus = convertJson(obj.stepStatus)
-        workflowPropertiesAfterCompletion = convertJson(obj.propertiesAtTermination)
-        completedFromWorkflowTaskIndex = convertJson(obj.workflowMessageIndexAtTermination)
-    }.build()
-
-    fun fromAvroPastStep(avro: AvroPastStep) = PastStep(
-        stringPosition = StringPosition(avro.stepPosition),
-        step = convertJson(avro.step),
-        stepHash = StepHash(avro.stepHash),
-        stepStatus = convertJson(avro.stepStatus),
-        propertiesAtTermination = convertJson(avro.workflowPropertiesAfterCompletion),
-        workflowMessageIndexAtTermination = WorkflowMessageIndex(avro.completedFromWorkflowTaskIndex)
-    )
+//    /**
+//     *  Steps
+//     */
+//    fun toAvroPastStep(obj: PastStep): AvroPastStep = AvroPastStep.newBuilder().apply {
+//        stepPosition = "${obj.stringPosition}"
+//        step = convertJson(obj.step)
+//        stepHash = "${obj.stepHash}"
+//        stepStatus = convertJson(obj.stepStatus)
+//        propertiesAtTermination = convertJson(obj.propertiesAtTermination)
+//        messageIndexAtTermination = convertJson(obj.messageIndexAtTermination)
+//    }.build()
+//
+//    fun fromAvroPastStep(avro: AvroPastStep) = PastStep(
+//        stringPosition = StringPosition(avro.stepPosition),
+//        step = convertJson(avro.step),
+//        stepHash = StepHash(avro.stepHash),
+//        stepStatus = convertJson(avro.stepStatus),
+//        propertiesAtTermination = convertJson(avro.propertiesAtTermination),
+//        messageIndexAtTermination = WorkflowMessageIndex(avro.messageIndexAtTermination)
+//    )
 
     /**
      *  Branches

@@ -13,7 +13,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
 
-class AvroConverterTests : StringSpec({
+class AvroDataTests : StringSpec({
 
     "TaskEngineState should be avro-reversible" {
         // given

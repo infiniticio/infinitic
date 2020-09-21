@@ -16,6 +16,7 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 sealed class StepStatus
 
 object StepStatusOngoing : StepStatus() {
+    // as we can not define a data class without parameter, we add manually the equals func
     override fun equals(other: Any?) = javaClass == other?.javaClass
 }
 

@@ -1,6 +1,10 @@
 package io.infinitic.workflowManager.common.data.instructions
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.workflowManager.common.data.commands.CommandHash
 import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.commands.CommandSimpleName
@@ -19,7 +23,12 @@ import io.infinitic.workflowManager.common.data.steps.StepStatusCompleted
 import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflows.WorkflowChangeCheckMode
-
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = PastCommand::class, name = "PAST_COMMAND"),
+    JsonSubTypes.Type(value = PastStep::class, name = "PAST_STEP")
+)
+@JsonIgnoreProperties(ignoreUnknown = true)
 sealed class PastInstruction(
     open val stringPosition: StringPosition
 ) {
@@ -27,6 +36,7 @@ sealed class PastInstruction(
 }
 
 data class PastCommand(
+    @JsonProperty("position")
     override val stringPosition: StringPosition,
     val commandType: CommandType,
     val commandId: CommandId,
@@ -34,6 +44,7 @@ data class PastCommand(
     val commandSimpleName: CommandSimpleName,
     var commandStatus: CommandStatus
 ) : PastInstruction(stringPosition) {
+
     @JsonIgnore
     override fun isTerminated() = this.commandStatus is CommandStatusCompleted || this.commandStatus is CommandStatusCanceled
 
@@ -50,12 +61,13 @@ data class PastCommand(
 }
 
 data class PastStep(
+    @JsonProperty("position")
     override val stringPosition: StringPosition,
     val step: Step,
     val stepHash: StepHash,
     var stepStatus: StepStatus = StepStatusOngoing,
     var propertiesAtTermination: Properties? = null,
-    var workflowMessageIndexAtTermination: WorkflowMessageIndex? = null
+    var messageIndexAtTermination: WorkflowMessageIndex? = null
 ) : PastInstruction(stringPosition) {
 
     @JsonIgnore

@@ -1,6 +1,7 @@
 package io.infinitic.workflowManager.common.data.commands
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
@@ -15,7 +16,8 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 @JsonSubTypes(
     JsonSubTypes.Type(value = DispatchTask::class, name = "DISPATCH_TASK"),
     JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
-    JsonSubTypes.Type(value = StartAsync::class, name = "DISPATCH_ASYNC_BRANCH"),
+    JsonSubTypes.Type(value = StartAsync::class, name = "START_ASYNC"),
+    JsonSubTypes.Type(value = EndAsync::class, name = "END_ASYNC"),
     JsonSubTypes.Type(value = DispatchTimer::class, name = "DISPATCH_TIMER"),
     JsonSubTypes.Type(value = DispatchReceiver::class, name = "DISPATCH_RECEIVER")
 )
@@ -28,28 +30,38 @@ sealed class Command {
  * Commands are asynchronously processed
  */
 
-class DispatchTask(
+data class DispatchTask(
+    @JsonProperty("name")
     val taskName: TaskName,
+    @JsonProperty("input")
     val taskInput: TaskInput,
+    @JsonProperty("meta")
     val taskMeta: TaskMeta
 ) : Command()
 
-class DispatchChildWorkflow(
+data class DispatchChildWorkflow(
+    @JsonProperty("name")
     val childWorkflowName: WorkflowName,
+    @JsonProperty("method")
     val childMethodName: MethodName,
+    @JsonProperty("input")
     val childMethodInput: MethodInput
 ) : Command()
 
-class StartAsync() : Command()
+object StartAsync : Command() {
+    // as we can not define a data class without parameter, we add manually the equals func
+    override fun equals(other: Any?) = javaClass == other?.javaClass
+}
 
-class EndAsync(
+data class EndAsync(
+    @JsonProperty("output")
     val asyncOutput: CommandOutput
 ) : Command()
 
-class DispatchTimer(
+data class DispatchTimer(
     val duration: Int
 ) : Command()
 
-class DispatchReceiver(
+data class DispatchReceiver(
     val klass: String
 ) : Command()

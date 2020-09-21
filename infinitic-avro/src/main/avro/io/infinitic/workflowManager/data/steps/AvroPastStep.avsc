@@ -4,7 +4,7 @@
   "namespace": "io.infinitic.workflowManager.data.steps",
   "fields": [
     {
-      "name": "stepPosition",
+      "name": "position",
       "type": "string"
     },
     {
@@ -20,14 +20,14 @@
       "type": "io.infinitic.workflowManager.data.steps.AvroStepStatus"
     },
     {
-      "name": "workflowPropertiesAfterCompletion",
+      "name": "propertiesAtTermination",
       "type": {
         "type": "map",
         "values": "string"
       }
     },
     {
-      "name": "completedFromWorkflowTaskIndex",
+      "name": "messageIndexAtTermination",
       "type": "int"
     }
   ]
