@@ -4,7 +4,7 @@
   "namespace": "io.infinitic.workflowManager.data.commands",
   "symbols": [
     "DISPATCH_TASK",
-    "DISPATCH_WORKFLOW",
+    "DISPATCH_CHILD_WORKFLOW",
     "DISPATCH_TIMER",
     "DISPATCH_RECEIVER",
     "START_ASYNC",

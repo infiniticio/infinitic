@@ -80,7 +80,7 @@ class MethodRunContext(
         val newCommand = NewCommand(
             command = dispatch,
             commandSimpleName = CommandSimpleName.fromMethod(method),
-            commandMethodPosition = methodLevel.methodPosition
+            commandPosition = methodLevel.methodPosition
         )
 
         val pastCommand = getPastCommandSimilarTo(newCommand)
@@ -105,7 +105,7 @@ class MethodRunContext(
         // create a new step
         val newStep = NewStep(
             step = deferred.step,
-            stepMethodPosition = methodLevel.methodPosition
+            stepPosition = methodLevel.methodPosition
         )
         val pastStep = getPastStepSimilarTo(newStep)
 
@@ -155,7 +155,7 @@ class MethodRunContext(
         val newCommand = NewCommand(
             command = dispatch,
             commandSimpleName = CommandSimpleName("StartAsync"),
-            commandMethodPosition = methodLevel.methodPosition
+            commandPosition = methodLevel.methodPosition
         )
 
         val pastCommand = getPastCommandSimilarTo(newCommand)
@@ -205,7 +205,7 @@ class MethodRunContext(
             val newCommand = NewCommand(
                 command = EndAsync(commandOutput),
                 commandSimpleName = CommandSimpleName("EndAsync"),
-                commandMethodPosition = methodLevel.methodPosition
+                commandPosition = methodLevel.methodPosition
             )
             newCommands.add(newCommand)
         }
@@ -233,7 +233,7 @@ class MethodRunContext(
     private fun getPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
         val pastCommand = workflowTaskInput.methodRun.pastCommands
-            .find { it.methodPosition == methodLevel.methodPosition }
+            .find { it.commandPosition == methodLevel.methodPosition }
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskInput.workflowOptions.workflowChangeCheckMode)) {
@@ -250,7 +250,7 @@ class MethodRunContext(
     private fun getPastStepSimilarTo(newStep: NewStep): PastStep? {
         // find pastCommand in current position
         val pastStep = workflowTaskInput.methodRun.pastSteps
-            .find { it.methodPosition == methodLevel.methodPosition }
+            .find { it.stepPosition == methodLevel.methodPosition }
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {

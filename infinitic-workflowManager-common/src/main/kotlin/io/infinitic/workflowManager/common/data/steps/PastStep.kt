@@ -1,15 +1,13 @@
 package io.infinitic.workflowManager.common.data.steps
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.infinitic.workflowManager.common.data.commands.PastCommand
 import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 
 data class PastStep(
-    @JsonProperty("position")
-    val methodPosition: MethodPosition,
+    val stepPosition: MethodPosition,
     val step: Step,
     val stepHash: StepHash,
     var stepStatus: StepStatus = StepStatusOngoing,

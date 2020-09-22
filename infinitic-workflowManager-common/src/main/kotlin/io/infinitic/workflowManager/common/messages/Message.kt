@@ -24,19 +24,19 @@ sealed class ForWorkflowEngineMessage(open val workflowId: WorkflowId) : Message
 
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
-    val output: MethodOutput?
+    val workflowOutput: MethodOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childOutput: MethodOutput?
+    val childWorkflowOutput: MethodOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childOutput: MethodOutput?
+    val childWorkflowOutput: MethodOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class WorkflowTaskCompleted(

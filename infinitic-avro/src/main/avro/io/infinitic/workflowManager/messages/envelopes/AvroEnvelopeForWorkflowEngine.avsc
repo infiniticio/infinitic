@@ -12,8 +12,8 @@
           "AvroCancelWorkflow",
           "AvroChildWorkflowCanceled",
           "AvroChildWorkflowCompleted",
-          "AvroDecisionCompleted",
-          "AvroDecisionDispatched",
+          "AvroWorkflowTaskCompleted",
+          "AvroWorkflowTaskDispatched",
           "AvroDelayCompleted",
           "AvroDispatchWorkflow",
           "AvroEventReceived",
@@ -55,18 +55,18 @@
       "default": null
     },
     {
-      "name": "AvroDecisionCompleted",
+      "name": "AvroWorkflowTaskCompleted",
       "type": [
         "null",
-        "io.infinitic.workflowManager.messages.AvroDecisionCompleted"
+        "io.infinitic.workflowManager.messages.AvroWorkflowTaskCompleted"
       ],
       "default": null
     },
     {
-      "name": "AvroDecisionDispatched",
+      "name": "AvroWorkflowTaskDispatched",
       "type": [
         "null",
-        "io.infinitic.workflowManager.messages.AvroDecisionDispatched"
+        "io.infinitic.workflowManager.messages.AvroWorkflowTaskDispatched"
       ],
       "default": null
     },

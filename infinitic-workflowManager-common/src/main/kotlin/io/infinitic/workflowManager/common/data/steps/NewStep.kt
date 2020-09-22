@@ -5,6 +5,6 @@ import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 data class NewStep(
     val stepId: StepId = StepId(),
     val step: Step,
-    val stepMethodPosition: MethodPosition,
+    val stepPosition: MethodPosition,
     val stepHash: StepHash = step.hash()
 )

@@ -39,7 +39,7 @@
       "default": null
     },
     {
-      "name": "currentWorkflowTaskIndex",
+      "name": "currentMessageIndex",
       "type": "int"
     },
     {

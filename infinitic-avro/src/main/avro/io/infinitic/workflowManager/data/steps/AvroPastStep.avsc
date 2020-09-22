@@ -4,7 +4,7 @@
   "namespace": "io.infinitic.workflowManager.data.steps",
   "fields": [
     {
-      "name": "position",
+      "name": "stepPosition",
       "type": "string"
     },
     {

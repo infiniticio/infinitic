@@ -13,6 +13,10 @@
       "type": "boolean"
     },
     {
+      "name": "parentWorkflowId",
+      "type": "string"
+    },
+    {
       "name": "methodName",
       "type": "io.infinitic.workflowManager.data.methodRuns.AvroMethodName"
     },
@@ -24,10 +28,16 @@
       }
     },
     {
+      "name": "methodOutput",
+      "type": [
+        "null",
+        "io.infinitic.taskManager.data.AvroSerializedData"
+      ],
+      "default": null
+    },
+    {
       "name": "messageIndexAtStart",
-      "type": {
-        "type": "int"
-      }
+      "type": "int"
     },
     {
       "name": "propertiesAtStart",

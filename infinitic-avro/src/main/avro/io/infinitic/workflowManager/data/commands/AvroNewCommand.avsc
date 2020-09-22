@@ -26,6 +26,10 @@
     {
       "name": "commandHash",
       "type": "string"
+    },
+    {
+      "name": "commandType",
+      "type": "io.infinitic.workflowManager.data.commands.AvroCommandType"
     }
   ]
 }

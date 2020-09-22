@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "AvroDecisionDispatched",
+  "name": "AvroWorkflowTaskDispatched",
   "namespace": "io.infinitic.workflowManager.messages",
   "fields": [
     {

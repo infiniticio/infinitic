@@ -51,7 +51,7 @@ class WorkflowTaskCompletedHandler(
         workflowTaskOutput.newSteps.map {
             methodRun.pastSteps.add(
                 PastStep(
-                    methodPosition = it.stepMethodPosition,
+                    stepPosition = it.stepPosition,
                     step = it.step,
                     stepHash = it.stepHash,
                     stepStatus = StepStatusOngoing
@@ -85,7 +85,7 @@ class WorkflowTaskCompletedHandler(
                     ChildWorkflowCompleted(
                         workflowId = it,
                         childWorkflowId = state.workflowId,
-                        childOutput = workflowTaskOutput.methodOutput
+                        childWorkflowOutput = workflowTaskOutput.methodOutput!!
                     )
                 )
             }
@@ -109,7 +109,7 @@ class WorkflowTaskCompletedHandler(
         val command = newCommand.command as EndAsync
         // look for previous Start Async command
         val pastStartAsync = methodRun.pastCommands.first {
-            it.methodPosition == newCommand.commandMethodPosition && it.commandType == CommandType.START_ASYNC
+            it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
         }
         // past command completed
         pastStartAsync.commandStatus = CommandStatusCompleted(CommandOutput(command.asyncOutput.data), currentMessageIndex)
@@ -134,7 +134,7 @@ class WorkflowTaskCompletedHandler(
     private fun addPastCommand(methodRun: MethodRun, newCommand: NewCommand) {
         methodRun.pastCommands.add(
             PastCommand(
-                methodPosition = newCommand.commandMethodPosition,
+                commandPosition = newCommand.commandPosition,
                 commandType = newCommand.commandType,
                 commandId = newCommand.commandId,
                 commandHash = newCommand.commandHash,

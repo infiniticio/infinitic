@@ -1,13 +1,11 @@
 package io.infinitic.workflowManager.common.data.commands
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 import io.infinitic.workflowManager.common.data.workflows.WorkflowChangeCheckMode
 
 data class PastCommand(
-    @JsonProperty("position")
-    val methodPosition: MethodPosition,
+    val commandPosition: MethodPosition,
     val commandType: CommandType,
     val commandId: CommandId,
     val commandHash: CommandHash,
@@ -19,7 +17,7 @@ data class PastCommand(
     fun isTerminated() = this.commandStatus is CommandStatusCompleted || this.commandStatus is CommandStatusCanceled
 
     fun isSimilarTo(newCommand: NewCommand, mode: WorkflowChangeCheckMode): Boolean =
-        newCommand.commandMethodPosition == methodPosition &&
+        newCommand.commandPosition == commandPosition &&
             when (mode) {
                 WorkflowChangeCheckMode.NONE ->
                     true

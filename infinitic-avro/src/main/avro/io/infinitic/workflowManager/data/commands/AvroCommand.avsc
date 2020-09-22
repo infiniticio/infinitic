@@ -5,7 +5,7 @@
   "fields": [
     {
       "name": "type",
-      "type": "string"
+      "type": "io.infinitic.workflowManager.data.commands.AvroCommandType"
     },
     {
       "name": "name",
