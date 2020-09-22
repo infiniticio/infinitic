@@ -1,6 +1,0 @@
-{
-  "type": "record",
-  "name": "AvroCommandStartAsync",
-  "namespace": "io.infinitic.workflowManager.data.commands",
-  "fields": []
-}

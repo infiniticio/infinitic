@@ -9,13 +9,7 @@
     },
     {
       "name": "command",
-      "type": [
-        "io.infinitic.workflowManager.data.commands.AvroCommandDispatchTask",
-        "io.infinitic.workflowManager.data.commands.AvroCommandDispatchWorkflow",
-        "io.infinitic.workflowManager.data.commands.AvroCommandDispatchTimer",
-        "io.infinitic.workflowManager.data.commands.AvroCommandDispatchReceiver",
-        "io.infinitic.workflowManager.data.commands.AvroCommandStartAsync"
-      ]
+      "type": "io.infinitic.workflowManager.data.commands.AvroCommand"
     },
     {
       "name": "commandSimpleName",

@@ -9,10 +9,7 @@
     },
     {
       "name": "step",
-      "type": [
-        "io.infinitic.workflowManager.data.steps.AvroStepId",
-        "io.infinitic.workflowManager.data.steps.AvroStepLogical"
-      ]
+      "type": "io.infinitic.workflowManager.data.steps.AvroStep"
     },
     {
       "name": "stepPosition",
