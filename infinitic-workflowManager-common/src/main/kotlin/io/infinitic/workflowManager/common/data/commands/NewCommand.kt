@@ -7,13 +7,15 @@ data class NewCommand(
     val command: Command,
     val commandSimpleName: CommandSimpleName,
     val commandStringPosition: StringPosition,
-    val commandStatus: CommandStatus = CommandStatusOngoing(),
+    val commandStatus: CommandStatus = CommandStatusOngoing,
+    val commandHash: CommandHash = command.hash()
+) {
     val commandType: CommandType = when (command) {
         is DispatchTask -> CommandType.DISPATCH_TASK
         is DispatchChildWorkflow -> CommandType.DISPATCH_WORKFLOW
         is DispatchTimer -> CommandType.DISPATCH_TIMER
         is DispatchReceiver -> CommandType.DISPATCH_RECEIVER
         is StartAsync -> CommandType.START_ASYNC
-    },
-    val commandHash: CommandHash = command.hash()
-)
+        is EndAsync -> CommandType.END_ASYNC
+    }
+}

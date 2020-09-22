@@ -1,11 +1,92 @@
 package io.infinitic.workflowManager.engine.avroConverter
 
+import io.infinitic.workflowManager.common.avro.AvroConverter
+import io.infinitic.workflowManager.common.data.commands.Command
+import io.infinitic.workflowManager.common.data.commands.CommandStatus
+import io.infinitic.workflowManager.common.data.steps.Step
+import io.infinitic.workflowManager.common.data.steps.StepStatus
+import io.infinitic.workflowManager.common.utils.TestFactory
+import io.infinitic.workflowManager.data.commands.AvroCommand
+import io.infinitic.workflowManager.data.commands.AvroCommandStatus
+import io.infinitic.workflowManager.data.steps.AvroStep
+import io.infinitic.workflowManager.data.steps.AvroStepStatus
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 
 class AvroConverterTests : ShouldSpec({
-//    context("WorkflowStateEngine") {
+    context("CommandStatus") {
+        CommandStatus::class.sealedSubclasses.forEach {
+            should("${it.simpleName} be avro-reversible") {
+                val obj1 = TestFactory.random(it)
+                val avro1 = AvroConverter.convertJson<AvroCommandStatus>(obj1)
+                val obj2 = AvroConverter.convertJson<CommandStatus>(avro1)
+                val avro2 = AvroConverter.convertJson<AvroCommandStatus>(obj2)
+
+                obj1 shouldBe obj2
+                avro1 shouldBe avro2
+            }
+        }
+    }
+
+    context("StepStatus") {
+        StepStatus::class.sealedSubclasses.forEach {
+            should("${it.simpleName} be avro-reversible") {
+                val obj1 = TestFactory.random(it)
+                val avro1 = AvroConverter.convertJson<AvroStepStatus>(obj1)
+                val obj2 = AvroConverter.convertJson<StepStatus>(avro1)
+                val avro2 = AvroConverter.convertJson<AvroStepStatus>(obj2)
+
+                obj1 shouldBe obj2
+                avro1 shouldBe avro2
+            }
+        }
+    }
+
+    context("Step") {
+        TestFactory.steps().forEach {
+            val obj1 = it.value
+            should("${it.key} be avro-convertible") {
+                val avro1 = AvroConverter.convertJson<AvroStep>(obj1)
+                val obj2 = AvroConverter.convertJson<Step>(avro1)
+                val avro2 = AvroConverter.convertJson<AvroStep>(obj2)
+
+                obj1 shouldBe obj2
+                avro1 shouldBe avro2
+            }
+        }
+    }
+
+    context("Command") {
+        Command::class.sealedSubclasses.forEach {
+            should("${it.simpleName} be avro-convertible") {
+                val obj1 = TestFactory.random(it)
+                val avro1 = AvroConverter.convertJson<AvroCommand>(obj1)
+                val obj2 = AvroConverter.convertJson<Command>(avro1)
+                val avro2 = AvroConverter.convertJson<AvroCommand>(obj2)
+
+                obj1 shouldBe obj2
+                avro1 shouldBe avro2
+            }
+        }
+    }
+
+//    context("PastInstruction") {
+//        PastInstruction::class.sealedSubclasses.forEach {
+//            should("${it.simpleName} be avro-convertible") {
+//                val obj1 = TestFactory.random(it)
+//                val avro1 = AvroConverter.convertJson<AvroCommand>(obj1)
+//                val obj2 = AvroConverter.convertJson<Command>(avro1)
+//                val avro2 = AvroConverter.convertJson<AvroCommand>(obj2)
+//
+//                obj1 shouldBe obj2
+//                avro1 shouldBe avro2
+//            }
+//        }
+//    }
+
+//    context("WorkflowState") {
 //        should("should be avro-reversible") {
-//            val o1 = TestFactory.random(WorkflowEngineState::class)
+//            val o1 = TestFactory.random(WorkflowState::class)
 //            val o2 = AvroConverter.toStorage(o1)
 //            val o3 = AvroConverter.fromStorage(o2)
 //            val o4 = AvroConverter.toStorage(o3)
@@ -54,19 +135,7 @@ class AvroConverterTests : ShouldSpec({
 //        }
 //    }
 //
-//    context("StepCriterion") {
-//        TestFactory.stepCriteria().forEach {
-//            val description = it.key
-//            val o1 = it.value
-//            should("$description should be avro-convertible") {
-//                val o2 = AvroConverter.toAvroStepCriterion(o1)
-//                val o3 = AvroConverter.fromAvroStepCriterion(o2)
-//                val o4 = AvroConverter.toAvroStepCriterion(o3)
-//                o1 shouldBe o3
-//                o2 shouldBe o4
-//            }
-//        }
-//    }
+//
 //
 //    ForWorkflowEngineMessage::class.sealedSubclasses.forEach {
 //        val msg = TestFactory.random(it)

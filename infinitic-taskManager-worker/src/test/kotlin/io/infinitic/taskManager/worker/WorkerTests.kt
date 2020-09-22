@@ -3,7 +3,6 @@
 package io.infinitic.taskManager.worker
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.taskManager.common.data.TaskAttemptContext
 import io.infinitic.taskManager.common.data.TaskAttemptId
 import io.infinitic.taskManager.common.data.TaskAttemptIndex
 import io.infinitic.taskManager.common.data.TaskAttemptRetry

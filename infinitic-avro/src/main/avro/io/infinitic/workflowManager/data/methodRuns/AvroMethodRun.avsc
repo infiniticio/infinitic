@@ -9,6 +9,10 @@
       "logicalType": "uuid"
     },
     {
+      "name": "isMain",
+      "type": "boolean"
+    },
+    {
       "name": "methodName",
       "type": "io.infinitic.workflowManager.data.methodRuns.AvroMethodName"
     },
@@ -17,6 +21,12 @@
       "type": {
         "type": "array",
         "items": "io.infinitic.taskManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "messageIndexAtStart",
+      "type": {
+        "type": "int"
       }
     },
     {

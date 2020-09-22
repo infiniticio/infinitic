@@ -15,16 +15,8 @@ import java.lang.reflect.Proxy
 import io.infinitic.taskManager.client.Client as TaskClient
 
 class Client(
-    val taskDispatcher: Dispatcher,
-    val workflowDispatcher: WorkflowDispatcher
-) : TaskClient(taskDispatcher) {
-
-//    /*
-//     * Use this method to provide an actual implementation of AvroWorkflowDispatcher
-//     */
-//    fun setWorkflowDispatcher(avroDispatcher: AvroWorkflowDispatcher) {
-//        workflowDispatcher = WorkflowDispatcher(avroDispatcher)
-//    }
+    override val dispatcher: Dispatcher
+) : TaskClient(dispatcher) {
 
     /*
      * Use this method to dispatch a task
@@ -58,7 +50,7 @@ class Client(
             workflowMeta = meta,
             workflowOptions = options
         )
-        workflowDispatcher.toWorkflowEngine(msg)
+        dispatcher.toWorkflowEngine(msg)
 
         return WorkflowInstance(msg.workflowId)
     }

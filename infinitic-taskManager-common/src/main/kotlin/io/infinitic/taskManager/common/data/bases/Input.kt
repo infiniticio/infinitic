@@ -1,5 +1,6 @@
 package io.infinitic.taskManager.common.data.bases
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.exceptions.ErrorDuringJsonDeserializationOfParameter
@@ -15,7 +16,7 @@ abstract class Input(open vararg val data: Any?) {
             serialized.map { it.deserialize() }.toTypedArray()
     }
 
-    fun getSerialized(method: Method? = null) = when {
+    @JsonIgnore fun getSerialized(method: Method? = null) = when {
         this::serializedData.isInitialized -> serializedData
         method == null -> data.map { SerializedData.from(it) }
         else -> data.mapIndexed { index, value ->
@@ -56,11 +57,11 @@ abstract class Input(open vararg val data: Any?) {
         return data
     }
 
-    override fun hashCode(): Int {
+    final override fun hashCode(): Int {
         return data.contentHashCode()
     }
 
-    override fun equals(other: Any?): Boolean {
+    final override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 

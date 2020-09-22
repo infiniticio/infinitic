@@ -1,6 +1,7 @@
 package io.infinitic.workflowManager.worker.deferred
 
 import io.infinitic.workflowManager.common.data.steps.Step
+import io.infinitic.workflowManager.common.data.steps.StepStatus
 import io.infinitic.workflowManager.common.exceptions.MixingDeferredFromDifferentWorkflowMethodExecution
 import io.infinitic.workflowManager.worker.data.MethodRunContext
 
@@ -8,6 +9,7 @@ data class Deferred<out T>(
     internal val step: Step,
     internal val methodRunContext: MethodRunContext
 ) {
+    internal lateinit var stepStatus: StepStatus
 
     fun await(): Deferred<T> = methodRunContext.await(this)
 

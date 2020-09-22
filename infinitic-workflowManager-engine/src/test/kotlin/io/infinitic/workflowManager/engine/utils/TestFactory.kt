@@ -3,8 +3,8 @@ package io.infinitic.workflowManager.engine.utils
 import io.infinitic.common.data.SerializedData
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.workflowManager.common.data.commands.CommandId
+import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.workflowManager.common.data.steps.Step
-import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random
@@ -49,7 +49,7 @@ object TestFactory {
     }
 
     fun stepCriteria(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(TaskId())) { StepStatusOngoing() }
+        fun getStepId() = Step.Id(CommandId(TaskId()), CommandStatusOngoing)
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

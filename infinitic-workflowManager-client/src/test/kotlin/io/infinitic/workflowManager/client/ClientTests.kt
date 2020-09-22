@@ -25,15 +25,15 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTests : StringSpec({
-    val taskDispatcher = mockk<Dispatcher>()
+    val dispatcher = mockk<Dispatcher>()
+
     val taskSlot = slot<ForTaskEngineMessage>()
-    coEvery { taskDispatcher.toTaskEngine(capture(taskSlot)) } just Runs
+    coEvery { dispatcher.toTaskEngine(capture(taskSlot)) } just Runs
 
-    val workflowDispatcher = mockk<WorkflowDispatcher>()
     val workflowSlot = slot<ForWorkflowEngineMessage>()
-    coEvery { workflowDispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
+    coEvery { dispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
 
-    val client = Client(taskDispatcher, workflowDispatcher)
+    val client = Client(dispatcher)
 
     beforeTest {
         taskSlot.clear()

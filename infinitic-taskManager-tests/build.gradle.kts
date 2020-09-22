@@ -6,17 +6,18 @@ plugins {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.apache.avro:avro:1.9.+")
+    implementation("org.apache.avro:avro:1.10.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     testImplementation(project(":infinitic-avro"))
+    testImplementation(project(":infinitic-messaging-api"))
+    testImplementation(project(":infinitic-storage-pulsar"))
     testImplementation(project(":infinitic-taskManager-common"))
     testImplementation(project(":infinitic-taskManager-engine"))
     testImplementation(project(":infinitic-taskManager-client"))
     testImplementation(project(":infinitic-taskManager-worker"))
-    testImplementation(project(":infinitic-messaging-api"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     testImplementation("org.jeasy:easy-random-core:4.2.+")

@@ -7,6 +7,7 @@ import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlob
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.api.PulsarClient
@@ -23,12 +24,18 @@ open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCom
         return this
     }
 
-    override suspend fun toWorkers(msg: AvroEnvelopeForWorker) {
+    override suspend fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine, after: Float) {
         withContext(Dispatchers.IO) {
-            wrapper
-                .newMessage(Topic.WORKERS.get(prefix, msg.taskName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
+            val messageBuilder = wrapper
+                .newMessage(Topic.WORKFLOW_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForWorkflowEngine::class.java))
+                .key(msg.workflowId)
                 .value(msg)
-                .send()
+
+            if (after > 0F) {
+                messageBuilder.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
+            }
+
+            messageBuilder.send()
         }
     }
 
@@ -61,6 +68,15 @@ open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCom
             wrapper
                 .newMessage(Topic.MONITORING_PER_NAME.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java))
                 .key(msg.taskName)
+                .value(msg)
+                .send()
+        }
+    }
+
+    override suspend fun toWorkers(msg: AvroEnvelopeForWorker) {
+        withContext(Dispatchers.IO) {
+            wrapper
+                .newMessage(Topic.WORKERS.get(prefix, msg.taskName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
                 .value(msg)
                 .send()
         }

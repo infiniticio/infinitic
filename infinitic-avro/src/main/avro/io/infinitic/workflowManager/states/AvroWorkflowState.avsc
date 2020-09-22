@@ -20,6 +20,14 @@
       "default": null
     },
     {
+      "name": "workflowName",
+      "type": "string"
+    },
+    {
+      "name": "workflowOptions",
+      "type": "io.infinitic.workflowManager.data.workflows.AvroWorkflowOptions"
+    },
+    {
       "name": "currentWorkflowTaskId",
       "type": [
         "null",

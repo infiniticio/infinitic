@@ -3,7 +3,6 @@ package io.infinitic.taskManager.worker
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
-import io.infinitic.taskManager.common.data.TaskAttemptContext
 import io.infinitic.taskManager.common.data.TaskAttemptError
 import io.infinitic.taskManager.common.data.TaskOutput
 import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
@@ -35,7 +34,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-open class Worker(val workerDispatcher: Dispatcher) {
+open class Worker(val dispatcher: Dispatcher) {
 
     companion object {
 
@@ -77,80 +76,93 @@ open class Worker(val workerDispatcher: Dispatcher) {
         is RunTask -> runTask(message)
     }
 
-    suspend fun runTask(msg: RunTask) = withContext(Dispatchers.Default) {
-        // let engine know that we are processing the message
-        sendTaskStarted(msg)
+    suspend fun runTask(msg: RunTask) {
+        val worker = this
 
-        // trying to instantiate the task
-        val (task, method, parameters, options) = try {
-            parse(msg)
-        } catch (e: Exception) {
-            // returning the exception (no retry)
-            sendTaskFailed(msg, e, null)
-            // we stop here
-            return@withContext
-        }
+        withContext(Dispatchers.Default) {
+            // let engine know that we are processing the message
+            sendTaskStarted(msg)
 
-        val taskAttemptContext = TaskAttemptContext(
-            taskId = msg.taskId,
-            taskAttemptId = msg.taskAttemptId,
-            taskAttemptIndex = msg.taskAttemptIndex,
-            taskAttemptRetry = msg.taskAttemptRetry,
-            taskMeta = msg.taskMeta,
-            taskOptions = msg.taskOptions
-        )
+            // trying to instantiate the task
+            val (task, method, parameters, options) = try {
+                parse(msg)
+            } catch (e: Exception) {
+                // returning the exception (no retry)
+                sendTaskFailed(msg, e, null)
+                // we stop here
+                return@withContext
+            }
 
-        // set taskAttemptContext into task (if a property with right type is present)
-        try {
-            setTaskTaskContext(task, taskAttemptContext)
-        } catch (e: Exception) {
-            // returning the exception (no retry)
-            sendTaskFailed(msg, e, null)
-            // we stop here
-            return@withContext
-        }
+            val taskAttemptContext = TaskAttemptContext(
+                worker = worker,
+                taskId = msg.taskId,
+                taskAttemptId = msg.taskAttemptId,
+                taskAttemptIndex = msg.taskAttemptIndex,
+                taskAttemptRetry = msg.taskAttemptRetry,
+                taskMeta = msg.taskMeta,
+                taskOptions = msg.taskOptions
+            )
 
-        val scope = CoroutineScope(coroutineContext + Job())
-        // running timeout delay if needed
-        if (options.runningTimeout != null && options.runningTimeout!! > 0F) {
-            scope.launch {
-                delay((1000 * options.runningTimeout!!).toLong())
+            // set taskAttemptContext into task (if a property with right type is present)
+            try {
+                setTaskContext(task, taskAttemptContext)
+            } catch (e: Exception) {
+                // returning the exception (no retry)
+                sendTaskFailed(msg, e, null)
+                // we stop here
+                return@withContext
+            }
+
+            val scope = CoroutineScope(coroutineContext + Job())
+            // running timeout delay if needed
+            if (options.runningTimeout != null && options.runningTimeout!! > 0F) {
+                scope.launch {
+                    delay((1000 * options.runningTimeout!!).toLong())
+                    ensureActive()
+                    // update context with the cause (to be potentially used in getRetryDelay method)
+                    taskAttemptContext.exception = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
+                    // returning a timeout
+                    getRetryDelayAndFailTask(task, msg, taskAttemptContext)
+                    // cancel everything else
+                    scope.cancel()
+                }
+            }
+
+            val taskJob = scope.async {
+                val output = method.invoke(task, *parameters)
                 ensureActive()
-                // update context with the cause (to be potentially used in getRetryDelay method)
-                taskAttemptContext.exception = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
-                // returning a timeout
-                getRetryDelayAndFailTask(task, msg, taskAttemptContext)
+                sendTaskCompleted(msg, output)
                 // cancel everything else
                 scope.cancel()
             }
-        }
 
-        val taskJob = scope.async {
-            val output = method.invoke(task, *parameters)
-            ensureActive()
-            sendTaskCompleted(msg, output)
-            // cancel everything else
-            scope.cancel()
-        }
-
-        try {
-            taskJob.await()
-        } catch (e: InvocationTargetException) {
-            // update context with the cause (to be potentially used in getRetryDelay method)
-            taskAttemptContext.exception = e.cause
-            // retrieve delay before retry
-            getRetryDelayAndFailTask(task, msg, taskAttemptContext)
-        } catch (e: CancellationException) {
-            // Do nothing as the failure is already reported by the timeout coroutine when cancel happens
-        } catch (e: Exception) {
-            // returning the exception (no retry)
-            sendTaskFailed(msg, e, null)
-        } finally {
-            scope.coroutineContext[Job]?.join()
+            try {
+                taskJob.await()
+            } catch (e: InvocationTargetException) {
+                // update context with the cause (to be potentially used in getRetryDelay method)
+                taskAttemptContext.exception = e.cause
+                // retrieve delay before retry
+                getRetryDelayAndFailTask(task, msg, taskAttemptContext)
+            } catch (e: CancellationException) {
+                // Do nothing as the failure is already reported by the timeout coroutine when cancel happens
+            } catch (e: Exception) {
+                // returning the exception (no retry)
+                sendTaskFailed(msg, e, null)
+            } finally {
+                scope.coroutineContext[Job]?.join()
+            }
         }
     }
 
-    private fun setTaskTaskContext(task: Any, context: TaskAttemptContext) {
+    fun getTaskInstance(name: String): Any {
+        // return registered instance if any
+        if (registeredTasks.containsKey(name)) return registeredTasks[name]!!
+
+        // if no instance is registered, try to instantiate this task
+        return getNewInstancePerName(name)
+    }
+
+    private fun setTaskContext(task: Any, context: TaskAttemptContext) {
         task::class.memberProperties.find {
             it.returnType.javaType.typeName == TaskAttemptContext::class.java.name
         }?.javaField?.apply {
@@ -196,14 +208,6 @@ open class Worker(val workerDispatcher: Dispatcher) {
         }
     }
 
-    private fun getTaskInstance(name: String): Any {
-        // return registered instance if any
-        if (registeredTasks.containsKey(name)) return registeredTasks[name]!!
-
-        // if no instance is registered, try to instantiate this task
-        return getNewInstancePerName(name)
-    }
-
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
     private fun getDelayBeforeRetry(task: Any): RetryDelay {
         val method = try {
@@ -233,10 +237,12 @@ open class Worker(val workerDispatcher: Dispatcher) {
             taskAttemptIndex = msg.taskAttemptIndex
         )
 
-        workerDispatcher.toTaskEngine(taskAttemptStarted)
+        dispatcher.toTaskEngine(taskAttemptStarted)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
+        println("!! Exception in Worker: ")
+        println(error)
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
@@ -246,7 +252,7 @@ open class Worker(val workerDispatcher: Dispatcher) {
             taskAttemptError = TaskAttemptError(error)
         )
 
-        workerDispatcher.toTaskEngine(taskAttemptFailed)
+        dispatcher.toTaskEngine(taskAttemptFailed)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -258,6 +264,6 @@ open class Worker(val workerDispatcher: Dispatcher) {
             taskOutput = TaskOutput(output)
         )
 
-        workerDispatcher.toTaskEngine(taskAttemptCompleted)
+        dispatcher.toTaskEngine(taskAttemptCompleted)
     }
 }

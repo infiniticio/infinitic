@@ -2,8 +2,8 @@ package io.infinitic.workflowManager.pulsar.utils
 
 import io.infinitic.taskManager.common.data.TaskId
 import io.infinitic.workflowManager.common.data.commands.CommandId
+import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.workflowManager.common.data.steps.Step
-import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
@@ -44,12 +44,12 @@ object TestFactory {
     }
 
     fun randomStepCriterion(): Step {
-        val criteria = stepCriteria().values.toList()
-        return criteria[Random.nextInt(until = criteria.size - 1)]
+        val steps = step().values.toList()
+        return steps[Random.nextInt(until = steps.size - 1)]
     }
 
-    fun stepCriteria(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(TaskId())) { StepStatusOngoing() }
+    fun step(): Map<String, Step> {
+        fun getStepId() = Step.Id(CommandId(TaskId()), CommandStatusOngoing)
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

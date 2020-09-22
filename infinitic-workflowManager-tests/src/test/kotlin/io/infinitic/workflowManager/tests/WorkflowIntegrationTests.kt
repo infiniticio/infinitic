@@ -1,89 +1,135 @@
 package io.infinitic.workflowManager.tests
 
-import io.infinitic.taskManager.common.avro.AvroConverter as TaskAvroConverter
 import io.infinitic.taskManager.data.AvroTaskStatus
-import io.infinitic.taskManager.engine.engines.MonitoringGlobal
-import io.infinitic.taskManager.engine.engines.MonitoringPerName
-import io.infinitic.taskManager.engine.engines.TaskEngine
-import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcher
-import io.infinitic.taskManager.tests.inMemory.InMemoryStorage
+import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
+import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.taskManager.worker.Worker
-import io.infinitic.workflowManager.common.avro.AvroConverter as WorkflowAvroConverter
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
-import io.infinitic.workflowManager.engine.dispatcher.Dispatcher as WorkflowEngineDispatcher
-import io.infinitic.workflowManager.engine.engines.WorkflowEngine
-import io.infinitic.workflowManager.worker.WorkflowTaskImpl
+import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
+import io.infinitic.workflowManager.worker.workflowTasks.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.shouldBe
 import io.mockk.mockk
+import kotlinx.coroutines.coroutineScope
 import org.slf4j.Logger
 
 private val mockLogger = mockk<Logger>(relaxed = true)
 
-private val dispatcher = InMemoryDispatcher()
-private val storage = InMemoryStorage()
-
-private val testAvroDispatcher = InMemoryDispatcher()
-private val testTaskDispatcher = io.infinitic.messaging.api.dispatcher.InMemoryDispatcher()
-private val testWorkflowDispatcher = WorkflowEngineDispatcher(testAvroDispatcher)
-private val testStorage = InMemoryStorage()
-
-private val client = io.infinitic.taskManager.client.Client(testTaskDispatcher)
-private val worker = Worker(testTaskDispatcher)
-private val taskEngine = TaskEngine(testStorage, testTaskDispatcher)
-private val monitoringPerName = MonitoringPerName(testStorage, testTaskDispatcher)
-private val monitoringGlobal = MonitoringGlobal(testStorage)
-
-private val workflowEngine = WorkflowEngine(testStorage, testWorkflowDispatcher)
+private val storage = InMemoryStorageTest()
+private val dispatcher = InMemoryDispatcherTest(storage)
+private val client = dispatcher.client
 
 private lateinit var status: AvroTaskStatus
 
-class TaskIntegrationTests : StringSpec({
+class WorkflowIntegrationTests : StringSpec({
     val taskTest = TaskTestImpl()
     val workflowTask = WorkflowTaskImpl()
+    val workflowA = WorkflowAImpl()
     Worker.register<TaskTest>(taskTest)
-    Worker.register<WorkflowTaskImpl>(workflowTask)
+    Worker.register<WorkflowTask>(workflowTask)
+    Worker.register<WorkflowA>(workflowA)
+
     var workflowInstance: WorkflowInstance
 
     beforeTest {
         storage.reset()
-        TaskTestImpl.log = ""
+        dispatcher.reset()
     }
 
-//    "Task succeeds at first try" {
-//        // run system
-//        coroutineScope {
-//            dispatcher.scope = this
-//            workflowInstance = client.dispatchWorkflow<WorkflowAImpl> { test1() }
-//        }
-//        // check that task is terminated
-//        storage.isTerminated(workflowInstance) shouldBe true
-//        // checks number of task processing
-//        TaskTestImpl.log shouldBe "11"
-//    }
-}) {
-    init {
-        dispatcher.apply {
-            workflowEngineHandle = {
-                workflowEngine.handle(WorkflowAvroConverter.fromWorkflowEngine(it))
-            }
-            taskEngineHandle =
-                {
-                    taskEngine.handle(TaskAvroConverter.fromTaskEngine(it))
-                }
-            monitoringPerNameHandle =
-                { avro ->
-                    monitoringPerName.handle(TaskAvroConverter.fromMonitoringPerName(avro))
-                    // update test status
-                    avro.taskStatusUpdated?.let { status = it.newStatus }
-                }
-            monitoringGlobalHandle =
-                {
-                    monitoringGlobal.handle(TaskAvroConverter.fromMonitoringGlobal(it))
-                }
-            workerHandle =
-                {
-                    worker.handle(it)
-                }
+    "empty Workflow" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { empty() }
         }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe "void"
     }
-}
+
+    "Simple Sequential Workflow" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq1() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe "123"
+    }
+
+    "Sequential Workflow with an async task" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq2() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe "23ba"
+    }
+
+    "Sequential Workflow with an async branch" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq3() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe "23ba"
+    }
+
+    "Sequential Workflow with an async branch with 2 tasks" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq4() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe "23bac"
+    }
+
+    "Or step with 3 async tasks" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { or1() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBeIn listOf("ba", "dc", "fe")
+    }
+
+    "Combined And/Or step with 3 async tasks" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { or2() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBeIn listOf(listOf("ba", "dc"), "fe")
+    }
+
+    "And step with 3 async tasks" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { and1() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe listOf("ba", "dc", "fe")
+    }
+})

@@ -12,6 +12,7 @@ public fun getNewInstancePerName(name: String): Any {
     return try {
         klass.newInstance()
     } catch (e: Exception) {
+        println(e.cause)
         throw ErrorDuringInstantiation(name)
     }
 }

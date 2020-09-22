@@ -27,11 +27,7 @@
     },
     {
       "name": "commandStatus",
-      "type": [
-        "io.infinitic.workflowManager.data.commands.AvroCommandStatusOngoing",
-        "io.infinitic.workflowManager.data.commands.AvroCommandStatusCompleted",
-        "io.infinitic.workflowManager.data.commands.AvroCommandStatusCanceled"
-      ]
+      "type": "io.infinitic.workflowManager.data.commands.AvroCommandStatus"
     },
     {
       "name": "commandHash",

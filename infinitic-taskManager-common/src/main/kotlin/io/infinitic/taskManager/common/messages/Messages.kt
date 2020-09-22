@@ -38,7 +38,7 @@ data class DispatchTask(
     val taskName: TaskName,
     val taskInput: TaskInput,
     val taskMeta: TaskMeta,
-    val taskOptions: TaskOptions
+    val taskOptions: TaskOptions = TaskOptions()
 ) : ForTaskEngineMessage(taskId)
 
 data class TaskAttemptCompleted(
@@ -80,6 +80,7 @@ data class TaskCanceled(
 
 data class TaskCompleted(
     override val taskId: TaskId,
+    val taskName: TaskName,
     val taskOutput: TaskOutput,
     val taskMeta: TaskMeta
 ) : ForTaskEngineMessage(taskId)

@@ -1,9 +1,6 @@
 plugins {
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
-
-    // Apply the java-library plugin for API and implementation separation.
-    `java-library`
 }
 
 dependencies {
@@ -16,6 +13,7 @@ dependencies {
 
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-taskManager-common"))
+    implementation(project(":infinitic-taskManager-worker"))
     implementation(project(":infinitic-workflowManager-common"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
