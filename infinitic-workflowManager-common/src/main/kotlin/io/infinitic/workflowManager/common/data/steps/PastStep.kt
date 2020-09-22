@@ -21,7 +21,7 @@ data class PastStep(
     fun terminateBy(pastCommand: PastCommand, properties: Properties): Boolean {
         if (isTerminated()) return false
 
-        step.updateWith(pastCommand)
+        step.update(pastCommand.commandId, pastCommand.commandStatus)
         stepStatus = step.stepStatus()
         return when (stepStatus) {
             is StepStatusOngoing -> false

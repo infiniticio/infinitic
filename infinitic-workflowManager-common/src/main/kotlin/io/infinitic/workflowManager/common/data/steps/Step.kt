@@ -137,11 +137,11 @@ sealed class Step {
     /*
      * Used in engine to update a step after having cancelled or completed a command
      */
-    fun updateWith(pastCommand: PastCommand): Step {
+    fun update(commandId: CommandId, commandStatus: CommandStatus): Step {
         when (this) {
-            is Id -> if (this.commandId == pastCommand.commandId) this.commandStatus = pastCommand.commandStatus
-            is And -> this.steps = this.steps.map { s -> s.updateWith(pastCommand) }
-            is Or -> this.steps = this.steps.map { s -> s.updateWith(pastCommand) }
+            is Id -> if (this.commandId == commandId) this.commandStatus = commandStatus
+            is And -> this.steps = this.steps.map { s -> s.update(commandId, commandStatus) }
+            is Or -> this.steps = this.steps.map { s -> s.update(commandId, commandStatus) }
         }
         return this.resolveOr().compose()
     }
