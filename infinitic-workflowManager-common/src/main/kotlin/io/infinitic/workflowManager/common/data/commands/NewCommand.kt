@@ -1,12 +1,12 @@
 package io.infinitic.workflowManager.common.data.commands
 
-import io.infinitic.workflowManager.common.data.instructions.StringPosition
+import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
 
 data class NewCommand(
     val commandId: CommandId = CommandId(),
     val command: Command,
     val commandSimpleName: CommandSimpleName,
-    val commandStringPosition: StringPosition,
+    val commandMethodPosition: MethodPosition,
     val commandStatus: CommandStatus = CommandStatusOngoing,
     val commandHash: CommandHash = command.hash()
 ) {

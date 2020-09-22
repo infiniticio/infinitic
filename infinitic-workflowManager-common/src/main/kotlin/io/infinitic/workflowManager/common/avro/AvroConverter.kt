@@ -1,13 +1,12 @@
 package io.infinitic.workflowManager.common.avro
 
 import io.infinitic.common.json.Json
-import io.infinitic.workflowManager.common.data.instructions.PastCommand
+import io.infinitic.workflowManager.common.data.commands.PastCommand
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyHash
 import io.infinitic.workflowManager.common.data.properties.PropertyName
-import io.infinitic.workflowManager.common.data.instructions.PastStep
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
@@ -29,6 +28,7 @@ import io.infinitic.workflowManager.common.messages.TaskDispatched
 import io.infinitic.workflowManager.common.messages.WorkflowCanceled
 import io.infinitic.workflowManager.common.messages.WorkflowCompleted
 import io.infinitic.workflowManager.common.data.states.WorkflowState
+import io.infinitic.workflowManager.common.data.steps.PastStep
 import io.infinitic.workflowManager.data.commands.AvroPastCommand
 import io.infinitic.workflowManager.data.methodRuns.AvroMethodRun
 import io.infinitic.workflowManager.data.steps.AvroPastStep
@@ -365,13 +365,9 @@ object AvroConverter {
         methodName = convertJson(obj.methodName)
         methodInput = convertJson(obj.methodInput)
         messageIndexAtStart = obj.messageIndexAtStart.int
-        methodPropertiesAtStart = toAvroProperties(obj.propertiesAtStart)
-        methodPastInstructions = obj.pastInstructions.map {
-            when (it) {
-                is PastCommand -> convertJson<AvroPastCommand>(it)
-                is PastStep -> convertJson<AvroPastStep>(it)
-            }
-        }
+        propertiesAtStart = toAvroProperties(obj.propertiesAtStart)
+        pastCommands = obj.pastCommands.map { convertJson<AvroPastCommand>(it) }
+        pastSteps = obj.pastSteps.map { convertJson<AvroPastStep>(it) }
     }.build()
 
     fun fromAvroMethodRun(avro: AvroMethodRun) = MethodRun(
@@ -380,14 +376,9 @@ object AvroConverter {
         methodName = convertJson(avro.methodName),
         methodInput = convertJson(avro.methodInput),
         messageIndexAtStart = WorkflowMessageIndex(avro.messageIndexAtStart),
-        propertiesAtStart = fromAvroProperties(avro.methodPropertiesAtStart),
-        pastInstructions = avro.methodPastInstructions.map {
-            when (it) {
-                is AvroPastCommand -> convertJson<PastCommand>(it)
-                is AvroPastStep -> convertJson<PastStep>(it)
-                else -> throw RuntimeException()
-            }
-        }.toMutableList()
+        propertiesAtStart = fromAvroProperties(avro.propertiesAtStart),
+        pastCommands = avro.pastCommands.map { convertJson<PastCommand>(it) }.toMutableList(),
+        pastSteps = avro.pastSteps.map { convertJson<PastStep>(it) }.toMutableList()
     )
 
     /**

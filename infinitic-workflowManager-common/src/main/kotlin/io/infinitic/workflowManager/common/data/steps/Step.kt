@@ -11,7 +11,7 @@ import io.infinitic.workflowManager.common.data.commands.CommandStatusCanceled
 import io.infinitic.workflowManager.common.data.commands.CommandStatusCompleted
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.workflowManager.common.data.commands.NewCommand
-import io.infinitic.workflowManager.common.data.instructions.PastCommand
+import io.infinitic.workflowManager.common.data.commands.PastCommand
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import kotlin.Int.Companion.MAX_VALUE
 import kotlin.Int.Companion.MIN_VALUE

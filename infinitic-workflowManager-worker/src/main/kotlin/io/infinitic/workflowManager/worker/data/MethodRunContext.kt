@@ -10,10 +10,9 @@ import io.infinitic.workflowManager.common.data.commands.StartAsync
 import io.infinitic.workflowManager.common.data.commands.DispatchTask
 import io.infinitic.workflowManager.common.data.commands.EndAsync
 import io.infinitic.workflowManager.common.data.commands.NewCommand
-import io.infinitic.workflowManager.common.data.instructions.PastCommand
+import io.infinitic.workflowManager.common.data.commands.PastCommand
 import io.infinitic.workflowManager.common.data.steps.NewStep
-import io.infinitic.workflowManager.common.data.instructions.PastStep
-import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
+import io.infinitic.workflowManager.common.data.steps.PastStep
 import io.infinitic.workflowManager.common.data.steps.Step
 import io.infinitic.workflowManager.common.data.steps.StepStatusCanceled
 import io.infinitic.workflowManager.common.data.steps.StepStatusCompleted
@@ -34,7 +33,7 @@ class MethodRunContext(
     private val workflowInstance: Workflow
 ) {
     // current position in the tree of method processing
-    private var methodPosition: MethodPosition = MethodPosition(messageIndex = workflowTaskInput.methodRun.messageIndexAtStart)
+    private var methodLevel: MethodLevel = MethodLevel(messageIndex = workflowTaskInput.methodRun.messageIndexAtStart)
 
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
@@ -46,21 +45,21 @@ class MethodRunContext(
      * Go to next position within the same branch
      */
     private fun positionNext() {
-        methodPosition = methodPosition.next()
+        methodLevel = methodLevel.next()
     }
 
     /*
      * Go to parent branch, this is done at the end of a async { ... } function
      */
     private fun positionUp() {
-        methodPosition.up()?.let { methodPosition = it }
+        methodLevel.up()?.let { methodLevel = it }
     }
 
     /*
      * Go to child branch, this is done at the start of a async { ... } function
      */
     private fun positionDown() {
-        methodPosition = methodPosition.down()
+        methodLevel = methodLevel.down()
     }
 
     /*
@@ -81,7 +80,7 @@ class MethodRunContext(
         val newCommand = NewCommand(
             command = dispatch,
             commandSimpleName = CommandSimpleName.fromMethod(method),
-            commandStringPosition = methodPosition.stringPosition
+            commandMethodPosition = methodLevel.methodPosition
         )
 
         val pastCommand = getPastCommandSimilarTo(newCommand)
@@ -106,13 +105,13 @@ class MethodRunContext(
         // create a new step
         val newStep = NewStep(
             step = deferred.step,
-            stepStringPosition = methodPosition.stringPosition
+            stepMethodPosition = methodLevel.methodPosition
         )
         val pastStep = getPastStepSimilarTo(newStep)
 
         // if this is really a new step, we check its status based on current workflow message index
         if (pastStep == null) {
-            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(methodPosition.messageIndex)
+            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(methodLevel.messageIndex)
             // if this deferred is still ongoing,
             if (deferred.stepStatus is StepStatusOngoing) {
                 // we add a new step
@@ -128,7 +127,7 @@ class MethodRunContext(
         deferred.stepStatus = pastStep.stepStatus
 
         // throw KnownStepException if ongoing else else update message index
-        methodPosition.messageIndex = when (val stepStatus = deferred.stepStatus) {
+        methodLevel.messageIndex = when (val stepStatus = deferred.stepStatus) {
             is StepStatusOngoing -> throw KnownStepException()
             is StepStatusCompleted -> stepStatus.completionWorkflowMessageIndex
             is StepStatusCanceled -> stepStatus.cancellationWorkflowMessageIndex
@@ -156,7 +155,7 @@ class MethodRunContext(
         val newCommand = NewCommand(
             command = dispatch,
             commandSimpleName = CommandSimpleName("StartAsync"),
-            commandStringPosition = methodPosition.stringPosition
+            commandMethodPosition = methodLevel.methodPosition
         )
 
         val pastCommand = getPastCommandSimilarTo(newCommand)
@@ -206,7 +205,7 @@ class MethodRunContext(
             val newCommand = NewCommand(
                 command = EndAsync(commandOutput),
                 commandSimpleName = CommandSimpleName("EndAsync"),
-                commandStringPosition = methodPosition.stringPosition
+                commandMethodPosition = methodLevel.methodPosition
             )
             newCommands.add(newCommand)
         }
@@ -225,7 +224,7 @@ class MethodRunContext(
     /*
      * Deferred status()
      */
-    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodPosition.messageIndex)) {
+    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.messageIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
@@ -233,15 +232,15 @@ class MethodRunContext(
 
     private fun getPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
-        val pastCommand = workflowTaskInput.methodRun.pastInstructions
-            .find { it is PastCommand && it.stringPosition == methodPosition.stringPosition } as PastCommand?
+        val pastCommand = workflowTaskInput.methodRun.pastCommands
+            .find { it.methodPosition == methodLevel.methodPosition }
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskInput.workflowOptions.workflowChangeCheckMode)) {
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
-                "${methodPosition.stringPosition}"
+                "${methodLevel.methodPosition}"
             )
         }
 
@@ -250,15 +249,15 @@ class MethodRunContext(
 
     private fun getPastStepSimilarTo(newStep: NewStep): PastStep? {
         // find pastCommand in current position
-        val pastStep = workflowTaskInput.methodRun.pastInstructions
-            .find { it is PastStep && it.stringPosition == methodPosition.stringPosition } as PastStep?
+        val pastStep = workflowTaskInput.methodRun.pastSteps
+            .find { it.methodPosition == methodLevel.methodPosition }
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
-                "${methodPosition.stringPosition}"
+                "${methodLevel.methodPosition}"
             )
         }
 
