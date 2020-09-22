@@ -28,7 +28,7 @@ import io.infinitic.workflowManager.common.messages.TaskCompleted
 import io.infinitic.workflowManager.common.messages.TaskDispatched
 import io.infinitic.workflowManager.common.messages.WorkflowCanceled
 import io.infinitic.workflowManager.common.messages.WorkflowCompleted
-import io.infinitic.workflowManager.common.states.WorkflowState
+import io.infinitic.workflowManager.common.data.states.WorkflowState
 import io.infinitic.workflowManager.data.commands.AvroPastCommand
 import io.infinitic.workflowManager.data.methodRuns.AvroMethodRun
 import io.infinitic.workflowManager.data.steps.AvroPastStep

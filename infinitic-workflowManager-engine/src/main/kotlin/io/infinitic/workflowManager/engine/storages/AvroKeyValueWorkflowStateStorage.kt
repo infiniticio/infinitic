@@ -4,7 +4,7 @@ import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.storage.api.Storage
 import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.states.WorkflowState
+import io.infinitic.workflowManager.common.data.states.WorkflowState
 import io.infinitic.workflowManager.states.AvroWorkflowState
 
 /**

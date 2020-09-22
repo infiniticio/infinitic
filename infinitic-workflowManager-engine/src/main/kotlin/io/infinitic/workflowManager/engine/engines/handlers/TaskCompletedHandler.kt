@@ -8,7 +8,7 @@ import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.workflowManager.common.data.instructions.PastCommand
 import io.infinitic.workflowManager.common.data.instructions.PastStep
 import io.infinitic.workflowManager.common.messages.TaskCompleted
-import io.infinitic.workflowManager.common.states.WorkflowState
+import io.infinitic.workflowManager.common.data.states.WorkflowState
 
 class TaskCompletedHandler(
     override val dispatcher: Dispatcher
