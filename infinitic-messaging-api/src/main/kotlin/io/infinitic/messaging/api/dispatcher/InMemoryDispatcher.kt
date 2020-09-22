@@ -23,12 +23,12 @@ open class InMemoryDispatcher() : Dispatcher {
     lateinit var scope: CoroutineScope
 
     override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {
-        if (msg is DispatchWorkflow || msg is TaskCompleted || msg is WorkflowTaskCompleted) {
-            println("===> Workflow Engine")
-            println(msg::class.java.name)
-            println(Json.stringify(msg, true))
-            println("")
-        }
+//        if (msg is DispatchWorkflow || msg is TaskCompleted || msg is WorkflowTaskCompleted) {
+//            println("===> Workflow Engine")
+//            println(msg::class.java.name)
+//            println(Json.stringify(msg, true))
+//            println("")
+//        }
         scope.launch {
             if (after > 0F) {
                 delay((1000 * after).toLong())
@@ -38,9 +38,6 @@ open class InMemoryDispatcher() : Dispatcher {
     }
 
     override suspend fun toTaskEngine(msg: ForTaskEngineMessage, after: Float) {
-//        println("===> Task Engine")
-//        println(msg)
-//        println("")
         scope.launch {
             if (after > 0F) {
                 delay((1000 * after).toLong())
@@ -50,24 +47,18 @@ open class InMemoryDispatcher() : Dispatcher {
     }
 
     override suspend fun toMonitoringPerName(msg: ForMonitoringPerNameMessage) {
-//        println("===> Monitoring(name)")
-//        println(msg)
-//        println("")
         scope.launch { monitoringPerNameHandle(msg) }
     }
 
     override suspend fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
-//        println("===> Monitoring(global)")
-//        println(msg)
-//        println("")
         scope.launch { monitoringGlobalHandle(msg) }
     }
 
     override suspend fun toWorkers(msg: ForWorkerMessage) {
-        println("===> Workers")
-        println(msg::class.java.name)
-        println(Json.stringify(msg, true))
-        println("")
+//        println("===> Workers")
+//        println(msg::class.java.name)
+//        println(Json.stringify(msg, true))
+//        println("")
         scope.launch { workerHandle(msg) }
     }
 }
