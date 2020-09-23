@@ -1,6 +1,7 @@
 package io.infinitic.workflowManager.tests
 
 import io.infinitic.workflowManager.worker.Workflow
+import io.infinitic.workflowManager.worker.deferred.Deferred
 import io.infinitic.workflowManager.worker.deferred.and
 import io.infinitic.workflowManager.worker.deferred.or
 
@@ -12,7 +13,10 @@ interface WorkflowA {
     fun seq4(): String
     fun or1(): String
     fun or2(): Any
+    fun or3(): String
     fun and1(): List<String>
+    fun and2(): List<String>
+    fun and3(): List<String>
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -79,11 +83,39 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return ((d1 and d2) or d3).result() // should be listOf("ba","dc") TODO: make this test deterministic
     }
 
+    override fun or3(): String {
+        val list: MutableList<Deferred<String>> = mutableListOf()
+        list.add(async(task) { reverse("ab") })
+        list.add(async(task) { reverse("cd") })
+        list.add(async(task) { reverse("ef") })
+
+        return list.or().result() // should be "ba" TODO: make this test deterministic
+    }
+
     override fun and1(): List<String> {
         val d1 = async(task) { reverse("ab") }
         val d2 = async(task) { reverse("cd") }
         val d3 = async(task) { reverse("ef") }
 
         return (d1 and d2 and d3).result() // should be listOf("ba","dc","fe")
+    }
+
+    override fun and2(): List<String> {
+
+        val list: MutableList<Deferred<String>> = mutableListOf()
+        list.add(async(task) { reverse("ab") })
+        list.add(async(task) { reverse("cd") })
+        list.add(async(task) { reverse("ef") })
+
+        return list.and().result() // should be listOf("ba","dc","fe")
+    }
+
+    override fun and3(): List<String> {
+
+        val list: MutableList<Deferred<String>> = mutableListOf()
+        for (i in 1..1_000) {
+            list.add(async(task) { reverse("ab") })
+        }
+        return list.and().result() // should be listOf("ba","dc","fe")
     }
 }

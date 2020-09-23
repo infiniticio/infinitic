@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "AvroTaskCompleted",
+  "name": "AvroWorkflowTaskCompleted",
   "namespace": "io.infinitic.workflowManager.messages",
   "fields": [
     {
@@ -9,18 +9,13 @@
       "logicalType": "uuid"
     },
     {
-      "name": "methodRunId",
+      "name": "workflowTaskId",
       "type": "string",
       "logicalType": "uuid"
     },
     {
-      "name": "taskId",
-      "type": "string",
-      "logicalType": "uuid"
-    },
-    {
-      "name": "taskOutput",
-      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+      "name": "workflowTaskOutput",
+      "type": "io.infinitic.workflowManager.data.workflowTasks.AvroWorkflowTaskOutput"
     }
   ]
 }

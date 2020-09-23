@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.common.states
+package io.infinitic.workflowManager.common.data.states
 
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId

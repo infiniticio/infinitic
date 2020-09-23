@@ -4,7 +4,7 @@
   "namespace": "io.infinitic.workflowManager.data.commands",
   "fields": [
     {
-      "name": "position",
+      "name": "commandPosition",
       "type": "string"
     },
     {
@@ -26,63 +26,6 @@
     {
       "name": "commandStatus",
       "type":  "io.infinitic.workflowManager.data.commands.AvroCommandStatus"
-    },
-    {
-      "name": "taskId",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    {
-      "name": "taskOutput",
-      "type": "io.infinitic.taskManager.data.AvroSerializedData"
-    },
-    {
-      "name": "childWorkflowId",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    {
-      "name": "childWorkflowOutput",
-      "type": "io.infinitic.taskManager.data.AvroSerializedData"
-    },
-    {
-      "name": "delayId",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    {
-      "name": "eventId",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    {
-      "name": "eventName",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    {
-      "name": "eventData",
-      "type": [
-        "null",
-        {
-          "type": "array",
-          "items": "io.infinitic.taskManager.data.AvroSerializedData"
-        }
-      ]
-    },
-    {
-      "name": "workflowOutput",
-      "type": "io.infinitic.taskManager.data.AvroSerializedData"
     }
   ]
 }

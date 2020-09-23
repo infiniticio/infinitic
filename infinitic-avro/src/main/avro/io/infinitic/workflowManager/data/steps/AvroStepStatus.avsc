@@ -5,7 +5,15 @@
   "fields": [
     {
       "name": "status",
-      "type": "string"
+      "type": {
+        "type": "enum",
+        "name": "AvroStepStatusName",
+        "symbols": [
+          "ONGOING",
+          "COMPLETED",
+          "CANCELED"
+        ]
+      }
     },
     {
       "name": "result",

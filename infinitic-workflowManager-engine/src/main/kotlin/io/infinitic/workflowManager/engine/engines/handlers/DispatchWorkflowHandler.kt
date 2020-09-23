@@ -15,7 +15,7 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.messages.WorkflowTaskDispatched
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow
-import io.infinitic.workflowManager.common.states.WorkflowState
+import io.infinitic.workflowManager.common.data.states.WorkflowState
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 
 class DispatchWorkflowHandler(

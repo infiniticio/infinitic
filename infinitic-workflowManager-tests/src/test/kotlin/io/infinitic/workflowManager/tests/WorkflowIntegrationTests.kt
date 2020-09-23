@@ -121,6 +121,18 @@ class WorkflowIntegrationTests : StringSpec({
         dispatcher.workflowOutput shouldBeIn listOf(listOf("ba", "dc"), "fe")
     }
 
+    "Or step with 3 async tasks through list" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { or3() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBeIn listOf("ba", "dc", "fe")
+    }
+
     "And step with 3 async tasks" {
         // run system
         coroutineScope {
@@ -131,5 +143,29 @@ class WorkflowIntegrationTests : StringSpec({
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
         dispatcher.workflowOutput shouldBe listOf("ba", "dc", "fe")
+    }
+
+    "And step with 3 async tasks through list" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { and2() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe listOf("ba", "dc", "fe")
+    }
+
+    "And step with 3 async tasks through large list" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { and3() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe MutableList(1_000) { "ba" }
     }
 })

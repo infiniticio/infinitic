@@ -23,11 +23,11 @@
       }
     },
     {
-      "name": "workflowTaskIndex",
+      "name": "workflowMessageIndex",
       "type": "int"
     },
     {
-      "name": "methoRun",
+      "name": "methodRun",
       "type": "io.infinitic.workflowManager.data.methodRuns.AvroMethodRun"
     }
   ]

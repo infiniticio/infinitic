@@ -9,6 +9,11 @@
       "logicalType": "uuid"
     },
     {
+      "name": "methodRunId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
       "name": "taskId",
       "type": "string",
       "logicalType": "uuid"

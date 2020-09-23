@@ -2,7 +2,7 @@ package io.infinitic.workflowManager.engine.engines
 
 import io.infinitic.common.data.interfaces.inc
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.workflowManager.common.states.WorkflowState
+import io.infinitic.workflowManager.common.data.states.WorkflowState
 import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
 import io.infinitic.workflowManager.common.messages.CancelWorkflow
 import io.infinitic.workflowManager.common.messages.DispatchWorkflow

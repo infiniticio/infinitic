@@ -14,9 +14,8 @@ import io.infinitic.workflowManager.common.data.commands.DispatchTask as Dispatc
 import io.infinitic.workflowManager.common.data.commands.DispatchTimer
 import io.infinitic.workflowManager.common.data.commands.EndAsync
 import io.infinitic.workflowManager.common.data.commands.NewCommand
-import io.infinitic.workflowManager.common.data.instructions.PastCommand
+import io.infinitic.workflowManager.common.data.commands.PastCommand
 import io.infinitic.workflowManager.common.data.commands.StartAsync
-import io.infinitic.workflowManager.common.data.instructions.PastStep
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
@@ -24,7 +23,8 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
 import io.infinitic.workflowManager.common.messages.ChildWorkflowCompleted
 import io.infinitic.workflowManager.common.messages.WorkflowCompleted
 import io.infinitic.workflowManager.common.messages.WorkflowTaskCompleted
-import io.infinitic.workflowManager.common.states.WorkflowState
+import io.infinitic.workflowManager.common.data.states.WorkflowState
+import io.infinitic.workflowManager.common.data.steps.PastStep
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 
 class WorkflowTaskCompletedHandler(
@@ -49,9 +49,9 @@ class WorkflowTaskCompletedHandler(
         }
         // add new steps to past instructions
         workflowTaskOutput.newSteps.map {
-            methodRun.pastInstructions.add(
+            methodRun.pastSteps.add(
                 PastStep(
-                    stringPosition = it.stepStringPosition,
+                    stepPosition = it.stepPosition,
                     step = it.step,
                     stepHash = it.stepHash,
                     stepStatus = StepStatusOngoing
@@ -85,14 +85,17 @@ class WorkflowTaskCompletedHandler(
                     ChildWorkflowCompleted(
                         workflowId = it,
                         childWorkflowId = state.workflowId,
-                        childOutput = workflowTaskOutput.methodOutput
+                        childWorkflowOutput = workflowTaskOutput.methodOutput!!
                     )
                 )
             }
         }
 
         // if everything is completed in methodRun then filter state
-        if (methodRun.methodOutput != null && methodRun.pastInstructions.all { it.isTerminated() }) {
+        if (methodRun.methodOutput != null &&
+            methodRun.pastCommands.all { it.isTerminated() } &&
+            methodRun.pastSteps.all { it.isTerminated() }
+        ) {
             // TODO("filter workflow if unused properties")
             state.currentMethodRuns.remove(methodRun)
         }
@@ -105,11 +108,9 @@ class WorkflowTaskCompletedHandler(
     private fun endAsync(methodRun: MethodRun, newCommand: NewCommand, currentMessageIndex: WorkflowMessageIndex) {
         val command = newCommand.command as EndAsync
         // look for previous Start Async command
-        val pastStartAsync = methodRun.pastInstructions.first {
-            it.stringPosition == newCommand.commandStringPosition &&
-                it is PastCommand &&
-                it.commandType == CommandType.START_ASYNC
-        } as PastCommand
+        val pastStartAsync = methodRun.pastCommands.first {
+            it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
+        }
         // past command completed
         pastStartAsync.commandStatus = CommandStatusCompleted(CommandOutput(command.asyncOutput.data), currentMessageIndex)
     }
@@ -131,9 +132,9 @@ class WorkflowTaskCompletedHandler(
     }
 
     private fun addPastCommand(methodRun: MethodRun, newCommand: NewCommand) {
-        methodRun.pastInstructions.add(
+        methodRun.pastCommands.add(
             PastCommand(
-                stringPosition = newCommand.commandStringPosition,
+                commandPosition = newCommand.commandPosition,
                 commandType = newCommand.commandType,
                 commandId = newCommand.commandId,
                 commandHash = newCommand.commandHash,
