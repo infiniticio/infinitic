@@ -30,7 +30,7 @@ class TaskCompletedHandler(
         // update steps
         val justCompleted = methodRun.pastSteps
             .map { it.terminateBy(pastCommand, state.currentProperties) }
-            .any() // any[} must be applied only after having applied terminateBy to all elements
+            .any { it } // any must be applied only after having applied terminateBy to all elements
 
         if (justCompleted) {
             dispatchWorkflowTask(state, methodRun)

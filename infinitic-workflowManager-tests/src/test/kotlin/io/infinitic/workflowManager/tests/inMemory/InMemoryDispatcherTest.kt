@@ -29,6 +29,7 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
 
     var taskStatus: TaskStatus? = null
     var workflowOutput: Any? = null
+    var taskCounter = 0
 
     init {
         workflowEngineHandle = {
@@ -43,6 +44,9 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
 
             // dispatch Task and WorkflowTask to workflow engine after completion
             if (it is TaskCompleted) {
+                taskCounter++
+                // if (taskCounter % 100 == 0) println(taskCounter)
+
                 val wid = it.taskMeta[WorkflowEngine.META_WORKFLOW_ID]
                 if (wid != null) {
                     val workflowId = WorkflowId("$wid")
@@ -76,5 +80,6 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
     fun reset() {
         taskStatus = null
         workflowOutput = null
+        taskCounter = 0
     }
 }

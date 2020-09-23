@@ -215,7 +215,7 @@ class MethodRunContext(
      * Deferred result()
      */
     @Suppress("UNCHECKED_CAST")
-    internal fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
+    fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
         is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN: asking result of an ongoing deferred")
         is StepStatusCompleted -> status.completionResult.data as T
         is StepStatusCanceled -> status.cancellationResult.data as T
@@ -224,7 +224,7 @@ class MethodRunContext(
     /*
      * Deferred status()
      */
-    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.messageIndex)) {
+    fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.messageIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
