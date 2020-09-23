@@ -18,6 +18,8 @@ import io.infinitic.workflowManager.common.data.workflows.WorkflowName
     JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
     JsonSubTypes.Type(value = StartAsync::class, name = "START_ASYNC"),
     JsonSubTypes.Type(value = EndAsync::class, name = "END_ASYNC"),
+    JsonSubTypes.Type(value = StartInlineTask::class, name = "START_INLINE_TASK"),
+    JsonSubTypes.Type(value = EndInlineTask::class, name = "END_INLINE_TASK"),
     JsonSubTypes.Type(value = DispatchTimer::class, name = "DISPATCH_TIMER"),
     JsonSubTypes.Type(value = DispatchReceiver::class, name = "DISPATCH_RECEIVER")
 )
