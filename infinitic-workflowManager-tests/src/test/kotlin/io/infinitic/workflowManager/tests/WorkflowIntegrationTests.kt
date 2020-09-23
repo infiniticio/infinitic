@@ -182,4 +182,24 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
     }
+
+    "Inline task with asynchronous task inside" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { inline2() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+    }
+
+    "Inline task with synchronous task inside" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { inline3() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe false
+    }
 })

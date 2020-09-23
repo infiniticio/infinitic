@@ -19,6 +19,8 @@ interface WorkflowA {
     fun and2(): List<String>
     fun and3(): List<String>
     fun inline(): String
+    fun inline2(): String
+    fun inline3(): String
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -124,5 +126,22 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun inline(): String {
         val date = task { LocalDateTime.now() }
         return task.concat("Current Date and Time is: ", "$date") // should not throw
+    }
+
+    override fun inline2(): String {
+        val date = task {
+            async(task) { reverse("ab") }
+            LocalDateTime.now()
+        }
+
+        return task.concat("Current Date and Time is: ", "$date") // should not throw
+    }
+
+    override fun inline3(): String {
+        val date = task {
+            task.concat("1", "2")
+            LocalDateTime.now()
+        }
+        return task.concat("Current Date and Time is: ", "$date") // should throw
     }
 }

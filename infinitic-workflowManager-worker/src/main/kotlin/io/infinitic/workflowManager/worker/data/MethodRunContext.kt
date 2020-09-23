@@ -237,6 +237,8 @@ class MethodRunContext(
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
             newCommands.add(startCommand)
+            // go down (it should be needed only if inline task dispatch some tasks)
+            positionDown()
             // run inline task
             val commandOutput = try {
                 CommandOutput(inline())
@@ -247,6 +249,9 @@ class MethodRunContext(
                     else -> throw e
                 }
             }
+            // go up
+            positionUp()
+            // record result
             val endCommand = NewCommand(
                 command = EndInlineTask(commandOutput),
                 commandSimpleName = CommandSimpleName("${CommandType.END_INLINE_TASK}"),
