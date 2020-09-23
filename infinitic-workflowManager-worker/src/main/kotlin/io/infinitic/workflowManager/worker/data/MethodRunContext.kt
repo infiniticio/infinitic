@@ -5,12 +5,17 @@ import io.infinitic.taskManager.common.data.TaskMeta
 import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandSimpleName
+import io.infinitic.workflowManager.common.data.commands.CommandStatusCanceled
+import io.infinitic.workflowManager.common.data.commands.CommandStatusCompleted
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
+import io.infinitic.workflowManager.common.data.commands.CommandType
 import io.infinitic.workflowManager.common.data.commands.StartAsync
 import io.infinitic.workflowManager.common.data.commands.DispatchTask
 import io.infinitic.workflowManager.common.data.commands.EndAsync
+import io.infinitic.workflowManager.common.data.commands.EndInlineTask
 import io.infinitic.workflowManager.common.data.commands.NewCommand
 import io.infinitic.workflowManager.common.data.commands.PastCommand
+import io.infinitic.workflowManager.common.data.commands.StartInlineTask
 import io.infinitic.workflowManager.common.data.steps.NewStep
 import io.infinitic.workflowManager.common.data.steps.PastStep
 import io.infinitic.workflowManager.common.data.steps.Step
@@ -18,6 +23,7 @@ import io.infinitic.workflowManager.common.data.steps.StepStatusCanceled
 import io.infinitic.workflowManager.common.data.steps.StepStatusCompleted
 import io.infinitic.workflowManager.common.data.steps.StepStatusOngoing
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.workflowManager.common.exceptions.ShouldNotWaitInInlineTask
 import io.infinitic.workflowManager.common.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflowManager.common.parser.setPropertiesToObject
 import io.infinitic.workflowManager.worker.deferred.Deferred
@@ -64,7 +70,6 @@ class MethodRunContext(
 
     /*
      * Command dispatching:
-     * we check is this command is already known
      */
     fun <S> dispatch(method: Method, args: Array<out Any>, type: Class<S>): Deferred<S> {
         // increment position
@@ -143,7 +148,6 @@ class MethodRunContext(
 
     /*
      * Async Branch dispatching:
-     * we check is this command is already known
      */
     internal fun <S> async(branch: () -> S): Deferred<S> {
         // increment position
@@ -154,7 +158,7 @@ class MethodRunContext(
         // create instruction that *may* be sent to engine
         val newCommand = NewCommand(
             command = dispatch,
-            commandSimpleName = CommandSimpleName("StartAsync"),
+            commandSimpleName = CommandSimpleName("${CommandType.START_ASYNC}"),
             commandPosition = methodLevel.methodPosition
         )
 
@@ -165,6 +169,7 @@ class MethodRunContext(
             newCommands.add(newCommand)
             // run async branch
             runAsync(branch)
+
             // returns a Deferred with an ongoing step
             return Deferred<S>(Step.Id.from(newCommand), this)
         } else {
@@ -204,7 +209,7 @@ class MethodRunContext(
             // create instruction that *may* be sent to engine
             val newCommand = NewCommand(
                 command = EndAsync(commandOutput),
-                commandSimpleName = CommandSimpleName("EndAsync"),
+                commandSimpleName = CommandSimpleName("${CommandType.END_ASYNC}"),
                 commandPosition = methodLevel.methodPosition
             )
             newCommands.add(newCommand)
@@ -212,10 +217,58 @@ class MethodRunContext(
     }
 
     /*
+     * Inline task
+     */
+    internal fun <S> task(inline: () -> S): S {
+        // increment position
+        positionNext()
+
+        // set a new command
+        val dispatch = StartInlineTask
+        // create instruction that *may* be sent to engine
+        val startCommand = NewCommand(
+            command = dispatch,
+            commandSimpleName = CommandSimpleName("${CommandType.START_INLINE_TASK}"),
+            commandPosition = methodLevel.methodPosition
+        )
+
+        val pastCommand = getPastCommandSimilarTo(startCommand)
+
+        if (pastCommand == null) {
+            // if this is a new command, we add it to the newCommands list
+            newCommands.add(startCommand)
+            // run inline task
+            val commandOutput = try {
+                CommandOutput(inline())
+            } catch (e: Exception) {
+                when (e) {
+                    is NewStepException -> throw ShouldNotWaitInInlineTask()
+                    is KnownStepException -> throw ShouldNotWaitInInlineTask()
+                    else -> throw e
+                }
+            }
+            val endCommand = NewCommand(
+                command = EndInlineTask(commandOutput),
+                commandSimpleName = CommandSimpleName("${CommandType.END_INLINE_TASK}"),
+                commandPosition = methodLevel.methodPosition
+            )
+            newCommands.add(endCommand)
+            // returns a Deferred with an ongoing step
+            return commandOutput.data as S
+        } else {
+            return when (val status = pastCommand.commandStatus) {
+                is CommandStatusOngoing -> throw RuntimeException("This should not happen: uncompleted inline task")
+                is CommandStatusCanceled -> throw RuntimeException("This should not happen: canceled inline task")
+                is CommandStatusCompleted -> status.completionResult.data as S
+            }
+        }
+    }
+
+    /*
      * Deferred result()
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
+    internal fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
         is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN: asking result of an ongoing deferred")
         is StepStatusCompleted -> status.completionResult.data as T
         is StepStatusCanceled -> status.cancellationResult.data as T
@@ -224,7 +277,7 @@ class MethodRunContext(
     /*
      * Deferred status()
      */
-    fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.messageIndex)) {
+    internal fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.messageIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED

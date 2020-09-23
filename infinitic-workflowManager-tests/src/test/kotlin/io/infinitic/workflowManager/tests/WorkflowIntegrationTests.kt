@@ -6,6 +6,10 @@ import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.taskManager.worker.Worker
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
+import io.infinitic.workflowManager.tests.samples.TaskA
+import io.infinitic.workflowManager.tests.samples.TaskAImpl
+import io.infinitic.workflowManager.tests.samples.WorkflowA
+import io.infinitic.workflowManager.tests.samples.WorkflowAImpl
 import io.infinitic.workflowManager.worker.workflowTasks.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
@@ -23,10 +27,10 @@ private val client = dispatcher.client
 private lateinit var status: AvroTaskStatus
 
 class WorkflowIntegrationTests : StringSpec({
-    val taskTest = TaskTestImpl()
+    val taskTest = TaskAImpl()
     val workflowTask = WorkflowTaskImpl()
     val workflowA = WorkflowAImpl()
-    Worker.register<TaskTest>(taskTest)
+    Worker.register<TaskA>(taskTest)
     Worker.register<WorkflowTask>(workflowTask)
     Worker.register<WorkflowA>(workflowA)
 
@@ -167,5 +171,15 @@ class WorkflowIntegrationTests : StringSpec({
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
         dispatcher.workflowOutput shouldBe MutableList(1_000) { "ba" }
+    }
+
+    "Inline task" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { inline() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
     }
 })

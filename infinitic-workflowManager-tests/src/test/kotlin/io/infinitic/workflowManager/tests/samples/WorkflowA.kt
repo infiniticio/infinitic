@@ -1,9 +1,10 @@
-package io.infinitic.workflowManager.tests
+package io.infinitic.workflowManager.tests.samples
 
 import io.infinitic.workflowManager.worker.Workflow
 import io.infinitic.workflowManager.worker.deferred.Deferred
 import io.infinitic.workflowManager.worker.deferred.and
 import io.infinitic.workflowManager.worker.deferred.or
+import java.time.LocalDateTime
 
 interface WorkflowA {
     fun empty(): String
@@ -17,10 +18,11 @@ interface WorkflowA {
     fun and1(): List<String>
     fun and2(): List<String>
     fun and3(): List<String>
+    fun inline(): String
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
-    private val task = proxy<TaskTest>()
+    private val task = proxy<TaskA>()
 
     override fun empty() = "void"
 
@@ -72,7 +74,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         val d2 = async(task) { reverse("cd") }
         val d3 = async(task) { reverse("ef") }
 
-        return (d1 or d2 or d3).result() // should be "ba" TODO: make this test deterministic
+        return (d1 or d2 or d3).result() // should be "ba" or "dc" or "fe"
     }
 
     override fun or2(): Any {
@@ -80,7 +82,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         val d2 = async(task) { reverse("cd") }
         val d3 = async(task) { reverse("ef") }
 
-        return ((d1 and d2) or d3).result() // should be listOf("ba","dc") TODO: make this test deterministic
+        return ((d1 and d2) or d3).result() // should be listOf("ba","dc") or "fe"
     }
 
     override fun or3(): String {
@@ -89,7 +91,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         list.add(async(task) { reverse("cd") })
         list.add(async(task) { reverse("ef") })
 
-        return list.or().result() // should be "ba" TODO: make this test deterministic
+        return list.or().result() // should be "ba" or "dc" or "fe"
     }
 
     override fun and1(): List<String> {
@@ -117,5 +119,10 @@ class WorkflowAImpl : Workflow(), WorkflowA {
             list.add(async(task) { reverse("ab") })
         }
         return list.and().result() // should be listOf("ba","dc","fe")
+    }
+
+    override fun inline(): String {
+        val date = task { LocalDateTime.now() }
+        return task.concat("Current Date and Time is: ", "$date") // should not throw
     }
 }
