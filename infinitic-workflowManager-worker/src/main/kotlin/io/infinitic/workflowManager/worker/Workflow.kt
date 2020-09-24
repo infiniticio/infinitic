@@ -43,5 +43,10 @@ abstract class Workflow {
     /*
      * Use this method to create an async branch
      */
-    fun <S> async(branch: () -> S) = methodRunContext!!.async { branch() }
+    fun <S> async(branch: () -> S) = methodRunContext!!.async(branch)
+
+    /*
+     * Use this method to create an inline task
+     */
+    fun <S> task(inline: () -> S): S = methodRunContext!!.task(inline)
 }

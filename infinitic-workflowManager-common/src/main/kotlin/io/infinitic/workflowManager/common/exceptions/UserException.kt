@@ -71,3 +71,10 @@ data class MixingDeferredFromDifferentWorkflowMethodExecution(
     msg = "You can not mix Deferred coming from different method executions",
     help = ""
 )
+
+data class ShouldNotWaitInInlineTask(
+    @JsonProperty("unused") val unused: String = ""
+) : UserExceptionInWorker(
+    msg = "You can not suspend computations inside an inline task",
+    help = "Make sure you do not wait in your inline task"
+)

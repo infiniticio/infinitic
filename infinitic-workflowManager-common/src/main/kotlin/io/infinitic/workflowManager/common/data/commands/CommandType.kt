@@ -6,5 +6,7 @@ enum class CommandType {
     DISPATCH_TIMER,
     DISPATCH_RECEIVER,
     START_ASYNC,
-    END_ASYNC
+    END_ASYNC,
+    START_INLINE_TASK,
+    END_INLINE_TASK
 }
