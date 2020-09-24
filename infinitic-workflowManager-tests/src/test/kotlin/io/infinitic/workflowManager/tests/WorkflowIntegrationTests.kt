@@ -230,4 +230,16 @@ class WorkflowIntegrationTests : StringSpec({
         // checks number of task processing
         dispatcher.workflowOutput shouldBe "21abc21"
     }
+
+    "Nested Child Workflow" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowB> { factorial(14) }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe 87178291200
+    }
 })
