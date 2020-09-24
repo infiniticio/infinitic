@@ -54,6 +54,7 @@ object AvroConverter {
         parentWorkflowId = avro.parentWorkflowId?.let { WorkflowId(it) },
         workflowName = WorkflowName(avro.workflowName),
         workflowOptions = convertJson(avro.workflowOptions),
+        workflowMeta = convertJson(avro.workflowMeta),
         currentWorkflowTaskId = avro.currentWorkflowTaskId?.let { WorkflowTaskId(it) },
         currentMessageIndex = WorkflowMessageIndex(avro.currentMessageIndex),
         currentMethodRuns = avro.currentMethodRuns.map { convertJson<MethodRun>(it) }.toMutableList(),
@@ -68,6 +69,7 @@ object AvroConverter {
         .setParentWorkflowId(state.parentWorkflowId?.toString())
         .setWorkflowName("${state.workflowName}")
         .setWorkflowOptions(convertJson(state.workflowOptions))
+        .setWorkflowMeta(convertJson(state.workflowMeta))
         .setCurrentWorkflowTaskId("${state.currentWorkflowTaskId}")
         .setCurrentMessageIndex(convertJson(state.currentMessageIndex))
         .setCurrentMethodRuns(state.currentMethodRuns.map { convertJson<AvroMethodRun>(it) })

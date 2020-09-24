@@ -27,6 +27,7 @@ import io.infinitic.workflowManager.common.messages.WorkflowCompleted
 import io.infinitic.workflowManager.common.messages.WorkflowTaskCompleted
 import io.infinitic.workflowManager.common.data.states.WorkflowState
 import io.infinitic.workflowManager.common.data.steps.PastStep
+import io.infinitic.workflowManager.common.messages.DispatchWorkflow
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 
 class WorkflowTaskCompletedHandler(
@@ -42,7 +43,7 @@ class WorkflowTaskCompletedHandler(
         workflowTaskOutput.newCommands.map {
             when (val command = it.command) {
                 is DispatchTaskInWorkflow -> dispatchTask(methodRun, it, msg.workflowId)
-                is DispatchChildWorkflow -> TODO()
+                is DispatchChildWorkflow -> dispatchChildWorkflow(methodRun, it, state)
                 is StartAsync -> startAsync(methodRun, it)
                 is EndAsync -> endAsync(methodRun, it, state.currentMessageIndex)
                 is StartInlineTask -> startInlineTask(methodRun, it)
@@ -88,6 +89,7 @@ class WorkflowTaskCompletedHandler(
                 dispatcher.toWorkflowEngine(
                     ChildWorkflowCompleted(
                         workflowId = it,
+                        methodRunId = methodRun.parentMethodRunId!!,
                         childWorkflowId = state.workflowId,
                         childWorkflowOutput = workflowTaskOutput.methodOutput!!
                     )
@@ -96,13 +98,7 @@ class WorkflowTaskCompletedHandler(
         }
 
         // if everything is completed in methodRun then filter state
-        if (methodRun.methodOutput != null &&
-            methodRun.pastCommands.all { it.isTerminated() } &&
-            methodRun.pastSteps.all { it.isTerminated() }
-        ) {
-            // TODO("filter workflow if unused properties")
-            state.currentMethodRuns.remove(methodRun)
-        }
+        cleanMethodRun(methodRun, state)
     }
 
     private fun startAsync(methodRun: MethodRun, newCommand: NewCommand) {
@@ -142,7 +138,7 @@ class WorkflowTaskCompletedHandler(
     private suspend fun dispatchTask(methodRun: MethodRun, newCommand: NewCommand, workflowId: WorkflowId) {
         val command = newCommand.command as DispatchTaskInWorkflow
         // send task to task engine
-        val task = DispatchTask(
+        val msg = DispatchTask(
             taskId = TaskId("${newCommand.commandId}"),
             taskName = command.taskName,
             taskInput = command.taskInput,
@@ -150,7 +146,25 @@ class WorkflowTaskCompletedHandler(
                 .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, workflowId)
                 .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, methodRun.methodRunId)
         )
-        dispatcher.toTaskEngine(task)
+        dispatcher.toTaskEngine(msg)
+
+        addPastCommand(methodRun, newCommand)
+    }
+
+    private suspend fun dispatchChildWorkflow(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
+        val command = newCommand.command as DispatchChildWorkflow
+        // send task to task engine
+        val msg = DispatchWorkflow(
+            workflowId = WorkflowId("${newCommand.commandId}"),
+            parentWorkflowId = state.workflowId,
+            parentMethodRunId = methodRun.methodRunId,
+            workflowName = command.childWorkflowName,
+            methodName = command.childMethodName,
+            methodInput = command.childMethodInput,
+            workflowMeta = state.workflowMeta,
+            workflowOptions = state.workflowOptions
+        )
+        dispatcher.toWorkflowEngine(msg)
 
         addPastCommand(methodRun, newCommand)
     }

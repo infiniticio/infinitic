@@ -10,6 +10,8 @@ import io.infinitic.workflowManager.tests.samples.TaskA
 import io.infinitic.workflowManager.tests.samples.TaskAImpl
 import io.infinitic.workflowManager.tests.samples.WorkflowA
 import io.infinitic.workflowManager.tests.samples.WorkflowAImpl
+import io.infinitic.workflowManager.tests.samples.WorkflowB
+import io.infinitic.workflowManager.tests.samples.WorkflowBImpl
 import io.infinitic.workflowManager.worker.workflowTasks.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
@@ -30,9 +32,11 @@ class WorkflowIntegrationTests : StringSpec({
     val taskTest = TaskAImpl()
     val workflowTask = WorkflowTaskImpl()
     val workflowA = WorkflowAImpl()
+    val workflowB = WorkflowBImpl()
     Worker.register<TaskA>(taskTest)
     Worker.register<WorkflowTask>(workflowTask)
     Worker.register<WorkflowA>(workflowA)
+    Worker.register<WorkflowB>(workflowB)
 
     var workflowInstance: WorkflowInstance
 
@@ -201,5 +205,29 @@ class WorkflowIntegrationTests : StringSpec({
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe false
+    }
+
+    "Sequential Child Workflow" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { child1() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe "-abc-"
+    }
+
+    "Asynchronous Child Workflow" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatchWorkflow<WorkflowA> { child2() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe "21abc21"
     }
 })

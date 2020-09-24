@@ -18,6 +18,7 @@ import io.infinitic.workflowManager.common.messages.TaskCompleted
 import io.infinitic.workflowManager.common.messages.TaskDispatched
 import io.infinitic.workflowManager.common.messages.WorkflowCanceled
 import io.infinitic.workflowManager.common.messages.WorkflowCompleted
+import io.infinitic.workflowManager.engine.engines.handlers.ChildWorkflowCompletedHandler
 import io.infinitic.workflowManager.engine.engines.handlers.DispatchWorkflowHandler
 import io.infinitic.workflowManager.engine.engines.handlers.TaskCompletedHandler
 import io.infinitic.workflowManager.engine.engines.handlers.WorkflowTaskCompletedHandler
@@ -127,9 +128,8 @@ class WorkflowEngine(
         TODO()
     }
 
-    private suspend fun childWorkflowCompleted(state: WorkflowState, msg: ChildWorkflowCompleted): WorkflowState {
-        TODO()
-    }
+    private suspend fun childWorkflowCompleted(state: WorkflowState, msg: ChildWorkflowCompleted) =
+        ChildWorkflowCompletedHandler(dispatcher).handle(state, msg)
 
     private suspend fun objectReceived(state: WorkflowState, msg: ObjectReceived): WorkflowState {
         TODO()

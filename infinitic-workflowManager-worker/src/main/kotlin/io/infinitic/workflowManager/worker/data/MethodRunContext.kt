@@ -1,14 +1,13 @@
 package io.infinitic.workflowManager.worker.data
 
-import io.infinitic.taskManager.common.data.TaskInput
-import io.infinitic.taskManager.common.data.TaskMeta
-import io.infinitic.taskManager.common.data.TaskName
+import io.infinitic.taskManager.worker.Worker
 import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandSimpleName
 import io.infinitic.workflowManager.common.data.commands.CommandStatusCanceled
 import io.infinitic.workflowManager.common.data.commands.CommandStatusCompleted
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.workflowManager.common.data.commands.CommandType
+import io.infinitic.workflowManager.common.data.commands.DispatchChildWorkflow
 import io.infinitic.workflowManager.common.data.commands.StartAsync
 import io.infinitic.workflowManager.common.data.commands.DispatchTask
 import io.infinitic.workflowManager.common.data.commands.EndAsync
@@ -35,6 +34,7 @@ import java.lang.RuntimeException
 import java.lang.reflect.Method
 
 class MethodRunContext(
+    private val worker: Worker,
     private val workflowTaskInput: WorkflowTaskInput,
     private val workflowInstance: Workflow
 ) {
@@ -71,19 +71,18 @@ class MethodRunContext(
     /*
      * Command dispatching:
      */
-    fun <S> dispatch(method: Method, args: Array<out Any>, type: Class<S>): Deferred<S> {
+    fun <S> dispatch(method: Method, args: Array<out Any>, returnType: Class<S>): Deferred<S> {
         // increment position
         positionNext()
         // set current command
-        val dispatch = DispatchTask(
-            taskName = TaskName.from(method),
-            taskInput = TaskInput.from(method, args),
-            taskMeta = TaskMeta().withParametersTypesFrom(method)
-        )
+        val command = if (worker.getInstance(method.declaringClass.name) is Workflow)
+            DispatchChildWorkflow.from(method, args)
+        else
+            DispatchTask.from(method, args)
 
         // create instruction that may be sent to engine
         val newCommand = NewCommand(
-            command = dispatch,
+            command = command,
             commandSimpleName = CommandSimpleName.fromMethod(method),
             commandPosition = methodLevel.methodPosition
         )

@@ -26,6 +26,7 @@ class DispatchWorkflowHandler(
         val methodRun = MethodRun(
             isMain = true,
             parentWorkflowId = msg.parentWorkflowId,
+            parentMethodRunId = msg.parentMethodRunId,
             methodName = msg.methodName,
             methodInput = msg.methodInput,
             messageIndexAtStart = WorkflowMessageIndex(0)
@@ -72,6 +73,7 @@ class DispatchWorkflowHandler(
             workflowId = msg.workflowId,
             workflowName = msg.workflowName,
             workflowOptions = msg.workflowOptions,
+            workflowMeta = msg.workflowMeta,
             currentWorkflowTaskId = workflowTaskId,
             currentMethodRuns = mutableListOf(methodRun)
         )
