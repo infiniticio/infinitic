@@ -14,21 +14,18 @@ import io.infinitic.taskManager.common.messages.RunTask
 import io.infinitic.taskManager.common.messages.TaskAttemptCompleted
 import io.infinitic.taskManager.common.messages.TaskAttemptFailed
 import io.infinitic.taskManager.common.messages.TaskAttemptStarted
-import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterCount
+import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.taskManager.common.parser.getNewInstancePerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.lang.reflect.InvocationTargetException
-import java.util.concurrent.CancellationException
+import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
@@ -113,43 +110,29 @@ open class Worker(val dispatcher: Dispatcher) {
                 return@withContext
             }
 
-            val scope = CoroutineScope(coroutineContext + Job())
-            // running timeout delay if needed
-            if (options.runningTimeout != null && options.runningTimeout!! > 0F) {
-                scope.launch {
-                    delay((1000 * options.runningTimeout!!).toLong())
-                    ensureActive()
-                    // update context with the cause (to be potentially used in getRetryDelay method)
-                    taskAttemptContext.exception = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
-                    // returning a timeout
-                    getRetryDelayAndFailTask(task, msg, taskAttemptContext)
-                    // cancel everything else
-                    scope.cancel()
-                }
-            }
-
-            val taskJob = scope.async {
-                val output = method.invoke(task, *parameters)
-                ensureActive()
-                sendTaskCompleted(msg, output)
-                // cancel everything else
-                scope.cancel()
-            }
-
             try {
-                taskJob.await()
+                val output = if (options.runningTimeout != null && options.runningTimeout!! > 0F) {
+                    withTimeout((1000 * options.runningTimeout!!).toLong()) {
+                        executeTask(method, task, parameters)
+                    }
+                } else {
+                    executeTask(method, task, parameters)
+                }
+
+                sendTaskCompleted(msg, output)
             } catch (e: InvocationTargetException) {
                 // update context with the cause (to be potentially used in getRetryDelay method)
                 taskAttemptContext.exception = e.cause
                 // retrieve delay before retry
                 getRetryDelayAndFailTask(task, msg, taskAttemptContext)
-            } catch (e: CancellationException) {
-                // Do nothing as the failure is already reported by the timeout coroutine when cancel happens
+            } catch (e: TimeoutCancellationException) {
+                // update context with the cause (to be potentially used in getRetryDelay method)
+                taskAttemptContext.exception = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
+                // returning a timeout
+                getRetryDelayAndFailTask(task, msg, taskAttemptContext)
             } catch (e: Exception) {
                 // returning the exception (no retry)
                 sendTaskFailed(msg, e, null)
-            } finally {
-                scope.coroutineContext[Job]?.join()
             }
         }
     }
@@ -160,6 +143,12 @@ open class Worker(val dispatcher: Dispatcher) {
 
         // if no instance is registered, try to instantiate this task
         return getNewInstancePerName(name)
+    }
+
+    private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
+        val output = method.invoke(task, *parameters)
+        ensureActive()
+        output
     }
 
     private fun setTaskContext(task: Any, context: TaskAttemptContext) {
@@ -241,8 +230,6 @@ open class Worker(val dispatcher: Dispatcher) {
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
-        println("!! Exception in Worker: ")
-        println(error)
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
