@@ -4,7 +4,7 @@ import io.infinitic.taskManager.common.proxies.MethodProxyHandler
 import io.infinitic.workflowManager.common.exceptions.NoMethodCallAtAsync
 import io.infinitic.workflowManager.common.exceptions.WorkflowTaskContextNotInitialized
 import io.infinitic.workflowManager.worker.deferred.Deferred
-import io.infinitic.workflowManager.worker.commands.TaskProxyHandler
+import io.infinitic.workflowManager.worker.commands.CommandProxy
 import io.infinitic.workflowManager.worker.data.MethodRunContext
 
 abstract class Workflow {
@@ -12,9 +12,9 @@ abstract class Workflow {
         get() = field ?: throw WorkflowTaskContextNotInitialized(this::class.java.name, MethodRunContext::class.java.name)
 
     /*
-     * Use this method to proxy task or child workflows
+     * Use this method to proxy a task or a child workflow
      */
-    protected inline fun <reified T : Any> proxy() = TaskProxyHandler { methodRunContext!! }.instance<T>()
+    protected inline fun <reified T : Any> proxy() = CommandProxy { methodRunContext!! }.instance<T>()
 
     /*
      * Use this method to dispatch a task

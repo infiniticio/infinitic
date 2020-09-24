@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
-class TaskProxyHandler(private val methodRunContext: () -> MethodRunContext) : InvocationHandler {
+class CommandProxy(private val methodRunContext: () -> MethodRunContext) : InvocationHandler {
 
     /*
      * implements the synchronous processing of a task or child workflow

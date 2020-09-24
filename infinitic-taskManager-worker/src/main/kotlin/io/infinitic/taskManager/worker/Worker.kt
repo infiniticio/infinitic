@@ -154,7 +154,7 @@ open class Worker(val dispatcher: Dispatcher) {
         }
     }
 
-    fun getTaskInstance(name: String): Any {
+    fun getInstance(name: String): Any {
         // return registered instance if any
         if (registeredTasks.containsKey(name)) return registeredTasks[name]!!
 
@@ -188,7 +188,7 @@ open class Worker(val dispatcher: Dispatcher) {
 
     private fun parse(msg: RunTask): TaskCommand {
         val (taskName, methodName) = getClassAndMethodName("${msg.taskName}")
-        val task = getTaskInstance(taskName)
+        val task = getInstance(taskName)
         val parameterTypes = msg.taskMeta.parameterTypes
         val method = if (parameterTypes == null) {
             getMethodPerNameAndParameterCount(task, methodName, msg.taskInput.size)
