@@ -61,15 +61,4 @@ abstract class MsgHandler(
 
         state.currentWorkflowTaskId = workflowTaskId
     }
-
-    protected fun cleanMethodRun(methodRun: MethodRun, state: WorkflowState) {
-        // if everything is completed in methodRun then filter state
-        if (methodRun.methodOutput != null &&
-            methodRun.pastCommands.all { it.isTerminated() } &&
-            methodRun.pastSteps.all { it.isTerminated() }
-        ) {
-            // TODO("filter workflow if unused properties")
-            state.currentMethodRuns.remove(methodRun)
-        }
-    }
 }

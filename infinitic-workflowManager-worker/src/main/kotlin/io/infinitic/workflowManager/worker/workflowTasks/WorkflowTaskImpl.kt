@@ -14,29 +14,27 @@ import io.infinitic.workflowManager.worker.data.MethodRunContext
 import java.lang.reflect.InvocationTargetException
 
 class WorkflowTaskImpl : WorkflowTask {
-    private lateinit var taskAttemptContext: TaskAttemptContext
+    lateinit var taskAttemptContext: TaskAttemptContext
 
-    override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
+    override fun handle(input: WorkflowTaskInput): WorkflowTaskOutput {
         // get  instance workflow by name
-        val workflowInstance = taskAttemptContext.worker.getInstance("${workflowTaskInput.workflowName}") as Workflow
+        val workflowInstance = taskAttemptContext.worker.getTaskInstance("${input.workflowName}") as Workflow
 
         // set initial properties
-        val properties = workflowTaskInput.methodRun.propertiesAtStart.mapValues {
-            workflowTaskInput.workflowPropertyStore[it.value]
-        }
+        val properties = input.methodRun.propertiesAtStart.mapValues { input.workflowPropertyStore[it.value] }
         setPropertiesToObject(workflowInstance, properties)
 
         // get method
-        val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
+        val method = getMethod(workflowInstance, input.methodRun)
 
         // set methodContext
-        val methodRunContext = MethodRunContext(taskAttemptContext.worker, workflowTaskInput, workflowInstance)
-
-        workflowInstance.methodRunContext = methodRunContext
+        val methodRunContext = MethodRunContext(input, workflowInstance)
 
         // run method and get output
         val methodOutput = try {
-            MethodOutput(method.invoke(workflowInstance, *workflowTaskInput.methodRun.methodInput.data))
+            workflowInstance.methodRunContext = methodRunContext
+
+            MethodOutput(method.invoke(workflowInstance, *input.methodRun.methodInput.data))
         } catch (e: InvocationTargetException) {
             when (e.cause) {
                 is NewStepException -> null
@@ -47,12 +45,12 @@ class WorkflowTaskImpl : WorkflowTask {
 
         // TODO("Properties updates")
         return WorkflowTaskOutput(
-            workflowTaskInput.workflowId,
-            workflowTaskInput.methodRun.methodRunId,
+            input.workflowId,
+            input.methodRun.methodRunId,
             methodRunContext.newCommands,
             methodRunContext.newSteps,
-            workflowTaskInput.methodRun.propertiesAtStart,
-            workflowTaskInput.workflowPropertyStore,
+            input.methodRun.propertiesAtStart,
+            input.workflowPropertyStore,
             methodOutput
         )
     }

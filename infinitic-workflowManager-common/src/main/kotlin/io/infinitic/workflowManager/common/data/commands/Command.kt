@@ -11,7 +11,6 @@ import io.infinitic.taskManager.common.data.TaskName
 import io.infinitic.workflowManager.common.data.methodRuns.MethodName
 import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
-import java.lang.reflect.Method
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
@@ -40,15 +39,7 @@ data class DispatchTask(
     val taskInput: TaskInput,
     @JsonProperty("meta")
     val taskMeta: TaskMeta
-) : Command() {
-    companion object {
-        fun from(method: Method, args: Array<out Any>) = DispatchTask(
-            taskName = TaskName.from(method),
-            taskInput = TaskInput.from(method, args),
-            taskMeta = TaskMeta().withParametersTypesFrom(method)
-        )
-    }
-}
+) : Command()
 
 data class DispatchChildWorkflow(
     @JsonProperty("name")
@@ -57,15 +48,7 @@ data class DispatchChildWorkflow(
     val childMethodName: MethodName,
     @JsonProperty("input")
     val childMethodInput: MethodInput
-) : Command() {
-    companion object {
-        fun from(method: Method, args: Array<out Any>) = DispatchChildWorkflow(
-            childWorkflowName = WorkflowName.from(method),
-            childMethodName = MethodName.from(method),
-            childMethodInput = MethodInput.from(method, args)
-        )
-    }
-}
+) : Command()
 
 object StartAsync : Command() {
     // as we can not define a data class without parameter, we add manually the equals func

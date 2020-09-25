@@ -10,7 +10,6 @@ data class MethodRun(
     val methodRunId: MethodRunId = MethodRunId(),
     val isMain: Boolean,
     val parentWorkflowId: WorkflowId? = null,
-    val parentMethodRunId: MethodRunId? = null,
     val methodName: MethodName,
     val methodInput: MethodInput,
     var methodOutput: MethodOutput? = null,
