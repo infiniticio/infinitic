@@ -1,4 +1,4 @@
-package io.infinitic.engine.workflowManager.pulsar.functions
+package io.infinitic.engine.pulsar.workflowManager.functions
 
 import io.infinitic.common.workflowManager.avro.AvroConverter
 import io.infinitic.common.workflowManager.messages.ForWorkflowEngineMessage

@@ -13,7 +13,6 @@ include("infinitic-client")
 include("infinitic-engine")
 include("infinitic-engine-pulsar")
 include("infinitic-tests")
-include("infinitic-workflowManager-engine-pulsar")
 
 pluginManagement {
     repositories {
