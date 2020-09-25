@@ -18,7 +18,7 @@ dependencies {
 
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-taskManager-client"))
+    implementation(project(":infinitic-client"))
     implementation(project(":infinitic-taskManager-worker"))
     implementation(project(":infinitic-messaging-pulsar"))
 

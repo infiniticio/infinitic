@@ -30,7 +30,9 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatchTask<TaskTest> {
+                log()
+            }
         }
         // check that task is terminated
         storage.isTerminated(task) shouldBe true

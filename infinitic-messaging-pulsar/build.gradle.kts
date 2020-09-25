@@ -15,7 +15,7 @@ dependencies {
 
     implementation(project(":infinitic-avro"))
     api(project(":infinitic-messaging-api"))
-    api(project(":infinitic-taskManager-client"))
+    api(project(":infinitic-client"))
     api(project(":infinitic-taskManager-engine"))
     api(project(":infinitic-taskManager-worker"))
 

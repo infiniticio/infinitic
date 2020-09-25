@@ -16,7 +16,7 @@ dependencies {
     testImplementation(project(":infinitic-storage-pulsar"))
     testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-taskManager-engine"))
-    testImplementation(project(":infinitic-taskManager-client"))
+    testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-taskManager-worker"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")

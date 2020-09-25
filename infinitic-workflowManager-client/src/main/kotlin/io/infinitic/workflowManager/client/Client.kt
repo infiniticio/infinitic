@@ -12,7 +12,7 @@ import io.infinitic.common.workflowManager.data.workflows.WorkflowName
 import io.infinitic.common.workflowManager.data.workflows.WorkflowOptions
 import io.infinitic.common.workflowManager.messages.DispatchWorkflow
 import java.lang.reflect.Proxy
-import io.infinitic.taskManager.client.Client as TaskClient
+import io.infinitic.client.taskManager.Client as TaskClient
 
 class Client(
     override val dispatcher: Dispatcher

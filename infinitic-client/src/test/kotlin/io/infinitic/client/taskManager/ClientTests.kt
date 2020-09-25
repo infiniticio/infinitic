@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.client
+package io.infinitic.client.taskManager
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.taskManager.data.TaskId
