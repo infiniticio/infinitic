@@ -5,6 +5,7 @@ import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptError
 import io.infinitic.taskManager.common.data.TaskOutput
+import io.infinitic.taskManager.common.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.MultipleUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.ProcessingTimeout
@@ -16,7 +17,6 @@ import io.infinitic.taskManager.common.messages.TaskAttemptFailed
 import io.infinitic.taskManager.common.messages.TaskAttemptStarted
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.taskManager.common.parser.getNewInstancePerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -137,13 +137,9 @@ open class Worker(val dispatcher: Dispatcher) {
         }
     }
 
-    fun getTaskInstance(name: String): Any {
-        // return registered instance if any
-        if (registeredTasks.containsKey(name)) return registeredTasks[name]!!
+    fun getInstance(name: String) = getInstanceOrNull(name) ?: throw ClassNotFoundDuringInstantiation(name)
 
-        // if no instance is registered, try to instantiate this task
-        return getNewInstancePerName(name)
-    }
+    fun getInstanceOrNull(name: String) = registeredTasks[name]
 
     private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
         val output = method.invoke(task, *parameters)
@@ -177,7 +173,7 @@ open class Worker(val dispatcher: Dispatcher) {
 
     private fun parse(msg: RunTask): TaskCommand {
         val (taskName, methodName) = getClassAndMethodName("${msg.taskName}")
-        val task = getTaskInstance(taskName)
+        val task = getInstance(taskName)
         val parameterTypes = msg.taskMeta.parameterTypes
         val method = if (parameterTypes == null) {
             getMethodPerNameAndParameterCount(task, methodName, msg.taskInput.size)

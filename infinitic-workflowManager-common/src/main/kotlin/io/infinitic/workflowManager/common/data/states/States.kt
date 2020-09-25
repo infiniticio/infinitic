@@ -6,6 +6,7 @@ import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
 import io.infinitic.workflowManager.common.data.properties.Properties
 import io.infinitic.workflowManager.common.data.properties.PropertyStore
 import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
+import io.infinitic.workflowManager.common.data.workflows.WorkflowMeta
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName
 import io.infinitic.workflowManager.common.data.workflows.WorkflowOptions
 import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
@@ -17,6 +18,7 @@ data class WorkflowState(
     val parentWorkflowId: WorkflowId? = null,
     val workflowName: WorkflowName,
     val workflowOptions: WorkflowOptions,
+    val workflowMeta: WorkflowMeta,
     var currentWorkflowTaskId: WorkflowTaskId? = null,
     var currentMessageIndex: WorkflowMessageIndex = WorkflowMessageIndex(0),
     val currentMethodRuns: MutableList<MethodRun>,

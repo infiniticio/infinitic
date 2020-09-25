@@ -149,9 +149,7 @@ data class ClassNotFoundDuringInstantiation(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(
     msg = "Impossible to find a Class associated to $name",
-    help = "Consider those options:\n" +
-        "- adding $name to the classes available to the worker\n" +
-        "- using register method to provide an instance that will be used associated to $name"
+    help = "Use \"register\" method to provide an instance that will be used associated to $name"
 )
 
 data class NoMethodFoundWithParameterTypes(
