@@ -19,7 +19,7 @@
       "name": "workflowPropertyStore",
       "type": {
         "type": "map",
-        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       }
     },
     {

@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.data.TaskInput
-import io.infinitic.taskManager.common.data.TaskMeta
-import io.infinitic.taskManager.common.data.TaskName
+import io.infinitic.common.taskManager.data.TaskInput
+import io.infinitic.common.taskManager.data.TaskMeta
+import io.infinitic.common.taskManager.data.TaskName
 import io.infinitic.workflowManager.common.data.methodRuns.MethodName
 import io.infinitic.workflowManager.common.data.methodRuns.MethodInput
 import io.infinitic.workflowManager.common.data.workflows.WorkflowName

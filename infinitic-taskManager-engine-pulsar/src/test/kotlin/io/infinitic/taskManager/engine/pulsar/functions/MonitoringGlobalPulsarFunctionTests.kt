@@ -1,9 +1,9 @@
 package io.infinitic.taskManager.engine.pulsar.functions
 
-import io.infinitic.taskManager.common.avro.AvroConverter
-import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.taskManager.avro.AvroConverter
+import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
 import io.infinitic.taskManager.engine.engines.MonitoringGlobal
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.Runs

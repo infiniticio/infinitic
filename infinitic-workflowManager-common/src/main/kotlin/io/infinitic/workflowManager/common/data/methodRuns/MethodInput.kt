@@ -3,7 +3,7 @@ package io.infinitic.workflowManager.common.data.methodRuns
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.data.bases.Input
+import io.infinitic.common.taskManager.data.bases.Input
 import java.lang.reflect.Method
 
 class MethodInput(override vararg val data: Any?) : Input(data), Collection<Any?> by data.toList() {

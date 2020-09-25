@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroTaskAttemptDispatched",
-  "namespace": "io.infinitic.taskManager.messages",
+  "namespace": "io.infinitic.avro.taskManager.messages",
   "fields": [
     {
       "name": "taskId",

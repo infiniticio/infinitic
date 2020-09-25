@@ -1,8 +1,8 @@
 package io.infinitic.workflowManager.common.messages
 
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskInput
-import io.infinitic.taskManager.common.data.TaskOutput
+import io.infinitic.common.taskManager.data.TaskId
+import io.infinitic.common.taskManager.data.TaskInput
+import io.infinitic.common.taskManager.data.TaskOutput
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskOutput

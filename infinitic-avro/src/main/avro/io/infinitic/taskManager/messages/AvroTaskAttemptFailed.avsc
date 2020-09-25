@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroTaskAttemptFailed",
-  "namespace": "io.infinitic.taskManager.messages",
+  "namespace": "io.infinitic.avro.taskManager.messages",
   "fields": [
     {
       "name": "taskId",
@@ -23,7 +23,7 @@
     },
     {
       "name": "taskAttemptError",
-      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+      "type": "io.infinitic.avro.taskManager.data.AvroSerializedData"
     },
     {
       "name": "taskAttemptDelayBeforeRetry",

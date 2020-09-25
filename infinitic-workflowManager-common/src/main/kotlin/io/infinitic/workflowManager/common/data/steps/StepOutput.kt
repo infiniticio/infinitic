@@ -3,7 +3,7 @@ package io.infinitic.workflowManager.common.data.steps
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.data.bases.Data
+import io.infinitic.common.taskManager.data.bases.Data
 
 data class StepOutput(override val data: Any?) : Data(data) {
     @get:JsonValue

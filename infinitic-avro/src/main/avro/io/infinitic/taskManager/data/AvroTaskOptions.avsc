@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroTaskOptions",
-  "namespace": "io.infinitic.taskManager.data",
+  "namespace": "io.infinitic.avro.taskManager.data",
   "fields": [
     {
       "name": "runningTimeout",

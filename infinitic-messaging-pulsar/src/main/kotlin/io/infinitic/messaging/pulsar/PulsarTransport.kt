@@ -3,10 +3,10 @@ package io.infinitic.messaging.pulsar
 import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
 import io.infinitic.messaging.pulsar.wrapper.PulsarClientWrapper
 import io.infinitic.messaging.pulsar.wrapper.PulsarFunctionContextWrapper
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

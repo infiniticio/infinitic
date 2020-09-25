@@ -42,14 +42,14 @@
       "name": "methodInput",
       "type": {
         "type": "array",
-        "items": "io.infinitic.taskManager.data.AvroSerializedData"
+        "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       }
     },
     {
       "name": "workflowMeta",
       "type": {
         "type": "map",
-        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       }
     },
     {

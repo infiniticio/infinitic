@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroEnvelopeForWorker",
-    "namespace": "io.infinitic.taskManager.messages.envelopes",
+    "namespace": "io.infinitic.avro.taskManager.messages.envelopes",
     "fields": [
         {
             "name": "type",
@@ -17,7 +17,7 @@
             "type": "string"
         },{
              "name": "RunTask",
-             "type": ["null", "io.infinitic.taskManager.messages.AvroRunTask"],
+             "type": ["null", "io.infinitic.avro.taskManager.messages.AvroRunTask"],
              "default": null
         }
     ]

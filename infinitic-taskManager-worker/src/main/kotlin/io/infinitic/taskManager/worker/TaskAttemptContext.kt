@@ -1,11 +1,11 @@
 package io.infinitic.taskManager.worker
 
-import io.infinitic.taskManager.common.data.TaskAttemptId
-import io.infinitic.taskManager.common.data.TaskAttemptIndex
-import io.infinitic.taskManager.common.data.TaskAttemptRetry
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskMeta
-import io.infinitic.taskManager.common.data.TaskOptions
+import io.infinitic.common.taskManager.data.TaskAttemptId
+import io.infinitic.common.taskManager.data.TaskAttemptIndex
+import io.infinitic.common.taskManager.data.TaskAttemptRetry
+import io.infinitic.common.taskManager.data.TaskId
+import io.infinitic.common.taskManager.data.TaskMeta
+import io.infinitic.common.taskManager.data.TaskOptions
 
 data class TaskAttemptContext(
     val worker: Worker,

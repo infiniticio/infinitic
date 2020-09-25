@@ -1,8 +1,8 @@
 package io.infinitic.workflowManager.client
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.taskManager.common.proxies.MethodProxyHandler
-import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
+import io.infinitic.common.taskManager.proxies.MethodProxyHandler
+import io.infinitic.common.taskManager.exceptions.NoMethodCallAtDispatch
 import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId
 import io.infinitic.workflowManager.common.data.methodRuns.MethodInput

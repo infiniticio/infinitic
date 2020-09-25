@@ -1,14 +1,14 @@
 package io.infinitic.messaging.pulsar
 
-import io.infinitic.taskManager.common.avro.AvroConverter
-import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
-import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
-import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
-import io.infinitic.taskManager.common.messages.ForWorkerMessage
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.common.taskManager.avro.AvroConverter
+import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
+import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.taskManager.messages.ForWorkerMessage
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.messaging.pulsar.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec

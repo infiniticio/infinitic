@@ -1,11 +1,11 @@
 package io.infinitic.taskManager.engine.engines
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.taskManager.common.data.TaskStatus
-import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
-import io.infinitic.taskManager.common.messages.TaskCreated
-import io.infinitic.taskManager.common.messages.TaskStatusUpdated
-import io.infinitic.taskManager.common.states.MonitoringPerNameState
+import io.infinitic.common.taskManager.data.TaskStatus
+import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.taskManager.messages.TaskCreated
+import io.infinitic.common.taskManager.messages.TaskStatusUpdated
+import io.infinitic.common.taskManager.states.MonitoringPerNameState
 import io.infinitic.taskManager.engine.storage.TaskStateStorage
 
 class MonitoringPerName(

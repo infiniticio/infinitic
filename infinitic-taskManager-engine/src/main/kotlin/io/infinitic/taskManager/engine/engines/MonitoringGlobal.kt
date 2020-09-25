@@ -1,8 +1,8 @@
 package io.infinitic.taskManager.engine.engines
 
-import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
-import io.infinitic.taskManager.common.messages.TaskCreated
-import io.infinitic.taskManager.common.states.MonitoringGlobalState
+import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.taskManager.messages.TaskCreated
+import io.infinitic.common.taskManager.states.MonitoringGlobalState
 import io.infinitic.taskManager.engine.storage.TaskStateStorage
 
 class MonitoringGlobal(

@@ -31,7 +31,7 @@
       "name": "workflowMeta",
       "type": {
         "type": "map",
-        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       }
     },
     {
@@ -67,7 +67,7 @@
       "name": "propertyStore",
       "type": {
         "type": "map",
-        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       }
     },
     {

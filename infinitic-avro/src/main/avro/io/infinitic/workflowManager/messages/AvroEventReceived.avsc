@@ -16,7 +16,7 @@
       "name": "eventData",
       "type": {
         "type": "array",
-        "items": "io.infinitic.taskManager.data.AvroSerializedData"
+        "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       },
       "default": []
     }

@@ -2,8 +2,8 @@ package io.infinitic.workflowManager.common.data.commands
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.taskManager.common.data.bases.Id
-import io.infinitic.taskManager.common.data.TaskId
+import io.infinitic.common.taskManager.data.bases.Id
+import io.infinitic.common.taskManager.data.TaskId
 import io.infinitic.workflowManager.common.data.DelayId
 import io.infinitic.workflowManager.common.data.events.EventId
 import io.infinitic.workflowManager.common.data.workflows.WorkflowId

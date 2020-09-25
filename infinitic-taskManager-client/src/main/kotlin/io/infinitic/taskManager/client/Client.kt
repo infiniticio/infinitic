@@ -1,18 +1,18 @@
 package io.infinitic.taskManager.client
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.taskManager.common.data.TaskInstance
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskInput
-import io.infinitic.taskManager.common.data.TaskMeta
-import io.infinitic.taskManager.common.data.TaskName
-import io.infinitic.taskManager.common.data.TaskOptions
-import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.taskManager.common.exceptions.NoMethodCallAtDispatch
-import io.infinitic.taskManager.common.messages.CancelTask
-import io.infinitic.taskManager.common.messages.DispatchTask
-import io.infinitic.taskManager.common.messages.RetryTask
-import io.infinitic.taskManager.common.proxies.MethodProxyHandler
+import io.infinitic.common.taskManager.data.TaskInstance
+import io.infinitic.common.taskManager.data.TaskId
+import io.infinitic.common.taskManager.data.TaskInput
+import io.infinitic.common.taskManager.data.TaskMeta
+import io.infinitic.common.taskManager.data.TaskName
+import io.infinitic.common.taskManager.data.TaskOptions
+import io.infinitic.common.taskManager.data.TaskOutput
+import io.infinitic.common.taskManager.exceptions.NoMethodCallAtDispatch
+import io.infinitic.common.taskManager.messages.CancelTask
+import io.infinitic.common.taskManager.messages.DispatchTask
+import io.infinitic.common.taskManager.messages.RetryTask
+import io.infinitic.common.taskManager.proxies.MethodProxyHandler
 
 open class Client(open val dispatcher: Dispatcher) {
 

@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroTaskEngineState",
-  "namespace": "io.infinitic.taskManager.states",
+  "namespace": "io.infinitic.avro.taskManager.states",
   "fields": [
     {
       "name": "taskAttemptId",
@@ -20,7 +20,7 @@
       "name": "taskInput",
       "type": {
         "type": "array",
-        "items": "io.infinitic.taskManager.data.AvroSerializedData"
+        "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       }
     },
     {
@@ -34,17 +34,17 @@
     },
     {
       "name": "taskStatus",
-      "type": "io.infinitic.taskManager.data.AvroTaskStatus"
+      "type": "io.infinitic.avro.taskManager.data.AvroTaskStatus"
     },
     {
       "name": "taskOptions",
-      "type": "io.infinitic.taskManager.data.AvroTaskOptions"
+      "type": "io.infinitic.avro.taskManager.data.AvroTaskOptions"
     },
     {
       "name": "taskMeta",
       "type": {
         "type": "map",
-        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       }
     }
   ]

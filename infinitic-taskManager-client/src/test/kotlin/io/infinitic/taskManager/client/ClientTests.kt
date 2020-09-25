@@ -1,13 +1,13 @@
 package io.infinitic.taskManager.client
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskInput
-import io.infinitic.taskManager.common.data.TaskMeta
-import io.infinitic.taskManager.common.data.TaskName
-import io.infinitic.taskManager.common.data.TaskOptions
-import io.infinitic.taskManager.common.messages.DispatchTask
-import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
+import io.infinitic.common.taskManager.data.TaskId
+import io.infinitic.common.taskManager.data.TaskInput
+import io.infinitic.common.taskManager.data.TaskMeta
+import io.infinitic.common.taskManager.data.TaskName
+import io.infinitic.common.taskManager.data.TaskOptions
+import io.infinitic.common.taskManager.messages.DispatchTask
+import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs

@@ -1,7 +1,7 @@
 {
     "type": "record",
     "name": "AvroEnvelopeForMonitoringGlobal",
-    "namespace": "io.infinitic.taskManager.messages.envelopes",
+    "namespace": "io.infinitic.avro.taskManager.messages.envelopes",
     "fields": [
         {
             "name": "type",
@@ -14,7 +14,7 @@
             }
         }, {
             "name": "TaskCreated",
-            "type": ["null", "io.infinitic.taskManager.messages.AvroTaskCreated"],
+            "type": ["null", "io.infinitic.avro.taskManager.messages.AvroTaskCreated"],
             "default": null
         }
     ]

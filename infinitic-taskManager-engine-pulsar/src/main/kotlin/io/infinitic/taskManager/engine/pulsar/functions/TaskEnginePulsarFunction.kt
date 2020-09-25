@@ -2,11 +2,11 @@ package io.infinitic.taskManager.engine.pulsar.functions
 
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
-import io.infinitic.taskManager.common.avro.AvroConverter
+import io.infinitic.common.taskManager.avro.AvroConverter
 import io.infinitic.messaging.pulsar.PulsarTransport
 import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.engine.storage.AvroKeyValueTaskStateStorage
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function

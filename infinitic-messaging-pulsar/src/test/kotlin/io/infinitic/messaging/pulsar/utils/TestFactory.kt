@@ -1,6 +1,6 @@
 package io.infinitic.messaging.pulsar.utils
 
-import io.infinitic.taskManager.common.data.TaskInput
+import io.infinitic.common.taskManager.data.TaskInput
 import io.kotest.properties.nextPrintableString
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters

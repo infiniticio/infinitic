@@ -1,6 +1,6 @@
 package io.infinitic.workflowManager.pulsar.utils
 
-import io.infinitic.taskManager.common.data.TaskId
+import io.infinitic.common.taskManager.data.TaskId
 import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
 import io.infinitic.workflowManager.common.data.steps.Step

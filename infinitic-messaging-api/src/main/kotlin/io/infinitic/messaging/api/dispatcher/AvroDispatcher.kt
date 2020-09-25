@@ -1,11 +1,11 @@
 package io.infinitic.messaging.api.dispatcher
 
 import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
-import io.infinitic.taskManager.common.avro.AvroConverter as TaskAvroConverter
-import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
-import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
-import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
-import io.infinitic.taskManager.common.messages.ForWorkerMessage
+import io.infinitic.common.taskManager.avro.AvroConverter as TaskAvroConverter
+import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
+import io.infinitic.common.taskManager.messages.ForWorkerMessage
 import io.infinitic.workflowManager.common.avro.AvroConverter as WorkflowAvroConverter
 import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
 

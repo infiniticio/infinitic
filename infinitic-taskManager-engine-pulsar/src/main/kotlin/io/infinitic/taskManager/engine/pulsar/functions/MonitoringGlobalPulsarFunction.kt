@@ -1,10 +1,10 @@
 package io.infinitic.taskManager.engine.pulsar.functions
 
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
-import io.infinitic.taskManager.common.avro.AvroConverter
+import io.infinitic.common.taskManager.avro.AvroConverter
 import io.infinitic.taskManager.engine.engines.MonitoringGlobal
 import io.infinitic.taskManager.engine.storage.AvroKeyValueTaskStateStorage
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 

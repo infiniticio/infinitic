@@ -36,12 +36,12 @@
       "name": "workflowPropertyStoreUpdates",
       "type": {
         "type": "map",
-        "values": "io.infinitic.taskManager.data.AvroSerializedData"
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
       }
     },
     {
       "name": "methodOutput",
-      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+      "type": "io.infinitic.avro.taskManager.data.AvroSerializedData"
     }
   ]
 }

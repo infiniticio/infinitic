@@ -1,6 +1,6 @@
 package io.infinitic.workflowManager.tests
 
-import io.infinitic.taskManager.data.AvroTaskStatus
+import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.taskManager.worker.Worker

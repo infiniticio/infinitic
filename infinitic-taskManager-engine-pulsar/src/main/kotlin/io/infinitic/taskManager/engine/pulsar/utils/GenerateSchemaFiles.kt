@@ -1,10 +1,10 @@
 package io.infinitic.taskManager.engine.pulsar.utils
 
 import io.infinitic.common.json.Json
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import java.io.File
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase

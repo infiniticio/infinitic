@@ -1,9 +1,9 @@
 package io.infinitic.workflowManager.common.utils
 
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.data.TaskInput
-import io.infinitic.taskManager.data.AvroSerializedData
-import io.infinitic.taskManager.data.AvroSerializedDataType
+import io.infinitic.common.taskManager.data.TaskInput
+import io.infinitic.avro.taskManager.data.AvroSerializedData
+import io.infinitic.avro.taskManager.data.AvroSerializedDataType
 import io.infinitic.workflowManager.common.avro.AvroConverter
 import io.infinitic.workflowManager.common.data.commands.CommandId
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing

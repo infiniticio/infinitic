@@ -1,7 +1,7 @@
 package io.infinitic.taskManager.tests
 
-import io.infinitic.taskManager.common.data.TaskInstance
-import io.infinitic.taskManager.common.data.TaskStatus
+import io.infinitic.common.taskManager.data.TaskInstance
+import io.infinitic.common.taskManager.data.TaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.taskManager.worker.Worker

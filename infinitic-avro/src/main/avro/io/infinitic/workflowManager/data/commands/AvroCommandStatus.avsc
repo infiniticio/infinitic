@@ -19,7 +19,7 @@
       "name": "result",
       "type":  [
         "null",
-        "io.infinitic.taskManager.data.AvroSerializedData"
+        "io.infinitic.avro.taskManager.data.AvroSerializedData"
       ],
       "default": null
     },

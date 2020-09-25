@@ -1,7 +1,7 @@
 package io.infinitic.workflowManager.worker.workflowTasks
 
-import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterCount
-import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.taskManager.worker.TaskAttemptContext
 import io.infinitic.workflowManager.common.data.methodRuns.MethodOutput
 import io.infinitic.workflowManager.common.data.methodRuns.MethodRun

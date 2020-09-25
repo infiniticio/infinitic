@@ -2,8 +2,8 @@ package io.infinitic.workflowManager.common.data.commands
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.taskManager.common.Constants
-import io.infinitic.taskManager.common.data.bases.Name
+import io.infinitic.common.taskManager.Constants
+import io.infinitic.common.taskManager.data.bases.Name
 import java.lang.reflect.Method
 
 data class CommandSimpleName

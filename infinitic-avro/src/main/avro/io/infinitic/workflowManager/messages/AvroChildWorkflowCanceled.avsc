@@ -15,7 +15,7 @@
     },
     {
       "name": "childWorkflowOutput",
-      "type": "io.infinitic.taskManager.data.AvroSerializedData"
+      "type": "io.infinitic.avro.taskManager.data.AvroSerializedData"
     }
   ]
 }

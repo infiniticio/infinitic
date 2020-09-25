@@ -2,16 +2,16 @@ package io.infinitic.taskManager.engine.storage
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.storage.api.Storage
-import io.infinitic.taskManager.common.avro.AvroConverter
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskName
-import io.infinitic.taskManager.common.data.TaskStatus
-import io.infinitic.taskManager.common.states.MonitoringGlobalState
-import io.infinitic.taskManager.common.states.MonitoringPerNameState
-import io.infinitic.taskManager.common.states.TaskEngineState
-import io.infinitic.taskManager.states.AvroMonitoringGlobalState
-import io.infinitic.taskManager.states.AvroMonitoringPerNameState
-import io.infinitic.taskManager.states.AvroTaskEngineState
+import io.infinitic.common.taskManager.avro.AvroConverter
+import io.infinitic.common.taskManager.data.TaskId
+import io.infinitic.common.taskManager.data.TaskName
+import io.infinitic.common.taskManager.data.TaskStatus
+import io.infinitic.common.taskManager.states.MonitoringGlobalState
+import io.infinitic.common.taskManager.states.MonitoringPerNameState
+import io.infinitic.common.taskManager.states.TaskEngineState
+import io.infinitic.avro.taskManager.states.AvroMonitoringGlobalState
+import io.infinitic.avro.taskManager.states.AvroMonitoringPerNameState
+import io.infinitic.avro.taskManager.states.AvroTaskEngineState
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves

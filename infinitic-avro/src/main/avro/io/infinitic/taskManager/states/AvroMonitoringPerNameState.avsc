@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroMonitoringPerNameState",
-  "namespace": "io.infinitic.taskManager.states",
+  "namespace": "io.infinitic.avro.taskManager.states",
   "fields": [
     {
       "name": "taskName",

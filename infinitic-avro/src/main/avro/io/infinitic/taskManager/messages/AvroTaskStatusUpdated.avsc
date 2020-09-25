@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "AvroTaskStatusUpdated",
-  "namespace": "io.infinitic.taskManager.messages",
+  "namespace": "io.infinitic.avro.taskManager.messages",
   "fields": [
     {
       "name": "taskId",
@@ -16,12 +16,12 @@
       "name": "oldStatus",
       "type": [
         "null",
-        "io.infinitic.taskManager.data.AvroTaskStatus"
+        "io.infinitic.avro.taskManager.data.AvroTaskStatus"
       ]
     },
     {
       "name": "newStatus",
-      "type": "io.infinitic.taskManager.data.AvroTaskStatus"
+      "type": "io.infinitic.avro.taskManager.data.AvroTaskStatus"
     }
   ]
 }

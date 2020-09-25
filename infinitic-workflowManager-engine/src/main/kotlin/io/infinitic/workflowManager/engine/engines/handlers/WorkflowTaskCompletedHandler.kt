@@ -1,10 +1,10 @@
 package io.infinitic.workflowManager.engine.engines.handlers
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.taskManager.common.data.TaskId
-import io.infinitic.taskManager.common.data.TaskMeta
+import io.infinitic.common.taskManager.data.TaskId
+import io.infinitic.common.taskManager.data.TaskMeta
 import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
-import io.infinitic.taskManager.common.messages.DispatchTask
+import io.infinitic.common.taskManager.messages.DispatchTask
 import io.infinitic.workflowManager.common.data.commands.CommandOutput
 import io.infinitic.workflowManager.common.data.commands.CommandStatusCompleted
 import io.infinitic.workflowManager.common.data.commands.CommandType
