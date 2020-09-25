@@ -9,11 +9,6 @@
       "logicalType": "uuid"
     },
     {
-      "name": "methodRunId",
-      "type": "string",
-      "logicalType": "uuid"
-    },
-    {
       "name": "childWorkflowId",
       "type": "string",
       "logicalType": "uuid"

@@ -37,6 +37,12 @@ class TaskCompletedHandler(
         }
 
         // if everything is completed in methodRun then filter state
-        cleanMethodRun(methodRun, state)
+        if (methodRun.methodOutput != null &&
+            methodRun.pastCommands.all { it.isTerminated() } &&
+            methodRun.pastSteps.all { it.isTerminated() }
+        ) {
+            // TODO("filter workflow if unused properties")
+            state.currentMethodRuns.remove(methodRun)
+        }
     }
 }

@@ -28,13 +28,6 @@
       "type": "io.infinitic.workflowManager.data.workflows.AvroWorkflowOptions"
     },
     {
-      "name": "workflowMeta",
-      "type": {
-        "type": "map",
-        "values": "io.infinitic.taskManager.data.AvroSerializedData"
-      }
-    },
-    {
       "name": "currentWorkflowTaskId",
       "type": [
         "null",

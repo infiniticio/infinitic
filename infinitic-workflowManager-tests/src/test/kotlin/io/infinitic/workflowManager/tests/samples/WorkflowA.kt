@@ -21,13 +21,10 @@ interface WorkflowA {
     fun inline(): String
     fun inline2(): String
     fun inline3(): String
-    fun child1(): String
-    fun child2(): String
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
     private val task = proxy<TaskA>()
-    private val workflowB = proxy<WorkflowB>()
 
     override fun empty() = "void"
 
@@ -146,20 +143,5 @@ class WorkflowAImpl : Workflow(), WorkflowA {
             LocalDateTime.now()
         }
         return task.concat("Current Date and Time is: ", "$date") // should throw
-    }
-
-    override fun child1(): String {
-
-        var str: String = workflowB.concat("-")
-        str = task.concat(str, "-")
-
-        return str // should be "-abc-"
-    }
-
-    override fun child2(): String {
-        val str = task.reverse("12")
-        val d = async(workflowB) { concat(str) }
-
-        return task.concat(d.result(), str) // should be "21abc21"
     }
 }

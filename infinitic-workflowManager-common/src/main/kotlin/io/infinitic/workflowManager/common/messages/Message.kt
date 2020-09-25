@@ -35,7 +35,6 @@ data class ChildWorkflowCanceled(
 
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
-    val methodRunId: MethodRunId,
     val childWorkflowId: WorkflowId,
     val childWorkflowOutput: MethodOutput
 ) : ForWorkflowEngineMessage(workflowId)
