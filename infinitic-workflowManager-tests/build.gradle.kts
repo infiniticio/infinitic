@@ -18,7 +18,6 @@ dependencies {
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-worker"))
     testImplementation(project(":infinitic-workflowManager-engine"))
-    testImplementation(project(":infinitic-workflowManager-worker"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     testImplementation("org.jeasy:easy-random-core:4.2.+")
