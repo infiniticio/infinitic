@@ -4,14 +4,9 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 plugins {
-    application
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
-}
-
-application {
-    mainClassName = "io.infinitic.taskManager.dispatcher.pulsar.utils.GenerateSchemaFilesKt"
 }
 
 dependencies {
