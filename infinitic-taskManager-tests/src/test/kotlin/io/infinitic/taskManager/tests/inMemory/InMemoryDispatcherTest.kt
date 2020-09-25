@@ -8,7 +8,7 @@ import io.infinitic.taskManager.engine.engines.MonitoringGlobal
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.engine.storage.InMemoryTaskStateStorage
-import io.infinitic.taskManager.worker.Worker
+import io.infinitic.worker.taskManager.Worker
 
 class InMemoryDispatcherTest(storage: InMemoryTaskStateStorage) : InMemoryDispatcher() {
     val client = Client(this)

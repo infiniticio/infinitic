@@ -4,7 +4,7 @@ import io.infinitic.common.taskManager.data.TaskInstance
 import io.infinitic.common.taskManager.data.TaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
-import io.infinitic.taskManager.worker.Worker
+import io.infinitic.worker.taskManager.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.coroutineScope

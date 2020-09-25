@@ -1,6 +1,6 @@
 package io.infinitic.taskManager.tests
 
-import io.infinitic.taskManager.worker.TaskAttemptContext
+import io.infinitic.worker.taskManager.TaskAttemptContext
 
 interface TaskTest {
     fun log()

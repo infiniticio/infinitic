@@ -1,6 +1,6 @@
 package io.infinitic.workflowManager.worker.data
 
-import io.infinitic.taskManager.worker.Worker
+import io.infinitic.worker.taskManager.Worker
 import io.infinitic.common.workflowManager.data.commands.CommandOutput
 import io.infinitic.common.workflowManager.data.commands.CommandSimpleName
 import io.infinitic.common.workflowManager.data.commands.CommandStatusCanceled

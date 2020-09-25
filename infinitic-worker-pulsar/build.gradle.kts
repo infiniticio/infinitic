@@ -1,30 +1,31 @@
-
 plugins {
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+
+    // Apply the java-library plugin for API and implementation separation.
+    `java-library`
 }
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    implementation("org.apache.pulsar:pulsar-client:2.5.+")
+    implementation("org.apache.pulsar:pulsar-functions-api:2.5.+")
     implementation("org.apache.avro:avro:1.10.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
 
-    testImplementation(project(":infinitic-avro"))
-    testImplementation(project(":infinitic-messaging-api"))
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-taskManager-engine"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-worker"))
-    testImplementation(project(":infinitic-workflowManager-engine"))
-    testImplementation(project(":infinitic-workflowManager-worker"))
+    implementation(project(":infinitic-avro"))
+    implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-client"))
+    implementation(project(":infinitic-worker"))
+    implementation(project(":infinitic-messaging-pulsar"))
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     testImplementation("org.jeasy:easy-random-core:4.2.+")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.1.+")
-    testImplementation("io.kotest:kotest-property-jvm:4.1.+")
-    testImplementation("io.kotest:kotest-core-jvm:4.1.+")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
+    testImplementation("io.kotest:kotest-property-jvm:4.0.+")
+    testImplementation("io.kotest:kotest-core-jvm:4.0.+")
     testImplementation("io.mockk:mockk:1.9.+")
 }
 

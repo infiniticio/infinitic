@@ -17,7 +17,7 @@ dependencies {
     api(project(":infinitic-messaging-api"))
     api(project(":infinitic-client"))
     api(project(":infinitic-taskManager-engine"))
-    api(project(":infinitic-taskManager-worker"))
+    api(project(":infinitic-worker"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

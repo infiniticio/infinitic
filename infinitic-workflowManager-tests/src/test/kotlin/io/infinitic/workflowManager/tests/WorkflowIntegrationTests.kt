@@ -3,7 +3,7 @@ package io.infinitic.workflowManager.tests
 import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
-import io.infinitic.taskManager.worker.Worker
+import io.infinitic.worker.taskManager.Worker
 import io.infinitic.common.workflowManager.data.workflows.WorkflowInstance
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
 import io.infinitic.workflowManager.tests.samples.TaskA
