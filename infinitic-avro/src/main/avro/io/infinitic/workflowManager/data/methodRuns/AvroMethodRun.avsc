@@ -14,7 +14,25 @@
     },
     {
       "name": "parentWorkflowId",
-      "type": "string"
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "logicalType": "uuid"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "parentMethodRunId",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "logicalType": "uuid"
+        }
+      ],
+      "default": null
     },
     {
       "name": "methodName",
