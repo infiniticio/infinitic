@@ -23,8 +23,8 @@ import io.infinitic.common.taskManager.states.TaskEngineState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 
 class TaskEngine(
-        val storage: TaskStateStorage,
-        val dispatcher: Dispatcher
+    val storage: TaskStateStorage,
+    val dispatcher: Dispatcher
 ) {
     suspend fun handle(message: ForTaskEngineMessage) {
         // immediately discard messages that are non managed
