@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.tests
+package io.infinitic.tests.workflowManager
 
 import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
@@ -6,12 +6,12 @@ import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.worker.taskManager.Worker
 import io.infinitic.common.workflowManager.data.workflows.WorkflowInstance
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
-import io.infinitic.workflowManager.tests.samples.TaskA
-import io.infinitic.workflowManager.tests.samples.TaskAImpl
-import io.infinitic.workflowManager.tests.samples.WorkflowA
-import io.infinitic.workflowManager.tests.samples.WorkflowAImpl
-import io.infinitic.workflowManager.tests.samples.WorkflowB
-import io.infinitic.workflowManager.tests.samples.WorkflowBImpl
+import io.infinitic.tests.workflowManager.samples.TaskA
+import io.infinitic.tests.workflowManager.samples.TaskAImpl
+import io.infinitic.tests.workflowManager.samples.WorkflowA
+import io.infinitic.tests.workflowManager.samples.WorkflowAImpl
+import io.infinitic.tests.workflowManager.samples.WorkflowB
+import io.infinitic.tests.workflowManager.samples.WorkflowBImpl
 import io.infinitic.worker.workflowManager.workflowTasks.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn

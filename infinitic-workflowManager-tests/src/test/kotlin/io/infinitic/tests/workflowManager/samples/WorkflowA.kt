@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.tests.samples
+package io.infinitic.tests.workflowManager.samples
 
 import io.infinitic.worker.workflowManager.Workflow
 import io.infinitic.worker.workflowManager.deferred.Deferred
