@@ -62,7 +62,7 @@ tasks {
 }
 
 tasks.register("setRetention") {
-    group = "Zenaton"
+    group = "Infinitic"
     description = "Set retention for default tenant/namespace to 1G"
     doLast {
         println("Set Pulsar retention to 1G size for public/default")
@@ -72,15 +72,18 @@ tasks.register("setRetention") {
 }
 
 tasks.register("setSchemas") {
-    group = "Zenaton"
-    description = "Upload Zenaton schemas into Pulsar"
+    group = "Infinitic"
+    description = "Upload Infinitic schemas into Pulsar"
     dependsOn("assemble")
     doLast {
         createSchemaFiles()
-        setPrefix("tasks")
+        uploadSchemaToTopic(
+                name = "AvroEnvelopeForWorkflowEngine",
+                topic = Topic.WORKFLOW_ENGINE.get()
+        )
         uploadSchemaToTopic(
             name = "AvroEnvelopeForTaskEngine",
-            topic = Topic.ENGINE.get()
+            topic = Topic.TASK_ENGINE.get()
         )
         uploadSchemaToTopic(
             name = "AvroEnvelopeForMonitoringPerName",
@@ -90,72 +93,96 @@ tasks.register("setSchemas") {
             name = "AvroEnvelopeForMonitoringGlobal",
             topic = Topic.MONITORING_GLOBAL.get()
         )
+        uploadSchemaToTopic(
+                name = "AvroEnvelopeForWorkflowEngine",
+                topic = Topic.WORKFLOW_ENGINE.get()
+        )
     }
 }
 
 tasks.register("install") {
-    group = "Zenaton"
-    description = "Install Zenaton into Pulsar"
+    group = "Infinitic"
+    description = "Install Infinitic into Pulsar"
     dependsOn("setRetention")
     dependsOn("setSchemas")
     doLast {
-        setZenatonFunction(
-            name = "infinitic-tasks-engine",
-            className = "TaskEnginePulsarFunction",
-            topicsIn = setOf(Topic.ENGINE.get()),
-            action = "create"
+        setInfiniticFunction(
+                name = "infinitic-workflows-engine",
+                className = "WorkflowEnginePulsarFunction",
+                classNamespace = "io.infinitic.engine.pulsar.workflowManager.functions",
+                topicsIn = setOf(Topic.WORKFLOW_ENGINE.get()),
+                action = "create"
         )
-        setZenatonFunction(
-            name = "infinitic-tasks-monitoring-global",
-            className = "MonitoringGlobalPulsarFunction",
-            topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
-            action = "create"
+        setInfiniticFunction(
+                name = "infinitic-tasks-engine",
+                className = "TaskEnginePulsarFunction",
+                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+                topicsIn = setOf(Topic.TASK_ENGINE.get()),
+                action = "create"
         )
-        setZenatonFunction(
-            name = "infinitic-tasks-monitoring-per-name",
-            className = "MonitoringPerNamePulsarFunction",
-            topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
-            action = "create"
+        setInfiniticFunction(
+                name = "infinitic-tasks-monitoring-global",
+                className = "MonitoringGlobalPulsarFunction",
+                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+                topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
+                action = "create"
+        )
+        setInfiniticFunction(
+                name = "infinitic-tasks-monitoring-per-name",
+                className = "MonitoringPerNamePulsarFunction",
+                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+                topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
+                action = "create"
         )
     }
 }
 
 tasks.register("update") {
-    group = "Zenaton"
-    description = "Update Zenaton into Pulsar"
+    group = "Infinitic"
+    description = "Update Infinitic into Pulsar"
     dependsOn("setSchemas")
     doLast {
-        setZenatonFunction(
-            name = "infinitic-tasks-engine",
-            className = "TaskEnginePulsarFunction",
-            topicsIn = setOf(Topic.ENGINE.get()),
-            action = "update"
+        setInfiniticFunction(
+                name = "infinitic-workflows-engine",
+                className = "WorkflowEnginePulsarFunction",
+                classNamespace = "io.infinitic.engine.pulsar.workflowManager.functions",
+                topicsIn = setOf(Topic.WORKFLOW_ENGINE.get()),
+                action = "update"
         )
-        setZenatonFunction(
-            name = "infinitic-tasks-monitoring-global",
-            className = "MonitoringGlobalPulsarFunction",
-            classNamespace = "io.infinitic.taskManager.pulsar.functions",
-            topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
-            action = "update"
+        setInfiniticFunction(
+                name = "infinitic-tasks-engine",
+                className = "TaskEnginePulsarFunction",
+                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+                topicsIn = setOf(Topic.TASK_ENGINE.get()),
+                action = "update"
         )
-        setZenatonFunction(
-            name = "infinitic-tasks-monitoring-per-name",
-            className = "MonitoringPerNamePulsarFunction",
-            topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
-            action = "update"
+        setInfiniticFunction(
+                name = "infinitic-tasks-monitoring-global",
+                className = "MonitoringGlobalPulsarFunction",
+                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+                topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
+                action = "update"
+        )
+        setInfiniticFunction(
+                name = "infinitic-tasks-monitoring-per-name",
+                className = "MonitoringPerNamePulsarFunction",
+                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+                topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
+                action = "update"
         )
     }
 }
 
 tasks.register("delete") {
-    group = "Zenaton"
-    description = "Delete Zenaton from Pulsar"
+    group = "Infinitic"
+    description = "Delete Infinitic from Pulsar"
     doLast {
-        setPrefix("tasks")
-        deleteZenatonFunction("infinitic-tasks-engine")
-        deleteZenatonFunction("infinitic-tasks-monitoring-global")
-        deleteZenatonFunction("infinitic-tasks-monitoring-per-name")
-        forceDeleteTopic(Topic.ENGINE.get())
+        deleteInfiniticFunction("infinitic-workflows-engine")
+        deleteInfiniticFunction("infinitic-tasks-engine")
+        deleteInfiniticFunction("infinitic-tasks-monitoring-global")
+        deleteInfiniticFunction("infinitic-tasks-monitoring-per-name")
+        forceDeleteTopic(Topic.WORKFLOW_ENGINE.get())
+        forceDeleteTopic(Topic.TASK_ENGINE.get())
         forceDeleteTopic(Topic.MONITORING_PER_NAME.get())
         forceDeleteTopic(Topic.MONITORING_GLOBAL.get())
         forceDeleteTopic(Topic.LOGS.get())
@@ -163,35 +190,30 @@ tasks.register("delete") {
 }
 
 val pulsarAdmin = "docker-compose -f ../pulsar/docker-compose.yml exec -T pulsar bin/pulsar-admin"
-val jar = "infinitic-taskManager-engine-pulsar-1.0.0-SNAPSHOT-all.jar"
-
-fun setPrefix(prefix: String) {
-    Topic.prefix = prefix
-}
+val jar = "infinitic-engine-pulsar-1.0.0-SNAPSHOT-all.jar"
 
 enum class Topic {
-    ENGINE {
-        override fun get(name: String?) = "${Topic.prefix}-engine"
+    WORKFLOW_ENGINE {
+        override fun get(name: String?) = "workflows-engine"
+    },
+    TASK_ENGINE {
+        override fun get(name: String?) = "tasks-engine"
     },
     WORKERS {
-        override fun get(name: String?) = "${Topic.prefix}-workers-$name"
+        override fun get(name: String?) = "tasks-workers-$name"
     },
     MONITORING_PER_INSTANCE {
-        override fun get(name: String?) = "${Topic.prefix}-monitoring-per-instance"
+        override fun get(name: String?) = "tasks-monitoring-per-instance"
     },
     MONITORING_PER_NAME {
-        override fun get(name: String?) = "${Topic.prefix}-monitoring-per-name"
+        override fun get(name: String?) = "tasks-monitoring-per-name"
     },
     MONITORING_GLOBAL {
-        override fun get(name: String?) = "${Topic.prefix}-monitoring-global"
+        override fun get(name: String?) = "tasks-monitoring-global"
     },
     LOGS {
-        override fun get(name: String?) = "${Topic.prefix}-logs"
+        override fun get(name: String?) = "tasks-logs"
     };
-
-    companion object {
-        var prefix = "tasks"
-    }
 
     abstract fun get(name: String? = ""): String
 }
@@ -199,8 +221,8 @@ enum class Topic {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    val cmd = "java -cp ./build/libs/$jar io.infinitic.taskManager.engine.pulsar.utils.GenerateSchemaFilesKt"
-    return exec(cmd)
+    exec("java -cp ./build/libs/$jar io.infinitic.engine.pulsar.taskManager.utils.GenerateSchemaFilesKt")
+    exec("java -cp ./build/libs/$jar io.infinitic.engine.pulsar.workflowManager.utils.GenerateSchemaFilesKt")
 }
 
 fun uploadSchemaToTopic(
@@ -211,14 +233,14 @@ fun uploadSchemaToTopic(
 ) {
     println("Uploading $name schema to $topic topic...")
     val cmd = "$pulsarAdmin schemas upload \"persistent://$tenant/$namespace/$topic\"" +
-        " --filename \"/infinitic/taskManager/schemas/$name.schema\" "
+        " --filename \"/infinitic/schemas/$name.schema\" "
     return exec(cmd)
 }
 
-fun setZenatonFunction(
+fun setInfiniticFunction(
     name: String,
     className: String,
-    classNamespace: String = "io.infinitic.taskManager.engine.pulsar.functions",
+    classNamespace: String,
     topicsIn: Set<String>,
     action: String,
     topicOut: String? = null,
@@ -231,19 +253,17 @@ fun setZenatonFunction(
         transform = { "persistent://$tenant/$namespace/$it" }
     )
     println("$action $className for $inputs...")
-    var cmd = "$pulsarAdmin functions $action --jar /infinitic/taskManager/libs/$jar" +
+    var cmd = "$pulsarAdmin functions $action --jar /infinitic/libs/$jar" +
         " --classname \"$classNamespace.$className\" --inputs $inputs " +
         " --name \"$name\" --log-topic \"persistent://$tenant/$namespace/$logs\""
     if (topicOut != null) {
         cmd += " --output \"persistent://$tenant/$namespace/$topicOut\""
     }
 
-    cmd += " --user-config {\"topicPrefix\":\"${Topic.prefix}\"}"
-
     return exec(cmd)
 }
 
-fun deleteZenatonFunction(name: String, tenant: String = "public", namespace: String = "default") {
+fun deleteInfiniticFunction(name: String, tenant: String = "public", namespace: String = "default") {
     println("Deleting $name function from $tenant/$namespace...")
     val cmd = "$pulsarAdmin functions delete --tenant \"$tenant\" --namespace \"$namespace\" --name \"$name\""
 

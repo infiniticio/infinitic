@@ -9,10 +9,8 @@ services:
     volumes:
       - "pulsardata:/pulsar/data"
       - "pulsarconf:/pulsar/conf"
-      - "../infinitic-taskManager-engine-pulsar/build/libs:/infinitic/taskManager/libs:delegated"
-      - "../infinitic-taskManager-engine-pulsar/build/schemas:/infinitic/taskManager/schemas:delegated"
-      - "../infinitic-workflowManager-engine-pulsar/build/libs:/infinitic/workflowManager/libs:delegated"
-      - "../infinitic-workflowManager-engine-pulsar/build/schemas:/infinitic/workflowManager/schemas:delegated"
+      - "../infinitic-engine-pulsar/build/libs:/infinitic/libs:delegated"
+      - "../infinitic-engine-pulsar/build/schemas:/infinitic/schemas:delegated"
     ports:
       - "6650:6650"
       - "8080:8080"

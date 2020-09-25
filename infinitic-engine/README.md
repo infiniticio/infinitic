@@ -1,6 +1,6 @@
 # Workflow Engine
 
-An Apache Pulsar function responsible for running Zenaton workflows.
+An Apache Pulsar function responsible for running Infinitic workflows.
 
 ## Development
 

@@ -1,6 +1,6 @@
 # Task Engine on Pulsar
 
-An Apache Pulsar function responsible for running Zenaton tasks.
+An Apache Pulsar function responsible for running Infinitic tasks.
 
 ## Development
 

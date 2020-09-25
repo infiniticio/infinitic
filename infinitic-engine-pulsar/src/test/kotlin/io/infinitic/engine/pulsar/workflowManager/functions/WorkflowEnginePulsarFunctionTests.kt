@@ -4,7 +4,6 @@ import io.infinitic.common.workflowManager.avro.AvroConverter
 import io.infinitic.common.workflowManager.messages.ForWorkflowEngineMessage
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
-import io.infinitic.workflowManager.pulsar.functions.WorkflowEnginePulsarFunction
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.Runs

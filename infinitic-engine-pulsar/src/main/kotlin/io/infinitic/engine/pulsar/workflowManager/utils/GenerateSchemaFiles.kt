@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.pulsar.utils
+package io.infinitic.engine.pulsar.workflowManager.utils
 
 import io.infinitic.common.json.Json
 import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine

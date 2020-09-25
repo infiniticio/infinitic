@@ -24,7 +24,7 @@
     "trailingComma": "es5"
   },
   "name": "@infinitic/client",
-  "author": "Zenaton",
+  "author": "Infinitic",
   "module": "dist/client.esm.js",
   "dependencies": {
     "@types/uuid": "^8.0.0",

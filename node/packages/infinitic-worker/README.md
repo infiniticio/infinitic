@@ -103,7 +103,7 @@ export const RefundBooking: Task<RefundBookingInput, RefundBookingOutput> = {
 };
 ```
 
-Now that we have a task, we can write our index.ts file which will create a Zenaton worker object,
+Now that we have a task, we can write our index.ts file which will create a Infinitic worker object,
 register the task we wrote in the previous step, and run the worker:
 
 ```typescript

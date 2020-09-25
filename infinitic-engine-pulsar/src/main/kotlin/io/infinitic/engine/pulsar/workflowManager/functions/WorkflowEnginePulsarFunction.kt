@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.pulsar.functions
+package io.infinitic.engine.pulsar.workflowManager.functions
 
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.pulsar.PulsarTransport

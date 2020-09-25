@@ -1,4 +1,4 @@
-# Zenaton examples
+# Infinitic examples
 
 This package provides examples of implementation of @infinitic/client and @infinitic/worker
 

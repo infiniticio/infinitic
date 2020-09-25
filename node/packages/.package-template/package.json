@@ -24,6 +24,6 @@
     "trailingComma": "es5"
   },
   "name": "@infinitic/package-template",
-  "author": "Zenaton",
+  "author": "Infinitic",
   "module": "dist/package-template.esm.js"
 }

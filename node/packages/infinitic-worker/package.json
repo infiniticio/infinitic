@@ -24,7 +24,7 @@
     "trailingComma": "es5"
   },
   "name": "@infinitic/worker",
-  "author": "Zenaton",
+  "author": "Infinitic",
   "module": "dist/worker.esm.js",
   "dependencies": {
     "@infinitic/messages": "^0.0.1",

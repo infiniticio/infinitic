@@ -1,4 +1,4 @@
-# Zenaton package template
+# Infinitic package template
 
 This is a package template that you can copy to bootstrap new node packages.
 It's a default TSDX bootstrapped package with some changes for Lerna integration.
