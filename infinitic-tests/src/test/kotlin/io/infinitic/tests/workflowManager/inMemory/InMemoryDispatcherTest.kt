@@ -4,9 +4,9 @@ import io.infinitic.messaging.api.dispatcher.InMemoryDispatcher
 import io.infinitic.common.taskManager.data.TaskStatus
 import io.infinitic.common.taskManager.messages.TaskCompleted
 import io.infinitic.common.taskManager.messages.TaskStatusUpdated
-import io.infinitic.taskManager.engine.engines.MonitoringGlobal
-import io.infinitic.taskManager.engine.engines.MonitoringPerName
-import io.infinitic.taskManager.engine.engines.TaskEngine
+import io.infinitic.engine.taskManager.engines.MonitoringGlobal
+import io.infinitic.engine.taskManager.engines.MonitoringPerName
+import io.infinitic.engine.taskManager.engines.TaskEngine
 import io.infinitic.worker.taskManager.Worker
 import io.infinitic.client.workflowManager.Client
 import io.infinitic.common.workflowManager.data.methodRuns.MethodRunId

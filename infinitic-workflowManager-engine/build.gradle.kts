@@ -20,7 +20,7 @@ dependencies {
     implementation(project(":infinitic-storage-api"))
     implementation(project(":infinitic-messaging-api"))
     implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-taskManager-engine"))
+    implementation(project(":infinitic-engine"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

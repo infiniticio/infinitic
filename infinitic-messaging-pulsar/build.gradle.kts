@@ -16,7 +16,7 @@ dependencies {
     implementation(project(":infinitic-avro"))
     api(project(":infinitic-messaging-api"))
     api(project(":infinitic-client"))
-    api(project(":infinitic-taskManager-engine"))
+    api(project(":infinitic-engine"))
     api(project(":infinitic-worker"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
