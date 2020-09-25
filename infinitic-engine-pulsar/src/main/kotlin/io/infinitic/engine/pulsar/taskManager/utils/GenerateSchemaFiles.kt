@@ -1,4 +1,4 @@
-package io.infinitic.engine.taskManager.pulsar.utils
+package io.infinitic.engine.pulsar.taskManager.utils
 
 import io.infinitic.common.json.Json
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine

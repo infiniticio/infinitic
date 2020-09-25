@@ -1,4 +1,4 @@
-package io.infinitic.engine.taskManager.pulsar.functions
+package io.infinitic.engine.pulsar.taskManager.functions
 
 import io.infinitic.common.taskManager.avro.AvroConverter
 import io.infinitic.common.taskManager.messages.ForTaskEngineMessage

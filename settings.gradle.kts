@@ -11,7 +11,7 @@ include("infinitic-worker")
 include("infinitic-worker-pulsar")
 include("infinitic-client")
 include("infinitic-engine")
-include("infinitic-taskManager-engine-pulsar")
+include("infinitic-engine-pulsar")
 include("infinitic-tests")
 include("infinitic-workflowManager-engine-pulsar")
 

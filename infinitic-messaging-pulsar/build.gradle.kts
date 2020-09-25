@@ -26,7 +26,7 @@ dependencies {
     testImplementation("io.mockk:mockk:1.9.+")
 
     testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-taskManager-engine-pulsar"))
+    testImplementation(project(":infinitic-engine-pulsar"))
 }
 
 java {

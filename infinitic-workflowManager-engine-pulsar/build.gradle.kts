@@ -27,7 +27,7 @@ dependencies {
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-engine"))
-    implementation(project(":infinitic-taskManager-engine-pulsar"))
+    implementation(project(":infinitic-engine-pulsar"))
     implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage-pulsar"))
 

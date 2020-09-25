@@ -1,4 +1,4 @@
-package io.infinitic.engine.taskManager.pulsar.functions
+package io.infinitic.engine.pulsar.taskManager.functions
 
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
