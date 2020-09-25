@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.tests.inMemory
+package io.infinitic.tests.taskManager.inMemory
 
 import io.infinitic.messaging.api.dispatcher.InMemoryDispatcher
 import io.infinitic.client.taskManager.Client

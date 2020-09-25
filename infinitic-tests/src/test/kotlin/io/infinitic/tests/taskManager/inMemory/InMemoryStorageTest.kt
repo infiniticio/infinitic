@@ -1,4 +1,4 @@
-package io.infinitic.taskManager.tests.inMemory
+package io.infinitic.tests.taskManager.inMemory
 
 import io.infinitic.common.taskManager.data.TaskInstance
 import io.infinitic.taskManager.engine.storage.InMemoryTaskStateStorage
