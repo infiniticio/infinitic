@@ -5,6 +5,7 @@ import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptError
 import io.infinitic.taskManager.common.data.TaskOutput
+import io.infinitic.taskManager.common.exceptions.ErrorDuringInstantiation
 import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.MultipleUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.ProcessingTimeout
@@ -137,13 +138,9 @@ open class Worker(val dispatcher: Dispatcher) {
         }
     }
 
-    fun getInstance(name: String): Any {
-        // return registered instance if any
-        if (registeredTasks.containsKey(name)) return registeredTasks[name]!!
+    fun getInstance(name: String) = getInstanceOrNull(name) ?: throw ErrorDuringInstantiation(name)
 
-        // if no instance is registered, try to instantiate this task
-        return getNewInstancePerName(name)
-    }
+    fun getInstanceOrNull(name: String) = registeredTasks[name]
 
     private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
         val output = method.invoke(task, *parameters)

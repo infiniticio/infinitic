@@ -75,7 +75,7 @@ class MethodRunContext(
         // increment position
         positionNext()
         // set current command
-        val command = if (worker.getInstance(method.declaringClass.name) is Workflow)
+        val command = if (worker.getInstanceOrNull(method.declaringClass.name) is Workflow)
             DispatchChildWorkflow.from(method, args)
         else
             DispatchTask.from(method, args)
