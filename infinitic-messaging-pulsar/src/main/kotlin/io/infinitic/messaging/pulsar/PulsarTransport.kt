@@ -16,18 +16,11 @@ import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
 
 open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCompatibleTransport {
-    private var prefix = "tasks"
-
-    fun usePrefix(newPrefix: String): PulsarTransport {
-        prefix = newPrefix
-
-        return this
-    }
 
     override suspend fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine, after: Float) {
         withContext(Dispatchers.IO) {
             val messageBuilder = wrapper
-                .newMessage(Topic.WORKFLOW_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForWorkflowEngine::class.java))
+                .newMessage(Topic.WORKFLOW_ENGINE.get(), AvroSchema.of(AvroEnvelopeForWorkflowEngine::class.java))
                 .key(msg.workflowId)
                 .value(msg)
 
@@ -42,7 +35,7 @@ open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCom
     override suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float) {
         withContext(Dispatchers.IO) {
             val messageBuilder = wrapper
-                .newMessage(Topic.TASK_ENGINE.get(prefix), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
+                .newMessage(Topic.TASK_ENGINE.get(), AvroSchema.of(AvroEnvelopeForTaskEngine::class.java))
                 .key(msg.taskId)
                 .value(msg)
 
@@ -57,7 +50,7 @@ open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCom
     override suspend fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal) {
         withContext(Dispatchers.IO) {
             wrapper
-                .newMessage(Topic.MONITORING_GLOBAL.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringGlobal::class.java))
+                .newMessage(Topic.MONITORING_GLOBAL.get(), AvroSchema.of(AvroEnvelopeForMonitoringGlobal::class.java))
                 .value(msg)
                 .send()
         }
@@ -66,7 +59,7 @@ open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCom
     override suspend fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName) {
         withContext(Dispatchers.IO) {
             wrapper
-                .newMessage(Topic.MONITORING_PER_NAME.get(prefix), AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java))
+                .newMessage(Topic.MONITORING_PER_NAME.get(), AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java))
                 .key(msg.taskName)
                 .value(msg)
                 .send()
@@ -76,25 +69,17 @@ open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCom
     override suspend fun toWorkers(msg: AvroEnvelopeForWorker) {
         withContext(Dispatchers.IO) {
             wrapper
-                .newMessage(Topic.WORKERS.get(prefix, msg.taskName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
+                .newMessage(Topic.WORKERS.get(msg.taskName), AvroSchema.of(AvroEnvelopeForWorker::class.java))
                 .value(msg)
                 .send()
         }
     }
 
     companion object {
-        private const val TOPIC_PREFIX = "topicPrefix"
+        fun forPulsarClient(pulsarClient: PulsarClient) =
+            PulsarTransport(PulsarClientWrapper(pulsarClient))
 
-        fun forPulsarClient(pulsarClient: PulsarClient): PulsarTransport = PulsarTransport(PulsarClientWrapper(pulsarClient))
-
-        fun forPulsarFunctionContext(pulsarFunctionContext: Context): PulsarTransport {
-            val dispatcher = PulsarTransport(PulsarFunctionContextWrapper(pulsarFunctionContext))
-            val requestedPrefix = pulsarFunctionContext.getUserConfigValue(TOPIC_PREFIX)
-            if (requestedPrefix.isPresent) {
-                dispatcher.usePrefix(requestedPrefix.get().toString())
-            }
-
-            return dispatcher
-        }
+        fun forPulsarFunctionContext(pulsarFunctionContext: Context) =
+            PulsarTransport(PulsarFunctionContextWrapper(pulsarFunctionContext))
     }
 }

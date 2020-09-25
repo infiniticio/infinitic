@@ -78,8 +78,8 @@ tasks.register("setSchemas") {
     doLast {
         createSchemaFiles()
         uploadSchemaToTopic(
-                name = "AvroEnvelopeForWorkflowEngine",
-                topic = Topic.WORKFLOW_ENGINE.get()
+            name = "AvroEnvelopeForWorkflowEngine",
+            topic = Topic.WORKFLOW_ENGINE.get()
         )
         uploadSchemaToTopic(
             name = "AvroEnvelopeForTaskEngine",
@@ -94,8 +94,8 @@ tasks.register("setSchemas") {
             topic = Topic.MONITORING_GLOBAL.get()
         )
         uploadSchemaToTopic(
-                name = "AvroEnvelopeForWorkflowEngine",
-                topic = Topic.WORKFLOW_ENGINE.get()
+            name = "AvroEnvelopeForWorkflowEngine",
+            topic = Topic.WORKFLOW_ENGINE.get()
         )
     }
 }
@@ -107,32 +107,32 @@ tasks.register("install") {
     dependsOn("setSchemas")
     doLast {
         setInfiniticFunction(
-                name = "infinitic-workflows-engine",
-                className = "WorkflowEnginePulsarFunction",
-                classNamespace = "io.infinitic.engine.pulsar.workflowManager.functions",
-                topicsIn = setOf(Topic.WORKFLOW_ENGINE.get()),
-                action = "create"
+            name = "infinitic-workflows-engine",
+            className = "WorkflowEnginePulsarFunction",
+            classNamespace = "io.infinitic.engine.pulsar.workflowManager.functions",
+            topicsIn = setOf(Topic.WORKFLOW_ENGINE.get()),
+            action = "create"
         )
         setInfiniticFunction(
-                name = "infinitic-tasks-engine",
-                className = "TaskEnginePulsarFunction",
-                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
-                topicsIn = setOf(Topic.TASK_ENGINE.get()),
-                action = "create"
+            name = "infinitic-tasks-engine",
+            className = "TaskEnginePulsarFunction",
+            classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+            topicsIn = setOf(Topic.TASK_ENGINE.get()),
+            action = "create"
         )
         setInfiniticFunction(
-                name = "infinitic-tasks-monitoring-global",
-                className = "MonitoringGlobalPulsarFunction",
-                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
-                topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
-                action = "create"
+            name = "infinitic-tasks-monitoring-global",
+            className = "MonitoringGlobalPulsarFunction",
+            classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+            topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
+            action = "create"
         )
         setInfiniticFunction(
-                name = "infinitic-tasks-monitoring-per-name",
-                className = "MonitoringPerNamePulsarFunction",
-                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
-                topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
-                action = "create"
+            name = "infinitic-tasks-monitoring-per-name",
+            className = "MonitoringPerNamePulsarFunction",
+            classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+            topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
+            action = "create"
         )
     }
 }
@@ -143,32 +143,32 @@ tasks.register("update") {
     dependsOn("setSchemas")
     doLast {
         setInfiniticFunction(
-                name = "infinitic-workflows-engine",
-                className = "WorkflowEnginePulsarFunction",
-                classNamespace = "io.infinitic.engine.pulsar.workflowManager.functions",
-                topicsIn = setOf(Topic.WORKFLOW_ENGINE.get()),
-                action = "update"
+            name = "infinitic-workflows-engine",
+            className = "WorkflowEnginePulsarFunction",
+            classNamespace = "io.infinitic.engine.pulsar.workflowManager.functions",
+            topicsIn = setOf(Topic.WORKFLOW_ENGINE.get()),
+            action = "update"
         )
         setInfiniticFunction(
-                name = "infinitic-tasks-engine",
-                className = "TaskEnginePulsarFunction",
-                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
-                topicsIn = setOf(Topic.TASK_ENGINE.get()),
-                action = "update"
+            name = "infinitic-tasks-engine",
+            className = "TaskEnginePulsarFunction",
+            classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+            topicsIn = setOf(Topic.TASK_ENGINE.get()),
+            action = "update"
         )
         setInfiniticFunction(
-                name = "infinitic-tasks-monitoring-global",
-                className = "MonitoringGlobalPulsarFunction",
-                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
-                topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
-                action = "update"
+            name = "infinitic-tasks-monitoring-global",
+            className = "MonitoringGlobalPulsarFunction",
+            classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+            topicsIn = setOf(Topic.MONITORING_GLOBAL.get()),
+            action = "update"
         )
         setInfiniticFunction(
-                name = "infinitic-tasks-monitoring-per-name",
-                className = "MonitoringPerNamePulsarFunction",
-                classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
-                topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
-                action = "update"
+            name = "infinitic-tasks-monitoring-per-name",
+            className = "MonitoringPerNamePulsarFunction",
+            classNamespace = "io.infinitic.engine.pulsar.taskManager.functions",
+            topicsIn = setOf(Topic.MONITORING_PER_NAME.get()),
+            action = "update"
         )
     }
 }

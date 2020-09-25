@@ -2,26 +2,26 @@ package io.infinitic.messaging.pulsar
 
 enum class Topic {
     WORKFLOW_ENGINE {
-        override fun get(prefix: String, name: String?) = "workflows"
+        override fun get(name: String) = "workflows-engine"
     },
     TASK_ENGINE {
-        override fun get(prefix: String, name: String?) = "$prefix-engine"
+        override fun get(name: String) = "tasks-engine"
     },
     WORKERS {
-        override fun get(prefix: String, name: String?) = "$prefix-workers-$name"
+        override fun get(name: String) = "tasks-workers-$name"
+    },
+    MONITORING_PER_INSTANCE {
+        override fun get(name: String) = "tasks-monitoring-per-instance"
     },
     MONITORING_PER_NAME {
-        override fun get(prefix: String, name: String?) = "$prefix-monitoring-per-name"
+        override fun get(name: String) = "tasks-monitoring-per-name"
     },
     MONITORING_GLOBAL {
-        override fun get(prefix: String, name: String?) = "$prefix-monitoring-global"
-    },
-    DELAYS {
-        override fun get(prefix: String, name: String?) = "delays"
+        override fun get(name: String) = "tasks-monitoring-global"
     },
     LOGS {
-        override fun get(prefix: String, name: String?) = "$prefix-logs"
+        override fun get(name: String) = "tasks-logs"
     };
 
-    abstract fun get(prefix: String, name: String? = ""): String
+    abstract fun get(name: String = ""): String
 }
