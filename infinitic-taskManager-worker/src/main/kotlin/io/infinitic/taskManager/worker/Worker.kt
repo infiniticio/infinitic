@@ -5,7 +5,7 @@ import io.infinitic.taskManager.common.Constants
 import io.infinitic.taskManager.common.avro.AvroConverter
 import io.infinitic.taskManager.common.data.TaskAttemptError
 import io.infinitic.taskManager.common.data.TaskOutput
-import io.infinitic.taskManager.common.exceptions.ErrorDuringInstantiation
+import io.infinitic.taskManager.common.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.taskManager.common.exceptions.InvalidUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.MultipleUseOfDividerInTaskName
 import io.infinitic.taskManager.common.exceptions.ProcessingTimeout
@@ -17,7 +17,6 @@ import io.infinitic.taskManager.common.messages.TaskAttemptFailed
 import io.infinitic.taskManager.common.messages.TaskAttemptStarted
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.taskManager.common.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.taskManager.common.parser.getNewInstancePerName
 import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -138,7 +137,7 @@ open class Worker(val dispatcher: Dispatcher) {
         }
     }
 
-    fun getInstance(name: String) = getInstanceOrNull(name) ?: throw ErrorDuringInstantiation(name)
+    fun getInstance(name: String) = getInstanceOrNull(name) ?: throw ClassNotFoundDuringInstantiation(name)
 
     fun getInstanceOrNull(name: String) = registeredTasks[name]
 
