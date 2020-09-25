@@ -16,6 +16,7 @@ dependencies {
     testImplementation(project(":infinitic-storage-pulsar"))
     testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-taskManager-engine"))
+    testImplementation(project(":infinitic-workflowManager-engine"))
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-worker"))
 

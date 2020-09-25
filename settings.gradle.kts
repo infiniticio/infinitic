@@ -15,7 +15,6 @@ include("infinitic-taskManager-engine-pulsar")
 include("infinitic-tests")
 include("infinitic-workflowManager-engine")
 include("infinitic-workflowManager-engine-pulsar")
-include("infinitic-workflowManager-tests")
 
 pluginManagement {
     repositories {
