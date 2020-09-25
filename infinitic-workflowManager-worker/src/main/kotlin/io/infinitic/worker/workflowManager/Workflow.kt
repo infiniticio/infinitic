@@ -1,11 +1,11 @@
-package io.infinitic.workflowManager.worker
+package io.infinitic.worker.workflowManager
 
 import io.infinitic.common.taskManager.proxies.MethodProxyHandler
 import io.infinitic.common.workflowManager.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflowManager.exceptions.WorkflowTaskContextNotInitialized
-import io.infinitic.workflowManager.worker.deferred.Deferred
-import io.infinitic.workflowManager.worker.commands.CommandProxy
-import io.infinitic.workflowManager.worker.data.MethodRunContext
+import io.infinitic.worker.workflowManager.deferred.Deferred
+import io.infinitic.worker.workflowManager.commands.CommandProxy
+import io.infinitic.worker.workflowManager.data.MethodRunContext
 
 abstract class Workflow {
     var methodRunContext: MethodRunContext? = null

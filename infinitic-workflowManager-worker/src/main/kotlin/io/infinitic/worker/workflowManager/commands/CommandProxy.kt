@@ -1,6 +1,6 @@
-package io.infinitic.workflowManager.worker.commands
+package io.infinitic.worker.workflowManager.commands
 
-import io.infinitic.workflowManager.worker.data.MethodRunContext
+import io.infinitic.worker.workflowManager.data.MethodRunContext
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy

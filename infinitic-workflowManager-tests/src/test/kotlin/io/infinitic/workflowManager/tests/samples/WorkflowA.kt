@@ -1,9 +1,9 @@
 package io.infinitic.workflowManager.tests.samples
 
-import io.infinitic.workflowManager.worker.Workflow
-import io.infinitic.workflowManager.worker.deferred.Deferred
-import io.infinitic.workflowManager.worker.deferred.and
-import io.infinitic.workflowManager.worker.deferred.or
+import io.infinitic.worker.workflowManager.Workflow
+import io.infinitic.worker.workflowManager.deferred.Deferred
+import io.infinitic.worker.workflowManager.deferred.and
+import io.infinitic.worker.workflowManager.deferred.or
 import java.time.LocalDateTime
 
 interface WorkflowA {

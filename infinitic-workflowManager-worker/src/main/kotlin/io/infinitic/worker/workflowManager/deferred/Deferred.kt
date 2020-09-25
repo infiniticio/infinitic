@@ -1,9 +1,9 @@
-package io.infinitic.workflowManager.worker.deferred
+package io.infinitic.worker.workflowManager.deferred
 
 import io.infinitic.common.workflowManager.data.steps.Step
 import io.infinitic.common.workflowManager.data.steps.StepStatus
 import io.infinitic.common.workflowManager.exceptions.MixingDeferredFromDifferentWorkflowMethodExecution
-import io.infinitic.workflowManager.worker.data.MethodRunContext
+import io.infinitic.worker.workflowManager.data.MethodRunContext
 
 data class Deferred<out T>(
     internal val step: Step,

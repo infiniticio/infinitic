@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.worker.data
+package io.infinitic.worker.workflowManager.data
 
 import io.infinitic.worker.taskManager.Worker
 import io.infinitic.common.workflowManager.data.commands.CommandOutput
@@ -25,11 +25,11 @@ import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflowManager.exceptions.ShouldNotWaitInInlineTask
 import io.infinitic.common.workflowManager.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.common.workflowManager.parser.setPropertiesToObject
-import io.infinitic.workflowManager.worker.deferred.Deferred
-import io.infinitic.workflowManager.worker.Workflow
-import io.infinitic.workflowManager.worker.deferred.DeferredStatus
-import io.infinitic.workflowManager.worker.workflowTasks.KnownStepException
-import io.infinitic.workflowManager.worker.workflowTasks.NewStepException
+import io.infinitic.worker.workflowManager.deferred.Deferred
+import io.infinitic.worker.workflowManager.Workflow
+import io.infinitic.worker.workflowManager.deferred.DeferredStatus
+import io.infinitic.worker.workflowManager.workflowTasks.KnownStepException
+import io.infinitic.worker.workflowManager.workflowTasks.NewStepException
 import java.lang.RuntimeException
 import java.lang.reflect.Method
 

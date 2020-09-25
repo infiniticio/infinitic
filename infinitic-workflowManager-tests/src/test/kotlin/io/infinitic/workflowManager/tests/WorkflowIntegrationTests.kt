@@ -12,7 +12,7 @@ import io.infinitic.workflowManager.tests.samples.WorkflowA
 import io.infinitic.workflowManager.tests.samples.WorkflowAImpl
 import io.infinitic.workflowManager.tests.samples.WorkflowB
 import io.infinitic.workflowManager.tests.samples.WorkflowBImpl
-import io.infinitic.workflowManager.worker.workflowTasks.WorkflowTaskImpl
+import io.infinitic.worker.workflowManager.workflowTasks.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe

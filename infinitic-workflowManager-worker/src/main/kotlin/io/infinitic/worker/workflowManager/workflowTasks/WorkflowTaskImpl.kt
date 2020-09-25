@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.worker.workflowTasks
+package io.infinitic.worker.workflowManager.workflowTasks
 
 import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterTypes
@@ -9,8 +9,8 @@ import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.common.workflowManager.parser.setPropertiesToObject
-import io.infinitic.workflowManager.worker.Workflow
-import io.infinitic.workflowManager.worker.data.MethodRunContext
+import io.infinitic.worker.workflowManager.Workflow
+import io.infinitic.worker.workflowManager.data.MethodRunContext
 import java.lang.reflect.InvocationTargetException
 
 class WorkflowTaskImpl : WorkflowTask {

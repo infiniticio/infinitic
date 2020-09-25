@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.worker.deferred
+package io.infinitic.worker.workflowManager.deferred
 
 enum class DeferredStatus {
     ONGOING,

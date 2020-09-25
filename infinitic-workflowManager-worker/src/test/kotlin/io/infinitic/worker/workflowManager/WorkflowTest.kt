@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.worker
+package io.infinitic.worker.workflowManager
 
 interface WorkflowA {
     fun test1(i: Int): String
