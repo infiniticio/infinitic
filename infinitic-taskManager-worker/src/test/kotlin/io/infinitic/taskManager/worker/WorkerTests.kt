@@ -30,8 +30,8 @@ import io.infinitic.taskManager.worker.samples.TestingSampleTask
 import io.infinitic.taskManager.worker.samples.TestingSampleTaskWithRetry
 import io.infinitic.taskManager.worker.samples.TestingSampleTaskWithBadTypeRetry
 import io.infinitic.taskManager.worker.samples.TestingSampleTaskWithBuggyRetry
-import io.infinitic.taskManager.worker.samples.TestingSampleTaskWithContext
-import io.infinitic.taskManager.worker.samples.TestingSampleTaskWithTimeout
+import io.infinitic.taskManager.worker.samples.SampleTaskWithContext
+import io.infinitic.taskManager.worker.samples.SampleTaskWithTimeout
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -293,7 +293,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, null)
         // when
-        Worker.register("foo", TestingSampleTaskWithContext())
+        Worker.register("foo", SampleTaskWithContext())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -313,7 +313,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, types)
         // when
-        Worker.register("foo", TestingSampleTaskWithTimeout())
+        Worker.register("foo", SampleTaskWithTimeout())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2

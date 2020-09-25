@@ -2,7 +2,7 @@ package io.infinitic.taskManager.worker.samples
 
 import io.infinitic.taskManager.worker.TaskAttemptContext
 
-internal class TestingSampleTaskWithTimeout() {
+internal class SampleTaskWithTimeout() {
     lateinit var context: TaskAttemptContext
 
     fun handle(i: Int, j: String): String {
