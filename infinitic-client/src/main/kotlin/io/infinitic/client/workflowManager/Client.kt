@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.client
+package io.infinitic.client.workflowManager
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.taskManager.proxies.MethodProxyHandler

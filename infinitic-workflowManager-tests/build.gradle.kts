@@ -18,7 +18,6 @@ dependencies {
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-taskManager-worker"))
     testImplementation(project(":infinitic-workflowManager-engine"))
-    testImplementation(project(":infinitic-workflowManager-client"))
     testImplementation(project(":infinitic-workflowManager-worker"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")

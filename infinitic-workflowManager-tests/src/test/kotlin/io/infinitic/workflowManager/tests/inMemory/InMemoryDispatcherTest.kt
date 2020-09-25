@@ -8,7 +8,7 @@ import io.infinitic.taskManager.engine.engines.MonitoringGlobal
 import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.worker.Worker
-import io.infinitic.workflowManager.client.Client
+import io.infinitic.client.workflowManager.Client
 import io.infinitic.common.workflowManager.data.methodRuns.MethodRunId
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskId
