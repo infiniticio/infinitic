@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.engine.storages
+package io.infinitic.engine.workflowManager.storages
 
 import io.infinitic.common.workflowManager.data.workflows.WorkflowId
 import io.infinitic.common.workflowManager.data.states.WorkflowState

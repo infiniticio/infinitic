@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.engine.engines.handlers
+package io.infinitic.engine.workflowManager.engines.handlers
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.taskManager.data.TaskId
@@ -28,7 +28,7 @@ import io.infinitic.common.workflowManager.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflowManager.data.states.WorkflowState
 import io.infinitic.common.workflowManager.data.steps.PastStep
 import io.infinitic.common.workflowManager.messages.DispatchWorkflow
-import io.infinitic.workflowManager.engine.engines.WorkflowEngine
+import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 
 class WorkflowTaskCompletedHandler(
     override val dispatcher: Dispatcher

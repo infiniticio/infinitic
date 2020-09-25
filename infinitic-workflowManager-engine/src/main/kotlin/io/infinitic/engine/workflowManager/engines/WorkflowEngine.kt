@@ -1,9 +1,9 @@
-package io.infinitic.workflowManager.engine.engines
+package io.infinitic.engine.workflowManager.engines
 
 import io.infinitic.common.data.interfaces.inc
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.workflowManager.data.states.WorkflowState
-import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
+import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
 import io.infinitic.common.workflowManager.messages.CancelWorkflow
 import io.infinitic.common.workflowManager.messages.DispatchWorkflow
 import io.infinitic.common.workflowManager.messages.ChildWorkflowCanceled
@@ -18,10 +18,10 @@ import io.infinitic.common.workflowManager.messages.TaskCompleted
 import io.infinitic.common.workflowManager.messages.TaskDispatched
 import io.infinitic.common.workflowManager.messages.WorkflowCanceled
 import io.infinitic.common.workflowManager.messages.WorkflowCompleted
-import io.infinitic.workflowManager.engine.engines.handlers.ChildWorkflowCompletedHandler
-import io.infinitic.workflowManager.engine.engines.handlers.DispatchWorkflowHandler
-import io.infinitic.workflowManager.engine.engines.handlers.TaskCompletedHandler
-import io.infinitic.workflowManager.engine.engines.handlers.WorkflowTaskCompletedHandler
+import io.infinitic.engine.workflowManager.engines.handlers.ChildWorkflowCompletedHandler
+import io.infinitic.engine.workflowManager.engines.handlers.DispatchWorkflowHandler
+import io.infinitic.engine.workflowManager.engines.handlers.TaskCompletedHandler
+import io.infinitic.engine.workflowManager.engines.handlers.WorkflowTaskCompletedHandler
 
 class WorkflowEngine(
     private val storage: WorkflowStateStorage,

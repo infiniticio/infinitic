@@ -4,8 +4,8 @@ import io.infinitic.common.taskManager.data.TaskInstance
 import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.infinitic.common.workflowManager.data.workflows.WorkflowInstance
-import io.infinitic.workflowManager.engine.storages.InMemoryWorkflowStateStorage
-import io.infinitic.workflowManager.engine.storages.WorkflowStateStorage
+import io.infinitic.engine.workflowManager.storages.InMemoryWorkflowStateStorage
+import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
 
 class InMemoryStorageTest(
     val workflowStateStorage: InMemoryWorkflowStateStorage = InMemoryWorkflowStateStorage(),

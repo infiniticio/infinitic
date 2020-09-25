@@ -1,21 +1,21 @@
-package io.infinitic.workflowManager.engine.engines.handlers
+package io.infinitic.engine.workflowManager.engines.handlers
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.workflowManager.data.commands.CommandId
 import io.infinitic.common.workflowManager.data.commands.CommandOutput
 import io.infinitic.common.workflowManager.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflowManager.data.commands.CommandStatusOngoing
-import io.infinitic.common.workflowManager.messages.TaskCompleted
 import io.infinitic.common.workflowManager.data.states.WorkflowState
+import io.infinitic.common.workflowManager.messages.ChildWorkflowCompleted
 
-class TaskCompletedHandler(
+class ChildWorkflowCompletedHandler(
     override val dispatcher: Dispatcher
 ) : MsgHandler(dispatcher) {
-    suspend fun handle(state: WorkflowState, msg: TaskCompleted) {
+    suspend fun handle(state: WorkflowState, msg: ChildWorkflowCompleted) {
         val methodRun = getMethodRun(state, msg.methodRunId)
 
         // update command status
-        val commandId = CommandId(msg.taskId)
+        val commandId = CommandId(msg.childWorkflowId)
         val pastCommand = methodRun.pastCommands.first { it.commandId == commandId }
 
         // do nothing if this command is not ongoing (could have been canceled)
@@ -23,7 +23,7 @@ class TaskCompletedHandler(
 
         // update command status
         pastCommand.commandStatus = CommandStatusCompleted(
-            CommandOutput(msg.taskOutput.data),
+            CommandOutput(msg.childWorkflowOutput.data),
             state.currentMessageIndex
         )
 

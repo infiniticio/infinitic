@@ -17,7 +17,7 @@ import io.infinitic.common.workflowManager.data.workflows.WorkflowId
 import io.infinitic.common.workflowManager.messages.WorkflowCompleted
 import io.infinitic.common.workflowManager.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflowManager.messages.TaskCompleted as TaskCompletedInWorkflow
-import io.infinitic.workflowManager.engine.engines.WorkflowEngine
+import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 
 class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher() {
     val client = Client(this)

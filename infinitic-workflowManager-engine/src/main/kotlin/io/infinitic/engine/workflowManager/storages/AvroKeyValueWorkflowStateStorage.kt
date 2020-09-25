@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.engine.storages
+package io.infinitic.engine.workflowManager.storages
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.storage.api.Storage

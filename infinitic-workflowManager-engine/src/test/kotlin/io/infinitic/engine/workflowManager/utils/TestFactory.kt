@@ -1,4 +1,4 @@
-package io.infinitic.workflowManager.engine.utils
+package io.infinitic.engine.workflowManager.utils
 
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.taskManager.data.TaskId
