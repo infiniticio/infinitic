@@ -27,9 +27,9 @@ import io.infinitic.taskManager.common.messages.TaskAttemptFailed
 import io.infinitic.taskManager.common.messages.TaskAttemptStarted
 import io.infinitic.taskManager.worker.samples.SampleTask
 import io.infinitic.taskManager.worker.samples.TestingSampleTask
-import io.infinitic.taskManager.worker.samples.TestingSampleTaskWithRetry
-import io.infinitic.taskManager.worker.samples.TestingSampleTaskWithBadTypeRetry
-import io.infinitic.taskManager.worker.samples.TestingSampleTaskWithBuggyRetry
+import io.infinitic.taskManager.worker.samples.SampleTaskWithRetry
+import io.infinitic.taskManager.worker.samples.SampleTaskWithBadTypeRetry
+import io.infinitic.taskManager.worker.samples.SampleTaskWithBuggyRetry
 import io.infinitic.taskManager.worker.samples.SampleTaskWithContext
 import io.infinitic.taskManager.worker.samples.SampleTaskWithTimeout
 import io.kotest.assertions.throwables.shouldThrow
@@ -78,7 +78,7 @@ class WorkerTests : StringSpec({
         val input = arrayOf(3, "3")
         val types = listOf(Int::class.java.name, String::class.java.name)
         // with
-        val msg = getRunTask("foo::explicitMethodWithoutRetry", input, types)
+        val msg = getRunTask("foo::other", input, types)
         // when
         Worker.register("foo", TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
@@ -99,7 +99,7 @@ class WorkerTests : StringSpec({
     "Should be able to run an explicit method with 2 parameters without parameterTypes" {
         val input = arrayOf(4, "3")
         // with
-        val msg = getRunTask("foo::explicitMethodWithoutRetry", input, null)
+        val msg = getRunTask("foo::other", input, null)
         // when
         Worker.register("foo", TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
@@ -233,7 +233,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, null)
         // when
-        Worker.register("foo", TestingSampleTaskWithRetry())
+        Worker.register("foo", SampleTaskWithRetry())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -253,7 +253,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, null)
         // when
-        Worker.register("foo", TestingSampleTaskWithBadTypeRetry())
+        Worker.register("foo", SampleTaskWithBadTypeRetry())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -273,7 +273,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, null)
         // when
-        Worker.register("foo", TestingSampleTaskWithBuggyRetry())
+        Worker.register("foo", SampleTaskWithBuggyRetry())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
