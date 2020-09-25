@@ -17,7 +17,6 @@ dependencies {
     testImplementation(project(":infinitic-taskManager-engine"))
     testImplementation(project(":infinitic-taskManager-client"))
     testImplementation(project(":infinitic-taskManager-worker"))
-    testImplementation(project(":infinitic-workflowManager-common"))
     testImplementation(project(":infinitic-workflowManager-engine"))
     testImplementation(project(":infinitic-workflowManager-client"))
     testImplementation(project(":infinitic-workflowManager-worker"))

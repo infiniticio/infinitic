@@ -1,6 +1,5 @@
-package io.infinitic.workflowManager.engine.avroConverter
+package io.infinitic.common.workflowManager.avro
 
-import io.infinitic.common.workflowManager.avro.AvroConverter
 import io.infinitic.common.workflowManager.messages.ForWorkflowEngineMessage
 import io.infinitic.common.workflowManager.utils.TestFactory
 import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine

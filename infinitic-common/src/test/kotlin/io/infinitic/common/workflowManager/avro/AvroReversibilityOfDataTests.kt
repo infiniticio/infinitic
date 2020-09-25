@@ -1,6 +1,5 @@
-package io.infinitic.workflowManager.engine.avroConverter
+package io.infinitic.common.workflowManager.avro
 
-import io.infinitic.common.workflowManager.avro.AvroConverter
 import io.infinitic.common.workflowManager.data.commands.Command
 import io.infinitic.common.workflowManager.data.commands.CommandStatus
 import io.infinitic.common.workflowManager.data.commands.PastCommand
