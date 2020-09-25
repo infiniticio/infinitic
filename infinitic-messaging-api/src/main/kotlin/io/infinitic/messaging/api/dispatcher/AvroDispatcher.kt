@@ -6,8 +6,8 @@ import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
 import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
 import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
 import io.infinitic.common.taskManager.messages.ForWorkerMessage
-import io.infinitic.workflowManager.common.avro.AvroConverter as WorkflowAvroConverter
-import io.infinitic.workflowManager.common.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflowManager.avro.AvroConverter as WorkflowAvroConverter
+import io.infinitic.common.workflowManager.messages.ForWorkflowEngineMessage
 
 class AvroDispatcher(private val transport: AvroCompatibleTransport) : Dispatcher {
     override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {

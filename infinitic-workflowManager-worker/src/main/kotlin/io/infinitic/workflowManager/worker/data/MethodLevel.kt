@@ -1,7 +1,7 @@
 package io.infinitic.workflowManager.worker.data
 
-import io.infinitic.workflowManager.common.data.methodRuns.MethodPosition
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflowManager.data.methodRuns.MethodPosition
+import io.infinitic.common.workflowManager.data.workflows.WorkflowMessageIndex
 
 data class MethodLevel(
     val parentLevel: MethodLevel? = null,

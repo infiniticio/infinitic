@@ -7,15 +7,15 @@ import io.infinitic.common.taskManager.data.TaskMeta
 import io.infinitic.common.taskManager.data.TaskName
 import io.infinitic.common.taskManager.data.TaskOptions
 import io.infinitic.common.taskManager.messages.DispatchTask
-import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
-import io.infinitic.workflowManager.common.data.properties.PropertyStore
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
-import io.infinitic.workflowManager.common.data.workflows.WorkflowMessageIndex
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.workflowManager.common.messages.WorkflowTaskDispatched
-import io.infinitic.workflowManager.common.messages.DispatchWorkflow
-import io.infinitic.workflowManager.common.data.states.WorkflowState
+import io.infinitic.common.workflowManager.data.methodRuns.MethodRun
+import io.infinitic.common.workflowManager.data.properties.PropertyStore
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskId
+import io.infinitic.common.workflowManager.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.common.workflowManager.messages.WorkflowTaskDispatched
+import io.infinitic.common.workflowManager.messages.DispatchWorkflow
+import io.infinitic.common.workflowManager.data.states.WorkflowState
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 
 class DispatchWorkflowHandler(

@@ -15,7 +15,7 @@ dependencies {
 
     api(project(":infinitic-messaging-api"))
     implementation(project(":infinitic-avro"))
-    implementation(project(":infinitic-taskManager-common"))
+    implementation(project(":infinitic-common"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     testImplementation("org.jeasy:easy-random-core:4.2.+")

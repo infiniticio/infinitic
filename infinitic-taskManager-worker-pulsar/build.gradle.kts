@@ -17,7 +17,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
 
     implementation(project(":infinitic-avro"))
-    implementation(project(":infinitic-taskManager-common"))
+    implementation(project(":infinitic-common"))
     implementation(project(":infinitic-taskManager-client"))
     implementation(project(":infinitic-taskManager-worker"))
     implementation(project(":infinitic-messaging-pulsar"))

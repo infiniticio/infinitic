@@ -19,7 +19,7 @@ dependencies {
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-storage-api"))
     implementation(project(":infinitic-messaging-api"))
-    implementation(project(":infinitic-taskManager-common"))
+    implementation(project(":infinitic-common"))
     implementation(project(":infinitic-taskManager-engine"))
     implementation(project(":infinitic-workflowManager-common"))
 

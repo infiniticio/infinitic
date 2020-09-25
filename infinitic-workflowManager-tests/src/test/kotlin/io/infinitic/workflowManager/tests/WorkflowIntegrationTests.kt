@@ -4,8 +4,8 @@ import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.taskManager.worker.Worker
-import io.infinitic.workflowManager.common.data.workflows.WorkflowInstance
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflowManager.data.workflows.WorkflowInstance
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
 import io.infinitic.workflowManager.tests.samples.TaskA
 import io.infinitic.workflowManager.tests.samples.TaskAImpl
 import io.infinitic.workflowManager.tests.samples.WorkflowA

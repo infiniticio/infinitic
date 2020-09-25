@@ -9,14 +9,14 @@ import io.infinitic.taskManager.engine.engines.MonitoringPerName
 import io.infinitic.taskManager.engine.engines.TaskEngine
 import io.infinitic.taskManager.worker.Worker
 import io.infinitic.workflowManager.client.Client
-import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.messages.WorkflowCompleted
-import io.infinitic.workflowManager.common.messages.WorkflowTaskCompleted
-import io.infinitic.workflowManager.common.messages.TaskCompleted as TaskCompletedInWorkflow
+import io.infinitic.common.workflowManager.data.methodRuns.MethodRunId
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskId
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflowManager.data.workflows.WorkflowId
+import io.infinitic.common.workflowManager.messages.WorkflowCompleted
+import io.infinitic.common.workflowManager.messages.WorkflowTaskCompleted
+import io.infinitic.common.workflowManager.messages.TaskCompleted as TaskCompletedInWorkflow
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 
 class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher() {

@@ -1,7 +1,7 @@
 package io.infinitic.workflowManager.pulsar.utils
 
 import io.infinitic.common.json.Json
-import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
+import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import java.io.File
 import kotlin.reflect.KClass
 import org.apache.avro.specific.SpecificRecordBase

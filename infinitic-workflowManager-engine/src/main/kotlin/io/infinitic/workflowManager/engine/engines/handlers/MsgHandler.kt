@@ -7,13 +7,13 @@ import io.infinitic.common.taskManager.data.TaskMeta
 import io.infinitic.common.taskManager.data.TaskName
 import io.infinitic.common.taskManager.data.TaskOptions
 import io.infinitic.common.taskManager.messages.DispatchTask
-import io.infinitic.workflowManager.common.data.methodRuns.MethodRun
-import io.infinitic.workflowManager.common.data.methodRuns.MethodRunId
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTask
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskId
-import io.infinitic.workflowManager.common.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.workflowManager.common.messages.WorkflowTaskDispatched
-import io.infinitic.workflowManager.common.data.states.WorkflowState
+import io.infinitic.common.workflowManager.data.methodRuns.MethodRun
+import io.infinitic.common.workflowManager.data.methodRuns.MethodRunId
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskId
+import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.common.workflowManager.messages.WorkflowTaskDispatched
+import io.infinitic.common.workflowManager.data.states.WorkflowState
 import io.infinitic.workflowManager.engine.engines.WorkflowEngine
 
 abstract class MsgHandler(

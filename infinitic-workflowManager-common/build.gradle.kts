@@ -11,7 +11,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
 
     implementation(project(":infinitic-avro"))
-    implementation(project(":infinitic-taskManager-common"))
+    implementation(project(":infinitic-common"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.1.+")

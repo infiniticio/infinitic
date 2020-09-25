@@ -1,8 +1,8 @@
 package io.infinitic.workflowManager.worker
 
 import io.infinitic.common.taskManager.proxies.MethodProxyHandler
-import io.infinitic.workflowManager.common.exceptions.NoMethodCallAtAsync
-import io.infinitic.workflowManager.common.exceptions.WorkflowTaskContextNotInitialized
+import io.infinitic.common.workflowManager.exceptions.NoMethodCallAtAsync
+import io.infinitic.common.workflowManager.exceptions.WorkflowTaskContextNotInitialized
 import io.infinitic.workflowManager.worker.deferred.Deferred
 import io.infinitic.workflowManager.worker.commands.CommandProxy
 import io.infinitic.workflowManager.worker.data.MethodRunContext

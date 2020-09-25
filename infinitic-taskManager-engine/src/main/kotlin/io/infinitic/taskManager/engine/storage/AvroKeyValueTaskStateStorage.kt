@@ -9,9 +9,9 @@ import io.infinitic.common.taskManager.data.TaskStatus
 import io.infinitic.common.taskManager.states.MonitoringGlobalState
 import io.infinitic.common.taskManager.states.MonitoringPerNameState
 import io.infinitic.common.taskManager.states.TaskEngineState
-import io.infinitic.avro.taskManager.states.AvroMonitoringGlobalState
-import io.infinitic.avro.taskManager.states.AvroMonitoringPerNameState
-import io.infinitic.avro.taskManager.states.AvroTaskEngineState
+import io.infinitic.avro.taskManager.data.states.AvroMonitoringGlobalState
+import io.infinitic.avro.taskManager.data.states.AvroMonitoringPerNameState
+import io.infinitic.avro.taskManager.data.states.AvroTaskEngineState
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves

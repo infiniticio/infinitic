@@ -1,0 +1,47 @@
+{
+  "type": "record",
+  "name": "AvroWorkflowTaskOutput",
+  "namespace": "io.infinitic.avro.workflowManager.data.workflowTasks",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string"
+    },
+    {
+      "name": "methodRunId",
+      "type": "string"
+    },
+    {
+      "name": "newCommands",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.avro.workflowManager.data.commands.AvroNewCommand"
+      }
+    },
+    {
+      "name": "newSteps",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.avro.workflowManager.data.steps.AvroNewStep"
+      }
+    },
+    {
+      "name": "workflowPropertiesUpdates",
+      "type": {
+        "type": "map",
+        "values": "string"
+      }
+    },
+    {
+      "name": "workflowPropertyStoreUpdates",
+      "type": {
+        "type": "map",
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "methodOutput",
+      "type": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+    }
+  ]
+}

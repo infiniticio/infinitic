@@ -2,10 +2,10 @@ package io.infinitic.workflowManager.engine.storages
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.storage.api.Storage
-import io.infinitic.workflowManager.common.avro.AvroConverter
-import io.infinitic.workflowManager.common.data.workflows.WorkflowId
-import io.infinitic.workflowManager.common.data.states.WorkflowState
-import io.infinitic.workflowManager.states.AvroWorkflowState
+import io.infinitic.common.workflowManager.avro.AvroConverter
+import io.infinitic.common.workflowManager.data.workflows.WorkflowId
+import io.infinitic.common.workflowManager.data.states.WorkflowState
+import io.infinitic.avro.workflowManager.states.AvroWorkflowState
 
 /**
  * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves

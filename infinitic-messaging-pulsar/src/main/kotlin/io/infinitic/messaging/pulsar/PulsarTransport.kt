@@ -7,7 +7,7 @@ import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitorin
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import io.infinitic.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
+import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.api.PulsarClient

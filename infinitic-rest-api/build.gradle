@@ -53,7 +53,7 @@ dependencies {
     testImplementation "io.ktor:ktor-server-tests:$ktor_version"
 
     implementation project(":infinitic-avro")
-    implementation project(":infinitic-taskManager-common")
+    implementation project(":infinitic-common")
 
     implementation "io.prestosql:presto-jdbc:$prestojdbc_version"
     implementation "org.koin:koin-ktor:$koin_version"

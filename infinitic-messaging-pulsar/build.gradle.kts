@@ -25,7 +25,7 @@ dependencies {
     testImplementation("io.kotest:kotest-core-jvm:4.0.+")
     testImplementation("io.mockk:mockk:1.9.+")
 
-    testImplementation(project(":infinitic-taskManager-common"))
+    testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-taskManager-engine-pulsar"))
 }
 

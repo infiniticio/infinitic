@@ -2,9 +2,9 @@ package io.infinitic.workflowManager.engine.utils
 
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.taskManager.data.TaskId
-import io.infinitic.workflowManager.common.data.commands.CommandId
-import io.infinitic.workflowManager.common.data.commands.CommandStatusOngoing
-import io.infinitic.workflowManager.common.data.steps.Step
+import io.infinitic.common.workflowManager.data.commands.CommandId
+import io.infinitic.common.workflowManager.data.commands.CommandStatusOngoing
+import io.infinitic.common.workflowManager.data.steps.Step
 import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random

@@ -14,7 +14,7 @@ dependencies {
     testImplementation(project(":infinitic-avro"))
     testImplementation(project(":infinitic-messaging-api"))
     testImplementation(project(":infinitic-storage-pulsar"))
-    testImplementation(project(":infinitic-taskManager-common"))
+    testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-taskManager-engine"))
     testImplementation(project(":infinitic-taskManager-client"))
     testImplementation(project(":infinitic-taskManager-worker"))
