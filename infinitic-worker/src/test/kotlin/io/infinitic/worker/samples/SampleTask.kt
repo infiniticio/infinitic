@@ -1,4 +1,4 @@
-package io.infinitic.worker.taskManager.samples
+package io.infinitic.worker.samples
 
 interface SampleTask {
     fun handle(i: Int, j: String): String

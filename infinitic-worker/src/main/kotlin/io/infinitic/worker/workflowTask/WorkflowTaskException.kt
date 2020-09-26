@@ -1,4 +1,4 @@
-package io.infinitic.worker.workflowManager.workflowTasks
+package io.infinitic.worker.workflowTask
 
 sealed class WorkflowTaskException : RuntimeException()
 

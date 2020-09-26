@@ -1,16 +1,14 @@
-package io.infinitic.worker.workflowManager.workflowTasks
+package io.infinitic.worker.workflowTask
 
 import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.worker.taskManager.TaskAttemptContext
+import io.infinitic.worker.task.TaskAttemptContext
 import io.infinitic.common.workflowManager.data.methodRuns.MethodOutput
 import io.infinitic.common.workflowManager.data.methodRuns.MethodRun
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.common.workflowManager.parser.setPropertiesToObject
-import io.infinitic.worker.workflowManager.Workflow
-import io.infinitic.worker.workflowManager.data.MethodRunContext
 import java.lang.reflect.InvocationTargetException
 
 class WorkflowTaskImpl : WorkflowTask {
@@ -30,9 +28,9 @@ class WorkflowTaskImpl : WorkflowTask {
         val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
 
         // set methodContext
-        val methodRunContext = MethodRunContext(taskAttemptContext.worker, workflowTaskInput, workflowInstance)
+        val methodRunContext = WorkflowTaskContext(taskAttemptContext.worker, workflowTaskInput, workflowInstance)
 
-        workflowInstance.methodRunContext = methodRunContext
+        workflowInstance.workflowTaskContext = methodRunContext
 
         // run method and get output
         val methodOutput = try {

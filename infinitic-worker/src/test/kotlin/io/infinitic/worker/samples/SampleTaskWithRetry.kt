@@ -1,6 +1,6 @@
-package io.infinitic.worker.taskManager.samples
+package io.infinitic.worker.samples
 
-import io.infinitic.worker.taskManager.TaskAttemptContext
+import io.infinitic.worker.task.TaskAttemptContext
 
 internal class SampleTaskWithRetry() {
     lateinit var context: TaskAttemptContext

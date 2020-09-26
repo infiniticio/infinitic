@@ -1,4 +1,4 @@
-package io.infinitic.worker.taskManager
+package io.infinitic.worker.task
 
 import io.infinitic.common.taskManager.data.TaskOptions
 import java.lang.reflect.Method

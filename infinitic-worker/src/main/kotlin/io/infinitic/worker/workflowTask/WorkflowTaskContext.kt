@@ -1,6 +1,6 @@
-package io.infinitic.worker.workflowManager.data
+package io.infinitic.worker.workflowTask
 
-import io.infinitic.worker.taskManager.Worker
+import io.infinitic.worker.Worker
 import io.infinitic.common.workflowManager.data.commands.CommandOutput
 import io.infinitic.common.workflowManager.data.commands.CommandSimpleName
 import io.infinitic.common.workflowManager.data.commands.CommandStatusCanceled
@@ -25,18 +25,16 @@ import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflowManager.exceptions.ShouldNotWaitInInlineTask
 import io.infinitic.common.workflowManager.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.common.workflowManager.parser.setPropertiesToObject
-import io.infinitic.worker.workflowManager.deferred.Deferred
-import io.infinitic.worker.workflowManager.Workflow
-import io.infinitic.worker.workflowManager.deferred.DeferredStatus
-import io.infinitic.worker.workflowManager.workflowTasks.KnownStepException
-import io.infinitic.worker.workflowManager.workflowTasks.NewStepException
+import io.infinitic.worker.workflowTask.deferred.Deferred
+import io.infinitic.worker.workflowTask.deferred.DeferredStatus
+import io.infinitic.worker.workflowTask.data.MethodLevel
 import java.lang.RuntimeException
 import java.lang.reflect.Method
 
-class MethodRunContext(
-    private val worker: Worker,
-    private val workflowTaskInput: WorkflowTaskInput,
-    private val workflowInstance: Workflow
+class WorkflowTaskContext(
+        private val worker: Worker,
+        private val workflowTaskInput: WorkflowTaskInput,
+        private val workflowInstance: Workflow
 ) {
     // current position in the tree of method processing
     private var methodLevel: MethodLevel = MethodLevel(messageIndex = workflowTaskInput.methodRun.messageIndexAtStart)

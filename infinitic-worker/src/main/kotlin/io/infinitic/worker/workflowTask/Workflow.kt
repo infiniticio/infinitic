@@ -1,23 +1,22 @@
-package io.infinitic.worker.workflowManager
+package io.infinitic.worker.workflowTask
 
 import io.infinitic.common.taskManager.proxies.MethodProxyHandler
 import io.infinitic.common.workflowManager.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflowManager.exceptions.WorkflowTaskContextNotInitialized
-import io.infinitic.worker.workflowManager.deferred.Deferred
-import io.infinitic.worker.workflowManager.commands.CommandProxy
-import io.infinitic.worker.workflowManager.data.MethodRunContext
+import io.infinitic.worker.workflowTask.deferred.Deferred
+import io.infinitic.worker.workflowTask.commands.CommandProxy
 
 abstract class Workflow {
-    var methodRunContext: MethodRunContext? = null
-        get() = field ?: throw WorkflowTaskContextNotInitialized(this::class.java.name, MethodRunContext::class.java.name)
+    var workflowTaskContext: WorkflowTaskContext? = null
+        get() = field ?: throw WorkflowTaskContextNotInitialized(this::class.java.name, WorkflowTaskContext::class.java.name)
 
     /*
      * Use this method to proxy a task or a child workflow
      */
-    protected inline fun <reified T : Any> proxy() = CommandProxy { methodRunContext!! }.instance<T>()
+    protected inline fun <reified T : Any> proxy() = CommandProxy { workflowTaskContext!! }.instance<T>()
 
     /*
-     * Use this method to dispatch a task
+     * Use this method to dispatch a task or a workflow
      */
     inline fun <reified T : Any, reified S> async(
         proxy: T,
@@ -33,7 +32,7 @@ abstract class Workflow {
         klass.method()
 
         // dispatch this request
-        return methodRunContext!!.dispatch(
+        return workflowTaskContext!!.dispatch(
             handler.method ?: throw NoMethodCallAtAsync(T::class.java.name),
             handler.args,
             S::class.java
@@ -43,10 +42,10 @@ abstract class Workflow {
     /*
      * Use this method to create an async branch
      */
-    fun <S> async(branch: () -> S) = methodRunContext!!.async(branch)
+    fun <S> async(branch: () -> S) = workflowTaskContext!!.async(branch)
 
     /*
      * Use this method to create an inline task
      */
-    fun <S> task(inline: () -> S): S = methodRunContext!!.task(inline)
+    fun <S> task(inline: () -> S): S = workflowTaskContext!!.task(inline)
 }

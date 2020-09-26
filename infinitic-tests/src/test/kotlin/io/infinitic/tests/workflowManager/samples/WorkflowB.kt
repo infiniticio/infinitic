@@ -1,6 +1,6 @@
 package io.infinitic.tests.workflowManager.samples
 
-import io.infinitic.worker.workflowManager.Workflow
+import io.infinitic.worker.workflowTask.Workflow
 
 interface WorkflowB {
     fun concat(input: String): String

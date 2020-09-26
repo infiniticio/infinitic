@@ -1,9 +1,9 @@
-package io.infinitic.worker.taskManager.pulsar.functions
+package io.infinitic.worker.pulsar.functions
 
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.pulsar.PulsarTransport
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import io.infinitic.worker.taskManager.Worker
+import io.infinitic.worker.Worker
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function

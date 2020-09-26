@@ -7,7 +7,7 @@ import io.infinitic.common.taskManager.messages.TaskStatusUpdated
 import io.infinitic.engine.taskManager.engines.MonitoringGlobal
 import io.infinitic.engine.taskManager.engines.MonitoringPerName
 import io.infinitic.engine.taskManager.engines.TaskEngine
-import io.infinitic.worker.taskManager.Worker
+import io.infinitic.worker.Worker
 import io.infinitic.client.workflowManager.Client
 import io.infinitic.common.workflowManager.data.methodRuns.MethodRunId
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask

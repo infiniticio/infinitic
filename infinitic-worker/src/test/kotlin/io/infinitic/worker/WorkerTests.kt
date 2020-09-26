@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package io.infinitic.worker.taskManager
+package io.infinitic.worker
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.taskManager.data.TaskAttemptId
@@ -25,13 +25,14 @@ import io.infinitic.common.taskManager.messages.RunTask
 import io.infinitic.common.taskManager.messages.TaskAttemptCompleted
 import io.infinitic.common.taskManager.messages.TaskAttemptFailed
 import io.infinitic.common.taskManager.messages.TaskAttemptStarted
-import io.infinitic.worker.taskManager.samples.SampleTask
-import io.infinitic.worker.taskManager.samples.TestingSampleTask
-import io.infinitic.worker.taskManager.samples.SampleTaskWithRetry
-import io.infinitic.worker.taskManager.samples.SampleTaskWithBadTypeRetry
-import io.infinitic.worker.taskManager.samples.SampleTaskWithBuggyRetry
-import io.infinitic.worker.taskManager.samples.SampleTaskWithContext
-import io.infinitic.worker.taskManager.samples.SampleTaskWithTimeout
+import io.infinitic.worker.Worker
+import io.infinitic.worker.samples.SampleTask
+import io.infinitic.worker.samples.TestingSampleTask
+import io.infinitic.worker.samples.SampleTaskWithRetry
+import io.infinitic.worker.samples.SampleTaskWithBadTypeRetry
+import io.infinitic.worker.samples.SampleTaskWithBuggyRetry
+import io.infinitic.worker.samples.SampleTaskWithContext
+import io.infinitic.worker.samples.SampleTaskWithTimeout
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

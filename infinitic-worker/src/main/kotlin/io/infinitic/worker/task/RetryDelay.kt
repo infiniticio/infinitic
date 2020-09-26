@@ -1,4 +1,4 @@
-package io.infinitic.worker.taskManager
+package io.infinitic.worker.task
 
 internal sealed class RetryDelay
 
