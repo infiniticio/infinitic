@@ -1,5 +1,6 @@
 package io.infinitic.taskManager.tests.inMemory
 
+import io.infinitic.client.Client
 import io.infinitic.messaging.api.dispatcher.InMemoryDispatcher
 import io.infinitic.common.taskManager.data.TaskStatus
 import io.infinitic.common.taskManager.messages.TaskCompleted
@@ -8,7 +9,6 @@ import io.infinitic.engine.taskManager.engines.MonitoringGlobal
 import io.infinitic.engine.taskManager.engines.MonitoringPerName
 import io.infinitic.engine.taskManager.engines.TaskEngine
 import io.infinitic.worker.Worker
-import io.infinitic.client.workflowManager.Client
 import io.infinitic.common.workflowManager.data.methodRuns.MethodRunId
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskId

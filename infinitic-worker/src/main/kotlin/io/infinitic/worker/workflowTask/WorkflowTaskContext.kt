@@ -32,9 +32,9 @@ import java.lang.RuntimeException
 import java.lang.reflect.Method
 
 class WorkflowTaskContext(
-        private val worker: Worker,
-        private val workflowTaskInput: WorkflowTaskInput,
-        private val workflowInstance: Workflow
+    private val worker: Worker,
+    private val workflowTaskInput: WorkflowTaskInput,
+    private val workflowInstance: Workflow
 ) {
     // current position in the tree of method processing
     private var methodLevel: MethodLevel = MethodLevel(messageIndex = workflowTaskInput.methodRun.messageIndexAtStart)

@@ -1,9 +1,12 @@
-package io.infinitic.tests.taskManager
+package io.infinitic.tests.tasks
 
 import io.infinitic.common.taskManager.data.TaskInstance
 import io.infinitic.common.taskManager.data.TaskStatus
-import io.infinitic.tests.taskManager.inMemory.InMemoryDispatcherTest
-import io.infinitic.tests.taskManager.inMemory.InMemoryStorageTest
+import io.infinitic.tests.tasks.samples.Status
+import io.infinitic.tests.tasks.samples.TaskTest
+import io.infinitic.tests.tasks.samples.TaskTestImpl
+import io.infinitic.tests.tasks.inMemory.InMemoryDispatcherTest
+import io.infinitic.tests.tasks.inMemory.InMemoryStorageTest
 import io.infinitic.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

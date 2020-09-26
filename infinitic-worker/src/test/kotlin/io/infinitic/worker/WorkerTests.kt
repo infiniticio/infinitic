@@ -25,7 +25,6 @@ import io.infinitic.common.taskManager.messages.RunTask
 import io.infinitic.common.taskManager.messages.TaskAttemptCompleted
 import io.infinitic.common.taskManager.messages.TaskAttemptFailed
 import io.infinitic.common.taskManager.messages.TaskAttemptStarted
-import io.infinitic.worker.Worker
 import io.infinitic.worker.samples.SampleTask
 import io.infinitic.worker.samples.TestingSampleTask
 import io.infinitic.worker.samples.SampleTaskWithRetry

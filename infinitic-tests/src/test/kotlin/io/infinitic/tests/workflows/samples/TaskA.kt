@@ -1,4 +1,4 @@
-package io.infinitic.tests.workflowManager.samples
+package io.infinitic.tests.workflows.samples
 
 interface TaskA {
     fun concat(str1: String, str2: String): String

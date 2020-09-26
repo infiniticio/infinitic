@@ -1,4 +1,4 @@
-package io.infinitic.tests.taskManager
+package io.infinitic.tests.tasks.samples
 
 import io.infinitic.worker.task.TaskAttemptContext
 

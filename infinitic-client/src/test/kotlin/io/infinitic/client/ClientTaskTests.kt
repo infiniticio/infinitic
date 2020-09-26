@@ -1,7 +1,9 @@
-package io.infinitic.client.taskManager
+package io.infinitic.client
 
+import io.infinitic.client.samples.FakeClass
+import io.infinitic.client.samples.FakeInterface
+import io.infinitic.client.samples.FakeTask
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.taskManager.data.TaskId
 import io.infinitic.common.taskManager.data.TaskInput
 import io.infinitic.common.taskManager.data.TaskMeta
 import io.infinitic.common.taskManager.data.TaskName
@@ -16,7 +18,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 
-class ClientTests : StringSpec({
+class ClientTaskTests : StringSpec({
     val dispatcher = mockk<Dispatcher>()
     val slot = slot<ForTaskEngineMessage>()
     coEvery { dispatcher.toTaskEngine(capture(slot)) } just Runs
@@ -148,15 +150,3 @@ class ClientTests : StringSpec({
 
     // TODO: add tests for error cases
 })
-
-private interface FakeInterface
-private data class FakeClass(val i: Int ? = 0) : FakeInterface
-
-private interface FakeTask {
-    fun m1()
-    fun m1(i: Int): String
-    fun m1(str: String?): Any?
-    fun m1(p1: Int, p2: String): String
-    fun m1(id: FakeInterface): TaskId
-    fun m2(): Boolean
-}
