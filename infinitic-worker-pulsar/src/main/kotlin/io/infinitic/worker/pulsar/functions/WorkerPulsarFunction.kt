@@ -8,7 +8,7 @@ import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-open class TaskWorkerPulsarFunction : Function<AvroEnvelopeForWorker, Void> {
+open class WorkerPulsarFunction : Function<AvroEnvelopeForWorker, Void> {
 
     override fun process(input: AvroEnvelopeForWorker, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
