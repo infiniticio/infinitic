@@ -3,8 +3,6 @@ package io.infinitic.worker.workflowTask
 import io.infinitic.common.taskManager.Task
 import io.infinitic.common.taskManager.proxies.MethodProxyHandler
 import io.infinitic.common.workflowManager.data.commands.Command
-import io.infinitic.common.workflowManager.Workflow as WorkflowInterface
-import io.infinitic.worker.Worker
 import io.infinitic.common.workflowManager.data.commands.CommandOutput
 import io.infinitic.common.workflowManager.data.commands.CommandSimpleName
 import io.infinitic.common.workflowManager.data.commands.CommandStatusCanceled
@@ -12,12 +10,12 @@ import io.infinitic.common.workflowManager.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflowManager.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflowManager.data.commands.CommandType
 import io.infinitic.common.workflowManager.data.commands.DispatchChildWorkflow
-import io.infinitic.common.workflowManager.data.commands.StartAsync
 import io.infinitic.common.workflowManager.data.commands.DispatchTask
 import io.infinitic.common.workflowManager.data.commands.EndAsync
 import io.infinitic.common.workflowManager.data.commands.EndInlineTask
 import io.infinitic.common.workflowManager.data.commands.NewCommand
 import io.infinitic.common.workflowManager.data.commands.PastCommand
+import io.infinitic.common.workflowManager.data.commands.StartAsync
 import io.infinitic.common.workflowManager.data.commands.StartInlineTask
 import io.infinitic.common.workflowManager.data.steps.NewStep
 import io.infinitic.common.workflowManager.data.steps.PastStep
@@ -30,14 +28,13 @@ import io.infinitic.common.workflowManager.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflowManager.exceptions.ShouldNotWaitInInlineTask
 import io.infinitic.common.workflowManager.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.common.workflowManager.parser.setPropertiesToObject
+import io.infinitic.worker.workflowTask.data.MethodLevel
 import io.infinitic.worker.workflowTask.deferred.Deferred
 import io.infinitic.worker.workflowTask.deferred.DeferredStatus
-import io.infinitic.worker.workflowTask.data.MethodLevel
-import java.lang.RuntimeException
 import java.lang.reflect.Method
+import io.infinitic.common.workflowManager.Workflow as WorkflowInterface
 
 class WorkflowTaskContext(
-    private val worker: Worker,
     private val workflowTaskInput: WorkflowTaskInput,
     private val workflowInstance: Workflow
 ) {

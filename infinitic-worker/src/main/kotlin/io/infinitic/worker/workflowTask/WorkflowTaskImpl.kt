@@ -11,7 +11,7 @@ import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.common.workflowManager.parser.setPropertiesToObject
 import java.lang.reflect.InvocationTargetException
 
-class WorkflowTaskImpl : WorkflowTask {
+class gitWorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
 
     override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
@@ -28,7 +28,7 @@ class WorkflowTaskImpl : WorkflowTask {
         val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
 
         // set methodContext
-        val methodRunContext = WorkflowTaskContext(taskAttemptContext.worker, workflowTaskInput, workflowInstance)
+        val methodRunContext = WorkflowTaskContext(workflowTaskInput, workflowInstance)
 
         workflowInstance.workflowTaskContext = methodRunContext
 
