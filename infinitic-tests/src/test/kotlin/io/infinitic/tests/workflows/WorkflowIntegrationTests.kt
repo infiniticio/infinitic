@@ -31,12 +31,10 @@ private lateinit var status: AvroTaskStatus
 class WorkflowIntegrationTests : StringSpec({
     val taskTest = TaskAImpl()
     val workflowTask = WorkflowTaskImpl()
-    val workflowA = WorkflowAImpl()
-    val workflowB = WorkflowBImpl()
     Worker.register<TaskA>(taskTest)
     Worker.register<WorkflowTask>(workflowTask)
-    Worker.register<WorkflowA>(workflowA)
-    Worker.register<WorkflowB>(workflowB)
+    Worker.register<WorkflowA>(WorkflowAImpl::class.java)
+    Worker.register<WorkflowB>(WorkflowBImpl::class.java)
 
     var workflowInstance: WorkflowInstance
 

@@ -65,7 +65,7 @@ data class NoMethodCallAtAsync(
     help = "Make sure to call exactly one method of \"$name\" within the curly braces - example: async(foo) { bar(*args) }"
 )
 
-data class MixingDeferredFromDifferentWorkflowMethodExecution(
+data class MixingDeferredFromDifferentWorkflowTaskContext(
     @JsonProperty("unused") val unused: String = ""
 ) : UserExceptionInWorker(
     msg = "You can not mix Deferred coming from different method executions",

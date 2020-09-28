@@ -18,6 +18,8 @@ import io.infinitic.common.taskManager.messages.TaskAttemptStarted
 import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.common.taskManager.Task
+import io.infinitic.common.workflowManager.Workflow
 import io.infinitic.worker.task.RetryDelay
 import io.infinitic.worker.task.RetryDelayFailed
 import io.infinitic.worker.task.RetryDelayRetrieved
@@ -41,34 +43,54 @@ open class Worker(val dispatcher: Dispatcher) {
     companion object {
 
         // map taskName <> taskInstance
-        private val registeredTasks = ConcurrentHashMap<String, Any>()
+        private val registeredTasks = ConcurrentHashMap<String, Task>()
 
         /**
-         * Use this method to register the task instance to use for a given name
+         * Use this to register a task instance to use for a given Task interface
          */
-        fun register(taskName: String, taskInstance: Any) {
+        inline fun <reified T : Task> register(taskInstance: T) = register(T::class.java.name, taskInstance)
+
+        /**
+         * Use this to register a task instance to use for a given Task interface
+         */
+        fun register(taskName: String, taskInstance: Task) {
             if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
 
             registeredTasks[taskName] = taskInstance
         }
 
+        // map workflowName <> workflowImplementation
+        private val registeredWorkflows = ConcurrentHashMap<String, Class<out Workflow>>()
+
         /**
-         * Use this method to unregister a given name (mostly used in tests)
+         * Use this to register a workflow definition to use for a given Workflow interface
          */
-        fun unregister(taskName: String) {
-            registeredTasks.remove(taskName)
+        inline fun <reified T : Workflow> register(klass: Class<out T>) = register(T::class.java.name, klass)
+
+        /**
+         * Use this to register a workflow definition to use for a given Workflow interface
+         */
+        fun register(workflowName: String, workflowClass: Class<out Workflow>) {
+            registeredWorkflows[workflowName] = workflowClass
         }
 
         /**
-         * Use this method to register the task instance to use for a given class
+         * Use this method to unregister a given name (mostly used in tests)
          */
-        inline fun <reified T> register(taskInstance: Any) = register(T::class.java.name, taskInstance)
+        inline fun <reified T : Any> unregister() = unregister(T::class.java.name)
 
         /**
-         * Use this method to unregister a given class (mostly used in tests)
+         * Use this method to unregister a given name (mostly used in tests)
          */
-        inline fun <reified T> unregister() = unregister(T::class.java.name)
+        fun unregister(name: String) {
+            registeredTasks.remove(name)
+            registeredWorkflows.remove(name)
+        }
     }
+
+    fun getTaskInstance(name: String) = registeredTasks[name] ?: throw ClassNotFoundDuringInstantiation(name)
+
+    fun getWorkflowClass(name: String) = registeredWorkflows[name] ?: throw ClassNotFoundDuringInstantiation(name)
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
         is RunTask -> runTask(msg)
@@ -142,10 +164,6 @@ open class Worker(val dispatcher: Dispatcher) {
         }
     }
 
-    fun getInstance(name: String) = getInstanceOrNull(name) ?: throw ClassNotFoundDuringInstantiation(name)
-
-    fun getInstanceOrNull(name: String) = registeredTasks[name]
-
     private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
         val output = method.invoke(task, *parameters)
         ensureActive()
@@ -178,7 +196,7 @@ open class Worker(val dispatcher: Dispatcher) {
 
     private fun parse(msg: RunTask): TaskCommand {
         val (taskName, methodName) = getClassAndMethodName("${msg.taskName}")
-        val task = getInstance(taskName)
+        val task = getTaskInstance(taskName)
         val parameterTypes = msg.taskMeta.parameterTypes
         val method = if (parameterTypes == null) {
             getMethodPerNameAndParameterCount(task, methodName, msg.taskInput.size)

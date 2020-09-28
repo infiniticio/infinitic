@@ -1,6 +1,8 @@
 package io.infinitic.worker.samples
 
-interface SampleTask {
+import io.infinitic.common.taskManager.Task
+
+interface SampleTask : Task {
     fun handle(i: Int, j: String): String
     fun handle(i: Int, j: Int): String
     fun other(i: Int, j: String): String
