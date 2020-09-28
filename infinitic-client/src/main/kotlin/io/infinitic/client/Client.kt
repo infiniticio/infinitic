@@ -1,5 +1,6 @@
 package io.infinitic.client
 
+import io.infinitic.common.taskManager.Task
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.taskManager.data.TaskInstance
 import io.infinitic.common.taskManager.data.TaskId
@@ -13,6 +14,7 @@ import io.infinitic.common.taskManager.messages.CancelTask
 import io.infinitic.common.taskManager.messages.DispatchTask
 import io.infinitic.common.taskManager.messages.RetryTask
 import io.infinitic.common.taskManager.proxies.MethodProxyHandler
+import io.infinitic.common.workflowManager.Workflow
 import io.infinitic.common.workflowManager.data.methodRuns.MethodInput
 import io.infinitic.common.workflowManager.data.methodRuns.MethodName
 import io.infinitic.common.workflowManager.data.workflows.WorkflowId
@@ -25,11 +27,12 @@ import java.lang.reflect.Proxy
 
 class Client(val dispatcher: Dispatcher) {
 
+
     /*
     * Use this method to dispatch a workflow
-    * TODO: using class instance instead of interface is not supported
     */
-    suspend inline fun <reified T> dispatchWorkflow(
+    suspend fun <T: Workflow> dispatch(
+        workflowInterface: Class<T>,
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta(),
         apply: T.() -> Any?
@@ -37,21 +40,17 @@ class Client(val dispatcher: Dispatcher) {
         // get a proxy for T
         val handler = MethodProxyHandler()
 
-        val klass = Proxy.newProxyInstance(
-            T::class.java.classLoader,
-            kotlin.arrayOf(T::class.java),
-            handler
-        ) as T
+        val klass = handler.instance(workflowInterface)
 
         // method call will actually be done through the proxy by handler
         klass.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchWorkflow")
+        val method = handler.method ?: throw NoMethodCallAtDispatch(workflowInterface.name, "dispatchWorkflow")
 
         val msg = DispatchWorkflow(
             workflowId = WorkflowId(),
-            workflowName = WorkflowName(T::class.java.name),
+            workflowName = WorkflowName.from(method),
             methodName = MethodName.from(method),
             methodInput = MethodInput.from(method, handler.args),
             workflowMeta = meta,
@@ -65,23 +64,23 @@ class Client(val dispatcher: Dispatcher) {
     /*
      * Use this method to dispatch a task
      */
-    suspend inline fun <reified T> dispatchTask(
+    suspend fun <T: Task> dispatch(
+        taskInterface: Class<T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
         apply: T.() -> Any?
     ): TaskInstance {
-        // TODO: using class instead of interface is not supported (CGLIB or JavaAssist could be used)
         // get a proxy for T
         val handler = MethodProxyHandler()
 
         // get a proxy instance
-        val klass = handler.instance<T>()
+        val klass = handler.instance(taskInterface)
 
         // method call will actually be done through the proxy by handler
         klass.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchTask")
+        val method = handler.method ?: throw NoMethodCallAtDispatch(taskInterface.name, "dispatchTask")
 
         val msg = DispatchTask(
             taskId = TaskId(),

@@ -38,7 +38,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow without parameter" {
         // when
-        val workflow = client.dispatchWorkflow<FakeWorkflow> { m1() }
+        val workflow = client.dispatch(FakeWorkflow::class.java) { m1() }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -54,9 +54,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with a primitive as parameter" {
         // when
-        val workflow = client.dispatchWorkflow<FakeWorkflow> {
-            m1(0)
-        }
+        val workflow = client.dispatch(FakeWorkflow::class.java) { m1(0) }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -72,7 +70,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple method definition" {
         // when
-        val workflow = client.dispatchWorkflow<FakeWorkflow> { m1("a") }
+        val workflow = client.dispatch(FakeWorkflow::class.java) { m1("a") }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -88,7 +86,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple parameters" {
         // when
-        val workflow = client.dispatchWorkflow<FakeWorkflow> { m1(0, "a") }
+        val workflow = client.dispatch(FakeWorkflow::class.java) { m1(0, "a") }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -105,7 +103,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val klass = FakeClass()
-        val instance = client.dispatchWorkflow<FakeWorkflow> { m1(klass) }
+        val instance = client.dispatch(FakeWorkflow::class.java) { m1(klass) }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured

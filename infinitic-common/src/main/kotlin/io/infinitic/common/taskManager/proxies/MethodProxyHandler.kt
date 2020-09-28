@@ -44,4 +44,10 @@ class MethodProxyHandler : InvocationHandler {
             this
         ) as T
     }
+
+    fun <T> instance(klass: Class<T>) = Proxy.newProxyInstance(
+        klass.classLoader,
+        kotlin.arrayOf(klass),
+        this
+    ) as T
 }

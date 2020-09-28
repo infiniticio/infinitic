@@ -6,7 +6,7 @@ import io.infinitic.worker.workflowTask.deferred.and
 import io.infinitic.worker.workflowTask.deferred.or
 import java.time.LocalDateTime
 
-interface WorkflowA {
+interface WorkflowA : io.infinitic.common.workflowManager.Workflow{
     fun empty(): String
     fun seq1(): String
     fun seq2(): String

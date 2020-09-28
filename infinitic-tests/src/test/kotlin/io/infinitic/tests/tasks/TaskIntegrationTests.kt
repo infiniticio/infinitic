@@ -33,9 +33,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> {
-                log()
-            }
+            task = client.dispatch(TaskTest::class.java) { log() }
         }
         // check that task is terminated
         storage.isTerminated(task) shouldBe true
@@ -51,7 +49,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
         }
         // check that task is terminated
         storage.isTerminated(task) shouldBe true
@@ -67,7 +65,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
         }
         // check that task is not terminated
         storage.isTerminated(task) shouldBe false
@@ -83,7 +81,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
         }
         // check that task is not terminated
         storage.isTerminated(task) shouldBe false
@@ -103,7 +101,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
             delay(100)
             client.retryTask(id = "${task.taskId}")
         }
@@ -122,7 +120,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
             delay(100)
             client.cancelTask(id = "${task.taskId}")
         }

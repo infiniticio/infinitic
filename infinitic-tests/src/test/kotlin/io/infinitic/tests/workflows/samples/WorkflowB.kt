@@ -2,7 +2,7 @@ package io.infinitic.tests.workflows.samples
 
 import io.infinitic.worker.workflowTask.Workflow
 
-interface WorkflowB {
+interface WorkflowB : io.infinitic.common.workflowManager.Workflow {
     fun concat(input: String): String
     fun factorial(n: Long): Long
 }
