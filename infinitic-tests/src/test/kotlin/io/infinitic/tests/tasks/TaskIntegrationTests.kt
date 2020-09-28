@@ -7,7 +7,6 @@ import io.infinitic.tests.tasks.samples.TaskTest
 import io.infinitic.tests.tasks.samples.TaskTestImpl
 import io.infinitic.tests.tasks.inMemory.InMemoryDispatcherTest
 import io.infinitic.tests.tasks.inMemory.InMemoryStorageTest
-import io.infinitic.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.coroutineScope
@@ -16,10 +15,11 @@ import kotlinx.coroutines.delay
 private val storage = InMemoryStorageTest()
 private val dispatcher = InMemoryDispatcherTest(storage)
 private val client = dispatcher.client
+private val worker = dispatcher.worker
 
 class TaskIntegrationTests : StringSpec({
     val taskTest = TaskTestImpl()
-    Worker.register<TaskTest>(taskTest)
+    worker.register<TaskTest>(taskTest)
     var task: TaskInstance
 
     beforeTest {

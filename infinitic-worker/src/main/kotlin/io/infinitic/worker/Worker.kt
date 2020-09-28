@@ -33,59 +33,55 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
 open class Worker(val dispatcher: Dispatcher) {
 
-    companion object {
+    // map taskName <> taskInstance
+    private val registeredTasks = mutableMapOf<String, Task>()
 
-        // map taskName <> taskInstance
-        private val registeredTasks = ConcurrentHashMap<String, Task>()
+    // map workflowName <> workflowImplementation
+    private val registeredWorkflows = mutableMapOf<String, Class<out Workflow>>()
 
-        /**
-         * Use this to register a task instance to use for a given Task interface
-         */
-        inline fun <reified T : Task> register(taskInstance: T) = register(T::class.java.name, taskInstance)
+    /**
+     * Use this to register a task instance to use for a given Task interface
+     */
+    inline fun <reified T : Task> register(taskInstance: T) = register(T::class.java.name, taskInstance)
 
-        /**
-         * Use this to register a task instance to use for a given Task interface
-         */
-        fun register(taskName: String, taskInstance: Task) {
-            if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
+    /**
+     * Use this to register a task instance to use for a given Task interface
+     */
+    fun register(taskName: String, taskInstance: Task) {
+        if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
 
-            registeredTasks[taskName] = taskInstance
-        }
+        registeredTasks[taskName] = taskInstance
+    }
 
-        // map workflowName <> workflowImplementation
-        private val registeredWorkflows = ConcurrentHashMap<String, Class<out Workflow>>()
+    /**
+     * Use this to register a workflow definition to use for a given Workflow interface
+     */
+    inline fun <reified T : Workflow> register(klass: Class<out T>) = register(T::class.java.name, klass)
 
-        /**
-         * Use this to register a workflow definition to use for a given Workflow interface
-         */
-        inline fun <reified T : Workflow> register(klass: Class<out T>) = register(T::class.java.name, klass)
+    /**
+     * Use this to register a workflow definition to use for a given Workflow interface
+     */
+    fun register(workflowName: String, workflowClass: Class<out Workflow>) {
+        registeredWorkflows[workflowName] = workflowClass
+    }
 
-        /**
-         * Use this to register a workflow definition to use for a given Workflow interface
-         */
-        fun register(workflowName: String, workflowClass: Class<out Workflow>) {
-            registeredWorkflows[workflowName] = workflowClass
-        }
+    /**
+     * Use this method to unregister a given name (mostly used in tests)
+     */
+    inline fun <reified T : Any> unregister() = unregister(T::class.java.name)
 
-        /**
-         * Use this method to unregister a given name (mostly used in tests)
-         */
-        inline fun <reified T : Any> unregister() = unregister(T::class.java.name)
-
-        /**
-         * Use this method to unregister a given name (mostly used in tests)
-         */
-        fun unregister(name: String) {
-            registeredTasks.remove(name)
-            registeredWorkflows.remove(name)
-        }
+    /**
+     * Use this method to unregister a given name (mostly used in tests)
+     */
+    fun unregister(name: String) {
+        registeredTasks.remove(name)
+        registeredWorkflows.remove(name)
     }
 
     fun getTaskInstance(name: String) = registeredTasks[name] ?: throw ClassNotFoundDuringInstantiation(name)

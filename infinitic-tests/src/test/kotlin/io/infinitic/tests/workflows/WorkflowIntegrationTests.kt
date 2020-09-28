@@ -3,7 +3,6 @@ package io.infinitic.tests.workflows
 import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
-import io.infinitic.worker.Worker
 import io.infinitic.common.workflowManager.data.workflows.WorkflowInstance
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
 import io.infinitic.tests.workflows.samples.TaskA
@@ -25,16 +24,17 @@ private val mockLogger = mockk<Logger>(relaxed = true)
 private val storage = InMemoryStorageTest()
 private val dispatcher = InMemoryDispatcherTest(storage)
 private val client = dispatcher.client
+private val worker = dispatcher.worker
 
 private lateinit var status: AvroTaskStatus
 
 class WorkflowIntegrationTests : StringSpec({
     val taskTest = TaskAImpl()
     val workflowTask = WorkflowTaskImpl()
-    Worker.register<TaskA>(taskTest)
-    Worker.register<WorkflowTask>(workflowTask)
-    Worker.register<WorkflowA>(WorkflowAImpl::class.java)
-    Worker.register<WorkflowB>(WorkflowBImpl::class.java)
+    worker.register<TaskA>(taskTest)
+    worker.register<WorkflowTask>(workflowTask)
+    worker.register<WorkflowA>(WorkflowAImpl::class.java)
+    worker.register<WorkflowB>(WorkflowBImpl::class.java)
 
     var workflowInstance: WorkflowInstance
 
