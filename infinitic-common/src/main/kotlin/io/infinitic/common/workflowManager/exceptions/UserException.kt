@@ -65,16 +65,16 @@ data class NoMethodCallAtAsync(
     help = "Make sure to call exactly one method of \"$name\" within the curly braces - example: async(foo) { bar(*args) }"
 )
 
-data class MixingDeferredFromDifferentWorkflowTaskContext(
-    @JsonProperty("unused") val unused: String = ""
-) : UserExceptionInWorker(
-    msg = "You can not mix Deferred coming from different method executions",
-    help = ""
-)
-
 data class ShouldNotWaitInInlineTask(
     @JsonProperty("unused") val unused: String = ""
 ) : UserExceptionInWorker(
     msg = "You can not suspend computations inside an inline task",
     help = "Make sure you do not wait in your inline task"
+)
+
+data class BadWorkflowConstructor(
+    @JsonProperty("name") val name: String
+) : UserExceptionInWorker(
+    msg = "Bad constructor of  \"$name\"",
+    help = "Make sure to define your workflow with the right constructor. Example: class $name(override val context: WorkflowTaskContext)"
 )

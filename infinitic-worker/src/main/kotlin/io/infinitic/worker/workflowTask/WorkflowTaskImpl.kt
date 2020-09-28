@@ -3,27 +3,36 @@ package io.infinitic.worker.workflowTask
 import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.workflowManager.Workflow
-import io.infinitic.worker.task.TaskAttemptContext
+import io.infinitic.common.workflowManager.WorkflowTaskContext
 import io.infinitic.common.workflowManager.data.methodRuns.MethodOutput
 import io.infinitic.common.workflowManager.data.methodRuns.MethodRun
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflowManager.exceptions.BadWorkflowConstructor
 import io.infinitic.common.workflowManager.parser.setPropertiesToObject
-import io.infinitic.common.workflowManager.WorkflowTaskContext
+import io.infinitic.worker.task.TaskAttemptContext
 import java.lang.reflect.InvocationTargetException
 
 class WorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
 
     override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
-        // get  instance workflow by name
-        val workflowClass = taskAttemptContext.worker.getWorkflowClass("${workflowTaskInput.workflowName}")
-
         // set methodContext
         val workflowTaskContext = WorkflowTaskContext(workflowTaskInput)
 
-        val workflowInstance = workflowClass.getDeclaredConstructor(WorkflowTaskContext::class.java).newInstance(workflowTaskContext)
+        // get  instance workflow by name
+        val workflowClass = taskAttemptContext.worker.getWorkflowClass("${workflowTaskInput.workflowName}")
+
+        // get constructor
+        val constructor = try {
+            workflowClass.getDeclaredConstructor(WorkflowTaskContext::class.java)
+        } catch (e: NoSuchMethodException) {
+            throw BadWorkflowConstructor("${workflowTaskInput.workflowName}")
+        }
+
+        val workflowInstance = constructor.newInstance(workflowTaskContext)
+
         workflowTaskContext.workflowInstance = workflowInstance
 
         // set initial properties
