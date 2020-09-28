@@ -1,6 +1,6 @@
 package io.infinitic.tests.tasks.inMemory
 
-import io.infinitic.common.taskManager.data.TaskInstance
+import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage
 
 internal class InMemoryStorageTest : InMemoryTaskStateStorage() {

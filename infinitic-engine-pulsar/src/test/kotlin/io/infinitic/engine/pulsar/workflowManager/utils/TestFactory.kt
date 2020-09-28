@@ -1,9 +1,9 @@
 package io.infinitic.workflowManager.pulsar.utils
 
-import io.infinitic.common.taskManager.data.TaskId
-import io.infinitic.common.workflowManager.data.commands.CommandId
-import io.infinitic.common.workflowManager.data.commands.CommandStatusOngoing
-import io.infinitic.common.workflowManager.data.steps.Step
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
+import io.infinitic.common.workflows.data.steps.Step
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates

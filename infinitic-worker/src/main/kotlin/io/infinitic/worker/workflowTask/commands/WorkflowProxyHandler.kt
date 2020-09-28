@@ -1,14 +1,14 @@
 package io.infinitic.worker.workflowTask.commands
 
-import io.infinitic.common.workflowManager.Workflow
-import io.infinitic.worker.workflowTask.WorkflowTaskContext
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.worker.workflowTask.WorkflowTaskContextImpl
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 internal class WorkflowProxyHandler<T : Workflow>(
     private val klass: Class<T>,
-    private val workflowTaskContext: () -> WorkflowTaskContext
+    private val workflowTaskContext: WorkflowTaskContextImpl
 ) : InvocationHandler {
     /*
      * implements the synchronous processing of a task or child workflow
@@ -16,7 +16,7 @@ internal class WorkflowProxyHandler<T : Workflow>(
     override fun invoke(proxy: Any?, method: Method, args: Array<out Any>?): Any? {
         if (method.name == "toString") return klass.name
 
-        return workflowTaskContext()
+        return workflowTaskContext
             .dispatchWorkflow<T>(method, args ?: arrayOf())
             .result()
     }

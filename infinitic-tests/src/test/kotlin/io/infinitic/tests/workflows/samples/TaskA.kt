@@ -1,6 +1,6 @@
 package io.infinitic.tests.workflows.samples
 
-import io.infinitic.common.taskManager.Task
+import io.infinitic.common.tasks.Task
 
 interface TaskA : Task {
     fun concat(str1: String, str2: String): String

@@ -1,16 +1,16 @@
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.common.workflowManager.Workflow
-import io.infinitic.common.workflowManager.WorkflowTaskContext
-import io.infinitic.common.workflowManager.data.methodRuns.MethodOutput
-import io.infinitic.common.workflowManager.data.methodRuns.MethodRun
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflowManager.exceptions.BadWorkflowConstructor
-import io.infinitic.common.workflowManager.parser.setPropertiesToObject
+import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.WorkflowTaskContext
+import io.infinitic.common.workflows.data.methodRuns.MethodOutput
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.exceptions.BadWorkflowConstructor
+import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.worker.task.TaskAttemptContext
 import java.lang.reflect.InvocationTargetException
 
@@ -19,7 +19,7 @@ class WorkflowTaskImpl : WorkflowTask {
 
     override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
         // set methodContext
-        val workflowTaskContext = WorkflowTaskContext(workflowTaskInput)
+        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput)
 
         // get  instance workflow by name
         val workflowClass = taskAttemptContext.worker.getWorkflowClass("${workflowTaskInput.workflowName}")
@@ -31,11 +31,12 @@ class WorkflowTaskImpl : WorkflowTask {
             throw BadWorkflowConstructor("${workflowTaskInput.workflowName}")
         }
 
+        // build workflow instance
         val workflowInstance = constructor.newInstance(workflowTaskContext)
 
         workflowTaskContext.workflowInstance = workflowInstance
 
-        // set initial properties
+        // set workflow's initial properties
         val properties = workflowTaskInput.methodRun.propertiesAtStart.mapValues {
             workflowTaskInput.workflowPropertyStore[it.value]
         }

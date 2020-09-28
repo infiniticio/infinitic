@@ -1,7 +1,7 @@
 package io.infinitic.client.samples
 
-import io.infinitic.common.taskManager.Task
-import io.infinitic.common.taskManager.data.TaskId
+import io.infinitic.common.tasks.Task
+import io.infinitic.common.tasks.data.TaskId
 
 internal interface FakeTask : Task {
     fun m1()

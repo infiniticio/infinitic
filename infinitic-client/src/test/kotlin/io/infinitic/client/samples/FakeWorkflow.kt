@@ -1,6 +1,6 @@
 package io.infinitic.client.samples
 
-import io.infinitic.common.workflowManager.Workflow
+import io.infinitic.common.workflows.Workflow
 
 internal interface FakeWorkflow : Workflow {
     fun m1()

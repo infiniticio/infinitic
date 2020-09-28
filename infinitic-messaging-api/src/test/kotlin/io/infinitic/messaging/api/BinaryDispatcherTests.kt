@@ -3,10 +3,10 @@ package io.infinitic.messaging.api
 import io.infinitic.messaging.api.dispatcher.BinaryDispatcher
 import io.infinitic.messaging.api.dispatcher.transport.BinaryCompatibleTransport
 import io.infinitic.messaging.api.utils.TestFactory
-import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
-import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
-import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
-import io.infinitic.common.taskManager.messages.ForWorkerMessage
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
+import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.ForWorkerMessage
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coVerify
 import io.mockk.confirmVerified

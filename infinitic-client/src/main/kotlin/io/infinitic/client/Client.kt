@@ -1,28 +1,28 @@
 package io.infinitic.client
 
-import io.infinitic.common.taskManager.Task
+import io.infinitic.common.tasks.Task
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.taskManager.data.TaskInstance
-import io.infinitic.common.taskManager.data.TaskId
-import io.infinitic.common.taskManager.data.TaskInput
-import io.infinitic.common.taskManager.data.TaskMeta
-import io.infinitic.common.taskManager.data.TaskName
-import io.infinitic.common.taskManager.data.TaskOptions
-import io.infinitic.common.taskManager.data.TaskOutput
-import io.infinitic.common.taskManager.exceptions.NoMethodCallAtDispatch
-import io.infinitic.common.taskManager.messages.CancelTask
-import io.infinitic.common.taskManager.messages.DispatchTask
-import io.infinitic.common.taskManager.messages.RetryTask
-import io.infinitic.common.taskManager.proxies.MethodProxyHandler
-import io.infinitic.common.workflowManager.Workflow
-import io.infinitic.common.workflowManager.data.methodRuns.MethodInput
-import io.infinitic.common.workflowManager.data.methodRuns.MethodName
-import io.infinitic.common.workflowManager.data.workflows.WorkflowId
-import io.infinitic.common.workflowManager.data.workflows.WorkflowInstance
-import io.infinitic.common.workflowManager.data.workflows.WorkflowMeta
-import io.infinitic.common.workflowManager.data.workflows.WorkflowName
-import io.infinitic.common.workflowManager.data.workflows.WorkflowOptions
-import io.infinitic.common.workflowManager.messages.DispatchWorkflow
+import io.infinitic.common.tasks.data.TaskInstance
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskOutput
+import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
+import io.infinitic.common.tasks.messages.CancelTask
+import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.tasks.messages.RetryTask
+import io.infinitic.common.tasks.proxies.MethodProxyHandler
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.data.methodRuns.MethodInput
+import io.infinitic.common.workflows.data.methodRuns.MethodName
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowInstance
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.messages.DispatchWorkflow
 
 class Client(val dispatcher: Dispatcher) {
 

@@ -1,7 +1,7 @@
 package io.infinitic.tests.tasks
 
-import io.infinitic.common.taskManager.data.TaskInstance
-import io.infinitic.common.taskManager.data.TaskStatus
+import io.infinitic.common.tasks.data.TaskInstance
+import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.tests.tasks.samples.Status
 import io.infinitic.tests.tasks.samples.TaskTest
 import io.infinitic.tests.tasks.samples.TaskTestImpl

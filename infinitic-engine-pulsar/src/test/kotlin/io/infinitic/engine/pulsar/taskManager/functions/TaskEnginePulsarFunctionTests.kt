@@ -1,7 +1,7 @@
 package io.infinitic.engine.pulsar.taskManager.functions
 
-import io.infinitic.common.taskManager.avro.AvroConverter
-import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
+import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.engine.taskManager.engines.TaskEngine
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.kotest.assertions.throwables.shouldThrowAny
