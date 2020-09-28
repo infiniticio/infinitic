@@ -1,14 +1,14 @@
 package io.infinitic.messaging.pulsar
 
-import io.infinitic.taskManager.common.avro.AvroConverter
-import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
-import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
-import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
-import io.infinitic.taskManager.common.messages.ForWorkerMessage
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.common.taskManager.avro.AvroConverter
+import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
+import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.taskManager.messages.ForWorkerMessage
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.messaging.pulsar.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
@@ -48,8 +48,7 @@ private fun shouldBeAbleToSendMessageToEngineTopic(msg: ForTaskEngineMessage) = 
     "${msg::class.simpleName!!} can be send to TaskEngine topic" {
         val avro = AvroConverter.toTaskEngine(msg)
         // given
-        val prefix = TestFactory.random(String::class)
-        val context = context(prefix)
+        val context = context()
         val builder = mockk<TypedMessageBuilder<AvroEnvelopeForTaskEngine>>()
         val slotSchema = slot<AvroSchema<AvroEnvelopeForTaskEngine>>()
         every { context.newOutputMessage<AvroEnvelopeForTaskEngine>(any(), capture(slotSchema)) } returns builder
@@ -60,8 +59,7 @@ private fun shouldBeAbleToSendMessageToEngineTopic(msg: ForTaskEngineMessage) = 
         PulsarTransport.forPulsarFunctionContext(context).toTaskEngine(avro)
         // then
         verifyAll {
-            context.newOutputMessage(Topic.TASK_ENGINE.get(prefix), slotSchema.captured)
-            context.getUserConfigValue("topicPrefix")
+            context.newOutputMessage(Topic.TASK_ENGINE.get(), slotSchema.captured)
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroEnvelopeForTaskEngine::class.java).avroSchema
         confirmVerified(context)
@@ -78,8 +76,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: ForMonitoring
     "${msg::class.simpleName!!} can be send to MonitoringPerName topic " {
         val avro = AvroConverter.toMonitoringPerName(msg)
         // given
-        val prefix = TestFactory.random(String::class)
-        val context = context(prefix)
+        val context = context()
         val builder = mockk<TypedMessageBuilder<AvroEnvelopeForMonitoringPerName>>()
         val slotSchema = slot<AvroSchema<AvroEnvelopeForMonitoringPerName>>()
         every { context.newOutputMessage<AvroEnvelopeForMonitoringPerName>(any(), capture(slotSchema)) } returns builder
@@ -90,8 +87,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: ForMonitoring
         PulsarTransport.forPulsarFunctionContext(context).toMonitoringPerName(avro)
         // then
         verifyAll {
-            context.newOutputMessage(Topic.MONITORING_PER_NAME.get(prefix), slotSchema.captured)
-            context.getUserConfigValue("topicPrefix")
+            context.newOutputMessage(Topic.MONITORING_PER_NAME.get(), slotSchema.captured)
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroEnvelopeForMonitoringPerName::class.java).avroSchema
         confirmVerified(context)
@@ -108,8 +104,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: ForMonitoringG
     "${msg::class.simpleName!!} can be send to MonitoringGlobal topic " {
         val avro = AvroConverter.toMonitoringGlobal(msg)
         // given
-        val prefix = TestFactory.random(String::class)
-        val context = context(prefix)
+        val context = context()
         val builder = mockk<TypedMessageBuilder<AvroEnvelopeForMonitoringGlobal>>()
         val slotSchema = slot<AvroSchema<AvroEnvelopeForMonitoringGlobal>>()
         val slotTopic = slot<String>()
@@ -121,10 +116,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: ForMonitoringG
         PulsarTransport.forPulsarFunctionContext(context).toMonitoringGlobal(avro)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        verify {
-            context.getUserConfigValue("topicPrefix")
-        }
-        slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get(prefix)
+        slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get()
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroEnvelopeForMonitoringGlobal::class.java).avroSchema
         verify(exactly = 1) { builder.value(avro) }
         verify(exactly = 1) { builder.send() }
@@ -136,8 +128,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: ForMonitoringG
 private fun shouldBeAbleToSendMessageToWorkerTopic(msg: ForWorkerMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to Worker topic" {
         val avro = AvroConverter.toWorkers(msg) // given
-        val prefix = TestFactory.random(String::class)
-        val context = context(prefix)
+        val context = context()
         val builder = mockk<TypedMessageBuilder<AvroEnvelopeForWorker>>()
         val slotSchema = slot<AvroSchema<AvroEnvelopeForWorker>>()
         val slotTopic = slot<String>()
@@ -148,10 +139,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: ForWorkerMessage) = stri
         PulsarTransport.forPulsarFunctionContext(context).toWorkers(avro)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        verify {
-            context.getUserConfigValue("topicPrefix")
-        }
-        slotTopic.captured shouldBe Topic.WORKERS.get(prefix, avro.taskName)
+        slotTopic.captured shouldBe Topic.WORKERS.get(avro.taskName)
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(AvroEnvelopeForWorker::class.java).avroSchema
         verify(exactly = 1) { builder.value(avro) }
         verify(exactly = 1) { builder.send() }
@@ -160,12 +148,10 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: ForWorkerMessage) = stri
     }
 }
 
-fun context(prefix: String): Context {
+fun context(): Context {
     val context = mockk<Context>()
     val optional = mockk<Optional<Any>>()
     every { context.logger } returns mockk<Logger>(relaxed = true)
-    every { context.getUserConfigValue("topicPrefix") } returns optional
-    every { optional.isPresent } returns true
-    every { optional.get() } returns prefix
+
     return context
 }

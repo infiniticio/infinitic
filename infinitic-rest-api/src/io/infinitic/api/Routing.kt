@@ -4,8 +4,8 @@ import io.infinitic.api.extensions.io.ktor.application.*
 import io.infinitic.api.support.BuildInfo
 import io.infinitic.api.task.repositories.TaskRepository
 import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.taskManager.states.AvroMonitoringGlobalState
-import io.infinitic.taskManager.states.AvroMonitoringPerNameState
+import io.infinitic.avro.taskManager.data.states.AvroMonitoringGlobalState
+import io.infinitic.avro.taskManager.data.states.AvroMonitoringPerNameState
 import io.ktor.application.*
 import io.ktor.config.ApplicationConfig
 import io.ktor.features.NotFoundException

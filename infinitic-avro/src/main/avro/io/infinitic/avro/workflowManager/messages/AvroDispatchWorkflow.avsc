@@ -1,0 +1,60 @@
+{
+  "type": "record",
+  "name": "AvroDispatchWorkflow",
+  "namespace": "io.infinitic.avro.workflowManager.messages",
+  "fields": [
+    {
+      "name": "workflowId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "parentWorkflowId",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "logicalType": "uuid"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "parentMethodRunId",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "logicalType": "uuid"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "workflowName",
+      "type": "string"
+    },
+    {
+      "name": "methodName",
+      "type": "io.infinitic.avro.workflowManager.data.methodRuns.AvroMethodName"
+    },
+    {
+      "name": "methodInput",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "workflowMeta",
+      "type": {
+        "type": "map",
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      }
+    },
+    {
+      "name": "workflowOptions",
+      "type": "io.infinitic.avro.workflowManager.data.workflows.AvroWorkflowOptions"
+    }
+  ]
+}

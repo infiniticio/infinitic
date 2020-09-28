@@ -1,4 +1,4 @@
-# Zenaton REST Api
+# Infinitic REST Api
 
 ## Requirements
 

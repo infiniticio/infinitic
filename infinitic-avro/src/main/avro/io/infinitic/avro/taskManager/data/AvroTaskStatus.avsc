@@ -1,0 +1,12 @@
+{
+  "type": "enum",
+  "name": "AvroTaskStatus",
+  "namespace": "io.infinitic.avro.taskManager.data",
+  "symbols": [
+    "RUNNING_OK",
+    "RUNNING_WARNING",
+    "RUNNING_ERROR",
+    "TERMINATED_COMPLETED",
+    "TERMINATED_CANCELED"
+  ]
+}

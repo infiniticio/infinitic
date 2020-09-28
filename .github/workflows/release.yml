@@ -41,7 +41,7 @@ jobs:
         working-directory: ${{ runner.temp }}
         run: |
           mkdir build-schemas && cd $_
-          java -cp $GITHUB_WORKSPACE/infinitic-taskManager-pulsar/build/libs/infinitic-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar io.infinitic.taskManager.engine.pulsar.utils.GenerateSchemaFilesKt
+          java -cp $GITHUB_WORKSPACE/infinitic-taskManager-pulsar/build/libs/infinitic-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar io.infinitic.engine.taskManager.pulsar.utils.GenerateSchemaFilesKt
           mkdir ${{ steps.create-release-dir.outputs.release-dir }}/schemas
           mv build/schemas/* ${{ steps.create-release-dir.outputs.release-dir }}/schemas
           cd ..

@@ -15,9 +15,9 @@ dependencies {
 
     implementation(project(":infinitic-avro"))
     api(project(":infinitic-messaging-api"))
-    api(project(":infinitic-taskManager-client"))
-    api(project(":infinitic-taskManager-engine"))
-    api(project(":infinitic-taskManager-worker"))
+    api(project(":infinitic-client"))
+    api(project(":infinitic-engine"))
+    api(project(":infinitic-worker"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
@@ -25,8 +25,8 @@ dependencies {
     testImplementation("io.kotest:kotest-core-jvm:4.0.+")
     testImplementation("io.mockk:mockk:1.9.+")
 
-    testImplementation(project(":infinitic-taskManager-common"))
-    testImplementation(project(":infinitic-taskManager-engine-pulsar"))
+    testImplementation(project(":infinitic-common"))
+    testImplementation(project(":infinitic-engine-pulsar"))
 }
 
 java {

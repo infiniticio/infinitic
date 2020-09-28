@@ -11,8 +11,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
 
     implementation(project(":infinitic-avro"))
-    api(project(":infinitic-taskManager-common"))
-    api(project(":infinitic-workflowManager-common"))
+    api(project(":infinitic-common"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")

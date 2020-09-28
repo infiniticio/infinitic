@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "AvroTaskCanceled",
+  "namespace": "io.infinitic.avro.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskOutput",
+      "type": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+    },
+    {
+      "name": "taskMeta",
+      "type": {
+        "type": "map",
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      }
+    }
+  ]
+}

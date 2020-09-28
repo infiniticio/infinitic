@@ -1,9 +1,9 @@
 package io.infinitic.messaging.api.utils
 
 import io.infinitic.common.data.SerializedData
-import io.infinitic.taskManager.common.data.TaskInput
-import io.infinitic.taskManager.data.AvroSerializedData
-import io.infinitic.taskManager.data.AvroSerializedDataType
+import io.infinitic.common.taskManager.data.TaskInput
+import io.infinitic.avro.taskManager.data.AvroSerializedData
+import io.infinitic.avro.taskManager.data.AvroSerializedDataType
 import io.kotest.properties.nextPrintableString
 import java.nio.ByteBuffer
 import kotlin.random.Random

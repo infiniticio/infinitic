@@ -1,0 +1,35 @@
+{
+  "type": "record",
+  "name": "AvroStepStatus",
+  "namespace": "io.infinitic.avro.workflowManager.data.steps",
+  "fields": [
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "AvroStepStatusName",
+        "symbols": [
+          "ONGOING",
+          "COMPLETED",
+          "CANCELED"
+        ]
+      }
+    },
+    {
+      "name": "result",
+      "type":  [
+        "null",
+        "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      ],
+      "default": null
+    },
+    {
+      "name": "workflowMessageIndex",
+      "type":  [
+        "null",
+        "int"
+      ],
+      "default": null
+    }
+  ]
+}

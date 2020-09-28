@@ -24,7 +24,7 @@
     "trailingComma": "es5"
   },
   "name": "@infinitic/messages",
-  "author": "Zenaton",
+  "author": "Infinitic",
   "module": "dist/messages.esm.js",
   "dependencies": {
     "avsc": "^5.4.21"

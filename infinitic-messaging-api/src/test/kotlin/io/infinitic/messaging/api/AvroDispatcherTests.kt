@@ -3,11 +3,11 @@ package io.infinitic.messaging.api
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
 import io.infinitic.messaging.api.utils.TestFactory
-import io.infinitic.taskManager.common.avro.AvroConverter
-import io.infinitic.taskManager.common.messages.ForTaskEngineMessage
-import io.infinitic.taskManager.common.messages.ForMonitoringGlobalMessage
-import io.infinitic.taskManager.common.messages.ForMonitoringPerNameMessage
-import io.infinitic.taskManager.common.messages.ForWorkerMessage
+import io.infinitic.common.taskManager.avro.AvroConverter
+import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
+import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.taskManager.messages.ForWorkerMessage
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coVerify
 import io.mockk.confirmVerified

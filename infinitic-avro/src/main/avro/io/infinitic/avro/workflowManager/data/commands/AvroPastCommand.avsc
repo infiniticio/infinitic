@@ -1,0 +1,31 @@
+{
+  "type": "record",
+  "name": "AvroPastCommand",
+  "namespace": "io.infinitic.avro.workflowManager.data.commands",
+  "fields": [
+    {
+      "name": "commandPosition",
+      "type": "string"
+    },
+    {
+      "name": "commandType",
+      "type": "io.infinitic.avro.workflowManager.data.commands.AvroCommandType"
+    },
+    {
+      "name": "commandId",
+      "type": "string"
+    },
+    {
+      "name": "commandHash",
+      "type": "string"
+    },
+    {
+      "name": "commandSimpleName",
+      "type": "string"
+    },
+    {
+      "name": "commandStatus",
+      "type":  "io.infinitic.avro.workflowManager.data.commands.AvroCommandStatus"
+    }
+  ]
+}

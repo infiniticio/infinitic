@@ -1,0 +1,48 @@
+{
+  "type": "record",
+  "name": "AvroRunTask",
+  "namespace": "io.infinitic.avro.taskManager.messages",
+  "fields": [
+    {
+      "name": "taskId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskAttemptId",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "taskAttemptRetry",
+      "type": "int"
+    },
+    {
+      "name": "taskAttemptIndex",
+      "type": "int"
+    },
+    {
+      "name": "taskName",
+      "type": "string"
+    },
+    {
+      "name": "taskInput",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      },
+      "default": []
+    },
+    {
+      "name": "taskOptions",
+      "type": "io.infinitic.avro.taskManager.data.AvroTaskOptions"
+    },
+    {
+      "name": "taskMeta",
+      "type": {
+        "type": "map",
+        "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# Zenaton
+# Infinitic
 
 ## Run Standalone Pulsar
 
@@ -22,17 +22,17 @@ To clean everything
 docker-compose down --volumes
 ```
 
-To install Zenaton:
+To install Infinitic:
 ```bash
 gradle install
 ```
 
-To remove Zenaton
+To remove Infinitic
 ```bash
 gradle delete
 ```
 
-To update Zenaton
+To update Infinitic
 ```bash
 gradle update
 ```

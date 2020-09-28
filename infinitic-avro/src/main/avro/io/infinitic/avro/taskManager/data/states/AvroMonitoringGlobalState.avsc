@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "AvroMonitoringGlobalState",
+  "namespace": "io.infinitic.avro.taskManager.data.states",
+  "fields": [
+    {
+      "name": "taskNames",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    }
+  ]
+}
+

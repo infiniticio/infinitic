@@ -1,0 +1,24 @@
+{
+    "type": "record",
+    "name": "AvroEnvelopeForMonitoringPerName",
+    "namespace": "io.infinitic.avro.taskManager.messages.envelopes",
+    "fields": [
+        {
+            "name": "type",
+            "type": {
+                "type": "enum",
+                "name": "AvroForMonitoringPerNameMessageType",
+                "symbols": [
+                    "TaskStatusUpdated"
+                ]
+            }
+        }, {
+            "name": "taskName",
+            "type": "string"
+        }, {
+            "name": "TaskStatusUpdated",
+            "type": ["null", "io.infinitic.avro.taskManager.messages.AvroTaskStatusUpdated"],
+            "default": null
+        }
+    ]
+}

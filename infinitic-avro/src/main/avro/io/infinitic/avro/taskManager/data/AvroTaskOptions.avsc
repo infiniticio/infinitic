@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "AvroTaskOptions",
+  "namespace": "io.infinitic.avro.taskManager.data",
+  "fields": [
+    {
+      "name": "runningTimeout",
+      "type": ["null", "float"]
+    }
+  ]
+}
