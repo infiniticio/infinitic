@@ -6,7 +6,7 @@ import io.infinitic.worker.workflowTask.deferred.and
 import io.infinitic.worker.workflowTask.deferred.or
 import java.time.LocalDateTime
 
-interface WorkflowA : io.infinitic.common.workflowManager.Workflow{
+interface WorkflowA : io.infinitic.common.workflowManager.Workflow {
     fun empty(): String
     fun seq1(): String
     fun seq2(): String
@@ -26,8 +26,8 @@ interface WorkflowA : io.infinitic.common.workflowManager.Workflow{
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
-    private val task = proxy<TaskA>()
-    private val workflowB = proxy<WorkflowB>()
+    private val task = proxy(TaskA::class.java)
+    private val workflowB = proxy(WorkflowB::class.java)
 
     override fun empty() = "void"
 

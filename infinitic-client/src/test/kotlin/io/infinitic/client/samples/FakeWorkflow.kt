@@ -2,7 +2,7 @@ package io.infinitic.client.samples
 
 import io.infinitic.common.workflowManager.Workflow
 
-internal interface FakeWorkflow: Workflow {
+internal interface FakeWorkflow : Workflow {
     fun m1()
     fun m1(i: Int?): String
     fun m1(str: String): Any?

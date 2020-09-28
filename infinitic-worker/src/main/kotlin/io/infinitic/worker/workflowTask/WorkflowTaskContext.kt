@@ -1,5 +1,9 @@
 package io.infinitic.worker.workflowTask
 
+import io.infinitic.common.taskManager.Task
+import io.infinitic.common.taskManager.proxies.MethodProxyHandler
+import io.infinitic.common.workflowManager.data.commands.Command
+import io.infinitic.common.workflowManager.Workflow as WorkflowInterface
 import io.infinitic.worker.Worker
 import io.infinitic.common.workflowManager.data.commands.CommandOutput
 import io.infinitic.common.workflowManager.data.commands.CommandSimpleName
@@ -22,6 +26,7 @@ import io.infinitic.common.workflowManager.data.steps.StepStatusCanceled
 import io.infinitic.common.workflowManager.data.steps.StepStatusCompleted
 import io.infinitic.common.workflowManager.data.steps.StepStatusOngoing
 import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.common.workflowManager.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflowManager.exceptions.ShouldNotWaitInInlineTask
 import io.infinitic.common.workflowManager.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.common.workflowManager.parser.setPropertiesToObject
@@ -69,19 +74,20 @@ class WorkflowTaskContext(
     /*
      * Command dispatching:
      */
-    fun <S> dispatch(method: Method, args: Array<out Any>, returnType: Class<S>): Deferred<S> {
+    fun <S> dispatchTask(method: Method, args: Array<out Any>) =
+        dispatch<S>(DispatchTask.from(method, args), CommandSimpleName.fromMethod(method))
+
+    fun <S> dispatchWorkflow(method: Method, args: Array<out Any>) =
+        dispatch<S>(DispatchChildWorkflow.from(method, args), CommandSimpleName.fromMethod(method))
+
+    private fun <S> dispatch(command: Command, commandSimpleName: CommandSimpleName): Deferred<S> {
         // increment position
         positionNext()
-        // set current command
-        val command = if (worker.getInstanceOrNull(method.declaringClass.name) is Workflow)
-            DispatchChildWorkflow.from(method, args)
-        else
-            DispatchTask.from(method, args)
 
         // create instruction that may be sent to engine
         val newCommand = NewCommand(
             command = command,
-            commandSimpleName = CommandSimpleName.fromMethod(method),
+            commandSimpleName = commandSimpleName,
             commandPosition = methodLevel.methodPosition
         )
 
@@ -141,6 +147,51 @@ class WorkflowTaskContext(
 
         // continue
         return deferred
+    }
+
+    /*
+     * Async Task/Workflow dispatching:
+     */
+    internal fun <T : Task, S> async(
+        proxy: T,
+        method: T.() -> S
+    ): Deferred<S> {
+        val command = Class.forName(proxy.toString())
+
+        // get a proxy for T
+        val handler = MethodProxyHandler(command)
+
+        // get a proxy instance
+        val klass = handler.instance() as T
+
+        // this call will capture method and arguments
+        klass.method()
+
+        return dispatchTask<S>(
+            handler.method ?: throw NoMethodCallAtAsync(command::class.java.name),
+            handler.args
+        )
+    }
+
+    internal fun <T : WorkflowInterface, S> async(
+        proxy: T,
+        method: T.() -> S
+    ): Deferred<S> {
+        val command = Class.forName(proxy.toString())
+
+        // get a proxy for T
+        val handler = MethodProxyHandler(command)
+
+        // get a proxy instance
+        val klass = handler.instance() as T
+
+        // this call will capture method and arguments
+        klass.method()
+
+        return dispatchWorkflow<S>(
+            handler.method ?: throw NoMethodCallAtAsync(command::class.java.name),
+            handler.args
+        )
     }
 
     /*

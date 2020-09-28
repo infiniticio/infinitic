@@ -8,8 +8,8 @@ interface WorkflowB : io.infinitic.common.workflowManager.Workflow {
 }
 
 class WorkflowBImpl : Workflow(), WorkflowB {
-    private val task = proxy<TaskA>()
-    private val workflow = proxy<WorkflowB>()
+    private val task = proxy(TaskA::class.java)
+    private val workflow = proxy(WorkflowB::class.java)
 
     override fun concat(input: String): String {
         var str = input

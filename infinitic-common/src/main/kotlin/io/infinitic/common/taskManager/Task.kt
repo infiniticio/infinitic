@@ -1,4 +1,3 @@
 package io.infinitic.common.taskManager
 
-interface Task {
-}
+interface Task

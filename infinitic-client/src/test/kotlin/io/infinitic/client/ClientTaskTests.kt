@@ -3,7 +3,6 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
-import io.infinitic.client.samples.FakeWorkflow
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.taskManager.data.TaskInput
 import io.infinitic.common.taskManager.data.TaskMeta

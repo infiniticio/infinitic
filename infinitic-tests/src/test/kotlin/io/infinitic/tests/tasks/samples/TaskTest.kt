@@ -3,7 +3,7 @@ package io.infinitic.tests.tasks.samples
 import io.infinitic.common.taskManager.Task
 import io.infinitic.worker.task.TaskAttemptContext
 
-interface TaskTest: Task {
+interface TaskTest : Task {
     fun log()
 }
 

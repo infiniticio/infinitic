@@ -23,24 +23,22 @@ import io.infinitic.common.workflowManager.data.workflows.WorkflowMeta
 import io.infinitic.common.workflowManager.data.workflows.WorkflowName
 import io.infinitic.common.workflowManager.data.workflows.WorkflowOptions
 import io.infinitic.common.workflowManager.messages.DispatchWorkflow
-import java.lang.reflect.Proxy
 
 class Client(val dispatcher: Dispatcher) {
-
 
     /*
     * Use this method to dispatch a workflow
     */
-    suspend fun <T: Workflow> dispatch(
+    suspend fun <T : Workflow> dispatch(
         workflowInterface: Class<T>,
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta(),
         apply: T.() -> Any?
     ): WorkflowInstance {
         // get a proxy for T
-        val handler = MethodProxyHandler()
+        val handler = MethodProxyHandler(workflowInterface)
 
-        val klass = handler.instance(workflowInterface)
+        val klass = handler.instance()
 
         // method call will actually be done through the proxy by handler
         klass.apply()
@@ -64,17 +62,17 @@ class Client(val dispatcher: Dispatcher) {
     /*
      * Use this method to dispatch a task
      */
-    suspend fun <T: Task> dispatch(
+    suspend fun <T : Task> dispatch(
         taskInterface: Class<T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
         apply: T.() -> Any?
     ): TaskInstance {
         // get a proxy for T
-        val handler = MethodProxyHandler()
+        val handler = MethodProxyHandler(taskInterface)
 
         // get a proxy instance
-        val klass = handler.instance(taskInterface)
+        val klass = handler.instance()
 
         // method call will actually be done through the proxy by handler
         klass.apply()

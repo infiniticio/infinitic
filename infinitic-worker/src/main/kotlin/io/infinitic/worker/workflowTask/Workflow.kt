@@ -1,43 +1,37 @@
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.taskManager.proxies.MethodProxyHandler
-import io.infinitic.common.workflowManager.exceptions.NoMethodCallAtAsync
+import io.infinitic.common.taskManager.Task
+import io.infinitic.common.workflowManager.Workflow as WorkflowInterface
 import io.infinitic.common.workflowManager.exceptions.WorkflowTaskContextNotInitialized
 import io.infinitic.worker.workflowTask.deferred.Deferred
-import io.infinitic.worker.workflowTask.commands.CommandProxy
+import io.infinitic.worker.workflowTask.commands.TaskProxyHandler
+import io.infinitic.worker.workflowTask.commands.WorkflowProxyHandler
 
 abstract class Workflow {
     var workflowTaskContext: WorkflowTaskContext? = null
         get() = field ?: throw WorkflowTaskContextNotInitialized(this::class.java.name, WorkflowTaskContext::class.java.name)
 
     /*
-     * Use this method to proxy a task or a child workflow
+     * Use this method to proxy a task
      */
-    protected inline fun <reified T : Any> proxy() = CommandProxy { workflowTaskContext!! }.instance<T>()
+    protected fun <T : Task> proxy(klass: Class<T>) =
+        TaskProxyHandler(klass) { workflowTaskContext!! }.instance()
 
     /*
-     * Use this method to dispatch a task or a workflow
+     * Use this method to proxy a child workflow
      */
-    inline fun <reified T : Any, reified S> async(
-        proxy: T,
-        method: T.() -> S
-    ): Deferred<S> {
-        // get a proxy for T
-        val handler = MethodProxyHandler()
+    protected fun <T : WorkflowInterface> proxy(klass: Class<T>) =
+        WorkflowProxyHandler(klass) { workflowTaskContext!! }.instance()
 
-        // get a proxy instance
-        val klass = handler.instance<T>()
+    /*
+     * Use this method to dispatch a proxy task
+     */
+    fun <T : Task, S> async(proxy: T, method: T.() -> S): Deferred<S> = workflowTaskContext!!.async(proxy, method)
 
-        // this call will capture method and arguments
-        klass.method()
-
-        // dispatch this request
-        return workflowTaskContext!!.dispatch(
-            handler.method ?: throw NoMethodCallAtAsync(T::class.java.name),
-            handler.args,
-            S::class.java
-        )
-    }
+    /*
+     * Use this method to dispatch a proxy workflow
+     */
+    fun <T : WorkflowInterface, S> async(proxy: T, method: T.() -> S): Deferred<S> = workflowTaskContext!!.async(proxy, method)
 
     /*
      * Use this method to create an async branch

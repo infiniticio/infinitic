@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
-class MethodProxyHandler : InvocationHandler {
+class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
     var method: Method? = null
     lateinit var args: Array<out Any>
 
@@ -13,6 +13,9 @@ class MethodProxyHandler : InvocationHandler {
      * invoke method is called when a method is applied to the proxy instance
      */
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        // toString method is used to retrieve initial class
+        if (method.name == "toString") return klass.name
+
         // invoke should called only once per ProxyHandler instance
         if (this.method != null) throw MultipleMethodCallsAtDispatch(method.declaringClass.name, this.method!!.name, method.name)
 
@@ -37,15 +40,8 @@ class MethodProxyHandler : InvocationHandler {
     /*
      * provides a proxy instance of type T
      */
-    inline fun <reified T> instance(): T {
-        return Proxy.newProxyInstance(
-            T::class.java.classLoader,
-            arrayOf(T::class.java),
-            this
-        ) as T
-    }
-
-    fun <T> instance(klass: Class<T>) = Proxy.newProxyInstance(
+    @Suppress("UNCHECKED_CAST")
+    fun instance() = Proxy.newProxyInstance(
         klass.classLoader,
         kotlin.arrayOf(klass),
         this

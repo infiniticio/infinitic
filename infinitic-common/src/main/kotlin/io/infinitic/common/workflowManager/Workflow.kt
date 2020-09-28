@@ -1,4 +1,3 @@
 package io.infinitic.common.workflowManager
 
-interface Workflow {
-}
+interface Workflow
