@@ -14,8 +14,8 @@ import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 
 class ForWorkflowTaskEngine(
-    override val storage: TaskStateStorage,
-    override val dispatcher: Dispatcher
+    storage: TaskStateStorage,
+    dispatcher: Dispatcher
 ) : TaskEngine(storage, dispatcher) {
     override suspend fun handle(message: ForTaskEngineMessage) {
         super.handle(message)
