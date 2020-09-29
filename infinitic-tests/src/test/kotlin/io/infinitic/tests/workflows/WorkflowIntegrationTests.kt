@@ -4,14 +4,12 @@ import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.tests.workflows.samples.TaskA
 import io.infinitic.tests.workflows.samples.TaskAImpl
 import io.infinitic.tests.workflows.samples.WorkflowA
 import io.infinitic.tests.workflows.samples.WorkflowAImpl
 import io.infinitic.tests.workflows.samples.WorkflowB
 import io.infinitic.tests.workflows.samples.WorkflowBImpl
-import io.infinitic.worker.workflowTask.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -30,7 +28,6 @@ private lateinit var status: AvroTaskStatus
 
 class WorkflowIntegrationTests : StringSpec({
     worker.register(TaskA::class.java.name, TaskAImpl())
-    worker.register(WorkflowTask::class.java.name, WorkflowTaskImpl())
     worker.register(WorkflowA::class.java.name, WorkflowAImpl())
     worker.register(WorkflowB::class.java.name, WorkflowBImpl())
 

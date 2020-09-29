@@ -20,11 +20,13 @@ import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.common.tasks.Task
 import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.worker.task.RetryDelay
 import io.infinitic.worker.task.RetryDelayFailed
 import io.infinitic.worker.task.RetryDelayRetrieved
 import io.infinitic.worker.task.TaskAttemptContext
 import io.infinitic.worker.task.TaskCommand
+import io.infinitic.worker.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
@@ -44,6 +46,11 @@ open class Worker(val dispatcher: Dispatcher) {
 
     // map workflowName <> workflowImplementation
     private val registeredWorkflows = mutableMapOf<String, Workflow>()
+
+    // per default, WorkflowTask is registered
+    init {
+        register(WorkflowTask::class.java.name, WorkflowTaskImpl())
+    }
 
     /**
      * Register a task instance to use for a given Task name
