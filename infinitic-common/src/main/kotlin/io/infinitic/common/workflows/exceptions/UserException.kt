@@ -71,10 +71,3 @@ data class ShouldNotWaitInInlineTask(
     msg = "You can not suspend computations inside an inline task",
     help = "Make sure you do not wait in your inline task"
 )
-
-data class BadWorkflowConstructor(
-    @JsonProperty("name") val name: String
-) : UserExceptionInWorker(
-    msg = "Bad constructor of  \"$name\"",
-    help = "Make sure to define your workflow with the right constructor. Example: class $name(override val context: WorkflowTaskContext)"
-)
