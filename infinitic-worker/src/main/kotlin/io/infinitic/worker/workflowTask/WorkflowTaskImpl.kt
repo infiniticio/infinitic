@@ -1,14 +1,15 @@
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.data.methodRuns.MethodOutput
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.worker.task.TaskAttemptContext
-import io.infinitic.common.workflowManager.data.methodRuns.MethodOutput
-import io.infinitic.common.workflowManager.data.methodRuns.MethodRun
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflowManager.parser.setPropertiesToObject
 import java.lang.reflect.InvocationTargetException
 
 class WorkflowTaskImpl : WorkflowTask {
@@ -16,9 +17,15 @@ class WorkflowTaskImpl : WorkflowTask {
 
     override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
         // get  instance workflow by name
-        val workflowInstance = taskAttemptContext.worker.getInstance("${workflowTaskInput.workflowName}") as Workflow
+        val workflowInstance = taskAttemptContext.worker.getWorkflowInstance("${workflowTaskInput.workflowName}")
 
-        // set initial properties
+        // set methodContext
+        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput, workflowInstance)
+
+        // set workflow task context
+        workflowInstance.context = workflowTaskContext
+
+        // set workflow's initial properties
         val properties = workflowTaskInput.methodRun.propertiesAtStart.mapValues {
             workflowTaskInput.workflowPropertyStore[it.value]
         }
@@ -26,11 +33,6 @@ class WorkflowTaskImpl : WorkflowTask {
 
         // get method
         val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
-
-        // set methodContext
-        val methodRunContext = WorkflowTaskContext(taskAttemptContext.worker, workflowTaskInput, workflowInstance)
-
-        workflowInstance.workflowTaskContext = methodRunContext
 
         // run method and get output
         val methodOutput = try {
@@ -47,8 +49,8 @@ class WorkflowTaskImpl : WorkflowTask {
         return WorkflowTaskOutput(
             workflowTaskInput.workflowId,
             workflowTaskInput.methodRun.methodRunId,
-            methodRunContext.newCommands,
-            methodRunContext.newSteps,
+            workflowTaskContext.newCommands,
+            workflowTaskContext.newSteps,
             workflowTaskInput.methodRun.propertiesAtStart,
             workflowTaskInput.workflowPropertyStore,
             methodOutput

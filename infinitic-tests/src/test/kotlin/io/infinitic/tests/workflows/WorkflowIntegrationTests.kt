@@ -3,16 +3,13 @@ package io.infinitic.tests.workflows
 import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
 import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
-import io.infinitic.worker.Worker
-import io.infinitic.common.workflowManager.data.workflows.WorkflowInstance
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.tests.workflows.samples.TaskA
 import io.infinitic.tests.workflows.samples.TaskAImpl
 import io.infinitic.tests.workflows.samples.WorkflowA
 import io.infinitic.tests.workflows.samples.WorkflowAImpl
 import io.infinitic.tests.workflows.samples.WorkflowB
 import io.infinitic.tests.workflows.samples.WorkflowBImpl
-import io.infinitic.worker.workflowTask.WorkflowTaskImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -25,18 +22,14 @@ private val mockLogger = mockk<Logger>(relaxed = true)
 private val storage = InMemoryStorageTest()
 private val dispatcher = InMemoryDispatcherTest(storage)
 private val client = dispatcher.client
+private val worker = dispatcher.worker
 
 private lateinit var status: AvroTaskStatus
 
 class WorkflowIntegrationTests : StringSpec({
-    val taskTest = TaskAImpl()
-    val workflowTask = WorkflowTaskImpl()
-    val workflowA = WorkflowAImpl()
-    val workflowB = WorkflowBImpl()
-    Worker.register<TaskA>(taskTest)
-    Worker.register<WorkflowTask>(workflowTask)
-    Worker.register<WorkflowA>(workflowA)
-    Worker.register<WorkflowB>(workflowB)
+    worker.register(TaskA::class.java.name, TaskAImpl())
+    worker.register(WorkflowA::class.java.name, WorkflowAImpl())
+    worker.register(WorkflowB::class.java.name, WorkflowBImpl())
 
     var workflowInstance: WorkflowInstance
 
@@ -49,7 +42,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { empty() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { empty() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -61,7 +54,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq1() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { seq1() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -73,7 +66,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq2() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { seq2() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -85,7 +78,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq3() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { seq3() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -97,7 +90,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { seq4() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { seq4() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -109,7 +102,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { or1() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { or1() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -121,7 +114,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { or2() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { or2() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -133,7 +126,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { or3() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { or3() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -145,7 +138,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { and1() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { and1() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -157,7 +150,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { and2() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { and2() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -169,7 +162,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { and3() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { and3() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -181,7 +174,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { inline() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { inline() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -191,7 +184,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { inline2() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { inline2() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -201,7 +194,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { inline3() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { inline3() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe false
@@ -211,7 +204,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { child1() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { child1() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -223,7 +216,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowA> { child2() }
+            workflowInstance = client.dispatch(WorkflowA::class.java) { child2() }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
@@ -235,7 +228,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            workflowInstance = client.dispatchWorkflow<WorkflowB> { factorial(14) }
+            workflowInstance = client.dispatch(WorkflowB::class.java) { factorial(14) }
         }
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true

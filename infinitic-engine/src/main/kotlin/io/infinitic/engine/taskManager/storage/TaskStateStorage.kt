@@ -1,10 +1,10 @@
 package io.infinitic.engine.taskManager.storage
 
-import io.infinitic.common.taskManager.data.TaskId
-import io.infinitic.common.taskManager.data.TaskName
-import io.infinitic.common.taskManager.states.MonitoringGlobalState
-import io.infinitic.common.taskManager.states.MonitoringPerNameState
-import io.infinitic.common.taskManager.states.TaskEngineState
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.states.MonitoringGlobalState
+import io.infinitic.common.tasks.states.MonitoringPerNameState
+import io.infinitic.common.tasks.states.TaskEngineState
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.

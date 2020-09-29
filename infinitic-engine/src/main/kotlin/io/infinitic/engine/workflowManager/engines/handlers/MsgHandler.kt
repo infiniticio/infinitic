@@ -1,19 +1,19 @@
 package io.infinitic.engine.workflowManager.engines.handlers
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.taskManager.data.TaskId
-import io.infinitic.common.taskManager.data.TaskInput
-import io.infinitic.common.taskManager.data.TaskMeta
-import io.infinitic.common.taskManager.data.TaskName
-import io.infinitic.common.taskManager.data.TaskOptions
-import io.infinitic.common.taskManager.messages.DispatchTask
-import io.infinitic.common.workflowManager.data.methodRuns.MethodRun
-import io.infinitic.common.workflowManager.data.methodRuns.MethodRunId
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.common.workflowManager.messages.WorkflowTaskDispatched
-import io.infinitic.common.workflowManager.data.states.WorkflowState
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
+import io.infinitic.common.workflows.data.states.WorkflowState
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 
 abstract class MsgHandler(

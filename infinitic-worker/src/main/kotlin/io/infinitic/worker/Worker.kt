@@ -1,28 +1,32 @@
 package io.infinitic.worker
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.taskManager.Constants
-import io.infinitic.common.taskManager.avro.AvroConverter
-import io.infinitic.common.taskManager.data.TaskAttemptError
-import io.infinitic.common.taskManager.data.TaskOutput
-import io.infinitic.common.taskManager.exceptions.ClassNotFoundDuringInstantiation
-import io.infinitic.common.taskManager.exceptions.InvalidUseOfDividerInTaskName
-import io.infinitic.common.taskManager.exceptions.MultipleUseOfDividerInTaskName
-import io.infinitic.common.taskManager.exceptions.ProcessingTimeout
-import io.infinitic.common.taskManager.exceptions.RetryDelayHasWrongReturnType
-import io.infinitic.common.taskManager.messages.ForWorkerMessage
-import io.infinitic.common.taskManager.messages.RunTask
-import io.infinitic.common.taskManager.messages.TaskAttemptCompleted
-import io.infinitic.common.taskManager.messages.TaskAttemptFailed
-import io.infinitic.common.taskManager.messages.TaskAttemptStarted
-import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.taskManager.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.tasks.Constants
+import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.tasks.data.TaskAttemptError
+import io.infinitic.common.tasks.data.TaskOutput
+import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
+import io.infinitic.common.tasks.exceptions.InvalidUseOfDividerInTaskName
+import io.infinitic.common.tasks.exceptions.MultipleUseOfDividerInTaskName
+import io.infinitic.common.tasks.exceptions.ProcessingTimeout
+import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
+import io.infinitic.common.tasks.messages.ForWorkerMessage
+import io.infinitic.common.tasks.messages.RunTask
+import io.infinitic.common.tasks.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.TaskAttemptStarted
+import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.common.tasks.Task
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.worker.task.RetryDelay
 import io.infinitic.worker.task.RetryDelayFailed
 import io.infinitic.worker.task.RetryDelayRetrieved
 import io.infinitic.worker.task.TaskAttemptContext
 import io.infinitic.worker.task.TaskCommand
+import io.infinitic.worker.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
@@ -31,44 +35,50 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
 open class Worker(val dispatcher: Dispatcher) {
 
-    companion object {
+    // map taskName <> taskInstance
+    private val registeredTasks = mutableMapOf<String, Task>()
 
-        // map taskName <> taskInstance
-        private val registeredTasks = ConcurrentHashMap<String, Any>()
+    // map workflowName <> workflowImplementation
+    private val registeredWorkflows = mutableMapOf<String, Workflow>()
 
-        /**
-         * Use this method to register the task instance to use for a given name
-         */
-        fun register(taskName: String, taskInstance: Any) {
-            if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
-
-            registeredTasks[taskName] = taskInstance
-        }
-
-        /**
-         * Use this method to unregister a given name (mostly used in tests)
-         */
-        fun unregister(taskName: String) {
-            registeredTasks.remove(taskName)
-        }
-
-        /**
-         * Use this method to register the task instance to use for a given class
-         */
-        inline fun <reified T> register(taskInstance: Any) = register(T::class.java.name, taskInstance)
-
-        /**
-         * Use this method to unregister a given class (mostly used in tests)
-         */
-        inline fun <reified T> unregister() = unregister(T::class.java.name)
+    // per default, WorkflowTask is registered
+    init {
+        register(WorkflowTask::class.java.name, WorkflowTaskImpl())
     }
+
+    /**
+     * Register a task instance to use for a given Task name
+     */
+    fun register(taskName: String, taskInstance: Task) {
+        if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
+
+        registeredTasks[taskName] = taskInstance
+    }
+
+    /**
+     * Register a workflow instance to use for a given Workflow name
+     */
+    fun register(workflowName: String, workflowInstance: Workflow) {
+        registeredWorkflows[workflowName] = workflowInstance
+    }
+
+    /**
+     * Unregister a given name (mostly used in tests)
+     */
+    fun unregister(name: String) {
+        registeredTasks.remove(name)
+        registeredWorkflows.remove(name)
+    }
+
+    fun getTaskInstance(name: String) = registeredTasks[name] ?: throw ClassNotFoundDuringInstantiation(name)
+
+    fun getWorkflowInstance(name: String) = registeredWorkflows[name] ?: throw ClassNotFoundDuringInstantiation(name)
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
         is RunTask -> runTask(msg)
@@ -142,10 +152,6 @@ open class Worker(val dispatcher: Dispatcher) {
         }
     }
 
-    fun getInstance(name: String) = getInstanceOrNull(name) ?: throw ClassNotFoundDuringInstantiation(name)
-
-    fun getInstanceOrNull(name: String) = registeredTasks[name]
-
     private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
         val output = method.invoke(task, *parameters)
         ensureActive()
@@ -178,7 +184,7 @@ open class Worker(val dispatcher: Dispatcher) {
 
     private fun parse(msg: RunTask): TaskCommand {
         val (taskName, methodName) = getClassAndMethodName("${msg.taskName}")
-        val task = getInstance(taskName)
+        val task = getTaskInstance(taskName)
         val parameterTypes = msg.taskMeta.parameterTypes
         val method = if (parameterTypes == null) {
             getMethodPerNameAndParameterCount(task, methodName, msg.taskInput.size)

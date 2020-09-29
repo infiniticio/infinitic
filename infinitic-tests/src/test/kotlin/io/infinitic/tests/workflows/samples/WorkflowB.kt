@@ -1,15 +1,19 @@
 package io.infinitic.tests.workflows.samples
 
-import io.infinitic.worker.workflowTask.Workflow
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.WorkflowTaskContext
+import io.infinitic.common.workflows.proxy
 
-interface WorkflowB {
+interface WorkflowB : Workflow {
     fun concat(input: String): String
     fun factorial(n: Long): Long
 }
 
-class WorkflowBImpl : Workflow(), WorkflowB {
-    private val task = proxy<TaskA>()
-    private val workflow = proxy<WorkflowB>()
+class WorkflowBImpl() : WorkflowB {
+    override lateinit var context: WorkflowTaskContext
+
+    private val task = proxy(TaskA::class.java)
+    private val workflow = proxy(WorkflowB::class.java)
 
     override fun concat(input: String): String {
         var str = input

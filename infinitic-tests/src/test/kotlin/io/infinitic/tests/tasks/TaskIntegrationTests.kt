@@ -1,13 +1,12 @@
 package io.infinitic.tests.tasks
 
-import io.infinitic.common.taskManager.data.TaskInstance
-import io.infinitic.common.taskManager.data.TaskStatus
+import io.infinitic.common.tasks.data.TaskInstance
+import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.tests.tasks.samples.Status
 import io.infinitic.tests.tasks.samples.TaskTest
 import io.infinitic.tests.tasks.samples.TaskTestImpl
 import io.infinitic.tests.tasks.inMemory.InMemoryDispatcherTest
 import io.infinitic.tests.tasks.inMemory.InMemoryStorageTest
-import io.infinitic.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.coroutineScope
@@ -16,10 +15,11 @@ import kotlinx.coroutines.delay
 private val storage = InMemoryStorageTest()
 private val dispatcher = InMemoryDispatcherTest(storage)
 private val client = dispatcher.client
+private val worker = dispatcher.worker
 
 class TaskIntegrationTests : StringSpec({
     val taskTest = TaskTestImpl()
-    Worker.register<TaskTest>(taskTest)
+    worker.register(TaskTest::class.java.name, taskTest)
     var task: TaskInstance
 
     beforeTest {
@@ -33,9 +33,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> {
-                log()
-            }
+            task = client.dispatch(TaskTest::class.java) { log() }
         }
         // check that task is terminated
         storage.isTerminated(task) shouldBe true
@@ -51,7 +49,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
         }
         // check that task is terminated
         storage.isTerminated(task) shouldBe true
@@ -67,7 +65,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
         }
         // check that task is not terminated
         storage.isTerminated(task) shouldBe false
@@ -83,7 +81,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
         }
         // check that task is not terminated
         storage.isTerminated(task) shouldBe false
@@ -103,7 +101,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
             delay(100)
             client.retryTask(id = "${task.taskId}")
         }
@@ -122,7 +120,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             dispatcher.scope = this
-            task = client.dispatchTask<TaskTest> { log() }
+            task = client.dispatch(TaskTest::class.java) { log() }
             delay(100)
             client.cancelTask(id = "${task.taskId}")
         }

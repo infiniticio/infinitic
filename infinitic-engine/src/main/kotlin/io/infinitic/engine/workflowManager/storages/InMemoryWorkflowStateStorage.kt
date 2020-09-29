@@ -1,7 +1,7 @@
 package io.infinitic.engine.workflowManager.storages
 
-import io.infinitic.common.workflowManager.data.workflows.WorkflowId
-import io.infinitic.common.workflowManager.data.states.WorkflowState
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.states.WorkflowState
 
 open class InMemoryWorkflowStateStorage : WorkflowStateStorage {
     private var workflowStateStore: MutableMap<String, WorkflowState> = mutableMapOf()

@@ -4,12 +4,12 @@ import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.taskManager.data.TaskInput
-import io.infinitic.common.taskManager.data.TaskMeta
-import io.infinitic.common.taskManager.data.TaskName
-import io.infinitic.common.taskManager.data.TaskOptions
-import io.infinitic.common.taskManager.messages.DispatchTask
-import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
+import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
@@ -30,7 +30,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch method without parameter" {
         // when
-        val task = client.dispatchTask<FakeTask> { m1() }
+        val task = client.dispatch(FakeTask::class.java) { m1() }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -45,9 +45,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as parameter" {
         // when
-        val task = client.dispatchTask<FakeTask> {
-            m1(0)
-        }
+        val task = client.dispatch(FakeTask::class.java) { m1(0) }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -62,9 +60,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with null as parameter" {
         // when
-        val task = client.dispatchTask<FakeTask> {
-            m1(null)
-        }
+        val task = client.dispatch(FakeTask::class.java) { m1(null) }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -79,7 +75,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with multiple definition" {
         // when
-        val task = client.dispatchTask<FakeTask> { m1("a") }
+        val task = client.dispatch(FakeTask::class.java) { m1("a") }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -94,7 +90,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with multiple parameters" {
         // when
-        val task = client.dispatchTask<FakeTask> { m1(0, "a") }
+        val task = client.dispatch(FakeTask::class.java) { m1(0, "a") }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -110,7 +106,7 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with an interface as parameter" {
         // when
         val fake = FakeClass()
-        val task = client.dispatchTask<FakeTask> { m1(fake) }
+        val task = client.dispatch(FakeTask::class.java) { m1(fake) }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured
@@ -126,7 +122,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as return value" {
         // when
-        val task = client.dispatchTask<FakeTask> { m2() }
+        val task = client.dispatch(FakeTask::class.java) { m2() }
         // then
         slot.isCaptured shouldBe true
         val msg = slot.captured

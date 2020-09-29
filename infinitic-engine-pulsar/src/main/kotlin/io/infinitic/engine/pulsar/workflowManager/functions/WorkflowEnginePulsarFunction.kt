@@ -3,7 +3,7 @@ package io.infinitic.engine.pulsar.workflowManager.functions
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.pulsar.PulsarTransport
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
-import io.infinitic.common.workflowManager.avro.AvroConverter
+import io.infinitic.common.workflows.avro.AvroConverter
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 import io.infinitic.engine.workflowManager.storages.AvroKeyValueWorkflowStateStorage
 import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine

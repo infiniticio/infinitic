@@ -2,13 +2,13 @@ package io.infinitic.engine.taskManager.storage
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.storage.api.Storage
-import io.infinitic.common.taskManager.avro.AvroConverter
-import io.infinitic.common.taskManager.data.TaskId
-import io.infinitic.common.taskManager.data.TaskName
-import io.infinitic.common.taskManager.data.TaskStatus
-import io.infinitic.common.taskManager.states.MonitoringGlobalState
-import io.infinitic.common.taskManager.states.MonitoringPerNameState
-import io.infinitic.common.taskManager.states.TaskEngineState
+import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.states.MonitoringGlobalState
+import io.infinitic.common.tasks.states.MonitoringPerNameState
+import io.infinitic.common.tasks.states.TaskEngineState
 import io.infinitic.avro.taskManager.data.states.AvroMonitoringGlobalState
 import io.infinitic.avro.taskManager.data.states.AvroMonitoringPerNameState
 import io.infinitic.avro.taskManager.data.states.AvroTaskEngineState

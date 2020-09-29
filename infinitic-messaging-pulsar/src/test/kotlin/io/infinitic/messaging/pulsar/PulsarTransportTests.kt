@@ -1,10 +1,10 @@
 package io.infinitic.messaging.pulsar
 
-import io.infinitic.common.taskManager.avro.AvroConverter
-import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
-import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
-import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
-import io.infinitic.common.taskManager.messages.ForWorkerMessage
+import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
+import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.ForWorkerMessage
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName

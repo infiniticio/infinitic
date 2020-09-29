@@ -2,21 +2,21 @@ package io.infinitic.taskManager.tests.inMemory
 
 import io.infinitic.client.Client
 import io.infinitic.messaging.api.dispatcher.InMemoryDispatcher
-import io.infinitic.common.taskManager.data.TaskStatus
-import io.infinitic.common.taskManager.messages.TaskCompleted
-import io.infinitic.common.taskManager.messages.TaskStatusUpdated
+import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.messages.TaskCompleted
+import io.infinitic.common.tasks.messages.TaskStatusUpdated
 import io.infinitic.engine.taskManager.engines.MonitoringGlobal
 import io.infinitic.engine.taskManager.engines.MonitoringPerName
 import io.infinitic.engine.taskManager.engines.TaskEngine
 import io.infinitic.worker.Worker
-import io.infinitic.common.workflowManager.data.methodRuns.MethodRunId
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflowManager.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflowManager.data.workflows.WorkflowId
-import io.infinitic.common.workflowManager.messages.WorkflowCompleted
-import io.infinitic.common.workflowManager.messages.WorkflowTaskCompleted
-import io.infinitic.common.workflowManager.messages.TaskCompleted as TaskCompletedInWorkflow
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.messages.WorkflowCompleted
+import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
+import io.infinitic.common.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 
 class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher() {

@@ -1,10 +1,10 @@
 package io.infinitic.messaging.api.dispatcher
 
-import io.infinitic.common.taskManager.messages.ForMonitoringGlobalMessage
-import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
-import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
-import io.infinitic.common.taskManager.messages.ForWorkerMessage
-import io.infinitic.common.workflowManager.messages.ForWorkflowEngineMessage
+import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
+import io.infinitic.common.tasks.messages.ForWorkerMessage
+import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

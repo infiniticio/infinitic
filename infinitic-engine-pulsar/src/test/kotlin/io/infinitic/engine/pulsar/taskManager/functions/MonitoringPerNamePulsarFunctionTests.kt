@@ -1,7 +1,7 @@
 package io.infinitic.engine.pulsar.taskManager.functions
 
-import io.infinitic.common.taskManager.avro.AvroConverter
-import io.infinitic.common.taskManager.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
 import io.infinitic.engine.taskManager.engines.MonitoringPerName
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.kotest.assertions.throwables.shouldThrow

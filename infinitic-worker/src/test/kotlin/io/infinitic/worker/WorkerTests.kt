@@ -3,28 +3,28 @@
 package io.infinitic.worker
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.taskManager.data.TaskAttemptId
-import io.infinitic.common.taskManager.data.TaskAttemptIndex
-import io.infinitic.common.taskManager.data.TaskAttemptRetry
-import io.infinitic.common.taskManager.data.TaskId
-import io.infinitic.common.taskManager.data.TaskInput
-import io.infinitic.common.taskManager.data.TaskMeta
-import io.infinitic.common.taskManager.data.TaskName
-import io.infinitic.common.taskManager.data.TaskOptions
-import io.infinitic.common.taskManager.data.TaskOutput
-import io.infinitic.common.taskManager.exceptions.ClassNotFoundDuringInstantiation
-import io.infinitic.common.taskManager.exceptions.InvalidUseOfDividerInTaskName
-import io.infinitic.common.taskManager.exceptions.MultipleUseOfDividerInTaskName
-import io.infinitic.common.taskManager.exceptions.NoMethodFoundWithParameterCount
-import io.infinitic.common.taskManager.exceptions.NoMethodFoundWithParameterTypes
-import io.infinitic.common.taskManager.exceptions.ProcessingTimeout
-import io.infinitic.common.taskManager.exceptions.RetryDelayHasWrongReturnType
-import io.infinitic.common.taskManager.exceptions.TooManyMethodsFoundWithParameterCount
-import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
-import io.infinitic.common.taskManager.messages.RunTask
-import io.infinitic.common.taskManager.messages.TaskAttemptCompleted
-import io.infinitic.common.taskManager.messages.TaskAttemptFailed
-import io.infinitic.common.taskManager.messages.TaskAttemptStarted
+import io.infinitic.common.tasks.data.TaskAttemptId
+import io.infinitic.common.tasks.data.TaskAttemptIndex
+import io.infinitic.common.tasks.data.TaskAttemptRetry
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskOutput
+import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
+import io.infinitic.common.tasks.exceptions.InvalidUseOfDividerInTaskName
+import io.infinitic.common.tasks.exceptions.MultipleUseOfDividerInTaskName
+import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterCount
+import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterTypes
+import io.infinitic.common.tasks.exceptions.ProcessingTimeout
+import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
+import io.infinitic.common.tasks.exceptions.TooManyMethodsFoundWithParameterCount
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
+import io.infinitic.common.tasks.messages.RunTask
+import io.infinitic.common.tasks.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.TaskAttemptStarted
 import io.infinitic.worker.samples.SampleTask
 import io.infinitic.worker.samples.TestingSampleTask
 import io.infinitic.worker.samples.SampleTaskWithRetry
@@ -58,7 +58,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask(SampleTask::class.java.name, input, types)
         // when
-        Worker.register<SampleTask>(TestingSampleTask())
+        worker.register(SampleTask::class.java.name, TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -80,7 +80,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo::other", input, types)
         // when
-        Worker.register("foo", TestingSampleTask())
+        worker.register("foo", TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -101,7 +101,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo::other", input, null)
         // when
-        Worker.register("foo", TestingSampleTask())
+        worker.register("foo", TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -119,7 +119,7 @@ class WorkerTests : StringSpec({
 
     "Should fail when trying to register an invalid task name " {
         shouldThrow<InvalidUseOfDividerInTaskName> {
-            Worker.register("foo::", TestingSampleTask())
+            worker.register("foo::", TestingSampleTask())
         }
     }
 
@@ -129,7 +129,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("blabla::m1::m2", input, types)
         // when
-        Worker.register("blabla", TestingSampleTask())
+        worker.register("blabla", TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -150,7 +150,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, types)
         // when
-        Worker.unregister("foo")
+        worker.unregister("foo")
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -173,7 +173,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo::unknown", input, types)
         // when
-        Worker.register("foo", TestingSampleTask())
+        worker.register("foo", TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -193,7 +193,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo::unknown", input, null)
         // when
-        Worker.register("foo", TestingSampleTask())
+        worker.register("foo", TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -213,7 +213,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo::handle", input, null)
         // when
-        Worker.register("foo", TestingSampleTask())
+        worker.register("foo", TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -233,7 +233,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, null)
         // when
-        Worker.register("foo", SampleTaskWithRetry())
+        worker.register("foo", SampleTaskWithRetry())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -253,7 +253,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, null)
         // when
-        Worker.register("foo", SampleTaskWithBadTypeRetry())
+        worker.register("foo", SampleTaskWithBadTypeRetry())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -273,7 +273,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, null)
         // when
-        Worker.register("foo", SampleTaskWithBuggyRetry())
+        worker.register("foo", SampleTaskWithBuggyRetry())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -293,7 +293,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, null)
         // when
-        Worker.register("foo", SampleTaskWithContext())
+        worker.register("foo", SampleTaskWithContext())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -313,7 +313,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", input, types)
         // when
-        Worker.register("foo", SampleTaskWithTimeout())
+        worker.register("foo", SampleTaskWithTimeout())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2

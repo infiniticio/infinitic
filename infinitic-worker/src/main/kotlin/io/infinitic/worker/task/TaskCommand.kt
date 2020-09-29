@@ -1,6 +1,6 @@
 package io.infinitic.worker.task
 
-import io.infinitic.common.taskManager.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskOptions
 import java.lang.reflect.Method
 
 internal data class TaskCommand(

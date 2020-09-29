@@ -1,9 +1,9 @@
 package io.infinitic.taskManager.tests.inMemory
 
-import io.infinitic.common.taskManager.data.TaskInstance
+import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
-import io.infinitic.common.workflowManager.data.workflows.WorkflowInstance
+import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.engine.workflowManager.storages.InMemoryWorkflowStateStorage
 import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
 

@@ -1,12 +1,13 @@
 package io.infinitic.tests.tasks.samples
 
+import io.infinitic.common.tasks.Task
 import io.infinitic.worker.task.TaskAttemptContext
 
-interface TaskTest {
+interface TaskTest : Task {
     fun log()
 }
 
-class TaskTestImpl {
+class TaskTestImpl : TaskTest {
     private lateinit var context: TaskAttemptContext
     lateinit var behavior: (index: Int, retry: Int) -> Status
 
@@ -14,7 +15,7 @@ class TaskTestImpl {
         var log = ""
     }
 
-    fun log() {
+    override fun log() {
         val status = behavior(context.taskAttemptIndex.int, context.taskAttemptRetry.int)
 
         log += when (status) {

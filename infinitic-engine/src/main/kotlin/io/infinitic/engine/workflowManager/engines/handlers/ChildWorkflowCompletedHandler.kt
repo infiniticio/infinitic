@@ -1,12 +1,12 @@
 package io.infinitic.engine.workflowManager.engines.handlers
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.workflowManager.data.commands.CommandId
-import io.infinitic.common.workflowManager.data.commands.CommandOutput
-import io.infinitic.common.workflowManager.data.commands.CommandStatusCompleted
-import io.infinitic.common.workflowManager.data.commands.CommandStatusOngoing
-import io.infinitic.common.workflowManager.data.states.WorkflowState
-import io.infinitic.common.workflowManager.messages.ChildWorkflowCompleted
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
+import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
+import io.infinitic.common.workflows.data.states.WorkflowState
+import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
 
 class ChildWorkflowCompletedHandler(
     override val dispatcher: Dispatcher

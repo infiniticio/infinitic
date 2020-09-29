@@ -4,14 +4,14 @@ import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.taskManager.messages.ForTaskEngineMessage
-import io.infinitic.common.workflowManager.data.methodRuns.MethodInput
-import io.infinitic.common.workflowManager.data.workflows.WorkflowMeta
-import io.infinitic.common.workflowManager.data.methodRuns.MethodName
-import io.infinitic.common.workflowManager.data.workflows.WorkflowName
-import io.infinitic.common.workflowManager.data.workflows.WorkflowOptions
-import io.infinitic.common.workflowManager.messages.DispatchWorkflow
-import io.infinitic.common.workflowManager.messages.ForWorkflowEngineMessage
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
+import io.infinitic.common.workflows.data.methodRuns.MethodInput
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.methodRuns.MethodName
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.messages.DispatchWorkflow
+import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
@@ -38,7 +38,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow without parameter" {
         // when
-        val workflow = client.dispatchWorkflow<FakeWorkflow> { m1() }
+        val workflow = client.dispatch(FakeWorkflow::class.java) { m1() }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -54,9 +54,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with a primitive as parameter" {
         // when
-        val workflow = client.dispatchWorkflow<FakeWorkflow> {
-            m1(0)
-        }
+        val workflow = client.dispatch(FakeWorkflow::class.java) { m1(0) }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -72,7 +70,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple method definition" {
         // when
-        val workflow = client.dispatchWorkflow<FakeWorkflow> { m1("a") }
+        val workflow = client.dispatch(FakeWorkflow::class.java) { m1("a") }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -88,7 +86,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple parameters" {
         // when
-        val workflow = client.dispatchWorkflow<FakeWorkflow> { m1(0, "a") }
+        val workflow = client.dispatch(FakeWorkflow::class.java) { m1(0, "a") }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -105,7 +103,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val klass = FakeClass()
-        val instance = client.dispatchWorkflow<FakeWorkflow> { m1(klass) }
+        val instance = client.dispatch(FakeWorkflow::class.java) { m1(klass) }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured

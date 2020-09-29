@@ -1,7 +1,7 @@
 package io.infinitic.engine.pulsar.workflowManager.functions
 
-import io.infinitic.common.workflowManager.avro.AvroConverter
-import io.infinitic.common.workflowManager.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.avro.AvroConverter
+import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.kotest.assertions.throwables.shouldThrowAny
