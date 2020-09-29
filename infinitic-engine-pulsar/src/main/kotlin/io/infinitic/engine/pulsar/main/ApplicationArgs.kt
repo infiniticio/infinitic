@@ -21,27 +21,11 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.messaging.pulsar.wrapper
+package io.infinitic.engine.pulsar.main
 
-import io.infinitic.messaging.pulsar.Wrapper
-import org.apache.pulsar.client.api.Producer
-import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.TypedMessageBuilder
-import java.util.concurrent.ConcurrentHashMap
+import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.default
 
-class PulsarClientWrapper(private val client: PulsarClient) : Wrapper {
-    private val producers = ConcurrentHashMap<String, Producer<*>>()
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> {
-        val producer = producers.computeIfAbsent(topicName) {
-            client
-                .newProducer(schema)
-                .topic(topicName)
-                .create()
-        } as Producer<O>
-
-        return producer.newMessage()
-    }
+class ApplicationArgs(parser: ArgParser) {
+    val pulsarUrl by parser.storing("The Pulsar cluster URL").default("pulsar://localhost:6650/")
 }

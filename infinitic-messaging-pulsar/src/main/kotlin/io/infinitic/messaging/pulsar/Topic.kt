@@ -46,5 +46,6 @@ enum class Topic {
         override fun get(name: String) = "tasks-logs"
     };
 
+    // FIXME: This seems broken. The name parameter is only used for the WORKERS topic. Something is wrong I think
     abstract fun get(name: String = ""): String
 }

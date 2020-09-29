@@ -46,9 +46,6 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
     testImplementation("io.kotest:kotest-property-jvm:4.2.+")
     testImplementation("io.mockk:mockk:1.10.+")
-
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-engine-pulsar"))
 }
 
 java {
