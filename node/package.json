@@ -19,9 +19,9 @@
     "packages/*"
   ],
   "dependencies": {
-    "@infinitic/messages": "file:packages/infinitic-messages",
-    "@infinitic/worker": "file:packages/infinitic-worker",
     "@infinitic/client": "file:packages/infinitic-client",
-    "@infinitic/examples": "file:packages/infinitic-examples"
+    "@infinitic/examples": "file:packages/infinitic-examples",
+    "@infinitic/messages": "file:packages/infinitic-messages",
+    "@infinitic/worker": "file:packages/infinitic-worker"
   }
 }
