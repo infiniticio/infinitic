@@ -22,11 +22,11 @@ import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.states.TaskEngineState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 
-class TaskEngine(
-    val storage: TaskStateStorage,
-    val dispatcher: Dispatcher
+open class TaskEngine(
+    protected val storage: TaskStateStorage,
+    protected val dispatcher: Dispatcher
 ) {
-    suspend fun handle(message: ForTaskEngineMessage) {
+    open suspend fun handle(message: ForTaskEngineMessage) {
         // immediately discard messages that are non managed
         when (message) {
             is TaskAttemptDispatched -> return

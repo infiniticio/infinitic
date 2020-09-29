@@ -7,6 +7,7 @@ import io.infinitic.messaging.pulsar.PulsarTransport
 import io.infinitic.engine.taskManager.engines.TaskEngine
 import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
+import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -32,6 +33,6 @@ class TaskEnginePulsarFunction : Function<AvroEnvelopeForTaskEngine, Void> {
         val storage = AvroKeyValueTaskStateStorage(PulsarFunctionStorage(ctx))
         val dispatcher = AvroDispatcher(PulsarTransport.forPulsarFunctionContext(ctx))
 
-        return TaskEngine(storage, dispatcher)
+        return ForWorkflowTaskEngine(storage, dispatcher)
     }
 }
