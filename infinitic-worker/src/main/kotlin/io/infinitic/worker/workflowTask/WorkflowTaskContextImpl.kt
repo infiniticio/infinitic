@@ -32,16 +32,12 @@ import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.WorkflowTaskContext
-import io.infinitic.worker.workflowTask.commands.TaskProxyHandler
-import io.infinitic.worker.workflowTask.commands.WorkflowProxyHandler
-import io.infinitic.worker.workflowTask.data.MethodLevel
 import java.lang.reflect.Method
 
 class WorkflowTaskContextImpl(
-    private val workflowTaskInput: WorkflowTaskInput
+    private val workflowTaskInput: WorkflowTaskInput,
+    private val workflowInstance: Workflow
 ) : WorkflowTaskContext {
-    lateinit var workflowInstance: Workflow
-
     // current position in the tree of method processing
     private var methodLevel: MethodLevel = MethodLevel(messageIndex = workflowTaskInput.methodRun.messageIndexAtStart)
 
@@ -50,16 +46,6 @@ class WorkflowTaskContextImpl(
 
     // new steps (if any) discovered during execution the method
     var newSteps: MutableList<NewStep> = mutableListOf()
-
-    /*
-     * Use this method to proxy a task
-     */
-    override fun <T : Task> proxy(klass: Class<T>) = TaskProxyHandler(klass, this).instance()
-
-    /*
-     * Use this method to proxy a child workflow
-     */
-    override fun <T : Workflow> proxy(klass: Class<T>) = WorkflowProxyHandler(klass, this).instance()
 
     /*
      * Async Task dispatching:
@@ -268,6 +254,18 @@ class WorkflowTaskContextImpl(
     }
 
     /*
+     * Task dispatching
+     */
+    override fun <S> dispatchTask(method: Method, args: Array<out Any>) =
+        dispatch<S>(DispatchTask.from(method, args), CommandSimpleName.fromMethod(method))
+
+    /*
+     * Workflow dispatching
+     */
+    override fun <S> dispatchWorkflow(method: Method, args: Array<out Any>) =
+        dispatch<S>(DispatchChildWorkflow.from(method, args), CommandSimpleName.fromMethod(method))
+
+    /*
      * Go to next position within the same branch
      */
     private fun positionNext() {
@@ -287,15 +285,6 @@ class WorkflowTaskContextImpl(
     private fun positionDown() {
         methodLevel = methodLevel.down()
     }
-
-    /*
-     * Command dispatching:
-     */
-    fun <S> dispatchTask(method: Method, args: Array<out Any>) =
-        dispatch<S>(DispatchTask.from(method, args), CommandSimpleName.fromMethod(method))
-
-    fun <S> dispatchWorkflow(method: Method, args: Array<out Any>) =
-        dispatch<S>(DispatchChildWorkflow.from(method, args), CommandSimpleName.fromMethod(method))
 
     private fun <S> dispatch(command: Command, commandSimpleName: CommandSimpleName): Deferred<S> {
         // increment position

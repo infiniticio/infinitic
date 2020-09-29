@@ -1,4 +1,4 @@
-package io.infinitic.worker.workflowTask.data
+package io.infinitic.worker.workflowTask
 
 import io.infinitic.common.workflows.data.methodRuns.MethodPosition
 import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex

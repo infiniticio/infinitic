@@ -1,20 +1,22 @@
 package io.infinitic.common.workflows
 
 import io.infinitic.common.tasks.Task
+import io.infinitic.common.workflows.proxies.TaskProxyHandler
+import io.infinitic.common.workflows.proxies.WorkflowProxyHandler
 
 interface Workflow {
-    val context: WorkflowTaskContext
+    var context: WorkflowTaskContext
 }
 
 /*
  * Proxy a task
  */
-fun <T : Task> Workflow.proxy(klass: Class<out T>) = context.proxy(klass)
+fun <T : Task> Workflow.proxy(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
 
 /*
  * Proxy a child workflow
  */
-fun <T : Workflow> Workflow.proxy(klass: Class<out T>) = context.proxy(klass)
+fun <T : Workflow> Workflow.proxy(klass: Class<out T>) = WorkflowProxyHandler(klass) { context }.instance()
 
 /*
  * Dispatch a task

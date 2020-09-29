@@ -13,14 +13,14 @@ import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 class BinaryDispatcher(private val transport: BinaryCompatibleTransport) : Dispatcher {
     override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {
         msg
-            .let { WorkflowAvroConverter.toWorkflowEngine(msg) }
+            .let { WorkflowAvroConverter.toWorkflowEngine(it) }
             .let { AvroSerDe.serialize(it) }
             .let { transport.toWorkflowEngine(it, after) }
     }
 
     override suspend fun toTaskEngine(msg: ForTaskEngineMessage, after: Float) {
         msg
-            .let { TaskAvroConverter.toTaskEngine(msg) }
+            .let { TaskAvroConverter.toTaskEngine(it) }
             .let { AvroSerDe.serialize(it) }
             .let { transport.toTaskEngine(it, after) }
     }

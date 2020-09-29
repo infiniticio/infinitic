@@ -29,7 +29,9 @@ interface WorkflowA : Workflow {
     fun child2(): String
 }
 
-class WorkflowAImpl(override val context: WorkflowTaskContext) : WorkflowA {
+class WorkflowAImpl() : WorkflowA {
+    override lateinit var context: WorkflowTaskContext
+
     private val taskA = proxy(TaskA::class.java)
     private val workflowB = proxy(WorkflowB::class.java)
 

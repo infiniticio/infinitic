@@ -3,13 +3,11 @@ package io.infinitic.worker.workflowTask
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.data.methodRuns.MethodOutput
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflows.exceptions.BadWorkflowConstructor
 import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.worker.task.TaskAttemptContext
 import java.lang.reflect.InvocationTargetException
@@ -18,23 +16,14 @@ class WorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
 
     override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
-        // set methodContext
-        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput)
-
         // get  instance workflow by name
-        val workflowClass = taskAttemptContext.worker.getWorkflowClass("${workflowTaskInput.workflowName}")
+        val workflowInstance = taskAttemptContext.worker.getWorkflowInstance("${workflowTaskInput.workflowName}")
 
-        // get constructor
-        val constructor = try {
-            workflowClass.getDeclaredConstructor(WorkflowTaskContext::class.java)
-        } catch (e: NoSuchMethodException) {
-            throw BadWorkflowConstructor("${workflowTaskInput.workflowName}")
-        }
+        // set methodContext
+        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput, workflowInstance)
 
-        // build workflow instance
-        val workflowInstance = constructor.newInstance(workflowTaskContext)
-
-        workflowTaskContext.workflowInstance = workflowInstance
+        // set workflow task context
+        workflowInstance.context = workflowTaskContext
 
         // set workflow's initial properties
         val properties = workflowTaskInput.methodRun.propertiesAtStart.mapValues {

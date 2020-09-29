@@ -43,15 +43,10 @@ open class Worker(val dispatcher: Dispatcher) {
     private val registeredTasks = mutableMapOf<String, Task>()
 
     // map workflowName <> workflowImplementation
-    private val registeredWorkflows = mutableMapOf<String, Class<out Workflow>>()
+    private val registeredWorkflows = mutableMapOf<String, Workflow>()
 
     /**
-     * Use this to register a task instance to use for a given Task interface
-     */
-    inline fun <reified T : Task> register(taskInstance: T) = register(T::class.java.name, taskInstance)
-
-    /**
-     * Use this to register a task instance to use for a given Task interface
+     * Register a task instance to use for a given Task name
      */
     fun register(taskName: String, taskInstance: Task) {
         if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
@@ -60,24 +55,14 @@ open class Worker(val dispatcher: Dispatcher) {
     }
 
     /**
-     * Use this to register a workflow definition to use for a given Workflow interface
+     * Register a workflow instance to use for a given Workflow name
      */
-    inline fun <reified T : Workflow> register(klass: Class<out T>) = register(T::class.java.name, klass)
-
-    /**
-     * Use this to register a workflow definition to use for a given Workflow interface
-     */
-    fun register(workflowName: String, workflowClass: Class<out Workflow>) {
-        registeredWorkflows[workflowName] = workflowClass
+    fun register(workflowName: String, workflowInstance: Workflow) {
+        registeredWorkflows[workflowName] = workflowInstance
     }
 
     /**
-     * Use this method to unregister a given name (mostly used in tests)
-     */
-    inline fun <reified T : Any> unregister() = unregister(T::class.java.name)
-
-    /**
-     * Use this method to unregister a given name (mostly used in tests)
+     * Unregister a given name (mostly used in tests)
      */
     fun unregister(name: String) {
         registeredTasks.remove(name)
@@ -86,7 +71,7 @@ open class Worker(val dispatcher: Dispatcher) {
 
     fun getTaskInstance(name: String) = registeredTasks[name] ?: throw ClassNotFoundDuringInstantiation(name)
 
-    fun getWorkflowClass(name: String) = registeredWorkflows[name] ?: throw ClassNotFoundDuringInstantiation(name)
+    fun getWorkflowInstance(name: String) = registeredWorkflows[name] ?: throw ClassNotFoundDuringInstantiation(name)
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
         is RunTask -> runTask(msg)

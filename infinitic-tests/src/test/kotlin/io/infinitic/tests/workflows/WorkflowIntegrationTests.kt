@@ -29,12 +29,10 @@ private val worker = dispatcher.worker
 private lateinit var status: AvroTaskStatus
 
 class WorkflowIntegrationTests : StringSpec({
-    val taskTest = TaskAImpl()
-    val workflowTask = WorkflowTaskImpl()
-    worker.register<TaskA>(taskTest)
-    worker.register<WorkflowTask>(workflowTask)
-    worker.register<WorkflowA>(WorkflowAImpl::class.java)
-    worker.register<WorkflowB>(WorkflowBImpl::class.java)
+    worker.register(TaskA::class.java.name, TaskAImpl())
+    worker.register(WorkflowTask::class.java.name, WorkflowTaskImpl())
+    worker.register(WorkflowA::class.java.name, WorkflowAImpl())
+    worker.register(WorkflowB::class.java.name, WorkflowBImpl())
 
     var workflowInstance: WorkflowInstance
 

@@ -58,7 +58,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask(SampleTask::class.java.name, input, types)
         // when
-        worker.register<SampleTask>(TestingSampleTask())
+        worker.register(SampleTask::class.java.name, TestingSampleTask())
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2

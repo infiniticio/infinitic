@@ -9,7 +9,9 @@ interface WorkflowB : Workflow {
     fun factorial(n: Long): Long
 }
 
-class WorkflowBImpl(override val context: WorkflowTaskContext) : WorkflowB {
+class WorkflowBImpl() : WorkflowB {
+    override lateinit var context: WorkflowTaskContext
+
     private val task = proxy(TaskA::class.java)
     private val workflow = proxy(WorkflowB::class.java)
 
