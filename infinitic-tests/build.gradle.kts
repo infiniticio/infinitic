@@ -21,7 +21,6 @@
 //
 // Licensor: infinitic.io
 
-
 plugins {
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
