@@ -33,6 +33,10 @@
       "type": "string"
     },
     {
+      "name": "taskMethod",
+      "type": "io.infinitic.avro.taskManager.data.AvroTaskMethod"
+    },
+    {
       "name": "taskStatus",
       "type": "io.infinitic.avro.taskManager.data.AvroTaskStatus"
     },

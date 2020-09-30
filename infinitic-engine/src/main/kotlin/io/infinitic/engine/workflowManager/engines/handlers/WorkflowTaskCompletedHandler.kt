@@ -164,6 +164,7 @@ class WorkflowTaskCompletedHandler(
         val msg = DispatchTask(
             taskId = TaskId("${newCommand.commandId}"),
             taskName = command.taskName,
+            taskMethod = command.taskMethod,
             taskInput = command.taskInput,
             taskMeta = command.taskMeta
                 .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, workflowId)

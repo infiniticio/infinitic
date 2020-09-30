@@ -29,6 +29,7 @@ import io.infinitic.client.samples.FakeTask
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskInput
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskMethod
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.messages.DispatchTask
@@ -60,9 +61,10 @@ class ClientTaskTests : StringSpec({
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskInput = TaskInput(),
-            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskName = TaskName(FakeTask::class.java.name),
+            taskMethod = TaskMethod("m1", listOf()),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf())
+            taskMeta = TaskMeta()
         )
     }
 
@@ -75,9 +77,10 @@ class ClientTaskTests : StringSpec({
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskInput = TaskInput(0),
-            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskName = TaskName(FakeTask::class.java.name),
+            taskMethod = TaskMethod("m1", listOf(Int::class.java.name)),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf(Int::class.java.name))
+            taskMeta = TaskMeta()
         )
     }
 
@@ -90,9 +93,10 @@ class ClientTaskTests : StringSpec({
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskInput = TaskInput(null),
-            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskName = TaskName(FakeTask::class.java.name),
+            taskMethod = TaskMethod("m1", listOf(String::class.java.name)),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf(String::class.java.name))
+            taskMeta = TaskMeta()
         )
     }
 
@@ -105,9 +109,10 @@ class ClientTaskTests : StringSpec({
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskInput = TaskInput("a"),
-            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskName = TaskName(FakeTask::class.java.name),
+            taskMethod = TaskMethod("m1", listOf(String::class.java.name)),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf(String::class.java.name))
+            taskMeta = TaskMeta()
         )
     }
 
@@ -120,9 +125,10 @@ class ClientTaskTests : StringSpec({
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskInput = TaskInput(0, "a"),
-            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskName = TaskName(FakeTask::class.java.name),
+            taskMethod = TaskMethod("m1", listOf(Int::class.java.name, String::class.java.name)),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf(Int::class.java.name, String::class.java.name))
+            taskMeta = TaskMeta()
         )
     }
 
@@ -137,9 +143,10 @@ class ClientTaskTests : StringSpec({
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskInput = TaskInput(fake),
-            taskName = TaskName("${FakeTask::class.java.name}::m1"),
+            taskName = TaskName(FakeTask::class.java.name),
+            taskMethod = TaskMethod("m1", listOf(FakeInterface::class.java.name)),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf(FakeInterface::class.java.name))
+            taskMeta = TaskMeta()
         )
     }
 
@@ -153,9 +160,10 @@ class ClientTaskTests : StringSpec({
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskInput = TaskInput(),
-            taskName = TaskName("${FakeTask::class.java.name}::m2"),
+            taskName = TaskName(FakeTask::class.java.name),
+            taskMethod = TaskMethod("m2", listOf()),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta().withParameterTypes(listOf())
+            taskMeta = TaskMeta()
         )
     }
 

@@ -13,6 +13,10 @@
       "type": "string"
     },
     {
+      "name": "taskMethod",
+      "type": "io.infinitic.avro.taskManager.data.AvroTaskMethod"
+    },
+    {
       "name": "taskInput",
       "type": {
         "type": "array",

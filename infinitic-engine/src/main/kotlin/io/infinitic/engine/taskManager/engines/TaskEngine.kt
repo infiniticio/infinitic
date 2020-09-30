@@ -27,6 +27,7 @@ import io.infinitic.common.data.interfaces.plus
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.CancelTask
 import io.infinitic.common.tasks.messages.DispatchTask
@@ -94,7 +95,7 @@ open class TaskEngine(
         if (oldState?.taskStatus != newState.taskStatus) {
             val tsc = TaskStatusUpdated(
                 taskId = newState.taskId,
-                taskName = newState.taskName,
+                taskName = TaskName("${newState.taskName}::${newState.taskMethod.methodName}"),
                 oldStatus = oldState?.taskStatus,
                 newStatus = newState.taskStatus
             )
@@ -125,6 +126,7 @@ open class TaskEngine(
         val state = TaskEngineState(
             taskId = msg.taskId,
             taskName = msg.taskName,
+            taskMethod = msg.taskMethod,
             taskInput = msg.taskInput,
             taskAttemptId = TaskAttemptId(),
             taskStatus = TaskStatus.RUNNING_OK,
@@ -139,6 +141,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskAttemptIndex = state.taskAttemptIndex,
             taskName = state.taskName,
+            taskMethod = state.taskMethod,
             taskInput = state.taskInput,
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
@@ -176,6 +179,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskAttemptIndex = state.taskAttemptIndex,
             taskName = state.taskName,
+            taskMethod = state.taskMethod,
             taskInput = state.taskInput,
             taskMeta = state.taskMeta,
             taskOptions = state.taskOptions
@@ -207,6 +211,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskAttemptIndex = state.taskAttemptIndex,
             taskName = state.taskName,
+            taskMethod = state.taskMethod,
             taskInput = state.taskInput,
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta

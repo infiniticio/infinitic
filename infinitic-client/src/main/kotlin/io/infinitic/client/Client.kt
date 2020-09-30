@@ -29,6 +29,7 @@ import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskInput
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskMethod
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskOutput
@@ -106,9 +107,10 @@ class Client(val dispatcher: Dispatcher) {
         val msg = DispatchTask(
             taskId = TaskId(),
             taskName = TaskName.from(method),
+            taskMethod = TaskMethod.from(method),
             taskInput = TaskInput.from(method, handler.args),
             taskOptions = options,
-            taskMeta = meta.withParametersTypesFrom(method)
+            taskMeta = meta
         )
         dispatcher.toTaskEngine(msg)
 
@@ -122,6 +124,7 @@ class Client(val dispatcher: Dispatcher) {
     suspend fun retryTask(
         id: String,
         name: TaskName? = null,
+        method: TaskMethod? = null,
         input: TaskInput? = null,
         options: TaskOptions? = null,
         meta: TaskMeta? = null
@@ -129,6 +132,7 @@ class Client(val dispatcher: Dispatcher) {
         val msg = RetryTask(
             taskId = TaskId(id),
             taskName = name,
+            taskMethod = method,
             taskInput = input,
             taskOptions = options,
             taskMeta = meta

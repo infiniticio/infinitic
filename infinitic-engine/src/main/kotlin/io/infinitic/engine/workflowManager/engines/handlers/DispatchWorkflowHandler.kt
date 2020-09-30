@@ -23,10 +23,12 @@
 
 package io.infinitic.engine.workflowManager.engines.handlers
 
+import io.infinitic.common.tasks.Constants
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskInput
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskMethod
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.messages.DispatchTask
@@ -71,6 +73,7 @@ class DispatchWorkflowHandler(
         val workflowTask = DispatchTask(
             taskId = TaskId("$workflowTaskId"),
             taskName = TaskName(WorkflowTask::class.java.name),
+            taskMethod = TaskMethod(Constants.WORKFLOW_TASK_METHOD, listOf(WorkflowTaskInput::class.java.name)),
             taskInput = TaskInput(workflowTaskInput),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()

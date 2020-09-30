@@ -30,6 +30,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.TaskInput
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskMethod
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.methodRuns.MethodName
 import io.infinitic.common.workflows.data.methodRuns.MethodInput
@@ -59,6 +60,8 @@ sealed class Command {
 data class DispatchTask(
     @JsonProperty("name")
     val taskName: TaskName,
+    @JsonProperty("method")
+    val taskMethod: TaskMethod,
     @JsonProperty("input")
     val taskInput: TaskInput,
     @JsonProperty("meta")
@@ -68,7 +71,8 @@ data class DispatchTask(
         fun from(method: Method, args: Array<out Any>) = DispatchTask(
             taskName = TaskName.from(method),
             taskInput = TaskInput.from(method, args),
-            taskMeta = TaskMeta().withParametersTypesFrom(method)
+            taskMethod = TaskMethod.from(method),
+            taskMeta = TaskMeta()
         )
     }
 }

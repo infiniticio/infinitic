@@ -30,6 +30,7 @@ import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskInput
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskMethod
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskOutput
@@ -59,6 +60,7 @@ data class CancelTask(
 data class DispatchTask(
     override val taskId: TaskId,
     val taskName: TaskName,
+    val taskMethod: TaskMethod,
     val taskInput: TaskInput,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions = TaskOptions()
@@ -111,6 +113,7 @@ data class TaskCompleted(
 data class RetryTask(
     override val taskId: TaskId,
     val taskName: TaskName?,
+    val taskMethod: TaskMethod?,
     val taskInput: TaskInput?,
     val taskMeta: TaskMeta?,
     val taskOptions: TaskOptions?
@@ -152,6 +155,7 @@ data class RunTask(
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskAttemptIndex: TaskAttemptIndex,
+    val taskMethod: TaskMethod,
     val taskInput: TaskInput,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta

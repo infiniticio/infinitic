@@ -29,8 +29,6 @@ import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
-import io.infinitic.common.tasks.exceptions.InvalidUseOfDividerInTaskName
-import io.infinitic.common.tasks.exceptions.MultipleUseOfDividerInTaskName
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.common.tasks.messages.ForWorkerMessage
@@ -79,8 +77,6 @@ open class Worker(val dispatcher: Dispatcher) {
      * Register a task instance to use for a given Task name
      */
     fun register(taskName: String, taskInstance: Task) {
-        if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
-
         registeredTasks[taskName] = taskInstance
     }
 
@@ -206,25 +202,15 @@ open class Worker(val dispatcher: Dispatcher) {
     }
 
     private fun parse(msg: RunTask): TaskCommand {
-        val (taskName, methodName) = getClassAndMethodName("${msg.taskName}")
-        val task = getTaskInstance(taskName)
-        val parameterTypes = msg.taskMeta.parameterTypes
+        val task = getTaskInstance("${msg.taskName}")
+        val parameterTypes = msg.taskMethod.methodParameterTypes
         val method = if (parameterTypes == null) {
-            getMethodPerNameAndParameterCount(task, methodName, msg.taskInput.size)
+            getMethodPerNameAndParameterCount(task, msg.taskMethod.methodName, msg.taskInput.size)
         } else {
-            getMethodPerNameAndParameterTypes(task, methodName, parameterTypes)
+            getMethodPerNameAndParameterTypes(task, msg.taskMethod.methodName, parameterTypes)
         }
 
         return TaskCommand(task, method, msg.taskInput.data, msg.taskOptions)
-    }
-
-    private fun getClassAndMethodName(name: String): List<String> {
-        val parts = name.split(Constants.METHOD_DIVIDER)
-        return when (parts.size) {
-            1 -> parts + Constants.METHOD_DEFAULT
-            2 -> parts
-            else -> throw MultipleUseOfDividerInTaskName(name)
-        }
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method

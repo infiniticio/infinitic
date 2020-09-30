@@ -24,6 +24,7 @@
 package io.infinitic.engine.taskManager.engines
 
 import io.infinitic.common.data.interfaces.plus
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.CancelTask
@@ -335,7 +336,7 @@ internal class TaskEngineTests : StringSpec({
         o.retryTaskAttempt!!.taskAttemptRetry shouldBe stateIn.taskAttemptRetry
         o.retryTaskAttemptDelay!! shouldBe msgIn.taskAttemptDelayBeforeRetry
         o.taskStatusUpdated!!.taskId shouldBe stateIn.taskId
-        o.taskStatusUpdated!!.taskName shouldBe stateIn.taskName
+        o.taskStatusUpdated!!.taskName shouldBe TaskName("${stateIn.taskName}::${stateIn.taskMethod.methodName}")
         o.taskStatusUpdated!!.oldStatus shouldBe stateIn.taskStatus
         o.taskStatusUpdated!!.newStatus shouldBe TaskStatus.RUNNING_WARNING
     }
