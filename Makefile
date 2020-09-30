@@ -31,3 +31,8 @@ clean: ## Clean all sub-projects
 deploy:
 	@echo "🚀 Starting deployment"
 	./scripts/deploy.sh
+
+.PHONY: addlicense
+addlicense:
+	@echo "📝 Adding license at the top of every source code file"
+	docker run -e OPTIONS="-s -c infinitic.io -f .license-header -config .addlicense.yml" --rm -it -v $(shell pwd):/myapp nokia/addlicense-nokia:latest

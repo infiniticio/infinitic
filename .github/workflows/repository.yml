@@ -15,4 +15,4 @@ jobs:
       - name: Ensure license header in all source files
         uses: ./.github/actions/addlicense-action
         env:
-          OPTIONS: "-s -c infinitic.io -c LICENSE -config .addlicense.yml -check"
+          OPTIONS: "-s -c infinitic.io -f .license-header -config .addlicense.yml -check"
