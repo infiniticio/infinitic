@@ -102,14 +102,14 @@ data class TaskCanceled(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val taskId: TaskId,
-    val methodOutput: io.infinitic.common.tasks.data.MethodOutput
+    val methodOutput: MethodOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class TaskCompleted(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val taskId: TaskId,
-    val methodOutput: io.infinitic.common.tasks.data.MethodOutput
+    val taskOutput: MethodOutput
 ) : ForWorkflowEngineMessage(workflowId)
 
 data class TaskDispatched(
