@@ -29,15 +29,15 @@ import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Input
 import java.lang.reflect.Method
 
-class TaskInput(override vararg val data: Any?) : Input(data), Collection<Any?> by data.toList() {
+class MethodInput(override vararg val data: Any?) : Input(data), Collection<Any?> by data.toList() {
     @get:JsonValue val json get() = getSerialized()
 
     companion object {
         @JvmStatic @JsonCreator
         fun fromSerialized(serialized: List<SerializedData>) =
-            TaskInput(*deserialize(serialized)).apply { serializedData = serialized }
+            MethodInput(*deserialize(serialized)).apply { serializedData = serialized }
 
         fun from(method: Method, data: Array<out Any>) =
-            TaskInput(*data).apply { serializedData = getSerialized(method) }
+            MethodInput(*data).apply { serializedData = getSerialized(method) }
     }
 }

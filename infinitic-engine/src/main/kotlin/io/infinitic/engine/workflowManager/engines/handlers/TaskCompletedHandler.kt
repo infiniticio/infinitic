@@ -46,7 +46,7 @@ class TaskCompletedHandler(
 
         // update command status
         pastCommand.commandStatus = CommandStatusCompleted(
-            CommandOutput(msg.taskOutput.data),
+            CommandOutput(msg.methodOutput.data),
             state.currentMessageIndex
         )
 

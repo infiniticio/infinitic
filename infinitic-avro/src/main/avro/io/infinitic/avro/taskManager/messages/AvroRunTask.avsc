@@ -26,16 +26,26 @@
       "type": "string"
     },
     {
-      "name": "taskMethod",
-      "type": "io.infinitic.avro.taskManager.data.AvroTaskMethod"
+      "name": "methodName",
+      "type": "string"
     },
     {
-      "name": "taskInput",
+      "name": "methodParameterTypes",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "string"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "methodInput",
       "type": {
         "type": "array",
         "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
-      },
-      "default": []
+      }
     },
     {
       "name": "taskOptions",

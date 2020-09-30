@@ -26,11 +26,12 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
+import io.infinitic.common.tasks.data.MethodInput
+import io.infinitic.common.tasks.data.MethodName
+import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.messages.ForTaskEngineMessage
-import io.infinitic.common.workflows.data.methodRuns.MethodInput
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.methodRuns.MethodName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.messages.DispatchWorkflow
@@ -68,7 +69,8 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            methodName = MethodName("m1", listOf()),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
             methodInput = MethodInput(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
@@ -84,7 +86,8 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            methodName = MethodName("m1", listOf(Integer::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
             methodInput = MethodInput(0),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
@@ -100,7 +103,8 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            methodName = MethodName("m1", listOf(String::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodInput = MethodInput("a"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
@@ -116,7 +120,8 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = workflow.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            methodName = MethodName("m1", listOf(Int::class.java.name, String::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodInput = MethodInput(0, "a"),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
@@ -134,7 +139,8 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             workflowId = instance.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            methodName = MethodName("m1", listOf(FakeInterface::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             methodInput = MethodInput(klass),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()

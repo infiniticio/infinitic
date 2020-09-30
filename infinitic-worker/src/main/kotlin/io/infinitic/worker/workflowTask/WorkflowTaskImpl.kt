@@ -23,10 +23,10 @@
 
 package io.infinitic.worker.workflowTask
 
+import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.data.methodRuns.MethodOutput
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
@@ -80,17 +80,17 @@ class WorkflowTaskImpl : WorkflowTask {
         )
     }
 
-    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodName.methodParameterTypes == null) {
+    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes.types == null) {
         getMethodPerNameAndParameterCount(
             workflow,
-            methodRun.methodName.methodName,
+            "${methodRun.methodName}",
             methodRun.methodInput.size
         )
     } else {
         getMethodPerNameAndParameterTypes(
             workflow,
-            methodRun.methodName.methodName,
-            methodRun.methodName.methodParameterTypes!!
+            "${methodRun.methodName}",
+            methodRun.methodParameterTypes.types!!
         )
     }
 }

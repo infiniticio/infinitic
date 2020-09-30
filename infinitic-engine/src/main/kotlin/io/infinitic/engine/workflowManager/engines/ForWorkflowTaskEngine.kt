@@ -58,7 +58,7 @@ class ForWorkflowTaskEngine(
                         workflowId = workflowId,
                         methodRunId = MethodRunId(message.taskMeta[WorkflowEngine.META_METHOD_RUN_ID].toString()),
                         taskId = message.taskId,
-                        taskOutput = message.taskOutput
+                        methodOutput = message.taskOutput
                     )
                 }
                 dispatcher.toWorkflowEngine(msg)

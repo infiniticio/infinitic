@@ -26,9 +26,10 @@ package io.infinitic.engine.workflowManager.engines.handlers
 import io.infinitic.common.tasks.Constants
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.MethodInput
+import io.infinitic.common.tasks.data.MethodName
+import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskMethod
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.messages.DispatchTask
@@ -53,6 +54,7 @@ class DispatchWorkflowHandler(
             parentWorkflowId = msg.parentWorkflowId,
             parentMethodRunId = msg.parentMethodRunId,
             methodName = msg.methodName,
+            methodParameterTypes = msg.methodParameterTypes,
             methodInput = msg.methodInput,
             messageIndexAtStart = WorkflowMessageIndex(0)
         )
@@ -73,8 +75,9 @@ class DispatchWorkflowHandler(
         val workflowTask = DispatchTask(
             taskId = TaskId("$workflowTaskId"),
             taskName = TaskName(WorkflowTask::class.java.name),
-            taskMethod = TaskMethod(Constants.WORKFLOW_TASK_METHOD, listOf(WorkflowTaskInput::class.java.name)),
-            taskInput = TaskInput(workflowTaskInput),
+            methodName = MethodName(Constants.WORKFLOW_TASK_METHOD),
+            methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskInput::class.java.name)),
+            methodInput = MethodInput(workflowTaskInput),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
                 .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, "${msg.workflowId}")

@@ -19,7 +19,7 @@
       "logicalType": "uuid"
     },
     {
-      "name": "taskOutput",
+      "name": "methodOutput",
       "type": "io.infinitic.avro.taskManager.data.AvroSerializedData"
     }
   ]

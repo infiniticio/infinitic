@@ -23,7 +23,7 @@
 
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.workflows.data.methodRuns.MethodPosition
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
 
 data class MethodLevel(
@@ -31,9 +31,9 @@ data class MethodLevel(
     val instructionIndex: Int = -1,
     var messageIndex: WorkflowMessageIndex
 ) {
-    val methodPosition: MethodPosition = when (parentLevel) {
-        null -> MethodPosition("$instructionIndex")
-        else -> MethodPosition("${parentLevel.methodPosition}.$instructionIndex")
+    val methodPosition: MethodRunPosition = when (parentLevel) {
+        null -> MethodRunPosition("$instructionIndex")
+        else -> MethodRunPosition("${parentLevel.methodPosition}.$instructionIndex")
     }
 
     override fun toString() = "$methodPosition"

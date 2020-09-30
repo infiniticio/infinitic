@@ -164,8 +164,9 @@ class WorkflowTaskCompletedHandler(
         val msg = DispatchTask(
             taskId = TaskId("${newCommand.commandId}"),
             taskName = command.taskName,
-            taskMethod = command.taskMethod,
-            taskInput = command.taskInput,
+            methodName = command.methodName,
+            methodParameterTypes = command.methodParameterTypes,
+            methodInput = command.methodInput,
             taskMeta = command.taskMeta
                 .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, workflowId)
                 .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, methodRun.methodRunId)
@@ -184,6 +185,7 @@ class WorkflowTaskCompletedHandler(
             parentMethodRunId = methodRun.methodRunId,
             workflowName = command.childWorkflowName,
             methodName = command.childMethodName,
+            methodParameterTypes = command.childMethodParameterTypes,
             methodInput = command.childMethodInput,
             workflowMeta = state.workflowMeta,
             workflowOptions = state.workflowOptions

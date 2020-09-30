@@ -17,15 +17,26 @@
       "default": null
     },
     {
-      "name": "taskMethod",
+      "name": "methodName",
       "type": [
         "null",
-        "io.infinitic.avro.taskManager.data.AvroTaskMethod"
+        "string"
       ],
       "default": null
     },
     {
-      "name": "taskInput",
+      "name": "methodParameterTypes",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "string"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "methodInput",
       "type": [
         "null",
         {

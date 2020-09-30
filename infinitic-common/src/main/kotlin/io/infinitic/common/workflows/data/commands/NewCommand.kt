@@ -23,13 +23,13 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.workflows.data.methodRuns.MethodPosition
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 
 data class NewCommand(
     val commandId: CommandId = CommandId(),
     val command: Command,
     val commandSimpleName: CommandSimpleName,
-    val commandPosition: MethodPosition
+    val commandPosition: MethodRunPosition
 ) {
     val commandStatus: CommandStatus = CommandStatusOngoing
 

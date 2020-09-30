@@ -21,23 +21,21 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.methodRuns
+package io.infinitic.common.tasks.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
-import io.infinitic.common.tasks.data.bases.Input
-import java.lang.reflect.Method
+import io.infinitic.common.tasks.data.bases.Data
 
-class MethodInput(override vararg val data: Any?) : Input(data), Collection<Any?> by data.toList() {
+data class MethodOutput(override val data: Any?) : Data(data) {
     @get:JsonValue val json get() = getSerialized()
 
     companion object {
-        @JvmStatic @JsonCreator
-        fun fromSerialized(serialized: List<SerializedData>) =
-            MethodInput(*(serialized.map { it.deserialize() }.toTypedArray())).apply { serializedData = serialized }
-
-        fun from(method: Method, data: Array<out Any>) =
-            MethodInput(*data).apply { serializedData = getSerialized(method) }
+        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+        fun fromSerialized(serializedData: SerializedData) =
+            MethodOutput(serializedData.deserialize()).apply {
+                this.serializedData = serializedData
+            }
     }
 }

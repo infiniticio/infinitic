@@ -27,9 +27,10 @@ import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
 import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.MethodInput
+import io.infinitic.common.tasks.data.MethodName
+import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskMethod
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.messages.DispatchTask
@@ -60,9 +61,10 @@ class ClientTaskTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
-            taskInput = TaskInput(),
             taskName = TaskName(FakeTask::class.java.name),
-            taskMethod = TaskMethod("m1", listOf()),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodInput = MethodInput(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -76,9 +78,10 @@ class ClientTaskTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
-            taskInput = TaskInput(0),
             taskName = TaskName(FakeTask::class.java.name),
-            taskMethod = TaskMethod("m1", listOf(Int::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name)),
+            methodInput = MethodInput(0),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -92,9 +95,10 @@ class ClientTaskTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
-            taskInput = TaskInput(null),
             taskName = TaskName(FakeTask::class.java.name),
-            taskMethod = TaskMethod("m1", listOf(String::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
+            methodInput = MethodInput(null),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -108,9 +112,10 @@ class ClientTaskTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
-            taskInput = TaskInput("a"),
             taskName = TaskName(FakeTask::class.java.name),
-            taskMethod = TaskMethod("m1", listOf(String::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
+            methodInput = MethodInput("a"),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -124,9 +129,10 @@ class ClientTaskTests : StringSpec({
         val msg = slot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
-            taskInput = TaskInput(0, "a"),
             taskName = TaskName(FakeTask::class.java.name),
-            taskMethod = TaskMethod("m1", listOf(Int::class.java.name, String::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+            methodInput = MethodInput(0, "a"),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -142,9 +148,10 @@ class ClientTaskTests : StringSpec({
 
         msg shouldBe DispatchTask(
             taskId = task.taskId,
-            taskInput = TaskInput(fake),
             taskName = TaskName(FakeTask::class.java.name),
-            taskMethod = TaskMethod("m1", listOf(FakeInterface::class.java.name)),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
+            methodInput = MethodInput(fake),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -159,9 +166,10 @@ class ClientTaskTests : StringSpec({
 
         msg shouldBe DispatchTask(
             taskId = task.taskId,
-            taskInput = TaskInput(),
             taskName = TaskName(FakeTask::class.java.name),
-            taskMethod = TaskMethod("m2", listOf()),
+            methodName = MethodName("m2"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodInput = MethodInput(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )

@@ -27,7 +27,7 @@ import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptError
-import io.infinitic.common.tasks.data.TaskOutput
+import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
@@ -203,14 +203,14 @@ open class Worker(val dispatcher: Dispatcher) {
 
     private fun parse(msg: RunTask): TaskCommand {
         val task = getTaskInstance("${msg.taskName}")
-        val parameterTypes = msg.taskMethod.methodParameterTypes
-        val method = if (parameterTypes == null) {
-            getMethodPerNameAndParameterCount(task, msg.taskMethod.methodName, msg.taskInput.size)
+        val parameterTypes = msg.methodParameterTypes
+        val method = if (parameterTypes.types == null) {
+            getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodInput.size)
         } else {
-            getMethodPerNameAndParameterTypes(task, msg.taskMethod.methodName, parameterTypes)
+            getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types!!)
         }
 
-        return TaskCommand(task, method, msg.taskInput.data, msg.taskOptions)
+        return TaskCommand(task, method, msg.methodInput.data, msg.taskOptions)
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
@@ -264,7 +264,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
             taskAttemptIndex = msg.taskAttemptIndex,
-            taskOutput = TaskOutput(output)
+            taskOutput = MethodOutput(output)
         )
 
         dispatcher.toTaskEngine(taskAttemptCompleted)

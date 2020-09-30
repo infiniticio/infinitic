@@ -30,12 +30,13 @@ import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptIndex
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.MethodInput
+import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskMethod
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.data.TaskOutput
+import io.infinitic.common.tasks.data.MethodOutput
+import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterCount
 import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterTypes
@@ -90,7 +91,7 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = TaskOutput("9")
+            taskOutput = MethodOutput("9")
         )
     }
 
@@ -111,7 +112,7 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = TaskOutput("12")
+            taskOutput = MethodOutput("12")
         )
     }
 
@@ -274,7 +275,7 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = TaskOutput("72")
+            taskOutput = MethodOutput("72")
         )
     }
 
@@ -306,8 +307,9 @@ private fun getRunTask(name: String, method: String, input: Array<out Any?>, typ
     taskAttemptIndex = TaskAttemptIndex(12),
     taskAttemptRetry = TaskAttemptRetry(7),
     taskName = TaskName(name),
-    taskMethod = TaskMethod(method, types),
-    taskInput = TaskInput(*input),
+    methodName = MethodName(method),
+    methodParameterTypes = MethodParameterTypes(types),
+    methodInput = MethodInput(*input),
     taskOptions = TaskOptions(runningTimeout = .2F),
     taskMeta = TaskMeta()
 )
