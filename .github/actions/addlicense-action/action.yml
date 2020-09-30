@@ -1,0 +1,9 @@
+name: "AddLicense action"
+description: "Use the addlicense tool in your github workflows"
+runs:
+  using: "docker"
+  image: "docker://nokia/addlicense-nokia:latest"
+  entrypoint: "sh"
+  args:
+    - "-c"
+    - "/addlicense $OPTIONS ."

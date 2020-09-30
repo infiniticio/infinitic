@@ -1,0 +1,18 @@
+name: Repository management
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Ensure license header in all source files
+        uses: ./.github/actions/addlicense-action
+        env:
+          OPTIONS: "-s -c infinitic.io -c LICENSE -config .addlicense.yml -check"

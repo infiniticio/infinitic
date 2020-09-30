@@ -4,6 +4,7 @@ on:
     branches:
       - master
     paths:
+      - ".github/workflows/engine-ci.yml"
       - "infinitic-*/**"
 
 jobs:

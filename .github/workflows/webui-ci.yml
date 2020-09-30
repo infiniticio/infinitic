@@ -4,6 +4,7 @@ on:
     branches:
       - master
     paths:
+      - ".github/workflows/webui-ci.yml"
       - "webui/**"
 
 jobs:
