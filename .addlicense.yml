@@ -24,6 +24,7 @@
 ignorePaths:
   - "infinitic-*/build/**"
   - "webui/dist/**"
+  - "**/*.md"
 
 hasLicensePatterns:
   - '"commons clause" license condition v1.0'
