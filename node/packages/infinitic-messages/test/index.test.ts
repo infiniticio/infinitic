@@ -42,6 +42,7 @@ describe('@infinitic/messages', () => {
     const value = random(types.AvroDispatchTask);
     expect(value.taskId).toBeOfType('string');
     expect(value.taskName).toBeOfType('string');
+    expect(value.methodName).toBeOfType('string');
     // expect(value.taskMeta).toBeOfType('Map');
   });
 

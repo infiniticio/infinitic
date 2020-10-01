@@ -9,7 +9,7 @@
     "cross-env": "^7.0.2",
     "husky": "^4.2.5",
     "jest-extended": "^0.11.5",
-    "lerna": "^3.22.0",
+    "lerna": "^3.22.1",
     "rollup-plugin-copy": "^3.3.0",
     "tsdx": "^0.13.2",
     "tslib": "^2.0.0",

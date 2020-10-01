@@ -69,8 +69,8 @@ export class TaskRunner {
     await this.notifyTaskAttemptStarted(message);
 
     let input: any;
-    if (message.taskInput.length > 0) {
-      input = JSON.parse(message.taskInput[0].bytes.toString());
+    if (message.methodInput.length > 0) {
+      input = JSON.parse(message.methodInput[0].bytes.toString());
     } else {
       input = undefined;
     }

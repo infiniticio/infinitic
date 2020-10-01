@@ -32,7 +32,7 @@ export interface SerializedData {
   meta: Map<string, Buffer>;
 }
 
-export type TaskInput = SerializedData[];
+export type MethodInput = SerializedData[];
 export type TaskOutput = SerializedData;
 export type TaskAttemptError = SerializedData;
 export type TaskOptions = { runningTimeout: number | null };
@@ -56,7 +56,8 @@ export type CancelTask = {
 export type DispatchTask = {
   taskId: string;
   taskName: string;
-  taskInput: TaskInput;
+  methodName: string;
+  methodInput: MethodInput;
   taskOptions: TaskOptions;
   taskMeta: Map<string, SerializedData>;
 };
@@ -201,7 +202,8 @@ export type ForWorkerMessageType = 'RunTask';
 export type RunTask = {
   taskId: string;
   taskName: string;
-  taskInput: TaskInput;
+  methodName: string;
+  methodInput: MethodInput;
   taskAttemptId: string;
   taskAttemptRetry: number;
   taskAttemptIndex: number;

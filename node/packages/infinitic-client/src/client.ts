@@ -69,7 +69,7 @@ export class Client {
     taskOptions: TaskOptions = { runningTimeout: null }
   ) {
     const taskId = uuid();
-    const taskInput =
+    const methodInput =
       input == null
         ? []
         : [
@@ -85,7 +85,8 @@ export class Client {
       DispatchTask: {
         taskId,
         taskName,
-        taskInput,
+        methodName: 'handle',
+        methodInput,
         taskMeta,
         taskOptions,
       },
