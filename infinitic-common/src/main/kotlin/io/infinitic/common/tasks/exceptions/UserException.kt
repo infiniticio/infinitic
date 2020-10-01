@@ -145,20 +145,6 @@ data class InconsistentJsonSerializationOfParameter(
  * Exceptions in worker
  ***********************/
 
-data class InvalidUseOfDividerInTaskName(
-    @JsonProperty("name") val name: String
-) : UserExceptionInWorker(
-    msg = "Task name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider",
-    help = "You can not include \"${Constants.METHOD_DIVIDER}\" in your name's job, as it is also used as a divider between job's name and method"
-)
-
-data class MultipleUseOfDividerInTaskName(
-    @JsonProperty("name") val name: String
-) : UserExceptionInWorker(
-    msg = "Task name \"$name\" must not contain the \"${Constants.METHOD_DIVIDER}\" divider more than once",
-    help = "You can not include \"${Constants.METHOD_DIVIDER}\" more than once in your name's job, as it is also used as a divider between job's name and method"
-)
-
 data class ErrorDuringInstantiation(
     @JsonProperty("name") val name: String
 ) : UserExceptionInWorker(

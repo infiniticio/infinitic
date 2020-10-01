@@ -17,13 +17,6 @@
       "type": "int"
     },
     {
-      "name": "taskInput",
-      "type": {
-        "type": "array",
-        "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
-      }
-    },
-    {
       "name": "taskId",
       "type": "string",
       "logicalType": "uuid"
@@ -31,6 +24,28 @@
     {
       "name": "taskName",
       "type": "string"
+    },
+    {
+      "name": "methodName",
+      "type": "string"
+    },
+    {
+      "name": "methodParameterTypes",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "string"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "methodInput",
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      }
     },
     {
       "name": "taskStatus",

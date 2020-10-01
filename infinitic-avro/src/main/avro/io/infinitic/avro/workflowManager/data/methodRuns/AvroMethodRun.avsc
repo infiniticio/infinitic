@@ -36,7 +36,18 @@
     },
     {
       "name": "methodName",
-      "type": "io.infinitic.avro.workflowManager.data.methodRuns.AvroMethodName"
+      "type": "string"
+    },
+    {
+      "name": "methodParameterTypes",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "string"
+        }
+      ],
+      "default": null
     },
     {
       "name": "methodInput",

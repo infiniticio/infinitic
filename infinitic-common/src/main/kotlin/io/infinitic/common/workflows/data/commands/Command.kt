@@ -28,11 +28,11 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.data.SerializedData
-import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.MethodInput
+import io.infinitic.common.tasks.data.MethodName
+import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.workflows.data.methodRuns.MethodName
-import io.infinitic.common.workflows.data.methodRuns.MethodInput
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import java.lang.reflect.Method
 
@@ -59,16 +59,22 @@ sealed class Command {
 data class DispatchTask(
     @JsonProperty("name")
     val taskName: TaskName,
+    @JsonProperty("method")
+    val methodName: MethodName,
+    @JsonProperty("types")
+    val methodParameterTypes: MethodParameterTypes,
     @JsonProperty("input")
-    val taskInput: TaskInput,
+    val methodInput: MethodInput,
     @JsonProperty("meta")
     val taskMeta: TaskMeta
 ) : Command() {
     companion object {
         fun from(method: Method, args: Array<out Any>) = DispatchTask(
             taskName = TaskName.from(method),
-            taskInput = TaskInput.from(method, args),
-            taskMeta = TaskMeta().withParametersTypesFrom(method)
+            methodInput = MethodInput.from(method, args),
+            methodParameterTypes = MethodParameterTypes.from(method),
+            methodName = MethodName.from(method),
+            taskMeta = TaskMeta()
         )
     }
 }
@@ -78,6 +84,8 @@ data class DispatchChildWorkflow(
     val childWorkflowName: WorkflowName,
     @JsonProperty("method")
     val childMethodName: MethodName,
+    @JsonProperty("types")
+    val childMethodParameterTypes: MethodParameterTypes,
     @JsonProperty("input")
     val childMethodInput: MethodInput
 ) : Command() {
@@ -85,6 +93,7 @@ data class DispatchChildWorkflow(
         fun from(method: Method, args: Array<out Any>) = DispatchChildWorkflow(
             childWorkflowName = WorkflowName.from(method),
             childMethodName = MethodName.from(method),
+            childMethodParameterTypes = MethodParameterTypes.from(method),
             childMethodInput = MethodInput.from(method, args)
         )
     }

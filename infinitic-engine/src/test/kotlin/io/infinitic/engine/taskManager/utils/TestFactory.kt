@@ -24,7 +24,7 @@
 package io.infinitic.engine.taskManager.utils
 
 import io.infinitic.common.data.SerializedData
-import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.avro.taskManager.data.AvroSerializedData
 import io.infinitic.avro.taskManager.data.AvroSerializedDataType
 import io.kotest.properties.nextPrintableString
@@ -64,8 +64,8 @@ object TestFactory {
                     .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
                     .build()
             }
-            .randomize(TaskInput::class.java) {
-                TaskInput(
+            .randomize(MethodInput::class.java) {
+                MethodInput(
                     Random(seed).nextBytes(10),
                     Random(seed).nextPrintableString(10)
                 )

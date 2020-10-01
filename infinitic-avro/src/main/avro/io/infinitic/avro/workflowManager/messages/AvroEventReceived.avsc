@@ -17,8 +17,7 @@
       "type": {
         "type": "array",
         "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
-      },
-      "default": []
+      }
     }
   ]
 }

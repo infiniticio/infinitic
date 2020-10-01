@@ -21,11 +21,16 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.methodRuns
+package io.infinitic.common.tasks.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
+import io.infinitic.common.tasks.data.bases.Name
+import java.lang.reflect.Method
 
-data class MethodPosition @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(@get:JsonValue val position: String) {
-    override fun toString() = position
+data class MethodName
+@JsonCreator constructor(@get:JsonValue override val name: String) : Name(name) {
+    companion object {
+        fun from(method: Method) = MethodName(method.name)
+    }
 }

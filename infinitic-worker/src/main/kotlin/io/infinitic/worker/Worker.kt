@@ -27,10 +27,8 @@ import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptError
-import io.infinitic.common.tasks.data.TaskOutput
+import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
-import io.infinitic.common.tasks.exceptions.InvalidUseOfDividerInTaskName
-import io.infinitic.common.tasks.exceptions.MultipleUseOfDividerInTaskName
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.common.tasks.messages.ForWorkerMessage
@@ -79,8 +77,6 @@ open class Worker(val dispatcher: Dispatcher) {
      * Register a task instance to use for a given Task name
      */
     fun register(taskName: String, taskInstance: Task) {
-        if (taskName.contains(Constants.METHOD_DIVIDER)) throw InvalidUseOfDividerInTaskName(taskName)
-
         registeredTasks[taskName] = taskInstance
     }
 
@@ -206,25 +202,15 @@ open class Worker(val dispatcher: Dispatcher) {
     }
 
     private fun parse(msg: RunTask): TaskCommand {
-        val (taskName, methodName) = getClassAndMethodName("${msg.taskName}")
-        val task = getTaskInstance(taskName)
-        val parameterTypes = msg.taskMeta.parameterTypes
-        val method = if (parameterTypes == null) {
-            getMethodPerNameAndParameterCount(task, methodName, msg.taskInput.size)
+        val task = getTaskInstance("${msg.taskName}")
+        val parameterTypes = msg.methodParameterTypes
+        val method = if (parameterTypes.types == null) {
+            getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodInput.size)
         } else {
-            getMethodPerNameAndParameterTypes(task, methodName, parameterTypes)
+            getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types!!)
         }
 
-        return TaskCommand(task, method, msg.taskInput.data, msg.taskOptions)
-    }
-
-    private fun getClassAndMethodName(name: String): List<String> {
-        val parts = name.split(Constants.METHOD_DIVIDER)
-        return when (parts.size) {
-            1 -> parts + Constants.METHOD_DEFAULT
-            2 -> parts
-            else -> throw MultipleUseOfDividerInTaskName(name)
-        }
+        return TaskCommand(task, method, msg.methodInput.data, msg.taskOptions)
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
@@ -278,7 +264,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
             taskAttemptIndex = msg.taskAttemptIndex,
-            taskOutput = TaskOutput(output)
+            taskOutput = MethodOutput(output)
         )
 
         dispatcher.toTaskEngine(taskAttemptCompleted)

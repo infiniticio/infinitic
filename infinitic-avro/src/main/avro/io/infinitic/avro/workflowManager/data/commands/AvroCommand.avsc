@@ -19,20 +19,38 @@
       "name": "method",
       "type":  [
         "null",
-        "io.infinitic.avro.workflowManager.data.methodRuns.AvroMethodName"
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "methodParameterTypes",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "string"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "types",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "string"
+        }
       ],
       "default": null
     },
     {
       "name": "input",
-      "type": [
-        "null",
-        {
-          "type": "array",
-          "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
-        }
-      ],
-      "default": null
+      "type": {
+        "type": "array",
+        "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      }
     },
     {
       "name": "output",

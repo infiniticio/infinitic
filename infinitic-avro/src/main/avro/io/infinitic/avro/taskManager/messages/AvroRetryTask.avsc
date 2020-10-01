@@ -17,7 +17,26 @@
       "default": null
     },
     {
-      "name": "taskInput",
+      "name": "methodName",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "methodParameterTypes",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": "string"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "methodInput",
       "type": [
         "null",
         {

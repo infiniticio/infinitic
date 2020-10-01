@@ -31,6 +31,6 @@ import java.lang.reflect.Method
 data class TaskName
 @JsonCreator constructor(@get:JsonValue override val name: String) : Name(name) {
     companion object {
-        fun from(method: Method) = TaskName(Name.fromMethod(method))
+        fun from(method: Method) = TaskName(method.declaringClass.name)
     }
 }

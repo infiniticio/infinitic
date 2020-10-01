@@ -24,6 +24,7 @@
 package io.infinitic.engine.taskManager.engines
 
 import io.infinitic.common.data.interfaces.plus
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.CancelTask
@@ -192,13 +193,13 @@ internal class TaskEngineTests : StringSpec({
         val run = o.workerMessage as RunTask
         run.taskId shouldBe msgIn.taskId
         run.taskName shouldBe msgIn.taskName
-        run.taskInput shouldBe msgIn.taskInput
+        run.methodInput shouldBe msgIn.methodInput
         run.taskAttemptRetry.int shouldBe 0
         run.taskAttemptId shouldBe o.taskAttemptDispatched!!.taskAttemptId
         run.taskAttemptRetry shouldBe o.taskAttemptDispatched!!.taskAttemptRetry
         o.state!!.taskId shouldBe msgIn.taskId
         o.state!!.taskName shouldBe msgIn.taskName
-        o.state!!.taskInput shouldBe msgIn.taskInput
+        o.state!!.methodInput shouldBe msgIn.methodInput
         o.state!!.taskAttemptId shouldBe run.taskAttemptId
         o.state!!.taskAttemptRetry.int shouldBe 0
         o.state!!.taskMeta shouldBe msgIn.taskMeta
@@ -217,7 +218,9 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskName" to null,
-                "taskInput" to null,
+                "methodName" to null,
+                "methodParameterTypes" to null,
+                "methodInput" to null,
                 "taskMeta" to null,
                 "taskOptions" to null
             )
@@ -237,13 +240,13 @@ internal class TaskEngineTests : StringSpec({
         run.taskAttemptId shouldNotBe stateIn.taskAttemptId
         run.taskAttemptRetry.int shouldBe 0
         run.taskName shouldBe stateIn.taskName
-        run.taskInput shouldBe stateIn.taskInput
+        run.methodInput shouldBe stateIn.methodInput
         o.taskAttemptDispatched!!.taskId shouldBe stateIn.taskId
         o.taskAttemptDispatched!!.taskAttemptId shouldBe run.taskAttemptId
         o.taskAttemptDispatched!!.taskAttemptRetry.int shouldBe 0
         o.state!!.taskId shouldBe stateIn.taskId
         o.state!!.taskName shouldBe stateIn.taskName
-        o.state!!.taskInput shouldBe stateIn.taskInput
+        o.state!!.methodInput shouldBe stateIn.methodInput
         o.state!!.taskAttemptId shouldBe run.taskAttemptId
         o.state!!.taskAttemptRetry shouldBe run.taskAttemptRetry
         o.state!!.taskStatus shouldBe TaskStatus.RUNNING_WARNING
@@ -335,7 +338,7 @@ internal class TaskEngineTests : StringSpec({
         o.retryTaskAttempt!!.taskAttemptRetry shouldBe stateIn.taskAttemptRetry
         o.retryTaskAttemptDelay!! shouldBe msgIn.taskAttemptDelayBeforeRetry
         o.taskStatusUpdated!!.taskId shouldBe stateIn.taskId
-        o.taskStatusUpdated!!.taskName shouldBe stateIn.taskName
+        o.taskStatusUpdated!!.taskName shouldBe TaskName("${stateIn.taskName}::${stateIn.methodName}")
         o.taskStatusUpdated!!.oldStatus shouldBe stateIn.taskStatus
         o.taskStatusUpdated!!.newStatus shouldBe TaskStatus.RUNNING_WARNING
     }
@@ -398,13 +401,13 @@ private fun checkShouldRetryTaskAttempt(msgIn: ForTaskEngineMessage, stateIn: Ta
     run.taskAttemptId shouldBe stateIn.taskAttemptId
     run.taskAttemptRetry shouldBe stateIn.taskAttemptRetry + 1
     run.taskName shouldBe stateIn.taskName
-    run.taskInput shouldBe stateIn.taskInput
+    run.methodInput shouldBe stateIn.methodInput
     o.taskAttemptDispatched!!.taskId shouldBe stateIn.taskId
     o.taskAttemptDispatched!!.taskAttemptId shouldBe run.taskAttemptId
     o.taskAttemptDispatched!!.taskAttemptRetry shouldBe run.taskAttemptRetry
     o.state!!.taskId shouldBe stateIn.taskId
     o.state!!.taskName shouldBe stateIn.taskName
-    o.state!!.taskInput shouldBe stateIn.taskInput
+    o.state!!.methodInput shouldBe stateIn.methodInput
     o.state!!.taskAttemptId shouldBe run.taskAttemptId
     o.state!!.taskAttemptRetry shouldBe run.taskAttemptRetry
     o.state!!.taskStatus shouldBe TaskStatus.RUNNING_WARNING

@@ -24,11 +24,11 @@
 package io.infinitic.common.workflows.data.commands
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.infinitic.common.workflows.data.methodRuns.MethodPosition
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode
 
 data class PastCommand(
-    val commandPosition: MethodPosition,
+    val commandPosition: MethodRunPosition,
     val commandType: CommandType,
     val commandId: CommandId,
     val commandHash: CommandHash,

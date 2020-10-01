@@ -128,5 +128,6 @@ data class SerializedData(
 
     private fun <T : Any> fromJson(klass: Class<out T>): T = Json.parse(String(bytes, Charsets.UTF_8), klass)
 
+    @Suppress("UNCHECKED_CAST")
     private fun <T : Any> fromAvro(klass: Class<out T>) = AvroSerDe.deserializeFromByteArray(bytes, klass as Class<out SpecificRecordBase>)
 }

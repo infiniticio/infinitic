@@ -39,8 +39,8 @@ module.exports = {
             dest: 'dist/avro/taskManager/messages',
           },
           {
-            src: 'src/avro/common/data/*.avsc',
-            dest: 'dist/avro/common/data',
+            src: 'src/avro/taskManager/data/*.avsc',
+            dest: 'dist/avro/taskManager/data',
           },
         ],
       })
@@ -49,3 +49,4 @@ module.exports = {
     return config;
   }
 };
+

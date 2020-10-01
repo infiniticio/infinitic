@@ -26,9 +26,9 @@ package io.infinitic.common.tasks.utils
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.data.TaskAttemptError
-import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskOutput
+import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.exceptions.CanNotUseJavaReservedKeywordInMeta
 import io.infinitic.common.tasks.exceptions.MultipleMethodCallsAtDispatch
 import io.infinitic.avro.taskManager.data.AvroSerializedData
@@ -77,14 +77,14 @@ object TestFactory {
                     .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
                     .build()
             }
-            .randomize(TaskInput::class.java) {
-                TaskInput(
+            .randomize(MethodInput::class.java) {
+                MethodInput(
                     Random(seed).nextBytes(10),
                     Random(seed).nextPrintableString(10)
                 )
             }
-            .randomize(TaskOutput::class.java) {
-                TaskOutput(
+            .randomize(MethodOutput::class.java) {
+                MethodOutput(
                     Random(seed).nextPrintableString(10)
                 )
             }

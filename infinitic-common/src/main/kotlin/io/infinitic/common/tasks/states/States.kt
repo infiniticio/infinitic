@@ -28,7 +28,9 @@ import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptIndex
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.MethodInput
+import io.infinitic.common.tasks.data.MethodName
+import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
@@ -39,8 +41,10 @@ sealed class State
 data class TaskEngineState(
     val taskId: TaskId,
     val taskName: TaskName,
+    val methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes,
+    val methodInput: MethodInput,
     val taskStatus: TaskStatus,
-    val taskInput: TaskInput,
     var taskAttemptId: TaskAttemptId,
     var taskAttemptIndex: TaskAttemptIndex = TaskAttemptIndex(0),
     var taskAttemptRetry: TaskAttemptRetry = TaskAttemptRetry(0),

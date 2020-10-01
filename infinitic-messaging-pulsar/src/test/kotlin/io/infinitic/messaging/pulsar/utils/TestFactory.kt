@@ -23,7 +23,7 @@
 
 package io.infinitic.messaging.pulsar.utils
 
-import io.infinitic.common.tasks.data.TaskInput
+import io.infinitic.common.tasks.data.MethodInput
 import io.kotest.properties.nextPrintableString
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
@@ -53,8 +53,8 @@ object TestFactory {
         val parameters = EasyRandomParameters()
             .seed(seed)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
-            .randomize(TaskInput::class.java) {
-                TaskInput(
+            .randomize(MethodInput::class.java) {
+                MethodInput(
                     Random(seed).nextBytes(10),
                     Random(seed).nextPrintableString(10)
                 )

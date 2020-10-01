@@ -23,11 +23,11 @@
 
 package io.infinitic.common.workflows.data.steps
 
-import io.infinitic.common.workflows.data.methodRuns.MethodPosition
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 
 data class NewStep(
     val stepId: StepId = StepId(),
     val step: Step,
-    val stepPosition: MethodPosition,
+    val stepPosition: MethodRunPosition,
     val stepHash: StepHash = step.hash()
 )

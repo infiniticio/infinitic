@@ -19,12 +19,15 @@
       "logicalType": "uuid"
     },
     {
-      "name": "taskInput",
+      "name": "methodName",
+      "type": "string"
+    },
+    {
+      "name": "methodInput",
       "type": {
         "type": "array",
         "items": "io.infinitic.avro.taskManager.data.AvroSerializedData"
-      },
-      "default": []
+      }
     }
   ]
 }
