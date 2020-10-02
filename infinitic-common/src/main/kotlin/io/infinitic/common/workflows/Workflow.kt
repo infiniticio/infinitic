@@ -32,7 +32,7 @@ interface Workflow {
 }
 
 /*
- * Proxy a task
+ * Proxy a taski
  */
 fun <T : Any> Workflow.proxy(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
 fun <T : Any> Workflow.proxy(klass: KClass<out T>) = TaskProxyHandler(klass.java) { context }.instance()
