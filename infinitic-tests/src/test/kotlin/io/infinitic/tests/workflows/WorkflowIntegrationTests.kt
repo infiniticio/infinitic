@@ -24,8 +24,8 @@
 package io.infinitic.tests.workflows
 
 import io.infinitic.avro.taskManager.data.AvroTaskStatus
-import io.infinitic.taskManager.tests.inMemory.InMemoryDispatcherTest
-import io.infinitic.taskManager.tests.inMemory.InMemoryStorageTest
+import io.infinitic.tests.workflows.inMemory.InMemoryDispatcherTest
+import io.infinitic.tests.workflows.inMemory.InMemoryStorageTest
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.tests.workflows.samples.TaskA
 import io.infinitic.tests.workflows.samples.TaskAImpl
