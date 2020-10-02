@@ -23,10 +23,9 @@
 
 package io.infinitic.worker.samples
 
-import io.infinitic.common.tasks.Task
 import io.infinitic.worker.task.TaskAttemptContext
 
-internal class SampleTaskWithTimeout() : Task {
+internal class SampleTaskWithTimeout() {
     lateinit var context: TaskAttemptContext
 
     fun handle(i: Int, j: String): String {

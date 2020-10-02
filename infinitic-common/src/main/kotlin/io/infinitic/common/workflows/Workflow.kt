@@ -23,7 +23,6 @@
 
 package io.infinitic.common.workflows
 
-import io.infinitic.common.tasks.Task
 import io.infinitic.common.workflows.proxies.TaskProxyHandler
 import io.infinitic.common.workflows.proxies.WorkflowProxyHandler
 import kotlin.reflect.KClass
@@ -35,8 +34,8 @@ interface Workflow {
 /*
  * Proxy a task
  */
-fun <T : Task> Workflow.proxy(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
-fun <T : Task> Workflow.proxy(klass: KClass<out T>) = TaskProxyHandler(klass.java) { context }.instance()
+fun <T : Any> Workflow.proxy(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
+fun <T : Any> Workflow.proxy(klass: KClass<out T>) = TaskProxyHandler(klass.java) { context }.instance()
 
 /*
  * Proxy a child workflow
@@ -47,7 +46,7 @@ fun <T : Workflow> Workflow.proxy(klass: KClass<out T>) = WorkflowProxyHandler(k
 /*
  * Dispatch a task
  */
-fun <T : Task, S> Workflow.async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
+fun <T : Any, S> Workflow.async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
 
 /*
  * Dispatch a workflow
