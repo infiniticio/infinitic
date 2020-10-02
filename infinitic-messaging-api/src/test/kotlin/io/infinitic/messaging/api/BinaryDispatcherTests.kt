@@ -24,7 +24,7 @@
 package io.infinitic.messaging.api
 
 import io.infinitic.messaging.api.dispatcher.BinaryDispatcher
-import io.infinitic.messaging.api.dispatcher.transport.BinaryCompatibleTransport
+import io.infinitic.messaging.api.dispatcher.transport.BinaryTransport
 import io.infinitic.messaging.api.utils.TestFactory
 import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
@@ -36,7 +36,7 @@ import io.mockk.confirmVerified
 import io.mockk.mockk
 
 class BinaryDispatcherTests : StringSpec({
-    val transport = mockk<BinaryCompatibleTransport>(relaxed = true)
+    val transport = mockk<BinaryTransport>(relaxed = true)
     val dispatcher = BinaryDispatcher(transport)
 
     "BinaryDispatcher.toTaskEngine should send correct parameter" {

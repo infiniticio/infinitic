@@ -41,7 +41,10 @@
     },
     {
       "name": "methodOutput",
-      "type": "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      "type": [
+        "null",
+        "io.infinitic.avro.taskManager.data.AvroSerializedData"
+      ]
     }
   ]
 }

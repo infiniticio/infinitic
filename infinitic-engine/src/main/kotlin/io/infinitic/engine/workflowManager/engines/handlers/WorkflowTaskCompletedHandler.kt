@@ -168,8 +168,8 @@ class WorkflowTaskCompletedHandler(
             methodParameterTypes = command.methodParameterTypes,
             methodInput = command.methodInput,
             taskMeta = command.taskMeta
-                .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, workflowId)
-                .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, methodRun.methodRunId)
+                .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, "$workflowId")
+                .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
         )
         dispatcher.toTaskEngine(msg)
 

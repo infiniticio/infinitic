@@ -23,12 +23,16 @@
 
 package io.infinitic.messaging.api.dispatcher.transport
 
-import java.nio.ByteBuffer
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 
-interface BinaryCompatibleTransport {
-    suspend fun toWorkflowEngine(msg: ByteBuffer, after: Float = 0f)
-    suspend fun toTaskEngine(msg: ByteBuffer, after: Float = 0f)
-    suspend fun toMonitoringGlobal(msg: ByteBuffer)
-    suspend fun toMonitoringPerName(msg: ByteBuffer)
-    suspend fun toWorkers(msg: ByteBuffer)
+interface AvroTransport {
+    suspend fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine, after: Float = 0f)
+    suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float = 0f)
+    suspend fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal)
+    suspend fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName)
+    suspend fun toWorkers(msg: AvroEnvelopeForWorker)
 }

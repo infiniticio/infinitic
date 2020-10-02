@@ -23,7 +23,10 @@
 
 package io.infinitic.messaging.api.dispatcher
 
-import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
+import io.infinitic.avro.taskManager.messages.AvroDispatchTask
+import io.infinitic.common.json.Json
+import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.messaging.api.dispatcher.transport.AvroTransport
 import io.infinitic.common.tasks.avro.AvroConverter as TaskAvroConverter
 import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
@@ -32,7 +35,7 @@ import io.infinitic.common.tasks.messages.ForWorkerMessage
 import io.infinitic.common.workflows.avro.AvroConverter as WorkflowAvroConverter
 import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 
-class AvroDispatcher(private val transport: AvroCompatibleTransport) : Dispatcher {
+class AvroDispatcher(private val transport: AvroTransport) : Dispatcher {
     override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {
         msg
             .let { WorkflowAvroConverter.toWorkflowEngine(it) }
