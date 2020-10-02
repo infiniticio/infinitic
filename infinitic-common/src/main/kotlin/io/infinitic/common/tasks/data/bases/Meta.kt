@@ -33,7 +33,7 @@ abstract class Meta(open val data: MutableMap<String, Any?> = mutableMapOf()) {
             serialized.mapValues { it.value.deserialize() } as MutableMap<String, Any?>
     }
 
-    fun getSerialized() =  data.mapValues { SerializedData.from(it.value) }
+    fun getSerialized() = data.mapValues { SerializedData.from(it.value) }
 
     fun <T : Meta> with(key: String, data: Any?): T {
         this.data[key] = data

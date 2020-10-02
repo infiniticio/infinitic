@@ -70,7 +70,8 @@ open class InMemoryAvroDispatcher : Dispatcher {
         scope.launch {
             val avro = TaskAvroConverter.toMonitoringPerName(msg)
 
-            monitoringPerNameHandle(TaskAvroConverter.fromMonitoringPerName(avro)) }
+            monitoringPerNameHandle(TaskAvroConverter.fromMonitoringPerName(avro))
+        }
     }
 
     override suspend fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
@@ -84,6 +85,4 @@ open class InMemoryAvroDispatcher : Dispatcher {
 
         scope.launch { workerHandle(TaskAvroConverter.fromWorkers(avro)) }
     }
-
-
 }

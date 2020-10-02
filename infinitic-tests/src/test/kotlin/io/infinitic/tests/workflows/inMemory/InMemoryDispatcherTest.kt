@@ -24,7 +24,6 @@
 package io.infinitic.taskManager.tests.inMemory
 
 import io.infinitic.client.Client
-import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.TaskStatusUpdated
 import io.infinitic.engine.taskManager.engines.MonitoringGlobal
