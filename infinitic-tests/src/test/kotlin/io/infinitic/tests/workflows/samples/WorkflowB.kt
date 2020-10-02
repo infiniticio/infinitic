@@ -35,8 +35,8 @@ interface WorkflowB : Workflow {
 class WorkflowBImpl() : WorkflowB {
     override lateinit var context: WorkflowTaskContext
 
-    private val task = proxy(TaskA::class.java)
-    private val workflow = proxy(WorkflowB::class.java)
+    private val task = proxy(TaskA::class)
+    private val workflow = proxy(WorkflowB::class)
 
     override fun concat(input: String): String {
         var str = input

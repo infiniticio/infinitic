@@ -26,6 +26,7 @@ package io.infinitic.common.workflows
 import io.infinitic.common.tasks.Task
 import io.infinitic.common.workflows.proxies.TaskProxyHandler
 import io.infinitic.common.workflows.proxies.WorkflowProxyHandler
+import kotlin.reflect.KClass
 
 interface Workflow {
     var context: WorkflowTaskContext
@@ -35,11 +36,13 @@ interface Workflow {
  * Proxy a task
  */
 fun <T : Task> Workflow.proxy(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
+fun <T : Task> Workflow.proxy(klass: KClass<out T>) = TaskProxyHandler(klass.java) { context }.instance()
 
 /*
  * Proxy a child workflow
  */
 fun <T : Workflow> Workflow.proxy(klass: Class<out T>) = WorkflowProxyHandler(klass) { context }.instance()
+fun <T : Workflow> Workflow.proxy(klass: KClass<out T>) = WorkflowProxyHandler(klass.java) { context }.instance()
 
 /*
  * Dispatch a task

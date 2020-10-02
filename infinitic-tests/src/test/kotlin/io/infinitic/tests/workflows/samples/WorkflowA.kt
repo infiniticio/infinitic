@@ -55,8 +55,8 @@ interface WorkflowA : Workflow {
 class WorkflowAImpl() : WorkflowA {
     override lateinit var context: WorkflowTaskContext
 
-    private val taskA = proxy(TaskA::class.java)
-    private val workflowB = proxy(WorkflowB::class.java)
+    private val taskA = proxy(TaskA::class)
+    private val workflowB = proxy(WorkflowB::class)
 
     override fun empty() = "void"
 
