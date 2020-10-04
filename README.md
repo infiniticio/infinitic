@@ -4,7 +4,7 @@
 
 # Infinitic
 
-> Infinitic is still a work in progress, please contact us if you are interested
+> Infinitic's development is still in progress, please contact [us](maito://gilles@infinitic(dot)io) if you are interested
 
 ## What is it?
 
@@ -63,10 +63,10 @@ For example, let's consider a situation when  I need to create different version
 
 > Note: `async`, `Deferred`, `await` exists in kotlin with a different meaning. They have been used here as they represent similar concepts, but they are not the same functions. Actually, it's forbidden in workflow's definition to use any real asynchronous functions.
 
-Being able to define workflow as code provides you with a very flexible and powerful tool. For example, instead of the 3 sizes for your image cropping, you can decide to crop your image from 10 to 200 pixels just with a few lines changes:
+Being able to define workflows as code provides you with a very flexible and powerful tool. For example, instead of the 3 sizes for your image cropping, you can decide to crop your image from 10 to 200 pixels just with a few lines changes:
 
 ![ImageTask](.github/images/Readme/ImageTask-200.png)
 
 ## Getting Started
 
-Please subscribe here if interested
+Please subscribe [here](https://zenaton.com/v2) if interested
