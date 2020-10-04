@@ -4,7 +4,7 @@
 
 # Infinitic
 
-> Infinitic's development is still in progress, please contact [us](maito://gilles@infinitic(dot)io) if you are interested
+> Infinitic's development is still in progress, please contact [us](mailto://gilles(at)infinitic.io) if you are interested
 
 ## What is it?
 
