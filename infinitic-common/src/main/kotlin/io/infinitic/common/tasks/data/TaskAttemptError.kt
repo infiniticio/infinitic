@@ -29,13 +29,8 @@ import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
 
 data class TaskAttemptError(override val data: Any?) : Data(data) {
-    @get:JsonValue val json get() = getSerialized()
-
     companion object {
         @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serializedData: SerializedData) =
-            TaskAttemptError(serializedData.deserialize()).apply {
-                this.serializedData = serializedData
-            }
+        fun fromSerialized(serializedData: SerializedData) = fromSerialized<TaskAttemptError>(serializedData)
     }
 }

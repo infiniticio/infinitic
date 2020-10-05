@@ -23,13 +23,23 @@
 
 package io.infinitic.common.tasks.data.bases
 
+import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
+import kotlin.reflect.full.primaryConstructor
 
-abstract class Data(open val data: Any?) {
+open class Data(open val data: Any?) {
     lateinit var serializedData: SerializedData
 
-    fun getSerialized() = when {
+    @get:JsonValue
+    val json get() = when {
         this::serializedData.isInitialized -> serializedData
         else -> SerializedData.from(data)
+    }
+
+    companion object {
+        inline fun <reified T: Data> fromSerialized(serializedData: SerializedData) =
+            T::class.primaryConstructor!!.call(serializedData.deserialize()).apply {
+                this.serializedData = serializedData
+            }
     }
 }
