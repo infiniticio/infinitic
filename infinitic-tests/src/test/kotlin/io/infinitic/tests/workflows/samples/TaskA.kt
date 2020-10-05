@@ -23,9 +23,7 @@
 
 package io.infinitic.tests.workflows.samples
 
-import io.infinitic.common.tasks.Task
-
-interface TaskA : Task {
+interface TaskA {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
 }

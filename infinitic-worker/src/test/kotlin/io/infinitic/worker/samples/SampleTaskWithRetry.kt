@@ -23,10 +23,9 @@
 
 package io.infinitic.worker.samples
 
-import io.infinitic.common.tasks.Task
 import io.infinitic.worker.task.TaskAttemptContext
 
-internal class SampleTaskWithRetry() : Task {
+internal class SampleTaskWithRetry() {
     lateinit var context: TaskAttemptContext
 
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
@@ -34,7 +33,7 @@ internal class SampleTaskWithRetry() : Task {
     fun getRetryDelay(): Float? = if (context.exception is IllegalStateException) 3F else 0F
 }
 
-internal class SampleTaskWithBadTypeRetry() : Task {
+internal class SampleTaskWithBadTypeRetry() {
     lateinit var context: TaskAttemptContext
 
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
@@ -42,7 +41,7 @@ internal class SampleTaskWithBadTypeRetry() : Task {
     fun getRetryDelay(): Int? = 3
 }
 
-internal class SampleTaskWithBuggyRetry() : Task {
+internal class SampleTaskWithBuggyRetry() {
     lateinit var context: TaskAttemptContext
 
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()

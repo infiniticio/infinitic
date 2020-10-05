@@ -39,7 +39,6 @@ import io.infinitic.common.tasks.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import io.infinitic.common.tasks.Task
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.worker.task.RetryDelay
@@ -63,7 +62,7 @@ import kotlin.reflect.jvm.javaType
 open class Worker(val dispatcher: Dispatcher) {
 
     // map taskName <> taskInstance
-    private val registeredTasks = mutableMapOf<String, Task>()
+    private val registeredTasks = mutableMapOf<String, Any>()
 
     // map workflowName <> workflowImplementation
     private val registeredWorkflows = mutableMapOf<String, Workflow>()
@@ -76,7 +75,7 @@ open class Worker(val dispatcher: Dispatcher) {
     /**
      * Register a task instance to use for a given Task name
      */
-    fun register(taskName: String, taskInstance: Task) {
+    fun register(taskName: String, taskInstance: Any) {
         registeredTasks[taskName] = taskInstance
     }
 

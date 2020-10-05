@@ -23,7 +23,6 @@
 
 package io.infinitic.client
 
-import io.infinitic.common.tasks.Task
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.messaging.api.dispatcher.Dispatcher
@@ -86,7 +85,7 @@ class Client(val dispatcher: Dispatcher) {
     /*
      * Use this method to dispatch a task
      */
-    suspend fun <T : Task> dispatch(
+    suspend fun <T : Any> dispatch(
         taskInterface: Class<T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),

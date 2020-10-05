@@ -23,11 +23,10 @@
 
 package io.infinitic.common.workflows
 
-import io.infinitic.common.tasks.Task
 import java.lang.reflect.Method
 
 interface WorkflowTaskContext {
-    fun <T : Task, S> async(proxy: T, method: T.() -> S): Deferred<S>
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
 
     fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S>
 

@@ -23,7 +23,6 @@
 
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.tasks.Task
 import io.infinitic.common.tasks.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.Deferred
 import io.infinitic.common.workflows.DeferredStatus
@@ -73,7 +72,7 @@ class WorkflowTaskContextImpl(
     /*
      * Async Task dispatching:
      */
-    override fun <T : Task, S> async(
+    override fun <T : Any, S> async(
         proxy: T,
         method: T.() -> S
     ): Deferred<S> {

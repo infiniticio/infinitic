@@ -23,13 +23,12 @@
 
 package io.infinitic.common.workflows.proxies
 
-import io.infinitic.common.tasks.Task
 import io.infinitic.common.workflows.WorkflowTaskContext
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
-internal class TaskProxyHandler<T : Task>(
+internal class TaskProxyHandler<T : Any>(
     private val klass: Class<T>,
     private val workflowTaskContextFun: () -> WorkflowTaskContext
 ) : InvocationHandler {

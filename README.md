@@ -4,7 +4,7 @@
 
 # Infinitic
 
-> Infinitic is still a work in progress, please contact us if you are interested
+> Infinitic's development is still in progress, please contact us (gilles(at)infinitic.io) if you are interested
 
 ## What is it?
 
@@ -52,21 +52,21 @@ For example, let's consider a situation when  I need to create different version
 
 ![ImageTask](.github/images/Readme/ImageTask-3.png)
 
-- *line 4*: the interface defines how to use ImageTask. Here we have 4 methods (`download`, `crop`, `upload, ` `save`) defined with their ad hoc parameter types (a unique String for `download` for example).
-- *line 11*: our class extends interface `io.infinitic.common.workflows.Workflow`. This gives access to `proxy` and `async` functions used here.
-- *line 12*: `context` is injected during processing by a Worker. It contains the workflow history
-- *line 13*: `proxy` function provides a pseudo-instance of the provided `ImageTask`  interface. *Line 17*, a method is applied to this pseudo instance - instead of doing an actuel work, this pseudo-instance will record that we want to process the method `download` for the task `ImageTask` with data `imageUrl` . If this task is not completed in the history stored in `context` the execution will stop here and the result will be sent to the workflow engine  that will trigger the `ImageTask::download` task with `imageUrl` data. If this task is already completed, the pseudo-instance returns the result and the workflow continues its execution.
+- *line 4*: the interface defines how to use ImageUtil. Here we have 4 methods (`download`, `crop`, `upload, ` `save`) defined with their parameter types (a unique String for `download` for example).
+- *line 11*: our class extends interface `io.infinitic.common.workflows.Workflow`, giving access to `proxy` and `async` functions used below.
+- *line 12*: `context` is injected when processing by a Worker. It contains the workflow history.
+- *line 13*: `proxy` function provides a pseudo-instance of the provided `ImageTask`  interface. *Line 17*, a method is being applied to this pseudo instance - this pseudo-instance will see that we want to process the method `download` for the distributed task `ImageUtil` with data `imageUrl`: if the history stored in `context` does NOT show that this task is already completed then the execution stops here, and a command will be sent to the workflow engine to will trigger the `ImageUtil` task on `download` method with `imageUrl` data. If this task is already completed, the pseudo-instance returns the result, and the workflow continues its execution.
 - *lines 50, 23, 27*: `async` function can be used to tell the workflow engine that we start an asynchronous branch. Here 3 branches are open in parallel and tasks. The output of an `async` function is a `Deferred<T>` where T is the return type of the result when completed.
-- *line 32*: the `and` infix function creates a new `Deferred<List<String>>`. Here we apply a `result()` method that will tell the engine the wake up only all branches above are completed. Method `return()` then returns the result of the completed Deferred.
+- *line 32*: the `and` infix function creates a new `Deferred<List<String>>`. Using `context`, the `result()` method will check if all branches above are completed. If yes, then `result()` returns the result of the all completed Deferred. If not, a command will be sent to the workflow engine to tell it to wait for completion of all those `Deferred` before triggering a new `WorkflowTask`.
 - *line 34*: we reach this line only after completion of previous branch. We then trigger a new task `ImageTask::save` with data `email` and `list`.
-- *line 35*: once the end reached, the workflow is completed.
+- *line 35*: once the end reached, the workflow is now completed.
 
 > Note: `async`, `Deferred`, `await` exists in kotlin with a different meaning. They have been used here as they represent similar concepts, but they are not the same functions. Actually, it's forbidden in workflow's definition to use any real asynchronous functions.
 
-Being able to define workflow as code provides you with a very flexible and powerful tool. For example, instead of the 3 sizes for your image cropping, you can decide to crop your image from 10 to 200 pixels just with a few lines changes:
+Being able to define workflows as code provides you with a very flexible and powerful tool. For example, instead of the 3 sizes for your image cropping, you can decide to crop your image from 10 to 200 pixels just with a few lines changes:
 
 ![ImageTask](.github/images/Readme/ImageTask-200.png)
 
 ## Getting Started
 
-Please subscribe here if interested
+Please subscribe [here](https://zenaton.com/v2) if interested
