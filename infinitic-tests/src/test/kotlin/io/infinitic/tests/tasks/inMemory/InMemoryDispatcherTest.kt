@@ -23,7 +23,7 @@
 
 package io.infinitic.tests.tasks.inMemory
 
-import io.infinitic.messaging.api.dispatcher.InMemoryDispatcher
+import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
 import io.infinitic.client.Client
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.TaskStatusUpdated

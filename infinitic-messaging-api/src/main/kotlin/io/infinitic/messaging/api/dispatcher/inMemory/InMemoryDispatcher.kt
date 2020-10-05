@@ -21,45 +21,60 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.messaging.api.dispatcher
+package io.infinitic.messaging.api.dispatcher.inMemory
 
-import io.infinitic.messaging.api.dispatcher.transport.AvroTransport
-import io.infinitic.common.tasks.avro.AvroConverter as TaskAvroConverter
 import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
 import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.common.tasks.messages.ForWorkerMessage
-import io.infinitic.common.workflows.avro.AvroConverter as WorkflowAvroConverter
 import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.messaging.api.dispatcher.Dispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-class AvroDispatcher(private val transport: AvroTransport) : Dispatcher {
+open class InMemoryDispatcher() : Dispatcher {
+    // Here we favor lambda to avoid a direct dependency with engines instances
+    lateinit var workflowEngineHandle: suspend (msg: ForWorkflowEngineMessage) -> Unit
+    lateinit var taskEngineHandle: suspend (msg: ForTaskEngineMessage) -> Unit
+    lateinit var monitoringPerNameHandle: suspend (msg: ForMonitoringPerNameMessage) -> Unit
+    lateinit var monitoringGlobalHandle: suspend (msg: ForMonitoringGlobalMessage) -> Unit
+    lateinit var workerHandle: suspend (msg: ForWorkerMessage) -> Unit
+    lateinit var scope: CoroutineScope
+
     override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {
-        msg
-            .let { WorkflowAvroConverter.toWorkflowEngine(it) }
-            .let { transport.toWorkflowEngine(it, after) }
+        scope.launch {
+            if (after > 0F) {
+                delay((1000 * after).toLong())
+            }
+            workflowEngineHandle(msg)
+        }
     }
 
     override suspend fun toTaskEngine(msg: ForTaskEngineMessage, after: Float) {
-        msg
-            .let { TaskAvroConverter.toTaskEngine(it) }
-            .let { transport.toTaskEngine(it, after) }
+        scope.launch {
+            if (after > 0F) {
+                delay((1000 * after).toLong())
+            }
+            taskEngineHandle(msg)
+        }
     }
 
     override suspend fun toMonitoringPerName(msg: ForMonitoringPerNameMessage) {
-        msg
-            .let { TaskAvroConverter.toMonitoringPerName(it) }
-            .let { transport.toMonitoringPerName(it) }
+        scope.launch {
+            monitoringPerNameHandle(msg)
+        }
     }
 
     override suspend fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
-        msg
-            .let { TaskAvroConverter.toMonitoringGlobal(it) }
-            .let { transport.toMonitoringGlobal(it) }
+        scope.launch {
+            monitoringGlobalHandle(msg)
+        }
     }
 
     override suspend fun toWorkers(msg: ForWorkerMessage) {
-        msg
-            .let { TaskAvroConverter.toWorkers(it) }
-            .let { transport.toWorkers(it) }
+        scope.launch {
+            workerHandle(msg)
+        }
     }
 }

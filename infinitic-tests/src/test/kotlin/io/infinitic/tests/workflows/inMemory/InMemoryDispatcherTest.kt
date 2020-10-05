@@ -21,10 +21,9 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.taskManager.tests.inMemory
+package io.infinitic.tests.workflows.inMemory
 
 import io.infinitic.client.Client
-import io.infinitic.messaging.api.dispatcher.InMemoryDispatcher
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.TaskStatusUpdated
 import io.infinitic.engine.taskManager.engines.MonitoringGlobal
@@ -33,8 +32,9 @@ import io.infinitic.worker.Worker
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
+import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryAvroDispatcher
 
-class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher() {
+class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryAvroDispatcher() {
     val client = Client(this)
     val worker = Worker(this)
     val taskEngine = ForWorkflowTaskEngine(storage, this)

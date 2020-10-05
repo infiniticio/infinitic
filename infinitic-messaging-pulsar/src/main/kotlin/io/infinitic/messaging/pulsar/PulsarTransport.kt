@@ -23,7 +23,7 @@
 
 package io.infinitic.messaging.pulsar
 
-import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
+import io.infinitic.messaging.api.dispatcher.transport.AvroTransport
 import io.infinitic.messaging.pulsar.wrapper.PulsarClientWrapper
 import io.infinitic.messaging.pulsar.wrapper.PulsarFunctionContextWrapper
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
@@ -38,7 +38,7 @@ import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
 
-open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroCompatibleTransport {
+open class PulsarTransport constructor(protected val wrapper: Wrapper) : AvroTransport {
 
     override suspend fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine, after: Float) {
         withContext(Dispatchers.IO) {

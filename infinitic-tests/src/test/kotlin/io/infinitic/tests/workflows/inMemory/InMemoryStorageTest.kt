@@ -21,7 +21,7 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.taskManager.tests.inMemory
+package io.infinitic.tests.workflows.inMemory
 
 import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage

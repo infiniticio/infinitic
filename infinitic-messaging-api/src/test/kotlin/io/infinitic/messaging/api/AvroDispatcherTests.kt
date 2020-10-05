@@ -24,7 +24,7 @@
 package io.infinitic.messaging.api
 
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
-import io.infinitic.messaging.api.dispatcher.transport.AvroCompatibleTransport
+import io.infinitic.messaging.api.dispatcher.transport.AvroTransport
 import io.infinitic.messaging.api.utils.TestFactory
 import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.messages.ForTaskEngineMessage
@@ -37,7 +37,7 @@ import io.mockk.confirmVerified
 import io.mockk.mockk
 
 class AvroDispatcherTests : StringSpec({
-    val transport = mockk<AvroCompatibleTransport>(relaxed = true)
+    val transport = mockk<AvroTransport>(relaxed = true)
     val dispatcher = AvroDispatcher(transport)
 
     "AvroDispatcher.toTaskEngine should send correct parameter" {

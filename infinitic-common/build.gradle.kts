@@ -31,6 +31,7 @@ dependencies {
     implementation("org.apache.avro:avro:1.10.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.+")
 
     implementation(project(":infinitic-avro"))
 
