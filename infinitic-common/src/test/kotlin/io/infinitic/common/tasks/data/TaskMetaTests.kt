@@ -36,8 +36,6 @@ class TaskMetaTests : StringSpec({
         // restore from serialization
         val meta2 = AvroConverter.convertJson<TaskMeta>(meta)
 
-        println(meta2)
-        println(meta)
         meta2 shouldBe meta
     }
 })

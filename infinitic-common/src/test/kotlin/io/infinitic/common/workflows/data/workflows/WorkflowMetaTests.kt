@@ -21,10 +21,9 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data
+package io.infinitic.common.workflows.data.workflows
 
 import io.infinitic.common.workflows.avro.AvroConverter
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
