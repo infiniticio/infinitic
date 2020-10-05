@@ -345,5 +345,5 @@ object AvroConverter {
     /**
      *  Mapping function by Json serialization/deserialization
      */
-    private inline fun <reified T : Any> convertJson(from: Any): T = Json.parse(Json.stringify(from))
+    inline fun <reified T : Any> convertJson(from: Any): T = Json.parse(Json.stringify(from))
 }

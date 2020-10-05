@@ -25,7 +25,6 @@ package io.infinitic.engine.workflowManager.engines.handlers
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.tasks.messages.DispatchTask
 import io.infinitic.common.workflows.data.commands.CommandOutput
@@ -168,8 +167,8 @@ class WorkflowTaskCompletedHandler(
             methodParameterTypes = command.methodParameterTypes,
             methodInput = command.methodInput,
             taskMeta = command.taskMeta
-                .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, "$workflowId")
-                .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
+                .with(WorkflowEngine.META_WORKFLOW_ID, "$workflowId")
+                .with(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
         )
         dispatcher.toTaskEngine(msg)
 

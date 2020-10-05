@@ -24,16 +24,14 @@
 package io.infinitic.common.workflows.data.workflows
 
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Meta
 
-data class WorkflowMeta(override val data: MutableMap<String, Any?> = mutableMapOf()) : Meta(data), MutableMap<String, Any?> by data {
-    @get:JsonValue val json get() = getSerialized()
-
+data class WorkflowMeta(override val data: Map<String, Any?> = mapOf()) : Meta(data), Map<String, Any?> by data {
     companion object {
         @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serialized: Map<String, SerializedData>) =
-            WorkflowMeta(deserialize(serialized)).apply { serializedData = serialized }
+        fun fromSerialized(serialized: Map<String, SerializedData>) = fromSerialized<WorkflowMeta>(serialized)
     }
+
+    fun with(key: String, value: Any?) = withMeta<WorkflowMeta>(key, value)
 }

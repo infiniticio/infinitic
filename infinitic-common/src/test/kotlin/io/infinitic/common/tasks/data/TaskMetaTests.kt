@@ -23,15 +23,19 @@
 
 package io.infinitic.common.tasks.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import io.infinitic.common.data.SerializedData
-import io.infinitic.common.tasks.data.bases.Meta
+import io.infinitic.common.tasks.avro.AvroConverter
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-data class TaskMeta(override val data: Map<String, Any?> = mapOf()) : Meta(data), Map<String, Any?> by data {
-    companion object {
-        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serialized: Map<String, SerializedData>) = fromSerialized<TaskMeta>(serialized)
+class TaskMetaTests : StringSpec({
+    "Serialization should be updated if meta is updated" {
+        // get meta from serialisation
+        var meta = AvroConverter.convertJson<TaskMeta>(TaskMeta(mapOf("a" to "b")))
+        // update meta
+        meta = meta.with("a", "c")
+        // restore from serialization
+        val meta2 = AvroConverter.convertJson<TaskMeta>(meta)
+
+        meta2 shouldBe meta
     }
-
-    fun with(key: String, value: Any?) = withMeta<TaskMeta>(key, value)
-}
+})

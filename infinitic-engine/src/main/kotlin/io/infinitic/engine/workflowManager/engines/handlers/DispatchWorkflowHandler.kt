@@ -79,9 +79,12 @@ class DispatchWorkflowHandler(
             methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskInput::class.java.name)),
             methodInput = MethodInput(workflowTaskInput),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta()
-                .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, "${msg.workflowId}")
-                .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
+            taskMeta = TaskMeta(
+                mapOf(
+                    WorkflowEngine.META_WORKFLOW_ID to "${msg.workflowId}",
+                    WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}"
+                )
+            )
         )
 
         // dispatch workflow task
