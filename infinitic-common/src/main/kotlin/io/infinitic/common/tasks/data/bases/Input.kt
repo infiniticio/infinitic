@@ -23,34 +23,49 @@
 
 package io.infinitic.common.tasks.data.bases
 
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonValue
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.exceptions.ErrorDuringJsonDeserializationOfParameter
 import io.infinitic.common.tasks.exceptions.ErrorDuringJsonSerializationOfParameter
 import io.infinitic.common.tasks.exceptions.InconsistentJsonSerializationOfParameter
 import java.lang.reflect.Method
+import kotlin.reflect.full.primaryConstructor
 
 abstract class Input(open vararg val data: Any?) {
+    @get:JsonValue
+    val json get() = when {
+        this::serializedData.isInitialized -> serializedData
+        else -> data.map { SerializedData.from(it) }
+    }
+
     lateinit var serializedData: List<SerializedData>
 
     companion object {
+        inline fun <reified T: Input> fromSerialized(serialized: List<SerializedData>)=
+            T::class.primaryConstructor!!.call(deserialize(serialized)).apply {
+                this.serializedData = serialized
+            }
+
+        inline fun <reified T: Input> from(method: Method, data: Array<out Any>) =
+            T::class.primaryConstructor!!.call(data).apply {
+                serializedData = when {
+                    this::serializedData.isInitialized -> serializedData
+                    else -> data.mapIndexed { index, value ->
+                        `access$getSerializedData`(
+                            parameterName = method.parameters[index].name,
+                            parameterValue = value,
+                            parameterType = method.parameterTypes[index],
+                            methodName = method.name,
+                            className = method.declaringClass.name
+                        )
+                    }
+                }
+            }
+
         fun deserialize(serialized: List<SerializedData>) =
             serialized.map { it.deserialize() }.toTypedArray()
-    }
 
-    @JsonIgnore fun getSerialized(method: Method? = null) = when {
-        this::serializedData.isInitialized -> serializedData
-        method == null -> data.map { SerializedData.from(it) }
-        else -> data.mapIndexed { index, value ->
-            getSerializedData(
-                parameterName = method.parameters[index].name,
-                parameterValue = value,
-                parameterType = method.parameterTypes[index],
-                methodName = method.name,
-                className = method.declaringClass.name
-            )
-        }
     }
 
     private fun getSerializedData(
@@ -94,4 +109,7 @@ abstract class Input(open vararg val data: Any?) {
 
         return true
     }
+
+    @PublishedApi
+    internal fun `access$getSerializedData`(parameterName: String, parameterValue: Any?, parameterType: Class<*>, methodName: String, className: String) = getSerializedData(parameterName, parameterValue, parameterType, methodName, className)
 }

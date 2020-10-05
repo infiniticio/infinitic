@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
 import kotlin.reflect.full.primaryConstructor
 
-open class Data(open val data: Any?) {
+abstract class Data(open val data: Any?) {
     lateinit var serializedData: SerializedData
 
     @get:JsonValue
