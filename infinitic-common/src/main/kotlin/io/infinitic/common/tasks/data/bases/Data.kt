@@ -37,7 +37,7 @@ abstract class Data(open val data: Any?) {
     }
 
     companion object {
-        inline fun <reified T: Data> fromSerialized(serializedData: SerializedData) =
+        inline fun <reified T : Data> fromSerialized(serializedData: SerializedData) =
             T::class.primaryConstructor!!.call(serializedData.deserialize()).apply {
                 this.serializedData = serializedData
             }

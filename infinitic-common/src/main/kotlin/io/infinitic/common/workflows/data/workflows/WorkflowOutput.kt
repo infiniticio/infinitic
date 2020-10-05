@@ -24,10 +24,8 @@
 package io.infinitic.common.workflows.data.workflows
 
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
-import io.infinitic.common.workflows.data.steps.StepOutput
 
 data class WorkflowOutput(override val data: Any?) : Data(data) {
     companion object {

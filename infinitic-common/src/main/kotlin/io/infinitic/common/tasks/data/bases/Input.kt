@@ -42,12 +42,12 @@ abstract class Input(open vararg val data: Any?) {
     lateinit var serializedData: List<SerializedData>
 
     companion object {
-        inline fun <reified T: Input> fromSerialized(serialized: List<SerializedData>)=
+        inline fun <reified T : Input> fromSerialized(serialized: List<SerializedData>) =
             T::class.primaryConstructor!!.call(deserialize(serialized)).apply {
                 this.serializedData = serialized
             }
 
-        inline fun <reified T: Input> from(method: Method, data: Array<out Any>) =
+        inline fun <reified T : Input> from(method: Method, data: Array<out Any>) =
             T::class.primaryConstructor!!.call(data).apply {
                 serializedData = when {
                     this::serializedData.isInitialized -> serializedData
@@ -65,7 +65,6 @@ abstract class Input(open vararg val data: Any?) {
 
         fun deserialize(serialized: List<SerializedData>) =
             serialized.map { it.deserialize() }.toTypedArray()
-
     }
 
     private fun getSerializedData(

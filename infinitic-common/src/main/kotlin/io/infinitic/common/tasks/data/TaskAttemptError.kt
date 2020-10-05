@@ -24,7 +24,6 @@
 package io.infinitic.common.tasks.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
 

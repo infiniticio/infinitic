@@ -69,9 +69,12 @@ abstract class MsgHandler(
             methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskInput::class.java.name)),
             methodInput = MethodInput(workflowTaskInput),
             taskOptions = TaskOptions(),
-            taskMeta = TaskMeta()
-                .with<TaskMeta>(WorkflowEngine.META_WORKFLOW_ID, "${state.workflowId}")
-                .with<TaskMeta>(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
+            taskMeta = TaskMeta(
+                mapOf(
+                    WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}",
+                    WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}"
+                )
+            )
         )
 
         // dispatch workflow task
