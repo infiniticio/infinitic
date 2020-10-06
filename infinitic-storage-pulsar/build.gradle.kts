@@ -31,7 +31,7 @@ plugins {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.apache.pulsar:pulsar-functions-api:2.5.+")
+    implementation("org.apache.pulsar:pulsar-functions-api:2.6.+")
 
     api(project(":infinitic-storage-api"))
 }
