@@ -39,7 +39,6 @@ import io.infinitic.common.tasks.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.worker.task.RetryDelay
@@ -61,31 +60,32 @@ import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
 typealias WorkflowFactory = () -> Workflow
+typealias TaskFactory = () -> Any
 
 open class Worker(val dispatcher: Dispatcher) {
 
     // map taskName <> taskInstance
-    private val registeredTasks = mutableMapOf<String, Any>()
+    private val registeredTasks = mutableMapOf<String, TaskFactory>()
 
     // map workflowName <> workflowImplementation
     private val registeredWorkflows = mutableMapOf<String, WorkflowFactory>()
 
     // per default, WorkflowTask is registered
     init {
-        register(WorkflowTask::class.java.name, WorkflowTaskImpl())
+        registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
     }
 
     /**
      * Register a task instance to use for a given Task name
      */
-    fun register(taskName: String, taskInstance: Any) {
+    fun registerTask(taskName: String, taskInstance: TaskFactory) {
         registeredTasks[taskName] = taskInstance
     }
 
     /**
      * Register a workflow instance to use for a given Workflow name
      */
-    fun register(workflowName: String, workflowFactory: WorkflowFactory) {
+    fun registerWorkflow(workflowName: String, workflowFactory: WorkflowFactory) {
         registeredWorkflows[workflowName] = workflowFactory
     }
 
@@ -97,7 +97,7 @@ open class Worker(val dispatcher: Dispatcher) {
         registeredWorkflows.remove(name)
     }
 
-    fun getTaskInstance(name: String) = registeredTasks[name] ?: throw ClassNotFoundDuringInstantiation(name)
+    fun getTaskInstance(name: String) = registeredTasks[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 
     fun getWorkflowInstance(name: String) = registeredWorkflows[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 

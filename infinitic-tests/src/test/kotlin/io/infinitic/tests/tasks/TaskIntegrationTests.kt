@@ -42,7 +42,7 @@ private val worker = dispatcher.worker
 
 class TaskIntegrationTests : StringSpec({
     val taskTest = TaskTestImpl()
-    worker.register(TaskTest::class.java.name, taskTest)
+    worker.registerTask(TaskTest::class.java.name) { taskTest }
     var task: TaskInstance
 
     beforeTest {
