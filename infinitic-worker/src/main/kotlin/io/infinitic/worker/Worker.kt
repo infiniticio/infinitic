@@ -66,7 +66,7 @@ typealias InstanceFactory = () -> Any
 open class Worker(val dispatcher: Dispatcher) {
 
     // map taskName <> taskInstance
-    private val registeredFactory = mutableMapOf<String, InstanceFactory>()
+    private val registeredFactories = mutableMapOf<String, InstanceFactory>()
 
     // per default, WorkflowTask is registered
     init {
@@ -77,28 +77,28 @@ open class Worker(val dispatcher: Dispatcher) {
      * Register a factory to use for a given name
      */
     inline fun <reified T> register(noinline factory: InstanceFactory) {
-        `access$registeredFactory`[T::class.java.name] = factory
+        `access$registeredFactories`[T::class.java.name] = factory
     }
 
     /**
      * Register a factory to use for a given name
      */
     fun register(name: String, instance: () -> Any) {
-        registeredFactory[name] = instance
+        registeredFactories[name] = instance
     }
 
     /**
      * Unregister a given name (mostly used in tests)
      */
     inline fun <reified T> unregister() {
-        `access$registeredFactory`.remove(T::class.java.name)
+        `access$registeredFactories`.remove(T::class.java.name)
     }
 
     /**
      * Unregister a given name (mostly used in tests)
      */
     fun unregister(name: String) {
-        registeredFactory.remove(name)
+        registeredFactories.remove(name)
     }
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
@@ -186,7 +186,7 @@ open class Worker(val dispatcher: Dispatcher) {
     }
 
     private fun getInstance(name: String) =
-        registeredFactory[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
+        registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 
     private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
         val output = method.invoke(task, *parameters)
@@ -288,6 +288,6 @@ open class Worker(val dispatcher: Dispatcher) {
     }
 
     @PublishedApi
-    internal val `access$registeredFactory`: MutableMap<String, InstanceFactory>
-        get() = registeredFactory
+    internal val `access$registeredFactories`: MutableMap<String, InstanceFactory>
+        get() = registeredFactories
 }
