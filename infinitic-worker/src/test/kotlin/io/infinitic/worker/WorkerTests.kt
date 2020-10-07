@@ -79,7 +79,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "other", input, types)
         // when
-        worker.registerTask("foo") { TestingSampleTask() }
+        worker.register("foo") { TestingSampleTask() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -100,7 +100,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "other", input, null)
         // when
-        worker.registerTask("foo") { TestingSampleTask() }
+        worker.register("foo") { TestingSampleTask() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -145,7 +145,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "unknown", input, types)
         // when
-        worker.registerTask("foo") { TestingSampleTask() }
+        worker.register("foo") { TestingSampleTask() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -165,7 +165,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "unknown", input, null)
         // when
-        worker.registerTask("foo") { TestingSampleTask() }
+        worker.register("foo") { TestingSampleTask() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -185,7 +185,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "handle", input, null)
         // when
-        worker.registerTask("foo") { TestingSampleTask() }
+        worker.register("foo") { TestingSampleTask() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -205,7 +205,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "handle", input, null)
         // when
-        worker.registerTask("foo") { SampleTaskWithRetry() }
+        worker.register("foo") { SampleTaskWithRetry() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -225,7 +225,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "handle", input, null)
         // when
-        worker.registerTask("foo") { SampleTaskWithBadTypeRetry() }
+        worker.register("foo") { SampleTaskWithBadTypeRetry() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -245,7 +245,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "handle", input, null)
         // when
-        worker.registerTask("foo") { SampleTaskWithBuggyRetry() }
+        worker.register("foo") { SampleTaskWithBuggyRetry() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -265,7 +265,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "handle", input, null)
         // when
-        worker.registerTask("foo") { SampleTaskWithContext() }
+        worker.register("foo") { SampleTaskWithContext() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2
@@ -285,7 +285,7 @@ class WorkerTests : StringSpec({
         // with
         val msg = getRunTask("foo", "handle", input, types)
         // when
-        worker.registerTask("foo") { SampleTaskWithTimeout() }
+        worker.register("foo") { SampleTaskWithTimeout() }
         coroutineScope { worker.runTask(msg) }
         // then
         slots.size shouldBe 2

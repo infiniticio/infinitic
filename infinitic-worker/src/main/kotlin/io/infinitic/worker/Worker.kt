@@ -41,6 +41,8 @@ import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
+import io.infinitic.common.workflows.exceptions.WorkflowUsedAsTask
 import io.infinitic.worker.task.RetryDelay
 import io.infinitic.worker.task.RetryDelayFailed
 import io.infinitic.worker.task.RetryDelayRetrieved
@@ -59,47 +61,45 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-typealias WorkflowFactory = () -> Workflow
-typealias TaskFactory = () -> Any
+typealias InstanceFactory = () -> Any
 
 open class Worker(val dispatcher: Dispatcher) {
 
     // map taskName <> taskInstance
-    private val registeredTasks = mutableMapOf<String, TaskFactory>()
-
-    // map workflowName <> workflowImplementation
-    private val registeredWorkflows = mutableMapOf<String, WorkflowFactory>()
+    private val registeredFactories = mutableMapOf<String, InstanceFactory>()
 
     // per default, WorkflowTask is registered
     init {
-        registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
+        register<WorkflowTask> { WorkflowTaskImpl() }
     }
 
     /**
-     * Register a task instance to use for a given Task name
+     * Register a factory to use for a given name
      */
-    fun registerTask(taskName: String, taskInstance: TaskFactory) {
-        registeredTasks[taskName] = taskInstance
+    inline fun <reified T> register(noinline factory: InstanceFactory) {
+        `access$registeredFactories`[T::class.java.name] = factory
     }
 
     /**
-     * Register a workflow instance to use for a given Workflow name
+     * Register a factory to use for a given name
      */
-    fun registerWorkflow(workflowName: String, workflowFactory: WorkflowFactory) {
-        registeredWorkflows[workflowName] = workflowFactory
+    fun register(name: String, instance: () -> Any) {
+        registeredFactories[name] = instance
+    }
+
+    /**
+     * Unregister a given name (mostly used in tests)
+     */
+    inline fun <reified T> unregister() {
+        `access$registeredFactories`.remove(T::class.java.name)
     }
 
     /**
      * Unregister a given name (mostly used in tests)
      */
     fun unregister(name: String) {
-        registeredTasks.remove(name)
-        registeredWorkflows.remove(name)
+        registeredFactories.remove(name)
     }
-
-    fun getTaskInstance(name: String) = registeredTasks[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
-
-    fun getWorkflowInstance(name: String) = registeredWorkflows[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
         is RunTask -> runTask(msg)
@@ -173,6 +173,21 @@ open class Worker(val dispatcher: Dispatcher) {
         }
     }
 
+    fun getWorkflow(name: String): Workflow {
+        val instance = getInstance(name)
+        if (instance is Workflow) return instance
+        else throw TaskUsedAsWorkflow(name, instance::class.qualifiedName!!)
+    }
+
+    private fun getTask(name: String): Any {
+        val instance = getInstance(name)
+        if (instance is Workflow) throw WorkflowUsedAsTask(name, instance::class.qualifiedName!!)
+        else return instance
+    }
+
+    private fun getInstance(name: String) =
+        registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
+
     private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
         val output = method.invoke(task, *parameters)
         ensureActive()
@@ -204,7 +219,7 @@ open class Worker(val dispatcher: Dispatcher) {
     }
 
     private fun parse(msg: RunTask): TaskCommand {
-        val task = getTaskInstance("${msg.taskName}")
+        val task = getTask("${msg.taskName}")
         val parameterTypes = msg.methodParameterTypes
         val method = if (parameterTypes.types == null) {
             getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodInput.size)
@@ -271,4 +286,8 @@ open class Worker(val dispatcher: Dispatcher) {
 
         dispatcher.toTaskEngine(taskAttemptCompleted)
     }
+
+    @PublishedApi
+    internal val `access$registeredFactories`: MutableMap<String, InstanceFactory>
+        get() = registeredFactories
 }
