@@ -94,3 +94,19 @@ data class ShouldNotWaitInInlineTask(
     msg = "You can not suspend computations inside an inline task",
     help = "Make sure you do not wait in your inline task"
 )
+
+data class WorkflowUsedAsTask(
+    @JsonProperty("name") val name: String,
+    @JsonProperty("workflow") val workflow: String
+) : UserExceptionInWorker(
+    msg = "$name is used as a task, but registered implementation $workflow is a workflow ",
+    help = "Check that you are using $name consistently between client and workers"
+)
+
+data class TaskUsedAsWorkflow(
+    @JsonProperty("name") val name: String,
+    @JsonProperty("task") val task: String
+) : UserExceptionInWorker(
+    msg = "$name is used as a workflow, but registered implementation $task is a task ",
+    help = "Check that you are using $name consistently between client and workers"
+)
