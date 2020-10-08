@@ -24,7 +24,6 @@
 package io.infinitic.messaging.pulsar.utils
 
 import io.infinitic.common.tasks.data.MethodInput
-import io.kotest.property.azstring
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
@@ -46,6 +45,8 @@ object TestFactory {
         return this
     }
 
+    inline fun <reified T : Any> random(values: Map<String, Any?>? = null): T = random(T::class, values)
+
     fun <T : Any> random(klass: KClass<T>, values: Map<String, Any?>? = null): T {
         // if not updated, 2 subsequents calls to this method would provide the same values
         seed++
@@ -53,10 +54,11 @@ object TestFactory {
         val parameters = EasyRandomParameters()
             .seed(seed)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
+            .randomize(String::class.java) { String(Random(seed).nextBytes(50)) }
             .randomize(MethodInput::class.java) {
                 MethodInput(
                     Random(seed).nextBytes(10),
-                    Random(seed).azstring(10)
+                    random<String>()
                 )
             }
 

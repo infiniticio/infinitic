@@ -32,7 +32,6 @@ import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.avro.workflowManager.data.steps.AvroStep
 import io.infinitic.common.tasks.data.MethodInput
-import io.kotest.property.azstring
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -40,6 +39,7 @@ import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
 import org.jeasy.random.api.Randomizer
+import java.nio.charset.StandardCharsets
 
 object TestFactory {
     private var seed = 0L
@@ -57,24 +57,25 @@ object TestFactory {
         seed++
 
         val parameters = EasyRandomParameters()
+            .excludeField(FieldPredicates.named("serializedData"))
             .seed(seed)
             .scanClasspathForConcreteTypes(true)
             .overrideDefaultInitialization(true)
             // for "Any" parameter, provides a String
-            .randomize(Any::class.java) { Random(seed).azstring(10) }
-            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
+            .randomize(Any::class.java) { random<String>() }
+            .randomize(String::class.java) { String(random<ByteArray>(), Charsets.UTF_8) }
+            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).azstring(10)) }
+            .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(AvroSerializedData::class.java) {
-                val data = random(SerializedData::class)
+                val data = random<SerializedData>()
                 AvroSerializedData.newBuilder()
                     .setBytes(ByteBuffer.wrap(data.bytes))
                     .setType(AvroSerializedDataType.JSON)
                     .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
                     .build()
             }
-            .randomize(MethodInput::class.java) { MethodInput(Random(seed).azstring(10)) }
-            .randomize(MethodInput::class.java) { io.infinitic.common.tasks.data.MethodInput(Random(seed).nextBytes(10)) }
+            .randomize(MethodInput::class.java) { MethodInput(random<String>()) }
             .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
 
         values?.forEach {

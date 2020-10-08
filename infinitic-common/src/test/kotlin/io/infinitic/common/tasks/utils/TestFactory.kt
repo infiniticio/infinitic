@@ -33,14 +33,13 @@ import io.infinitic.common.tasks.exceptions.CanNotUseJavaReservedKeywordInMeta
 import io.infinitic.common.tasks.exceptions.MultipleMethodCallsAtDispatch
 import io.infinitic.avro.taskManager.data.AvroSerializedData
 import io.infinitic.avro.taskManager.data.AvroSerializedDataType
-import io.kotest.property.azstring
 import java.nio.ByteBuffer
 import kotlin.random.Random
-import kotlin.reflect.KClass
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
 import org.jeasy.random.api.Randomizer
+import kotlin.reflect.KClass
 
 fun main() {
     val e = TestFactory.random(MultipleMethodCallsAtDispatch::class)
@@ -56,6 +55,7 @@ object TestFactory {
 
         return this
     }
+    inline fun <reified T : Any> random(values: Map<String, Any?>? = null): T = random(T::class, values)
 
     fun <T : Any> random(klass: KClass<T>, values: Map<String, Any?>? = null): T {
         // if not updated, 2 subsequents calls to this method would provide the same values
@@ -68,9 +68,10 @@ object TestFactory {
             .overrideDefaultInitialization(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).azstring(10)) }
+            .randomize(String::class.java) { String(Random(seed).nextBytes(50)) }
+            .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(AvroSerializedData::class.java) {
-                val data = random(SerializedData::class)
+                val data = random<SerializedData>()
                 AvroSerializedData.newBuilder()
                     .setBytes(ByteBuffer.wrap(data.bytes))
                     .setType(AvroSerializedDataType.JSON)
@@ -80,12 +81,12 @@ object TestFactory {
             .randomize(MethodInput::class.java) {
                 MethodInput(
                     Random(seed).nextBytes(10),
-                    Random(seed).azstring(10)
+                    random<String>()
                 )
             }
             .randomize(MethodOutput::class.java) {
                 MethodOutput(
-                    Random(seed).azstring(10)
+                    random<String>()
                 )
             }
             .randomize(TaskAttemptError::class.java) {
