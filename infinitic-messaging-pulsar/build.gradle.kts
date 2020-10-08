@@ -35,7 +35,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("org.apache.avro:avro:1.10.+")
 
     implementation(project(":infinitic-avro"))
     api(project(":infinitic-messaging-api"))

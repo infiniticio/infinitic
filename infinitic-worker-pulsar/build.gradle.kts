@@ -34,9 +34,6 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("org.apache.avro:avro:1.10.+")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
 
