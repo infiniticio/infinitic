@@ -27,10 +27,8 @@ plugins {
 }
 
 dependencies {
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.apache.avro:avro:1.10.+")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     testImplementation(project(":infinitic-avro"))
@@ -41,11 +39,11 @@ dependencies {
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-worker"))
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
-    testImplementation("org.jeasy:easy-random-core:4.2.+")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
-    testImplementation("io.kotest:kotest-property-jvm:4.2.+")
-    testImplementation("io.mockk:mockk:1.10.+")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+    testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
+    testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
+    testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
 }
 
 java {
