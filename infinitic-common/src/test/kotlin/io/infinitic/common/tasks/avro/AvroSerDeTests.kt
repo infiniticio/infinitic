@@ -24,8 +24,8 @@
 package io.infinitic.common.tasks.avro
 
 import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.common.tasks.utils.TestFactory
 import io.infinitic.avro.taskManager.data.states.AvroTaskEngineState
+import io.infinitic.common.fixtures.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

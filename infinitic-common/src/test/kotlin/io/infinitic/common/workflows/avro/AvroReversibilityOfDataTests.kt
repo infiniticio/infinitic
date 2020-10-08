@@ -33,7 +33,6 @@ import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflows.utils.TestFactory
 import io.infinitic.avro.workflowManager.data.commands.AvroCommand
 import io.infinitic.avro.workflowManager.data.commands.AvroCommandStatus
 import io.infinitic.avro.workflowManager.data.commands.AvroPastCommand
@@ -43,6 +42,7 @@ import io.infinitic.avro.workflowManager.data.steps.AvroStep
 import io.infinitic.avro.workflowManager.data.steps.AvroStepStatus
 import io.infinitic.avro.workflowManager.data.workflowTasks.AvroWorkflowTaskInput
 import io.infinitic.avro.workflowManager.data.workflowTasks.AvroWorkflowTaskOutput
+import io.infinitic.common.fixtures.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 

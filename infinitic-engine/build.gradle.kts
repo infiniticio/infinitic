@@ -24,6 +24,7 @@
 plugins {
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    id("java-test-fixtures")
 }
 
 dependencies {
@@ -41,6 +42,7 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
+    testImplementation(testFixtures(project(":infinitic-common")))
 }
 
 java {

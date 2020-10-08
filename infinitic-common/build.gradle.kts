@@ -24,6 +24,7 @@
 plugins {
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    id("java-test-fixtures")
 }
 
 dependencies {
@@ -39,6 +40,12 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
+
+    testFixturesImplementation(project(":infinitic-avro"))
+    testFixturesImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
+    testFixturesImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
+    testFixturesImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
+    testFixturesImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
 }
 
 java {
@@ -51,6 +58,9 @@ tasks {
         kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
     compileTestKotlin {
+        kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+    compileTestFixturesKotlin {
         kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 }

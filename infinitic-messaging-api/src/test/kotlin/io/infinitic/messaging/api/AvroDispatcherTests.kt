@@ -23,9 +23,9 @@
 
 package io.infinitic.messaging.api
 
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.api.dispatcher.transport.AvroTransport
-import io.infinitic.messaging.api.utils.TestFactory
 import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage

@@ -21,7 +21,7 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.utils
+package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.SerializedData
 import io.infinitic.avro.taskManager.data.AvroSerializedData
@@ -56,15 +56,19 @@ object TestFactory {
         seed++
 
         val parameters = EasyRandomParameters()
-            .excludeField(FieldPredicates.named("serializedData"))
             .seed(seed)
             .scanClasspathForConcreteTypes(true)
             .overrideDefaultInitialization(true)
-            // for "Any" parameter, provides a String
+            .collectionSizeRange(1, 5)
+            // avoid providing a value for lateinit serializedData
+            .excludeField(FieldPredicates.named("serializedData"))
+            // provides a String for "Any" parameter
             .randomize(Any::class.java) { random<String>() }
             .randomize(String::class.java) { String(random<ByteArray>(), Charsets.UTF_8) }
-            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
+            .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
+            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
+            .randomize(MethodInput::class.java) { MethodInput(random<ByteArray>(), random<String>()) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(AvroSerializedData::class.java) {
                 val data = random<SerializedData>()
@@ -74,8 +78,6 @@ object TestFactory {
                     .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
                     .build()
             }
-            .randomize(MethodInput::class.java) { MethodInput(random<String>()) }
-            .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
 
         values?.forEach {
             parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value })
@@ -89,7 +91,7 @@ object TestFactory {
         return steps[Random.nextInt(until = steps.size - 1)]
     }
 
-    internal fun steps(): Map<String, Step> {
+    fun steps(): Map<String, Step> {
         fun getStepId() = Step.Id(CommandId(), CommandStatusOngoing)
         val stepA = getStepId()
         val stepB = getStepId()

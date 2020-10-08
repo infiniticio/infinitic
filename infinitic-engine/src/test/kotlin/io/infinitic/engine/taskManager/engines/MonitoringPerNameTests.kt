@@ -23,13 +23,13 @@
 
 package io.infinitic.engine.taskManager.engines
 
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.TaskCreated
 import io.infinitic.common.tasks.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.states.MonitoringPerNameState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
-import io.infinitic.engine.taskManager.utils.TestFactory
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
