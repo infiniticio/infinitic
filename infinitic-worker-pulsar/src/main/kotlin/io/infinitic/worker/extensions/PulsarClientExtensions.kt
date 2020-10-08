@@ -21,27 +21,18 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.messaging.pulsar.wrapper
+package io.infinitic.worker.extensions
 
-import io.infinitic.messaging.pulsar.Wrapper
-import org.apache.pulsar.client.api.Producer
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.messaging.pulsar.Topic
+import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.TypedMessageBuilder
-import java.util.concurrent.ConcurrentHashMap
+import org.apache.pulsar.client.api.SubscriptionType
 
-class PulsarClientWrapper(private val client: PulsarClient) : Wrapper {
-    private val producers = ConcurrentHashMap<String, Producer<*>>()
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> {
-        val producer = producers.computeIfAbsent(topicName) {
-            client
-                .newProducer(schema)
-                .topic(topicName)
-                .create()
-        } as Producer<O>
-
-        return producer.newMessage()
-    }
-}
+fun PulsarClient.newTaskConsumer(name: String): Consumer<AvroEnvelopeForWorker> =
+    newConsumer(Schema.AVRO(AvroEnvelopeForWorker::class.java))
+        .topic(Topic.WORKERS.get(name)) // FIXME: Should probably not be access an internal detail of the pulsar messaging
+        .subscriptionName("infinitic-worker") // FIXME: Should be in a constant somewhere
+        .subscriptionType(SubscriptionType.Shared)
+        .subscribe()

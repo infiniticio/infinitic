@@ -27,6 +27,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 plugins {
+    application
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
@@ -41,6 +42,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
+    implementation("com.xenomachina:kotlin-argparser:2.0.+")
 
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-common"))
@@ -52,6 +54,10 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
     testImplementation("io.kotest:kotest-property-jvm:4.2.+")
     testImplementation("io.mockk:mockk:1.10.+")
+}
+
+application {
+    mainClassName = "io.infinitic.engine.pulsar.main.MainKt"
 }
 
 java {

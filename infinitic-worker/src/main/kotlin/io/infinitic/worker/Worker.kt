@@ -83,8 +83,8 @@ open class Worker(val dispatcher: Dispatcher) {
     /**
      * Register a factory to use for a given name
      */
-    fun register(name: String, instance: () -> Any) {
-        registeredFactories[name] = instance
+    fun register(name: String, factory: () -> Any) {
+        registeredFactories[name] = factory
     }
 
     /**
@@ -184,6 +184,12 @@ open class Worker(val dispatcher: Dispatcher) {
         if (instance is Workflow) throw WorkflowUsedAsTask(name, instance::class.qualifiedName!!)
         else return instance
     }
+
+    fun getRegisteredTasks() =
+        registeredFactories
+            .map { (name, factory) -> name to factory() }
+            .filterNot { (_, instance) -> instance is Workflow }
+            .map { (name, _) -> name }
 
     private fun getInstance(name: String) =
         registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)

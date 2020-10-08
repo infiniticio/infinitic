@@ -21,27 +21,11 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.messaging.pulsar.wrapper
+package io.infinitic.worker.main
 
-import io.infinitic.messaging.pulsar.Wrapper
-import org.apache.pulsar.client.api.Producer
-import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.TypedMessageBuilder
-import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.channels.SendChannel
+import org.apache.pulsar.client.api.MessageId
 
-class PulsarClientWrapper(private val client: PulsarClient) : Wrapper {
-    private val producers = ConcurrentHashMap<String, Producer<*>>()
+data class MessageToProcess<T>(val messageId: MessageId, val message: T, val replyTo: SendChannel<MessageProcessed>)
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> {
-        val producer = producers.computeIfAbsent(topicName) {
-            client
-                .newProducer(schema)
-                .topic(topicName)
-                .create()
-        } as Producer<O>
-
-        return producer.newMessage()
-    }
-}
+data class MessageProcessed(val messageId: MessageId)
