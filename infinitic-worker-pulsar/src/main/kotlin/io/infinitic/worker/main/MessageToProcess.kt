@@ -21,33 +21,11 @@
 //
 // Licensor: infinitic.io
 
-plugins {
-    kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+package io.infinitic.worker.main
 
-    // Apply the java-library plugin for API and implementation separation.
-    `java-library`
-}
+import kotlinx.coroutines.channels.SendChannel
+import org.apache.pulsar.client.api.MessageId
 
-dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(kotlin("stdlib-jdk8"))
-}
+data class MessageToProcess<T>(val messageId: MessageId, val message: T, val replyTo: SendChannel<MessageProcessed>)
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks {
-    compileKotlin {
-        kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
-    compileTestKotlin {
-        kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
+data class MessageProcessed(val messageId: MessageId)

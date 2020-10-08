@@ -27,20 +27,21 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 plugins {
+    application
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
 }
 
 dependencies {
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
-    implementation("org.apache.pulsar:pulsar-client:2.6.+")
-    implementation("org.apache.pulsar:pulsar-functions-api:2.6.+")
-    implementation("org.apache.avro:avro:1.10.+")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("org.slf4j:slf4j-api:1.7.+")
+    implementation("com.xenomachina:kotlin-argparser:2.0.+")
 
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-common"))
@@ -48,10 +49,14 @@ dependencies {
     implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage-pulsar"))
 
-    testImplementation("org.jeasy:easy-random-core:4.2.+")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
-    testImplementation("io.kotest:kotest-property-jvm:4.2.+")
-    testImplementation("io.mockk:mockk:1.10.+")
+    testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
+    testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
+    testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
+}
+
+application {
+    mainClassName = "io.infinitic.engine.pulsar.main.MainKt"
 }
 
 java {

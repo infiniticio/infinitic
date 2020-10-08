@@ -21,33 +21,18 @@
 //
 // Licensor: infinitic.io
 
-plugins {
-    kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+package io.infinitic.worker.extensions
 
-    // Apply the java-library plugin for API and implementation separation.
-    `java-library`
-}
+import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.messaging.pulsar.Topic
+import org.apache.pulsar.client.api.Consumer
+import org.apache.pulsar.client.api.PulsarClient
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.SubscriptionType
 
-dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(kotlin("stdlib-jdk8"))
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks {
-    compileKotlin {
-        kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
-    compileTestKotlin {
-        kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
+fun PulsarClient.newTaskConsumer(name: String): Consumer<AvroEnvelopeForWorker> =
+    newConsumer(Schema.AVRO(AvroEnvelopeForWorker::class.java))
+        .topic(Topic.WORKERS.get(name)) // FIXME: Should probably not be access an internal detail of the pulsar messaging
+        .subscriptionName("infinitic-worker") // FIXME: Should be in a constant somewhere
+        .subscriptionType(SubscriptionType.Shared)
+        .subscribe()

@@ -79,15 +79,10 @@ object TestFactory {
                     .build()
             }
             .randomize(MethodInput::class.java) {
-                MethodInput(
-                    Random(seed).nextBytes(10),
-                    random<String>()
-                )
+                MethodInput(Random(seed).nextBytes(10), random<String>())
             }
             .randomize(MethodOutput::class.java) {
-                MethodOutput(
-                    random<String>()
-                )
+                MethodOutput(random<String>())
             }
             .randomize(TaskAttemptError::class.java) {
                 TaskAttemptError(CanNotUseJavaReservedKeywordInMeta("foo"))

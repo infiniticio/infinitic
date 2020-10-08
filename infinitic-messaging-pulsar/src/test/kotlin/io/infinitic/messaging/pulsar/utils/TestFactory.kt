@@ -56,10 +56,7 @@ object TestFactory {
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(String::class.java) { String(Random(seed).nextBytes(50)) }
             .randomize(MethodInput::class.java) {
-                MethodInput(
-                    Random(seed).nextBytes(10),
-                    random<String>()
-                )
+                MethodInput(Random(seed).nextBytes(10), random<String>())
             }
 
         values?.forEach {

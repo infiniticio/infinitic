@@ -21,33 +21,11 @@
 //
 // Licensor: infinitic.io
 
-plugins {
-    kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+package io.infinitic.engine.pulsar.main
 
-    // Apply the java-library plugin for API and implementation separation.
-    `java-library`
-}
+import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.default
 
-dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(kotlin("stdlib-jdk8"))
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks {
-    compileKotlin {
-        kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
-    compileTestKotlin {
-        kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
+class ApplicationArgs(parser: ArgParser) {
+    val pulsarUrl by parser.storing("The Pulsar cluster URL").default("pulsar://localhost:6650/")
 }

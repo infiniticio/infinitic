@@ -39,7 +39,6 @@ import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
 import org.jeasy.random.api.Randomizer
-import java.nio.charset.StandardCharsets
 
 object TestFactory {
     private var seed = 0L

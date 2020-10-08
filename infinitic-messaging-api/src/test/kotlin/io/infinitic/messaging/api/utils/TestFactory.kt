@@ -67,10 +67,7 @@ object TestFactory {
                     .build()
             }
             .randomize(MethodInput::class.java) {
-                MethodInput(
-                    Random(seed).nextBytes(10),
-                    random<String>()
-                )
+                MethodInput(Random(seed).nextBytes(10), random<String>())
             }
 
         values?.forEach {
