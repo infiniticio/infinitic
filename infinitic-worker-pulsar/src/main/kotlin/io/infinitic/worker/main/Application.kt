@@ -49,12 +49,10 @@ class Application internal constructor(private val pulsarClient: PulsarClient, p
         get() = Dispatchers.IO + Job()
 
     init {
-        Runtime.getRuntime().addShutdownHook(
-            thread(start = false) {
-                println("Stopping because of the shutdown hook.")
-                stop()
-            }
-        )
+        Runtime.getRuntime().addShutdownHook(thread(start = false) {
+            println("Stopping because of the shutdown hook.")
+            stop()
+        })
     }
 
     fun run() {
