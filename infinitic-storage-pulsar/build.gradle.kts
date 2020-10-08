@@ -32,7 +32,7 @@ plugins {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.apache.pulsar:pulsar-functions-api:2.6.+")
+    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
 
     api(project(":infinitic-storage-api"))
 }

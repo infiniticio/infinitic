@@ -32,9 +32,9 @@ plugins {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
-    implementation("org.apache.pulsar:pulsar-client:2.6.+")
-    implementation("org.apache.pulsar:pulsar-functions-api:2.6.+")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("org.apache.avro:avro:1.10.+")
 
     implementation(project(":infinitic-avro"))
@@ -44,10 +44,10 @@ dependencies {
     api(project(":infinitic-worker"))
 
     testImplementation(kotlin("reflect"))
-    testImplementation("org.jeasy:easy-random-core:4.2.+")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
-    testImplementation("io.kotest:kotest-property-jvm:4.2.+")
-    testImplementation("io.mockk:mockk:1.10.+")
+    testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
+    testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
+    testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
 }
 
 java {
