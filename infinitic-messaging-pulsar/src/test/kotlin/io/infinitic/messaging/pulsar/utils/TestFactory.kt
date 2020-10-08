@@ -24,7 +24,7 @@
 package io.infinitic.messaging.pulsar.utils
 
 import io.infinitic.common.tasks.data.MethodInput
-import io.kotest.properties.nextPrintableString
+import io.kotest.property.azstring
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
@@ -56,7 +56,7 @@ object TestFactory {
             .randomize(MethodInput::class.java) {
                 MethodInput(
                     Random(seed).nextBytes(10),
-                    Random(seed).nextPrintableString(10)
+                    Random(seed).azstring(10)
                 )
             }
 

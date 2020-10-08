@@ -36,10 +36,10 @@ dependencies {
     implementation(project(":infinitic-avro"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.1.+")
-    testImplementation("io.kotest:kotest-property-jvm:4.1.+")
-    testImplementation("io.kotest:kotest-core-jvm:4.1.+")
-    testImplementation("io.mockk:mockk:1.9.+")
+    testImplementation("org.jetbrains.kotlin:kotlin-reflect:1.4.10")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
+    testImplementation("io.kotest:kotest-property-jvm:4.2.+")
+    testImplementation("io.mockk:mockk:1.10.+")
 }
 
 java {

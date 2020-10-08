@@ -37,7 +37,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("org.slf4j:slf4j-api:1.7.+")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
 
     implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-common"))
@@ -46,10 +46,9 @@ dependencies {
     implementation(project(":infinitic-messaging-pulsar"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
-    testImplementation("io.kotest:kotest-property-jvm:4.0.+")
-    testImplementation("io.kotest:kotest-core-jvm:4.0.+")
-    testImplementation("io.mockk:mockk:1.9.+")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
+    testImplementation("io.kotest:kotest-property-jvm:4.2.+")
+    testImplementation("io.mockk:mockk:1.10.+")
 }
 
 java {

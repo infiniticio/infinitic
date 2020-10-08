@@ -27,7 +27,7 @@ import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.avro.taskManager.data.AvroSerializedData
 import io.infinitic.avro.taskManager.data.AvroSerializedDataType
-import io.kotest.properties.nextPrintableString
+import io.kotest.property.azstring
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -55,7 +55,7 @@ object TestFactory {
             .overrideDefaultInitialization(true)
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).nextPrintableString(10)) }
+            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).azstring(10)) }
             .randomize(AvroSerializedData::class.java) {
                 val data = random(SerializedData::class)
                 AvroSerializedData.newBuilder()
@@ -67,7 +67,7 @@ object TestFactory {
             .randomize(MethodInput::class.java) {
                 MethodInput(
                     Random(seed).nextBytes(10),
-                    Random(seed).nextPrintableString(10)
+                    Random(seed).azstring(10)
                 )
             }
 
