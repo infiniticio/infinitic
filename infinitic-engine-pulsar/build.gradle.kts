@@ -26,6 +26,8 @@ import org.gradle.kotlin.dsl.support.serviceOf
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
+// Fake change just ot trigger CI
+
 plugins {
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "5.2.0"
