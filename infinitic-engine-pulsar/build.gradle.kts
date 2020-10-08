@@ -34,7 +34,7 @@ plugins {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
     implementation("org.apache.pulsar:pulsar-client:2.6.+")
     implementation("org.apache.pulsar:pulsar-functions-api:2.6.+")
     implementation("org.apache.avro:avro:1.10.+")
@@ -49,10 +49,9 @@ dependencies {
     implementation(project(":infinitic-storage-pulsar"))
 
     testImplementation("org.jeasy:easy-random-core:4.2.+")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.+")
-    testImplementation("io.kotest:kotest-property-jvm:4.0.+")
-    testImplementation("io.kotest:kotest-core-jvm:4.0.+")
-    testImplementation("io.mockk:mockk:1.9.+")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
+    testImplementation("io.kotest:kotest-property-jvm:4.2.+")
+    testImplementation("io.mockk:mockk:1.10.+")
 }
 
 java {

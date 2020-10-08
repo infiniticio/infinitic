@@ -32,7 +32,7 @@ import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.avro.workflowManager.data.steps.AvroStep
 import io.infinitic.common.tasks.data.MethodInput
-import io.kotest.properties.nextPrintableString
+import io.kotest.property.azstring
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -61,10 +61,10 @@ object TestFactory {
             .scanClasspathForConcreteTypes(true)
             .overrideDefaultInitialization(true)
             // for "Any" parameter, provides a String
-            .randomize(Any::class.java) { Random(seed).nextPrintableString(10) }
+            .randomize(Any::class.java) { Random(seed).azstring(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).nextPrintableString(10)) }
+            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).azstring(10)) }
             .randomize(AvroSerializedData::class.java) {
                 val data = random(SerializedData::class)
                 AvroSerializedData.newBuilder()
@@ -73,7 +73,7 @@ object TestFactory {
                     .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
                     .build()
             }
-            .randomize(MethodInput::class.java) { MethodInput(Random(seed).nextPrintableString(10)) }
+            .randomize(MethodInput::class.java) { MethodInput(Random(seed).azstring(10)) }
             .randomize(MethodInput::class.java) { io.infinitic.common.tasks.data.MethodInput(Random(seed).nextBytes(10)) }
             .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
 

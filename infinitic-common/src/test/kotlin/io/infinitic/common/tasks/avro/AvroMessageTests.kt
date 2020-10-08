@@ -33,7 +33,6 @@ import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitorin
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.kotest.assertions.throwables.shouldNotThrowAny
-import io.kotest.core.spec.TestConfiguration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -98,7 +97,7 @@ internal fun checkAvroConversionToEnvelopeForWorker(msg: ForWorkerMessage) = str
     }
 }
 
-internal inline fun <reified T> checkAllSubTypesFromEnvelope(config: TestConfiguration, msg: GenericRecord) {
+internal inline fun <reified T> checkAllSubTypesFromEnvelope(config: StringSpec, msg: GenericRecord) {
     msg.schema.getField("type").schema().enumSymbols.forEach {
         val schema = msg.schema.getField(it).schema()
         config.include(checkEnvelopeSchema(it, schema, msg::class))

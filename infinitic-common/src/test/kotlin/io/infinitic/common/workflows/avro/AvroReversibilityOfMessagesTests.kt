@@ -27,7 +27,6 @@ import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 import io.infinitic.common.workflows.utils.TestFactory
 import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.kotest.assertions.throwables.shouldNotThrowAny
-import io.kotest.core.spec.TestConfiguration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -57,7 +56,7 @@ fun messagesForWorkflowEngineShouldBeAvroReversible(msg: ForWorkflowEngineMessag
     }
 }
 
-inline fun <reified T> checkAllSubTypesFromEnvelope(config: TestConfiguration, msg: GenericRecord) {
+inline fun <reified T> checkAllSubTypesFromEnvelope(config: StringSpec, msg: GenericRecord) {
     msg.schema.getField("type").schema().enumSymbols.forEach {
         val schema = msg.schema.getField(it).schema()
         config.include(checkEnvelopeSchema(it, schema, msg::class))
