@@ -30,6 +30,7 @@ plugins {
 }
 
 dependencies {
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.apache.avro:avro:1.10.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
@@ -41,7 +42,6 @@ dependencies {
     implementation(project(":infinitic-common"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
-    testImplementation("org.jetbrains.kotlin:kotlin-reflect:1.4.10")
     testImplementation("org.jeasy:easy-random-core:4.2.+")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.+")
     testImplementation("io.kotest:kotest-property-jvm:4.2.+")

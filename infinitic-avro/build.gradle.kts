@@ -32,6 +32,7 @@ repositories {
 }
 
 dependencies {
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
     api("org.apache.avro:avro:1.10.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
