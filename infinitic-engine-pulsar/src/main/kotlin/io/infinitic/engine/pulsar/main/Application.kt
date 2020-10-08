@@ -55,11 +55,9 @@ class Application private constructor(
         get() = Dispatchers.IO + Job()
 
     init {
-        Runtime.getRuntime().addShutdownHook(
-            thread(start = false) {
-                stop()
-            }
-        )
+        Runtime.getRuntime().addShutdownHook(thread(start = false) {
+            stop()
+        })
     }
 
     fun run() {
