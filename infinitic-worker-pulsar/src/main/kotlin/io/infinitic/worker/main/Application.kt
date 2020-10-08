@@ -23,7 +23,6 @@
 
 package io.infinitic.worker.main
 
-import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.messages.ForWorkerMessage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
@@ -40,7 +39,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.apache.pulsar.client.api.Message
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
 import kotlin.concurrent.thread
@@ -81,7 +79,6 @@ class Application internal constructor(private val pulsarClient: PulsarClient, p
     }
 
     fun runWithConcurrency() {
-        val messagesInputChannel = Channel<Message<AvroEnvelopeForWorker>>()
         val workerInputChannel = Channel<MessageToProcess<ForWorkerMessage>>()
 
         // launch 8 workers
@@ -97,32 +94,22 @@ class Application internal constructor(private val pulsarClient: PulsarClient, p
         worker.getRegisteredTasks().map { name ->
             Pair(name, pulsarClient.newTaskConsumer(name))
         }.forEach { (taskName, consumer) ->
+            val resultChannel = Channel<MessageProcessed>(8)
 
             // launch 1 consumer
             launch(CoroutineName("consumer-$taskName")) {
                 while (isActive) {
-                    consumer
-                        .receiveSuspend()
-                        .let { messagesInputChannel.send(it) }
-                }
-            }
-
-            val resultChannel = Channel<MessageProcessed>()
-
-            // launch 1 acknowledger
-            launch(CoroutineName("ack-$taskName")) {
-                for (result in resultChannel) {
-                    val message = resultChannel.receive()
-                    consumer.acknowledgeSuspend(message.messageId)
-                }
-            }
-
-            // launch 1 executor
-            launch(CoroutineName("executor-$taskName")) {
-                for (message in messagesInputChannel) {
+                    val message = consumer.receiveSuspend()
                     message
                         .let { AvroConverter.fromWorkers(it.value) }
                         .let { workerInputChannel.send(MessageToProcess(message.messageId, it, resultChannel)) }
+                }
+            }
+
+            // launch 1 acknowledger
+            launch(CoroutineName("ack-$taskName")) {
+                for (message in resultChannel) {
+                    consumer.acknowledgeSuspend(message.messageId)
                 }
             }
         }
