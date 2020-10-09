@@ -23,9 +23,9 @@
 
 package io.infinitic.messaging.api
 
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.messaging.api.dispatcher.BinaryDispatcher
 import io.infinitic.messaging.api.dispatcher.transport.BinaryTransport
-import io.infinitic.messaging.api.utils.TestFactory
 import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage

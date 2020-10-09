@@ -21,19 +21,17 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.tasks.utils
+package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.SerializedData
-import io.infinitic.common.json.Json
-import io.infinitic.common.tasks.data.TaskAttemptError
-import io.infinitic.common.tasks.data.MethodInput
-import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.exceptions.CanNotUseJavaReservedKeywordInMeta
-import io.infinitic.common.tasks.exceptions.MultipleMethodCallsAtDispatch
 import io.infinitic.avro.taskManager.data.AvroSerializedData
 import io.infinitic.avro.taskManager.data.AvroSerializedDataType
-import io.kotest.property.azstring
+import io.infinitic.common.workflows.avro.AvroConverter
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
+import io.infinitic.common.workflows.data.steps.Step
+import io.infinitic.avro.workflowManager.data.steps.AvroStep
+import io.infinitic.common.tasks.data.MethodInput
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -42,20 +40,16 @@ import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
 import org.jeasy.random.api.Randomizer
 
-fun main() {
-    val e = TestFactory.random(MultipleMethodCallsAtDispatch::class)
-    println(e.cause)
-    val s = Json.stringify(e)
-    println(s)
-}
 object TestFactory {
     private var seed = 0L
 
     fun seed(seed: Long): TestFactory {
-        this.seed = seed
+        TestFactory.seed = seed
 
         return this
     }
+
+    inline fun <reified T : Any> random(values: Map<String, Any?>? = null) = random(T::class, values)
 
     fun <T : Any> random(klass: KClass<T>, values: Map<String, Any?>? = null): T {
         // if not updated, 2 subsequents calls to this method would provide the same values
@@ -63,36 +57,26 @@ object TestFactory {
 
         val parameters = EasyRandomParameters()
             .seed(seed)
-            .collectionSizeRange(1, 5)
             .scanClasspathForConcreteTypes(true)
             .overrideDefaultInitialization(true)
-            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(Random(seed).nextBytes(10)) }
+            .collectionSizeRange(1, 5)
+            // avoid providing a value for lateinit serializedData
+            .excludeField(FieldPredicates.named("serializedData"))
+            // provides a String for "Any" parameter
+            .randomize(Any::class.java) { random<String>() }
+            .randomize(String::class.java) { String(random<ByteArray>(), Charsets.UTF_8) }
+            .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(SerializedData::class.java) { SerializedData.from(Random(seed).azstring(10)) }
+            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
+            .randomize(MethodInput::class.java) { MethodInput(random<ByteArray>(), random<String>()) }
+            .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(AvroSerializedData::class.java) {
-                val data = random(SerializedData::class)
+                val data = random<SerializedData>()
                 AvroSerializedData.newBuilder()
                     .setBytes(ByteBuffer.wrap(data.bytes))
                     .setType(AvroSerializedDataType.JSON)
                     .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
                     .build()
-            }
-            .randomize(MethodInput::class.java) {
-                MethodInput(
-                    Random(seed).nextBytes(10),
-                    Random(seed).azstring(10)
-                )
-            }
-            .randomize(MethodOutput::class.java) {
-                MethodOutput(
-                    Random(seed).azstring(10)
-                )
-            }
-            .randomize(TaskAttemptError::class.java) {
-                TaskAttemptError(CanNotUseJavaReservedKeywordInMeta("foo"))
-            }
-            .randomize(TaskMeta::class.java) {
-                TaskMeta(mutableMapOf("foo" to "bar"))
             }
 
         values?.forEach {
@@ -100,5 +84,30 @@ object TestFactory {
         }
 
         return EasyRandom(parameters).nextObject(klass.java)
+    }
+
+    private fun randomStep(): Step {
+        val steps = steps().values.toList()
+        return steps[Random.nextInt(until = steps.size - 1)]
+    }
+
+    fun steps(): Map<String, Step> {
+        fun getStepId() = Step.Id(CommandId(), CommandStatusOngoing)
+        val stepA = getStepId()
+        val stepB = getStepId()
+        val stepC = getStepId()
+        val stepD = getStepId()
+
+        return mapOf(
+            "A" to stepA,
+            "OR B" to Step.Or(listOf(stepA)),
+            "AND A" to Step.And(listOf(stepA)),
+            "A AND B" to Step.And(listOf(stepA, stepB)),
+            "A OR B" to Step.Or(listOf(stepA, stepB)),
+            "A OR (B OR C)" to Step.Or(listOf(stepA, Step.Or(listOf(stepB, stepC)))),
+            "A AND (B OR C)" to Step.And(listOf(stepA, Step.Or(listOf(stepB, stepC)))),
+            "A AND (B AND C)" to Step.And(listOf(stepA, Step.And(listOf(stepB, stepC)))),
+            "A OR (B AND (C OR D))" to Step.Or(listOf(stepA, Step.And(listOf(stepB, Step.Or(listOf(stepC, stepD))))))
+        )
     }
 }

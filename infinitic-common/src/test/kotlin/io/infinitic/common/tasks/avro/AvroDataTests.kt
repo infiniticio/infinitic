@@ -23,6 +23,7 @@
 
 package io.infinitic.common.tasks.avro
 
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
@@ -30,7 +31,6 @@ import io.infinitic.common.tasks.messages.ForWorkerMessage
 import io.infinitic.common.tasks.states.TaskEngineState
 import io.infinitic.common.tasks.states.MonitoringGlobalState
 import io.infinitic.common.tasks.states.MonitoringPerNameState
-import io.infinitic.common.tasks.utils.TestFactory
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec

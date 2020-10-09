@@ -32,7 +32,7 @@ import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngin
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import io.infinitic.messaging.pulsar.utils.TestFactory
+import io.infinitic.common.fixtures.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe

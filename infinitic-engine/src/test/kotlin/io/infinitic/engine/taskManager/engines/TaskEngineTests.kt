@@ -24,6 +24,7 @@
 package io.infinitic.engine.taskManager.engines
 
 import io.infinitic.common.data.interfaces.plus
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus
@@ -43,7 +44,6 @@ import io.infinitic.common.tasks.messages.RetryTaskAttempt
 import io.infinitic.common.tasks.messages.RunTask
 import io.infinitic.common.tasks.states.TaskEngineState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
-import io.infinitic.engine.taskManager.utils.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -421,14 +421,14 @@ private fun checkConfirmVerified(o: EngineResults) {
     confirmVerified(o.logger)
 }
 
-private fun state(values: Map<String, Any?>? = null) = TestFactory.random(TaskEngineState::class, values)
-private fun cancelTask(values: Map<String, Any?>? = null) = TestFactory.random(CancelTask::class, values)
-private fun dispatchTask(values: Map<String, Any?>? = null) = TestFactory.random(DispatchTask::class, values)
-private fun retryTask(values: Map<String, Any?>? = null) = TestFactory.random(RetryTask::class, values)
-private fun retryTaskAttempt(values: Map<String, Any?>? = null) = TestFactory.random(RetryTaskAttempt::class, values)
-private fun taskCompleted(values: Map<String, Any?>? = null) = TestFactory.random(TaskCompleted::class, values)
-private fun taskCanceled(values: Map<String, Any?>? = null) = TestFactory.random(TaskCanceled::class, values)
-private fun taskAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.random(TaskAttemptDispatched::class, values)
-private fun taskAttemptCompleted(values: Map<String, Any?>? = null) = TestFactory.random(TaskAttemptCompleted::class, values)
-private fun taskAttemptFailed(values: Map<String, Any?>? = null) = TestFactory.random(TaskAttemptFailed::class, values)
-private fun taskAttemptStarted(values: Map<String, Any?>? = null) = TestFactory.random(TaskAttemptStarted::class, values)
+private fun state(values: Map<String, Any?>? = null) = TestFactory.random<TaskEngineState>(values)
+private fun cancelTask(values: Map<String, Any?>? = null) = TestFactory.random<CancelTask>(values)
+private fun dispatchTask(values: Map<String, Any?>? = null) = TestFactory.random<DispatchTask>(values)
+private fun retryTask(values: Map<String, Any?>? = null) = TestFactory.random<RetryTask>(values)
+private fun retryTaskAttempt(values: Map<String, Any?>? = null) = TestFactory.random<RetryTaskAttempt>(values)
+private fun taskCompleted(values: Map<String, Any?>? = null) = TestFactory.random<TaskCompleted>(values)
+private fun taskCanceled(values: Map<String, Any?>? = null) = TestFactory.random<TaskCanceled>(values)
+private fun taskAttemptDispatched(values: Map<String, Any?>? = null) = TestFactory.random<TaskAttemptDispatched>(values)
+private fun taskAttemptCompleted(values: Map<String, Any?>? = null) = TestFactory.random<TaskAttemptCompleted>(values)
+private fun taskAttemptFailed(values: Map<String, Any?>? = null) = TestFactory.random<TaskAttemptFailed>(values)
+private fun taskAttemptStarted(values: Map<String, Any?>? = null) = TestFactory.random<TaskAttemptStarted>(values)
