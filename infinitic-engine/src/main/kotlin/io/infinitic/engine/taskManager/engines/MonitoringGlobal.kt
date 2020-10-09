@@ -24,13 +24,28 @@
 package io.infinitic.engine.taskManager.engines
 
 import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
 import io.infinitic.common.tasks.messages.TaskCreated
 import io.infinitic.common.tasks.states.MonitoringGlobalState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
+import io.infinitic.messaging.api.dispatcher.Receiver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class MonitoringGlobal(
-    val storage: TaskStateStorage
-) {
+    val storage: TaskStateStorage,
+    val receiver: Receiver<ForMonitoringGlobalMessage>,
+    ) {
+
+    suspend fun listen(scope: CoroutineScope) {
+        scope.launch {
+            while (isActive) {
+                receiver.onMessage { scope.launch { handle(it) } }
+            }
+        }
+    }
+
     fun handle(message: ForMonitoringGlobalMessage) {
 
         // get associated state

@@ -34,42 +34,42 @@ import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryAvroDispatcher
 
-class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryAvroDispatcher() {
-    val client = Client(this)
-    val worker = Worker(this)
-    val taskEngine = ForWorkflowTaskEngine(storage, this)
-    val workflowEngine = WorkflowEngine(storage, this)
-    val monitoringPerName = MonitoringPerName(storage, this)
-    val monitoringGlobal = MonitoringGlobal(storage)
-
-    var taskStatus: TaskStatus? = null
-    var workflowOutput: Any? = null
-
-    init {
-        workflowEngineHandle = {
-            workflowEngine.handle(it)
-
-            when (it) {
-                is WorkflowCompleted -> { workflowOutput = it.workflowOutput.data }
-            }
-        }
-        taskEngineHandle = {
-            taskEngine.handle(it)
-        }
-        monitoringPerNameHandle = {
-            monitoringPerName.handle(it)
-            when (it) {
-                is TaskStatusUpdated -> { taskStatus = it.newStatus }
-            }
-        }
-        monitoringGlobalHandle = { monitoringGlobal.handle(it) }
-        workerHandle = {
-            worker.handle(it)
-        }
-    }
-
-    fun reset() {
-        taskStatus = null
-        workflowOutput = null
-    }
-}
+//class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryAvroDispatcher() {
+//    val client = Client(this)
+//    val worker = Worker(this)
+//    val taskEngine = ForWorkflowTaskEngine(storage, this)
+//    val workflowEngine = WorkflowEngine(storage, this)
+//    val monitoringPerName = MonitoringPerName(storage, this)
+//    val monitoringGlobal = MonitoringGlobal(storage)
+//
+//    var taskStatus: TaskStatus? = null
+//    var workflowOutput: Any? = null
+//
+//    init {
+//        workflowEngineHandle = {
+//            workflowEngine.handle(it)
+//
+//            when (it) {
+//                is WorkflowCompleted -> { workflowOutput = it.workflowOutput.data }
+//            }
+//        }
+//        taskEngineHandle = {
+//            taskEngine.handle(it)
+//        }
+//        monitoringPerNameHandle = {
+//            monitoringPerName.handle(it)
+//            when (it) {
+//                is TaskStatusUpdated -> { taskStatus = it.newStatus }
+//            }
+//        }
+//        monitoringGlobalHandle = { monitoringGlobal.handle(it) }
+//        workerHandle = {
+//            worker.handle(it)
+//        }
+//    }
+//
+//    fun reset() {
+//        taskStatus = null
+//        workflowOutput = null
+//    }
+//}

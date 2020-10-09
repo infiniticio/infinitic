@@ -39,20 +39,26 @@ import io.infinitic.common.tasks.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
 import io.infinitic.common.workflows.exceptions.WorkflowUsedAsTask
+import io.infinitic.messaging.api.dispatcher.Emetter
+import io.infinitic.messaging.api.dispatcher.Receiver
 import io.infinitic.worker.task.RetryDelay
 import io.infinitic.worker.task.RetryDelayFailed
 import io.infinitic.worker.task.RetryDelayRetrieved
 import io.infinitic.worker.task.TaskAttemptContext
 import io.infinitic.worker.task.TaskCommand
 import io.infinitic.worker.workflowTask.WorkflowTaskImpl
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.lang.reflect.InvocationTargetException
@@ -63,7 +69,10 @@ import kotlin.reflect.jvm.javaType
 
 typealias InstanceFactory = () -> Any
 
-open class Worker(val dispatcher: Dispatcher) {
+open class Worker(
+    private val receiver: Receiver<ForWorkerMessage>,
+    private val taskEngineEmetter: Emetter<ForTaskEngineMessage>
+) {
 
     // map taskName <> taskInstance
     private val registeredFactories = mutableMapOf<String, InstanceFactory>()
@@ -99,6 +108,14 @@ open class Worker(val dispatcher: Dispatcher) {
      */
     fun unregister(name: String) {
         registeredFactories.remove(name)
+    }
+
+    suspend fun listen(scope: CoroutineScope) {
+        scope.launch {
+            while (isActive) {
+                receiver.onMessage { scope.launch { handle(it) } }
+            }
+        }
     }
 
     suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
@@ -265,7 +282,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskAttemptIndex = msg.taskAttemptIndex
         )
 
-        dispatcher.toTaskEngine(taskAttemptStarted)
+        taskEngineEmetter.send(taskAttemptStarted)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
@@ -278,7 +295,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskAttemptError = TaskAttemptError(error)
         )
 
-        dispatcher.toTaskEngine(taskAttemptFailed)
+        taskEngineEmetter.send(taskAttemptFailed)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -290,7 +307,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskOutput = MethodOutput(output)
         )
 
-        dispatcher.toTaskEngine(taskAttemptCompleted)
+        taskEngineEmetter.send(taskAttemptCompleted)
     }
 
     @PublishedApi

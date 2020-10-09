@@ -25,16 +25,32 @@ package io.infinitic.engine.taskManager.engines
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.common.tasks.messages.TaskCreated
 import io.infinitic.common.tasks.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.states.MonitoringPerNameState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
+import io.infinitic.messaging.api.dispatcher.Emetter
+import io.infinitic.messaging.api.dispatcher.Receiver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class MonitoringPerName(
     val storage: TaskStateStorage,
-    val dispatcher: Dispatcher
+    val receiver: Receiver<ForMonitoringPerNameMessage>,
+    val monitoringGlobalEmetter: Emetter<ForMonitoringGlobalMessage>,
 ) {
+    suspend fun listen(scope: CoroutineScope) {
+        scope.launch {
+            while (isActive) {
+                receiver.onMessage { scope.launch { handle(it) } }
+            }
+        }
+    }
+
     suspend fun handle(message: ForMonitoringPerNameMessage) {
 
         // get associated state
@@ -54,7 +70,7 @@ class MonitoringPerName(
         if (oldState == null) {
             val tsc = TaskCreated(taskName = message.taskName)
 
-            dispatcher.toMonitoringGlobal(tsc)
+            monitoringGlobalEmetter.send(tsc)
         }
     }
 

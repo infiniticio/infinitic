@@ -31,7 +31,9 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.CancelTask
 import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
 import io.infinitic.common.tasks.messages.ForTaskEngineMessage
+import io.infinitic.common.tasks.messages.ForWorkerMessage
 import io.infinitic.common.tasks.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.messages.TaskAttemptDispatched
 import io.infinitic.common.tasks.messages.TaskAttemptFailed
@@ -45,11 +47,29 @@ import io.infinitic.common.tasks.messages.RunTask
 import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.states.TaskEngineState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
+import io.infinitic.messaging.api.dispatcher.Emetter
+import io.infinitic.messaging.api.dispatcher.Receiver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 open class TaskEngine(
-    protected val storage: TaskStateStorage,
-    protected val dispatcher: Dispatcher
+    protected open val storage: TaskStateStorage,
+    protected open val receiver: Receiver<ForTaskEngineMessage>,
+    protected open val taskEngineEmetter: Emetter<ForTaskEngineMessage>,
+    protected open val monitoringPerNameEmetter: Emetter<ForMonitoringPerNameMessage>,
+    protected open val workerEmetter: Emetter<ForWorkerMessage>
 ) {
+
+    suspend fun listen(scope: CoroutineScope) {
+        scope.launch {
+            while (isActive) {
+                receiver.onMessage { scope.launch { handle(it) } }
+            }
+        }
+    }
+
     open suspend fun handle(message: ForTaskEngineMessage) {
         // immediately discard messages that are non managed
         when (message) {
@@ -100,7 +120,7 @@ open class TaskEngine(
                 newStatus = newState.taskStatus
             )
 
-            dispatcher.toMonitoringPerName(tsc)
+            monitoringPerNameEmetter.send(tsc)
         }
     }
 
@@ -113,7 +133,7 @@ open class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        dispatcher.toTaskEngine(tad)
+        taskEngineEmetter.send(tad)
 
         // Delete stored state
         storage.deleteTaskEngineState(state.taskId)
@@ -148,7 +168,7 @@ open class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        dispatcher.toWorkers(rt)
+        workerEmetter.send(rt)
 
         // log events
         val tad = TaskAttemptDispatched(
@@ -157,7 +177,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskAttemptIndex = state.taskAttemptIndex
         )
-        dispatcher.toTaskEngine(tad)
+        taskEngineEmetter.send(tad)
 
         return state
     }
@@ -187,7 +207,7 @@ open class TaskEngine(
             taskMeta = state.taskMeta,
             taskOptions = state.taskOptions
         )
-        dispatcher.toWorkers(rt)
+        workerEmetter.send(rt)
 
         // log event
         val tad = TaskAttemptDispatched(
@@ -196,7 +216,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskAttemptIndex = state.taskAttemptIndex
         )
-        dispatcher.toTaskEngine(tad)
+        taskEngineEmetter.send(tad)
 
         return state
     }
@@ -220,7 +240,7 @@ open class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        dispatcher.toWorkers(rt)
+        workerEmetter.send(rt)
 
         // log event
         val tar = TaskAttemptDispatched(
@@ -229,7 +249,7 @@ open class TaskEngine(
             taskAttemptIndex = state.taskAttemptIndex,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        dispatcher.toTaskEngine(tar)
+        taskEngineEmetter.send(tar)
 
         return state
     }
@@ -244,7 +264,7 @@ open class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        dispatcher.toTaskEngine(tc)
+        taskEngineEmetter.send(tc)
 
         // Delete stored state
         storage.deleteTaskEngineState(state.taskId)
@@ -271,7 +291,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskAttemptIndex = state.taskAttemptIndex
         )
-        dispatcher.toTaskEngine(tar, after = delay)
+        taskEngineEmetter.send(tar, after = delay)
 
         return state
     }

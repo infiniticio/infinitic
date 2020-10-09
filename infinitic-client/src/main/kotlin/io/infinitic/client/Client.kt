@@ -36,6 +36,7 @@ import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
 import io.infinitic.common.tasks.messages.CancelTask
 import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.tasks.messages.ForTaskEngineMessage
 import io.infinitic.common.tasks.messages.RetryTask
 import io.infinitic.common.tasks.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.Workflow
@@ -45,8 +46,13 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.messages.DispatchWorkflow
+import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.messaging.api.dispatcher.Emetter
 
-class Client(val dispatcher: Dispatcher) {
+class Client(
+    private val taskEngineEmetter: Emetter<ForTaskEngineMessage>,
+    private val workflowEngineEmetter: Emetter<ForWorkflowEngineMessage>
+) {
 
     /*
     * Use this method to dispatch a workflow
@@ -77,7 +83,7 @@ class Client(val dispatcher: Dispatcher) {
             workflowMeta = meta,
             workflowOptions = options
         )
-        dispatcher.toWorkflowEngine(msg)
+        workflowEngineEmetter.send(msg)
 
         return WorkflowInstance(msg.workflowId)
     }
@@ -112,7 +118,7 @@ class Client(val dispatcher: Dispatcher) {
             taskOptions = options,
             taskMeta = meta
         )
-        dispatcher.toTaskEngine(msg)
+        taskEngineEmetter.send(msg)
 
         return TaskInstance(msg.taskId)
     }
@@ -139,7 +145,7 @@ class Client(val dispatcher: Dispatcher) {
             taskOptions = options,
             taskMeta = meta
         )
-        dispatcher.toTaskEngine(msg)
+        taskEngineEmetter.send(msg)
     }
 
     /*
@@ -153,6 +159,6 @@ class Client(val dispatcher: Dispatcher) {
             taskId = TaskId(id),
             taskOutput = MethodOutput(output)
         )
-        dispatcher.toTaskEngine(msg)
+        taskEngineEmetter.send(msg)
     }
 }
