@@ -24,9 +24,6 @@
 plugins {
     kotlin("jvm")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
-
-    // Apply the java-library plugin for API and implementation separation.
-    `java-library`
 }
 
 dependencies {
@@ -37,11 +34,10 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
 
-    implementation(project(":infinitic-avro"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-worker"))
-    implementation(project(":infinitic-messaging-pulsar"))
+    api(project(":infinitic-avro"))
+    api(project(":infinitic-common"))
+    api(project(":infinitic-worker"))
+    api(project(":infinitic-messaging-pulsar"))
 
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")

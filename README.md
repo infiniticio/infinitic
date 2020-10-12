@@ -1,7 +1,3 @@
-
-
-
-
 # Infinitic
 
 > Infinitic's development is still in progress, please contact us (gilles(at)infinitic.io) if you are interested
