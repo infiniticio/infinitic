@@ -150,7 +150,7 @@ class WorkflowAImpl() : WorkflowA {
     override fun and3(): List<String> {
 
         val list: MutableList<Deferred<String>> = mutableListOf()
-        for (i in 1..1_000) {
+        for (i in 1..1_00) {
             list.add(async(taskA) { reverse("ab") })
         }
         return list.and().result() // should be listOf("ba","dc","fe")

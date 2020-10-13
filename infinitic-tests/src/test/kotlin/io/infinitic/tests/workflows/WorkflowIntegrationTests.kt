@@ -192,7 +192,7 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe MutableList(1_000) { "ba" }
+        dispatcher.workflowOutput shouldBe MutableList(1_00) { "ba" }
     }
 
     "Inline task" {

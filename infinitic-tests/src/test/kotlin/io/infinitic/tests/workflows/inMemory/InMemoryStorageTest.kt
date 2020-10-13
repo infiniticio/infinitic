@@ -24,12 +24,10 @@
 package io.infinitic.tests.workflows.inMemory
 
 import io.infinitic.common.tasks.data.TaskInstance
-import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.engine.workflowManager.storages.AvroKeyValueWorkflowStateStorage
-import io.infinitic.engine.workflowManager.storages.InMemoryWorkflowStateStorage
 import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
 import io.infinitic.storage.api.Flushable
 import io.infinitic.storage.api.Storage
@@ -39,6 +37,7 @@ class InMemoryStorageTest(
     private val workflowStateStorage: WorkflowStateStorage = AvroKeyValueWorkflowStateStorage(storage),
     private val taskStateStorage: TaskStateStorage = AvroKeyValueTaskStateStorage(storage)
 ) : WorkflowStateStorage by workflowStateStorage, TaskStateStorage by taskStateStorage {
+
     fun isTerminated(taskInstance: TaskInstance): Boolean = taskStateStorage.getTaskEngineState(taskInstance.taskId) == null
     fun isTerminated(workflowInstance: WorkflowInstance): Boolean = workflowStateStorage.getState(workflowInstance.workflowId) == null
 

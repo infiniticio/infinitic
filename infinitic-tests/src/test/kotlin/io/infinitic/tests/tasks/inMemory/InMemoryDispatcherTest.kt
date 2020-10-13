@@ -30,7 +30,6 @@ import io.infinitic.common.tasks.messages.TaskStatusUpdated
 import io.infinitic.engine.taskManager.engines.MonitoringGlobal
 import io.infinitic.engine.taskManager.engines.MonitoringPerName
 import io.infinitic.engine.taskManager.engines.TaskEngine
-import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.infinitic.worker.Worker
 

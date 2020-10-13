@@ -93,7 +93,7 @@ object AvroConverter {
         .setWorkflowName("${state.workflowName}")
         .setWorkflowOptions(convertJson(state.workflowOptions))
         .setWorkflowMeta(convertJson(state.workflowMeta))
-        .setCurrentWorkflowTaskId("${state.currentWorkflowTaskId}")
+        .setCurrentWorkflowTaskId(state.currentWorkflowTaskId?.toString())
         .setCurrentMessageIndex(convertJson(state.currentMessageIndex))
         .setCurrentMethodRuns(state.currentMethodRuns.map { convertJson<AvroMethodRun>(it) })
         .setCurrentProperties(convertJson(state.currentProperties))
