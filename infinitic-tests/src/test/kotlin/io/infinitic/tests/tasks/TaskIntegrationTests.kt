@@ -25,6 +25,7 @@ package io.infinitic.tests.tasks
 
 import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.storage.inmemory.inMemory
 import io.infinitic.tests.tasks.samples.Status
 import io.infinitic.tests.tasks.samples.TaskTest
 import io.infinitic.tests.tasks.samples.TaskTestImpl
@@ -35,7 +36,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 
-private val storage = InMemoryStorageTest()
+private val internalStorage = inMemory()
+private val storage = InMemoryStorageTest(internalStorage)
 private val dispatcher = InMemoryDispatcherTest(storage)
 private val client = dispatcher.client
 private val worker = dispatcher.worker

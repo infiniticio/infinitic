@@ -24,8 +24,15 @@
 package io.infinitic.tests.tasks.inMemory
 
 import io.infinitic.common.tasks.data.TaskInstance
-import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage
+import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
+import io.infinitic.storage.api.Flushable
+import io.infinitic.storage.api.Storage
 
-internal class InMemoryStorageTest : InMemoryTaskStateStorage() {
+internal class InMemoryStorageTest(storage: Storage) : AvroKeyValueTaskStateStorage(storage) {
     fun isTerminated(task: TaskInstance): Boolean = getTaskEngineState(task.taskId) == null
+    fun reset() {
+        if (storage is Flushable) {
+            storage.flush()
+        }
+    }
 }
