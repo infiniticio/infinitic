@@ -21,27 +21,28 @@
 //
 // Licensor: infinitic.io
 
-rootProject.name = "io.infinitic"
+plugins {
+    kotlin("jvm")
+    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+}
 
-include("infinitic-rest-api")
-include("infinitic-avro")
-include("infinitic-storage-api")
-include("infinitic-storage-pulsar")
-include("infinitic-storage-redis")
-include("infinitic-messaging-api")
-include("infinitic-messaging-pulsar")
-include("infinitic-common")
-include("infinitic-worker")
-include("infinitic-worker-pulsar")
-include("infinitic-client")
-include("infinitic-engine")
-include("infinitic-engine-pulsar")
-include("infinitic-tests")
+dependencies {
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
+    implementation(kotlin("stdlib-jdk8"))
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
-    }
+    api(project(":infinitic-storage-api"))
+    implementation("redis.clients:jedis:3.3.+")
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
