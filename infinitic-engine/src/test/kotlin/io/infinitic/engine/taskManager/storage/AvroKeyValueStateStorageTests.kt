@@ -58,7 +58,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             // when
             val state = stateStorage.getTaskEngineState(taskId)
             // then
-            verify(exactly = 1) { storage.getState("engine.state.$taskId") }
+            verify(exactly = 1) { storage.getState("engine.state.task.$taskId") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -73,7 +73,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             // when
             val stateOut = stateStorage.getTaskEngineState(stateIn.taskId)
             // then
-            verify(exactly = 1) { context.getState("engine.state.${stateIn.taskId}") }
+            verify(exactly = 1) { context.getState("engine.state.task.${stateIn.taskId}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }
@@ -92,7 +92,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             // then
             verify(exactly = 1) {
                 context.putState(
-                    "engine.state.${stateIn.taskId}",
+                    "engine.state.task.${stateIn.taskId}",
                     byteBufferRepresentation(stateIn)
                 )
             }
@@ -111,7 +111,7 @@ class AvroKeyValueStateStorageTests : ShouldSpec({
             // when
             stageStorage.deleteTaskEngineState(stateIn.taskId)
             // then
-            verify(exactly = 1) { context.deleteState("engine.state.${stateIn.taskId}") }
+            verify(exactly = 1) { context.deleteState("engine.state.task.${stateIn.taskId}") }
             confirmVerified(context)
         }
     }

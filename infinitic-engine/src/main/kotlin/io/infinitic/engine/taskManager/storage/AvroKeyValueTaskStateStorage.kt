@@ -126,5 +126,5 @@ class AvroKeyValueTaskStateStorage(private val storage: Storage) : TaskStateStor
     internal fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
     internal fun getMonitoringPerNameStateKey(taskName: TaskName) = "monitoringPerName.state.$taskName"
     internal fun getMonitoringPerNameCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.toString().toLowerCase()}"
-    internal fun getEngineStateKey(taskId: String) = "engine.state.$taskId"
+    internal fun getEngineStateKey(taskId: String) = "engine.state.task.$taskId"
 }
