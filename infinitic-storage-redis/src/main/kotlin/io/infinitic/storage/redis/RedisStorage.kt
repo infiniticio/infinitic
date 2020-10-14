@@ -27,6 +27,7 @@ import io.infinitic.storage.api.Storage
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 class RedisStorage internal constructor(private val config: RedisStorageConfig) : Storage {
     private val pool by lazy {
@@ -35,12 +36,12 @@ class RedisStorage internal constructor(private val config: RedisStorageConfig) 
 
     override fun getState(key: String): ByteBuffer? =
         pool.resource.use { jedis ->
-            jedis.get(key.toByteArray())?.toByteBuffer()
+            jedis.get(key.toByteArray(StandardCharsets.UTF_8))?.toByteBuffer()
         }
 
     override fun putState(key: String, value: ByteBuffer) =
         pool.resource.use { jedis ->
-            jedis.set(key.toByteArray(), value.toByteArray())
+            jedis.set(key.toByteArray(StandardCharsets.UTF_8), value.toByteArray())
 
             Unit
         }
@@ -49,14 +50,14 @@ class RedisStorage internal constructor(private val config: RedisStorageConfig) 
 
     override fun deleteState(key: String) =
         pool.resource.use { jedis ->
-            jedis.del(key)
+            jedis.del(key.toByteArray(StandardCharsets.UTF_8))
 
             Unit
         }
 
     override fun incrementCounter(key: String, amount: Long) =
         pool.resource.use { jedis ->
-            jedis.incrBy(key, amount)
+            jedis.incrBy(key.toByteArray(StandardCharsets.UTF_8), amount)
 
             Unit
         }
