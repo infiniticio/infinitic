@@ -25,7 +25,20 @@ package io.infinitic.engine.pulsar.main
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
+import io.infinitic.engine.pulsar.main.storage.StorageType
+import io.infinitic.storage.redis.RedisStorageConfig
 
 class ApplicationArgs(parser: ArgParser) {
+    val storage by parser.storing("The storage adapter to use") { StorageType.of(this) }.default(StorageType.InMemory)
+
+    // Pulsar specific options
     val pulsarUrl by parser.storing("The Pulsar cluster URL").default("pulsar://localhost:6650/")
+
+    // Redis specific options
+    val redisHost by parser.storing("Redis hostname").default(RedisStorageConfig.defaultConfig.host)
+    val redisPort by parser.storing("Redis port") { toInt() }.default(RedisStorageConfig.defaultConfig.port)
+    val redisTimeout by parser.storing("Redis timeout") { toInt() }.default(RedisStorageConfig.defaultConfig.timeout)
+    val redisUser by parser.storing("Redis user").default(RedisStorageConfig.defaultConfig.user)
+    val redisPassword by parser.storing("Redis password").default(RedisStorageConfig.defaultConfig.password)
+    val redisDatabase by parser.storing("Redis database") { toInt() }.default(RedisStorageConfig.defaultConfig.database)
 }
