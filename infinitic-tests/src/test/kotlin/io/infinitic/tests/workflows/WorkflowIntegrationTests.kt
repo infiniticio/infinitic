@@ -27,6 +27,7 @@ import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.tests.workflows.inMemory.InMemoryDispatcherTest
 import io.infinitic.tests.workflows.inMemory.InMemoryStorageTest
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
+import io.infinitic.storage.inmemory.inMemory
 import io.infinitic.tests.workflows.samples.TaskA
 import io.infinitic.tests.workflows.samples.TaskAImpl
 import io.infinitic.tests.workflows.samples.WorkflowA
@@ -42,7 +43,8 @@ import org.slf4j.Logger
 
 private val mockLogger = mockk<Logger>(relaxed = true)
 
-private val storage = InMemoryStorageTest()
+private val internalStorage = inMemory()
+private val storage = InMemoryStorageTest(internalStorage)
 private val dispatcher = InMemoryDispatcherTest(storage)
 private val client = dispatcher.client
 private val worker = dispatcher.worker
@@ -190,7 +192,7 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe MutableList(1_000) { "ba" }
+        dispatcher.workflowOutput shouldBe MutableList(1_00) { "ba" }
     }
 
     "Inline task" {

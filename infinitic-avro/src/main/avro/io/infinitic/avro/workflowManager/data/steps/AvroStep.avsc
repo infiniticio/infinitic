@@ -24,7 +24,10 @@
     },
     {
       "name": "commandStatus",
-      "type": "io.infinitic.avro.workflowManager.data.commands.AvroCommandStatus"
+      "type": [
+        "null",
+        "io.infinitic.avro.workflowManager.data.commands.AvroCommandStatus"
+      ]
     },
     {
       "name": "steps",

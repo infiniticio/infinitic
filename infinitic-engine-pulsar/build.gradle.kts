@@ -47,6 +47,8 @@ dependencies {
     implementation(project(":infinitic-engine"))
     implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage-pulsar"))
+    implementation(project(":infinitic-storage-redis"))
+    implementation(project(":infinitic-storage-inmemory"))
 
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")

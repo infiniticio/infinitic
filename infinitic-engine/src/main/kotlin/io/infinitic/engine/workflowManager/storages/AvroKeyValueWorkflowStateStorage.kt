@@ -39,21 +39,23 @@ open class AvroKeyValueWorkflowStateStorage(private val storage: Storage) : Work
     override fun createState(workflowId: WorkflowId, state: WorkflowState) {
         AvroConverter.toStorage(state)
             .let { AvroSerDe.serialize(it) }
-            .let { storage.putState("$workflowId", it) }
+            .let { storage.putState(getStateKey("$workflowId"), it) }
     }
 
     override fun getState(workflowId: WorkflowId) = storage
-        .getState("$workflowId")
+        .getState(getStateKey("$workflowId"))
         ?.let { AvroSerDe.deserialize<AvroWorkflowState>(it) }
         ?.let { AvroConverter.fromStorage(it) }
 
     override fun updateState(workflowId: WorkflowId, state: WorkflowState) {
         AvroConverter.toStorage(state)
             .let { AvroSerDe.serialize(it) }
-            .let { storage.putState("$workflowId", it) }
+            .let { storage.putState(getStateKey("$workflowId"), it) }
     }
 
     override fun deleteState(workflowId: WorkflowId) {
-        storage.deleteState("$workflowId")
+        storage.deleteState(getStateKey("$workflowId"))
     }
+
+    private fun getStateKey(workflowId: String) = "engine.state.workflow.$workflowId"
 }

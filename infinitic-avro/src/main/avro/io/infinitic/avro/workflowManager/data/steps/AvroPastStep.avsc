@@ -21,14 +21,17 @@
     },
     {
       "name": "propertiesAtTermination",
-      "type": {
-        "type": "map",
-        "values": "string"
-      }
+      "type": [
+        "null",
+        {
+          "type": "map",
+          "values": "string"
+        }
+      ]
     },
     {
       "name": "messageIndexAtTermination",
-      "type": "int"
+      "type": ["null", "int"]
     }
   ]
 }

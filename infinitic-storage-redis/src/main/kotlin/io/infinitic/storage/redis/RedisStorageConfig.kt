@@ -21,28 +21,15 @@
 //
 // Licensor: infinitic.io
 
-rootProject.name = "io.infinitic"
+package io.infinitic.storage.redis
 
-include("infinitic-rest-api")
-include("infinitic-avro")
-include("infinitic-storage-api")
-include("infinitic-storage-pulsar")
-include("infinitic-storage-redis")
-include("infinitic-storage-inmemory")
-include("infinitic-messaging-api")
-include("infinitic-messaging-pulsar")
-include("infinitic-common")
-include("infinitic-worker")
-include("infinitic-worker-pulsar")
-include("infinitic-client")
-include("infinitic-engine")
-include("infinitic-engine-pulsar")
-include("infinitic-tests")
+import redis.clients.jedis.Protocol
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
-    }
+class RedisStorageConfig {
+    var host = Protocol.DEFAULT_HOST
+    var port = Protocol.DEFAULT_PORT
+    val timeout = Protocol.DEFAULT_TIMEOUT
+    val user = ""
+    val password = ""
+    var database = Protocol.DEFAULT_DATABASE
 }

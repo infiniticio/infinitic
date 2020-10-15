@@ -34,6 +34,7 @@ dependencies {
     testImplementation(project(":infinitic-avro"))
     testImplementation(project(":infinitic-messaging-api"))
     testImplementation(project(":infinitic-storage-pulsar"))
+    testImplementation(project(":infinitic-storage-inmemory"))
     testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-engine"))
     testImplementation(project(":infinitic-client"))
