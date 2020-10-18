@@ -87,9 +87,9 @@ class WorkflowTaskCompletedHandler(
         }
 
         // update current workflow properties
-        workflowTaskOutput.workflowPropertiesUpdates.map {
-            TODO()
-        }
+//        workflowTaskOutput.workflowPropertiesNameHashUpdates.map {
+//            TODO()
+//        }
 
         // if completed for the first time
         if (workflowTaskOutput.methodOutput != null && methodRun.methodOutput == null) {

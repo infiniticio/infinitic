@@ -27,13 +27,23 @@ import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.properties.PropertiesHashValue
+import io.infinitic.common.workflows.data.properties.PropertiesNameHash
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.parser.getPropertiesFromObject
 import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.worker.task.TaskAttemptContext
+import java.lang.RuntimeException
 import java.lang.reflect.InvocationTargetException
+import kotlin.reflect.KProperty1
+import kotlin.reflect.jvm.javaType
 
 class WorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
@@ -49,10 +59,10 @@ class WorkflowTaskImpl : WorkflowTask {
         workflowInstance.context = workflowTaskContext
 
         // set workflow's initial properties
-        val properties = workflowTaskInput.methodRun.propertiesAtStart.mapValues {
-            workflowTaskInput.workflowPropertyStore[it.value]
-        }
-        setPropertiesToObject(workflowInstance, properties)
+        setPropertiesToObject(
+            workflowInstance,
+            workflowTaskInput.methodRun.getPropertiesNameValue(workflowTaskInput.workflowPropertiesHashValue)
+        )
 
         // get method
         val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
@@ -68,14 +78,37 @@ class WorkflowTaskImpl : WorkflowTask {
             }
         }
 
-        // TODO("Properties updates")
+        // get current workflow properties (WorkflowTaskContext and proxies excluded)
+        val currentPropertiesNameValue = getPropertiesFromObject(workflowInstance, {
+            it.third.javaType.typeName != WorkflowTaskContext::class.java.name &&
+            ! it.second!!::class.java.name.startsWith("com.sun.proxy.")
+        })
+
+        // get properties updates
+        val unknownProperties = workflowTaskInput.methodRun.propertiesNameHashAtStart.keys.filter { it !in currentPropertiesNameValue.keys }.joinToString()
+        if (unknownProperties.isNotEmpty()) throw RuntimeException(unknownProperties)
+
+        val hashValueUpdates = mutableMapOf<PropertyHash, PropertyValue>()
+        val nameHashUpdates = mutableMapOf<PropertyName, PropertyHash>()
+
+        currentPropertiesNameValue.map {
+            val hash = it.value.hash()
+            if (it.key !in workflowTaskInput.methodRun.propertiesNameHashAtStart.keys || hash != workflowTaskInput.methodRun.propertiesNameHashAtStart[it.key]) {
+                // new property
+                nameHashUpdates[it.key] = hash
+            }
+            if (hash !in hashValueUpdates.keys) {
+                hashValueUpdates[hash] = it.value
+            }
+        }
+
         return WorkflowTaskOutput(
             workflowTaskInput.workflowId,
             workflowTaskInput.methodRun.methodRunId,
             workflowTaskContext.newCommands,
             workflowTaskContext.newSteps,
-            workflowTaskInput.methodRun.propertiesAtStart,
-            workflowTaskInput.workflowPropertyStore,
+            PropertiesNameHash(nameHashUpdates),
+            PropertiesHashValue(hashValueUpdates),
             methodOutput
         )
     }

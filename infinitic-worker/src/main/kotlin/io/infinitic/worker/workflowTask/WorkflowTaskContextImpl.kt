@@ -70,7 +70,7 @@ class WorkflowTaskContextImpl(
     var newSteps: MutableList<NewStep> = mutableListOf()
 
     /*
-     * Async Task dispatching:
+     * Async Task dispatching
      */
     override fun <T : Any, S> async(
         proxy: T,
@@ -95,7 +95,7 @@ class WorkflowTaskContextImpl(
     }
 
     /*
-     * Async Task dispatching:
+     * Async Workflow dispatching
      */
     override fun <T : Workflow, S> async(
         proxy: T,
@@ -120,7 +120,7 @@ class WorkflowTaskContextImpl(
     }
 
     /*
-     * Async Branch dispatching:
+     * Async Branch dispatching
      */
     override fun <S> async(branch: () -> S): Deferred<S> {
         // increment position
@@ -249,7 +249,7 @@ class WorkflowTaskContextImpl(
         }
 
         // update workflow instance properties
-        val properties = pastStep.propertiesAtTermination!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
+        val properties = pastStep.propertiesNameHashAtTermination!!.mapValues { workflowTaskInput.workflowPropertiesHashValue[it.value]!! }
         setPropertiesToObject(workflowInstance, properties)
 
         // continue
@@ -261,7 +261,7 @@ class WorkflowTaskContextImpl(
      */
     @Suppress("UNCHECKED_CAST")
     override fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
-        is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN: asking result of an ongoing deferred")
+        is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
         is StepStatusCompleted -> status.completionResult.data as T
         is StepStatusCanceled -> status.cancellationResult.data as T
     }

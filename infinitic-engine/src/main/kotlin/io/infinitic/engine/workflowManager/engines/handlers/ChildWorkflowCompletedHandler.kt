@@ -52,7 +52,7 @@ class ChildWorkflowCompletedHandler(
 
         // update steps
         val justCompleted = methodRun.pastSteps
-            .map { it.terminateBy(pastCommand, state.currentProperties) }
+            .map { it.terminateBy(pastCommand, state.currentPropertiesNameHash) }
             .any { it } // any must be applied only after having applied terminateBy to all elements
 
         if (justCompleted) {

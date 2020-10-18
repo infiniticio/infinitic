@@ -25,7 +25,10 @@ package io.infinitic.common.workflows.data.properties
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
+import io.infinitic.common.tasks.data.bases.Name
 
 data class PropertyName
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue val name: String) : Comparable<String> by name
+constructor(@get:JsonValue override val name: String) : Name(name) {
+
+}

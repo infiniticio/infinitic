@@ -24,7 +24,7 @@
 package io.infinitic.common.workflows.data.workflowTasks
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.properties.PropertyStore
+import io.infinitic.common.workflows.data.properties.PropertiesHashValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -34,7 +34,7 @@ data class WorkflowTaskInput(
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
     val workflowOptions: WorkflowOptions,
-    val workflowPropertyStore: PropertyStore,
+    val workflowPropertiesHashValue: PropertiesHashValue,
     val workflowMessageIndex: WorkflowMessageIndex,
 
     val methodRun: MethodRun

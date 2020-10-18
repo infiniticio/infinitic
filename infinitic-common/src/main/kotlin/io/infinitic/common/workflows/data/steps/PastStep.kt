@@ -26,7 +26,7 @@ package io.infinitic.common.workflows.data.steps
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.properties.Properties
+import io.infinitic.common.workflows.data.properties.PropertiesNameHash
 import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
 
 data class PastStep(
@@ -34,14 +34,14 @@ data class PastStep(
     val step: Step,
     val stepHash: StepHash,
     var stepStatus: StepStatus = StepStatusOngoing,
-    var propertiesAtTermination: Properties? = null,
+    var propertiesNameHashAtTermination: PropertiesNameHash? = null,
     var messageIndexAtTermination: WorkflowMessageIndex? = null
 ) {
 
     @JsonIgnore
     fun isTerminated() = stepStatus is StepStatusCompleted || stepStatus is StepStatusCanceled
 
-    fun terminateBy(pastCommand: PastCommand, properties: Properties): Boolean {
+    fun terminateBy(pastCommand: PastCommand, propertiesNameHash: PropertiesNameHash): Boolean {
         if (isTerminated()) return false
 
         step.update(pastCommand.commandId, pastCommand.commandStatus)
@@ -49,7 +49,7 @@ data class PastStep(
         return when (stepStatus) {
             is StepStatusOngoing -> false
             is StepStatusCanceled, is StepStatusCompleted -> {
-                propertiesAtTermination = properties
+                propertiesNameHashAtTermination = propertiesNameHash
                 true
             }
         }

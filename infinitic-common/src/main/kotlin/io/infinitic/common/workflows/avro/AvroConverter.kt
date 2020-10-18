@@ -81,8 +81,8 @@ object AvroConverter {
         currentWorkflowTaskId = avro.currentWorkflowTaskId?.let { WorkflowTaskId(it) },
         currentMessageIndex = WorkflowMessageIndex(avro.currentMessageIndex),
         currentMethodRuns = avro.currentMethodRuns.map { convertJson<MethodRun>(it) }.toMutableList(),
-        currentProperties = convertJson(avro.currentProperties),
-        propertyStore = convertJson(avro.propertyStore),
+        currentPropertiesNameHash = convertJson(avro.currentPropertiesNameHash),
+        propertiesHashValue = convertJson(avro.propertiesHashValue),
         bufferedMessages = avro.bufferedMessages.map { fromWorkflowEngine(it) }.toMutableList()
     )
 
@@ -96,8 +96,8 @@ object AvroConverter {
         .setCurrentWorkflowTaskId(state.currentWorkflowTaskId?.toString())
         .setCurrentMessageIndex(convertJson(state.currentMessageIndex))
         .setCurrentMethodRuns(state.currentMethodRuns.map { convertJson<AvroMethodRun>(it) })
-        .setCurrentProperties(convertJson(state.currentProperties))
-        .setPropertyStore(convertJson(state.propertyStore))
+        .setCurrentPropertiesNameHash(convertJson(state.currentPropertiesNameHash))
+        .setPropertiesHashValue(convertJson(state.propertiesHashValue))
         .setBufferedMessages(state.bufferedMessages.map { toWorkflowEngine(it) })
         .build()
 

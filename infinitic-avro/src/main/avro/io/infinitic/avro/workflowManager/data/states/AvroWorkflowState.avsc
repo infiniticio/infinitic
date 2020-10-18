@@ -57,14 +57,14 @@
       }
     },
     {
-      "name": "currentProperties",
+      "name": "currentPropertiesNameHash",
       "type": {
         "type": "map",
         "values": "string"
       }
     },
     {
-      "name": "propertyStore",
+      "name": "propertiesHashValue",
       "type": {
         "type": "map",
         "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"

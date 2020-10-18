@@ -54,7 +54,7 @@ abstract class MsgHandler(
             workflowId = state.workflowId,
             workflowName = state.workflowName,
             workflowOptions = state.workflowOptions,
-            workflowPropertyStore = state.propertyStore, // TODO filterStore(state.propertyStore, listOf(methodRun))
+            workflowPropertiesHashValue = state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
             workflowMessageIndex = state.currentMessageIndex,
             methodRun = methodRun
         )

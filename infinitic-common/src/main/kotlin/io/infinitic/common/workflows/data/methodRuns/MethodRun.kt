@@ -23,15 +23,18 @@
 
 package io.infinitic.common.workflows.data.methodRuns
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.properties.Properties
+import io.infinitic.common.workflows.data.properties.PropertiesNameHash
+import io.infinitic.common.workflows.data.properties.PropertiesHashValue
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import java.lang.RuntimeException
 
 data class MethodRun(
     val methodRunId: MethodRunId = MethodRunId(),
@@ -43,7 +46,12 @@ data class MethodRun(
     val methodInput: MethodInput,
     var methodOutput: MethodOutput? = null,
     val messageIndexAtStart: WorkflowMessageIndex,
-    val propertiesAtStart: Properties = Properties(),
+    val propertiesNameHashAtStart: PropertiesNameHash = PropertiesNameHash(),
     val pastCommands: MutableList<PastCommand> = mutableListOf(),
     val pastSteps: MutableList<PastStep> = mutableListOf()
-)
+) {
+    @JsonIgnore
+    fun getPropertiesNameValue(propertiesHashValue: PropertiesHashValue) = propertiesNameHashAtStart.mapValues {
+            propertiesHashValue[it.value] ?: throw RuntimeException("Unknown hash ${it.value} in $propertiesHashValue")
+        }
+}

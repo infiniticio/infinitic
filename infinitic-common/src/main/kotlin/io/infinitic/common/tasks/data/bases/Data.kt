@@ -30,6 +30,8 @@ import kotlin.reflect.full.primaryConstructor
 abstract class Data(open val data: Any?) {
     lateinit var serializedData: SerializedData
 
+    final override fun toString() = data.toString()
+
     @get:JsonValue
     val json get() = when {
         this::serializedData.isInitialized -> serializedData

@@ -16,7 +16,7 @@
       "type": "io.infinitic.avro.workflowManager.data.workflows.AvroWorkflowOptions"
     },
     {
-      "name": "workflowPropertyStore",
+      "name": "workflowPropertiesHashValue",
       "type": {
         "type": "map",
         "values": "io.infinitic.avro.taskManager.data.AvroSerializedData"

@@ -86,7 +86,7 @@ object TestFactory {
         return EasyRandom(parameters).nextObject(klass.java)
     }
 
-    private fun randomStep(): Step {
+    fun randomStep(): Step {
         val steps = steps().values.toList()
         return steps[Random.nextInt(until = steps.size - 1)]
     }

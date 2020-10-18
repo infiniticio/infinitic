@@ -69,7 +69,7 @@
       "type": "int"
     },
     {
-      "name": "propertiesAtStart",
+      "name": "propertiesNameHashAtStart",
       "type": {
         "type": "map",
         "values": "string"

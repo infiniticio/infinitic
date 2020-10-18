@@ -260,4 +260,52 @@ class WorkflowIntegrationTests : StringSpec({
         // checks number of task processing
         dispatcher.workflowOutput shouldBe 87178291200
     }
+
+    "Check prop1" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatch(WorkflowA::class.java) { prop1() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe true
+    }
+
+    "Check prop2" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatch(WorkflowA::class.java) { prop2() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe true
+    }
+
+    "Check prop3" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatch(WorkflowA::class.java) { prop3() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe true
+    }
+
+    "Check prop4" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatch(WorkflowA::class.java) { prop4() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe true
+    }
 })

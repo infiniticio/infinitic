@@ -25,31 +25,67 @@ package io.infinitic.common.workflows.parser
 
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.properties.PropertyName
+import java.lang.reflect.Type
+import kotlin.reflect.KProperty1
+import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
+import kotlin.reflect.jvm.javaType
 
-public fun setPropertiesToObject(obj: Any, values: Map<PropertyName, PropertyValue?>) {
+fun <T: Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyValue>) {
     val properties = obj::class.memberProperties
     values.forEach { (name, value) ->
         properties.find { it.name == name.name }
-            ?.javaField?.apply {
-            val accessible = isAccessible
-            if (!accessible) try {
-                isAccessible = true
-            } catch (e: SecurityException) {
-                throw Exception("property can not set accessible")
-            }
-            try {
-                set(obj, value?.data)
-            } catch (e: IllegalAccessException) {
-                throw Exception("property is final")
-            } catch (e: IllegalArgumentException) {
-                throw Exception("value is not of the property's type")
-            } catch (e: Exception) {
-                throw Exception("Impossible to set property")
-            }
-            if (!accessible) isAccessible = false
+            ?.let { setProperty(obj, it, value.data)}
+            ?: throw RuntimeException("Trying to set unknown property ${obj::class.java.name}:${name.name}")
+    }
+}
+
+fun <T: Any> getPropertiesFromObject(obj: T, filter: (p: Triple<String, Any?, KType>) -> Boolean = { true }): Map<PropertyName, PropertyValue> =
+    obj::class.memberProperties
+        .map { p -> Triple(p.name, getProperty(obj, p), p.returnType) }
+        .filter { filter(it) }
+        .associateBy({ PropertyName(it.first) }, { PropertyValue(it.second) })
+
+private fun <T: Any> getProperty(obj: T, kProperty: KProperty1<out T, *>)=  kProperty.javaField
+    ?.let {
+        val errorMsg = "Property ${obj::class.java.name}:${it.name} is not readable"
+
+        val accessible = it.isAccessible
+        if (!accessible) try {
+            it.isAccessible = true
+        } catch (e: SecurityException) {
+            throw RuntimeException("$errorMsg (can not set accessible)")
         }
-            ?: throw Exception("Unknown property ${name.name}")
+        val value = try {
+            it.get(obj)
+        } catch (e: Exception) {
+            throw RuntimeException("$errorMsg ($e)")
+        }
+        if (!accessible) it.isAccessible = false
+
+        value
+    }
+
+private fun <T: Any> setProperty(obj: T, kProperty: KProperty1<out T, *>, value: Any?) {
+    kProperty.javaField?.apply {
+        val errorMsg = "Property ${obj::class.java.name}:$name can not be set"
+
+        val accessible = isAccessible
+        if (!accessible) try {
+            isAccessible = true
+        } catch (e: SecurityException) {
+            throw RuntimeException("$errorMsg (can not set it as accessible)")
+        }
+        try {
+            set(obj, value)
+        } catch (e: IllegalAccessException) {
+            throw RuntimeException("$errorMsg can not be set (is final)")
+        } catch (e: IllegalArgumentException) {
+            throw RuntimeException("$errorMsg can not be set (wrong ${value?.let { it::class.java.name}} type)")
+        } catch (e: Exception) {
+            throw RuntimeException("$errorMsg ($e)")
+        }
+        if (!accessible) isAccessible = false
     }
 }

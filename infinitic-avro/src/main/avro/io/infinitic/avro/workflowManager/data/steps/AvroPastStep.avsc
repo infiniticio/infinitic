@@ -20,7 +20,7 @@
       "type": "io.infinitic.avro.workflowManager.data.steps.AvroStepStatus"
     },
     {
-      "name": "propertiesAtTermination",
+      "name": "propertiesNameHashAtTermination",
       "type": [
         "null",
         {

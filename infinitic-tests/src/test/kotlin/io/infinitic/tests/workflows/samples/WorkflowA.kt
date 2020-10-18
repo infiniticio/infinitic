@@ -50,13 +50,17 @@ interface WorkflowA : Workflow {
     fun inline3(): String
     fun child1(): String
     fun child2(): String
+    fun prop1(): Boolean
+    fun prop2(): Boolean
+    fun prop3(): Boolean
+    fun prop4(): Boolean
 }
 
 class WorkflowAImpl() : WorkflowA {
     override lateinit var context: WorkflowTaskContext
-
     private val taskA = proxy(TaskA::class)
     private val workflowB = proxy(WorkflowB::class)
+    var p1 = ""
 
     override fun empty() = "void"
 
@@ -191,5 +195,49 @@ class WorkflowAImpl() : WorkflowA {
         val d = async(workflowB) { concat(str) }
 
         return taskA.concat(d.result(), str) // should be "21abc21"
+    }
+
+    override fun prop1(): Boolean {
+        p1 = "a"
+
+        val d = async {
+            p1 = "b"
+        }
+        return p1=="a"
+    }
+
+    override fun prop2(): Boolean {
+        p1 = "a"
+
+        val d = async {
+            p1 = "b"
+        }
+        taskA.await(100)
+
+        return p1=="b"
+    }
+
+    override fun prop3(): Boolean {
+        p1 = "a"
+
+        val d = async {
+            taskA.await(50)
+            p1 = "b"
+        }
+        taskA.await(100)
+
+        return p1=="b"
+    }
+
+    override fun prop4(): Boolean {
+        p1 = "a"
+
+        val d = async {
+            taskA.await(150)
+            p1 = "b"
+        }
+        taskA.await(100)
+
+        return p1=="a"
     }
 }
