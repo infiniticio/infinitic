@@ -41,19 +41,14 @@ data class PastStep(
     @JsonIgnore
     fun isTerminated() = stepStatus is StepStatusCompleted || stepStatus is StepStatusCanceled
 
-    fun terminateBy(pastCommand: PastCommand, propertiesNameHash: PropertiesNameHash, workflowTaskIndex: WorkflowTaskIndex): Boolean {
+    fun isUpdatedBy(pastCommand: PastCommand): Boolean {
+        // returns false if already terminated
         if (isTerminated()) return false
-
+        // apply update
         step.update(pastCommand.commandId, pastCommand.commandStatus)
         stepStatus = step.stepStatus()
-        return when (stepStatus) {
-            is StepStatusOngoing -> false
-            is StepStatusCanceled, is StepStatusCompleted -> {
-                propertiesNameHashAtTermination = propertiesNameHash
-                workflowTaskIndexAtTermination = workflowTaskIndex
-                true
-            }
-        }
+        // returns true only if newly terminated
+        return isTerminated()
     }
 
     fun isSimilarTo(newStep: NewStep) = newStep.stepHash == stepHash

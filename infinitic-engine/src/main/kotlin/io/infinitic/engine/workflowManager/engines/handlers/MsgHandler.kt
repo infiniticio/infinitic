@@ -23,6 +23,7 @@
 
 package io.infinitic.engine.workflowManager.engines.handlers
 
+import io.infinitic.common.data.interfaces.inc
 import io.infinitic.common.tasks.Constants
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskId
@@ -49,6 +50,8 @@ abstract class MsgHandler(
         state.currentMethodRuns.first { it.methodRunId == methodRunId }
 
     protected suspend fun dispatchWorkflowTask(state: WorkflowState, methodRun: MethodRun) {
+        state.currentWorkflowTaskIndex++
+
         // defines workflow task input
         val workflowTaskInput = WorkflowTaskInput(
             workflowId = state.workflowId,

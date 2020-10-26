@@ -29,6 +29,6 @@ import io.infinitic.common.data.interfaces.IntInterface
 
 data class WorkflowTaskIndex
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override var int: Int) : IntInterface {
+constructor(@get:JsonValue override var int: Int = 0) : IntInterface {
     override fun toString() = "$int"
 }

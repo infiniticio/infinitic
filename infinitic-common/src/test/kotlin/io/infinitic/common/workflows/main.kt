@@ -1,12 +1,20 @@
 package io.infinitic.common.workflows
 
+import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.parser.getPropertiesFromObject
 import java.lang.RuntimeException
 
 fun main() {
+    val e = WorkflowTaskIndex(0)
+    println(e)
+    println(e + 1)
+
+
+
     val obj1 = Test1("e", 4)
     val obj2 = Test2("e", 4)
 

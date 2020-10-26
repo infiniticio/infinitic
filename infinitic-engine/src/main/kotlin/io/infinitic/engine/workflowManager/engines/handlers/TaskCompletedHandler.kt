@@ -23,6 +23,7 @@
 
 package io.infinitic.engine.workflowManager.engines.handlers
 
+import io.infinitic.common.data.interfaces.plus
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput
@@ -52,8 +53,11 @@ class TaskCompletedHandler(
 
         // update steps
         val justCompleted = methodRun.pastSteps
-            .map { it.terminateBy(pastCommand, state.currentPropertiesNameHash, state.currentWorkflowTaskIndex) }
-            .any { it } // "any" must be applied only after having applied terminateBy to all elements
+            .filter { it.isUpdatedBy(pastCommand) }
+            .map {
+                it.workflowTaskIndexAtTermination = state.currentWorkflowTaskIndex + 1
+                it.propertiesNameHashAtTermination = state.currentPropertiesNameHash
+            }.isNotEmpty()
 
         // if a step is completed by this message, dispatch a new WorkflowTask
         if (justCompleted) {

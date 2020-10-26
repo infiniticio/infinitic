@@ -110,9 +110,6 @@ class WorkflowEngine(
     }
 
     private suspend fun processMessage(state: WorkflowState, msg: ForWorkflowEngineMessage) {
-        // increment message index
-        state.currentWorkflowTaskIndex++
-        //
         when (msg) {
             is CancelWorkflow -> cancelWorkflow(state, msg)
             is ChildWorkflowCanceled -> childWorkflowCanceled(state, msg)
