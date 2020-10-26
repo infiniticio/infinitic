@@ -47,14 +47,15 @@ class TaskCompletedHandler(
         // update command status
         pastCommand.commandStatus = CommandStatusCompleted(
             CommandOutput(msg.taskOutput.data),
-            state.currentMessageIndex
+            state.currentWorkflowTaskIndex
         )
 
         // update steps
         val justCompleted = methodRun.pastSteps
-            .map { it.terminateBy(pastCommand, state.currentPropertiesNameHash) }
-            .any { it } // any must be applied only after having applied terminateBy to all elements
+            .map { it.terminateBy(pastCommand, state.currentPropertiesNameHash, state.currentWorkflowTaskIndex) }
+            .any { it } // "any" must be applied only after having applied terminateBy to all elements
 
+        // if a step is completed by this message, dispatch a new WorkflowTask
         if (justCompleted) {
             dispatchWorkflowTask(state, methodRun)
         }

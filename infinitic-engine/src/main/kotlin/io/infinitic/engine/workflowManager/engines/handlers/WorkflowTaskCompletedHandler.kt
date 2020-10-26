@@ -43,7 +43,7 @@ import io.infinitic.common.workflows.data.commands.StartInlineTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
@@ -67,9 +67,9 @@ class WorkflowTaskCompletedHandler(
                 is DispatchTaskInWorkflow -> dispatchTask(methodRun, it, msg.workflowId)
                 is DispatchChildWorkflow -> dispatchChildWorkflow(methodRun, it, state)
                 is StartAsync -> startAsync(methodRun, it)
-                is EndAsync -> endAsync(methodRun, it, state.currentMessageIndex)
+                is EndAsync -> endAsync(methodRun, it, state.currentWorkflowTaskIndex)
                 is StartInlineTask -> startInlineTask(methodRun, it)
-                is EndInlineTask -> endInlineTask(methodRun, it, state.currentMessageIndex)
+                is EndInlineTask -> endInlineTask(methodRun, it, state.currentWorkflowTaskIndex)
                 is DispatchTimer -> TODO()
                 is DispatchReceiver -> TODO()
             }
@@ -127,7 +127,7 @@ class WorkflowTaskCompletedHandler(
         addPastCommand(methodRun, newCommand)
     }
 
-    private fun endAsync(methodRun: MethodRun, newCommand: NewCommand, currentMessageIndex: WorkflowMessageIndex) {
+    private fun endAsync(methodRun: MethodRun, newCommand: NewCommand, currentWorkflowTaskIndex: WorkflowTaskIndex) {
         val command = newCommand.command as EndAsync
         // look for previous Start Async command
         val pastStartAsync = methodRun.pastCommands.first {
@@ -136,7 +136,7 @@ class WorkflowTaskCompletedHandler(
         // past command completed
         pastStartAsync.commandStatus = CommandStatusCompleted(
             CommandOutput(command.asyncOutput.data),
-            currentMessageIndex
+            currentWorkflowTaskIndex
         )
     }
 
@@ -144,7 +144,7 @@ class WorkflowTaskCompletedHandler(
         addPastCommand(methodRun, newCommand)
     }
 
-    private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, currentMessageIndex: WorkflowMessageIndex) {
+    private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, currentWorkflowTaskIndex: WorkflowTaskIndex) {
         val command = newCommand.command as EndInlineTask
         // look for previous StartInlineTask command
         val pastStartInlineTask = methodRun.pastCommands.first {
@@ -153,7 +153,7 @@ class WorkflowTaskCompletedHandler(
         // past command completed
         pastStartInlineTask.commandStatus = CommandStatusCompleted(
             CommandOutput(command.inlineTaskOutput.data),
-            currentMessageIndex
+            currentWorkflowTaskIndex
         )
     }
 

@@ -113,6 +113,7 @@ object StartInlineTask : Command() {
     // as we can not define a data class without parameter, we add manually the equals func
     override fun equals(other: Any?) = javaClass == other?.javaClass
 }
+
 data class EndInlineTask(
     @JsonProperty("output")
     val inlineTaskOutput: CommandOutput

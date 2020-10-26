@@ -29,14 +29,14 @@ import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.steps.Step.Or
 import io.infinitic.common.workflows.data.steps.Step.And
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 fun getStepId() = Step.Id(CommandId(), CommandStatusOngoing)
 fun getCompletedStatus(output: Any? = null, index: Int = 0) = CommandStatusCompleted(
     completionResult = CommandOutput(output),
-    completionWorkflowMessageIndex = WorkflowMessageIndex(index)
+    completionWorkflowTaskIndex = WorkflowTaskIndex(index)
 )
 
 class StepTests : StringSpec({

@@ -21,27 +21,36 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.workflowTasks
+package io.infinitic.engine.workflowManager.storages
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.properties.PropertiesHashValue
+import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.storage.api.Storage
+import io.infinitic.common.workflows.avro.AvroConverter
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import java.lang.RuntimeException
+import io.infinitic.common.workflows.data.states.WorkflowState
+import io.infinitic.avro.workflowManager.states.AvroWorkflowState
+import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.LongAdder
 
-data class WorkflowTaskInput(
-    val workflowId: WorkflowId,
-    val workflowName: WorkflowName,
-    val workflowOptions: WorkflowOptions,
-    val workflowPropertiesHashValue: PropertiesHashValue,
-    val workflowTaskIndex: WorkflowTaskIndex,
+/**
+ * This WorkflowStateStorage implementation is used for tests.
+ */
+open class InMemoryWorkflowStateStorage() : WorkflowStateStorage {
 
-    val methodRun: MethodRun
-) {
-    @JsonIgnore
-    fun getPropertiesAtStart() = methodRun.propertiesNameHashAtStart.mapValues {
-        workflowPropertiesHashValue[it.value] ?: throw RuntimeException("Unknown hash ${it.value} in $workflowPropertiesHashValue")
+    private val stateStorage = ConcurrentHashMap<WorkflowId, WorkflowState>()
+
+    override fun createState(workflowId: WorkflowId, state: WorkflowState) {
+        stateStorage[workflowId] = state
+    }
+
+    override fun getState(workflowId: WorkflowId) = stateStorage[workflowId]
+
+    override fun updateState(workflowId: WorkflowId, state: WorkflowState) {
+        stateStorage[workflowId] = state
+    }
+
+    override fun deleteState(workflowId: WorkflowId) {
+        stateStorage.remove(workflowId)
     }
 }

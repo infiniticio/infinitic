@@ -55,7 +55,7 @@ abstract class MsgHandler(
             workflowName = state.workflowName,
             workflowOptions = state.workflowOptions,
             workflowPropertiesHashValue = state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
-            workflowMessageIndex = state.currentMessageIndex,
+            workflowTaskIndex = state.currentWorkflowTaskIndex,
             methodRun = methodRun
         )
 
@@ -99,7 +99,7 @@ abstract class MsgHandler(
             methodRun.pastCommands.all { it.isTerminated() } &&
             methodRun.pastSteps.all { it.isTerminated() }
         ) {
-            // TODO("filter workflow if unused properties")
+            // TODO("filter unused workflow properties")
             state.currentMethodRuns.remove(methodRun)
         }
     }

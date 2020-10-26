@@ -21,14 +21,14 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.workflows
+package io.infinitic.common.workflows.data.properties
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.data.interfaces.IntInterface
+import io.infinitic.common.data.SerializedData
+import io.infinitic.common.tasks.data.bases.Name
 
-data class WorkflowMessageIndex
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override var int: kotlin.Int = 0) : IntInterface {
-    override fun toString() = "$int"
-}
+data class PropertySerialized
+@JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
+    @get:JsonValue val serializedData: SerializedData
+)

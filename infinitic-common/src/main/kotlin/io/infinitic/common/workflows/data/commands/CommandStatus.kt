@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "status")
 @JsonSubTypes(
@@ -46,12 +46,12 @@ data class CommandStatusCompleted(
     @JsonProperty("result")
     val completionResult: CommandOutput,
     @JsonProperty("workflowMessageIndex")
-    val completionWorkflowMessageIndex: WorkflowMessageIndex
+    val completionWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()
 
 data class CommandStatusCanceled(
     @JsonProperty("result")
     val cancellationResult: CommandOutput,
     @JsonProperty("workflowMessageIndex")
-    val cancellationWorkflowMessageIndex: WorkflowMessageIndex
+    val cancellationWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()

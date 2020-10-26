@@ -42,7 +42,6 @@ import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.worker.task.TaskAttemptContext
 import java.lang.RuntimeException
 import java.lang.reflect.InvocationTargetException
-import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.javaType
 
 class WorkflowTaskImpl : WorkflowTask {
@@ -55,75 +54,19 @@ class WorkflowTaskImpl : WorkflowTask {
         // set methodContext
         val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput, workflowInstance)
 
-        // set workflow task context
-        workflowInstance.context = workflowTaskContext
-
-        // set workflow's initial properties
-        setPropertiesToObject(
-            workflowInstance,
-            workflowTaskInput.methodRun.getPropertiesNameValue(workflowTaskInput.workflowPropertiesHashValue)
-        )
-
-        // get method
-        val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
-
         // run method and get output
-        val methodOutput = try {
-            MethodOutput(method.invoke(workflowInstance, *workflowTaskInput.methodRun.methodInput.data))
-        } catch (e: InvocationTargetException) {
-            when (e.cause) {
-                is NewStepException -> null
-                is KnownStepException -> null
-                else -> throw e.cause!!
-            }
-        }
-
-        // get current workflow properties (WorkflowTaskContext and proxies excluded)
-        val currentPropertiesNameValue = getPropertiesFromObject(workflowInstance, {
-            it.third.javaType.typeName != WorkflowTaskContext::class.java.name &&
-            ! it.second!!::class.java.name.startsWith("com.sun.proxy.")
-        })
-
-        // get properties updates
-        val unknownProperties = workflowTaskInput.methodRun.propertiesNameHashAtStart.keys.filter { it !in currentPropertiesNameValue.keys }.joinToString()
-        if (unknownProperties.isNotEmpty()) throw RuntimeException(unknownProperties)
-
-        val hashValueUpdates = mutableMapOf<PropertyHash, PropertyValue>()
-        val nameHashUpdates = mutableMapOf<PropertyName, PropertyHash>()
-
-        currentPropertiesNameValue.map {
-            val hash = it.value.hash()
-            if (it.key !in workflowTaskInput.methodRun.propertiesNameHashAtStart.keys || hash != workflowTaskInput.methodRun.propertiesNameHashAtStart[it.key]) {
-                // new property
-                nameHashUpdates[it.key] = hash
-            }
-            if (hash !in hashValueUpdates.keys) {
-                hashValueUpdates[hash] = it.value
-            }
-        }
+        val methodOutput = workflowTaskContext.run()
 
         return WorkflowTaskOutput(
             workflowTaskInput.workflowId,
             workflowTaskInput.methodRun.methodRunId,
             workflowTaskContext.newCommands,
             workflowTaskContext.newSteps,
-            PropertiesNameHash(nameHashUpdates),
-            PropertiesHashValue(hashValueUpdates),
+            PropertiesNameHash(),
+            PropertiesHashValue(),
             methodOutput
         )
     }
 
-    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes.types == null) {
-        getMethodPerNameAndParameterCount(
-            workflow,
-            "${methodRun.methodName}",
-            methodRun.methodInput.size
-        )
-    } else {
-        getMethodPerNameAndParameterTypes(
-            workflow,
-            "${methodRun.methodName}",
-            methodRun.methodParameterTypes.types!!
-        )
-    }
+
 }

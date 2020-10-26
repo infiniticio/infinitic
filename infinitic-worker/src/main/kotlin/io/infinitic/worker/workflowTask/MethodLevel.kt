@@ -24,12 +24,12 @@
 package io.infinitic.worker.workflowTask
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 
 data class MethodLevel(
     val parentLevel: MethodLevel? = null,
     val instructionIndex: Int = -1,
-    var messageIndex: WorkflowMessageIndex
+    var workflowTaskIndex: WorkflowTaskIndex
 ) {
     val methodPosition: MethodRunPosition = when (parentLevel) {
         null -> MethodRunPosition("$instructionIndex")
@@ -38,9 +38,9 @@ data class MethodLevel(
 
     override fun toString() = "$methodPosition"
 
-    fun next() = MethodLevel(parentLevel, instructionIndex + 1, messageIndex)
+    fun next() = MethodLevel(parentLevel, instructionIndex + 1, workflowTaskIndex)
 
     fun up() = parentLevel
 
-    fun down() = MethodLevel(this, -1, messageIndex)
+    fun down() = MethodLevel(this, -1, workflowTaskIndex)
 }

@@ -37,7 +37,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertiesHashValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.messages.DispatchWorkflow
@@ -56,7 +56,7 @@ class DispatchWorkflowHandler(
             methodName = msg.methodName,
             methodParameterTypes = msg.methodParameterTypes,
             methodInput = msg.methodInput,
-            messageIndexAtStart = WorkflowMessageIndex(0)
+            workflowTaskIndexAtStart = WorkflowTaskIndex(0)
         )
 
         // defines workflow task input
@@ -65,7 +65,7 @@ class DispatchWorkflowHandler(
             workflowName = msg.workflowName,
             workflowOptions = msg.workflowOptions,
             workflowPropertiesHashValue = PropertiesHashValue(),
-            workflowMessageIndex = WorkflowMessageIndex(0),
+            workflowTaskIndex = WorkflowTaskIndex(0),
             methodRun = methodRun
         )
 

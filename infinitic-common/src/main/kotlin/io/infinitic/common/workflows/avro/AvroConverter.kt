@@ -26,7 +26,7 @@ package io.infinitic.common.workflows.avro
 import io.infinitic.common.json.Json
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.messages.CancelWorkflow
@@ -79,7 +79,7 @@ object AvroConverter {
         workflowOptions = convertJson(avro.workflowOptions),
         workflowMeta = convertJson(avro.workflowMeta),
         currentWorkflowTaskId = avro.currentWorkflowTaskId?.let { WorkflowTaskId(it) },
-        currentMessageIndex = WorkflowMessageIndex(avro.currentMessageIndex),
+        currentWorkflowTaskIndex = WorkflowTaskIndex(avro.currentMessageIndex),
         currentMethodRuns = avro.currentMethodRuns.map { convertJson<MethodRun>(it) }.toMutableList(),
         currentPropertiesNameHash = convertJson(avro.currentPropertiesNameHash),
         propertiesHashValue = convertJson(avro.propertiesHashValue),
@@ -94,7 +94,7 @@ object AvroConverter {
         .setWorkflowOptions(convertJson(state.workflowOptions))
         .setWorkflowMeta(convertJson(state.workflowMeta))
         .setCurrentWorkflowTaskId(state.currentWorkflowTaskId?.toString())
-        .setCurrentMessageIndex(convertJson(state.currentMessageIndex))
+        .setCurrentMessageIndex(convertJson(state.currentWorkflowTaskIndex))
         .setCurrentMethodRuns(state.currentMethodRuns.map { convertJson<AvroMethodRun>(it) })
         .setCurrentPropertiesNameHash(convertJson(state.currentPropertiesNameHash))
         .setPropertiesHashValue(convertJson(state.propertiesHashValue))

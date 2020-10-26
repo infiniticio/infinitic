@@ -33,8 +33,10 @@ import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryAvroDispatcher
+import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
 
-class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryAvroDispatcher() {
+//class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryAvroDispatcher() {
+class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher() {
     val client = Client(this)
     val worker = Worker(this)
     val taskEngine = ForWorkflowTaskEngine(storage, this)

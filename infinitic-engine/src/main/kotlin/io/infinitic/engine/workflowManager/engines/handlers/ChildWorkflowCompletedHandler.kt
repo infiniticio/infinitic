@@ -47,12 +47,12 @@ class ChildWorkflowCompletedHandler(
         // update command status
         pastCommand.commandStatus = CommandStatusCompleted(
             CommandOutput(msg.childWorkflowOutput.data),
-            state.currentMessageIndex
+            state.currentWorkflowTaskIndex
         )
 
         // update steps
         val justCompleted = methodRun.pastSteps
-            .map { it.terminateBy(pastCommand, state.currentPropertiesNameHash) }
+            .map { it.terminateBy(pastCommand, state.currentPropertiesNameHash, state.currentWorkflowTaskIndex) }
             .any { it } // any must be applied only after having applied terminateBy to all elements
 
         if (justCompleted) {

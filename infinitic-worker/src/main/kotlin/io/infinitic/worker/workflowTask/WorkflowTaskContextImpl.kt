@@ -23,6 +23,9 @@
 
 package io.infinitic.worker.workflowTask
 
+import io.infinitic.common.tasks.data.MethodOutput
+import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.tasks.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.Deferred
 import io.infinitic.common.workflows.DeferredStatus
@@ -54,20 +57,84 @@ import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.WorkflowTaskContext
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertySerialized
+import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.parser.getPropertiesFromObject
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import kotlin.reflect.jvm.javaType
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
     private val workflowInstance: Workflow
 ) : WorkflowTaskContext {
     // current position in the tree of method processing
-    private var methodLevel: MethodLevel = MethodLevel(messageIndex = workflowTaskInput.methodRun.messageIndexAtStart)
+    private var methodLevel = MethodLevel(workflowTaskIndex = workflowTaskInput.methodRun.workflowTaskIndexAtStart)
 
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
 
-    // new steps (if any) discovered during execution the method
+    // new steps (if any) discovered during execution the method (can be multiple due to `async` function)
     var newSteps: MutableList<NewStep> = mutableListOf()
+
+    // properties after this workflowTask
+    val serializedPropertiesAtCompletion: MutableMap<PropertyName, PropertySerialized> = mutableMapOf()
+
+    init {
+        // set workflow task context
+        workflowInstance.context = this
+    }
+
+    /*
+     * Run method defined in workflowTaskInput.methodRun
+     */
+    fun run() : MethodOutput? {
+        // set workflow's initial properties
+        setPropertiesToObject(workflowInstance, workflowTaskInput.getPropertiesAtStart())
+
+        // get method
+        val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
+
+        // run method and get output
+        return try {
+            MethodOutput(method.invoke(workflowInstance, *workflowTaskInput.methodRun.methodInput.data))
+        } catch (e: InvocationTargetException) {
+            when (e.cause) {
+                is NewStepException -> null
+                is KnownStepException -> null
+                else -> throw e.cause!!
+            }
+        }
+    }
+
+    fun updateProps() {
+        // get current workflow properties (WorkflowTaskContext and proxies excluded)
+        val currentProperties = getPropertiesFromObject(workflowInstance, {
+            it.third.javaType.typeName != WorkflowTaskContext::class.java.name &&
+                ! it.second!!::class.java.name.startsWith("com.sun.proxy.")
+        })
+
+        // get properties updates
+        val unknownProperties = workflowTaskInput.methodRun.propertiesNameHashAtStart.keys.filter { it !in currentProperties.keys }.joinToString()
+        if (unknownProperties.isNotEmpty()) throw java.lang.RuntimeException(unknownProperties)
+
+        val hashValueUpdates = mutableMapOf<PropertyHash, PropertyValue>()
+        val nameHashUpdates = mutableMapOf<PropertyName, PropertyHash>()
+
+        currentProperties.map {
+            val hash = it.value.hash()
+            if (it.key !in workflowTaskInput.methodRun.propertiesNameHashAtStart.keys || hash != workflowTaskInput.methodRun.propertiesNameHashAtStart[it.key]) {
+                // new property
+                nameHashUpdates[it.key] = hash
+            }
+            if (hash !in hashValueUpdates.keys) {
+                hashValueUpdates[hash] = it.value
+            }
+        }
+    }
 
     /*
      * Async Task dispatching
@@ -126,16 +193,14 @@ class WorkflowTaskContextImpl(
         // increment position
         positionNext()
 
-        // set a new command
-        val dispatch = StartAsync
-        // create instruction that *may* be sent to engine
+        // create instruction that will be sent to engine only if new
         val newCommand = NewCommand(
-            command = dispatch,
+            command = StartAsync,
             commandSimpleName = CommandSimpleName("${CommandType.START_ASYNC}"),
             commandPosition = methodLevel.methodPosition
         )
 
-        val pastCommand = getPastCommandSimilarTo(newCommand)
+        val pastCommand = findPastCommandSimilarTo(newCommand)
 
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
@@ -163,16 +228,14 @@ class WorkflowTaskContextImpl(
         // increment position
         positionNext()
 
-        // set a new command
-        val dispatch = StartInlineTask
-        // create instruction that *may* be sent to engine
+        // create instruction that will be sent to engine only if new
         val startCommand = NewCommand(
-            command = dispatch,
+            command = StartInlineTask,
             commandSimpleName = CommandSimpleName("${CommandType.START_INLINE_TASK}"),
             commandPosition = methodLevel.methodPosition
         )
 
-        val pastCommand = getPastCommandSimilarTo(startCommand)
+        val pastCommand = findPastCommandSimilarTo(startCommand)
 
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
@@ -180,9 +243,7 @@ class WorkflowTaskContextImpl(
             // go down (it should be needed only if inline task dispatch some tasks)
             positionDown()
             // run inline task
-            val commandOutput = try {
-                CommandOutput(inline())
-            } catch (e: Exception) {
+            val commandOutput = try { CommandOutput(inline()) } catch (e: Exception) {
                 when (e) {
                     is NewStepException -> throw ShouldNotWaitInInlineTask()
                     is KnownStepException -> throw ShouldNotWaitInInlineTask()
@@ -217,6 +278,7 @@ class WorkflowTaskContextImpl(
     override fun <T> await(deferred: Deferred<T>): Deferred<T> {
         // increment position
         positionNext()
+
         // create a new step
         val newStep = NewStep(
             step = deferred.step,
@@ -226,7 +288,7 @@ class WorkflowTaskContextImpl(
 
         // if this is really a new step, we check its status based on current workflow message index
         if (pastStep == null) {
-            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(methodLevel.messageIndex)
+            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(methodLevel.workflowTaskIndex)
             // if this deferred is still ongoing,
             if (deferred.stepStatus is StepStatusOngoing) {
                 // we add a new step
@@ -242,14 +304,16 @@ class WorkflowTaskContextImpl(
         deferred.stepStatus = pastStep.stepStatus
 
         // throw KnownStepException if ongoing else else update message index
-        methodLevel.messageIndex = when (val stepStatus = deferred.stepStatus) {
+        methodLevel.workflowTaskIndex = when (val stepStatus = deferred.stepStatus) {
             is StepStatusOngoing -> throw KnownStepException()
-            is StepStatusCompleted -> stepStatus.completionWorkflowMessageIndex
-            is StepStatusCanceled -> stepStatus.cancellationWorkflowMessageIndex
+            is StepStatusCompleted -> stepStatus.completionWorkflowTaskIndex
+            is StepStatusCanceled -> stepStatus.cancellationWorkflowTaskIndex
         }
 
         // update workflow instance properties
-        val properties = pastStep.propertiesNameHashAtTermination!!.mapValues { workflowTaskInput.workflowPropertiesHashValue[it.value]!! }
+        val properties = pastStep.propertiesNameHashAtTermination!!.mapValues {
+            workflowTaskInput.workflowPropertiesHashValue[it.value]!!
+        }
         setPropertiesToObject(workflowInstance, properties)
 
         // continue
@@ -269,7 +333,7 @@ class WorkflowTaskContextImpl(
     /*
      * Deferred status()
      */
-    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.messageIndex)) {
+    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.workflowTaskIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
@@ -286,6 +350,23 @@ class WorkflowTaskContextImpl(
      */
     override fun <S> dispatchWorkflow(method: Method, args: Array<out Any>) =
         dispatch<S>(DispatchChildWorkflow.from(method, args), CommandSimpleName.fromMethod(method))
+
+    /*
+     * Get method from workflow implementation
+     */
+    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes.types == null) {
+        getMethodPerNameAndParameterCount(
+            workflow,
+            "${methodRun.methodName}",
+            methodRun.methodInput.size
+        )
+    } else {
+        getMethodPerNameAndParameterTypes(
+            workflow,
+            "${methodRun.methodName}",
+            methodRun.methodParameterTypes.types!!
+        )
+    }
 
     /*
      * Go to next position within the same branch
@@ -319,7 +400,7 @@ class WorkflowTaskContextImpl(
             commandPosition = methodLevel.methodPosition
         )
 
-        val pastCommand = getPastCommandSimilarTo(newCommand)
+        val pastCommand = findPastCommandSimilarTo(newCommand)
 
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
@@ -365,7 +446,7 @@ class WorkflowTaskContextImpl(
         }
     }
 
-    private fun getPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
+    private fun findPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
         val pastCommand = workflowTaskInput.methodRun.pastCommands
             .find { it.commandPosition == methodLevel.methodPosition }

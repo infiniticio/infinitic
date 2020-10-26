@@ -28,7 +28,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertiesNameHash
 import io.infinitic.common.workflows.data.properties.PropertiesHashValue
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
@@ -43,7 +43,7 @@ data class WorkflowState(
     val workflowOptions: WorkflowOptions,
     val workflowMeta: WorkflowMeta,
     var currentWorkflowTaskId: WorkflowTaskId? = null,
-    var currentMessageIndex: WorkflowMessageIndex = WorkflowMessageIndex(0),
+    var currentWorkflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
     val currentMethodRuns: MutableList<MethodRun>,
     val currentPropertiesNameHash: PropertiesNameHash = PropertiesNameHash(mutableMapOf()),
     val propertiesHashValue: PropertiesHashValue = PropertiesHashValue(mutableMapOf()),

@@ -75,7 +75,7 @@ class WorkflowEngine(
                 state = dispatchWorkflow(msg)
                 storage.createState(msg.workflowId, state)
             }
-            // discard all other types of message as this workflow is already terminated
+            // discard all other types of message as its workflow is already terminated
             return
         }
 
@@ -111,7 +111,7 @@ class WorkflowEngine(
 
     private suspend fun processMessage(state: WorkflowState, msg: ForWorkflowEngineMessage) {
         // increment message index
-        state.currentMessageIndex++
+        state.currentWorkflowTaskIndex++
         //
         when (msg) {
             is CancelWorkflow -> cancelWorkflow(state, msg)

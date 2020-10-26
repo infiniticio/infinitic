@@ -21,12 +21,14 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.properties
+package io.infinitic.common.workflows.data.workflowTasks
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.tasks.data.bases.Name
+import io.infinitic.common.data.interfaces.IntInterface
 
-data class PropertyName
+data class WorkflowTaskIndex
 @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val name: String) : Name(name)
+constructor(@get:JsonValue override var int: Int) : IntInterface {
+    override fun toString() = "$int"
+}
