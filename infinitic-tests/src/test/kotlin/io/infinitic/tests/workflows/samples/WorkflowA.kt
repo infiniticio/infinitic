@@ -55,6 +55,7 @@ interface WorkflowA : Workflow {
     fun prop3(): Boolean
     fun prop4(): Boolean
     fun prop5(): Boolean
+    fun prop6(): Boolean
 }
 
 class WorkflowAImpl() : WorkflowA {
@@ -264,5 +265,20 @@ class WorkflowAImpl() : WorkflowA {
         taskA.await(100)
 
         return p1 == "adbc"
+    }
+
+    override fun prop6(): Boolean {
+        val d1 = async(taskA) { reverse("12") }
+
+        val d2 = async {
+            d1.await()
+            p1 += "b"
+            p1
+        }
+        d1.await()
+        p1 += "a"
+        p1 += d2.result()
+
+        return p1 == "aab"
     }
 }

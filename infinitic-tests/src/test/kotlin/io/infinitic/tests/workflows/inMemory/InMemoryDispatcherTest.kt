@@ -48,6 +48,8 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
 
     init {
         workflowEngineHandle = {
+//            println(it::class.java.name)
+//            println(Json.stringify(it, true))
             workflowEngine.handle(it)
 
             when (it) {

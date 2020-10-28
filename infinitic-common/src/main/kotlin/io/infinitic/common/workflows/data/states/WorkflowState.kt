@@ -35,8 +35,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 
-sealed class State
-
 data class WorkflowState(
     /*
     Id of this workflow instance
@@ -102,4 +100,4 @@ data class WorkflowState(
     or when more than one branch' steps are completed by the same message)
      */
     val bufferedCommands: MutableList<CommandId> = mutableListOf()
-) : State()
+)

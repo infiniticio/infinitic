@@ -68,7 +68,7 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
     workflowTaskOutput.properties.map {
         val hash = it.value.hash()
         if (it.key !in state.currentPropertiesNameHash.keys || hash != state.currentPropertiesNameHash[it.key]) {
-            // new property
+            // new or updated property
             state.currentPropertiesNameHash[it.key] = hash
         }
         if (hash !in state.propertiesHashValue.keys) {
@@ -137,8 +137,8 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
 
         when (pastCommand.commandType) {
             CommandType.START_ASYNC -> {
-                // update pastCommand with current properties and anticipated workflowTaskIndex
-                pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash
+                // update pastCommand with a copy (!) of current properties and anticipated workflowTaskIndex
+                pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash.copy()
                 pastCommand.workflowTaskIndexAtStart = state.workflowTaskIndex + 1
                 // dispatch a new workflowTask
                 dispatchWorkflowTask(dispatcher, state, methodRun, pastCommand.commandPosition)
@@ -158,7 +158,7 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
                     state.bufferedCommands.removeAt(0)
                 } else {
                     // update pastStep with current properties and anticipated workflowTaskIndex
-                    pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash
+                    pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash.copy()
                     pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
                     // dispatch a new workflowTask
                     dispatchWorkflowTask(dispatcher, state, methodRun, pastStep.stepPosition)
