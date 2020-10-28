@@ -157,7 +157,7 @@ open class Worker(val dispatcher: Dispatcher) {
 
                 sendTaskCompleted(msg, output)
             } catch (e: InvocationTargetException) {
-                println(e.cause?.cause?.stackTraceToString())
+                // println(e.cause?.cause?.stackTraceToString())
                 // update context with the cause (to be potentially used in getRetryDelay method)
                 taskAttemptContext.exception = e.cause
                 // retrieve delay before retry

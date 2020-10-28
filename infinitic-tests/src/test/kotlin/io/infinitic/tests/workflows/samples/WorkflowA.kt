@@ -54,6 +54,7 @@ interface WorkflowA : Workflow {
     fun prop2(): Boolean
     fun prop3(): Boolean
     fun prop4(): Boolean
+    fun prop5(): Boolean
 }
 
 class WorkflowAImpl() : WorkflowA {
@@ -201,20 +202,24 @@ class WorkflowAImpl() : WorkflowA {
         p1 = "a"
 
         val d = async {
-            p1 = "b"
+            p1 += "b"
         }
-        return p1 == "a"
+        p1 += "c"
+
+        return p1 == "ac"
     }
 
     override fun prop2(): Boolean {
         p1 = "a"
 
         val d = async {
-            p1 = "b"
+            p1 += "b"
         }
+        p1 += "c"
         taskA.await(100)
+        p1 += "d"
 
-        return p1 == "b"
+        return p1 == "acbd"
     }
 
     override fun prop3(): Boolean {
@@ -222,11 +227,13 @@ class WorkflowAImpl() : WorkflowA {
 
         val d = async {
             taskA.await(50)
-            p1 = "b"
+            p1 += "b"
         }
+        p1 += "c"
         taskA.await(100)
+        p1 += "d"
 
-        return p1 == "b"
+        return p1 == "acbd"
     }
 
     override fun prop4(): Boolean {
@@ -234,10 +241,28 @@ class WorkflowAImpl() : WorkflowA {
 
         val d = async {
             taskA.await(150)
-            p1 = "b"
+            p1 += "b"
         }
+        p1 += "c"
+        taskA.await(100)
+        p1 += "d"
+
+        return p1 == "acd"
+    }
+
+    override fun prop5(): Boolean {
+        p1 = "a"
+
+        async {
+            p1 += "b"
+        }
+
+        async {
+            p1 += "c"
+        }
+        p1 += "d"
         taskA.await(100)
 
-        return p1 == "a"
+        return p1 == "adbc"
     }
 }

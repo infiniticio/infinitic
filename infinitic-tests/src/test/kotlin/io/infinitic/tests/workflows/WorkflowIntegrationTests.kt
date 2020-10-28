@@ -308,4 +308,16 @@ class WorkflowIntegrationTests : StringSpec({
         // checks number of task processing
         dispatcher.workflowOutput shouldBe true
     }
+
+    "Check prop5" {
+        // run system
+        coroutineScope {
+            dispatcher.scope = this
+            workflowInstance = client.dispatch(WorkflowA::class.java) { prop5() }
+        }
+        // check that the w is terminated
+        storage.isTerminated(workflowInstance) shouldBe true
+        // checks number of task processing
+        dispatcher.workflowOutput shouldBe true
+    }
 })
