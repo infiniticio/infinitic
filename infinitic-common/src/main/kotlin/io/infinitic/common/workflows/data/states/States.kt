@@ -24,12 +24,9 @@
 package io.infinitic.common.workflows.data.states
 
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertiesNameHash
 import io.infinitic.common.workflows.data.properties.PropertiesHashValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex

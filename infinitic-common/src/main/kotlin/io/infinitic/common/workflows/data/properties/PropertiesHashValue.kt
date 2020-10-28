@@ -27,7 +27,6 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 
 data class PropertiesHashValue
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue val properties: MutableMap<PropertyHash, PropertyValue> = mutableMapOf()) : Map<PropertyHash, PropertyValue> by properties {
-
-}
+@JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
+    @get:JsonValue val properties: MutableMap<PropertyHash, PropertyValue> = mutableMapOf()
+) : MutableMap<PropertyHash, PropertyValue> by properties

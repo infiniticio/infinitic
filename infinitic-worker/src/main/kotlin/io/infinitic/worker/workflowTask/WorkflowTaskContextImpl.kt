@@ -29,6 +29,8 @@ import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.tasks.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.Deferred
 import io.infinitic.common.workflows.DeferredStatus
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -44,6 +46,10 @@ import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.StartAsync
 import io.infinitic.common.workflows.data.commands.StartInlineTask
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.Step
@@ -52,26 +58,17 @@ import io.infinitic.common.workflows.data.steps.StepStatusCompleted
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
-import io.infinitic.common.workflows.exceptions.ShouldNotWaitInInlineTask
-import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
-import io.infinitic.common.workflows.parser.setPropertiesToObject
-import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.properties.PropertyHash
-import io.infinitic.common.workflows.data.properties.PropertyName
-import io.infinitic.common.workflows.data.properties.PropertySerialized
-import io.infinitic.common.workflows.data.properties.PropertyValue
-import io.infinitic.common.workflows.parser.getPropertiesFromObject
+import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
+import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
+import io.infinitic.common.workflows.exceptions.WorkflowDefinitionUpdatedWhileOngoing
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import kotlin.reflect.jvm.javaType
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
-    private val workflowInstance: Workflow
+    private val workflow: Workflow
 ) : WorkflowTaskContext {
-    // current position in the tree of method processing
+    // position in the current method processing
     private var methodRunIndex = MethodRunIndex()
 
     // current workflowTaskIndex (useful to retrieve status of Deferred)
@@ -83,60 +80,12 @@ class WorkflowTaskContextImpl(
     // new steps (if any) discovered during execution the method (can be multiple due to `async` function)
     var newSteps: MutableList<NewStep> = mutableListOf()
 
-    // properties after this workflowTask
-    val serializedPropertiesAtCompletion: MutableMap<PropertyName, PropertySerialized> = mutableMapOf()
-
     init {
         // set workflowTask context
-        workflowInstance.context = this
+        workflow.context = this
     }
 
-    /*
-     * Run method defined in workflowTaskInput.methodRun
-     */
-    fun runMethod() : MethodOutput? {
-        // set workflow's initial properties
-        setPropertiesToObject(workflowInstance, workflowTaskInput.getPropertiesAtStart())
 
-        // get method
-        val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
-
-        // run method and get output
-        return try {
-            MethodOutput(method.invoke(workflowInstance, *workflowTaskInput.methodRun.methodInput.data))
-        } catch (e: InvocationTargetException) {
-            when (e.cause) {
-                is WorkflowTaskException -> null
-                else -> throw e.cause!!
-            }
-        }
-    }
-
-    fun updateProps() {
-        // get current workflow properties (WorkflowTaskContext and proxies excluded)
-        val currentProperties = getPropertiesFromObject(workflowInstance, {
-            it.third.javaType.typeName != WorkflowTaskContext::class.java.name &&
-                ! it.second!!::class.java.name.startsWith("com.sun.proxy.")
-        })
-
-        // get properties updates
-        val unknownProperties = workflowTaskInput.methodRun.propertiesNameHashAtStart.keys.filter { it !in currentProperties.keys }.joinToString()
-        if (unknownProperties.isNotEmpty()) throw java.lang.RuntimeException(unknownProperties)
-
-        val hashValueUpdates = mutableMapOf<PropertyHash, PropertyValue>()
-        val nameHashUpdates = mutableMapOf<PropertyName, PropertyHash>()
-
-        currentProperties.map {
-            val hash = it.value.hash()
-            if (it.key !in workflowTaskInput.methodRun.propertiesNameHashAtStart.keys || hash != workflowTaskInput.methodRun.propertiesNameHashAtStart[it.key]) {
-                // new property
-                nameHashUpdates[it.key] = hash
-            }
-            if (hash !in hashValueUpdates.keys) {
-                hashValueUpdates[hash] = it.value
-            }
-        }
-    }
 
     /*
      * Async Task dispatching
@@ -212,11 +161,17 @@ class WorkflowTaskContextImpl(
             return Deferred<S>(Step.Id.from(newCommand), this)
         }
 
-        // branch is processed only if on path of targetPosition
-//            if (pastCommand.commandStatus is CommandStatusOngoing) {
+        // async branch is processed only if on path of targetPosition
         if (methodRunIndex.leadsTo(workflowTaskInput.targetPosition)) {
+            // update workflowTaskIndex to value linked to first processing of this branch
             workflowTaskIndex = pastCommand.workflowTaskIndexAtStart!!
-            // TODO set properties with: pastCommand.propertiesNameHashAtStart
+
+            // update workflow instance properties
+            setWorkflowProperties(
+                workflow,
+                workflowTaskInput.workflowPropertiesHashValue,
+                pastCommand.propertiesNameHashAtStart
+            )
 
             // go down
             positionDown()
@@ -227,11 +182,13 @@ class WorkflowTaskContextImpl(
             // go up
             positionUp()
 
-            newCommands.add(NewCommand(
-                command = EndAsync(commandOutput),
-                commandSimpleName = CommandSimpleName("${CommandType.END_ASYNC}"),
-                commandPosition = methodRunIndex.methodPosition
-            ))
+            newCommands.add(
+                NewCommand(
+                    command = EndAsync(commandOutput),
+                    commandSimpleName = CommandSimpleName("${CommandType.END_ASYNC}"),
+                    commandPosition = methodRunIndex.methodPosition
+                )
+            )
 
             // async is completed
             throw AsyncCompletedException()
@@ -242,7 +199,7 @@ class WorkflowTaskContextImpl(
     }
 
     /*
-     * Inline task
+     * Inlined task
      */
     override fun <S> task(inline: () -> S): S {
         // increment position
@@ -260,12 +217,13 @@ class WorkflowTaskContextImpl(
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
             newCommands.add(startCommand)
-            // go down (in case that this inline task dispatches some tasks)
+            // go down (in case this inline task asynchronously dispatches some tasks)
             positionDown()
             // run inline task
             val commandOutput = try { CommandOutput(inline()) } catch (e: Exception) {
                 when (e) {
-                    is WorkflowTaskException -> throw ShouldNotWaitInInlineTask()
+                    is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskInput.getErrorMethodName())
+                    is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskInput.getErrorMethodName())
                     else -> throw e
                 }
             }
@@ -330,10 +288,11 @@ class WorkflowTaskContextImpl(
         }
 
         // update workflow instance properties
-        val properties = pastStep.propertiesNameHashAtTermination!!.mapValues {
-            workflowTaskInput.workflowPropertiesHashValue[it.value]!!
-        }
-        setPropertiesToObject(workflowInstance, properties)
+        setWorkflowProperties(
+            workflow,
+            workflowTaskInput.workflowPropertiesHashValue,
+            pastStep.propertiesNameHashAtTermination
+        )
 
         // continue
         return deferred
@@ -371,23 +330,6 @@ class WorkflowTaskContextImpl(
         dispatch<S>(DispatchChildWorkflow.from(method, args), CommandSimpleName.fromMethod(method))
 
     /*
-     * Get method from workflow implementation
-     */
-    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes.types == null) {
-        getMethodPerNameAndParameterCount(
-            workflow,
-            "${methodRun.methodName}",
-            methodRun.methodInput.size
-        )
-    } else {
-        getMethodPerNameAndParameterTypes(
-            workflow,
-            "${methodRun.methodName}",
-            methodRun.methodParameterTypes.types!!
-        )
-    }
-
-    /*
      * Go to next position within the same branch
      */
     private fun positionNext() {
@@ -395,14 +337,14 @@ class WorkflowTaskContextImpl(
     }
 
     /*
-     * Go to parent branch, this is done at the end of a async { ... } function
+     * End of a async { ... } function
      */
     private fun positionUp() {
         methodRunIndex.up()?.let { methodRunIndex = it }
     }
 
     /*
-     * Go to child branch, this is done at the start of a async { ... } function
+     * Start of a async { ... } function
      */
     private fun positionDown() {
         methodRunIndex = methodRunIndex.down()
@@ -439,7 +381,7 @@ class WorkflowTaskContextImpl(
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskInput.workflowOptions.workflowChangeCheckMode)) {
-            throw WorkflowUpdatedWhileRunning(
+            throw WorkflowDefinitionUpdatedWhileOngoing(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
                 "${methodRunIndex.methodPosition}"
@@ -456,7 +398,7 @@ class WorkflowTaskContextImpl(
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
-            throw WorkflowUpdatedWhileRunning(
+            throw WorkflowDefinitionUpdatedWhileOngoing(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
                 "${methodRunIndex.methodPosition}"

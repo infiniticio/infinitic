@@ -72,7 +72,7 @@ data class WorkflowTaskContextNotInitialized(
     help = "If you need to test your workflow, please initialize the context property by an instance of $context"
 )
 
-data class WorkflowUpdatedWhileRunning(
+data class WorkflowDefinitionUpdatedWhileOngoing(
     @JsonProperty("workflowName") val workflowName: String,
     @JsonProperty("workflowMethodName") val workflowMethodName: String,
     @JsonProperty("position") val position: String
@@ -88,18 +88,25 @@ data class NoMethodCallAtAsync(
     help = "Make sure to call exactly one method of \"$name\" within the curly braces - example: async(foo) { bar(*args) }"
 )
 
-data class ShouldNotWaitInInlineTask(
-    @JsonProperty("unused") val unused: String = ""
+data class ShouldNotWaitInsideInlinedTask(
+    @JsonProperty("method") val method: String,
 ) : UserExceptionInWorker(
-    msg = "You can not suspend computations inside an inline task",
-    help = "Make sure you do not wait in your inline task"
+    msg = "You must not suspend computations inside an inlined task",
+    help = "In $method, make sure you do not wait for task or child workflow completion inside `task { ... }`"
+)
+
+data class ShouldNotUseAsyncFunctionInsideInlinedTask(
+    @JsonProperty("method") val method: String,
+) : UserExceptionInWorker(
+    msg = "You must not suspend computations inside an inlined task",
+    help = "In $method, make sure you do not use `async { ... }` function inside `task { ... }`"
 )
 
 data class WorkflowUsedAsTask(
     @JsonProperty("name") val name: String,
     @JsonProperty("workflow") val workflow: String
 ) : UserExceptionInWorker(
-    msg = "$name is used as a task, but registered implementation $workflow is a workflow ",
+    msg = "$name is used as a task, but registered implementation $workflow is a workflow",
     help = "Check that you are using $name consistently between client and workers"
 )
 
@@ -107,6 +114,6 @@ data class TaskUsedAsWorkflow(
     @JsonProperty("name") val name: String,
     @JsonProperty("task") val task: String
 ) : UserExceptionInWorker(
-    msg = "$name is used as a workflow, but registered implementation $task is a task ",
+    msg = "$name is used as a workflow, but registered implementation $task is a task",
     help = "Check that you are using $name consistently between client and workers"
 )

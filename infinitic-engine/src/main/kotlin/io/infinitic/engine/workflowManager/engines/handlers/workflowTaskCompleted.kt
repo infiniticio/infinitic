@@ -42,6 +42,9 @@ import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.StartAsync
 import io.infinitic.common.workflows.data.commands.StartInlineTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
@@ -63,6 +66,18 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
 
     val workflowTaskOutput = msg.workflowTaskOutput
     val methodRun = getMethodRun(state, workflowTaskOutput.methodRunId)
+
+    // properties updates
+    workflowTaskOutput.properties.map {
+        val hash = it.value.hash()
+        if (it.key !in state.currentPropertiesNameHash.keys || hash != state.currentPropertiesNameHash[it.key]) {
+            // new property
+            state.currentPropertiesNameHash[it.key] = hash
+        }
+        if (hash !in state.propertiesHashValue.keys) {
+            state.propertiesHashValue[hash] = it.value
+        }
+    }
 
     // add new commands to past commands
     workflowTaskOutput.newCommands.map {
@@ -89,11 +104,6 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
             )
         )
     }
-
-    // update current workflow properties
-//        workflowTaskOutput.workflowPropertiesNameHashUpdates.map {
-//            TODO()
-//        }
 
     // if method is completed for the first time
     if (workflowTaskOutput.methodOutput != null && methodRun.methodOutput == null) {
@@ -167,7 +177,7 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
 }
 
 private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
-    val pastCommand =  addPastCommand(methodRun, newCommand)
+    val pastCommand = addPastCommand(methodRun, newCommand)
 
     state.bufferedCommands.add(pastCommand.commandId)
 }
@@ -255,15 +265,16 @@ private fun addPastCommand(
         commandStatus = CommandStatusOngoing
     )
 
-    methodRun.pastCommands.add(PastCommand(
-        commandPosition = newCommand.commandPosition,
-        commandType = newCommand.commandType,
-        commandId = newCommand.commandId,
-        commandHash = newCommand.commandHash,
-        commandSimpleName = newCommand.commandSimpleName,
-        commandStatus = CommandStatusOngoing
-    ))
+    methodRun.pastCommands.add(
+        PastCommand(
+            commandPosition = newCommand.commandPosition,
+            commandType = newCommand.commandType,
+            commandId = newCommand.commandId,
+            commandHash = newCommand.commandHash,
+            commandSimpleName = newCommand.commandSimpleName,
+            commandStatus = CommandStatusOngoing
+        )
+    )
 
     return pastCommand
 }
-

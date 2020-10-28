@@ -30,7 +30,6 @@ import io.infinitic.common.workflows.data.properties.PropertiesHashValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import java.lang.RuntimeException
 
 data class WorkflowTaskInput(
     val workflowId: WorkflowId,
@@ -43,7 +42,5 @@ data class WorkflowTaskInput(
     val targetPosition: MethodRunPosition = MethodRunPosition("")
 ) {
     @JsonIgnore
-    fun getPropertiesAtStart() = methodRun.propertiesNameHashAtStart.mapValues {
-        workflowPropertiesHashValue[it.value] ?: throw RuntimeException("Unknown hash ${it.value} in $workflowPropertiesHashValue")
-    }
+    fun getErrorMethodName() = "$workflowName::${methodRun.methodName}"
 }

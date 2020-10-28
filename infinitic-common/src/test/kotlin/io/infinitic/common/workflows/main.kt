@@ -5,7 +5,6 @@ import io.infinitic.common.json.Json
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.parser.getPropertiesFromObject
 import java.lang.RuntimeException
 import io.infinitic.common.workflows.data.commands.StartAsync
@@ -49,10 +48,9 @@ fun main() {
 
     println(hashValueUpdates)
     println(nameHashUpdates)
-
 }
 
-data class Test1(val o1: String, private val o2:Int)
-data class Test2(val o1: String, private val o2:Int) {
-    lateinit var o3 : String
+data class Test1(val o1: String, private val o2: Int)
+data class Test2(val o1: String, private val o2: Int) {
+    lateinit var o3: String
 }

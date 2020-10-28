@@ -25,29 +25,27 @@ package io.infinitic.common.workflows.parser
 
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.properties.PropertyName
-import java.lang.reflect.Type
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
-import kotlin.reflect.jvm.javaType
 
-fun <T: Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyValue>) {
+fun <T : Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyValue>) {
     val properties = obj::class.memberProperties
     values.forEach { (name, value) ->
         properties.find { it.name == name.name }
-            ?.let { setProperty(obj, it, value.data)}
+            ?.let { setProperty(obj, it, value.data) }
             ?: throw RuntimeException("Trying to set unknown property ${obj::class.java.name}:${name.name}")
     }
 }
 
-fun <T: Any> getPropertiesFromObject(obj: T, filter: (p: Triple<String, Any?, KType>) -> Boolean = { true }): Map<PropertyName, PropertyValue> =
+fun <T : Any> getPropertiesFromObject(obj: T, filter: (p: Triple<String, Any?, KType>) -> Boolean = { true }): Map<PropertyName, PropertyValue> =
     obj::class.memberProperties
         .map { p -> Triple(p.name, getProperty(obj, p), p.returnType) }
         .filter { filter(it) }
         .associateBy({ PropertyName(it.first) }, { PropertyValue(it.second) })
 
-private fun <T: Any> getProperty(obj: T, kProperty: KProperty1<out T, *>)=  kProperty.javaField
+private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>) = kProperty.javaField
     ?.let {
         val errorMsg = "Property ${obj::class.java.name}:${it.name} is not readable"
 
@@ -67,7 +65,7 @@ private fun <T: Any> getProperty(obj: T, kProperty: KProperty1<out T, *>)=  kPro
         value
     }
 
-private fun <T: Any> setProperty(obj: T, kProperty: KProperty1<out T, *>, value: Any?) {
+private fun <T : Any> setProperty(obj: T, kProperty: KProperty1<out T, *>, value: Any?) {
     kProperty.javaField?.apply {
         val errorMsg = "Property ${obj::class.java.name}:$name can not be set"
 

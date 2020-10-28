@@ -23,15 +23,9 @@
 
 package io.infinitic.engine.workflowManager.storages
 
-import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.storage.api.Storage
-import io.infinitic.common.workflows.avro.AvroConverter
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.states.WorkflowState
-import io.infinitic.avro.workflowManager.states.AvroWorkflowState
-import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.LongAdder
 
 /**
  * This WorkflowStateStorage implementation is used for tests.

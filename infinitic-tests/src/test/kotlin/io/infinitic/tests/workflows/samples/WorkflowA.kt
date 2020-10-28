@@ -203,7 +203,7 @@ class WorkflowAImpl() : WorkflowA {
         val d = async {
             p1 = "b"
         }
-        return p1=="a"
+        return p1 == "a"
     }
 
     override fun prop2(): Boolean {
@@ -214,7 +214,7 @@ class WorkflowAImpl() : WorkflowA {
         }
         taskA.await(100)
 
-        return p1=="b"
+        return p1 == "b"
     }
 
     override fun prop3(): Boolean {
@@ -226,7 +226,7 @@ class WorkflowAImpl() : WorkflowA {
         }
         taskA.await(100)
 
-        return p1=="b"
+        return p1 == "b"
     }
 
     override fun prop4(): Boolean {
@@ -238,6 +238,6 @@ class WorkflowAImpl() : WorkflowA {
         }
         taskA.await(100)
 
-        return p1=="a"
+        return p1 == "a"
     }
 }

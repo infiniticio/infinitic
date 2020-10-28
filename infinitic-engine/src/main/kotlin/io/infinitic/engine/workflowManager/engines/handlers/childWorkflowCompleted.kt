@@ -43,4 +43,3 @@ suspend fun childWorkflowCompleted(
         CommandOutput(msg.childWorkflowOutput.data)
     )
 }
-

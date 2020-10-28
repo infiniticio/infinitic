@@ -26,9 +26,7 @@ package io.infinitic.tests.workflows.inMemory
 import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
-import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage
-import io.infinitic.engine.workflowManager.storages.AvroKeyValueWorkflowStateStorage
 import io.infinitic.engine.workflowManager.storages.InMemoryWorkflowStateStorage
 import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
 import io.infinitic.storage.api.Flushable
