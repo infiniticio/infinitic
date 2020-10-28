@@ -21,26 +21,10 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.worker.workflowTask
+package io.infinitic.engine.workflowManager.engines.helpers
 
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.states.WorkflowState
 
-data class MethodLevel(
-    val parentLevel: MethodLevel? = null,
-    val instructionIndex: Int = -1,
-    var workflowTaskIndex: WorkflowTaskIndex
-) {
-    val methodPosition: MethodRunPosition = when (parentLevel) {
-        null -> MethodRunPosition("$instructionIndex")
-        else -> MethodRunPosition("${parentLevel.methodPosition}.$instructionIndex")
-    }
-
-    override fun toString() = "$methodPosition"
-
-    fun next() = MethodLevel(parentLevel, instructionIndex + 1, workflowTaskIndex)
-
-    fun up() = parentLevel
-
-    fun down() = MethodLevel(this, -1, workflowTaskIndex)
-}
+fun getMethodRun(state: WorkflowState, methodRunId: MethodRunId) =
+    state.methodRuns.first { it.methodRunId == methodRunId }

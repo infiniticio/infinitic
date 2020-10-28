@@ -23,26 +23,12 @@
 
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertiesHashValue
 import io.infinitic.common.workflows.data.properties.PropertiesNameHash
-import io.infinitic.common.workflows.data.properties.PropertyHash
-import io.infinitic.common.workflows.data.properties.PropertyName
-import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflows.parser.getPropertiesFromObject
-import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.worker.task.TaskAttemptContext
-import java.lang.RuntimeException
-import java.lang.reflect.InvocationTargetException
-import kotlin.reflect.jvm.javaType
 
 class WorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
@@ -55,7 +41,7 @@ class WorkflowTaskImpl : WorkflowTask {
         val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput, workflowInstance)
 
         // run method and get output
-        val methodOutput = workflowTaskContext.run()
+        val methodOutput = workflowTaskContext.runMethod()
 
         return WorkflowTaskOutput(
             workflowTaskInput.workflowId,

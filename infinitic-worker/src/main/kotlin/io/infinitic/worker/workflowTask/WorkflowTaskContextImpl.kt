@@ -72,7 +72,10 @@ class WorkflowTaskContextImpl(
     private val workflowInstance: Workflow
 ) : WorkflowTaskContext {
     // current position in the tree of method processing
-    private var methodLevel = MethodLevel(workflowTaskIndex = workflowTaskInput.methodRun.workflowTaskIndexAtStart)
+    private var methodRunIndex = MethodRunIndex()
+
+    // current workflowTaskIndex (useful to retrieve status of Deferred)
+    private var workflowTaskIndex = workflowTaskInput.methodRun.workflowTaskIndexAtStart
 
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
@@ -84,14 +87,14 @@ class WorkflowTaskContextImpl(
     val serializedPropertiesAtCompletion: MutableMap<PropertyName, PropertySerialized> = mutableMapOf()
 
     init {
-        // set workflow task context
+        // set workflowTask context
         workflowInstance.context = this
     }
 
     /*
      * Run method defined in workflowTaskInput.methodRun
      */
-    fun run() : MethodOutput? {
+    fun runMethod() : MethodOutput? {
         // set workflow's initial properties
         setPropertiesToObject(workflowInstance, workflowTaskInput.getPropertiesAtStart())
 
@@ -103,8 +106,7 @@ class WorkflowTaskContextImpl(
             MethodOutput(method.invoke(workflowInstance, *workflowTaskInput.methodRun.methodInput.data))
         } catch (e: InvocationTargetException) {
             when (e.cause) {
-                is NewStepException -> null
-                is KnownStepException -> null
+                is WorkflowTaskException -> null
                 else -> throw e.cause!!
             }
         }
@@ -197,7 +199,7 @@ class WorkflowTaskContextImpl(
         val newCommand = NewCommand(
             command = StartAsync,
             commandSimpleName = CommandSimpleName("${CommandType.START_ASYNC}"),
-            commandPosition = methodLevel.methodPosition
+            commandPosition = methodRunIndex.methodPosition
         )
 
         val pastCommand = findPastCommandSimilarTo(newCommand)
@@ -205,20 +207,38 @@ class WorkflowTaskContextImpl(
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
             newCommands.add(newCommand)
-            // run async branch
-            runAsync(branch)
 
             // returns a Deferred with an ongoing step
             return Deferred<S>(Step.Id.from(newCommand), this)
-        } else {
-            // branch is processed only if not yet completed or canceled
-            if (pastCommand.commandStatus is CommandStatusOngoing) {
-                runAsync(branch)
-            }
-
-            // returns a Deferred linked to pastCommand
-            return Deferred<S>(Step.Id.from(pastCommand), this)
         }
+
+        // branch is processed only if on path of targetPosition
+//            if (pastCommand.commandStatus is CommandStatusOngoing) {
+        if (methodRunIndex.leadsTo(workflowTaskInput.targetPosition)) {
+            workflowTaskIndex = pastCommand.workflowTaskIndexAtStart!!
+            // TODO set properties with: pastCommand.propertiesNameHashAtStart
+
+            // go down
+            positionDown()
+
+            // exceptions caught by runMethod
+            val commandOutput = CommandOutput(branch())
+
+            // go up
+            positionUp()
+
+            newCommands.add(NewCommand(
+                command = EndAsync(commandOutput),
+                commandSimpleName = CommandSimpleName("${CommandType.END_ASYNC}"),
+                commandPosition = methodRunIndex.methodPosition
+            ))
+
+            // async is completed
+            throw AsyncCompletedException()
+        }
+
+        // returns a Deferred linked to pastCommand
+        return Deferred<S>(Step.Id.from(pastCommand), this)
     }
 
     /*
@@ -232,7 +252,7 @@ class WorkflowTaskContextImpl(
         val startCommand = NewCommand(
             command = StartInlineTask,
             commandSimpleName = CommandSimpleName("${CommandType.START_INLINE_TASK}"),
-            commandPosition = methodLevel.methodPosition
+            commandPosition = methodRunIndex.methodPosition
         )
 
         val pastCommand = findPastCommandSimilarTo(startCommand)
@@ -240,13 +260,12 @@ class WorkflowTaskContextImpl(
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
             newCommands.add(startCommand)
-            // go down (it should be needed only if inline task dispatch some tasks)
+            // go down (in case that this inline task dispatches some tasks)
             positionDown()
             // run inline task
             val commandOutput = try { CommandOutput(inline()) } catch (e: Exception) {
                 when (e) {
-                    is NewStepException -> throw ShouldNotWaitInInlineTask()
-                    is KnownStepException -> throw ShouldNotWaitInInlineTask()
+                    is WorkflowTaskException -> throw ShouldNotWaitInInlineTask()
                     else -> throw e
                 }
             }
@@ -256,7 +275,7 @@ class WorkflowTaskContextImpl(
             val endCommand = NewCommand(
                 command = EndInlineTask(commandOutput),
                 commandSimpleName = CommandSimpleName("${CommandType.END_INLINE_TASK}"),
-                commandPosition = methodLevel.methodPosition
+                commandPosition = methodRunIndex.methodPosition
             )
             newCommands.add(endCommand)
             // returns a Deferred with an ongoing step
@@ -282,13 +301,13 @@ class WorkflowTaskContextImpl(
         // create a new step
         val newStep = NewStep(
             step = deferred.step,
-            stepPosition = methodLevel.methodPosition
+            stepPosition = methodRunIndex.methodPosition
         )
         val pastStep = getPastStepSimilarTo(newStep)
 
         // if this is really a new step, we check its status based on current workflow message index
         if (pastStep == null) {
-            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(methodLevel.workflowTaskIndex)
+            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(workflowTaskIndex)
             // if this deferred is still ongoing,
             if (deferred.stepStatus is StepStatusOngoing) {
                 // we add a new step
@@ -304,7 +323,7 @@ class WorkflowTaskContextImpl(
         deferred.stepStatus = pastStep.stepStatus
 
         // throw KnownStepException if ongoing else else update message index
-        methodLevel.workflowTaskIndex = when (val stepStatus = deferred.stepStatus) {
+        workflowTaskIndex = when (val stepStatus = deferred.stepStatus) {
             is StepStatusOngoing -> throw KnownStepException()
             is StepStatusCompleted -> stepStatus.completionWorkflowTaskIndex
             is StepStatusCanceled -> stepStatus.cancellationWorkflowTaskIndex
@@ -333,7 +352,7 @@ class WorkflowTaskContextImpl(
     /*
      * Deferred status()
      */
-    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.workflowTaskIndex)) {
+    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(workflowTaskIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
@@ -372,21 +391,21 @@ class WorkflowTaskContextImpl(
      * Go to next position within the same branch
      */
     private fun positionNext() {
-        methodLevel = methodLevel.next()
+        methodRunIndex = methodRunIndex.next()
     }
 
     /*
      * Go to parent branch, this is done at the end of a async { ... } function
      */
     private fun positionUp() {
-        methodLevel.up()?.let { methodLevel = it }
+        methodRunIndex.up()?.let { methodRunIndex = it }
     }
 
     /*
      * Go to child branch, this is done at the start of a async { ... } function
      */
     private fun positionDown() {
-        methodLevel = methodLevel.down()
+        methodRunIndex = methodRunIndex.down()
     }
 
     private fun <S> dispatch(command: Command, commandSimpleName: CommandSimpleName): Deferred<S> {
@@ -397,7 +416,7 @@ class WorkflowTaskContextImpl(
         val newCommand = NewCommand(
             command = command,
             commandSimpleName = commandSimpleName,
-            commandPosition = methodLevel.methodPosition
+            commandPosition = methodRunIndex.methodPosition
         )
 
         val pastCommand = findPastCommandSimilarTo(newCommand)
@@ -413,50 +432,17 @@ class WorkflowTaskContextImpl(
         }
     }
 
-    /*
-     * When running an async branch:
-     * - unknown step breaks only current branch
-     * - output is returned through a special EndAsync command
-     */
-    private fun <S> runAsync(branch: () -> S) {
-        // go down
-        positionDown()
-
-        val commandOutput = try {
-            CommandOutput(branch())
-        } catch (e: Exception) {
-            when (e) {
-                is NewStepException -> null
-                is KnownStepException -> null
-                else -> throw e
-            }
-        }
-        // go up - note that message index comes back to its previous value before going down
-        positionUp()
-
-        // if the branch is completed, then we send a special command to the engine
-        if (commandOutput != null) {
-            // create instruction that *may* be sent to engine
-            val newCommand = NewCommand(
-                command = EndAsync(commandOutput),
-                commandSimpleName = CommandSimpleName("${CommandType.END_ASYNC}"),
-                commandPosition = methodLevel.methodPosition
-            )
-            newCommands.add(newCommand)
-        }
-    }
-
     private fun findPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
         val pastCommand = workflowTaskInput.methodRun.pastCommands
-            .find { it.commandPosition == methodLevel.methodPosition }
+            .find { it.commandPosition == methodRunIndex.methodPosition }
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskInput.workflowOptions.workflowChangeCheckMode)) {
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
-                "${methodLevel.methodPosition}"
+                "${methodRunIndex.methodPosition}"
             )
         }
 
@@ -466,14 +452,14 @@ class WorkflowTaskContextImpl(
     private fun getPastStepSimilarTo(newStep: NewStep): PastStep? {
         // find pastCommand in current position
         val pastStep = workflowTaskInput.methodRun.pastSteps
-            .find { it.stepPosition == methodLevel.methodPosition }
+            .find { it.stepPosition == methodRunIndex.methodPosition }
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
-                "${methodLevel.methodPosition}"
+                "${methodRunIndex.methodPosition}"
             )
         }
 

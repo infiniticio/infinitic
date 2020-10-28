@@ -21,29 +21,28 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.workflowTasks
+package io.infinitic.worker.workflowTask
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.properties.PropertiesHashValue
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import java.lang.RuntimeException
 
-data class WorkflowTaskInput(
-    val workflowId: WorkflowId,
-    val workflowName: WorkflowName,
-    val workflowOptions: WorkflowOptions,
-    val workflowPropertiesHashValue: PropertiesHashValue,
-    val workflowTaskIndex: WorkflowTaskIndex,
+const val POSITION_SEPARATOR = "."
 
-    val methodRun: MethodRun,
-    val targetPosition: MethodRunPosition = MethodRunPosition("")
+data class MethodRunIndex(
+    val parent: MethodRunIndex? = null,
+    val index: Int = -1,
 ) {
-    @JsonIgnore
-    fun getPropertiesAtStart() = methodRun.propertiesNameHashAtStart.mapValues {
-        workflowPropertiesHashValue[it.value] ?: throw RuntimeException("Unknown hash ${it.value} in $workflowPropertiesHashValue")
+    val methodPosition: MethodRunPosition = when (parent) {
+        null -> MethodRunPosition("$index")
+        else -> MethodRunPosition("${parent.methodPosition}$POSITION_SEPARATOR$index")
     }
+
+    override fun toString() = "$methodPosition"
+
+    fun next() = MethodRunIndex(parent, index + 1)
+
+    fun up() = parent
+
+    fun down() = MethodRunIndex(this, -1)
+
+    fun leadsTo(target: MethodRunPosition) = "${target}$POSITION_SEPARATOR".startsWith("$methodPosition$POSITION_SEPARATOR")
 }

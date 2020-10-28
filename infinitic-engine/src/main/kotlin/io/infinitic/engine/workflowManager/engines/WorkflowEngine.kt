@@ -23,28 +23,27 @@
 
 package io.infinitic.engine.workflowManager.engines
 
-import io.infinitic.common.data.interfaces.inc
-import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.workflows.data.states.WorkflowState
-import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
 import io.infinitic.common.workflows.messages.CancelWorkflow
-import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.common.workflows.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
-import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
-import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
-import io.infinitic.common.workflows.messages.TimerCompleted
-import io.infinitic.common.workflows.messages.ObjectReceived
+import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.ObjectReceived
 import io.infinitic.common.workflows.messages.TaskCanceled
 import io.infinitic.common.workflows.messages.TaskCompleted
 import io.infinitic.common.workflows.messages.TaskDispatched
+import io.infinitic.common.workflows.messages.TimerCompleted
 import io.infinitic.common.workflows.messages.WorkflowCanceled
 import io.infinitic.common.workflows.messages.WorkflowCompleted
-import io.infinitic.engine.workflowManager.engines.handlers.ChildWorkflowCompletedHandler
-import io.infinitic.engine.workflowManager.engines.handlers.DispatchWorkflowHandler
-import io.infinitic.engine.workflowManager.engines.handlers.TaskCompletedHandler
-import io.infinitic.engine.workflowManager.engines.handlers.WorkflowTaskCompletedHandler
+import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
+import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
+import io.infinitic.engine.workflowManager.engines.handlers.childWorkflowCompleted
+import io.infinitic.engine.workflowManager.engines.handlers.dispatchWorkflow
+import io.infinitic.engine.workflowManager.engines.handlers.taskCompleted
+import io.infinitic.engine.workflowManager.engines.handlers.workflowTaskCompleted
+import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 
 class WorkflowEngine(
     private val storage: WorkflowStateStorage,
@@ -72,7 +71,7 @@ class WorkflowEngine(
         // if no state (can happen for a newly created workflow or a terminated workflow)
         if (state == null) {
             if (msg is DispatchWorkflow) {
-                state = dispatchWorkflow(msg)
+                state = dispatchWorkflow(dispatcher, msg)
                 storage.createState(msg.workflowId, state)
             }
             // discard all other types of message as its workflow is already terminated
@@ -80,7 +79,7 @@ class WorkflowEngine(
         }
 
         // if a workflow task is ongoing then buffer this message (except for WorkflowTaskCompleted)
-        if (state.currentWorkflowTaskId != null && msg !is WorkflowTaskCompleted) {
+        if (state.runningWorkflowTaskId != null && msg !is WorkflowTaskCompleted) {
             // buffer this message
             state.bufferedMessages.add(msg)
             // update state
@@ -91,10 +90,11 @@ class WorkflowEngine(
 
         // process this message
         processMessage(state, msg)
+
         // process all buffered messages
         while (
-            state.currentMethodRuns.size > 0 && // if workflow is not terminated
-            state.currentWorkflowTaskId == null && // if a workflowTask is not ongoing
+            state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
+            state.methodRuns.size > 0 && // if workflow is not terminated
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
             val bufferedMsg = state.bufferedMessages.removeAt(0)
@@ -102,7 +102,7 @@ class WorkflowEngine(
         }
 
         // update state
-        if (state.currentMethodRuns.size == 0) {
+        if (state.methodRuns.size == 0) {
             storage.deleteState(msg.workflowId)
         } else {
             storage.updateState(msg.workflowId, state)
@@ -113,43 +113,31 @@ class WorkflowEngine(
         when (msg) {
             is CancelWorkflow -> cancelWorkflow(state, msg)
             is ChildWorkflowCanceled -> childWorkflowCanceled(state, msg)
-            is ChildWorkflowCompleted -> childWorkflowCompleted(state, msg)
-            is WorkflowTaskCompleted -> workflowTaskCompleted(state, msg)
+            is ChildWorkflowCompleted -> childWorkflowCompleted(dispatcher, state, msg)
+            is WorkflowTaskCompleted -> workflowTaskCompleted(dispatcher, state, msg)
             is TimerCompleted -> timerCompleted(state, msg)
             is ObjectReceived -> objectReceived(state, msg)
             is TaskCanceled -> taskCanceled(state, msg)
-            is TaskCompleted -> taskCompleted(state, msg)
+            is TaskCompleted -> taskCompleted(dispatcher, state, msg)
             else -> throw RuntimeException("Unknown ForWorkflowEngineMessage: ${msg::class.qualifiedName}")
         }
     }
 
-    private suspend fun dispatchWorkflow(msg: DispatchWorkflow) =
-        DispatchWorkflowHandler(dispatcher).handle(msg)
-
-    private suspend fun workflowTaskCompleted(state: WorkflowState, msg: WorkflowTaskCompleted) =
-        WorkflowTaskCompletedHandler(dispatcher).handle(state, msg)
-
-    private suspend fun taskCompleted(state: WorkflowState, msg: TaskCompleted) =
-        TaskCompletedHandler(dispatcher).handle(state, msg)
-
-    private suspend fun cancelWorkflow(state: WorkflowState, msg: CancelWorkflow): WorkflowState {
+    private suspend fun cancelWorkflow(state: WorkflowState, msg: CancelWorkflow) {
         TODO()
     }
 
-    private suspend fun childWorkflowCanceled(state: WorkflowState, msg: ChildWorkflowCanceled): WorkflowState {
+    private suspend fun childWorkflowCanceled(state: WorkflowState, msg: ChildWorkflowCanceled) {
         TODO()
     }
 
-    private suspend fun timerCompleted(state: WorkflowState, msg: TimerCompleted): WorkflowState {
+    private suspend fun timerCompleted(state: WorkflowState, msg: TimerCompleted) {
         TODO()
     }
 
-    private suspend fun taskCanceled(state: WorkflowState, msg: TaskCanceled): WorkflowState {
+    private suspend fun taskCanceled(state: WorkflowState, msg: TaskCanceled) {
         TODO()
     }
-
-    private suspend fun childWorkflowCompleted(state: WorkflowState, msg: ChildWorkflowCompleted) =
-        ChildWorkflowCompletedHandler(dispatcher).handle(state, msg)
 
     private suspend fun objectReceived(state: WorkflowState, msg: ObjectReceived): WorkflowState {
         TODO()

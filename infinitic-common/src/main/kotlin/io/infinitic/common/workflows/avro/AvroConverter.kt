@@ -78,9 +78,9 @@ object AvroConverter {
         workflowName = WorkflowName(avro.workflowName),
         workflowOptions = convertJson(avro.workflowOptions),
         workflowMeta = convertJson(avro.workflowMeta),
-        currentWorkflowTaskId = avro.currentWorkflowTaskId?.let { WorkflowTaskId(it) },
-        currentWorkflowTaskIndex = WorkflowTaskIndex(avro.currentMessageIndex),
-        currentMethodRuns = avro.currentMethodRuns.map { convertJson<MethodRun>(it) }.toMutableList(),
+        runningWorkflowTaskId = avro.currentWorkflowTaskId?.let { WorkflowTaskId(it) },
+        workflowTaskIndex = WorkflowTaskIndex(avro.currentMessageIndex),
+        methodRuns = avro.currentMethodRuns.map { convertJson<MethodRun>(it) }.toMutableList(),
         currentPropertiesNameHash = convertJson(avro.currentPropertiesNameHash),
         propertiesHashValue = convertJson(avro.propertiesHashValue),
         bufferedMessages = avro.bufferedMessages.map { fromWorkflowEngine(it) }.toMutableList()
@@ -93,9 +93,9 @@ object AvroConverter {
         .setWorkflowName("${state.workflowName}")
         .setWorkflowOptions(convertJson(state.workflowOptions))
         .setWorkflowMeta(convertJson(state.workflowMeta))
-        .setCurrentWorkflowTaskId(state.currentWorkflowTaskId?.toString())
-        .setCurrentMessageIndex(convertJson(state.currentWorkflowTaskIndex))
-        .setCurrentMethodRuns(state.currentMethodRuns.map { convertJson<AvroMethodRun>(it) })
+        .setCurrentWorkflowTaskId(state.runningWorkflowTaskId?.toString())
+        .setCurrentMessageIndex(convertJson(state.workflowTaskIndex))
+        .setCurrentMethodRuns(state.methodRuns.map { convertJson<AvroMethodRun>(it) })
         .setCurrentPropertiesNameHash(convertJson(state.currentPropertiesNameHash))
         .setPropertiesHashValue(convertJson(state.propertiesHashValue))
         .setBufferedMessages(state.bufferedMessages.map { toWorkflowEngine(it) })

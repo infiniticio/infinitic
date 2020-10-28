@@ -21,12 +21,25 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.worker.workflowTask
+package io.infinitic.engine.workflowManager.engines.handlers
 
-sealed class WorkflowTaskException : RuntimeException()
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.data.states.WorkflowState
+import io.infinitic.common.workflows.messages.TaskCompleted
+import io.infinitic.engine.workflowManager.engines.helpers.jobCompleted
+import io.infinitic.messaging.api.dispatcher.Dispatcher
 
-class NewStepException() : WorkflowTaskException()
-
-class KnownStepException : WorkflowTaskException()
-
-class AsyncCompletedException : WorkflowTaskException()
+suspend fun taskCompleted(
+    dispatcher: Dispatcher,
+    state: WorkflowState,
+    msg: TaskCompleted
+) {
+    jobCompleted(
+        dispatcher,
+        state,
+        msg.methodRunId,
+        CommandId(msg.taskId),
+        CommandOutput(msg.taskOutput.data)
+    )
+}

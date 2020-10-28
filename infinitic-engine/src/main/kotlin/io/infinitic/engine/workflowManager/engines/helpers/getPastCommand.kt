@@ -21,29 +21,10 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.workflowTasks
+package io.infinitic.engine.workflowManager.engines.helpers
 
-import com.fasterxml.jackson.annotation.JsonIgnore
+import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.properties.PropertiesHashValue
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import java.lang.RuntimeException
 
-data class WorkflowTaskInput(
-    val workflowId: WorkflowId,
-    val workflowName: WorkflowName,
-    val workflowOptions: WorkflowOptions,
-    val workflowPropertiesHashValue: PropertiesHashValue,
-    val workflowTaskIndex: WorkflowTaskIndex,
-
-    val methodRun: MethodRun,
-    val targetPosition: MethodRunPosition = MethodRunPosition("")
-) {
-    @JsonIgnore
-    fun getPropertiesAtStart() = methodRun.propertiesNameHashAtStart.mapValues {
-        workflowPropertiesHashValue[it.value] ?: throw RuntimeException("Unknown hash ${it.value} in $workflowPropertiesHashValue")
-    }
-}
+fun getPastCommand(methodRun: MethodRun, commandId: CommandId) =
+    methodRun.pastCommands.first { it.commandId == commandId }

@@ -23,9 +23,13 @@
 
 package io.infinitic.common.workflows.data.states
 
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertiesNameHash
 import io.infinitic.common.workflows.data.properties.PropertiesHashValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
@@ -37,15 +41,68 @@ import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 sealed class State
 
 data class WorkflowState(
+    /*
+    Id of this workflow instance
+     */
     val workflowId: WorkflowId,
+
+    /*
+    Id (if any) of parent's workflow
+     */
     val parentWorkflowId: WorkflowId? = null,
+
+    /*
+    Workflow's name (used wy worker to instantiate)
+     */
     val workflowName: WorkflowName,
+
+    /*
+    Instance's options defined when dispatched
+     */
     val workflowOptions: WorkflowOptions,
+
+    /*
+    Instance's meta defined when dispatched
+     */
     val workflowMeta: WorkflowMeta,
-    var currentWorkflowTaskId: WorkflowTaskId? = null,
-    var currentWorkflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
-    val currentMethodRuns: MutableList<MethodRun>,
+
+    /*
+    Id of WorkflowTask currently running (only 1 at a time)
+     */
+    var runningWorkflowTaskId: WorkflowTaskId? = null,
+
+    /*
+    Incremental index counting WorkflowTasks (used as an index for instance's state)
+     */
+    var workflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
+
+    /*
+    Methods currently running. Once completed this data can be deleted to limit memory usage
+     */
+    val methodRuns: MutableList<MethodRun>,
+
+    /*
+    Current (last) hash of instance's properties. hash is used as an index to actual value
+     */
     val currentPropertiesNameHash: PropertiesNameHash = PropertiesNameHash(mutableMapOf()),
+
+    /*
+    Store containing values of past and current values of properties
+    (past values are useful when replaying WorkflowTask)
+     */
     val propertiesHashValue: PropertiesHashValue = PropertiesHashValue(mutableMapOf()),
-    val bufferedMessages: MutableList<ForWorkflowEngineMessage> = mutableListOf()
+
+    /*
+    Messages received while a WorkflowTask is still running.
+    They can not be handled immediately, so are stored in this buffer
+     */
+    val bufferedMessages: MutableList<ForWorkflowEngineMessage> = mutableListOf(),
+
+    /*
+    In some situations, we know that multiples branches must be processed.
+    As WorkflowTask handles branch one by one, we orderly buffer these branches here
+    (it happens when a workflowTask decide to launch more than one async branch,
+    or when more than one branch' steps are completed by the same message)
+     */
+    val bufferedCommands: MutableList<CommandId> = mutableListOf()
 ) : State()

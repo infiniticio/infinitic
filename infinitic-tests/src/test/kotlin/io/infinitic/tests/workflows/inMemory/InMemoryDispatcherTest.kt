@@ -24,6 +24,7 @@
 package io.infinitic.tests.workflows.inMemory
 
 import io.infinitic.client.Client
+import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.TaskStatusUpdated
 import io.infinitic.engine.taskManager.engines.MonitoringGlobal
@@ -49,6 +50,8 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
 
     init {
         workflowEngineHandle = {
+            println(it::class.java.name)
+            println(Json.stringify(it, true))
             workflowEngine.handle(it)
 
             when (it) {
