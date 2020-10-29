@@ -40,7 +40,6 @@ suspend fun jobCompleted(
     commandOutput: CommandOutput
 ) {
     val methodRun = getMethodRun(state, methodRunId)
-
     val pastCommand = getPastCommand(methodRun, commandId)
 
     // do nothing if this command is not ongoing (could have been canceled)
@@ -62,7 +61,5 @@ suspend fun jobCompleted(
             // keep this command as we could have another pastStep solved by it
             state.bufferedCommands.add(pastCommand.commandId)
         }
-
-    // if everything is completed in methodRun then filter state
-    cleanMethodRun(methodRun, state)
+        ?: cleanMethodRunIfNeeded(methodRun, state) // if everything is completed in methodRun then filter state
 }

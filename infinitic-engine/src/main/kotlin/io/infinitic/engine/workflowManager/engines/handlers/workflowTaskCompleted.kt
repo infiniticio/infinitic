@@ -51,7 +51,7 @@ import io.infinitic.common.workflows.data.states.WorkflowState
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
-import io.infinitic.engine.workflowManager.engines.helpers.cleanMethodRun
+import io.infinitic.engine.workflowManager.engines.helpers.cleanMethodRunIfNeeded
 import io.infinitic.engine.workflowManager.engines.helpers.dispatchWorkflowTask
 import io.infinitic.engine.workflowManager.engines.helpers.getMethodRun
 import io.infinitic.engine.workflowManager.engines.helpers.getPastCommand
@@ -170,7 +170,7 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
     }
 
     // if everything is completed in methodRun then filter state
-    cleanMethodRun(methodRun, state)
+    cleanMethodRunIfNeeded(methodRun, state)
 }
 
 private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {

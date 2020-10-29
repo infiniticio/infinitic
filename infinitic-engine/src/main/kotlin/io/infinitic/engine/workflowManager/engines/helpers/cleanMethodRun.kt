@@ -24,15 +24,50 @@
 package io.infinitic.engine.workflowManager.engines.helpers
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.states.WorkflowState
 
-fun cleanMethodRun(methodRun: MethodRun, state: WorkflowState) {
+fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
     // if everything is completed in methodRun then filter state
     if (methodRun.methodOutput != null &&
         methodRun.pastCommands.all { it.isTerminated() } &&
         methodRun.pastSteps.all { it.isTerminated() }
     ) {
-        // TODO("filter unused workflow properties")
         state.methodRuns.remove(methodRun)
+
+        removeUnusedPropertyHash(state)
+    }
+
+
+}
+
+private fun removeUnusedPropertyHash(state: WorkflowState) {
+    // get set of all hashes still in use
+    val propertyHashes = mutableSetOf<PropertyHash>()
+
+    state.methodRuns.forEach { methodRun ->
+        methodRun.pastSteps.forEach { pastStep ->
+            pastStep.propertiesNameHashAtTermination?.forEach {
+                propertyHashes.add(it.value)
+            }
+        }
+        methodRun.pastCommands.forEach { pastCommand ->
+            pastCommand.propertiesNameHashAtStart?.forEach {
+                propertyHashes.add(it.value)
+            }
+        }
+        methodRun.propertiesNameHashAtStart.forEach {
+            propertyHashes.add(it.value)
+        }
+    }
+    state.currentPropertiesNameHash.forEach {
+        propertyHashes.add(it.value)
+    }
+
+    // remove each propertyHashValue entry not in propertyHashes
+    state.propertiesHashValue.keys.filter {
+        it !in propertyHashes
+    }.forEach {
+        state.propertiesHashValue.remove(it)
     }
 }

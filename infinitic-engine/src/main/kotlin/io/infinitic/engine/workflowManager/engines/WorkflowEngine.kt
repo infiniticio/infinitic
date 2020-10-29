@@ -142,23 +142,4 @@ class WorkflowEngine(
     private suspend fun objectReceived(state: WorkflowState, msg: ObjectReceived): WorkflowState {
         TODO()
     }
-
-//    private fun filterStore(store: PropertyStore, branches: List<MethodRun>): PropertyStore {
-//        // Retrieve properties at step at completion in branches
-//        val listProperties1 = branches.flatMap {
-//            b ->
-//            b.pastSteps.map { it.propertiesAfterCompletion }
-//        }
-//        // Retrieve properties when starting in branches
-//        val listProperties2 = branches.map {
-//            b ->
-//            b.propertiesAtStart
-//        }
-//        // Retrieve List<PropertyHash?> relevant for branches
-//        val listHashes = listProperties1.union(listProperties2).flatMap { it.properties.values }
-//        // Keep only relevant keys
-//        val properties = store.properties.filterKeys { listHashes.contains(it) }.toMutableMap()
-//
-//        return PropertyStore(properties)
-//    }
 }
