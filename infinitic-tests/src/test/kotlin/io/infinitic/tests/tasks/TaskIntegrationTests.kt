@@ -119,9 +119,11 @@ class TaskIntegrationTests : StringSpec({
     "Task succeeds after manual retry" {
         // task will succeed only at the 4th try
         taskTest.behavior = { index, retry ->
-            if (index == 0)
+            if (index == 0) {
                 if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
-            else if (retry < 2) Status.FAILED_WITH_RETRY else Status.SUCCESS
+            } else {
+                if (retry < 2) Status.FAILED_WITH_RETRY else Status.SUCCESS
+            }
         }
         // run system
         coroutineScope {

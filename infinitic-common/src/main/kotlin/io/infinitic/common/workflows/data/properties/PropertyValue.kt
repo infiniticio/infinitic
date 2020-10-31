@@ -23,15 +23,28 @@
 
 package io.infinitic.common.workflows.data.properties
 
-import com.fasterxml.jackson.annotation.JsonCreator
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class PropertyValue(override val data: Any?) : Data(data) {
+@Serializable(with = PropertyValueSerializer::class)
+data class PropertyValue(override val serializedData: SerializedData) : Data(serializedData)  {
     companion object {
-        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serializedData: SerializedData) = fromSerialized<PropertyValue>(serializedData)
+        fun from(data: Any?) = PropertyValue(SerializedData.from(data))
     }
 
-    fun hash() = PropertyHash(json.hash())
+    fun hash() = PropertyHash(serializedData.hash())
+}
+
+object PropertyValueSerializer : KSerializer<PropertyValue> {
+    override val descriptor: SerialDescriptor =  SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: PropertyValue) {
+        SerializedData.serializer().serialize(encoder,  value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        PropertyValue(SerializedData.serializer().deserialize(decoder))
 }

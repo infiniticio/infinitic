@@ -29,19 +29,19 @@ import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.CancelTask
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.ForTaskEngineMessage
-import io.infinitic.common.tasks.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.TaskAttemptDispatched
-import io.infinitic.common.tasks.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.TaskCanceled
-import io.infinitic.common.tasks.messages.TaskCompleted
-import io.infinitic.common.tasks.messages.TaskStatusUpdated
-import io.infinitic.common.tasks.messages.RetryTask
-import io.infinitic.common.tasks.messages.RetryTaskAttempt
-import io.infinitic.common.tasks.messages.RunTask
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.taskEngineMessages.CancelTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTaskAttempt
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptDispatched
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptStarted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCanceled
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCompleted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.workerMessages.RunTask
 import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.states.TaskEngineState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
@@ -50,7 +50,7 @@ open class TaskEngine(
     protected val storage: TaskStateStorage,
     protected val dispatcher: Dispatcher
 ) {
-    open suspend fun handle(message: ForTaskEngineMessage) {
+    open suspend fun handle(message: TaskEngineMessage) {
         // immediately discard messages that are non managed
         when (message) {
             is TaskAttemptDispatched -> return

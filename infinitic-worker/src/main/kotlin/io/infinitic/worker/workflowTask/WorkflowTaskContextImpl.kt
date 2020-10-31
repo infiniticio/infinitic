@@ -167,7 +167,7 @@ class WorkflowTaskContextImpl(
             positionDown()
 
             // exceptions caught by runMethod
-            val commandOutput = CommandOutput(branch())
+            val commandOutput = CommandOutput.from(branch())
 
             // go up
             positionUp()
@@ -210,7 +210,7 @@ class WorkflowTaskContextImpl(
             // go down (in case this inline task asynchronously dispatches some tasks)
             positionDown()
             // run inline task
-            val commandOutput = try { CommandOutput(inline()) } catch (e: Exception) {
+            val commandOutput = try { CommandOutput.from(inline()) } catch (e: Exception) {
                 when (e) {
                     is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskInput.getErrorMethodName())
                     is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskInput.getErrorMethodName())
@@ -228,13 +228,13 @@ class WorkflowTaskContextImpl(
             newCommands.add(endCommand)
             // returns a Deferred with an ongoing step
             @Suppress("UNCHECKED_CAST")
-            return commandOutput.data as S
+            return commandOutput.get() as S
         } else {
             @Suppress("UNCHECKED_CAST")
             return when (val status = pastCommand.commandStatus) {
                 is CommandStatusOngoing -> throw RuntimeException("This should not happen: uncompleted inline task")
                 is CommandStatusCanceled -> throw RuntimeException("This should not happen: canceled inline task")
-                is CommandStatusCompleted -> status.completionResult.data as S
+                is CommandStatusCompleted -> status.completionResult.get() as S
             }
         }
     }
@@ -294,8 +294,8 @@ class WorkflowTaskContextImpl(
     @Suppress("UNCHECKED_CAST")
     override fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
         is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
-        is StepStatusCompleted -> status.completionResult.data as T
-        is StepStatusCanceled -> status.cancellationResult.data as T
+        is StepStatusCompleted -> status.completionResult.get() as T
+        is StepStatusCanceled -> status.cancellationResult.get() as T
     }
 
     /*

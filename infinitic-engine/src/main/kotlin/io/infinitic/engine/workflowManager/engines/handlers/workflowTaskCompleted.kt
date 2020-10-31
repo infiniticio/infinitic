@@ -26,9 +26,9 @@ package io.infinitic.engine.workflowManager.engines.handlers
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.plus
+import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
@@ -191,7 +191,7 @@ private suspend fun endAsync(dispatcher: Dispatcher, methodRun: MethodRun, newCo
         state,
         methodRun.methodRunId,
         pastStartAsync.commandId,
-        CommandOutput(command.asyncOutput.data)
+        command.asyncOutput
     )
 }
 
@@ -207,7 +207,7 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
     }
     // past command completed
     pastStartInlineTask.commandStatus = CommandStatusCompleted(
-        CommandOutput(command.inlineTaskOutput.data),
+        command.inlineTaskOutput,
         state.workflowTaskIndex
     )
 }
@@ -222,8 +222,8 @@ private suspend fun dispatchTask(dispatcher: Dispatcher, methodRun: MethodRun, n
         methodParameterTypes = command.methodParameterTypes,
         methodInput = command.methodInput,
         taskMeta = command.taskMeta
-            .with(WorkflowEngine.META_WORKFLOW_ID, "${state.workflowId}")
-            .with(WorkflowEngine.META_METHOD_RUN_ID, "${methodRun.methodRunId}")
+            + (WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}")
+            + (WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}")
     )
     dispatcher.toTaskEngine(msg)
 

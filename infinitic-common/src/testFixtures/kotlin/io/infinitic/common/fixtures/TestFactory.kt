@@ -32,6 +32,14 @@ import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.avro.workflowManager.data.steps.AvroStep
 import io.infinitic.common.tasks.data.MethodInput
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalEnvelope
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEnvelope
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineEnvelope
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.workerMessages.WorkerEnvelope
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -60,23 +68,38 @@ object TestFactory {
             .scanClasspathForConcreteTypes(true)
             .overrideDefaultInitialization(true)
             .collectionSizeRange(1, 5)
-            // avoid providing a value for lateinit serializedData
-            .excludeField(FieldPredicates.named("serializedData"))
             // provides a String for "Any" parameter
             .randomize(Any::class.java) { random<String>() }
             .randomize(String::class.java) { String(random<ByteArray>(), Charsets.UTF_8) }
             .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
-            .randomize(MethodInput::class.java) { MethodInput(random<ByteArray>(), random<String>()) }
+            .randomize(MethodInput::class.java) { MethodInput.from(random<ByteArray>(), random<String>()) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(AvroSerializedData::class.java) {
                 val data = random<SerializedData>()
                 AvroSerializedData.newBuilder()
                     .setBytes(ByteBuffer.wrap(data.bytes))
                     .setType(AvroSerializedDataType.JSON)
-                    .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
+//                    .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
+                    .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value.toByteArray()) })
                     .build()
+            }
+            .randomize(TaskEngineEnvelope::class.java) {
+                val klass = TaskEngineMessage::class.sealedSubclasses.shuffled().first()
+                TaskEngineEnvelope.from(random(klass))
+            }
+            .randomize(MonitoringPerNameEnvelope::class.java) {
+                val klass = MonitoringPerNameMessage::class.sealedSubclasses.shuffled().first()
+                MonitoringPerNameEnvelope.from(random(klass))
+            }
+            .randomize(MonitoringGlobalEnvelope::class.java) {
+                val klass = MonitoringGlobalMessage::class.sealedSubclasses.shuffled().first()
+                MonitoringGlobalEnvelope.from(random(klass))
+            }
+            .randomize(WorkerEnvelope::class.java) {
+                val klass = WorkerMessage::class.sealedSubclasses.shuffled().first()
+                WorkerEnvelope.from(random(klass))
             }
 
         values?.forEach {

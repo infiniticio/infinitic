@@ -23,6 +23,9 @@
 
 package io.infinitic.common.tasks.data
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class TaskStatus {
     RUNNING_OK {
         override val isTerminated: Boolean get() = false

@@ -28,20 +28,20 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.CancelTask
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.ForTaskEngineMessage
-import io.infinitic.common.tasks.messages.ForWorkerMessage
-import io.infinitic.common.tasks.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.TaskAttemptDispatched
-import io.infinitic.common.tasks.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.TaskCanceled
-import io.infinitic.common.tasks.messages.TaskCompleted
-import io.infinitic.common.tasks.messages.TaskStatusUpdated
-import io.infinitic.common.tasks.messages.RetryTask
-import io.infinitic.common.tasks.messages.RetryTaskAttempt
-import io.infinitic.common.tasks.messages.RunTask
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.taskEngineMessages.CancelTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTaskAttempt
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptDispatched
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptStarted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCanceled
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCompleted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.workerMessages.RunTask
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.tasks.states.TaskEngineState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.kotest.core.spec.style.StringSpec
@@ -64,7 +64,7 @@ internal class EngineResults {
     lateinit var storage: TaskStateStorage
     lateinit var logger: Logger
     var state: TaskEngineState? = null
-    var workerMessage: ForWorkerMessage? = null
+    var workerMessage: WorkerMessage? = null
     var retryTaskAttempt: RetryTaskAttempt? = null
     var retryTaskAttemptDelay: Float? = null
     var taskAttemptCompleted: TaskAttemptCompleted? = null
@@ -76,7 +76,7 @@ internal class EngineResults {
     var taskStatusUpdated: TaskStatusUpdated? = null
 }
 
-internal fun engineHandle(stateIn: TaskEngineState?, msgIn: ForTaskEngineMessage): EngineResults = runBlocking {
+internal fun engineHandle(stateIn: TaskEngineState?, msgIn: TaskEngineMessage): EngineResults = runBlocking {
     // deep copy of stateIn to avoid updating it
     val state: TaskEngineState? = stateIn?.deepCopy()
     // mocking
@@ -92,7 +92,7 @@ internal fun engineHandle(stateIn: TaskEngineState?, msgIn: ForTaskEngineMessage
     val taskCompletedSlot = slot<TaskCompleted>()
     val retryTaskAttemptSlot = slot<RetryTaskAttempt>()
     val retryTaskAttemptDelaySlot = slot<Float>()
-    val workerMessageSlot = slot<ForWorkerMessage>()
+    val workerMessageSlot = slot<WorkerMessage>()
     val taskStatusUpdatedSlot = slot<TaskStatusUpdated>()
     every { logger.error(any(), msgIn, stateIn) } just Runs
     every { logger.warn(any(), msgIn, stateIn) } just Runs
@@ -386,7 +386,7 @@ private fun checkShouldDoNothing(o: EngineResults) {
     checkConfirmVerified(o)
 }
 
-private fun checkShouldRetryTaskAttempt(msgIn: ForTaskEngineMessage, stateIn: TaskEngineState, o: EngineResults) {
+private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskEngineState, o: EngineResults) {
     coVerifyOrder {
         o.storage.getTaskEngineState(msgIn.taskId)
         o.dispatcher.toWorkers(o.workerMessage!!)

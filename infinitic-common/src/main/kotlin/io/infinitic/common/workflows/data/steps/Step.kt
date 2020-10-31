@@ -79,13 +79,13 @@ sealed class Step {
             is CommandStatusOngoing -> StepStatusOngoing
             is CommandStatusCompleted -> with(commandStatus as CommandStatusCompleted) {
                 when (index >= this.completionWorkflowTaskIndex) {
-                    true -> StepStatusCompleted(StepOutput(this.completionResult.data), this.completionWorkflowTaskIndex)
+                    true -> StepStatusCompleted(StepOutput.from(this.completionResult.get()), this.completionWorkflowTaskIndex)
                     false -> StepStatusOngoing
                 }
             }
             is CommandStatusCanceled -> with(commandStatus as CommandStatusCanceled) {
                 when (index >= this.cancellationWorkflowTaskIndex) {
-                    true -> StepStatusCanceled(StepOutput(this.cancellationResult.data), this.cancellationWorkflowTaskIndex)
+                    true -> StepStatusCanceled(StepOutput.from(this.cancellationResult.get()), this.cancellationWorkflowTaskIndex)
                     false -> StepStatusOngoing
                 }
             }
@@ -123,9 +123,9 @@ sealed class Step {
                 }
             }.max()!!
 
-            if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(StepOutput(results.map { it.data }), maxIndex)
+            if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(StepOutput.from(results.map { it.get() }), maxIndex)
 
-            return StepStatusCanceled(StepOutput(results.map { it.data }), maxIndex)
+            return StepStatusCanceled(StepOutput.from(results.map { it.get() }), maxIndex)
         }
     }
 

@@ -25,9 +25,9 @@ package io.infinitic.engine.taskManager.engines
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
-import io.infinitic.common.tasks.messages.TaskCreated
-import io.infinitic.common.tasks.messages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
 import io.infinitic.common.tasks.states.MonitoringPerNameState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 
@@ -35,7 +35,7 @@ class MonitoringPerName(
     val storage: TaskStateStorage,
     val dispatcher: Dispatcher
 ) {
-    suspend fun handle(message: ForMonitoringPerNameMessage) {
+    suspend fun handle(message: MonitoringPerNameMessage) {
 
         // get associated state
         val oldState = storage.getMonitoringPerNameState(message.taskName)

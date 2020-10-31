@@ -27,16 +27,17 @@ import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.exceptions.MissingMetaJavaClassDuringDeserialization
 import io.infinitic.common.tasks.exceptions.UnknownReturnClassDuringDeserialization
-import io.infinitic.avro.taskManager.data.AvroSerializedDataType
+import kotlinx.serialization.Serializable
 import org.apache.avro.specific.SpecificRecordBase
 import java.math.BigInteger
-import java.nio.ByteBuffer
 import java.security.MessageDigest
 
+@Serializable
 data class SerializedData(
     var bytes: ByteArray,
-    var type: AvroSerializedDataType,
-    val meta: Map<String, ByteArray> = mapOf()
+    var type: SerializedDataType,
+//    val meta: Map<String, ByteArray> = mapOf()
+    val meta: Map<String, String> = mapOf()
 ) {
     companion object {
         // meta key containing the name of the serialized java class
@@ -47,29 +48,26 @@ data class SerializedData(
          */
         fun from(value: Any?): SerializedData {
             val bytes: ByteArray
-            val type: AvroSerializedDataType
-            val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name.toByteArray(charset = Charsets.UTF_8))
+            val type: SerializedDataType
+//            val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name.toByteArray(charset = Charsets.UTF_8))
+            val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name)
 
             when (value) {
                 null -> {
                     bytes = ByteArray(0)
-                    type = AvroSerializedDataType.NULL
+                    type = SerializedDataType.NULL
                 }
                 is ByteArray -> {
                     bytes = value
-                    type = AvroSerializedDataType.BYTES
-                }
-                is ByteBuffer -> {
-                    bytes = value.array()
-                    type = AvroSerializedDataType.BYTES
+                    type = SerializedDataType.BYTES
                 }
                 is SpecificRecordBase -> {
                     bytes = AvroSerDe.serializeToByteArray(value)
-                    type = AvroSerializedDataType.AVRO
+                    type = SerializedDataType.AVRO
                 }
                 else -> {
                     bytes = Json.stringify(value).toByteArray(charset = Charsets.UTF_8)
-                    type = AvroSerializedDataType.JSON
+                    type = SerializedDataType.JSON
                 }
             }
             return SerializedData(bytes, type, meta)
@@ -81,18 +79,19 @@ data class SerializedData(
      * @param
      */
     fun deserialize(klass: Class<*>) = when (type) {
-        AvroSerializedDataType.NULL -> null
-        AvroSerializedDataType.BYTES -> bytes
-        AvroSerializedDataType.JSON -> fromJson(klass)
-        AvroSerializedDataType.AVRO -> fromAvro(klass)
-        else -> throw Exception("Can't deserialize data with CUSTOM serialization")
+        SerializedDataType.NULL -> null
+        SerializedDataType.BYTES -> bytes
+        SerializedDataType.JSON -> fromJson(klass)
+        SerializedDataType.AVRO -> fromAvro(klass)
+        SerializedDataType.CUSTOM -> throw RuntimeException("Can't deserialize data with CUSTOM serialization")
     }
 
     /**
      * @return deserialized value
      */
     fun deserialize(): Any? {
-        val klassName = meta[META_JAVA_CLASS]?.let { String(it, charset = Charsets.UTF_8) }
+//        val klassName = meta[META_JAVA_CLASS]?.let { String(it, charset = Charsets.UTF_8) }
+        val klassName = meta[META_JAVA_CLASS]?.let { it }
         if (klassName === null) throw MissingMetaJavaClassDuringDeserialization(this)
 
         val klass = try {
@@ -108,6 +107,10 @@ data class SerializedData(
         // MD5 implementation, enough to avoid collision in practical cases
         val md = MessageDigest.getInstance("MD5")
         return BigInteger(1, md.digest(bytes)).toString(16).padStart(32, '0')
+    }
+
+    override fun toString() = try { "${deserialize()}" } catch (e: Throwable) {
+        "** error during deserialization:**\n$e"
     }
 
     override fun equals(other: Any?): Boolean {
@@ -130,4 +133,12 @@ data class SerializedData(
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> fromAvro(klass: Class<out T>) = AvroSerDe.deserializeFromByteArray(bytes, klass as Class<out SpecificRecordBase>)
+}
+
+enum class SerializedDataType {
+    NULL,
+    BYTES,
+    JSON,
+    AVRO,
+    CUSTOM
 }

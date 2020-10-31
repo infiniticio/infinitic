@@ -31,14 +31,14 @@ import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
-import io.infinitic.common.tasks.messages.ForWorkerMessage
-import io.infinitic.common.tasks.messages.RunTask
-import io.infinitic.common.tasks.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptStarted
+import io.infinitic.common.tasks.messages.workerMessages.RunTask
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
@@ -105,7 +105,7 @@ open class Worker(val dispatcher: Dispatcher) {
         is RunTask -> runTask(msg)
     }
 
-    suspend fun handle(message: ForWorkerMessage) = when (message) {
+    suspend fun handle(message: WorkerMessage) = when (message) {
         is RunTask -> runTask(message)
     }
 
@@ -195,8 +195,8 @@ open class Worker(val dispatcher: Dispatcher) {
     private fun getInstance(name: String) =
         registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 
-    private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
-        val output = method.invoke(task, *parameters)
+    private suspend fun executeTask(method: Method, task: Any, parameters: List<Any?>) = coroutineScope {
+        val output = method.invoke(task, *parameters.toTypedArray())
         ensureActive()
         output
     }
@@ -234,7 +234,7 @@ open class Worker(val dispatcher: Dispatcher) {
             getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types!!)
         }
 
-        return TaskCommand(task, method, msg.methodInput.data, msg.taskOptions)
+        return TaskCommand(task, method, msg.methodInput.get(), msg.taskOptions)
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
@@ -276,7 +276,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskAttemptRetry = msg.taskAttemptRetry,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptDelayBeforeRetry = delay,
-            taskAttemptError = TaskAttemptError(error)
+            taskAttemptError = TaskAttemptError.from(error)
         )
 
         dispatcher.toTaskEngine(taskAttemptFailed)
@@ -288,7 +288,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
             taskAttemptIndex = msg.taskAttemptIndex,
-            taskOutput = MethodOutput(output)
+            taskOutput = MethodOutput.from(output)
         )
 
         dispatcher.toTaskEngine(taskAttemptCompleted)

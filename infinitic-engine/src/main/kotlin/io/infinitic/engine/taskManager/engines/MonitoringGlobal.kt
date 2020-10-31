@@ -23,15 +23,15 @@
 
 package io.infinitic.engine.taskManager.engines
 
-import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.TaskCreated
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
 import io.infinitic.common.tasks.states.MonitoringGlobalState
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 
 class MonitoringGlobal(
     val storage: TaskStateStorage
 ) {
-    fun handle(message: ForMonitoringGlobalMessage) {
+    fun handle(message: MonitoringGlobalMessage) {
 
         // get associated state
         val oldState = storage.getMonitoringGlobalState()

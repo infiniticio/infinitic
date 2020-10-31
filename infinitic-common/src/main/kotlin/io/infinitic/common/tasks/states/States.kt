@@ -23,6 +23,7 @@
 
 package io.infinitic.common.tasks.states
 
+import com.sksamuel.avro4k.Avro
 import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptIndex
@@ -35,9 +36,11 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskStatus
+import kotlinx.serialization.Serializable
 
 sealed class State
 
+@Serializable
 data class TaskEngineState(
     val taskId: TaskId,
     val taskName: TaskName,
@@ -51,9 +54,15 @@ data class TaskEngineState(
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
 ) : State() {
-    fun deepCopy() = AvroConverter.fromStorage(AvroConverter.toStorage(this))
+    fun deepCopy(): TaskEngineState {
+        val serializer = TaskEngineState.serializer()
+        val byteArray =  Avro.default.encodeToByteArray(serializer, this)
+
+        return Avro.default.decodeFromByteArray(serializer, byteArray)
+    }
 }
 
+@Serializable
 data class MonitoringPerNameState(
     val taskName: TaskName,
     var runningOkCount: Long = 0,
@@ -62,11 +71,22 @@ data class MonitoringPerNameState(
     var terminatedCompletedCount: Long = 0,
     var terminatedCanceledCount: Long = 0
 ) : State() {
-    fun deepCopy() = AvroConverter.fromStorage(AvroConverter.toStorage(this))
+    fun deepCopy(): MonitoringPerNameState {
+        val serializer = MonitoringPerNameState.serializer()
+        val byteArray =  Avro.default.encodeToByteArray(serializer, this)
+
+        return Avro.default.decodeFromByteArray(serializer, byteArray)
+    }
 }
 
+@Serializable
 data class MonitoringGlobalState(
     val taskNames: MutableSet<TaskName> = mutableSetOf()
 ) : State() {
-    fun deepCopy() = AvroConverter.fromStorage(AvroConverter.toStorage(this))
+    fun deepCopy() : MonitoringGlobalState {
+        val serializer = MonitoringGlobalState.serializer()
+        val byteArray =  Avro.default.encodeToByteArray(serializer, this)
+
+        return Avro.default.decodeFromByteArray(serializer, byteArray)
+    }
 }

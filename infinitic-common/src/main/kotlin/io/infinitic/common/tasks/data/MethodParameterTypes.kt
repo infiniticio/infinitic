@@ -23,13 +23,28 @@
 
 package io.infinitic.common.tasks.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.nullable
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
-data class MethodParameterTypes
-@JsonCreator constructor(@get:JsonValue val types: List<String>?) {
+@Serializable(with = MethodParameterTypesSerializer::class)
+data class MethodParameterTypes(val types: List<String>?) {
     companion object {
         fun from(method: Method) = MethodParameterTypes(method.parameterTypes.map { it.name })
     }
+}
+
+object MethodParameterTypesSerializer : KSerializer<MethodParameterTypes> {
+    override val descriptor: SerialDescriptor = ListSerializer(String.serializer()).nullable.descriptor
+    override fun serialize(encoder: Encoder, value: MethodParameterTypes) {
+        ListSerializer(String.serializer()).nullable.serialize(encoder,  value.types)
+    }
+    override fun deserialize(decoder: Decoder) =
+        MethodParameterTypes(ListSerializer(String.serializer()).nullable.deserialize(decoder))
 }

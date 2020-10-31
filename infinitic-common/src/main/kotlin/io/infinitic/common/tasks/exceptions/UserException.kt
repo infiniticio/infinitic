@@ -23,37 +23,41 @@
 
 package io.infinitic.common.tasks.exceptions
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskOptions
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /*
  *  @JsonIgnoreProperties and @JsonProperty annotations are here
  *  to allow correct JSON ser/deserialization through constructors
  */
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+
+@Serializable
 sealed class UserException(
-    open val msg: String,
-    open val help: String
-) : RuntimeException("$msg.\n$help") // Must be an unchecked exception, to avoid UndeclaredThrowableException when thrown from a proxy
+    @Transient open val msg2: String = "",
+    @Transient open val help2: String = ""
+) : RuntimeException("$msg2.\n$help2")  // Must be an unchecked exception, to avoid UndeclaredThrowableException when thrown from a proxy
 
 sealed class UserExceptionInCommon(
-    override val msg: String,
-    override val help: String
+    val msg: String,
+    val help: String
 ) : UserException(msg, help)
 
+@Serializable
 sealed class UserExceptionInClient(
-    override val msg: String,
-    override val help: String
+    val msg: String,
+    val help: String
 ) : UserException(msg, help)
 
 sealed class UserExceptionInWorker(
-    override val msg: String,
-    override val help: String
+    val msg: String,
+    val help: String
 ) : UserException(msg, help)
 
 /***********************
@@ -83,10 +87,10 @@ data class UnknownReturnClassDuringDeserialization(
  * Exceptions in client
  ***********************/
 
+@Serializable
 data class NoMethodCallAtDispatch(
-    @JsonProperty("name") val name: String,
-    @JsonProperty("dispatch") val dispatch: String
-
+   val name: String,
+   val dispatch: String
 ) : UserExceptionInClient(
     msg = "You must use a method of \"$name\" when using \"$dispatch\" method",
     help = "Make sure to call one method of \"$name\" within the curly braces - example: client.$dispatch<Foo> { bar(*args) }"

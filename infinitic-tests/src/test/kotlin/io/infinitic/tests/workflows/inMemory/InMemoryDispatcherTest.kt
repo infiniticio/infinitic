@@ -25,7 +25,7 @@ package io.infinitic.tests.workflows.inMemory
 
 import io.infinitic.client.Client
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
 import io.infinitic.engine.taskManager.engines.MonitoringGlobal
 import io.infinitic.engine.taskManager.engines.MonitoringPerName
 import io.infinitic.worker.Worker
@@ -53,7 +53,7 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
             workflowEngine.handle(it)
 
             when (it) {
-                is WorkflowCompleted -> { workflowOutput = it.workflowOutput.data }
+                is WorkflowCompleted -> { workflowOutput = it.workflowOutput.get() }
             }
         }
         taskEngineHandle = {

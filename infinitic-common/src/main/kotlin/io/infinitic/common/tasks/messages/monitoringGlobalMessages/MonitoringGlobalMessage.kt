@@ -21,32 +21,15 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.tasks.avro
+package io.infinitic.common.tasks.messages.monitoringGlobalMessages
 
-import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.avro.taskManager.data.states.AvroTaskEngineState
-import io.infinitic.common.fixtures.TestFactory
-import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
+import io.infinitic.common.tasks.data.TaskName
+import kotlinx.serialization.Serializable
 
-class AvroSerDeTests : StringSpec({
-    "Avro state should be SerDe-reversible through ByteBuffer" {
-        // given
-        val state = TestFactory.random(AvroTaskEngineState::class)
-        // when
-        val serState = AvroSerDe.serialize(state)
-        val deState = AvroSerDe.deserialize<AvroTaskEngineState>(serState)
-        // then
-        state shouldBe deState
-    }
+@Serializable
+sealed class MonitoringGlobalMessage
 
-    "Avro state should be SerDe-reversible through ByteArray" {
-        // given
-        val state = TestFactory.random(AvroTaskEngineState::class)
-        // when
-        val serState = AvroSerDe.serializeToByteArray(state)
-        val deState = AvroSerDe.deserializeFromByteArray<AvroTaskEngineState>(serState)
-        // then
-        state shouldBe deState
-    }
-})
+@Serializable
+data class TaskCreated(
+    val taskName: TaskName
+) : MonitoringGlobalMessage()

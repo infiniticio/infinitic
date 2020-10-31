@@ -30,6 +30,7 @@
 
 plugins {
     kotlin("jvm") version "1.4.10" apply false
+    kotlin("plugin.serialization") version "1.4.10" apply false
 }
 
 allprojects {
@@ -41,6 +42,7 @@ allprojects {
 subprojects {
     version = "1.0.0-SNAPSHOT"
 
+    extra["kotlin-reflect_version"] = "1.4.10"
     extra["kotest_version"] = "4.2.+"
     extra["mockk_version"] = "1.10.+"
     extra["kotlinx_coroutines_version"] = "1.3.+"

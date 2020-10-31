@@ -27,26 +27,8 @@ import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.SerializedData
 import kotlin.reflect.full.primaryConstructor
 
-abstract class Meta(open val data: Map<String, Any?> = mapOf()) {
-    @get:JsonValue
-    val json get() = when {
-        this::serializedData.isInitialized -> serializedData
-        else -> data.mapValues { SerializedData.from(it.value) }
-    }
+abstract class Meta(open val serialized: Map<String, SerializedData> = mapOf()) {
+    fun get(key: String) = serialized[key]?.deserialize()
 
-    lateinit var serializedData: Map<String, SerializedData>
-
-    companion object {
-        inline fun <reified T : Meta> fromSerialized(serialized: Map<String, SerializedData>) =
-            T::class.primaryConstructor!!.call(serialized.mapValues { it.value.deserialize() }).apply {
-                this.serializedData = serialized
-            }
-    }
-
-    protected inline fun <reified T : Meta> withMeta(key: String, value: Any?): T {
-        val newSerializedData = json.toMutableMap().plus(key to SerializedData.from(value)).toMap()
-        return T::class.primaryConstructor!!.call(data.toMutableMap().plus(key to value).toMap()).apply {
-            serializedData = newSerializedData
-        }
-    }
+    fun get() = serialized.mapValues { it.value.deserialize() }
 }

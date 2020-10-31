@@ -23,6 +23,9 @@
 
 package io.infinitic.common.tasks.data
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class TaskOptions(
     val runningTimeout: Float? = null
 )

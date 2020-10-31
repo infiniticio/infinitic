@@ -23,13 +23,26 @@
 
 package io.infinitic.common.workflows.data.steps
 
-import com.fasterxml.jackson.annotation.JsonCreator
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class StepOutput(override val data: Any?) : Data(data) {
+@Serializable(with = StepOutputSerializer::class)
+data class StepOutput(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serializedData: SerializedData) = fromSerialized<StepOutput>(serializedData)
+        fun from(data: Any?) = StepOutput(SerializedData.from(data))
     }
+}
+
+object StepOutputSerializer : KSerializer<StepOutput> {
+    override val descriptor: SerialDescriptor =  SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: StepOutput) {
+        SerializedData.serializer().serialize(encoder,  value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        StepOutput(SerializedData.serializer().deserialize(decoder))
 }

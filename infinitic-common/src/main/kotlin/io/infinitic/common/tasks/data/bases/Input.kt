@@ -23,79 +23,44 @@
 
 package io.infinitic.common.tasks.data.bases
 
-import com.fasterxml.jackson.annotation.JsonValue
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.exceptions.ErrorDuringJsonDeserializationOfParameter
 import io.infinitic.common.tasks.exceptions.ErrorDuringJsonSerializationOfParameter
 import io.infinitic.common.tasks.exceptions.InconsistentJsonSerializationOfParameter
 import java.lang.reflect.Method
-import kotlin.reflect.full.primaryConstructor
 
-abstract class Input(open vararg val data: Any?) {
-    @get:JsonValue
-    val json get() = when {
-        this::serializedData.isInitialized -> serializedData
-        else -> data.map { SerializedData.from(it) }
-    }
-
-    lateinit var serializedData: List<SerializedData>
-
+abstract class Input(open vararg val serializedData: SerializedData) {
     companion object {
-        inline fun <reified T : Input> fromSerialized(serialized: List<SerializedData>) =
-            T::class.primaryConstructor!!.call(deserialize(serialized)).apply {
-                this.serializedData = serialized
+        fun getSerializedParameter(method: Method, index: Int, parameterValue: Any?) : SerializedData {
+            val restoredValue: Any?
+            val parameterName = method.parameters[index].name
+            val parameterType = method.parameterTypes[index]
+            val methodName = method.name
+            val className = method.declaringClass.name
+            // get serialized data
+            val serializedData = try {
+                SerializedData.from(parameterValue)
+            } catch (e: JsonProcessingException) {
+                throw ErrorDuringJsonSerializationOfParameter(parameterName, parameterValue, parameterType.name, methodName, className)
             }
-
-        inline fun <reified T : Input> from(method: Method, data: Array<out Any>) =
-            T::class.primaryConstructor!!.call(data).apply {
-                serializedData = when {
-                    this::serializedData.isInitialized -> serializedData
-                    else -> data.mapIndexed { index, value ->
-                        `access$getSerializedData`(
-                            parameterName = method.parameters[index].name,
-                            parameterValue = value,
-                            parameterType = method.parameterTypes[index],
-                            methodName = method.name,
-                            className = method.declaringClass.name
-                        )
-                    }
-                }
+            // for user convenience, we check right here that data can actually be deserialized
+            try {
+                restoredValue = serializedData.deserialize()
+            } catch (e: JsonProcessingException) {
+                throw ErrorDuringJsonDeserializationOfParameter(parameterName, parameterValue, parameterType.name, methodName, className)
             }
+            // check that serialization/deserialization process works as expected
+            if (parameterValue != restoredValue) throw InconsistentJsonSerializationOfParameter(parameterName, parameterValue, restoredValue, parameterType.name, methodName, className)
 
-        fun deserialize(serialized: List<SerializedData>) =
-            serialized.map { it.deserialize() }.toTypedArray()
+            return serializedData
+        }
     }
 
-    private fun getSerializedData(
-        parameterName: String,
-        parameterValue: Any?,
-        parameterType: Class<*>,
-        methodName: String,
-        className: String
-    ): SerializedData {
-        val data: SerializedData
-        val restoredValue: Any?
-        // get serialized data
-        try {
-            data = SerializedData.from(parameterValue)
-        } catch (e: JsonProcessingException) {
-            throw ErrorDuringJsonSerializationOfParameter(parameterName, parameterValue, parameterType.name, methodName, className)
-        }
-        // for user convenience, we check right here that data can actually be deserialized
-        try {
-            restoredValue = data.deserialize()
-        } catch (e: JsonProcessingException) {
-            throw ErrorDuringJsonDeserializationOfParameter(parameterName, parameterValue, parameterType.name, methodName, className)
-        }
-        // check that serialization/deserialization process works as expected
-        if (parameterValue != restoredValue) throw InconsistentJsonSerializationOfParameter(parameterName, parameterValue, restoredValue, parameterType.name, methodName, className)
-
-        return data
-    }
+    final override fun toString() = "${serializedData.toList()}"
 
     final override fun hashCode(): Int {
-        return data.contentHashCode()
+        return serializedData.contentHashCode()
     }
 
     final override fun equals(other: Any?): Boolean {
@@ -104,11 +69,10 @@ abstract class Input(open vararg val data: Any?) {
 
         other as Input
 
-        if (!data.contentDeepEquals(other.data)) return false
+        if (!serializedData.contentDeepEquals(other.serializedData)) return false
 
         return true
     }
 
-    @PublishedApi
-    internal fun `access$getSerializedData`(parameterName: String, parameterValue: Any?, parameterType: Class<*>, methodName: String, className: String) = getSerializedData(parameterName, parameterValue, parameterType, methodName, className)
+    fun get() = serializedData.map { it.deserialize() }
 }

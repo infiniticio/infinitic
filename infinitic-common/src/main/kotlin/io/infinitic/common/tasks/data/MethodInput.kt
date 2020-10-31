@@ -24,15 +24,38 @@
 package io.infinitic.common.tasks.data
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Input
+import io.infinitic.common.tasks.exceptions.ErrorDuringJsonDeserializationOfParameter
+import io.infinitic.common.tasks.exceptions.ErrorDuringJsonSerializationOfParameter
+import io.infinitic.common.tasks.exceptions.InconsistentJsonSerializationOfParameter
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
-class MethodInput(override vararg val data: Any?) : Input(data), Collection<Any?> by data.toList() {
+@Serializable(with = MethodInputSerializer::class)
+class MethodInput(override vararg val serializedData: SerializedData) : Input(*serializedData), Collection<SerializedData> by serializedData.toList() {
     companion object {
-        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serialized: List<SerializedData>) = fromSerialized<MethodInput>(serialized)
+        fun from(method: Method, data: Array<out Any>) = MethodInput(
+            *data.mapIndexed { index, value -> getSerializedParameter(method, index, value) }.toTypedArray()
+        )
 
-        fun from(method: Method, data: Array<out Any>) = from<MethodInput>(method, data)
+        fun from(vararg data: Any?) = MethodInput(
+            *data.map {  SerializedData.from(it) }.toTypedArray()
+        )
     }
+}
+
+object MethodInputSerializer : KSerializer<MethodInput> {
+    override val descriptor: SerialDescriptor =  ListSerializer(SerializedData.serializer()).descriptor
+    override fun serialize(encoder: Encoder, value: MethodInput) {
+        ListSerializer(SerializedData.serializer()).serialize(encoder,  value.serializedData.toList())
+    }
+    override fun deserialize(decoder: Decoder) =
+        MethodInput(*(ListSerializer(SerializedData.serializer()).deserialize(decoder).toTypedArray()))
 }

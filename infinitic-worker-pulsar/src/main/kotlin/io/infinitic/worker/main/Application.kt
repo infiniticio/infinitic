@@ -24,7 +24,7 @@
 package io.infinitic.worker.main
 
 import io.infinitic.common.tasks.avro.AvroConverter
-import io.infinitic.common.tasks.messages.ForWorkerMessage
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.worker.Worker
 import io.infinitic.worker.extensions.acknowledgeSuspend
@@ -81,7 +81,7 @@ class Application internal constructor(private val pulsarClient: PulsarClient, p
     }
 
     fun runWithConcurrency() {
-        val workerInputChannel = Channel<MessageToProcess<ForWorkerMessage>>()
+        val workerInputChannel = Channel<MessageToProcess<WorkerMessage>>()
 
         // launch 8 workers
         repeat(8) {

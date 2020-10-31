@@ -25,29 +25,24 @@ package io.infinitic.common.tasks.avro
 
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
-import io.infinitic.common.tasks.messages.CancelTask
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.ForTaskEngineMessage
-import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
-import io.infinitic.common.tasks.messages.ForWorkerMessage
-import io.infinitic.common.tasks.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.TaskAttemptDispatched
-import io.infinitic.common.tasks.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.TaskCanceled
-import io.infinitic.common.tasks.messages.TaskCompleted
-import io.infinitic.common.tasks.messages.TaskCreated
-import io.infinitic.common.tasks.messages.TaskStatusUpdated
-import io.infinitic.common.tasks.messages.Message
-import io.infinitic.common.tasks.messages.RetryTask
-import io.infinitic.common.tasks.messages.RetryTaskAttempt
-import io.infinitic.common.tasks.messages.RunTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.CancelTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptDispatched
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptStarted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCanceled
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCompleted
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTaskAttempt
 import io.infinitic.common.tasks.states.TaskEngineState
 import io.infinitic.common.tasks.states.MonitoringGlobalState
 import io.infinitic.common.tasks.states.MonitoringPerNameState
 import io.infinitic.common.tasks.states.State
 import io.infinitic.avro.taskManager.data.AvroSerializedData
+import io.infinitic.avro.taskManager.data.AvroSerializedDataType
 import io.infinitic.avro.taskManager.messages.AvroCancelTask
 import io.infinitic.avro.taskManager.messages.AvroDispatchTask
 import io.infinitic.avro.taskManager.messages.AvroTaskAttemptCompleted
@@ -72,6 +67,12 @@ import io.infinitic.avro.taskManager.messages.envelopes.AvroForWorkerMessageType
 import io.infinitic.avro.taskManager.data.states.AvroTaskEngineState
 import io.infinitic.avro.taskManager.data.states.AvroMonitoringGlobalState
 import io.infinitic.avro.taskManager.data.states.AvroMonitoringPerNameState
+import io.infinitic.common.data.SerializedDataType
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.workerMessages.RunTask
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import org.apache.avro.specific.SpecificRecordBase
 import java.nio.ByteBuffer
 
@@ -236,29 +237,29 @@ object AvroConverter {
      *  Message <-> Avro Envelope
      */
 
-    fun toTaskEngine(message: ForTaskEngineMessage): AvroEnvelopeForTaskEngine =
+    fun toTaskEngine(message: TaskEngineMessage): AvroEnvelopeForTaskEngine =
         addEnvelopeToTaskEngineMessage(toAvroMessage(message))
 
     fun fromTaskEngine(input: AvroEnvelopeForTaskEngine) =
-        fromAvroMessage(removeEnvelopeFromTaskEngineMessage(input)) as ForTaskEngineMessage
+        fromAvroMessage(removeEnvelopeFromTaskEngineMessage(input)) as TaskEngineMessage
 
-    fun toMonitoringPerName(message: ForMonitoringPerNameMessage): AvroEnvelopeForMonitoringPerName =
+    fun toMonitoringPerName(message: MonitoringPerNameMessage): AvroEnvelopeForMonitoringPerName =
         addEnvelopeToMonitoringPerNameMessage(toAvroMessage(message))
 
     fun fromMonitoringPerName(input: AvroEnvelopeForMonitoringPerName) =
-        fromAvroMessage(removeEnvelopeFromMonitoringPerNameMessage(input)) as ForMonitoringPerNameMessage
+        fromAvroMessage(removeEnvelopeFromMonitoringPerNameMessage(input)) as MonitoringPerNameMessage
 
-    fun toMonitoringGlobal(message: ForMonitoringGlobalMessage): AvroEnvelopeForMonitoringGlobal =
+    fun toMonitoringGlobal(message: MonitoringGlobalMessage): AvroEnvelopeForMonitoringGlobal =
         addEnvelopeToMonitoringGlobalMessage(toAvroMessage(message))
 
     fun fromMonitoringGlobal(input: AvroEnvelopeForMonitoringGlobal) =
-        fromAvroMessage(removeEnvelopeFromMonitoringGlobalMessage(input)) as ForMonitoringGlobalMessage
+        fromAvroMessage(removeEnvelopeFromMonitoringGlobalMessage(input)) as MonitoringGlobalMessage
 
-    fun toWorkers(message: ForWorkerMessage): AvroEnvelopeForWorker =
+    fun toWorkers(message: WorkerMessage): AvroEnvelopeForWorker =
         addEnvelopeToWorkerMessage(toAvroMessage(message))
 
     fun fromWorkers(input: AvroEnvelopeForWorker) =
-        fromAvroMessage(removeEnvelopeFromWorkerMessage(input)) as ForWorkerMessage
+        fromAvroMessage(removeEnvelopeFromWorkerMessage(input)) as WorkerMessage
 
     /**
      *  Message <-> Avro Message
@@ -295,7 +296,7 @@ object AvroConverter {
     private fun fromAvroMessage(avro: AvroRetryTaskAttempt) = convertJson<RetryTaskAttempt>(avro)
     private fun fromAvroMessage(avro: AvroRunTask) = convertJson<RunTask>(avro)
 
-    fun toAvroMessage(msg: Message) = when (msg) {
+    fun toAvroMessage(msg: TaskEngineMessage) = when (msg) {
         is CancelTask -> toAvroMessage(msg)
         is DispatchTask -> toAvroMessage(msg)
         is TaskAttemptCompleted -> toAvroMessage(msg)
@@ -304,10 +305,18 @@ object AvroConverter {
         is TaskAttemptStarted -> toAvroMessage(msg)
         is TaskCanceled -> toAvroMessage(msg)
         is TaskCompleted -> toAvroMessage(msg)
-        is TaskCreated -> toAvroMessage(msg)
-        is TaskStatusUpdated -> toAvroMessage(msg)
         is RetryTask -> toAvroMessage(msg)
         is RetryTaskAttempt -> toAvroMessage(msg)
+    }
+
+    fun toAvroMessage(msg: MonitoringPerNameMessage) = when (msg) {
+        is TaskStatusUpdated -> toAvroMessage(msg)
+    }
+
+    fun toAvroMessage(msg: MonitoringGlobalMessage) = when (msg) {
+        is TaskCreated -> toAvroMessage(msg)
+    }
+    fun toAvroMessage(msg: WorkerMessage) = when (msg) {
         is RunTask -> toAvroMessage(msg)
     }
 
@@ -331,17 +340,34 @@ object AvroConverter {
 
     fun fromAvroSerializedData(avro: AvroSerializedData) = SerializedData(
         avro.bytes.array(),
-        avro.type,
-        avro.meta.mapValues { it.value.array() }
+        fromAvroSerializedDataType(avro.type),
+//        avro.meta.mapValues { it.value.array() }
+        avro.meta.mapValues { String (it.value.array()) }
     )
 
     fun toAvroSerializedData(data: SerializedData): AvroSerializedData = AvroSerializedData
         .newBuilder()
-        .setType(data.type)
+        .setType(toAvroSerializedDataType(data.type))
         .setBytes(ByteBuffer.wrap(data.bytes))
-        .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
+//        .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
+        .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value.toByteArray()) })
         .build()
 
+    fun fromAvroSerializedDataType(avro: AvroSerializedDataType) = when (avro) {
+        AvroSerializedDataType.AVRO -> SerializedDataType.AVRO
+        AvroSerializedDataType.BYTES -> SerializedDataType.BYTES
+        AvroSerializedDataType.CUSTOM -> SerializedDataType.CUSTOM
+        AvroSerializedDataType.JSON -> SerializedDataType.JSON
+        AvroSerializedDataType.NULL -> SerializedDataType.NULL
+    }
+
+    fun toAvroSerializedDataType(type: SerializedDataType) = when (type) {
+        SerializedDataType.AVRO -> AvroSerializedDataType.AVRO
+        SerializedDataType.BYTES -> AvroSerializedDataType.BYTES
+        SerializedDataType.CUSTOM -> AvroSerializedDataType.CUSTOM
+        SerializedDataType.JSON -> AvroSerializedDataType.JSON
+        SerializedDataType.NULL -> AvroSerializedDataType.NULL
+    }
     /**
      *  Mapping function by Json serialization/deserialization
      */

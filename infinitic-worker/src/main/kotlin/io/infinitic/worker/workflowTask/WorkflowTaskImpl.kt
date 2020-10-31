@@ -56,7 +56,7 @@ class WorkflowTaskImpl : WorkflowTask {
 
         // run method and get output (null if end not reached)
         val methodOutput = try {
-            MethodOutput(method.invoke(workflow, *workflowTaskInput.methodRun.methodInput.data))
+            MethodOutput.from(method.invoke(workflow, *workflowTaskInput.methodRun.methodInput.get().toTypedArray()))
         } catch (e: InvocationTargetException) {
             when (e.cause) {
                 is WorkflowTaskException -> null

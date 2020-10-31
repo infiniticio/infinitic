@@ -25,4 +25,6 @@ package io.infinitic.common.tasks.data.bases
 
 abstract class Name(open val name: String) : CharSequence by name, Comparable<String> by name {
     final override fun toString() = name
+
+    fun get() = name
 }

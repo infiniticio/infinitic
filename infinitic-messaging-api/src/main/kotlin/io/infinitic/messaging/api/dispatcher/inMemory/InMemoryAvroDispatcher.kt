@@ -23,10 +23,10 @@
 
 package io.infinitic.messaging.api.dispatcher.inMemory
 
-import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
-import io.infinitic.common.tasks.messages.ForTaskEngineMessage
-import io.infinitic.common.tasks.messages.ForWorkerMessage
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.workflows.avro.AvroConverter
 import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
@@ -38,10 +38,10 @@ import io.infinitic.common.tasks.avro.AvroConverter as TaskAvroConverter
 open class InMemoryAvroDispatcher : Dispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var workflowEngineHandle: suspend (msg: ForWorkflowEngineMessage) -> Unit
-    lateinit var taskEngineHandle: suspend (msg: ForTaskEngineMessage) -> Unit
-    lateinit var monitoringPerNameHandle: suspend (msg: ForMonitoringPerNameMessage) -> Unit
-    lateinit var monitoringGlobalHandle: suspend (msg: ForMonitoringGlobalMessage) -> Unit
-    lateinit var workerHandle: suspend (msg: ForWorkerMessage) -> Unit
+    lateinit var taskEngineHandle: suspend (msg: TaskEngineMessage) -> Unit
+    lateinit var monitoringPerNameHandle: suspend (msg: MonitoringPerNameMessage) -> Unit
+    lateinit var monitoringGlobalHandle: suspend (msg: MonitoringGlobalMessage) -> Unit
+    lateinit var workerHandle: suspend (msg: WorkerMessage) -> Unit
     lateinit var scope: CoroutineScope
 
     override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {
@@ -55,7 +55,7 @@ open class InMemoryAvroDispatcher : Dispatcher {
         }
     }
 
-    override suspend fun toTaskEngine(msg: ForTaskEngineMessage, after: Float) {
+    override suspend fun toTaskEngine(msg: TaskEngineMessage, after: Float) {
         val avro = TaskAvroConverter.toTaskEngine(msg)
 
         scope.launch {
@@ -66,7 +66,7 @@ open class InMemoryAvroDispatcher : Dispatcher {
         }
     }
 
-    override suspend fun toMonitoringPerName(msg: ForMonitoringPerNameMessage) {
+    override suspend fun toMonitoringPerName(msg: MonitoringPerNameMessage) {
         scope.launch {
             val avro = TaskAvroConverter.toMonitoringPerName(msg)
 
@@ -74,13 +74,13 @@ open class InMemoryAvroDispatcher : Dispatcher {
         }
     }
 
-    override suspend fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
+    override suspend fun toMonitoringGlobal(msg: MonitoringGlobalMessage) {
         val avro = TaskAvroConverter.toMonitoringGlobal(msg)
 
         scope.launch { monitoringGlobalHandle(TaskAvroConverter.fromMonitoringGlobal(avro)) }
     }
 
-    override suspend fun toWorkers(msg: ForWorkerMessage) {
+    override suspend fun toWorkers(msg: WorkerMessage) {
         val avro = TaskAvroConverter.toWorkers(msg)
 
         scope.launch { workerHandle(TaskAvroConverter.fromWorkers(avro)) }

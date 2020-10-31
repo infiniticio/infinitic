@@ -40,6 +40,6 @@ suspend fun childWorkflowCompleted(
         state,
         msg.methodRunId,
         CommandId(msg.childWorkflowId),
-        CommandOutput(msg.childWorkflowOutput.data)
+        CommandOutput(msg.childWorkflowOutput.serializedData)
     )
 }

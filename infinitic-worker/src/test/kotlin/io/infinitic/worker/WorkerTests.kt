@@ -91,7 +91,7 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = MethodOutput("9")
+            taskOutput = MethodOutput.from("9")
         )
     }
 
@@ -112,7 +112,7 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = MethodOutput("12")
+            taskOutput = MethodOutput.from("12")
         )
     }
 
@@ -275,7 +275,7 @@ class WorkerTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskAttemptIndex = msg.taskAttemptIndex,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = MethodOutput("72")
+            taskOutput = MethodOutput.from("72")
         )
     }
 

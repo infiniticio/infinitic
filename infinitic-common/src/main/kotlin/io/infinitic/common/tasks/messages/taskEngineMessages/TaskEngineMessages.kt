@@ -21,43 +21,36 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.tasks.messages
+package io.infinitic.common.tasks.messages.taskEngineMessages
 
+import io.infinitic.common.tasks.data.MethodInput
+import io.infinitic.common.tasks.data.MethodName
+import io.infinitic.common.tasks.data.MethodOutput
+import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptIndex
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.MethodInput
-import io.infinitic.common.tasks.data.MethodName
-import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.interfaces.FailingTaskAttemptMessage
 import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
+import kotlinx.serialization.Serializable
 
-sealed class Message
+@Serializable
+sealed class TaskEngineMessage() {
+    abstract val taskId: TaskId
+}
 
-sealed class ForTaskEngineMessage(open val taskId: TaskId) : Message()
-
-sealed class ForMonitoringPerNameMessage(open val taskName: TaskName) : Message()
-
-sealed class ForMonitoringGlobalMessage : Message()
-
-sealed class ForWorkerMessage(open val taskName: TaskName) : Message()
-
-/*
- * Task Engine Messages
- */
-
+@Serializable
 data class CancelTask(
     override val taskId: TaskId,
     val taskOutput: MethodOutput
-) : ForTaskEngineMessage(taskId)
+) : TaskEngineMessage()
 
+@Serializable
 data class DispatchTask(
     override val taskId: TaskId,
     val taskName: TaskName,
@@ -66,23 +59,26 @@ data class DispatchTask(
     val methodInput: MethodInput,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions = TaskOptions()
-) : ForTaskEngineMessage(taskId)
+) : TaskEngineMessage()
 
+@Serializable
 data class TaskAttemptCompleted(
     override val taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskAttemptIndex: TaskAttemptIndex,
     val taskOutput: MethodOutput
-) : ForTaskEngineMessage(taskId), TaskAttemptMessage
+) : TaskEngineMessage(), TaskAttemptMessage
 
+@Serializable
 data class TaskAttemptDispatched(
     override val taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskAttemptIndex: TaskAttemptIndex
-) : ForTaskEngineMessage(taskId), TaskAttemptMessage
+) : TaskEngineMessage(), TaskAttemptMessage
 
+@Serializable
 data class TaskAttemptFailed(
     override val taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
@@ -90,28 +86,32 @@ data class TaskAttemptFailed(
     override val taskAttemptIndex: TaskAttemptIndex,
     override val taskAttemptDelayBeforeRetry: Float?,
     val taskAttemptError: TaskAttemptError
-) : ForTaskEngineMessage(taskId), FailingTaskAttemptMessage
+) : TaskEngineMessage(), FailingTaskAttemptMessage
 
+@Serializable
 data class TaskAttemptStarted(
     override val taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskAttemptIndex: TaskAttemptIndex
-) : ForTaskEngineMessage(taskId), TaskAttemptMessage
+) : TaskEngineMessage(), TaskAttemptMessage
 
+@Serializable
 data class TaskCanceled(
     override val taskId: TaskId,
     val taskOutput: MethodOutput,
     val taskMeta: TaskMeta
-) : ForTaskEngineMessage(taskId)
+) : TaskEngineMessage()
 
+@Serializable
 data class TaskCompleted(
     override val taskId: TaskId,
     val taskName: TaskName,
     val taskOutput: MethodOutput,
     val taskMeta: TaskMeta
-) : ForTaskEngineMessage(taskId)
+) : TaskEngineMessage()
 
+@Serializable
 data class RetryTask(
     override val taskId: TaskId,
     val taskName: TaskName?,
@@ -120,47 +120,12 @@ data class RetryTask(
     val methodInput: MethodInput?,
     val taskMeta: TaskMeta?,
     val taskOptions: TaskOptions?
-) : ForTaskEngineMessage(taskId)
+) : TaskEngineMessage()
 
+@Serializable
 data class RetryTaskAttempt(
     override val taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskAttemptIndex: TaskAttemptIndex
-) : ForTaskEngineMessage(taskId), TaskAttemptMessage
-
-/*
- * Monitoring Per Name Messages
- */
-
-data class TaskStatusUpdated constructor(
-    override val taskName: TaskName,
-    val taskId: TaskId,
-    val oldStatus: TaskStatus?,
-    val newStatus: TaskStatus
-) : ForMonitoringPerNameMessage(taskName)
-
-/*
- * Monitoring Global Messages
- */
-
-data class TaskCreated(
-    val taskName: TaskName
-) : ForMonitoringGlobalMessage()
-
-/*
- * Worker Messages
- */
-
-data class RunTask(
-    override val taskName: TaskName,
-    override val taskId: TaskId,
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptRetry: TaskAttemptRetry,
-    override val taskAttemptIndex: TaskAttemptIndex,
-    val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
-    val methodInput: MethodInput,
-    val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta
-) : ForWorkerMessage(taskName), TaskAttemptMessage
+) : TaskEngineMessage(), TaskAttemptMessage

@@ -34,9 +34,9 @@ import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
-import io.infinitic.common.tasks.messages.CancelTask
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.RetryTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.CancelTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTask
 import io.infinitic.common.tasks.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -151,7 +151,7 @@ class Client(val dispatcher: Dispatcher) {
     ) {
         val msg = CancelTask(
             taskId = TaskId(id),
-            taskOutput = MethodOutput(output)
+            taskOutput = MethodOutput.from(output)
         )
         dispatcher.toTaskEngine(msg)
     }

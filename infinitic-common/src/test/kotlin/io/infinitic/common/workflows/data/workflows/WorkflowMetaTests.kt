@@ -30,9 +30,9 @@ import io.kotest.matchers.shouldBe
 class WorkflowMetaTests : StringSpec({
     "Serialization should be updated if meta is updated" {
         // get meta from serialisation
-        var meta = AvroConverter.convertJson<WorkflowMeta>(WorkflowMeta(mapOf("a" to "b")))
+        var meta = AvroConverter.convertJson<WorkflowMeta>(WorkflowMeta.from(mapOf("a" to "b")))
         // update meta
-        meta = meta.with("a", "c")
+        meta += ("a" to "c")
         // restore from serialization
         val meta2 = AvroConverter.convertJson<WorkflowMeta>(meta)
 

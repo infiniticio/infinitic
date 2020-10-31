@@ -33,8 +33,8 @@ import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.ForTaskEngineMessage
+import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
@@ -45,7 +45,7 @@ import io.mockk.slot
 
 class ClientTaskTests : StringSpec({
     val dispatcher = mockk<Dispatcher>()
-    val slot = slot<ForTaskEngineMessage>()
+    val slot = slot<TaskEngineMessage>()
     coEvery { dispatcher.toTaskEngine(capture(slot)) } just Runs
     val client = Client(dispatcher)
 
@@ -81,7 +81,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name)),
-            methodInput = MethodInput(0),
+            methodInput = MethodInput.from(0),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -98,7 +98,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
-            methodInput = MethodInput(null),
+            methodInput = MethodInput.from(null),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -115,7 +115,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
-            methodInput = MethodInput("a"),
+            methodInput = MethodInput.from("a"),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -132,7 +132,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
-            methodInput = MethodInput(0, "a"),
+            methodInput = MethodInput.from(0, "a"),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -151,7 +151,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
-            methodInput = MethodInput(fake),
+            methodInput = MethodInput.from(fake),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )

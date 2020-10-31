@@ -32,7 +32,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.states.WorkflowState
@@ -70,9 +70,9 @@ suspend fun dispatchWorkflowTask(
         taskName = TaskName(WorkflowTask::class.java.name),
         methodName = MethodName(Constants.WORKFLOW_TASK_METHOD),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskInput::class.java.name)),
-        methodInput = MethodInput(workflowTaskInput),
+        methodInput = MethodInput.from(workflowTaskInput),
         taskOptions = TaskOptions(),
-        taskMeta = TaskMeta(
+        taskMeta = TaskMeta.from(
             mapOf(
                 WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}",
                 WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}"

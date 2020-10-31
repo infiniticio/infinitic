@@ -26,11 +26,24 @@ package io.infinitic.common.tasks.data
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.tasks.data.bases.Name
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
-data class TaskName
-@JsonCreator constructor(@get:JsonValue override val name: String) : Name(name) {
+@Serializable(with = TaskNameSerializer::class)
+data class TaskName(override val name: String) : Name(name) {
     companion object {
         fun from(method: Method) = TaskName(method.declaringClass.name)
     }
+}
+
+object TaskNameSerializer : KSerializer<TaskName> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskName", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TaskName) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = TaskName(decoder.decodeString())
 }

@@ -26,7 +26,7 @@ package io.infinitic.tests.tasks.inMemory
 import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
 import io.infinitic.client.Client
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
 import io.infinitic.engine.taskManager.engines.MonitoringGlobal
 import io.infinitic.engine.taskManager.engines.MonitoringPerName
 import io.infinitic.engine.taskManager.engines.TaskEngine

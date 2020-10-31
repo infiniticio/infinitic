@@ -34,7 +34,7 @@ fun <T : Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyVa
     val properties = obj::class.memberProperties
     values.forEach { (name, value) ->
         properties.find { it.name == name.name }
-            ?.let { setProperty(obj, it, value.data) }
+            ?.let { setProperty(obj, it, value.get()) }
             ?: throw RuntimeException("Trying to set unknown property ${obj::class.java.name}:${name.name}")
     }
 }
@@ -43,7 +43,7 @@ fun <T : Any> getPropertiesFromObject(obj: T, filter: (p: Triple<String, Any?, K
     obj::class.memberProperties
         .map { p -> Triple(p.name, getProperty(obj, p), p.returnType) }
         .filter { filter(it) }
-        .associateBy({ PropertyName(it.first) }, { PropertyValue(it.second) })
+        .associateBy({ PropertyName(it.first) }, { PropertyValue.from(it.second) })
 
 private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>) = kProperty.javaField
     ?.let {

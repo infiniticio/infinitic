@@ -21,13 +21,23 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.data
+package io.infinitic.common.tasks.messages.monitoringPerNameMessages
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskStatus
+import kotlinx.serialization.Serializable
 
-data class DateTime
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue val time: Long = LocalDateTime.now(ZoneOffset.UTC).atZone(ZoneOffset.UTC).toEpochSecond())
+
+@Serializable
+sealed class MonitoringPerNameMessage  {
+    abstract val taskName: TaskName
+}
+
+@Serializable
+data class TaskStatusUpdated constructor(
+    override val taskName: TaskName,
+    val taskId: TaskId,
+    val oldStatus: TaskStatus?,
+    val newStatus: TaskStatus
+) : MonitoringPerNameMessage()

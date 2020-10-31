@@ -24,15 +24,26 @@
 package io.infinitic.tests.tasks.inMemory
 
 import io.infinitic.common.tasks.data.TaskInstance
+import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
+import io.infinitic.engine.taskManager.storage.InMemoryTaskStateStorage
+import io.infinitic.engine.taskManager.storage.TaskStateStorage
+import io.infinitic.engine.workflowManager.storages.InMemoryWorkflowStateStorage
+import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
 import io.infinitic.storage.api.Flushable
 import io.infinitic.storage.api.Storage
 
-internal class InMemoryStorageTest(storage: Storage) : AvroKeyValueTaskStateStorage(storage) {
-    fun isTerminated(task: TaskInstance): Boolean = getTaskEngineState(task.taskId) == null
+class InMemoryStorageTest(
+    private val storage: Storage,
+//    private val taskStateStorage: TaskStateStorage = AvroKeyValueTaskStateStorage(storage)
+    private val taskStateStorage: TaskStateStorage = InMemoryTaskStateStorage()
+) : TaskStateStorage by taskStateStorage {
+
+    fun isTerminated(taskInstance: TaskInstance): Boolean = taskStateStorage.getTaskEngineState(taskInstance.taskId) == null
+
     fun reset() {
-        if (storage is Flushable) {
-            storage.flush()
+        if (taskStateStorage is Flushable) {
+            taskStateStorage.flush()
         }
     }
 }

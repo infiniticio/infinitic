@@ -23,13 +23,26 @@
 
 package io.infinitic.common.tasks.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class MethodOutput(override val data: Any?) : Data(data) {
+@Serializable(with = MethodOutputSerializer::class)
+data class MethodOutput(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serializedData: SerializedData) = fromSerialized<MethodOutput>(serializedData)
+        fun from(data: Any?) = MethodOutput(SerializedData.from(data))
     }
+}
+
+object MethodOutputSerializer : KSerializer<MethodOutput> {
+    override val descriptor: SerialDescriptor =  SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: MethodOutput) {
+        SerializedData.serializer().serialize(encoder,  value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        MethodOutput(SerializedData.serializer().deserialize(decoder))
 }

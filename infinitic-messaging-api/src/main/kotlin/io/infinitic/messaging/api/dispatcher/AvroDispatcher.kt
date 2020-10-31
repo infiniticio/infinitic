@@ -25,10 +25,10 @@ package io.infinitic.messaging.api.dispatcher
 
 import io.infinitic.messaging.api.dispatcher.transport.AvroTransport
 import io.infinitic.common.tasks.avro.AvroConverter as TaskAvroConverter
-import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
-import io.infinitic.common.tasks.messages.ForTaskEngineMessage
-import io.infinitic.common.tasks.messages.ForWorkerMessage
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.workflows.avro.AvroConverter as WorkflowAvroConverter
 import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
 
@@ -39,25 +39,25 @@ class AvroDispatcher(private val transport: AvroTransport) : Dispatcher {
             .let { transport.toWorkflowEngine(it, after) }
     }
 
-    override suspend fun toTaskEngine(msg: ForTaskEngineMessage, after: Float) {
+    override suspend fun toTaskEngine(msg: TaskEngineMessage, after: Float) {
         msg
             .let { TaskAvroConverter.toTaskEngine(it) }
             .let { transport.toTaskEngine(it, after) }
     }
 
-    override suspend fun toMonitoringPerName(msg: ForMonitoringPerNameMessage) {
+    override suspend fun toMonitoringPerName(msg: MonitoringPerNameMessage) {
         msg
             .let { TaskAvroConverter.toMonitoringPerName(it) }
             .let { transport.toMonitoringPerName(it) }
     }
 
-    override suspend fun toMonitoringGlobal(msg: ForMonitoringGlobalMessage) {
+    override suspend fun toMonitoringGlobal(msg: MonitoringGlobalMessage) {
         msg
             .let { TaskAvroConverter.toMonitoringGlobal(it) }
             .let { transport.toMonitoringGlobal(it) }
     }
 
-    override suspend fun toWorkers(msg: ForWorkerMessage) {
+    override suspend fun toWorkers(msg: WorkerMessage) {
         msg
             .let { TaskAvroConverter.toWorkers(it) }
             .let { transport.toWorkers(it) }
