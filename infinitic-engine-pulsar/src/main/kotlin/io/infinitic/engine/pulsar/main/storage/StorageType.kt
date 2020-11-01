@@ -21,19 +21,18 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.storage.redis
+package io.infinitic.engine.pulsar.main.storage
 
-import redis.clients.jedis.Protocol
-
-class RedisStorageConfig {
-    var host = Protocol.DEFAULT_HOST
-    var port = Protocol.DEFAULT_PORT
-    var timeout = Protocol.DEFAULT_TIMEOUT
-    var user = ""
-    var password = ""
-    var database = Protocol.DEFAULT_DATABASE
+enum class StorageType {
+    InMemory,
+    Redis;
 
     companion object {
-        val defaultConfig = RedisStorageConfig()
+        fun of(id: String): StorageType = when (id.toLowerCase()) {
+            "memory" -> InMemory
+            "inmemory" -> InMemory
+            "redis" -> Redis
+            else -> throw IllegalArgumentException("No storage adapter corresponding to the '$id' name")
+        }
     }
 }

@@ -25,11 +25,11 @@ package io.infinitic.engine.pulsar.main
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
+import io.infinitic.engine.pulsar.main.storage.StorageFactory
 import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.engine.workflowManager.storages.AvroKeyValueWorkflowStateStorage
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.pulsar.PulsarTransport
-import io.infinitic.storage.inmemory.inMemory
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 
@@ -42,8 +42,7 @@ fun main(args: Array<String>) = mainBody {
             .serviceUrl(parsedArgs.pulsarUrl)
             .build()
 
-        // FIXME: This must be configurable using a configuration file or command line arguments
-        val storage = inMemory()
+        val storage = StorageFactory().createStorage(parsedArgs)
         val taskStateStorage = AvroKeyValueTaskStateStorage(storage)
         val workflowStateStorage = AvroKeyValueWorkflowStateStorage(storage)
 
