@@ -36,6 +36,7 @@ plugins {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
+    implementation("com.sksamuel.avro4k:avro4k-core:0.41.+")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
@@ -239,8 +240,7 @@ enum class Topic {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    exec("java -cp ./build/libs/$jar io.infinitic.engine.pulsar.taskManager.utils.GenerateSchemaFilesKt")
-    exec("java -cp ./build/libs/$jar io.infinitic.engine.pulsar.workflowManager.utils.GenerateSchemaFilesKt")
+    exec("java -cp ./build/libs/$jar io.infinitic.engine.pulsar.schemas.GenerateSchemaFilesKt")
 }
 
 fun uploadSchemaToTopic(

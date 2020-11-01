@@ -23,6 +23,7 @@
 
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
 }
 
@@ -31,6 +32,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.slf4j:slf4j-api:1.7.+")
 
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
     testImplementation(project(":infinitic-avro"))
     testImplementation(project(":infinitic-messaging-api"))
     testImplementation(project(":infinitic-storage-pulsar"))

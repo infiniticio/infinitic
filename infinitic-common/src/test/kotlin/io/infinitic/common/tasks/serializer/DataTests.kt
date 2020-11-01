@@ -1,6 +1,7 @@
 package io.infinitic.common.tasks.serializer
 
 import io.infinitic.common.data.SerializedData
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.MethodOutput
@@ -18,6 +19,18 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class DataTests : StringSpec({
+    "TaskId should be stringify as id" {
+        val taskId = TestFactory.random<TaskId>()
+
+        "$taskId" shouldBe taskId.id
+    }
+
+    "TaskAttemptId should be stringify as id" {
+        val taskAttemptId = TestFactory.random<TaskAttemptId>()
+
+        "$taskAttemptId" shouldBe taskAttemptId.id
+    }
+
     "MethodInput should be serialized as List<SerializedData>" {
         val m = MethodInput.from("a", "b")
 
@@ -58,15 +71,15 @@ class DataTests : StringSpec({
         m2 shouldBe m
     }
 
-    "MethodParameterTypes[null] should be serialized as null" {
-        val m = MethodParameterTypes(null)
-
-        val json = Json.encodeToString(m)
-        json shouldBe "null"
-
-        val m2 = Json.decodeFromString<MethodParameterTypes>(json)
-        m2 shouldBe m
-    }
+//    "MethodParameterTypes[null] should be serialized as null" {
+//        val m = MethodParameterTypes(null)
+//
+//        val json = Json.encodeToString(m)
+//        json shouldBe "null"
+//
+//        val m2 = Json.decodeFromString<MethodParameterTypes>(json)
+//        m2 shouldBe m
+//    }
 
     "TaskAttemptId should be serialized as String" {
         val m = TaskAttemptId("qwerty")

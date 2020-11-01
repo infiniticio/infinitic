@@ -169,7 +169,9 @@ open class TaskEngine(
             taskAttemptRetry = TaskAttemptRetry(0),
             taskAttemptIndex = oldState.taskAttemptIndex + 1,
             taskName = msg.taskName ?: oldState.taskName,
+            methodName = msg.methodName ?: oldState.methodName,
             methodInput = msg.methodInput ?: oldState.methodInput,
+            methodParameterTypes = msg.methodParameterTypes ?: oldState.methodParameterTypes,
             taskOptions = msg.taskOptions ?: oldState.taskOptions,
             taskMeta = msg.taskMeta ?: oldState.taskMeta
         )
@@ -182,10 +184,10 @@ open class TaskEngine(
             taskAttemptIndex = state.taskAttemptIndex,
             taskName = state.taskName,
             methodName = state.methodName,
-            methodParameterTypes = state.methodParameterTypes,
             methodInput = state.methodInput,
-            taskMeta = state.taskMeta,
-            taskOptions = state.taskOptions
+            methodParameterTypes = state.methodParameterTypes,
+            taskOptions = state.taskOptions,
+            taskMeta = state.taskMeta
         )
         dispatcher.toWorkers(rt)
 

@@ -129,7 +129,9 @@ class TaskIntegrationTests : StringSpec({
         coroutineScope {
             dispatcher.scope = this
             task = client.dispatch(TaskTest::class.java) { log() }
-            delay(100)
+            while (dispatcher.taskStatus != TaskStatus.RUNNING_ERROR ) {
+                delay(50)
+            }
             client.retryTask(id = "${task.taskId}")
         }
         // check that task is terminated

@@ -24,7 +24,7 @@
 version: "3.7"
 services:
   pulsar:
-    image: apachepulsar/pulsar-all:2.6.0
+    image: apachepulsar/pulsar-all:2.6.1
     environment:
       - BOOKIE_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
     command: >
@@ -41,7 +41,7 @@ services:
     restart: unless-stopped
 
   dashboard:
-    image: apachepulsar/pulsar-manager:v0.1.0
+    image: apachepulsar/pulsar-manager:v0.2.0
     ports:
       - "9527:9527"
     depends_on:

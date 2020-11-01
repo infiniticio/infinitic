@@ -4,38 +4,57 @@ import com.sksamuel.avro4k.Avro
 import com.sksamuel.avro4k.io.AvroFormat
 import io.infinitic.common.data.SerializedData
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.tasks.data.MethodParameterTypes
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalEnvelope
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.messages.taskEngineMessages.CancelTask
+import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTask
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineEnvelope
+import io.infinitic.common.tasks.messages.workerMessages.WorkerEnvelope
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 import org.apache.avro.Schema
 import org.apache.avro.file.SeekableByteArrayInput
 import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
 import java.io.ByteArrayOutputStream
+import java.io.File
+import kotlin.reflect.full.companionObject
+import kotlin.reflect.full.companionObjectInstance
 
+@InternalSerializationApi
 fun main() {
-    val schema: Schema = Avro.default.schema(TaskEngineEnvelope.serializer())
-    println(schema.toString(true))
 
-    // val m = Test(mapOf("foo" to "bar".toByteArray()))
-    val m = TestFactory.random<TaskEngineEnvelope>()
-    println(m)
-    println(m.deepcopy())
+   val msg = RetryTask(TaskId("ertyu"), null, null,
+       null,
+       null, null, null)
+    println(Json.encodeToString(msg))
 
-    val json = Json.encodeToString(m)
 
-    println(json)
-
-    val m2 = Json.decodeFromString<TaskEngineEnvelope>(json)
-    println(m2)
-
-    println(m2 == m)
+//    val schema: Schema = Avro.default.schema(TaskEngineEnvelope.serializer())
+//    println(schema.toString(true))
+//
+//    // val m = Test(mapOf("foo" to "bar".toByteArray()))
+//    val m = TestFactory.random<TaskEngineEnvelope>()
+//    println(m)
+//    println(m.deepcopy())
+//
+//    val json = Json.encodeToString(m)
+//
+//    println(json)
+//
+//    val m2 = Json.decodeFromString<TaskEngineEnvelope>(json)
+//    println(m2)
+//
+//    println(m2 == m)
 
 }
 

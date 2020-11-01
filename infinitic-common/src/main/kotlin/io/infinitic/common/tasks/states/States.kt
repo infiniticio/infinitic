@@ -45,7 +45,7 @@ data class TaskEngineState(
     val taskId: TaskId,
     val taskName: TaskName,
     val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
+    val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
     val taskStatus: TaskStatus,
     var taskAttemptId: TaskAttemptId,

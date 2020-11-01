@@ -49,7 +49,7 @@ data class RunTask(
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskAttemptIndex: TaskAttemptIndex,
     val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
+    val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta

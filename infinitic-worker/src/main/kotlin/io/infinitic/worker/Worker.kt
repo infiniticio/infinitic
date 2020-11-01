@@ -228,7 +228,7 @@ open class Worker(val dispatcher: Dispatcher) {
     private fun parse(msg: RunTask): TaskCommand {
         val task = getTask("${msg.taskName}")
         val parameterTypes = msg.methodParameterTypes
-        val method = if (parameterTypes.types == null) {
+        val method = if (parameterTypes == null) {
             getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodInput.size)
         } else {
             getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types!!)

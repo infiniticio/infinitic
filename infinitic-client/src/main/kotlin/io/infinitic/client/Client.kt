@@ -124,20 +124,20 @@ class Client(val dispatcher: Dispatcher) {
     suspend fun retryTask(
         id: String,
         name: TaskName? = null,
-        method: MethodName? = null,
-        parameterTypes: MethodParameterTypes? = null,
-        input: io.infinitic.common.tasks.data.MethodInput? = null,
-        options: TaskOptions? = null,
-        meta: TaskMeta? = null
+        methodName: MethodName? = null,
+        methodParameterTypes: MethodParameterTypes? = null,
+        methodInput: MethodInput? = null,
+        taskOptions: TaskOptions? = null,
+        taskMeta: TaskMeta? = null
     ) {
         val msg = RetryTask(
             taskId = TaskId(id),
             taskName = name,
-            methodName = method,
-            methodParameterTypes = parameterTypes,
-            methodInput = input,
-            taskOptions = options,
-            taskMeta = meta
+            methodName = methodName,
+            methodParameterTypes = methodParameterTypes,
+            methodInput = methodInput,
+            taskOptions = taskOptions,
+            taskMeta = taskMeta
         )
         dispatcher.toTaskEngine(msg)
     }

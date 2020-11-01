@@ -32,6 +32,8 @@ import io.infinitic.engine.taskManager.engines.MonitoringPerName
 import io.infinitic.engine.taskManager.engines.TaskEngine
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.infinitic.worker.Worker
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class InMemoryDispatcherTest(storage: TaskStateStorage) : InMemoryDispatcher() {
     val client = Client(this)
@@ -40,17 +42,26 @@ class InMemoryDispatcherTest(storage: TaskStateStorage) : InMemoryDispatcher() {
     val monitoringPerName = MonitoringPerName(storage, this)
     val monitoringGlobal = MonitoringGlobal(storage)
 
-    lateinit var taskStatus: TaskStatus
+    var taskStatus = TaskStatus.RUNNING_OK
 
     init {
-        taskEngineHandle = { taskEngine.handle(it) }
+        taskEngineHandle = {
+            taskEngine.handle(it)
+        }
+
         monitoringPerNameHandle = {
             monitoringPerName.handle(it)
             when (it) {
                 is TaskStatusUpdated -> { taskStatus = it.newStatus }
             }
         }
-        monitoringGlobalHandle = { monitoringGlobal.handle(it) }
-        workerHandle = { worker.handle(it) }
+
+        monitoringGlobalHandle = {
+            monitoringGlobal.handle(it)
+        }
+
+        workerHandle = {
+            worker.handle(it)
+        }
     }
 }

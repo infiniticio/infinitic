@@ -55,7 +55,7 @@ data class DispatchTask(
     override val taskId: TaskId,
     val taskName: TaskName,
     val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
+    val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions = TaskOptions()

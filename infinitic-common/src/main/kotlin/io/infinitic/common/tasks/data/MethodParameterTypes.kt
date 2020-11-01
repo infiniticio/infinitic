@@ -34,17 +34,17 @@ import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
 @Serializable(with = MethodParameterTypesSerializer::class)
-data class MethodParameterTypes(val types: List<String>?) {
+data class MethodParameterTypes(val types: List<String>) {
     companion object {
         fun from(method: Method) = MethodParameterTypes(method.parameterTypes.map { it.name })
     }
 }
 
 object MethodParameterTypesSerializer : KSerializer<MethodParameterTypes> {
-    override val descriptor: SerialDescriptor = ListSerializer(String.serializer()).nullable.descriptor
+    override val descriptor: SerialDescriptor = ListSerializer(String.serializer()).descriptor
     override fun serialize(encoder: Encoder, value: MethodParameterTypes) {
-        ListSerializer(String.serializer()).nullable.serialize(encoder,  value.types)
+        ListSerializer(String.serializer()).serialize(encoder, value.types)
     }
     override fun deserialize(decoder: Decoder) =
-        MethodParameterTypes(ListSerializer(String.serializer()).nullable.deserialize(decoder))
+        MethodParameterTypes(ListSerializer(String.serializer()).deserialize(decoder))
 }
