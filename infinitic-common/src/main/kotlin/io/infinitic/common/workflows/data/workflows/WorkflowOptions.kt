@@ -23,10 +23,14 @@
 
 package io.infinitic.common.workflows.data.workflows
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class WorkflowOptions(
     val workflowChangeCheckMode: WorkflowChangeCheckMode = WorkflowChangeCheckMode.ALL
 )
 
+@Serializable
 enum class WorkflowChangeCheckMode {
     NONE, SIMPLE_NAME_ONLY, ALL
 }

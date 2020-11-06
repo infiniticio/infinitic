@@ -39,93 +39,108 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import kotlinx.serialization.Serializable
 
-sealed class Message
+@Serializable
+sealed class WorkflowEngineMessage() {
+    abstract val workflowId: WorkflowId
+}
 
-sealed class ForWorkflowEngineMessage(open val workflowId: WorkflowId) : Message()
-
+@Serializable
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
     val workflowOutput: MethodOutput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
     val childWorkflowOutput: MethodOutput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val childWorkflowId: WorkflowId,
     val childWorkflowOutput: MethodOutput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class WorkflowTaskCompleted(
     override val workflowId: WorkflowId,
     val workflowTaskId: WorkflowTaskId,
     val workflowTaskOutput: WorkflowTaskOutput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class WorkflowTaskDispatched(
     override val workflowId: WorkflowId,
     val workflowTaskId: WorkflowTaskId,
     val workflowName: WorkflowName,
     val workflowTaskInput: WorkflowTaskInput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class TimerCompleted(
     override val workflowId: WorkflowId,
     val delayId: DelayId
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class DispatchWorkflow(
     override val workflowId: WorkflowId,
     var parentWorkflowId: WorkflowId? = null,
     var parentMethodRunId: MethodRunId? = null,
     val workflowName: WorkflowName,
     val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
+    val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class ObjectReceived(
     override val workflowId: WorkflowId,
     val eventName: EventName,
     val eventData: EventData?
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class TaskCanceled(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val taskId: TaskId,
     val methodOutput: MethodOutput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class TaskCompleted(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val taskId: TaskId,
     val taskOutput: MethodOutput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class TaskDispatched(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val taskId: TaskId,
     val methodName: MethodName,
     val methodInput: MethodInput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class WorkflowCanceled(
     override val workflowId: WorkflowId,
     val workflowOutput: MethodOutput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()
 
+@Serializable
 data class WorkflowCompleted(
     override val workflowId: WorkflowId,
     val workflowOutput: MethodOutput
-) : ForWorkflowEngineMessage(workflowId)
+) : WorkflowEngineMessage()

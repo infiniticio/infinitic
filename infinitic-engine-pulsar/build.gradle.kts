@@ -29,6 +29,7 @@ import java.io.InputStreamReader
 plugins {
     application
     kotlin("jvm")
+    kotlin("plugin.serialization")
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
 }
@@ -50,6 +51,7 @@ dependencies {
     implementation(project(":infinitic-storage-pulsar"))
     implementation(project(":infinitic-storage-redis"))
     implementation(project(":infinitic-storage-inmemory"))
+    testImplementation(testFixtures(project(":infinitic-common")))
 
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
@@ -96,25 +98,21 @@ tasks.register("setSchemas") {
     dependsOn("assemble")
     doLast {
         createSchemaFiles()
+//        uploadSchemaToTopic(
+//            name = "AvroEnvelopeForWorkflowEngine",
+//            topic = Topic.WORKFLOW_ENGINE.get()
+//        )
         uploadSchemaToTopic(
-            name = "AvroEnvelopeForWorkflowEngine",
-            topic = Topic.WORKFLOW_ENGINE.get()
-        )
-        uploadSchemaToTopic(
-            name = "AvroEnvelopeForTaskEngine",
+            name = "TaskEngine",
             topic = Topic.TASK_ENGINE.get()
         )
         uploadSchemaToTopic(
-            name = "AvroEnvelopeForMonitoringPerName",
+            name = "MonitoringPerName",
             topic = Topic.MONITORING_PER_NAME.get()
         )
         uploadSchemaToTopic(
-            name = "AvroEnvelopeForMonitoringGlobal",
+            name = "MonitoringGlobal",
             topic = Topic.MONITORING_GLOBAL.get()
-        )
-        uploadSchemaToTopic(
-            name = "AvroEnvelopeForWorkflowEngine",
-            topic = Topic.WORKFLOW_ENGINE.get()
         )
     }
 }

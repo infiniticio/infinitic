@@ -97,7 +97,7 @@ export class TaskRunner {
         taskId: message.taskId,
         taskAttemptId: message.taskAttemptId,
         taskAttemptRetry: message.taskAttemptRetry,
-        taskAttemptIndex: message.taskAttemptIndex,
+        taskRetry: message.taskRetry,
       },
     };
 
@@ -125,7 +125,7 @@ export class TaskRunner {
         taskId: message.taskId,
         taskAttemptId: message.taskAttemptId,
         taskAttemptRetry: message.taskAttemptRetry,
-        taskAttemptIndex: message.taskAttemptIndex,
+        taskRetry: message.taskRetry,
         taskOutput: taskOutput,
       },
     };
@@ -143,7 +143,7 @@ export class TaskRunner {
         taskId: message.taskId,
         taskAttemptId: message.taskAttemptId,
         taskAttemptRetry: message.taskAttemptRetry,
-        taskAttemptIndex: message.taskAttemptIndex,
+        taskRetry: message.taskRetry,
         taskAttemptDelayBeforeRetry: null,
         taskAttemptError: {
           bytes: Buffer.from(JSON.stringify(error)),

@@ -23,12 +23,22 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.data.interfaces.IntInterface
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class WorkflowTaskIndex
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override var int: Int = 0) : IntInterface {
+@Serializable(with = WorkflowTaskIndexSerializer::class)
+data class WorkflowTaskIndex(override var int: Int = 0) : IntInterface {
     override fun toString() = "$int"
+}
+
+object WorkflowTaskIndexSerializer : KSerializer<WorkflowTaskIndex> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
+    override fun serialize(encoder: Encoder, value: WorkflowTaskIndex) { encoder.encodeInt(value.int) }
+    override fun deserialize(decoder: Decoder) = WorkflowTaskIndex(decoder.decodeInt())
 }

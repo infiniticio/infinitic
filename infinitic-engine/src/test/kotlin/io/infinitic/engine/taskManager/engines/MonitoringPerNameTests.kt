@@ -29,6 +29,7 @@ import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
 import io.infinitic.common.tasks.states.MonitoringPerNameState
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe

@@ -25,7 +25,7 @@ package io.infinitic.engine.taskManager.storage
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.storage.api.Storage
-import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus

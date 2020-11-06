@@ -28,7 +28,7 @@ import io.infinitic.common.workflows.messages.CancelWorkflow
 import io.infinitic.common.workflows.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.messages.DispatchWorkflow
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.messages.ObjectReceived
 import io.infinitic.common.workflows.messages.TaskCanceled
 import io.infinitic.common.workflows.messages.TaskCompleted
@@ -55,7 +55,7 @@ class WorkflowEngine(
         const val META_METHOD_RUN_ID = "methodRunId"
     }
 
-    suspend fun handle(msg: ForWorkflowEngineMessage) {
+    suspend fun handle(msg: WorkflowEngineMessage) {
         // immediately discard irrelevant messages
         when (msg) {
             is WorkflowTaskDispatched -> return
@@ -109,7 +109,7 @@ class WorkflowEngine(
         }
     }
 
-    private suspend fun processMessage(state: WorkflowState, msg: ForWorkflowEngineMessage) {
+    private suspend fun processMessage(state: WorkflowState, msg: WorkflowEngineMessage) {
         when (msg) {
             is CancelWorkflow -> cancelWorkflow(state, msg)
             is ChildWorkflowCanceled -> childWorkflowCanceled(state, msg)

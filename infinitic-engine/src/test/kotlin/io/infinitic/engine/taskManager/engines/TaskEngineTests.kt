@@ -58,6 +58,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class EngineResults {
     lateinit var dispatcher: Dispatcher
@@ -189,7 +190,7 @@ internal class TaskEngineTests : StringSpec({
             o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
-        (o.workerMessage is RunTask) shouldBe true
+        o.workerMessage.shouldBeInstanceOf<RunTask>()
         val run = o.workerMessage as RunTask
         run.taskId shouldBe msgIn.taskId
         run.taskName shouldBe msgIn.taskName
@@ -234,7 +235,7 @@ internal class TaskEngineTests : StringSpec({
             o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
         }
         checkConfirmVerified(o)
-        (o.workerMessage is RunTask) shouldBe true
+        o.workerMessage.shouldBeInstanceOf<RunTask>()
         val run = o.workerMessage as RunTask
         run.taskId shouldBe stateIn.taskId
         run.taskAttemptId shouldNotBe stateIn.taskAttemptId
@@ -395,7 +396,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskE
         o.dispatcher.toMonitoringPerName(o.taskStatusUpdated!!)
     }
     checkConfirmVerified(o)
-    (o.workerMessage is RunTask) shouldBe true
+    o.workerMessage.shouldBeInstanceOf<RunTask>()
     val run = o.workerMessage as RunTask
     run.taskId shouldBe stateIn.taskId
     run.taskAttemptId shouldBe stateIn.taskAttemptId

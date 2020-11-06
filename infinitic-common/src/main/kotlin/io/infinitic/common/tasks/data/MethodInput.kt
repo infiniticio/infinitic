@@ -23,13 +23,8 @@
 
 package io.infinitic.common.tasks.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.core.JsonProcessingException
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.bases.Input
-import io.infinitic.common.tasks.exceptions.ErrorDuringJsonDeserializationOfParameter
-import io.infinitic.common.tasks.exceptions.ErrorDuringJsonSerializationOfParameter
-import io.infinitic.common.tasks.exceptions.InconsistentJsonSerializationOfParameter
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -46,15 +41,15 @@ class MethodInput(override vararg val serializedData: SerializedData) : Input(*s
         )
 
         fun from(vararg data: Any?) = MethodInput(
-            *data.map {  SerializedData.from(it) }.toTypedArray()
+            *data.map { SerializedData.from(it) }.toTypedArray()
         )
     }
 }
 
 object MethodInputSerializer : KSerializer<MethodInput> {
-    override val descriptor: SerialDescriptor =  ListSerializer(SerializedData.serializer()).descriptor
+    override val descriptor: SerialDescriptor = ListSerializer(SerializedData.serializer()).descriptor
     override fun serialize(encoder: Encoder, value: MethodInput) {
-        ListSerializer(SerializedData.serializer()).serialize(encoder,  value.serializedData.toList())
+        ListSerializer(SerializedData.serializer()).serialize(encoder, value.serializedData.toList())
     }
     override fun deserialize(decoder: Decoder) =
         MethodInput(*(ListSerializer(SerializedData.serializer()).deserialize(decoder).toTypedArray()))

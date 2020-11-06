@@ -37,8 +37,7 @@ import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.messages.TimerCompleted
 import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.common.workflows.messages.ObjectReceived
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
-import io.infinitic.common.workflows.messages.Message
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.messages.TaskCanceled
 import io.infinitic.common.workflows.messages.TaskCompleted
 import io.infinitic.common.workflows.messages.TaskDispatched
@@ -198,17 +197,17 @@ object AvroConverter {
      *  Message <-> Avro Envelope
      */
 
-    fun toWorkflowEngine(message: ForWorkflowEngineMessage): AvroEnvelopeForWorkflowEngine =
+    fun toWorkflowEngine(message: WorkflowEngineMessage): AvroEnvelopeForWorkflowEngine =
         addEnvelopeToWorkflowEngineMessage(toAvroMessage(message))
 
     fun fromWorkflowEngine(avro: AvroEnvelopeForWorkflowEngine) =
-        fromAvroMessage(removeEnvelopeFromWorkflowEngineMessage(avro)) as ForWorkflowEngineMessage
+        fromAvroMessage(removeEnvelopeFromWorkflowEngineMessage(avro)) as WorkflowEngineMessage
 
     /**
      *  Message <-> Avro Message
      */
 
-    fun fromAvroMessage(avro: SpecificRecordBase): Message = when (avro) {
+    fun fromAvroMessage(avro: SpecificRecordBase): WorkflowEngineMessage = when (avro) {
         is AvroCancelWorkflow -> fromAvroMessage(avro)
         is AvroChildWorkflowCanceled -> fromAvroMessage(avro)
         is AvroChildWorkflowCompleted -> fromAvroMessage(avro)
@@ -239,7 +238,7 @@ object AvroConverter {
     private fun fromAvroMessage(avro: AvroWorkflowCanceled) = convertJson<WorkflowCanceled>(avro)
     private fun fromAvroMessage(avro: AvroWorkflowCompleted) = convertJson<WorkflowCompleted>(avro)
 
-    fun toAvroMessage(message: Message): SpecificRecordBase = when (message) {
+    fun toAvroMessage(message: WorkflowEngineMessage): SpecificRecordBase = when (message) {
         is CancelWorkflow -> AvroConverter.toAvroMessage(message)
         is ChildWorkflowCanceled -> AvroConverter.toAvroMessage(message)
         is ChildWorkflowCompleted -> AvroConverter.toAvroMessage(message)

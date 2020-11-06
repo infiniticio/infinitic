@@ -1,0 +1,232 @@
+package io.infinitic.common.workflows
+
+import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.workflows.data.commands.CommandHash
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.data.commands.CommandSimpleName
+import io.infinitic.common.workflows.data.events.EventData
+import io.infinitic.common.workflows.data.events.EventId
+import io.infinitic.common.workflows.data.events.EventName
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.data.steps.StepHash
+import io.infinitic.common.workflows.data.steps.StepId
+import io.infinitic.common.workflows.data.steps.StepOutput
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowOutput
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+class DataTests : StringSpec({
+    "WorkflowId should be stringify as id" {
+        val workflowId = TestFactory.random<WorkflowId>()
+
+        "$workflowId" shouldBe workflowId.id
+    }
+
+    "CommandHash should be serialized as String" {
+        val m = CommandHash("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<CommandHash>(json)
+        m2 shouldBe m
+    }
+
+    "CommandId should be serialized as String" {
+        val m = CommandId("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<CommandId>(json)
+        m2 shouldBe m
+    }
+
+    "CommandOutput should be serialized as SerializedData" {
+        val m = CommandOutput.from("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe Json.encodeToString(SerializedData.from(m.get()))
+
+        val m2 = Json.decodeFromString<CommandOutput>(json)
+        m2 shouldBe m
+    }
+
+    "CommandSimpleName should be serialized as String" {
+        val m = CommandSimpleName("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<CommandSimpleName>(json)
+        m2 shouldBe m
+    }
+
+    "EventData should be serialized as SerializedData" {
+        val m = EventData(SerializedData.from("qwerty"))
+
+        val json = Json.encodeToString(m)
+        json shouldBe Json.encodeToString(SerializedData.from("qwerty"))
+        val m2 = Json.decodeFromString<EventData>(json)
+        m2 shouldBe m
+    }
+
+    "EventId should be serialized as String" {
+        val m = EventId("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<EventId>(json)
+        m2 shouldBe m
+    }
+
+    "EventName should be serialized as String" {
+        val m = EventName("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<EventName>(json)
+        m2 shouldBe m
+    }
+
+    "MethodRunId should be serialized as String" {
+        val m = MethodRunId("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<MethodRunId>(json)
+        m2 shouldBe m
+    }
+
+    "MethodRunPosition should be serialized as String" {
+        val m = MethodRunPosition("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<MethodRunPosition>(json)
+        m2 shouldBe m
+    }
+
+    "PropertyHash should be serialized as String" {
+        val m = PropertyHash("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<PropertyHash>(json)
+        m2 shouldBe m
+    }
+
+    "PropertyName should be serialized as String" {
+        val m = PropertyName("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<PropertyName>(json)
+        m2 shouldBe m
+    }
+
+    "PropertyValue should be serialized as SerializedData" {
+        val m = PropertyValue.from("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe Json.encodeToString(SerializedData.from(m.get()))
+
+        val m2 = Json.decodeFromString<PropertyValue>(json)
+        m2 shouldBe m
+    }
+
+    "StepHash should be serialized as String" {
+        val m = StepHash("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<StepHash>(json)
+        m2 shouldBe m
+    }
+
+    "StepId should be serialized as String" {
+        val m = StepId("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<StepId>(json)
+        m2 shouldBe m
+    }
+
+    "StepOutput should be serialized as SerializedData" {
+        val m = StepOutput.from("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe Json.encodeToString(SerializedData.from(m.get()))
+
+        val m2 = Json.decodeFromString<StepOutput>(json)
+        m2 shouldBe m
+    }
+
+    "WorkflowId should be serialized as String" {
+        val m = WorkflowId("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<WorkflowId>(json)
+        m2 shouldBe m
+    }
+
+    "WorkflowMeta should be serialized as Map<String, SerializedData>" {
+        val m = WorkflowMeta(mapOf("a" to SerializedData.from(1)))
+
+        val json = Json.encodeToString(m)
+        json shouldBe "{\"a\":${Json.encodeToString(SerializedData.from(1))}}"
+
+        val m2 = Json.decodeFromString<WorkflowMeta>(json)
+        m2 shouldBe m
+    }
+
+    "WorkflowName should be serialized as String" {
+        val m = WorkflowName("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<WorkflowName>(json)
+        m2 shouldBe m
+    }
+
+    "WorkflowOutput should be serialized as SerializedData" {
+        val m = WorkflowOutput.from("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe Json.encodeToString(SerializedData.from(m.get()))
+
+        val m2 = Json.decodeFromString<WorkflowOutput>(json)
+        m2 shouldBe m
+    }
+
+    "WorkflowTaskId should be serialized as String" {
+        val m = WorkflowTaskId("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<WorkflowTaskId>(json)
+        m2 shouldBe m
+    }
+
+    "WorkflowTaskIndex should be serialized as Int" {
+        val m = WorkflowTaskIndex(42)
+
+        val json = Json.encodeToString(m)
+        json shouldBe "42"
+        val m2 = Json.decodeFromString<WorkflowTaskIndex>(json)
+        m2 shouldBe m
+    }
+})

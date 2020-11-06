@@ -17,6 +17,7 @@
           "BYTES",
           "JSON",
           "AVRO",
+          "KOTLIN",
           "CUSTOM"
         ]
       }

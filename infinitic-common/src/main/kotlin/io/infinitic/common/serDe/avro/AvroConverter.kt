@@ -21,9 +21,8 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.tasks.avro
+package io.infinitic.common.serDe.avro
 
-import io.infinitic.common.data.SerializedData
 import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.messages.taskEngineMessages.CancelTask
 import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
@@ -67,7 +66,8 @@ import io.infinitic.avro.taskManager.messages.envelopes.AvroForWorkerMessageType
 import io.infinitic.avro.taskManager.data.states.AvroTaskEngineState
 import io.infinitic.avro.taskManager.data.states.AvroMonitoringGlobalState
 import io.infinitic.avro.taskManager.data.states.AvroMonitoringPerNameState
-import io.infinitic.common.data.SerializedDataType
+import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.serDe.SerializedDataType
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
@@ -341,31 +341,31 @@ object AvroConverter {
     fun fromAvroSerializedData(avro: AvroSerializedData) = SerializedData(
         avro.bytes.array(),
         fromAvroSerializedDataType(avro.type),
-//        avro.meta.mapValues { it.value.array() }
-        avro.meta.mapValues { String (it.value.array()) }
+        avro.meta.mapValues { it.value.array() }
     )
 
     fun toAvroSerializedData(data: SerializedData): AvroSerializedData = AvroSerializedData
         .newBuilder()
         .setType(toAvroSerializedDataType(data.type))
         .setBytes(ByteBuffer.wrap(data.bytes))
-//        .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
-        .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value.toByteArray()) })
+        .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
         .build()
 
     fun fromAvroSerializedDataType(avro: AvroSerializedDataType) = when (avro) {
-        AvroSerializedDataType.AVRO -> SerializedDataType.AVRO
+        AvroSerializedDataType.AVRO -> SerializedDataType.AVRO_JAVA
         AvroSerializedDataType.BYTES -> SerializedDataType.BYTES
         AvroSerializedDataType.CUSTOM -> SerializedDataType.CUSTOM
-        AvroSerializedDataType.JSON -> SerializedDataType.JSON
+        AvroSerializedDataType.JSON -> SerializedDataType.JSON_JACKSON
+        AvroSerializedDataType.KOTLIN -> SerializedDataType.JSON_KOTLIN
         AvroSerializedDataType.NULL -> SerializedDataType.NULL
     }
 
     fun toAvroSerializedDataType(type: SerializedDataType) = when (type) {
-        SerializedDataType.AVRO -> AvroSerializedDataType.AVRO
+        SerializedDataType.AVRO_JAVA -> AvroSerializedDataType.AVRO
         SerializedDataType.BYTES -> AvroSerializedDataType.BYTES
         SerializedDataType.CUSTOM -> AvroSerializedDataType.CUSTOM
-        SerializedDataType.JSON -> AvroSerializedDataType.JSON
+        SerializedDataType.JSON_JACKSON -> AvroSerializedDataType.JSON
+        SerializedDataType.JSON_KOTLIN -> AvroSerializedDataType.KOTLIN
         SerializedDataType.NULL -> AvroSerializedDataType.NULL
     }
     /**

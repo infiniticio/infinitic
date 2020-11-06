@@ -27,7 +27,7 @@ package io.infinitic.worker
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptIndex
+import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.MethodInput
@@ -88,7 +88,7 @@ class WorkerTests : StringSpec({
         slots[1] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
-            taskAttemptIndex = msg.taskAttemptIndex,
+            taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
             taskOutput = MethodOutput.from("9")
         )
@@ -107,7 +107,7 @@ class WorkerTests : StringSpec({
         slots[1] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
-            taskAttemptIndex = msg.taskAttemptIndex,
+            taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
             taskOutput = MethodOutput.from("12")
         )
@@ -128,7 +128,7 @@ class WorkerTests : StringSpec({
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
+        fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
         fail.taskAttemptError.get()!!::class.java.name shouldBe ClassNotFoundDuringInstantiation::class.java.name
@@ -149,7 +149,7 @@ class WorkerTests : StringSpec({
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
+        fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
         fail.taskAttemptError.get()!!::class.java.name shouldBe NoMethodFoundWithParameterTypes::class.java.name
@@ -169,7 +169,7 @@ class WorkerTests : StringSpec({
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
+        fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
         fail.taskAttemptError.get()!!::class.java.name shouldBe NoMethodFoundWithParameterCount::class.java.name
@@ -189,7 +189,7 @@ class WorkerTests : StringSpec({
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
+        fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
         fail.taskAttemptError.get()!!::class.java.name shouldBe TooManyMethodsFoundWithParameterCount::class.java.name
@@ -209,7 +209,7 @@ class WorkerTests : StringSpec({
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
+        fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe 3F
         fail.taskAttemptError.get()!!::class.java.name shouldBe IllegalStateException::class.java.name
@@ -229,7 +229,7 @@ class WorkerTests : StringSpec({
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
+        fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
         fail.taskAttemptError.get()!!::class.java.name shouldBe RetryDelayHasWrongReturnType::class.java.name
@@ -249,7 +249,7 @@ class WorkerTests : StringSpec({
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
+        fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
         fail.taskAttemptError.get()!!::class.java.name shouldBe IllegalArgumentException::class.java.name
@@ -268,7 +268,7 @@ class WorkerTests : StringSpec({
         slots[1] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
-            taskAttemptIndex = msg.taskAttemptIndex,
+            taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
             taskOutput = MethodOutput.from("72")
         )
@@ -289,7 +289,7 @@ class WorkerTests : StringSpec({
         val fail = slots[1] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskAttemptIndex shouldBe msg.taskAttemptIndex
+        fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
         fail.taskAttemptDelayBeforeRetry shouldBe null
         fail.taskAttemptError.get()!!::class.java.name shouldBe ProcessingTimeout::class.java.name
@@ -299,12 +299,13 @@ class WorkerTests : StringSpec({
 private fun getRunTask(name: String, method: String, input: Array<out Any?>, types: List<String>?) = RunTask(
     taskId = TaskId(),
     taskAttemptId = TaskAttemptId(),
-    taskAttemptIndex = TaskAttemptIndex(12),
+    taskRetry = TaskRetry(12),
     taskAttemptRetry = TaskAttemptRetry(7),
     taskName = TaskName(name),
     methodName = MethodName(method),
-    methodParameterTypes = MethodParameterTypes(types),
+    methodParameterTypes = types?.let { MethodParameterTypes(it) },
     methodInput = MethodInput.from(*input),
+    lastTaskAttemptError = null,
     taskOptions = TaskOptions(runningTimeout = .2F),
     taskMeta = TaskMeta()
 )
@@ -312,6 +313,6 @@ private fun getRunTask(name: String, method: String, input: Array<out Any?>, typ
 private fun getTaskAttemptStarted(msg: RunTask) = TaskAttemptStarted(
     taskId = msg.taskId,
     taskAttemptId = msg.taskAttemptId,
-    taskAttemptIndex = msg.taskAttemptIndex,
+    taskRetry = msg.taskRetry,
     taskAttemptRetry = msg.taskAttemptRetry
 )

@@ -23,11 +23,7 @@
 
 package io.infinitic.common.tasks.data.bases
 
-import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.data.SerializedData
-import io.infinitic.common.tasks.data.MethodOutput
-import kotlinx.serialization.Serializable
-import kotlin.reflect.full.primaryConstructor
+import io.infinitic.common.serDe.SerializedData
 
 abstract class Data(open val serializedData: SerializedData) {
     final override fun toString() = "$serializedData"

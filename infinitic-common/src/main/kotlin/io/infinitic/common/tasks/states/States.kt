@@ -24,14 +24,14 @@
 package io.infinitic.common.tasks.states
 
 import com.sksamuel.avro4k.Avro
-import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptIndex
+import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.MethodParameterTypes
+import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
@@ -48,15 +48,16 @@ data class TaskEngineState(
     val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
     val taskStatus: TaskStatus,
+    var taskRetry: TaskRetry = TaskRetry(0),
     var taskAttemptId: TaskAttemptId,
-    var taskAttemptIndex: TaskAttemptIndex = TaskAttemptIndex(0),
     var taskAttemptRetry: TaskAttemptRetry = TaskAttemptRetry(0),
+    var lastTaskAttemptError: TaskAttemptError? = null,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
 ) : State() {
     fun deepCopy(): TaskEngineState {
-        val serializer = TaskEngineState.serializer()
-        val byteArray =  Avro.default.encodeToByteArray(serializer, this)
+        val serializer = serializer()
+        val byteArray = Avro.default.encodeToByteArray(serializer, this)
 
         return Avro.default.decodeFromByteArray(serializer, byteArray)
     }
@@ -72,8 +73,8 @@ data class MonitoringPerNameState(
     var terminatedCanceledCount: Long = 0
 ) : State() {
     fun deepCopy(): MonitoringPerNameState {
-        val serializer = MonitoringPerNameState.serializer()
-        val byteArray =  Avro.default.encodeToByteArray(serializer, this)
+        val serializer = serializer()
+        val byteArray = Avro.default.encodeToByteArray(serializer, this)
 
         return Avro.default.decodeFromByteArray(serializer, byteArray)
     }
@@ -83,9 +84,9 @@ data class MonitoringPerNameState(
 data class MonitoringGlobalState(
     val taskNames: MutableSet<TaskName> = mutableSetOf()
 ) : State() {
-    fun deepCopy() : MonitoringGlobalState {
-        val serializer = MonitoringGlobalState.serializer()
-        val byteArray =  Avro.default.encodeToByteArray(serializer, this)
+    fun deepCopy(): MonitoringGlobalState {
+        val serializer = serializer()
+        val byteArray = Avro.default.encodeToByteArray(serializer, this)
 
         return Avro.default.decodeFromByteArray(serializer, byteArray)
     }

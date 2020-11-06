@@ -27,14 +27,17 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.properties.PropertiesNameHash
-import io.infinitic.common.workflows.data.properties.PropertiesHashValue
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class WorkflowState(
     /*
     Id of this workflow instance
@@ -79,19 +82,19 @@ data class WorkflowState(
     /*
     Current (last) hash of instance's properties. hash is used as an index to actual value
      */
-    val currentPropertiesNameHash: PropertiesNameHash = PropertiesNameHash(mutableMapOf()),
+    val currentPropertiesNameHash: MutableMap<PropertyName, PropertyHash> = mutableMapOf(),
 
     /*
     Store containing values of past and current values of properties
     (past values are useful when replaying WorkflowTask)
      */
-    val propertiesHashValue: PropertiesHashValue = PropertiesHashValue(mutableMapOf()),
+    var propertiesHashValue: MutableMap<PropertyHash, PropertyValue> = mutableMapOf(),
 
     /*
     Messages received while a WorkflowTask is still running.
     They can not be handled immediately, so are stored in this buffer
      */
-    val bufferedMessages: MutableList<ForWorkflowEngineMessage> = mutableListOf(),
+    val bufferedMessages: MutableList<WorkflowEngineMessage> = mutableListOf(),
 
     /*
     In some situations, we know that multiples branches must be processed.

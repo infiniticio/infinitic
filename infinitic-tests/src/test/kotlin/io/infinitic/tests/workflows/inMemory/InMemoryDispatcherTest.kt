@@ -24,10 +24,12 @@
 package io.infinitic.tests.workflows.inMemory
 
 import io.infinitic.client.Client
+import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.engine.taskManager.engines.MonitoringGlobal
-import io.infinitic.engine.taskManager.engines.MonitoringPerName
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
 import io.infinitic.worker.Worker
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
@@ -38,10 +40,10 @@ import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
 class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher() {
     val client = Client(this)
     val worker = Worker(this)
-    val taskEngine = ForWorkflowTaskEngine(storage, this)
-    val workflowEngine = WorkflowEngine(storage, this)
-    val monitoringPerName = MonitoringPerName(storage, this)
-    val monitoringGlobal = MonitoringGlobal(storage)
+    private val taskEngine = ForWorkflowTaskEngine(storage, this)
+    private val workflowEngine = WorkflowEngine(storage, this)
+    private val monitoringPerName = MonitoringPerName(storage, this)
+    private val monitoringGlobal = MonitoringGlobal(storage)
 
     var taskStatus: TaskStatus? = null
     var workflowOutput: Any? = null

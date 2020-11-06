@@ -23,8 +23,6 @@
 
 package io.infinitic.common.tasks.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.tasks.data.bases.Name
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

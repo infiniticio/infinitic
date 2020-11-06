@@ -37,21 +37,9 @@ data class WorkerEnvelope(
             runTask
         )
 
-        require(noNull.size == 1) {
-            if (noNull.size > 1) {
-                "More than 1 message provided: ${noNull.joinToString()}"
-            } else {
-                "No message provided"
-            }
-        }
-
-        require( noNull.first()::class == when(type) {
-            WorkerMessageType.RUN_TASK -> RunTask::class
-        }) { "Provided type $type inconsistent with message ${noNull.first()}" }
-
-        require( noNull.first().taskName == taskName) {
-            "Provided taskName $taskName inconsistent with message ${noNull.first()}"
-        }
+        require(noNull.size == 1)
+        require(noNull.first() == value())
+        require(noNull.first().taskName == taskName)
     }
 
     companion object {
@@ -59,11 +47,12 @@ data class WorkerEnvelope(
             is RunTask -> WorkerEnvelope(
                 msg.taskName,
                 WorkerMessageType.RUN_TASK,
-                runTask = msg)
+                runTask = msg
+            )
         }
     }
 
-    fun value() : WorkerMessage = when (type) {
+    fun value(): WorkerMessage = when (type) {
         WorkerMessageType.RUN_TASK -> runTask!!
     }
 }

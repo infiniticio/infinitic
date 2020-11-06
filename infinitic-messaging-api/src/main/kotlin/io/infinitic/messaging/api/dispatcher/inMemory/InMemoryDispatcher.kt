@@ -27,7 +27,7 @@ import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlo
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -35,14 +35,14 @@ import kotlinx.coroutines.launch
 
 open class InMemoryDispatcher() : Dispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
-    lateinit var workflowEngineHandle: suspend (msg: ForWorkflowEngineMessage) -> Unit
+    lateinit var workflowEngineHandle: suspend (msg: WorkflowEngineMessage) -> Unit
     lateinit var taskEngineHandle: suspend (msg: TaskEngineMessage) -> Unit
     lateinit var monitoringPerNameHandle: suspend (msg: MonitoringPerNameMessage) -> Unit
     lateinit var monitoringGlobalHandle: suspend (msg: MonitoringGlobalMessage) -> Unit
     lateinit var workerHandle: suspend (msg: WorkerMessage) -> Unit
     lateinit var scope: CoroutineScope
 
-    override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {
+    override suspend fun toWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
         scope.launch {
             if (after > 0F) {
                 delay((1000 * after).toLong())

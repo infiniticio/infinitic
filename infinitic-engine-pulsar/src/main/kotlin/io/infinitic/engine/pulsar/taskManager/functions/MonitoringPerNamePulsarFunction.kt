@@ -25,9 +25,9 @@ package io.infinitic.engine.pulsar.taskManager.functions
 
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
-import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.messaging.pulsar.PulsarTransport
-import io.infinitic.engine.taskManager.engines.MonitoringPerName
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
 import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import kotlinx.coroutines.runBlocking

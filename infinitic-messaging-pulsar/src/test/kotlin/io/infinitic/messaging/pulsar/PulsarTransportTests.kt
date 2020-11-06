@@ -23,16 +23,16 @@
 
 package io.infinitic.messaging.pulsar
 
-import io.infinitic.common.tasks.avro.AvroConverter
-import io.infinitic.common.tasks.messages.ForTaskEngineMessage
-import io.infinitic.common.tasks.messages.ForMonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.ForMonitoringPerNameMessage
-import io.infinitic.common.tasks.messages.ForWorkerMessage
+import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -50,24 +50,24 @@ import org.slf4j.Logger
 import java.util.Optional
 
 class PulsarTransportTests : StringSpec({
-    ForTaskEngineMessage::class.sealedSubclasses.forEach {
+    TaskEngineMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToEngineTopic(TestFactory.random(it)))
     }
 
-    ForMonitoringPerNameMessage::class.sealedSubclasses.forEach {
+    MonitoringPerNameMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToMonitoringPerNameTopic(TestFactory.random(it)))
     }
 
-    ForMonitoringGlobalMessage::class.sealedSubclasses.forEach {
+    MonitoringGlobalMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToMonitoringGlobalTopic(TestFactory.random(it)))
     }
 
-    ForWorkerMessage::class.sealedSubclasses.forEach {
+    WorkerMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToWorkerTopic(TestFactory.random(it)))
     }
 })
 
-private fun shouldBeAbleToSendMessageToEngineTopic(msg: ForTaskEngineMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToEngineTopic(msg: TaskEngineMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to TaskEngine topic" {
         val avro = AvroConverter.toTaskEngine(msg)
         // given
@@ -95,7 +95,7 @@ private fun shouldBeAbleToSendMessageToEngineTopic(msg: ForTaskEngineMessage) = 
     }
 }
 
-private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: ForMonitoringPerNameMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPerNameMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MonitoringPerName topic " {
         val avro = AvroConverter.toMonitoringPerName(msg)
         // given
@@ -123,7 +123,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: ForMonitoring
     }
 }
 
-private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: ForMonitoringGlobalMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlobalMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MonitoringGlobal topic " {
         val avro = AvroConverter.toMonitoringGlobal(msg)
         // given
@@ -148,7 +148,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: ForMonitoringG
     }
 }
 
-private fun shouldBeAbleToSendMessageToWorkerTopic(msg: ForWorkerMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToWorkerTopic(msg: WorkerMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to Worker topic" {
         val avro = AvroConverter.toWorkers(msg) // given
         val context = context()

@@ -24,7 +24,7 @@
 package io.infinitic.engine.pulsar.workflowManager.functions
 
 import io.infinitic.common.workflows.avro.AvroConverter
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import io.kotest.assertions.throwables.shouldThrowAny
@@ -57,7 +57,7 @@ class WorkflowEnginePulsarFunctionTests : StringSpec({
 
         // Mocking avro conversion
         val avroMsg = mockk<AvroEnvelopeForWorkflowEngine>()
-        val msg = mockk<ForWorkflowEngineMessage>()
+        val msg = mockk<WorkflowEngineMessage>()
         mockkObject(AvroConverter)
         every { AvroConverter.fromWorkflowEngine(avroMsg) } returns msg
 

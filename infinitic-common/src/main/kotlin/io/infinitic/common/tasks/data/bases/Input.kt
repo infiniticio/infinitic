@@ -24,7 +24,7 @@
 package io.infinitic.common.tasks.data.bases
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.exceptions.ErrorDuringJsonDeserializationOfParameter
 import io.infinitic.common.tasks.exceptions.ErrorDuringJsonSerializationOfParameter
 import io.infinitic.common.tasks.exceptions.InconsistentJsonSerializationOfParameter
@@ -32,7 +32,7 @@ import java.lang.reflect.Method
 
 abstract class Input(open vararg val serializedData: SerializedData) {
     companion object {
-        fun getSerializedParameter(method: Method, index: Int, parameterValue: Any?) : SerializedData {
+        fun getSerializedParameter(method: Method, index: Int, parameterValue: Any?): SerializedData {
             val restoredValue: Any?
             val parameterName = method.parameters[index].name
             val parameterType = method.parameterTypes[index]

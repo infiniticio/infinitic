@@ -49,7 +49,7 @@ class TaskIntegrationTests : StringSpec({
 
     beforeTest {
         storage.reset()
-        TaskTestImpl.log = ""
+        dispatcher.reset()
     }
 
     "Task succeeds at first try" {
@@ -65,7 +65,7 @@ class TaskIntegrationTests : StringSpec({
         // check that task is completed
         dispatcher.taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
-        TaskTestImpl.log shouldBe "1"
+        taskTest.log shouldBe "1"
     }
 
     "Task succeeds at 4th try" {
@@ -81,7 +81,7 @@ class TaskIntegrationTests : StringSpec({
         // check that task is completed
         dispatcher.taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
-        TaskTestImpl.log shouldBe "0001"
+        taskTest.log shouldBe "0001"
     }
 
     "Task fails at first try" {
@@ -97,7 +97,7 @@ class TaskIntegrationTests : StringSpec({
         // check that task is failed
         dispatcher.taskStatus shouldBe TaskStatus.RUNNING_ERROR
         // checks number of task processing
-        TaskTestImpl.log shouldBe "0"
+        taskTest.log shouldBe "0"
     }
 
     "Task fails after 4 tries " {
@@ -113,7 +113,7 @@ class TaskIntegrationTests : StringSpec({
         // check that task is failed
         dispatcher.taskStatus shouldBe TaskStatus.RUNNING_ERROR
         // checks number of task processing
-        TaskTestImpl.log shouldBe "0000"
+        taskTest.log shouldBe "0000"
     }
 
     "Task succeeds after manual retry" {
@@ -139,7 +139,7 @@ class TaskIntegrationTests : StringSpec({
         // check that task is completed
         dispatcher.taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
-        TaskTestImpl.log shouldBe "0000001"
+        taskTest.log shouldBe "0000001"
     }
 
     "Task canceled during automatic retry" {

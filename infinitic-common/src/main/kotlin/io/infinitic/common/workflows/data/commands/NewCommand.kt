@@ -24,7 +24,9 @@
 package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class NewCommand(
     val commandId: CommandId = CommandId(),
     val command: Command,

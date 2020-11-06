@@ -21,21 +21,13 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.workflows
+package io.infinitic.common.serDe
 
-import io.infinitic.common.workflows.avro.AvroConverter
-import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
-
-class WorkflowMetaTests : StringSpec({
-    "Serialization should be updated if meta is updated" {
-        // get meta from serialisation
-        var meta = AvroConverter.convertJson<WorkflowMeta>(WorkflowMeta.from(mapOf("a" to "b")))
-        // update meta
-        meta += ("a" to "c")
-        // restore from serialization
-        val meta2 = AvroConverter.convertJson<WorkflowMeta>(meta)
-
-        meta2 shouldBe meta
-    }
-})
+enum class SerializedDataType {
+    NULL,
+    BYTES,
+    JSON_JACKSON,
+    AVRO_JAVA,
+    JSON_KOTLIN,
+    CUSTOM
+}

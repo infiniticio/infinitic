@@ -23,4 +23,7 @@
 
 package io.infinitic.common.workflows.data.workflows
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class WorkflowInstance(val workflowId: WorkflowId)

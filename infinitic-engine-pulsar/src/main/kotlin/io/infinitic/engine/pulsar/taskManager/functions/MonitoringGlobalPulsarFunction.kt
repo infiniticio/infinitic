@@ -24,8 +24,8 @@
 package io.infinitic.engine.pulsar.taskManager.functions
 
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
-import io.infinitic.common.tasks.avro.AvroConverter
-import io.infinitic.engine.taskManager.engines.MonitoringGlobal
+import io.infinitic.common.serDe.avro.AvroConverter
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
 import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import org.apache.pulsar.functions.api.Context

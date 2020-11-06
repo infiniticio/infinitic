@@ -23,15 +23,25 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.tasks.data.bases.Name
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
-data class CommandSimpleName
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val name: String) : Name(name) {
+@Serializable(with = CommandSimpleNameSerializer::class)
+data class CommandSimpleName(override val name: String) : Name(name) {
     companion object {
         fun fromMethod(method: Method) = CommandSimpleName("${method.declaringClass.simpleName}::${method.name}")
     }
+}
+
+object CommandSimpleNameSerializer : KSerializer<CommandSimpleName> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandSimpleName", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CommandSimpleName) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = CommandSimpleName(decoder.decodeString())
 }

@@ -37,6 +37,7 @@ suspend fun dispatchWorkflow(dispatcher: Dispatcher, msg: DispatchWorkflow): Wor
         methodName = msg.methodName,
         methodParameterTypes = msg.methodParameterTypes,
         methodInput = msg.methodInput,
+        propertiesNameHashAtStart = mapOf()
     )
 
     val state = WorkflowState(

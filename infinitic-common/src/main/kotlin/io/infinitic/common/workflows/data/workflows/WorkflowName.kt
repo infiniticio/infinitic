@@ -23,15 +23,25 @@
 
 package io.infinitic.common.workflows.data.workflows
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.tasks.data.bases.Name
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
-data class WorkflowName
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val name: String) : Name(name) {
+@Serializable(with = WorkflowNameSerializer::class)
+data class WorkflowName(override val name: String) : Name(name) {
     companion object {
         fun from(method: Method) = WorkflowName(method.declaringClass.name)
     }
+}
+
+object WorkflowNameSerializer : KSerializer<WorkflowName> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("WorkflowName", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: WorkflowName) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = WorkflowName(decoder.decodeString())
 }

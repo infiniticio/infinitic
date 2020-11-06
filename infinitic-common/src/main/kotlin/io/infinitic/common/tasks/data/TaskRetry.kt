@@ -21,12 +21,22 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.properties
+package io.infinitic.common.tasks.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
+import io.infinitic.common.data.interfaces.IntInterface
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class PropertiesHashValue
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
-    @get:JsonValue val properties: MutableMap<PropertyHash, PropertyValue> = mutableMapOf()
-) : MutableMap<PropertyHash, PropertyValue> by properties
+@Serializable(with = TaskRetrySerializer::class)
+data class TaskRetry(override var int: kotlin.Int = 0) : IntInterface
+
+object TaskRetrySerializer : KSerializer<TaskRetry> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
+    override fun serialize(encoder: Encoder, value: TaskRetry) { encoder.encodeInt(value.int) }
+    override fun deserialize(decoder: Decoder) = TaskRetry(decoder.decodeInt())
+}

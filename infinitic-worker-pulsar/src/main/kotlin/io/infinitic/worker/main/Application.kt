@@ -23,7 +23,7 @@
 
 package io.infinitic.worker.main
 
-import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.worker.Worker

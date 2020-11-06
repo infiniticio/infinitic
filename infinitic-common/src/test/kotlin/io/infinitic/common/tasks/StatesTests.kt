@@ -1,4 +1,4 @@
-package io.infinitic.common.tasks.serializer
+package io.infinitic.common.tasks
 
 import com.sksamuel.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
@@ -14,7 +14,7 @@ class StatesTests : StringSpec({
     "TaskEngineState should be avro-convertible" {
         shouldNotThrowAny {
             val msg = TestFactory.random<TaskEngineState>()
-            val ser =  TaskEngineState.serializer()
+            val ser = TaskEngineState.serializer()
             val byteArray = Avro.default.encodeToByteArray(ser, msg)
             val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
             msg shouldBe msg2
@@ -24,7 +24,7 @@ class StatesTests : StringSpec({
     "MonitoringPerNameState should be avro-convertible" {
         shouldNotThrowAny {
             val msg = TestFactory.random<MonitoringPerNameState>()
-            val ser =  MonitoringPerNameState.serializer()
+            val ser = MonitoringPerNameState.serializer()
             val byteArray = Avro.default.encodeToByteArray(ser, msg)
             val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
             msg shouldBe msg2
@@ -34,7 +34,7 @@ class StatesTests : StringSpec({
     "MonitoringGlobalState should be avro-convertible" {
         shouldNotThrowAny {
             val msg = TestFactory.random<MonitoringGlobalState>()
-            val ser =  MonitoringGlobalState.serializer()
+            val ser = MonitoringGlobalState.serializer()
             val byteArray = Avro.default.encodeToByteArray(ser, msg)
             val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
             msg shouldBe msg2

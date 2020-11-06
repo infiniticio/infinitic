@@ -31,6 +31,6 @@ internal class SampleTaskWithTimeout() {
     fun handle(i: Int, j: String): String {
         Thread.sleep(400)
 
-        return (i * j.toInt() * context.taskAttemptIndex.int).toString()
+        return (i * j.toInt() * context.taskRetry).toString()
     }
 }

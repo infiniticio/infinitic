@@ -23,10 +23,10 @@
 
 package io.infinitic.engine.pulsar.taskManager.functions
 
-import io.infinitic.common.tasks.avro.AvroConverter
-import io.infinitic.common.tasks.messages.ForTaskEngineMessage
+import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.engine.taskManager.engines.TaskEngine
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.Runs
@@ -57,7 +57,7 @@ class TaskEnginePulsarFunctionTests : StringSpec({
 
         // Mocking avro conversion
         val avroMsg = mockk<AvroEnvelopeForTaskEngine>()
-        val msg = mockk<ForTaskEngineMessage>()
+        val msg = mockk<TaskEngineMessage>()
         mockkObject(AvroConverter)
         every { AvroConverter.fromTaskEngine(avroMsg) } returns msg
 

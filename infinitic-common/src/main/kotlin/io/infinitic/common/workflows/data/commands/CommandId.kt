@@ -23,20 +23,33 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.tasks.data.bases.Id
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.bases.Id
 import io.infinitic.common.workflows.data.DelayId
 import io.infinitic.common.workflows.data.events.EventId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-data class CommandId
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val id: String = UUID.randomUUID().toString()) : Id(id) {
+@Serializable(with = CommandIdSerializer::class)
+data class CommandId(override val id: String = UUID.randomUUID().toString()) : Id(id) {
     constructor(taskId: TaskId) : this(taskId.id)
     constructor(delayId: DelayId) : this(delayId.id)
     constructor(workflowId: WorkflowId) : this(workflowId.id)
     constructor(eventId: EventId) : this(eventId.id)
+}
+
+@Serializable(with = CommandIdSerializer::class)
+data class TaskAttemptId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+
+object CommandIdSerializer : KSerializer<CommandId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandId", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CommandId) { encoder.encodeString(value.id) }
+    override fun deserialize(decoder: Decoder) = CommandId(decoder.decodeString())
 }

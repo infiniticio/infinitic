@@ -23,9 +23,27 @@
 
 package io.infinitic.common.workflows.data.events
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
+import io.infinitic.common.tasks.data.bases.Name
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import java.lang.reflect.Method
 
-data class EventName
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue val name: String)
+@Serializable(with = EventNameSerializer::class)
+data class EventName(override val name: String) : Name(name)
+
+data class WorkflowName(override val name: String) : Name(name) {
+    companion object {
+        fun from(method: Method) = WorkflowName(method.declaringClass.name)
+    }
+}
+
+object EventNameSerializer : KSerializer<EventName> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EventName", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: EventName) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = EventName(decoder.decodeString())
+}

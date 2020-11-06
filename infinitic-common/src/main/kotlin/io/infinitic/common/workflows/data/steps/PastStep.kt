@@ -26,15 +26,18 @@ package io.infinitic.common.workflows.data.steps
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.properties.PropertiesNameHash
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class PastStep(
     val stepPosition: MethodRunPosition,
     val step: Step,
     val stepHash: StepHash,
     var stepStatus: StepStatus = StepStatusOngoing,
-    var propertiesNameHashAtTermination: PropertiesNameHash? = null,
+    var propertiesNameHashAtTermination: Map<PropertyName, PropertyHash>? = null,
     var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
     @JsonIgnore

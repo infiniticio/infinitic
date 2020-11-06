@@ -28,5 +28,5 @@ import io.infinitic.worker.task.TaskAttemptContext
 internal class SampleTaskWithContext() {
     private lateinit var context: TaskAttemptContext
 
-    fun handle(i: Int, j: String) = (i * j.toInt() * context.taskAttemptIndex.int).toString()
+    fun handle(i: Int, j: String) = (i * j.toInt() * context.taskRetry).toString()
 }

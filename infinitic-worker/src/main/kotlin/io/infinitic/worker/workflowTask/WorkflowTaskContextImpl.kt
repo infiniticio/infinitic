@@ -160,7 +160,7 @@ class WorkflowTaskContextImpl(
             setWorkflowProperties(
                 workflow,
                 workflowTaskInput.workflowPropertiesHashValue,
-                pastCommand.propertiesNameHashAtStart
+                pastCommand.propertiesNameHashAtStart!!
             )
 
             // go down
@@ -212,8 +212,8 @@ class WorkflowTaskContextImpl(
             // run inline task
             val commandOutput = try { CommandOutput.from(inline()) } catch (e: Exception) {
                 when (e) {
-                    is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskInput.getErrorMethodName())
-                    is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskInput.getErrorMethodName())
+                    is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskInput.getFullMethodName())
+                    is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskInput.getFullMethodName())
                     else -> throw e
                 }
             }
@@ -281,7 +281,7 @@ class WorkflowTaskContextImpl(
         setWorkflowProperties(
             workflow,
             workflowTaskInput.workflowPropertiesHashValue,
-            pastStep.propertiesNameHashAtTermination
+            pastStep.propertiesNameHashAtTermination!!
         )
 
         // continue

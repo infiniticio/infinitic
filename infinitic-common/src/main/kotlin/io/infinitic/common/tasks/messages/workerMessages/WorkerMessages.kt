@@ -26,8 +26,9 @@ package io.infinitic.common.tasks.messages.workerMessages
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.MethodParameterTypes
+import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptIndex
+import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -37,7 +38,7 @@ import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class WorkerMessage  {
+sealed class WorkerMessage {
     abstract val taskName: TaskName
 }
 
@@ -45,9 +46,10 @@ sealed class WorkerMessage  {
 data class RunTask(
     override val taskName: TaskName,
     override val taskId: TaskId,
+    override val taskRetry: TaskRetry,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
-    override val taskAttemptIndex: TaskAttemptIndex,
+    val lastTaskAttemptError: TaskAttemptError?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,

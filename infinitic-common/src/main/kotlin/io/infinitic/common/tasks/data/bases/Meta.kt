@@ -23,9 +23,7 @@
 
 package io.infinitic.common.tasks.data.bases
 
-import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.data.SerializedData
-import kotlin.reflect.full.primaryConstructor
+import io.infinitic.common.serDe.SerializedData
 
 abstract class Meta(open val serialized: Map<String, SerializedData> = mapOf()) {
     fun get(key: String) = serialized[key]?.deserialize()

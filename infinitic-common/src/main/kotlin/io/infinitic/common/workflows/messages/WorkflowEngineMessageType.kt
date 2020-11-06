@@ -21,13 +21,23 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.workflows.data.properties
+package io.infinitic.common.workflows.messages
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
+import kotlinx.serialization.Serializable
 
-data class PropertiesNameHash @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
-    @get:JsonValue val properties: MutableMap<PropertyName, PropertyHash> = mutableMapOf()
-) : MutableMap<PropertyName, PropertyHash> by properties {
-    fun copy() = PropertiesNameHash(toMutableMap())
+@Serializable
+enum class WorkflowEngineMessageType {
+    CANCEL_WORKFLOW,
+    CHILD_WORKFLOW_CANCELED,
+    CHILD_WORKFLOW_COMPLETED,
+    WORKFLOW_TASK_COMPLETED,
+    WORKFLOW_TASK_DISPATCHED,
+    TIMER_COMPLETED,
+    DISPATCH_WORKFLOW,
+    OBJECT_RECEIVED,
+    TASK_CANCELED,
+    TASK_COMPLETED,
+    TASK_DISPATCHED,
+    WORKFLOW_CANCELED,
+    WORKFLOW_COMPLETED
 }

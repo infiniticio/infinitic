@@ -35,28 +35,20 @@ data class MonitoringGlobalEnvelope(
             taskCreated
         )
 
-        require(noNull.size == 1) {
-            if (noNull.size > 1) {
-                "More than 1 message provided: ${noNull.joinToString()}"
-            } else {
-                "No message provided"
-            }
-        }
-
-        require( noNull.first()::class == when(type) {
-            MonitoringGlobalMessageType.TASK_CREATED -> TaskCreated::class
-        }) { "Provided type $type inconsistent with message ${noNull.first()}" }
+        require(noNull.size == 1)
+        require(noNull.first() == value())
     }
 
     companion object {
         fun from(msg: MonitoringGlobalMessage) = when (msg) {
             is TaskCreated -> MonitoringGlobalEnvelope(
                 MonitoringGlobalMessageType.TASK_CREATED,
-                taskCreated = msg)
+                taskCreated = msg
+            )
         }
     }
 
-    fun value() : MonitoringGlobalMessage = when (type) {
+    fun value(): MonitoringGlobalMessage = when (type) {
         MonitoringGlobalMessageType.TASK_CREATED -> taskCreated!!
     }
 }

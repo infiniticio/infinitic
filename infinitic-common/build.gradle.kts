@@ -31,7 +31,6 @@ plugins {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("com.sksamuel.avro4k:avro4k-core:0.41.+")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
@@ -42,9 +41,9 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
-    testImplementation("org.jetbrains.kotlin:kotlin-reflect:${project.extra["kotlin-reflect_version"]}")
 
     testFixturesImplementation(project(":infinitic-avro"))
+    testFixturesImplementation("org.jetbrains.kotlin:kotlin-reflect:${project.extra["kotlin-reflect_version"]}")
     testFixturesImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
 }
 

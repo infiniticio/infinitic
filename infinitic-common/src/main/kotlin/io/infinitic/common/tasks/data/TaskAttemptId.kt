@@ -31,7 +31,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.util.*
+import java.util.UUID
 
 @Serializable(with = TaskAttemptIdSerializer::class)
 data class TaskAttemptId(override val id: String = UUID.randomUUID().toString()) : Id(id)

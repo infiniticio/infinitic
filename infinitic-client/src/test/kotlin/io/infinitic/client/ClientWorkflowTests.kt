@@ -35,7 +35,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.messages.DispatchWorkflow
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
@@ -50,7 +50,7 @@ class ClientWorkflowTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     coEvery { dispatcher.toTaskEngine(capture(taskSlot)) } just Runs
 
-    val workflowSlot = slot<ForWorkflowEngineMessage>()
+    val workflowSlot = slot<WorkflowEngineMessage>()
     coEvery { dispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
 
     val client = Client(dispatcher)

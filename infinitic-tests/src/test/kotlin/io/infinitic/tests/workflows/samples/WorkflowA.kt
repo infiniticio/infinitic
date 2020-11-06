@@ -50,12 +50,12 @@ interface WorkflowA : Workflow {
     fun inline3(): String
     fun child1(): String
     fun child2(): String
-    fun prop1(): Boolean
-    fun prop2(): Boolean
-    fun prop3(): Boolean
-    fun prop4(): Boolean
-    fun prop5(): Boolean
-    fun prop6(): Boolean
+    fun prop1(): String
+    fun prop2(): String
+    fun prop3(): String
+    fun prop4(): String
+    fun prop5(): String
+    fun prop6(): String
 }
 
 class WorkflowAImpl() : WorkflowA {
@@ -199,7 +199,7 @@ class WorkflowAImpl() : WorkflowA {
         return taskA.concat(d.result(), str) // should be "21abc21"
     }
 
-    override fun prop1(): Boolean {
+    override fun prop1(): String {
         p1 = "a"
 
         val d = async {
@@ -207,10 +207,10 @@ class WorkflowAImpl() : WorkflowA {
         }
         p1 += "c"
 
-        return p1 == "ac"
+        return p1 // should be "ac"
     }
 
-    override fun prop2(): Boolean {
+    override fun prop2(): String {
         p1 = "a"
 
         val d = async {
@@ -220,10 +220,10 @@ class WorkflowAImpl() : WorkflowA {
         taskA.await(100)
         p1 += "d"
 
-        return p1 == "acbd"
+        return p1 // should be "acbd"
     }
 
-    override fun prop3(): Boolean {
+    override fun prop3(): String {
         p1 = "a"
 
         val d = async {
@@ -234,10 +234,10 @@ class WorkflowAImpl() : WorkflowA {
         taskA.await(100)
         p1 += "d"
 
-        return p1 == "acbd"
+        return p1 // should be "acbd"
     }
 
-    override fun prop4(): Boolean {
+    override fun prop4(): String {
         p1 = "a"
 
         val d = async {
@@ -248,10 +248,10 @@ class WorkflowAImpl() : WorkflowA {
         taskA.await(100)
         p1 += "d"
 
-        return p1 == "acd"
+        return p1 // should be "acd"
     }
 
-    override fun prop5(): Boolean {
+    override fun prop5(): String {
         p1 = "a"
 
         async {
@@ -264,10 +264,10 @@ class WorkflowAImpl() : WorkflowA {
         p1 += "d"
         taskA.await(100)
 
-        return p1 == "adbc"
+        return p1 // should be "adbc"
     }
 
-    override fun prop6(): Boolean {
+    override fun prop6(): String {
         val d1 = async(taskA) { reverse("12") }
 
         val d2 = async {
@@ -279,6 +279,6 @@ class WorkflowAImpl() : WorkflowA {
         p1 += "a"
         p1 += d2.result()
 
-        return p1 == "aab"
+        return p1 // should be "abab"
     }
 }

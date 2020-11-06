@@ -23,11 +23,7 @@
 
 package io.infinitic.common.workflows.data.steps
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandStatusCanceled
@@ -36,24 +32,16 @@ import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import kotlinx.serialization.Serializable
 import kotlin.Int.Companion.MAX_VALUE
 import kotlin.Int.Companion.MIN_VALUE
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes(
-    JsonSubTypes.Type(value = Step.Id::class, name = "ID"),
-    JsonSubTypes.Type(value = Step.And::class, name = "AND"),
-    JsonSubTypes.Type(value = Step.Or::class, name = "OR")
-)
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 sealed class Step {
-    @JsonIgnore
     fun isTerminated() = isTerminatedAtMessageIndex(WorkflowTaskIndex(MAX_VALUE))
-
     fun stepStatus() = stepStatusAtMessageIndex(WorkflowTaskIndex(MAX_VALUE))
 
     abstract fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex): Boolean
-
     abstract fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus
 
     /*
@@ -61,6 +49,7 @@ sealed class Step {
      */
     abstract fun hash(): StepHash
 
+    @Serializable
     data class Id(
         val commandId: CommandId,
         var commandStatus: CommandStatus
@@ -68,7 +57,6 @@ sealed class Step {
 
         override fun hash() = StepHash(SerializedData.from(commandId).hash())
 
-        @JsonIgnore
         override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = when (stepStatusAtMessageIndex(index)) {
             is StepStatusCanceled -> true
             is StepStatusCompleted -> true
@@ -97,11 +85,11 @@ sealed class Step {
         }
     }
 
+    @Serializable
     data class And(var steps: List<Step>) : Step() {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        @JsonIgnore
         override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = this.steps.all { s -> s.isTerminatedAtMessageIndex(index) }
 
         override fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus {
@@ -121,7 +109,7 @@ sealed class Step {
                     is StepStatusCompleted -> it.completionWorkflowTaskIndex
                     is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
                 }
-            }.max()!!
+            }.maxOrNull()!!
 
             if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(StepOutput.from(results.map { it.get() }), maxIndex)
 
@@ -129,11 +117,11 @@ sealed class Step {
         }
     }
 
+    @Serializable
     data class Or(var steps: List<Step>) : Step() {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        @JsonIgnore
         override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = this.steps.any { s -> s.isTerminatedAtMessageIndex(index) }
 
         override fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus {
@@ -141,7 +129,7 @@ sealed class Step {
             // if all steps are ongoing then returns StepStatusOngoing
             if (statuses.all { it is StepStatusOngoing }) return StepStatusOngoing
             // find first step not ongoing
-            val minStep = statuses.minBy {
+            val minStep = statuses.minByOrNull {
                 when (it) {
                     is StepStatusOngoing -> WorkflowTaskIndex(MAX_VALUE)
                     is StepStatusCompleted -> it.completionWorkflowTaskIndex

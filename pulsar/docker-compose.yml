@@ -21,7 +21,6 @@
 #
 # Licensor: infinitic.io
 
-version: "3.7"
 services:
   pulsar:
     image: apachepulsar/pulsar-all:2.6.1
@@ -44,6 +43,7 @@ services:
     image: apachepulsar/pulsar-manager:v0.2.0
     ports:
       - "9527:9527"
+      - "7750:7750"
     depends_on:
       - pulsar
     links:
@@ -51,13 +51,7 @@ services:
     volumes:
       - "pulsardata:/data"
     environment:
-      REDIRECT_HOST: "http://127.0.0.1"
-      REDIRECT_PORT: "9527"
-      DRIVER_CLASS_NAME: "org.postgresql.Driver"
-      URL: "jdbc:postgresql://127.0.0.1:5432/pulsar_manager"
-      USERNAME: "pulsar"
-      PASSWORD: "pulsar"
-      LOG_LEVEL: "DEBUG"
+      SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties
 
   # Uncomment the following block if you want to use a Redis storage for persistence of states. There is also a volume to uncomment at the bottom of the file.
 #  redis:

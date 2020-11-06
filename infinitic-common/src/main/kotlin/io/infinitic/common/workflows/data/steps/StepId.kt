@@ -23,11 +23,21 @@
 
 package io.infinitic.common.workflows.data.steps
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.tasks.data.bases.Id
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-data class StepId
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val id: String = UUID.randomUUID().toString()) : Id(id)
+@Serializable(with = StepIdIdSerializer::class)
+data class StepId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+
+object StepIdIdSerializer : KSerializer<StepId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("StepId", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: StepId) { encoder.encodeString(value.id) }
+    override fun deserialize(decoder: Decoder) = StepId(decoder.decodeString())
+}

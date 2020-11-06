@@ -1,13 +1,13 @@
-package io.infinitic.common.tasks.serializer
+package io.infinitic.common.tasks
 
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptIndex
+import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -71,16 +71,6 @@ class DataTests : StringSpec({
         m2 shouldBe m
     }
 
-//    "MethodParameterTypes[null] should be serialized as null" {
-//        val m = MethodParameterTypes(null)
-//
-//        val json = Json.encodeToString(m)
-//        json shouldBe "null"
-//
-//        val m2 = Json.decodeFromString<MethodParameterTypes>(json)
-//        m2 shouldBe m
-//    }
-
     "TaskAttemptId should be serialized as String" {
         val m = TaskAttemptId("qwerty")
 
@@ -91,13 +81,13 @@ class DataTests : StringSpec({
         m2 shouldBe m
     }
 
-    "TaskAttemptIndex should be serialized as Int" {
-        val m = TaskAttemptIndex(42)
+    "TaskRetry should be serialized as Int" {
+        val m = TaskRetry(42)
 
         val json = Json.encodeToString(m)
         json shouldBe "42"
 
-        val m2 = Json.decodeFromString<TaskAttemptIndex>(json)
+        val m2 = Json.decodeFromString<TaskRetry>(json)
         m2 shouldBe m
     }
 
@@ -141,4 +131,3 @@ class DataTests : StringSpec({
         m2 shouldBe m
     }
 })
-

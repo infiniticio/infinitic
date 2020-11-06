@@ -23,6 +23,9 @@
 
 package io.infinitic.common.workflows.data.commands
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class CommandType {
     DISPATCH_TASK,
     DISPATCH_CHILD_WORKFLOW,

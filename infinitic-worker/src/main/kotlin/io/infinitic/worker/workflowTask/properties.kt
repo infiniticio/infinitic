@@ -25,19 +25,21 @@ package io.infinitic.worker.workflowTask
 
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.WorkflowTaskContext
-import io.infinitic.common.workflows.data.properties.PropertiesHashValue
-import io.infinitic.common.workflows.data.properties.PropertiesNameHash
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.parser.getPropertiesFromObject
 import io.infinitic.common.workflows.parser.setPropertiesToObject
 import java.lang.RuntimeException
 import kotlin.reflect.jvm.javaType
 
-fun setWorkflowProperties(workflow: Workflow, propertiesHashValue: PropertiesHashValue, propertiesNameHash: PropertiesNameHash?) {
-    val properties = propertiesNameHash
-        ?.mapValues {
-            propertiesHashValue[it.value] ?: throw RuntimeException("This should not happen: unknown hash ${it.value} in $propertiesHashValue")
-        }
-        ?: throw RuntimeException("This should not happen: null propertiesNameHash")
+fun setWorkflowProperties(
+    workflow: Workflow,
+    propertiesHashValue: Map<PropertyHash, PropertyValue>,
+    propertiesNameHash: Map<PropertyName, PropertyHash>) {
+    val properties = propertiesNameHash.mapValues {
+        propertiesHashValue[it.value] ?: throw RuntimeException("This should not happen: unknown hash ${it.value} in $propertiesHashValue")
+    }
 
     setPropertiesToObject(workflow, properties)
 }

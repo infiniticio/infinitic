@@ -23,7 +23,7 @@
 
 package io.infinitic.common.tasks.data
 
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -39,9 +39,9 @@ data class MethodOutput(override val serializedData: SerializedData) : Data(seri
 }
 
 object MethodOutputSerializer : KSerializer<MethodOutput> {
-    override val descriptor: SerialDescriptor =  SerializedData.serializer().descriptor
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
     override fun serialize(encoder: Encoder, value: MethodOutput) {
-        SerializedData.serializer().serialize(encoder,  value.serializedData)
+        SerializedData.serializer().serialize(encoder, value.serializedData)
     }
     override fun deserialize(decoder: Decoder) =
         MethodOutput(SerializedData.serializer().deserialize(decoder))

@@ -23,10 +23,20 @@
 
 package io.infinitic.common.workflows.data.steps
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
 import io.infinitic.common.tasks.data.bases.Hash
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class StepHash
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val hash: String) : Hash(hash)
+@Serializable(with = StepHashSerializer::class)
+data class StepHash(override val hash: String) : Hash(hash)
+
+object StepHashSerializer : KSerializer<StepHash> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("StepHash", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: StepHash) { encoder.encodeString(value.hash) }
+    override fun deserialize(decoder: Decoder) = StepHash(decoder.decodeString())
+}

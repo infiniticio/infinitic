@@ -27,10 +27,10 @@ import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlo
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 
 interface Dispatcher {
-    suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float = 0f)
+    suspend fun toWorkflowEngine(msg: WorkflowEngineMessage, after: Float = 0f)
     suspend fun toTaskEngine(msg: TaskEngineMessage, after: Float = 0f)
     suspend fun toMonitoringPerName(msg: MonitoringPerNameMessage)
     suspend fun toMonitoringGlobal(msg: MonitoringGlobalMessage)

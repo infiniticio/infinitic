@@ -13,7 +13,7 @@
       "type": "int"
     },
     {
-      "name": "taskAttemptIndex",
+      "name": "taskRetry",
       "type": "int"
     },
     {

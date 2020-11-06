@@ -25,16 +25,16 @@ package io.infinitic.messaging.api.dispatcher
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.messaging.api.dispatcher.transport.BinaryTransport
-import io.infinitic.common.tasks.avro.AvroConverter as TaskAvroConverter
+import io.infinitic.common.serDe.avro.AvroConverter as TaskAvroConverter
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.workflows.avro.AvroConverter as WorkflowAvroConverter
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 
 class BinaryDispatcher(private val transport: BinaryTransport) : Dispatcher {
-    override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {
+    override suspend fun toWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
         msg
             .let { WorkflowAvroConverter.toWorkflowEngine(it) }
             .let { AvroSerDe.serialize(it) }

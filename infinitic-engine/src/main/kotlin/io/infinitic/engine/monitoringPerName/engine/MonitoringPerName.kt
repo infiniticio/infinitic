@@ -21,7 +21,7 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.engine.taskManager.engines
+package io.infinitic.engine.monitoringPerName.engine
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus

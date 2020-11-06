@@ -21,7 +21,7 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.engine.taskManager.engines
+package io.infinitic.engine.monitoringGlobal.engine
 
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated

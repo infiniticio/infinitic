@@ -24,6 +24,7 @@
 package io.infinitic.engine.taskManager.engines
 
 import io.infinitic.common.data.interfaces.plus
+import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -138,13 +139,14 @@ open class TaskEngine(
         // send task to workers
         val rt = RunTask(
             taskId = state.taskId,
+            taskRetry = state.taskRetry,
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry,
-            taskAttemptIndex = state.taskAttemptIndex,
             taskName = state.taskName,
             methodName = state.methodName,
-            methodParameterTypes = state.methodParameterTypes,
             methodInput = state.methodInput,
+            methodParameterTypes = state.methodParameterTypes,
+            lastTaskAttemptError = null,
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
@@ -155,7 +157,7 @@ open class TaskEngine(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry,
-            taskAttemptIndex = state.taskAttemptIndex
+            taskRetry = state.taskRetry
         )
         dispatcher.toTaskEngine(tad)
 
@@ -167,7 +169,7 @@ open class TaskEngine(
             taskStatus = TaskStatus.RUNNING_WARNING,
             taskAttemptId = TaskAttemptId(),
             taskAttemptRetry = TaskAttemptRetry(0),
-            taskAttemptIndex = oldState.taskAttemptIndex + 1,
+            taskRetry = oldState.taskRetry + 1,
             taskName = msg.taskName ?: oldState.taskName,
             methodName = msg.methodName ?: oldState.methodName,
             methodInput = msg.methodInput ?: oldState.methodInput,
@@ -181,11 +183,12 @@ open class TaskEngine(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry,
-            taskAttemptIndex = state.taskAttemptIndex,
+            taskRetry = state.taskRetry,
             taskName = state.taskName,
             methodName = state.methodName,
             methodInput = state.methodInput,
             methodParameterTypes = state.methodParameterTypes,
+            lastTaskAttemptError = state.lastTaskAttemptError,
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
@@ -196,7 +199,7 @@ open class TaskEngine(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry,
-            taskAttemptIndex = state.taskAttemptIndex
+            taskRetry = state.taskRetry
         )
         dispatcher.toTaskEngine(tad)
 
@@ -214,11 +217,12 @@ open class TaskEngine(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry,
-            taskAttemptIndex = state.taskAttemptIndex,
+            taskRetry = state.taskRetry,
             taskName = state.taskName,
             methodName = state.methodName,
             methodParameterTypes = state.methodParameterTypes,
             methodInput = state.methodInput,
+            lastTaskAttemptError = state.lastTaskAttemptError,
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
@@ -228,7 +232,7 @@ open class TaskEngine(
         val tar = TaskAttemptDispatched(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
-            taskAttemptIndex = state.taskAttemptIndex,
+            taskRetry = state.taskRetry,
             taskAttemptRetry = state.taskAttemptRetry
         )
         dispatcher.toTaskEngine(tar)
@@ -255,23 +259,37 @@ open class TaskEngine(
     }
 
     private suspend fun taskAttemptFailed(oldState: TaskEngineState, msg: TaskAttemptFailed): TaskEngineState {
-        return delayRetryTaskAttempt(oldState, delay = msg.taskAttemptDelayBeforeRetry)
+        return delayRetryTaskAttempt(
+            oldState,
+            delay = msg.taskAttemptDelayBeforeRetry,
+            error = msg.taskAttemptError
+        )
     }
 
-    private suspend fun delayRetryTaskAttempt(oldState: TaskEngineState, delay: Float?): TaskEngineState {
+    private suspend fun delayRetryTaskAttempt(
+        oldState: TaskEngineState,
+        delay: Float?,
+        error: TaskAttemptError
+    ): TaskEngineState {
         // no retry
-        if (delay == null) return oldState.copy(taskStatus = TaskStatus.RUNNING_ERROR)
+        if (delay == null) return oldState.copy(
+            taskStatus = TaskStatus.RUNNING_ERROR,
+            lastTaskAttemptError = error
+        )
         // immediate retry
-        if (delay <= 0f) return retryTaskAttempt(oldState)
+        if (delay <= 0f) return retryTaskAttempt(oldState.copy(lastTaskAttemptError = error))
         // delayed retry
-        val state = oldState.copy(taskStatus = TaskStatus.RUNNING_WARNING)
+        val state = oldState.copy(
+            taskStatus = TaskStatus.RUNNING_WARNING,
+            lastTaskAttemptError = error
+        )
 
         // schedule next attempt
         val tar = RetryTaskAttempt(
             taskId = state.taskId,
+            taskRetry = state.taskRetry,
             taskAttemptId = state.taskAttemptId,
-            taskAttemptRetry = state.taskAttemptRetry,
-            taskAttemptIndex = state.taskAttemptIndex
+            taskAttemptRetry = state.taskAttemptRetry
         )
         dispatcher.toTaskEngine(tar, after = delay)
 

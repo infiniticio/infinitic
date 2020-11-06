@@ -28,23 +28,23 @@ import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPe
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.workflows.avro.AvroConverter
-import io.infinitic.common.workflows.messages.ForWorkflowEngineMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import io.infinitic.common.tasks.avro.AvroConverter as TaskAvroConverter
+import io.infinitic.common.serDe.avro.AvroConverter as TaskAvroConverter
 
 open class InMemoryAvroDispatcher : Dispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
-    lateinit var workflowEngineHandle: suspend (msg: ForWorkflowEngineMessage) -> Unit
+    lateinit var workflowEngineHandle: suspend (msg: WorkflowEngineMessage) -> Unit
     lateinit var taskEngineHandle: suspend (msg: TaskEngineMessage) -> Unit
     lateinit var monitoringPerNameHandle: suspend (msg: MonitoringPerNameMessage) -> Unit
     lateinit var monitoringGlobalHandle: suspend (msg: MonitoringGlobalMessage) -> Unit
     lateinit var workerHandle: suspend (msg: WorkerMessage) -> Unit
     lateinit var scope: CoroutineScope
 
-    override suspend fun toWorkflowEngine(msg: ForWorkflowEngineMessage, after: Float) {
+    override suspend fun toWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
         val avro = AvroConverter.toWorkflowEngine(msg)
 
         scope.launch {

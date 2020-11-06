@@ -23,31 +23,18 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import kotlinx.serialization.Serializable
 import java.lang.reflect.Method
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes(
-    JsonSubTypes.Type(value = DispatchTask::class, name = "DISPATCH_TASK"),
-    JsonSubTypes.Type(value = DispatchChildWorkflow::class, name = "DISPATCH_CHILD_WORKFLOW"),
-    JsonSubTypes.Type(value = StartAsync::class, name = "START_ASYNC"),
-    JsonSubTypes.Type(value = EndAsync::class, name = "END_ASYNC"),
-    JsonSubTypes.Type(value = StartInlineTask::class, name = "START_INLINE_TASK"),
-    JsonSubTypes.Type(value = EndInlineTask::class, name = "END_INLINE_TASK"),
-    JsonSubTypes.Type(value = DispatchTimer::class, name = "DISPATCH_TIMER"),
-    JsonSubTypes.Type(value = DispatchReceiver::class, name = "DISPATCH_RECEIVER")
-)
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 sealed class Command {
     fun hash() = CommandHash(SerializedData.from(this).hash())
 }
@@ -56,16 +43,12 @@ sealed class Command {
  * Commands are asynchronously processed
  */
 
+@Serializable
 data class DispatchTask(
-    @JsonProperty("name")
     val taskName: TaskName,
-    @JsonProperty("method")
     val methodName: MethodName,
-    @JsonProperty("types")
     val methodParameterTypes: MethodParameterTypes,
-    @JsonProperty("input")
     val methodInput: MethodInput,
-    @JsonProperty("meta")
     val taskMeta: TaskMeta
 ) : Command() {
     companion object {
@@ -79,14 +62,11 @@ data class DispatchTask(
     }
 }
 
+@Serializable
 data class DispatchChildWorkflow(
-    @JsonProperty("name")
     val childWorkflowName: WorkflowName,
-    @JsonProperty("method")
     val childMethodName: MethodName,
-    @JsonProperty("types")
     val childMethodParameterTypes: MethodParameterTypes,
-    @JsonProperty("input")
     val childMethodInput: MethodInput
 ) : Command() {
     companion object {
@@ -99,30 +79,36 @@ data class DispatchChildWorkflow(
     }
 }
 
+@Serializable
 object StartAsync : Command() {
     // as we can not define a data class without parameter, we add manually the equals func
     override fun equals(other: Any?) = javaClass == other?.javaClass
 }
 
+@Serializable
 data class EndAsync(
     @JsonProperty("output")
     val asyncOutput: CommandOutput
 ) : Command()
 
+@Serializable
 object StartInlineTask : Command() {
     // as we can not define a data class without parameter, we add manually the equals func
     override fun equals(other: Any?) = javaClass == other?.javaClass
 }
 
+@Serializable
 data class EndInlineTask(
     @JsonProperty("output")
     val inlineTaskOutput: CommandOutput
 ) : Command()
 
+@Serializable
 data class DispatchTimer(
     val duration: Int
 ) : Command()
 
+@Serializable
 data class DispatchReceiver(
     val klass: String
 ) : Command()

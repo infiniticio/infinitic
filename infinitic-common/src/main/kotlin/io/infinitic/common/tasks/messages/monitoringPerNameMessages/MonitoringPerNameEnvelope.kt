@@ -37,21 +37,9 @@ data class MonitoringPerNameEnvelope(
             taskStatusUpdated
         )
 
-        require(noNull.size == 1) {
-            if (noNull.size > 1) {
-                "More than 1 message provided: ${noNull.joinToString()}"
-            } else {
-                "No message provided"
-            }
-        }
-
-        require( noNull.first()::class == when(type) {
-            MonitoringPerNameMessageType.TASK_STATUS_UPDATED -> TaskStatusUpdated::class
-        }) { "Provided type $type inconsistent with message ${noNull.first()}" }
-
-        require( noNull.first().taskName == taskName) {
-            "Provided taskName $taskName inconsistent with message ${noNull.first()}"
-        }
+        require(noNull.size == 1)
+        require(noNull.first() == value())
+        require(noNull.first().taskName == taskName)
     }
 
     companion object {
@@ -59,11 +47,12 @@ data class MonitoringPerNameEnvelope(
             is TaskStatusUpdated -> MonitoringPerNameEnvelope(
                 msg.taskName,
                 MonitoringPerNameMessageType.TASK_STATUS_UPDATED,
-                taskStatusUpdated = msg)
+                taskStatusUpdated = msg
+            )
         }
     }
 
-    fun value() : MonitoringPerNameMessage = when (type) {
+    fun value(): MonitoringPerNameMessage = when (type) {
         MonitoringPerNameMessageType.TASK_STATUS_UPDATED -> taskStatusUpdated!!
     }
 }

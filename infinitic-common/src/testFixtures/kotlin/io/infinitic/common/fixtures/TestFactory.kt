@@ -23,7 +23,7 @@
 
 package io.infinitic.common.fixtures
 
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.avro.taskManager.data.AvroSerializedData
 import io.infinitic.avro.taskManager.data.AvroSerializedDataType
 import io.infinitic.common.workflows.avro.AvroConverter
@@ -40,6 +40,8 @@ import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineEnvelope
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerEnvelope
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
+import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import java.nio.ByteBuffer
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -68,38 +70,34 @@ object TestFactory {
             .scanClasspathForConcreteTypes(true)
             .overrideDefaultInitialization(true)
             .collectionSizeRange(1, 5)
-            // provides a String for "Any" parameter
             .randomize(Any::class.java) { random<String>() }
+            .randomize(Step::class.java) { randomStep() }
             .randomize(String::class.java) { String(random<ByteArray>(), Charsets.UTF_8) }
             .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
             .randomize(MethodInput::class.java) { MethodInput.from(random<ByteArray>(), random<String>()) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
-            .randomize(AvroSerializedData::class.java) {
-                val data = random<SerializedData>()
-                AvroSerializedData.newBuilder()
-                    .setBytes(ByteBuffer.wrap(data.bytes))
-                    .setType(AvroSerializedDataType.JSON)
-//                    .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
-                    .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value.toByteArray()) })
-                    .build()
+            .randomize(AvroSerializedData::class.java) { randomAvroSerializedData() }
+            .randomize(WorkflowEngineEnvelope::class.java) {
+                val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
+                WorkflowEngineEnvelope.from(random(sub))
             }
             .randomize(TaskEngineEnvelope::class.java) {
-                val klass = TaskEngineMessage::class.sealedSubclasses.shuffled().first()
-                TaskEngineEnvelope.from(random(klass))
+                val sub = TaskEngineMessage::class.sealedSubclasses.shuffled().first()
+                TaskEngineEnvelope.from(random(sub))
             }
             .randomize(MonitoringPerNameEnvelope::class.java) {
-                val klass = MonitoringPerNameMessage::class.sealedSubclasses.shuffled().first()
-                MonitoringPerNameEnvelope.from(random(klass))
+                val sub = MonitoringPerNameMessage::class.sealedSubclasses.shuffled().first()
+                MonitoringPerNameEnvelope.from(random(sub))
             }
             .randomize(MonitoringGlobalEnvelope::class.java) {
-                val klass = MonitoringGlobalMessage::class.sealedSubclasses.shuffled().first()
-                MonitoringGlobalEnvelope.from(random(klass))
+                val sub = MonitoringGlobalMessage::class.sealedSubclasses.shuffled().first()
+                MonitoringGlobalEnvelope.from(random(sub))
             }
             .randomize(WorkerEnvelope::class.java) {
-                val klass = WorkerMessage::class.sealedSubclasses.shuffled().first()
-                WorkerEnvelope.from(random(klass))
+                val sub = WorkerMessage::class.sealedSubclasses.shuffled().first()
+                WorkerEnvelope.from(random(sub))
             }
 
         values?.forEach {
@@ -107,11 +105,6 @@ object TestFactory {
         }
 
         return EasyRandom(parameters).nextObject(klass.java)
-    }
-
-    fun randomStep(): Step {
-        val steps = steps().values.toList()
-        return steps[Random.nextInt(until = steps.size - 1)]
     }
 
     fun steps(): Map<String, Step> {
@@ -132,5 +125,19 @@ object TestFactory {
             "A AND (B AND C)" to Step.And(listOf(stepA, Step.And(listOf(stepB, stepC)))),
             "A OR (B AND (C OR D))" to Step.Or(listOf(stepA, Step.And(listOf(stepB, Step.Or(listOf(stepC, stepD))))))
         )
+    }
+
+    private fun randomAvroSerializedData(): AvroSerializedData {
+        val data = random<SerializedData>()
+        return AvroSerializedData.newBuilder()
+            .setBytes(ByteBuffer.wrap(data.bytes))
+            .setType(AvroSerializedDataType.JSON)
+            .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
+            .build()
+    }
+
+    private fun randomStep(): Step {
+        val steps = steps().values.toList()
+        return steps[Random.nextInt(until = steps.size - 1)]
     }
 }

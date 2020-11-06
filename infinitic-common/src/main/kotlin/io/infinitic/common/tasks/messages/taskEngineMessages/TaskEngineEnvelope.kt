@@ -55,30 +55,9 @@ data class TaskEngineEnvelope(
             taskAttemptStarted
         )
 
-        require(noNull.size == 1) {
-            if (noNull.size > 1) {
-                "More than 1 message provided: ${noNull.joinToString()}"
-            } else {
-                "No message provided"
-            }
-        }
-
-        require( noNull.first()::class == when(type) {
-            TaskEngineMessageType.DISPATCH_TASK -> DispatchTask::class
-            TaskEngineMessageType.RETRY_TASK -> RetryTask::class
-            TaskEngineMessageType.RETRY_TASK_ATTEMPT -> RetryTaskAttempt::class
-            TaskEngineMessageType.CANCEL_TASK -> CancelTask::class
-            TaskEngineMessageType.TASK_CANCELED -> TaskCanceled::class
-            TaskEngineMessageType.TASK_COMPLETED -> TaskCompleted::class
-            TaskEngineMessageType.TASK_ATTEMPT_DISPATCHED -> TaskAttemptDispatched::class
-            TaskEngineMessageType.TASK_ATTEMPT_COMPLETED -> TaskAttemptCompleted::class
-            TaskEngineMessageType.TASK_ATTEMPT_FAILED -> TaskAttemptFailed::class
-            TaskEngineMessageType.TASK_ATTEMPT_STARTED -> TaskAttemptStarted::class
-        }) { "Provided type $type inconsistent with message ${noNull.first()}" }
-
-        require( noNull.first().taskId == taskId) {
-            "Provided taskId $taskId inconsistent with message ${noNull.first()}"
-        }
+        require(noNull.size == 1)
+        require(noNull.first() == value())
+        require(noNull.first().taskId == taskId)
     }
 
     companion object {
@@ -86,47 +65,57 @@ data class TaskEngineEnvelope(
             is DispatchTask -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.DISPATCH_TASK,
-                dispatchTask = msg)
+                dispatchTask = msg
+            )
             is RetryTask -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.RETRY_TASK,
-                retryTask = msg)
+                retryTask = msg
+            )
             is RetryTaskAttempt -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.RETRY_TASK_ATTEMPT,
-                retryTaskAttempt = msg)
+                retryTaskAttempt = msg
+            )
             is CancelTask -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.CANCEL_TASK,
-                cancelTask = msg)
+                cancelTask = msg
+            )
             is TaskCanceled -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_CANCELED,
-                taskCanceled = msg)
-            is TaskCompleted  -> TaskEngineEnvelope(
+                taskCanceled = msg
+            )
+            is TaskCompleted -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_COMPLETED,
-                taskCompleted = msg)
+                taskCompleted = msg
+            )
             is TaskAttemptDispatched -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_ATTEMPT_DISPATCHED,
-                taskAttemptDispatched = msg)
+                taskAttemptDispatched = msg
+            )
             is TaskAttemptCompleted -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_ATTEMPT_COMPLETED,
-                taskAttemptCompleted = msg)
+                taskAttemptCompleted = msg
+            )
             is TaskAttemptFailed -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_ATTEMPT_FAILED,
-                taskAttemptFailed = msg)
+                taskAttemptFailed = msg
+            )
             is TaskAttemptStarted -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_ATTEMPT_STARTED,
-                taskAttemptStarted = msg)
+                taskAttemptStarted = msg
+            )
         }
     }
 
-    fun value() : TaskEngineMessage = when (type) {
+    fun value(): TaskEngineMessage = when (type) {
         TaskEngineMessageType.DISPATCH_TASK -> dispatchTask!!
         TaskEngineMessageType.RETRY_TASK -> retryTask!!
         TaskEngineMessageType.RETRY_TASK_ATTEMPT -> retryTaskAttempt!!

@@ -23,7 +23,6 @@
 
 package io.infinitic.tests.workflows
 
-import io.infinitic.avro.taskManager.data.AvroTaskStatus
 import io.infinitic.tests.workflows.inMemory.InMemoryDispatcherTest
 import io.infinitic.tests.workflows.inMemory.InMemoryStorageTest
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
@@ -37,19 +36,13 @@ import io.infinitic.tests.workflows.samples.WorkflowBImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
-import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
-import org.slf4j.Logger
-
-private val mockLogger = mockk<Logger>(relaxed = true)
 
 private val internalStorage = inMemory()
 private val storage = InMemoryStorageTest(internalStorage)
 private val dispatcher = InMemoryDispatcherTest(storage)
 private val client = dispatcher.client
 private val worker = dispatcher.worker
-
-private lateinit var status: AvroTaskStatus
 
 class WorkflowIntegrationTests : StringSpec({
     worker.register<TaskA> { TaskAImpl() }
@@ -270,7 +263,7 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe true
+        dispatcher.workflowOutput shouldBe "ac"
     }
 
     "Check prop2" {
@@ -282,7 +275,7 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe true
+        dispatcher.workflowOutput shouldBe "acbd"
     }
 
     "Check prop3" {

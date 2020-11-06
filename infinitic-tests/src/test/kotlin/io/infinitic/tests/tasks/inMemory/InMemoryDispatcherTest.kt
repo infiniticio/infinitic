@@ -27,22 +27,21 @@ import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
 import io.infinitic.client.Client
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.engine.taskManager.engines.MonitoringGlobal
-import io.infinitic.engine.taskManager.engines.MonitoringPerName
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
 import io.infinitic.engine.taskManager.engines.TaskEngine
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
+import io.infinitic.storage.api.Flushable
 import io.infinitic.worker.Worker
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 class InMemoryDispatcherTest(storage: TaskStateStorage) : InMemoryDispatcher() {
     val client = Client(this)
     val worker = Worker(this)
-    val taskEngine = TaskEngine(storage, this)
-    val monitoringPerName = MonitoringPerName(storage, this)
-    val monitoringGlobal = MonitoringGlobal(storage)
+    private val taskEngine = TaskEngine(storage, this)
+    private val monitoringPerName = MonitoringPerName(storage, this)
+    private val monitoringGlobal = MonitoringGlobal(storage)
 
-    var taskStatus = TaskStatus.RUNNING_OK
+    var taskStatus : TaskStatus? = null
 
     init {
         taskEngineHandle = {
@@ -63,5 +62,9 @@ class InMemoryDispatcherTest(storage: TaskStateStorage) : InMemoryDispatcher() {
         workerHandle = {
             worker.handle(it)
         }
+    }
+
+    fun reset() {
+        taskStatus = null
     }
 }

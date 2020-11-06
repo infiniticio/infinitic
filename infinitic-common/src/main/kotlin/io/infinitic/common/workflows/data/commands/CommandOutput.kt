@@ -23,8 +23,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -33,16 +32,16 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = CommandOutputSerializer::class)
-data class CommandOutput(override val serializedData: SerializedData) : Data(serializedData)  {
+data class CommandOutput(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
         fun from(data: Any?) = CommandOutput(SerializedData.from(data))
     }
 }
 
 object CommandOutputSerializer : KSerializer<CommandOutput> {
-    override val descriptor: SerialDescriptor =  SerializedData.serializer().descriptor
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
     override fun serialize(encoder: Encoder, value: CommandOutput) {
-        SerializedData.serializer().serialize(encoder,  value.serializedData)
+        SerializedData.serializer().serialize(encoder, value.serializedData)
     }
     override fun deserialize(decoder: Decoder) =
         CommandOutput(SerializedData.serializer().deserialize(decoder))

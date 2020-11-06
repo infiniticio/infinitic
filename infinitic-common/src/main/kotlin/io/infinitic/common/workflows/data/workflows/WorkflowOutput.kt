@@ -23,7 +23,7 @@
 
 package io.infinitic.common.workflows.data.workflows
 
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -39,9 +39,9 @@ data class WorkflowOutput(override val serializedData: SerializedData) : Data(se
 }
 
 object WorkflowOutputSerializer : KSerializer<WorkflowOutput> {
-    override val descriptor: SerialDescriptor =  SerializedData.serializer().descriptor
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
     override fun serialize(encoder: Encoder, value: WorkflowOutput) {
-        SerializedData.serializer().serialize(encoder,  value.serializedData)
+        SerializedData.serializer().serialize(encoder, value.serializedData)
     }
     override fun deserialize(decoder: Decoder) =
         WorkflowOutput(SerializedData.serializer().deserialize(decoder))

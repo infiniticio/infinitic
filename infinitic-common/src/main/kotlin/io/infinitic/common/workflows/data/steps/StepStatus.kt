@@ -23,36 +23,26 @@
 
 package io.infinitic.common.workflows.data.steps
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import kotlinx.serialization.Serializable
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "status")
-@JsonSubTypes(
-    JsonSubTypes.Type(value = StepStatusOngoing::class, name = "ONGOING"),
-    JsonSubTypes.Type(value = StepStatusCompleted::class, name = "COMPLETED"),
-    JsonSubTypes.Type(value = StepStatusCanceled::class, name = "CANCELED")
-)
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 sealed class StepStatus
 
+@Serializable
 object StepStatusOngoing : StepStatus() {
     // as we can not define a data class without parameter, we add manually the equals func
     override fun equals(other: Any?) = javaClass == other?.javaClass
 }
 
+@Serializable
 data class StepStatusCompleted(
-    @JsonProperty("result")
     val completionResult: StepOutput,
-    @JsonProperty("workflowMessageIndex")
     val completionWorkflowTaskIndex: WorkflowTaskIndex
 ) : StepStatus()
 
+@Serializable
 data class StepStatusCanceled(
-    @JsonProperty("result")
     val cancellationResult: StepOutput,
-    @JsonProperty("workflowMessageIndex")
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
 ) : StepStatus()

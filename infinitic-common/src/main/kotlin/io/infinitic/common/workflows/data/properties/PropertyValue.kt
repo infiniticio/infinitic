@@ -23,7 +23,7 @@
 
 package io.infinitic.common.workflows.data.properties
 
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.bases.Data
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -32,7 +32,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = PropertyValueSerializer::class)
-data class PropertyValue(override val serializedData: SerializedData) : Data(serializedData)  {
+data class PropertyValue(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
         fun from(data: Any?) = PropertyValue(SerializedData.from(data))
     }
@@ -41,9 +41,9 @@ data class PropertyValue(override val serializedData: SerializedData) : Data(ser
 }
 
 object PropertyValueSerializer : KSerializer<PropertyValue> {
-    override val descriptor: SerialDescriptor =  SerializedData.serializer().descriptor
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
     override fun serialize(encoder: Encoder, value: PropertyValue) {
-        SerializedData.serializer().serialize(encoder,  value.serializedData)
+        SerializedData.serializer().serialize(encoder, value.serializedData)
     }
     override fun deserialize(decoder: Decoder) =
         PropertyValue(SerializedData.serializer().deserialize(decoder))

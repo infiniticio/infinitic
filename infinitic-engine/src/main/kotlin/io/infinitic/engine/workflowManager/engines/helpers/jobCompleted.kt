@@ -54,7 +54,7 @@ suspend fun jobCompleted(
         .find { it.isTerminatedBy(pastCommand) }
         ?.also {
             // update pastStep with a copy (!) of current properties and anticipated workflowTaskIndex
-            it.propertiesNameHashAtTermination = state.currentPropertiesNameHash.copy()
+            it.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
             it.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
             // dispatch a new workflowTask
             dispatchWorkflowTask(dispatcher, state, methodRun, it.stepPosition)

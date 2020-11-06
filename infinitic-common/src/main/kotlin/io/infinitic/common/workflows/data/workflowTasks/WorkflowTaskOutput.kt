@@ -30,7 +30,9 @@ import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class WorkflowTaskOutput(
     val workflowId: WorkflowId,
     val methodRunId: MethodRunId,

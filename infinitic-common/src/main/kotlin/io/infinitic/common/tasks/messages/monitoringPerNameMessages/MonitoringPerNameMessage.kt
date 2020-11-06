@@ -28,9 +28,8 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
 import kotlinx.serialization.Serializable
 
-
 @Serializable
-sealed class MonitoringPerNameMessage  {
+sealed class MonitoringPerNameMessage {
     abstract val taskName: TaskName
 }
 

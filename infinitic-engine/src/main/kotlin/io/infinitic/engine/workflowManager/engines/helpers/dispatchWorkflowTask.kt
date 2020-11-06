@@ -24,6 +24,7 @@
 package io.infinitic.engine.workflowManager.engines.helpers
 
 import io.infinitic.common.data.interfaces.inc
+import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
@@ -65,10 +66,14 @@ suspend fun dispatchWorkflowTask(
     // defines workflow task
     val workflowTaskId = WorkflowTaskId()
 
+    println("a")
+    println(workflowTaskInput)
+    println(MethodInput.from(workflowTaskInput))
+    println("b")
     val workflowTask = DispatchTask(
         taskId = TaskId("$workflowTaskId"),
         taskName = TaskName(WorkflowTask::class.java.name),
-        methodName = MethodName(Constants.WORKFLOW_TASK_METHOD),
+        methodName = MethodName(WorkflowTask.DEFAULT_METHOD),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskInput::class.java.name)),
         methodInput = MethodInput.from(workflowTaskInput),
         taskOptions = TaskOptions(),

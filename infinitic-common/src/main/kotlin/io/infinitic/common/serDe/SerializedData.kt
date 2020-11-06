@@ -21,13 +21,21 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.data
+package io.infinitic.common.serDe
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.common.json.Json
+import io.infinitic.common.json.Json as JsonJackson
+import io.infinitic.common.serDe.kotlin.getKSerializerOrNull
 import io.infinitic.common.tasks.exceptions.MissingMetaJavaClassDuringDeserialization
-import io.infinitic.common.tasks.exceptions.UnknownReturnClassDuringDeserialization
+import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringDeserialization
+import io.infinitic.common.tasks.exceptions.ExceptionDuringJsonDeserialization
+import io.infinitic.common.tasks.exceptions.ExceptionDuringKotlinDeserialization
+import io.infinitic.common.tasks.exceptions.SerializerNotFoundDuringDeserialization
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json as JsonKotlin
 import org.apache.avro.specific.SpecificRecordBase
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -36,8 +44,7 @@ import java.security.MessageDigest
 data class SerializedData(
     var bytes: ByteArray,
     var type: SerializedDataType,
-//    val meta: Map<String, ByteArray> = mapOf()
-    val meta: Map<String, String> = mapOf()
+    val meta: Map<String, ByteArray> = mapOf()
 ) {
     companion object {
         // meta key containing the name of the serialized java class
@@ -49,8 +56,7 @@ data class SerializedData(
         fun from(value: Any?): SerializedData {
             val bytes: ByteArray
             val type: SerializedDataType
-//            val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name.toByteArray(charset = Charsets.UTF_8))
-            val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name)
+            val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name.toByteArray(charset = Charsets.UTF_8))
 
             when (value) {
                 null -> {
@@ -62,42 +68,44 @@ data class SerializedData(
                     type = SerializedDataType.BYTES
                 }
                 is SpecificRecordBase -> {
-                    bytes = AvroSerDe.serializeToByteArray(value)
-                    type = SerializedDataType.AVRO
+                    bytes = toAvroJavaByteArray(value)
+                    type = SerializedDataType.AVRO_JAVA
                 }
                 else -> {
-                    bytes = Json.stringify(value).toByteArray(charset = Charsets.UTF_8)
-                    type = SerializedDataType.JSON
+                    val serializer = getKSerializerOrNull(value::class.java)
+                    if (serializer == null) {
+                        bytes = toJsonJacksonByteArray(value)
+                        type = SerializedDataType.JSON_JACKSON
+                    } else {
+                        bytes = toJsonKotlinByteArray(value, serializer)
+                        type = SerializedDataType.JSON_KOTLIN
+                    }
                 }
             }
             return SerializedData(bytes, type, meta)
         }
-    }
 
-    /**
-     * @return deserialized value
-     * @param
-     */
-    fun deserialize(klass: Class<*>) = when (type) {
-        SerializedDataType.NULL -> null
-        SerializedDataType.BYTES -> bytes
-        SerializedDataType.JSON -> fromJson(klass)
-        SerializedDataType.AVRO -> fromAvro(klass)
-        SerializedDataType.CUSTOM -> throw RuntimeException("Can't deserialize data with CUSTOM serialization")
+        private fun toJsonJacksonByteArray(value: Any): ByteArray =
+            JsonJackson.stringify(value).toByteArray(charset = Charsets.UTF_8)
+
+        private fun <T : Any> toJsonKotlinByteArray(value: T, serializer: KSerializer<T>): ByteArray =
+            JsonKotlin.encodeToString(serializer, value).toByteArray(charset = Charsets.UTF_8)
+
+        private fun toAvroJavaByteArray(value: SpecificRecordBase): ByteArray =
+            AvroSerDe.serializeToByteArray(value)
     }
 
     /**
      * @return deserialized value
      */
     fun deserialize(): Any? {
-//        val klassName = meta[META_JAVA_CLASS]?.let { String(it, charset = Charsets.UTF_8) }
-        val klassName = meta[META_JAVA_CLASS]?.let { it }
+        val klassName = meta[META_JAVA_CLASS]?.let { String(it, charset = Charsets.UTF_8) }
         if (klassName === null) throw MissingMetaJavaClassDuringDeserialization(this)
 
         val klass = try {
             Class.forName(klassName)
         } catch (e: ClassNotFoundException) {
-            throw UnknownReturnClassDuringDeserialization(this, klassName)
+            throw ClassNotFoundDuringDeserialization(this, klassName)
         }
 
         return deserialize(klass)
@@ -129,16 +137,33 @@ data class SerializedData(
         return bytes.contentHashCode()
     }
 
-    private fun <T : Any> fromJson(klass: Class<out T>): T = Json.parse(String(bytes, Charsets.UTF_8), klass)
+    private fun deserialize(klass: Class<*>) = when (type) {
+        SerializedDataType.NULL -> null
+        SerializedDataType.BYTES -> bytes
+        SerializedDataType.JSON_JACKSON -> fromJsonJackson(klass)
+        SerializedDataType.JSON_KOTLIN -> fromJsonKotlin(klass)
+        SerializedDataType.AVRO_JAVA -> fromAvroJava(klass)
+        SerializedDataType.CUSTOM -> throw RuntimeException("Can't deserialize data with CUSTOM serialization")
+    }
+
+    private fun <T : Any> fromJsonJackson(klass: Class<out T>): T = try {
+        JsonJackson.parse(String(bytes, Charsets.UTF_8), klass)
+    } catch (e: JsonProcessingException) {
+        throw ExceptionDuringJsonDeserialization(klass.name, cause = e)
+    }
+
+    private fun <T : Any> fromJsonKotlin(klass: Class<T>): T {
+        val serializer = getKSerializerOrNull(klass) ?: throw SerializerNotFoundDuringDeserialization(klass.name)
+
+        return try {
+            JsonKotlin.decodeFromString(serializer, String(bytes, Charsets.UTF_8))
+        } catch (e: SerializationException) {
+            throw ExceptionDuringKotlinDeserialization(klass.name, cause = e)
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Any> fromAvro(klass: Class<out T>) = AvroSerDe.deserializeFromByteArray(bytes, klass as Class<out SpecificRecordBase>)
-}
-
-enum class SerializedDataType {
-    NULL,
-    BYTES,
-    JSON,
-    AVRO,
-    CUSTOM
+    private fun <T : Any> fromAvroJava(klass: Class<out T>): SpecificRecordBase {
+        return AvroSerDe.deserializeFromByteArray(bytes, klass as Class<out SpecificRecordBase>)
+    }
 }

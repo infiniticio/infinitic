@@ -23,14 +23,14 @@
 
 package io.infinitic.engine.pulsar.main
 
-import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.engine.pulsar.extensions.newMonitoringGlobalConsumer
 import io.infinitic.engine.pulsar.extensions.newMonitoringPerNameConsumer
 import io.infinitic.engine.pulsar.extensions.newTaskEngineConsumer
 import io.infinitic.engine.pulsar.extensions.newWorkflowEngineConsumer
 import io.infinitic.engine.pulsar.extensions.startConsumer
-import io.infinitic.engine.taskManager.engines.MonitoringGlobal
-import io.infinitic.engine.taskManager.engines.MonitoringPerName
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
 import io.infinitic.engine.taskManager.storage.TaskStateStorage
 import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine

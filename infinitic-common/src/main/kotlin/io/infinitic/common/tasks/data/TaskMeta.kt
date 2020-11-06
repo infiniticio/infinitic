@@ -23,7 +23,7 @@
 
 package io.infinitic.common.tasks.data
 
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.bases.Meta
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -46,12 +46,9 @@ operator fun TaskMeta.plus(other: Pair<String, Any?>) =
 operator fun TaskMeta.minus(other: String) =
     TaskMeta(this.serialized - other)
 
-
 object TaskMetaSerializer : KSerializer<TaskMeta> {
-    override val descriptor: SerialDescriptor =  MapSerializer(String.serializer(),SerializedData.serializer()).descriptor
-    override fun serialize(encoder: Encoder, value: TaskMeta) {
-        MapSerializer(String.serializer(),SerializedData.serializer()).serialize(encoder,  value.serialized)
-    }
-    override fun deserialize(decoder: Decoder) =
-        TaskMeta(MapSerializer(String.serializer(),SerializedData.serializer()).deserialize(decoder))
+    val ser = MapSerializer(String.serializer(), SerializedData.serializer())
+    override val descriptor: SerialDescriptor = ser.descriptor
+    override fun serialize(encoder: Encoder, value: TaskMeta) { ser.serialize(encoder, value.serialized) }
+    override fun deserialize(decoder: Decoder) = TaskMeta(ser.deserialize(decoder))
 }

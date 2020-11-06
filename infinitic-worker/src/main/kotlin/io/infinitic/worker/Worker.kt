@@ -25,7 +25,7 @@ package io.infinitic.worker
 
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.Constants
-import io.infinitic.common.tasks.avro.AvroConverter
+import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
@@ -128,11 +128,12 @@ open class Worker(val dispatcher: Dispatcher) {
 
             val taskAttemptContext = TaskAttemptContext(
                 worker = worker,
-                taskId = msg.taskId,
-                taskAttemptId = msg.taskAttemptId,
-                taskAttemptIndex = msg.taskAttemptIndex,
-                taskAttemptRetry = msg.taskAttemptRetry,
-                taskMeta = msg.taskMeta,
+                taskId = "${msg.taskId}",
+                taskAttemptId = "${msg.taskAttemptId}",
+                taskRetry = msg.taskRetry.int,
+                taskAttemptRetry = msg.taskAttemptRetry.int,
+                lastTaskAttemptError = msg.lastTaskAttemptError?.get(),
+                taskMeta = msg.taskMeta.get(),
                 taskOptions = msg.taskOptions
             )
 
@@ -154,17 +155,16 @@ open class Worker(val dispatcher: Dispatcher) {
                 } else {
                     executeTask(method, task, parameters)
                 }
-
                 sendTaskCompleted(msg, output)
             } catch (e: InvocationTargetException) {
-                // println(e.cause?.cause?.stackTraceToString())
+//                println(e.cause?.cause?.stackTraceToString())
                 // update context with the cause (to be potentially used in getRetryDelay method)
-                taskAttemptContext.exception = e.cause
+                taskAttemptContext.currentTaskAttemptError = e.cause
                 // retrieve delay before retry
                 getRetryDelayAndFailTask(task, msg, taskAttemptContext)
             } catch (e: TimeoutCancellationException) {
                 // update context with the cause (to be potentially used in getRetryDelay method)
-                taskAttemptContext.exception = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
+                taskAttemptContext.currentTaskAttemptError = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
                 // returning a timeout
                 getRetryDelayAndFailTask(task, msg, taskAttemptContext)
             } catch (e: Exception) {
@@ -216,7 +216,7 @@ open class Worker(val dispatcher: Dispatcher) {
         when (val delay = getDelayBeforeRetry(task)) {
             is RetryDelayRetrieved -> {
                 // returning the original cause
-                sendTaskFailed(msg, context.exception, delay.value)
+                sendTaskFailed(msg, context.currentTaskAttemptError, delay.value)
             }
             is RetryDelayFailed -> {
                 // returning the error in getRetryDelay, without retry
@@ -231,7 +231,7 @@ open class Worker(val dispatcher: Dispatcher) {
         val method = if (parameterTypes == null) {
             getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodInput.size)
         } else {
-            getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types!!)
+            getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types)
         }
 
         return TaskCommand(task, method, msg.methodInput.get(), msg.taskOptions)
@@ -263,7 +263,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskAttemptIndex = msg.taskAttemptIndex
+            taskRetry = msg.taskRetry
         )
 
         dispatcher.toTaskEngine(taskAttemptStarted)
@@ -274,7 +274,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskAttemptIndex = msg.taskAttemptIndex,
+            taskRetry = msg.taskRetry,
             taskAttemptDelayBeforeRetry = delay,
             taskAttemptError = TaskAttemptError.from(error)
         )
@@ -287,7 +287,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskAttemptIndex = msg.taskAttemptIndex,
+            taskRetry = msg.taskRetry,
             taskOutput = MethodOutput.from(output)
         )
 

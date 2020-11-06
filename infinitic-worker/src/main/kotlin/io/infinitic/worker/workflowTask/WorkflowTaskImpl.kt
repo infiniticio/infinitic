@@ -76,7 +76,7 @@ class WorkflowTaskImpl : WorkflowTask {
         )
     }
 
-    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes.types == null) {
+    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes == null) {
         getMethodPerNameAndParameterCount(
             workflow,
             "${methodRun.methodName}",
@@ -86,7 +86,7 @@ class WorkflowTaskImpl : WorkflowTask {
         getMethodPerNameAndParameterTypes(
             workflow,
             "${methodRun.methodName}",
-            methodRun.methodParameterTypes.types!!
+            methodRun.methodParameterTypes!!.types
         )
     }
 }
