@@ -287,7 +287,7 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe true
+        dispatcher.workflowOutput shouldBe "acbd"
     }
 
     "Check prop4" {
@@ -299,7 +299,7 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe true
+        dispatcher.workflowOutput shouldBe "acd"
     }
 
     "Check prop5" {
@@ -311,7 +311,7 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe true
+        dispatcher.workflowOutput shouldBe "adbc"
     }
 
     "Check prop6" {
@@ -323,6 +323,6 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         storage.isTerminated(workflowInstance) shouldBe true
         // checks number of task processing
-        dispatcher.workflowOutput shouldBe true
+        dispatcher.workflowOutput shouldBe "abab"
     }
 })

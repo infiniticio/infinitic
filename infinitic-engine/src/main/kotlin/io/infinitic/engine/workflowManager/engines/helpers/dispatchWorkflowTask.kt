@@ -66,10 +66,6 @@ suspend fun dispatchWorkflowTask(
     // defines workflow task
     val workflowTaskId = WorkflowTaskId()
 
-    println("a")
-    println(workflowTaskInput)
-    println(MethodInput.from(workflowTaskInput))
-    println("b")
     val workflowTask = DispatchTask(
         taskId = TaskId("$workflowTaskId"),
         taskName = TaskName(WorkflowTask::class.java.name),

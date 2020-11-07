@@ -69,10 +69,19 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
         val hash = it.value.hash()
         if (it.key !in state.currentPropertiesNameHash.keys || hash != state.currentPropertiesNameHash[it.key]) {
             // new or updated property
-            state.currentPropertiesNameHash + (it.key to hash)
+            state.currentPropertiesNameHash[it.key] = hash
         }
         if (hash !in state.propertiesHashValue.keys) {
             state.propertiesHashValue[hash] = it.value
+        }
+
+        println("Properties Name:")
+        state.currentPropertiesNameHash.map {
+            println("key=${it.key} value=${it.value}")
+        }
+        println("Properties Value:")
+        state.propertiesHashValue.map {
+            println("key=${it.key} value=${it.value.get()}")
         }
     }
 

@@ -24,17 +24,17 @@
 package io.infinitic.tests.workflows.inMemory
 
 import io.infinitic.client.Client
-import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
 import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
 import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
 import io.infinitic.worker.Worker
 import io.infinitic.common.workflows.messages.WorkflowCompleted
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
 import io.infinitic.engine.workflowManager.engines.WorkflowEngine
 import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
+import kotlinx.serialization.json.Json
 
 // class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryAvroDispatcher() {
 class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher() {
@@ -50,8 +50,10 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
 
     init {
         workflowEngineHandle = {
-//            println(it::class.java.name)
-//            println(Json.stringify(it, true))
+            println()
+            println("============================================================")
+            println(it::class.java.name)
+            println(Json { prettyPrint = true }.encodeToString(WorkflowEngineMessage.serializer(), it))
             workflowEngine.handle(it)
 
             when (it) {

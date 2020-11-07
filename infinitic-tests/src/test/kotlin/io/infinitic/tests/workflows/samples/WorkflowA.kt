@@ -58,11 +58,11 @@ interface WorkflowA : Workflow {
     fun prop6(): String
 }
 
-class WorkflowAImpl() : WorkflowA {
+class WorkflowAImpl : WorkflowA {
     override lateinit var context: WorkflowTaskContext
     private val taskA = proxy(TaskA::class)
     private val workflowB = proxy(WorkflowB::class)
-    var p1 = ""
+    private var p1 = ""
 
     override fun empty() = "void"
 
@@ -202,7 +202,7 @@ class WorkflowAImpl() : WorkflowA {
     override fun prop1(): String {
         p1 = "a"
 
-        val d = async {
+        async {
             p1 += "b"
         }
         p1 += "c"
@@ -213,7 +213,7 @@ class WorkflowAImpl() : WorkflowA {
     override fun prop2(): String {
         p1 = "a"
 
-        val d = async {
+        async {
             p1 += "b"
         }
         p1 += "c"
@@ -226,7 +226,7 @@ class WorkflowAImpl() : WorkflowA {
     override fun prop3(): String {
         p1 = "a"
 
-        val d = async {
+        async {
             taskA.await(50)
             p1 += "b"
         }
@@ -240,7 +240,7 @@ class WorkflowAImpl() : WorkflowA {
     override fun prop4(): String {
         p1 = "a"
 
-        val d = async {
+        async {
             taskA.await(150)
             p1 += "b"
         }
@@ -277,7 +277,10 @@ class WorkflowAImpl() : WorkflowA {
         }
         d1.await()
         p1 += "a"
-        p1 += d2.result()
+        p1 = d2.result() + p1
+        // unfortunately p1 = p1 + d2.result() would fail the test
+        // because d2.result() updates p1 value too lately in the expression
+        // not sure, how to avoid that
 
         return p1 // should be "abab"
     }
