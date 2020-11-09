@@ -25,11 +25,12 @@ package io.infinitic.engine.tasks.engine
 
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.tasks.data.TaskAttemptError
-import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
 import io.infinitic.common.tasks.messages.taskEngineMessages.CancelTask
 import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
@@ -43,14 +44,22 @@ import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCanceled
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCompleted
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.RunTask
-import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.tasks.states.TaskState
 import io.infinitic.engine.tasks.storage.TaskStateStorage
 
+typealias SendToTaskEngine = suspend (TaskEngineMessage, Float) -> Unit
+typealias SendToMonitoringPerName = suspend (MonitoringPerNameEngineMessage) -> Unit
+typealias SendToWorkers = suspend (WorkerMessage) -> Unit
+
 open class TaskEngine(
     protected val storage: TaskStateStorage,
-    protected val dispatcher: Dispatcher
+    protected val sendToTaskEngine: SendToTaskEngine,
+    protected val sendToMonitoringPerName: SendToMonitoringPerName,
+    protected val sendToWorkers: SendToWorkers,
 ) {
+    lateinit var taskCompletedHook: suspend (_: TaskCompleted) -> Unit
+
     open suspend fun handle(message: TaskEngineMessage) {
         // immediately discard messages that are non managed
         when (message) {
@@ -101,7 +110,7 @@ open class TaskEngine(
                 newStatus = newState.taskStatus
             )
 
-            dispatcher.toMonitoringPerNameEngine(tsc)
+            sendToMonitoringPerName(tsc)
         }
     }
 
@@ -114,7 +123,7 @@ open class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        dispatcher.toTaskEngine(tad)
+        sendToTaskEngine(tad, 0F)
 
         // Delete stored state
         storage.deleteState(state.taskId)
@@ -150,7 +159,7 @@ open class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        dispatcher.toWorkers(rt)
+        sendToWorkers(rt)
 
         // log events
         val tad = TaskAttemptDispatched(
@@ -159,7 +168,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskRetry = state.taskRetry
         )
-        dispatcher.toTaskEngine(tad)
+        sendToTaskEngine(tad, 0F)
 
         return state
     }
@@ -192,7 +201,7 @@ open class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        dispatcher.toWorkers(rt)
+        sendToWorkers(rt)
 
         // log event
         val tad = TaskAttemptDispatched(
@@ -201,7 +210,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskRetry = state.taskRetry
         )
-        dispatcher.toTaskEngine(tad)
+        sendToTaskEngine(tad, 0F)
 
         return state
     }
@@ -226,7 +235,7 @@ open class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        dispatcher.toWorkers(rt)
+        sendToWorkers(rt)
 
         // log event
         val tar = TaskAttemptDispatched(
@@ -235,7 +244,7 @@ open class TaskEngine(
             taskRetry = state.taskRetry,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        dispatcher.toTaskEngine(tar)
+        sendToTaskEngine(tar, 0F)
 
         return state
     }
@@ -250,10 +259,13 @@ open class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        dispatcher.toTaskEngine(tc)
+        sendToTaskEngine(tc, 0F)
 
-        // Delete stored state
+        // delete stored state
         storage.deleteState(state.taskId)
+
+        // run hook if any
+        if (this::taskCompletedHook.isInitialized) taskCompletedHook(tc)
 
         return state
     }
@@ -291,7 +303,7 @@ open class TaskEngine(
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        dispatcher.toTaskEngine(tar, after = delay)
+        sendToTaskEngine(tar, delay)
 
         return state
     }

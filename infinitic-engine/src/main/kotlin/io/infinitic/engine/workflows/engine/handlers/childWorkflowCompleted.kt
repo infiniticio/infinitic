@@ -27,16 +27,19 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.states.WorkflowState
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
+import io.infinitic.engine.workflows.engine.SendToTaskEngine
+import io.infinitic.engine.workflows.engine.SendToWorkflowEngine
 import io.infinitic.engine.workflows.engine.helpers.jobCompleted
-import io.infinitic.messaging.api.dispatcher.Dispatcher
 
 suspend fun childWorkflowCompleted(
-    dispatcher: Dispatcher,
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToTaskEngine: SendToTaskEngine,
     state: WorkflowState,
     msg: ChildWorkflowCompleted
 ) {
     jobCompleted(
-        dispatcher,
+        sendToWorkflowEngine,
+        sendToTaskEngine,
         state,
         msg.methodRunId,
         CommandId(msg.childWorkflowId),

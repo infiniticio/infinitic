@@ -71,7 +71,7 @@ class BinaryDispatcherTests : StringSpec({
         dispatcher.toMonitoringPerNameEngine(msg)
         // then
         coVerify {
-            transport.toMonitoringPerName(ofType())
+            transport.toMonitoringPerNameEngine(ofType())
         }
         confirmVerified(transport)
     }
@@ -82,7 +82,7 @@ class BinaryDispatcherTests : StringSpec({
         dispatcher.toMonitoringGlobalEngine(msg)
         // then
         coVerify {
-            transport.toMonitoringGlobal(ofType())
+            transport.toMonitoringGlobalEngine(ofType())
         }
         confirmVerified(transport)
     }

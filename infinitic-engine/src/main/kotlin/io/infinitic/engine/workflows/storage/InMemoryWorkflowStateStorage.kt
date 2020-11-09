@@ -21,7 +21,7 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.engine.workflows.storages
+package io.infinitic.engine.workflows.storage
 
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.states.WorkflowState

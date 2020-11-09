@@ -23,17 +23,19 @@
 
 package io.infinitic.engine.monitoringPerName.engine
 
-import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
 import io.infinitic.common.tasks.states.MonitoringPerNameState
 import io.infinitic.engine.monitoringPerName.storage.MonitoringPerNameStateStorage
 
+typealias SendToMonitoringGlobal = suspend (MonitoringGlobalMessage) -> Unit
+
 class MonitoringPerNameEngine(
     val storage: MonitoringPerNameStateStorage,
-    val dispatcher: Dispatcher
+    val sendToMonitoringGlobal: SendToMonitoringGlobal
 ) {
     suspend fun handle(message: MonitoringPerNameEngineMessage) {
 
@@ -54,7 +56,7 @@ class MonitoringPerNameEngine(
         if (oldState == null) {
             val tsc = TaskCreated(taskName = message.taskName)
 
-            dispatcher.toMonitoringGlobalEngine(tsc)
+            sendToMonitoringGlobal(tsc)
         }
     }
 

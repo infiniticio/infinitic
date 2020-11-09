@@ -30,10 +30,12 @@ import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.states.WorkflowState
-import io.infinitic.messaging.api.dispatcher.Dispatcher
+import io.infinitic.engine.workflows.engine.SendToTaskEngine
+import io.infinitic.engine.workflows.engine.SendToWorkflowEngine
 
 suspend fun jobCompleted(
-    dispatcher: Dispatcher,
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToTaskEngine: SendToTaskEngine,
     state: WorkflowState,
     methodRunId: MethodRunId,
     commandId: CommandId,
@@ -57,7 +59,13 @@ suspend fun jobCompleted(
             it.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
             it.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
             // dispatch a new workflowTask
-            dispatchWorkflowTask(dispatcher, state, methodRun, it.stepPosition)
+            dispatchWorkflowTask(
+                sendToWorkflowEngine,
+                sendToTaskEngine,
+                state,
+                methodRun,
+                it.stepPosition
+            )
             // keep this command as we could have another pastStep solved by it
             state.bufferedCommands.add(pastCommand.commandId)
         }

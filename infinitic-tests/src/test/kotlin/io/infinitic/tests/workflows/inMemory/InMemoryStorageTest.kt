@@ -27,8 +27,8 @@ import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.engine.tasks.storage.TaskStateStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.engine.tasks.storage.TaskStateInMemoryStorage
-import io.infinitic.engine.workflows.storages.InMemoryWorkflowStateStorage
-import io.infinitic.engine.workflows.storages.WorkflowStateStorage
+import io.infinitic.engine.workflows.storage.InMemoryWorkflowStateStorage
+import io.infinitic.engine.workflows.storage.WorkflowStateStorage
 import io.infinitic.storage.api.Flushable
 import io.infinitic.storage.api.KeyValueStorage
 

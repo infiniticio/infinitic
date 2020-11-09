@@ -35,6 +35,7 @@ import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 
 class BinaryDispatcher(private val transport: BinaryTransport) : Dispatcher {
     override suspend fun toWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
+
         msg
             .let { WorkflowAvroConverter.toWorkflowEngine(it) }
             .let { AvroSerDe.serialize(it) }
@@ -52,14 +53,14 @@ class BinaryDispatcher(private val transport: BinaryTransport) : Dispatcher {
         msg
             .let { TaskAvroConverter.toMonitoringPerName(it) }
             .let { AvroSerDe.serialize(it) }
-            .let { transport.toMonitoringPerName(it) }
+            .let { transport.toMonitoringPerNameEngine(it) }
     }
 
     override suspend fun toMonitoringGlobalEngine(msg: MonitoringGlobalMessage) {
         msg
             .let { TaskAvroConverter.toMonitoringGlobal(it) }
             .let { AvroSerDe.serialize(it) }
-            .let { transport.toMonitoringGlobal(it) }
+            .let { transport.toMonitoringGlobalEngine(it) }
     }
 
     override suspend fun toWorkers(msg: WorkerMessage) {

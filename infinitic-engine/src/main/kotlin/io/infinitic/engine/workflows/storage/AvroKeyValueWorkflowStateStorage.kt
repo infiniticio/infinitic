@@ -21,7 +21,7 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.engine.workflows.storages
+package io.infinitic.engine.workflows.storage
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.storage.api.KeyValueStorage

@@ -26,7 +26,7 @@ package io.infinitic.engine.pulsar.main
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
 import io.infinitic.engine.tasks.storage.TaskStateKeyValueStorage
-import io.infinitic.engine.workflows.storages.AvroKeyValueWorkflowStateStorage
+import io.infinitic.engine.workflows.storage.AvroKeyValueWorkflowStateStorage
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.pulsar.PulsarTransport
 import io.infinitic.storage.inmemory.inMemory

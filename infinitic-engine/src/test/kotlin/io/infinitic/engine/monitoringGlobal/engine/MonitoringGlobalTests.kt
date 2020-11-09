@@ -21,18 +21,8 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.messaging.api.dispatcher.transport
+package io.infinitic.engine.monitoringGlobal.engine
 
-import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
-import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
-import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
-import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
-
-interface AvroTransport {
-    suspend fun toWorkflowEngine(msg: AvroEnvelopeForWorkflowEngine, after: Float = 0f)
-    suspend fun toTaskEngine(msg: AvroEnvelopeForTaskEngine, after: Float = 0f)
-    suspend fun toMonitoringGlobal(msg: AvroEnvelopeForMonitoringGlobal)
-    suspend fun toMonitoringPerName(msg: AvroEnvelopeForMonitoringPerName)
-    suspend fun toWorkers(msg: AvroEnvelopeForWorker)
+class MonitoringGlobalTests {
+    // TODO Add tests for MonitoringGlobalEngine
 }

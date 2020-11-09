@@ -28,7 +28,7 @@ import io.infinitic.messaging.pulsar.PulsarTransport
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
 import io.infinitic.common.workflows.avro.AvroConverter
 import io.infinitic.engine.workflows.engine.WorkflowEngine
-import io.infinitic.engine.workflows.storages.AvroKeyValueWorkflowStateStorage
+import io.infinitic.engine.workflows.storage.AvroKeyValueWorkflowStateStorage
 import io.infinitic.avro.workflowManager.messages.envelopes.AvroEnvelopeForWorkflowEngine
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context

@@ -34,7 +34,7 @@ import io.infinitic.engine.monitoringPerName.engine.MonitoringPerNameEngine
 import io.infinitic.engine.tasks.storage.TaskStateStorage
 import io.infinitic.engine.workflows.engine.ForWorkflowTaskEngine
 import io.infinitic.engine.workflows.engine.WorkflowEngine
-import io.infinitic.engine.workflows.storages.WorkflowStateStorage
+import io.infinitic.engine.workflows.storage.WorkflowStateStorage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

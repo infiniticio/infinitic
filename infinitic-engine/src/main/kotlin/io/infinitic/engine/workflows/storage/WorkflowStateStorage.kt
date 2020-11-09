@@ -21,8 +21,14 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.engine.tasks.engine
+package io.infinitic.engine.workflows.storage
 
-class MonitoringGlobalTests {
-    // TODO Add tests for MonitoringGlobalEngine
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.states.WorkflowState
+
+interface WorkflowStateStorage {
+    fun createState(workflowId: WorkflowId, state: WorkflowState)
+    fun getState(workflowId: WorkflowId): WorkflowState?
+    fun updateState(workflowId: WorkflowId, state: WorkflowState)
+    fun deleteState(workflowId: WorkflowId)
 }

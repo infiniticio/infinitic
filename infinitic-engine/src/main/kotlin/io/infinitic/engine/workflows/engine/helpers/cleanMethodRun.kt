@@ -37,8 +37,6 @@ fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
 
         removeUnusedPropertyHash(state)
     }
-
-
 }
 
 private fun removeUnusedPropertyHash(state: WorkflowState) {

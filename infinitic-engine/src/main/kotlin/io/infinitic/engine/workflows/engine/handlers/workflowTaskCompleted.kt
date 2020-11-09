@@ -24,16 +24,15 @@
 package io.infinitic.engine.workflows.engine.handlers
 
 import io.infinitic.common.data.interfaces.plus
-import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
-import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
+import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.DispatchReceiver
-import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 import io.infinitic.common.workflows.data.commands.DispatchTimer
 import io.infinitic.common.workflows.data.commands.EndAsync
 import io.infinitic.common.workflows.data.commands.EndInlineTask
@@ -42,22 +41,31 @@ import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.StartAsync
 import io.infinitic.common.workflows.data.commands.StartInlineTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
+import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.common.workflows.messages.WorkflowCompleted
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.states.WorkflowState
-import io.infinitic.common.workflows.data.steps.PastStep
-import io.infinitic.common.workflows.messages.DispatchWorkflow
+import io.infinitic.engine.workflows.engine.SendToTaskEngine
+import io.infinitic.engine.workflows.engine.SendToWorkflowEngine
 import io.infinitic.engine.workflows.engine.WorkflowEngine
 import io.infinitic.engine.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.engine.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.engine.workflows.engine.helpers.getMethodRun
 import io.infinitic.engine.workflows.engine.helpers.getPastCommand
 import io.infinitic.engine.workflows.engine.helpers.jobCompleted
+import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
-suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, msg: WorkflowTaskCompleted) {
+suspend fun workflowTaskCompleted(
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToTaskEngine: SendToTaskEngine,
+    state: WorkflowState,
+    msg: WorkflowTaskCompleted
+) {
     // remove currentWorkflowTaskId
     state.runningWorkflowTaskId = null
 
@@ -88,10 +96,10 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
     // add new commands to past commands
     workflowTaskOutput.newCommands.map {
         when (it.command) {
-            is DispatchTaskInWorkflow -> dispatchTask(dispatcher, methodRun, it, state)
-            is DispatchChildWorkflow -> dispatchChildWorkflow(dispatcher, methodRun, it, state)
+            is DispatchTaskInWorkflow -> dispatchTask(sendToTaskEngine, methodRun, it, state)
+            is DispatchChildWorkflow -> dispatchChildWorkflow(sendToWorkflowEngine, methodRun, it, state)
             is StartAsync -> startAsync(methodRun, it, state)
-            is EndAsync -> endAsync(dispatcher, methodRun, it, state)
+            is EndAsync -> endAsync(sendToWorkflowEngine, sendToTaskEngine, methodRun, it, state)
             is StartInlineTask -> startInlineTask(methodRun, it)
             is EndInlineTask -> endInlineTask(methodRun, it, state)
             is DispatchTimer -> TODO()
@@ -118,23 +126,25 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
 
         // if this is the main method, it means the workflow is completed
         if (methodRun.isMain) {
-            dispatcher.toWorkflowEngine(
+            sendToWorkflowEngine(
                 WorkflowCompleted(
                     workflowId = state.workflowId,
                     workflowOutput = methodRun.methodOutput!!
-                )
+                ),
+                0F
             )
         }
 
         // tell parent workflow if any
         methodRun.parentWorkflowId?.let {
-            dispatcher.toWorkflowEngine(
+            sendToWorkflowEngine(
                 ChildWorkflowCompleted(
                     workflowId = it,
                     methodRunId = methodRun.parentMethodRunId!!,
                     childWorkflowId = state.workflowId,
                     childWorkflowOutput = workflowTaskOutput.methodOutput!!
-                )
+                ),
+                0F
             )
         }
     }
@@ -150,7 +160,13 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
                 pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap()
                 pastCommand.workflowTaskIndexAtStart = state.workflowTaskIndex + 1
                 // dispatch a new workflowTask
-                dispatchWorkflowTask(dispatcher, state, methodRun, pastCommand.commandPosition)
+                dispatchWorkflowTask(
+                    sendToWorkflowEngine,
+                    sendToTaskEngine,
+                    state,
+                    methodRun,
+                    pastCommand.commandPosition
+                )
                 // removes this command
                 state.bufferedCommands.removeAt(0)
             }
@@ -170,7 +186,13 @@ suspend fun workflowTaskCompleted(dispatcher: Dispatcher, state: WorkflowState, 
                     pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
                     pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
                     // dispatch a new workflowTask
-                    dispatchWorkflowTask(dispatcher, state, methodRun, pastStep.stepPosition)
+                    dispatchWorkflowTask(
+                        sendToWorkflowEngine,
+                        sendToTaskEngine,
+                        state,
+                        methodRun,
+                        pastStep.stepPosition
+                    )
                     // state.bufferedWorkflowTasks is untouched as we could have another pastStep solved by this command
                 }
             }
@@ -188,7 +210,13 @@ private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: Work
     state.bufferedCommands.add(pastCommand.commandId)
 }
 
-private suspend fun endAsync(dispatcher: Dispatcher, methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
+private suspend fun endAsync(
+    sendToWorkflowEngine: suspend (_: WorkflowEngineMessage, delay: Float) -> Unit,
+    sendToTaskEngine: suspend (_: TaskEngineMessage) -> Unit,
+    methodRun: MethodRun,
+    newCommand: NewCommand,
+    state: WorkflowState
+) {
     val command = newCommand.command as EndAsync
     // look for previous Start Async command
     val pastStartAsync = methodRun.pastCommands.first {
@@ -196,7 +224,8 @@ private suspend fun endAsync(dispatcher: Dispatcher, methodRun: MethodRun, newCo
     }
 
     jobCompleted(
-        dispatcher,
+        sendToWorkflowEngine,
+        sendToTaskEngine,
         state,
         methodRun.methodRunId,
         pastStartAsync.commandId,
@@ -221,7 +250,12 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
     )
 }
 
-private suspend fun dispatchTask(dispatcher: Dispatcher, methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
+private suspend fun dispatchTask(
+    sendToTaskEngine: suspend (_: TaskEngineMessage) -> Unit,
+    methodRun: MethodRun,
+    newCommand: NewCommand,
+    state: WorkflowState
+) {
     val command = newCommand.command as DispatchTaskInWorkflow
     // send task to task engine
     val msg = DispatchTask(
@@ -234,12 +268,17 @@ private suspend fun dispatchTask(dispatcher: Dispatcher, methodRun: MethodRun, n
             + (WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}")
             + (WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}")
     )
-    dispatcher.toTaskEngine(msg)
+    sendToTaskEngine(msg)
 
     addPastCommand(methodRun, newCommand)
 }
 
-private suspend fun dispatchChildWorkflow(dispatcher: Dispatcher, methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
+private suspend fun dispatchChildWorkflow(
+    sendToWorkflowEngine: suspend (_: WorkflowEngineMessage, delay: Float) -> Unit,
+    methodRun: MethodRun,
+    newCommand: NewCommand,
+    state: WorkflowState
+) {
     val command = newCommand.command as DispatchChildWorkflow
     // send task to task engine
     val msg = DispatchWorkflow(
@@ -253,7 +292,7 @@ private suspend fun dispatchChildWorkflow(dispatcher: Dispatcher, methodRun: Met
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )
-    dispatcher.toWorkflowEngine(msg)
+    sendToWorkflowEngine(msg, 0F)
 
     addPastCommand(methodRun, newCommand)
 }
