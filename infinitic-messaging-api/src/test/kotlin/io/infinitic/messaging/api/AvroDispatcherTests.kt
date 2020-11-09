@@ -69,7 +69,7 @@ class AvroDispatcherTests : StringSpec({
         // given
         val msg = TestFactory.random(ForMonitoringPerNameMessage::class)
         // when
-        dispatcher.toMonitoringPerName(msg)
+        dispatcher.toMonitoringPerNameEngine(msg)
         // then
         coVerify {
             transport.toMonitoringPerName(AvroConverter.toMonitoringPerName(msg))
@@ -81,7 +81,7 @@ class AvroDispatcherTests : StringSpec({
         // given
         val msg = TestFactory.random(ForMonitoringGlobalMessage::class)
         // when
-        dispatcher.toMonitoringGlobal(msg)
+        dispatcher.toMonitoringGlobalEngine(msg)
         // then
         coVerify {
             transport.toMonitoringGlobal(AvroConverter.toMonitoringGlobal(msg))

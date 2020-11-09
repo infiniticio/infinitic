@@ -24,9 +24,9 @@
 package io.infinitic.engine.pulsar.taskManager.functions
 
 import io.infinitic.common.serDe.avro.AvroConverter
-import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerNameEngine
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.Runs
@@ -58,12 +58,12 @@ class MonitoringPerNamePulsarFunctionTests : ShouldSpec({
 
             // Mocking avro conversion
             val avroMsg = mockk<AvroEnvelopeForMonitoringPerName>()
-            val msg = mockk<MonitoringPerNameMessage>()
+            val msg = mockk<MonitoringPerNameEngineMessage>()
             mockkObject(AvroConverter)
             every { AvroConverter.fromMonitoringPerName(avroMsg) } returns msg
 
             // Mocking Monitoring Per Name
-            val monitoringPerName = mockk<MonitoringPerName>()
+            val monitoringPerName = mockk<MonitoringPerNameEngine>()
             val monitoringPerNamePulsarFunction = spyk<MonitoringPerNamePulsarFunction>()
             every { monitoringPerNamePulsarFunction.getMonitoringPerName(context) } returns monitoringPerName
             coEvery { monitoringPerName.handle(msg) } just Runs

@@ -24,7 +24,7 @@
 package io.infinitic.engine.pulsar.taskManager.functions
 
 import io.infinitic.common.serDe.avro.AvroConverter
-import io.infinitic.engine.taskManager.engines.TaskEngine
+import io.infinitic.engine.tasks.engine.TaskEngine
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForTaskEngine
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.kotest.assertions.throwables.shouldThrowAny

@@ -23,13 +23,13 @@
 
 package io.infinitic.storage.redis
 
-import io.infinitic.storage.api.Storage
+import io.infinitic.storage.api.KeyValueStorage
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-class RedisStorage internal constructor(private val config: RedisStorageConfig) : Storage {
+class RedisStorage internal constructor(private val config: RedisStorageConfig) : KeyValueStorage {
     private val pool by lazy {
         JedisPool(JedisPoolConfig(), config.host, config.port)
     }

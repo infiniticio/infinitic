@@ -25,8 +25,8 @@ package io.infinitic.engine.pulsar.taskManager.functions
 
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
 import io.infinitic.common.serDe.avro.AvroConverter
-import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
-import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobalEngine
+import io.infinitic.engine.tasks.storage.TaskStateKeyValueStorage
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -48,9 +48,9 @@ class MonitoringGlobalPulsarFunction : Function<AvroEnvelopeForMonitoringGlobal,
         return null
     }
 
-    internal fun getMonitoringGlobal(ctx: Context): MonitoringGlobal {
-        val storage = AvroKeyValueTaskStateStorage(PulsarFunctionStorage(ctx))
+    internal fun getMonitoringGlobal(ctx: Context): MonitoringGlobalEngine {
+        val storage = TaskStateKeyValueStorage(PulsarFunctionStorage(ctx))
 
-        return MonitoringGlobal(storage)
+        return MonitoringGlobalEngine(storage)
     }
 }

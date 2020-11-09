@@ -5,7 +5,7 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalEnvelope
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineEnvelope
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerEnvelope
@@ -30,7 +30,7 @@ class EnvelopesTests : StringSpec({
         }
     }
 
-    MonitoringPerNameMessage::class.sealedSubclasses.map {
+    MonitoringPerNameEngineMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
         "MonitoringPerNameEnvelope(${msg::class.simpleName}) should be avro-convertible" {

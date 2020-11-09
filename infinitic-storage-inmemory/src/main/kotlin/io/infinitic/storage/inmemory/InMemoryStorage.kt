@@ -24,12 +24,12 @@
 package io.infinitic.storage.inmemory
 
 import io.infinitic.storage.api.Flushable
-import io.infinitic.storage.api.Storage
+import io.infinitic.storage.api.KeyValueStorage
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.LongAdder
 
-class InMemoryStorage internal constructor() : Storage, Flushable {
+class InMemoryStorage internal constructor() : KeyValueStorage, Flushable {
     private val stateStorage = ConcurrentHashMap<String, ByteBuffer>()
     private val counterStorage = ConcurrentHashMap<String, LongAdder>()
 

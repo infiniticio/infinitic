@@ -24,7 +24,7 @@
 package io.infinitic.engine.pulsar.taskManager.functions
 
 import io.infinitic.common.serDe.avro.AvroConverter
-import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobalEngine
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringGlobal
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
 import io.kotest.assertions.throwables.shouldThrow
@@ -63,7 +63,7 @@ class MonitoringGlobalPulsarFunctionTests : ShouldSpec({
             every { AvroConverter.fromMonitoringGlobal(avroMsg) } returns msg
 
             // Mocking Task Engine
-            val monitoringGlobal = mockk<MonitoringGlobal>()
+            val monitoringGlobal = mockk<MonitoringGlobalEngine>()
             val monitoringGlobalPulsarFunction = spyk<MonitoringGlobalPulsarFunction>()
             every { monitoringGlobalPulsarFunction.getMonitoringGlobal(context) } returns monitoringGlobal
             coEvery { monitoringGlobal.handle(msg) } just Runs

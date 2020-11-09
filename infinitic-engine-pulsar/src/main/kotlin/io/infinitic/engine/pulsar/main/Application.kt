@@ -29,12 +29,12 @@ import io.infinitic.engine.pulsar.extensions.newMonitoringPerNameConsumer
 import io.infinitic.engine.pulsar.extensions.newTaskEngineConsumer
 import io.infinitic.engine.pulsar.extensions.newWorkflowEngineConsumer
 import io.infinitic.engine.pulsar.extensions.startConsumer
-import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
-import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
-import io.infinitic.engine.taskManager.storage.TaskStateStorage
-import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
-import io.infinitic.engine.workflowManager.engines.WorkflowEngine
-import io.infinitic.engine.workflowManager.storages.WorkflowStateStorage
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobalEngine
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerNameEngine
+import io.infinitic.engine.tasks.storage.TaskStateStorage
+import io.infinitic.engine.workflows.engine.ForWorkflowTaskEngine
+import io.infinitic.engine.workflows.engine.WorkflowEngine
+import io.infinitic.engine.workflows.storages.WorkflowStateStorage
 import io.infinitic.messaging.api.dispatcher.Dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,8 +64,8 @@ class Application private constructor(
 
     fun run() {
         val taskEngine = ForWorkflowTaskEngine(taskStateStorage, dispatcher)
-        val monitoringPerName = MonitoringPerName(taskStateStorage, dispatcher)
-        val monitoringGlobal = MonitoringGlobal(taskStateStorage)
+        val monitoringPerName = MonitoringPerNameEngine(taskStateStorage, dispatcher)
+        val monitoringGlobal = MonitoringGlobalEngine(taskStateStorage)
         val workflowEngine = WorkflowEngine(workflowStateStorage, dispatcher)
 
         try {

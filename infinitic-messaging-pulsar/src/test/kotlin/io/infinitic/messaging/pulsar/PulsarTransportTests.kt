@@ -30,7 +30,7 @@ import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitorin
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.kotest.core.spec.style.StringSpec
@@ -54,7 +54,7 @@ class PulsarTransportTests : StringSpec({
         include(shouldBeAbleToSendMessageToEngineTopic(TestFactory.random(it)))
     }
 
-    MonitoringPerNameMessage::class.sealedSubclasses.forEach {
+    MonitoringPerNameEngineMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToMonitoringPerNameTopic(TestFactory.random(it)))
     }
 
@@ -95,7 +95,7 @@ private fun shouldBeAbleToSendMessageToEngineTopic(msg: TaskEngineMessage) = str
     }
 }
 
-private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPerNameMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPerNameEngineMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MonitoringPerName topic " {
         val avro = AvroConverter.toMonitoringPerName(msg)
         // given

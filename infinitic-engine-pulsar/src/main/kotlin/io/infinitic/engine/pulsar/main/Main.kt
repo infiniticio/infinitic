@@ -25,8 +25,8 @@ package io.infinitic.engine.pulsar.main
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
-import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
-import io.infinitic.engine.workflowManager.storages.AvroKeyValueWorkflowStateStorage
+import io.infinitic.engine.tasks.storage.TaskStateKeyValueStorage
+import io.infinitic.engine.workflows.storages.AvroKeyValueWorkflowStateStorage
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.pulsar.PulsarTransport
 import io.infinitic.storage.inmemory.inMemory
@@ -44,7 +44,7 @@ fun main(args: Array<String>) = mainBody {
 
         // FIXME: This must be configurable using a configuration file or command line arguments
         val storage = inMemory()
-        val taskStateStorage = AvroKeyValueTaskStateStorage(storage)
+        val taskStateStorage = TaskStateKeyValueStorage(storage)
         val workflowStateStorage = AvroKeyValueWorkflowStateStorage(storage)
 
         // FIXME: This must be configurable using a configuration file or command line arguments

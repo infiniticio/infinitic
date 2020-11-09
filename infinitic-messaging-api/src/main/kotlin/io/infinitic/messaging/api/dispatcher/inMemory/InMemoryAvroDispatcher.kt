@@ -24,7 +24,7 @@
 package io.infinitic.messaging.api.dispatcher.inMemory
 
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.workflows.avro.AvroConverter
@@ -39,7 +39,7 @@ open class InMemoryAvroDispatcher : Dispatcher {
     // Here we favor lambda to avoid a direct dependency with engines instances
     lateinit var workflowEngineHandle: suspend (msg: WorkflowEngineMessage) -> Unit
     lateinit var taskEngineHandle: suspend (msg: TaskEngineMessage) -> Unit
-    lateinit var monitoringPerNameHandle: suspend (msg: MonitoringPerNameMessage) -> Unit
+    lateinit var monitoringPerNameHandle: suspend (msg: MonitoringPerNameEngineMessage) -> Unit
     lateinit var monitoringGlobalHandle: suspend (msg: MonitoringGlobalMessage) -> Unit
     lateinit var workerHandle: suspend (msg: WorkerMessage) -> Unit
     lateinit var scope: CoroutineScope
@@ -66,7 +66,7 @@ open class InMemoryAvroDispatcher : Dispatcher {
         }
     }
 
-    override suspend fun toMonitoringPerName(msg: MonitoringPerNameMessage) {
+    override suspend fun toMonitoringPerNameEngine(msg: MonitoringPerNameEngineMessage) {
         scope.launch {
             val avro = TaskAvroConverter.toMonitoringPerName(msg)
 
@@ -74,7 +74,7 @@ open class InMemoryAvroDispatcher : Dispatcher {
         }
     }
 
-    override suspend fun toMonitoringGlobal(msg: MonitoringGlobalMessage) {
+    override suspend fun toMonitoringGlobalEngine(msg: MonitoringGlobalMessage) {
         val avro = TaskAvroConverter.toMonitoringGlobal(msg)
 
         scope.launch { monitoringGlobalHandle(TaskAvroConverter.fromMonitoringGlobal(avro)) }

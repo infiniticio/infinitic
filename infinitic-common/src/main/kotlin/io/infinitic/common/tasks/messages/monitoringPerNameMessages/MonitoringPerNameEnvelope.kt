@@ -43,7 +43,7 @@ data class MonitoringPerNameEnvelope(
     }
 
     companion object {
-        fun from(msg: MonitoringPerNameMessage) = when (msg) {
+        fun from(msg: MonitoringPerNameEngineMessage) = when (msg) {
             is TaskStatusUpdated -> MonitoringPerNameEnvelope(
                 msg.taskName,
                 MonitoringPerNameMessageType.TASK_STATUS_UPDATED,
@@ -52,7 +52,7 @@ data class MonitoringPerNameEnvelope(
         }
     }
 
-    fun value(): MonitoringPerNameMessage = when (type) {
+    fun value(): MonitoringPerNameEngineMessage = when (type) {
         MonitoringPerNameMessageType.TASK_STATUS_UPDATED -> taskStatusUpdated!!
     }
 }

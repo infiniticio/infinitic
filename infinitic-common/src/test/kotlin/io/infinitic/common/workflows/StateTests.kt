@@ -2,7 +2,7 @@ package io.infinitic.common.workflows
 
 import com.sksamuel.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.workflows.data.states.WorkflowState
+import io.infinitic.common.workflows.states.WorkflowState
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

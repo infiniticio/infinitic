@@ -36,10 +36,9 @@ import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
 import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTask
 import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTaskAttempt
-import io.infinitic.common.tasks.states.TaskEngineState
+import io.infinitic.common.tasks.states.TaskState
 import io.infinitic.common.tasks.states.MonitoringGlobalState
 import io.infinitic.common.tasks.states.MonitoringPerNameState
-import io.infinitic.common.tasks.states.State
 import io.infinitic.avro.taskManager.data.AvroSerializedData
 import io.infinitic.avro.taskManager.data.AvroSerializedDataType
 import io.infinitic.avro.taskManager.messages.AvroCancelTask
@@ -69,7 +68,7 @@ import io.infinitic.avro.taskManager.data.states.AvroMonitoringPerNameState
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.serDe.SerializedDataType
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.RunTask
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
@@ -91,17 +90,11 @@ object AvroConverter {
         else -> throw Exception("Unknown SpecificRecordBase: ${avro::class.qualifiedName}")
     }
 
-    fun fromStorage(avro: AvroTaskEngineState) = convertJson<TaskEngineState>(avro)
+    fun fromStorage(avro: AvroTaskEngineState) = convertJson<TaskState>(avro)
     fun fromStorage(avro: AvroMonitoringGlobalState) = convertJson<MonitoringGlobalState>(avro)
     fun fromStorage(avro: AvroMonitoringPerNameState) = convertJson<MonitoringPerNameState>(avro)
 
-    fun toStorage(state: State) = when (state) {
-        is TaskEngineState -> toStorage(state)
-        is MonitoringGlobalState -> toStorage(state)
-        is MonitoringPerNameState -> toStorage(state)
-    }
-
-    fun toStorage(state: TaskEngineState) = convertJson<AvroTaskEngineState>(state)
+    fun toStorage(state: TaskState) = convertJson<AvroTaskEngineState>(state)
     fun toStorage(state: MonitoringGlobalState) = convertJson<AvroMonitoringGlobalState>(state)
     fun toStorage(state: MonitoringPerNameState) = convertJson<AvroMonitoringPerNameState>(state)
 
@@ -243,11 +236,11 @@ object AvroConverter {
     fun fromTaskEngine(input: AvroEnvelopeForTaskEngine) =
         fromAvroMessage(removeEnvelopeFromTaskEngineMessage(input)) as TaskEngineMessage
 
-    fun toMonitoringPerName(message: MonitoringPerNameMessage): AvroEnvelopeForMonitoringPerName =
+    fun toMonitoringPerName(message: MonitoringPerNameEngineMessage): AvroEnvelopeForMonitoringPerName =
         addEnvelopeToMonitoringPerNameMessage(toAvroMessage(message))
 
     fun fromMonitoringPerName(input: AvroEnvelopeForMonitoringPerName) =
-        fromAvroMessage(removeEnvelopeFromMonitoringPerNameMessage(input)) as MonitoringPerNameMessage
+        fromAvroMessage(removeEnvelopeFromMonitoringPerNameMessage(input)) as MonitoringPerNameEngineMessage
 
     fun toMonitoringGlobal(message: MonitoringGlobalMessage): AvroEnvelopeForMonitoringGlobal =
         addEnvelopeToMonitoringGlobalMessage(toAvroMessage(message))
@@ -309,7 +302,7 @@ object AvroConverter {
         is RetryTaskAttempt -> toAvroMessage(msg)
     }
 
-    fun toAvroMessage(msg: MonitoringPerNameMessage) = when (msg) {
+    fun toAvroMessage(msg: MonitoringPerNameEngineMessage) = when (msg) {
         is TaskStatusUpdated -> toAvroMessage(msg)
     }
 

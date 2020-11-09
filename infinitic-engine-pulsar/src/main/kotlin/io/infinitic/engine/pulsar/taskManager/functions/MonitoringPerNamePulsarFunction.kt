@@ -27,8 +27,8 @@ import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.storage.pulsar.PulsarFunctionStorage
 import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.messaging.pulsar.PulsarTransport
-import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
-import io.infinitic.engine.taskManager.storage.AvroKeyValueTaskStateStorage
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerNameEngine
+import io.infinitic.engine.tasks.storage.TaskStateKeyValueStorage
 import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForMonitoringPerName
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
@@ -51,10 +51,10 @@ class MonitoringPerNamePulsarFunction : Function<AvroEnvelopeForMonitoringPerNam
         null
     }
 
-    internal fun getMonitoringPerName(context: Context): MonitoringPerName {
-        val storage = AvroKeyValueTaskStateStorage(PulsarFunctionStorage(context))
+    internal fun getMonitoringPerName(context: Context): MonitoringPerNameEngine {
+        val storage = TaskStateKeyValueStorage(PulsarFunctionStorage(context))
         val dispatcher = AvroDispatcher(PulsarTransport.forPulsarFunctionContext(context))
 
-        return MonitoringPerName(storage, dispatcher)
+        return MonitoringPerNameEngine(storage, dispatcher)
     }
 }

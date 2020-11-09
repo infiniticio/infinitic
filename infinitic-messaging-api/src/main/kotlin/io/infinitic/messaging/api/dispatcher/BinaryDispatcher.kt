@@ -27,7 +27,7 @@ import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.messaging.api.dispatcher.transport.BinaryTransport
 import io.infinitic.common.serDe.avro.AvroConverter as TaskAvroConverter
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.workflows.avro.AvroConverter as WorkflowAvroConverter
@@ -48,14 +48,14 @@ class BinaryDispatcher(private val transport: BinaryTransport) : Dispatcher {
             .let { transport.toTaskEngine(it, after) }
     }
 
-    override suspend fun toMonitoringPerName(msg: MonitoringPerNameMessage) {
+    override suspend fun toMonitoringPerNameEngine(msg: MonitoringPerNameEngineMessage) {
         msg
             .let { TaskAvroConverter.toMonitoringPerName(it) }
             .let { AvroSerDe.serialize(it) }
             .let { transport.toMonitoringPerName(it) }
     }
 
-    override suspend fun toMonitoringGlobal(msg: MonitoringGlobalMessage) {
+    override suspend fun toMonitoringGlobalEngine(msg: MonitoringGlobalMessage) {
         msg
             .let { TaskAvroConverter.toMonitoringGlobal(it) }
             .let { AvroSerDe.serialize(it) }

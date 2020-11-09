@@ -35,7 +35,7 @@ import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalEnvelope
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineEnvelope
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerEnvelope
@@ -88,7 +88,7 @@ object TestFactory {
                 TaskEngineEnvelope.from(random(sub))
             }
             .randomize(MonitoringPerNameEnvelope::class.java) {
-                val sub = MonitoringPerNameMessage::class.sealedSubclasses.shuffled().first()
+                val sub = MonitoringPerNameEngineMessage::class.sealedSubclasses.shuffled().first()
                 MonitoringPerNameEnvelope.from(random(sub))
             }
             .randomize(MonitoringGlobalEnvelope::class.java) {

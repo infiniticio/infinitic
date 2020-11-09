@@ -152,7 +152,7 @@ data class SerializedData(
         throw ExceptionDuringJsonDeserialization(klass.name, cause = e)
     }
 
-    private fun <T : Any> fromJsonKotlin(klass: Class<T>): T {
+    private fun fromJsonKotlin(klass: Class<*>): Any? {
         val serializer = getKSerializerOrNull(klass) ?: throw SerializerNotFoundDuringDeserialization(klass.name)
 
         return try {

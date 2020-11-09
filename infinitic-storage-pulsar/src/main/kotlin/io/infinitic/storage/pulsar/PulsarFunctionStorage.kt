@@ -23,11 +23,11 @@
 
 package io.infinitic.storage.pulsar
 
-import io.infinitic.storage.api.Storage
+import io.infinitic.storage.api.KeyValueStorage
 import org.apache.pulsar.functions.api.Context
 import java.nio.ByteBuffer
 
-class PulsarFunctionStorage(private val context: Context) : Storage {
+class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
     override fun getState(key: String): ByteBuffer? = context.getState(key)
 
     override fun putState(key: String, value: ByteBuffer) = context.putState(key, value)

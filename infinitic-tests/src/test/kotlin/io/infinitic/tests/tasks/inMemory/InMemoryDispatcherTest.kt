@@ -27,19 +27,18 @@ import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
 import io.infinitic.client.Client
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
-import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
-import io.infinitic.engine.taskManager.engines.TaskEngine
-import io.infinitic.engine.taskManager.storage.TaskStateStorage
-import io.infinitic.storage.api.Flushable
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobalEngine
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerNameEngine
+import io.infinitic.engine.tasks.engine.TaskEngine
+import io.infinitic.engine.tasks.storage.TaskStateStorage
 import io.infinitic.worker.Worker
 
 class InMemoryDispatcherTest(storage: TaskStateStorage) : InMemoryDispatcher() {
     val client = Client(this)
     val worker = Worker(this)
     private val taskEngine = TaskEngine(storage, this)
-    private val monitoringPerName = MonitoringPerName(storage, this)
-    private val monitoringGlobal = MonitoringGlobal(storage)
+    private val monitoringPerName = MonitoringPerNameEngine(storage, this)
+    private val monitoringGlobal = MonitoringGlobalEngine(storage)
 
     var taskStatus : TaskStatus? = null
 

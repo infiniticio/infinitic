@@ -26,13 +26,13 @@ package io.infinitic.tests.workflows.inMemory
 import io.infinitic.client.Client
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobal
-import io.infinitic.engine.monitoringPerName.engine.MonitoringPerName
+import io.infinitic.engine.monitoringGlobal.engine.MonitoringGlobalEngine
+import io.infinitic.engine.monitoringPerName.engine.MonitoringPerNameEngine
 import io.infinitic.worker.Worker
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.common.workflows.messages.WorkflowEngineMessage
-import io.infinitic.engine.workflowManager.engines.ForWorkflowTaskEngine
-import io.infinitic.engine.workflowManager.engines.WorkflowEngine
+import io.infinitic.engine.workflows.engine.ForWorkflowTaskEngine
+import io.infinitic.engine.workflows.engine.WorkflowEngine
 import io.infinitic.messaging.api.dispatcher.inMemory.InMemoryDispatcher
 import kotlinx.serialization.json.Json
 
@@ -42,8 +42,8 @@ class InMemoryDispatcherTest(storage: InMemoryStorageTest) : InMemoryDispatcher(
     val worker = Worker(this)
     private val taskEngine = ForWorkflowTaskEngine(storage, this)
     private val workflowEngine = WorkflowEngine(storage, this)
-    private val monitoringPerName = MonitoringPerName(storage, this)
-    private val monitoringGlobal = MonitoringGlobal(storage)
+    private val monitoringPerName = MonitoringPerNameEngine(storage, this)
+    private val monitoringGlobal = MonitoringGlobalEngine(storage)
 
     var taskStatus: TaskStatus? = null
     var workflowOutput: Any? = null
