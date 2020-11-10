@@ -284,11 +284,6 @@ class WorkflowTaskContextImpl(
             pastStep.propertiesNameHashAtTermination!!
         )
 
-        val properties = getWorkflowProperties(workflow)
-        println(pastStep)
-        properties.map {
-            println("${it.key} = ${it.value.get()}")
-        }
         // continue
         return deferred
     }

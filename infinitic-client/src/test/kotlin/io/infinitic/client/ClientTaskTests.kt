@@ -26,7 +26,6 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
-import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.MethodParameterTypes
@@ -44,10 +43,11 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTaskTests : StringSpec({
-    val dispatcher = mockk<Dispatcher>()
+    val sendToTaskEngine = mockk<SendToTaskEngine>()
+    val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
     val slot = slot<TaskEngineMessage>()
-    coEvery { dispatcher.toTaskEngine(capture(slot)) } just Runs
-    val client = Client(dispatcher)
+    coEvery { sendToTaskEngine(capture(slot)) } just Runs
+    val client = Client(sendToTaskEngine, sendToWorkflowEngine)
 
     beforeTest {
         slot.clear()

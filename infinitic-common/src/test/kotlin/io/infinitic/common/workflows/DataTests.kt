@@ -22,7 +22,6 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowOutput
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.decodeFromString
@@ -199,16 +198,6 @@ class DataTests : StringSpec({
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<WorkflowName>(json)
-        m2 shouldBe m
-    }
-
-    "WorkflowOutput should be serialized as SerializedData" {
-        val m = WorkflowOutput.from("qwerty")
-
-        val json = Json.encodeToString(m)
-        json shouldBe Json.encodeToString(SerializedData.from(m.get()))
-
-        val m2 = Json.decodeFromString<WorkflowOutput>(json)
         m2 shouldBe m
     }
 

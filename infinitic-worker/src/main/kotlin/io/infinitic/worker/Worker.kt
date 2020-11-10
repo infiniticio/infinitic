@@ -23,7 +23,7 @@
 
 package io.infinitic.worker
 
-import io.infinitic.messaging.api.dispatcher.Dispatcher
+import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptError
@@ -33,10 +33,10 @@ import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptCompleted
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptStarted
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.RunTask
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.common.workflows.Workflow
@@ -62,8 +62,11 @@ import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
 typealias InstanceFactory = () -> Any
+typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit
 
-open class Worker(val dispatcher: Dispatcher) {
+open class Worker(
+    val sendToTaskEngine: SendToTaskEngine
+) {
 
     // map taskName <> taskInstance
     private val registeredFactories = mutableMapOf<String, InstanceFactory>()
@@ -99,10 +102,6 @@ open class Worker(val dispatcher: Dispatcher) {
      */
     fun unregister(name: String) {
         registeredFactories.remove(name)
-    }
-
-    suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
-        is RunTask -> runTask(msg)
     }
 
     suspend fun handle(message: WorkerMessage) = when (message) {
@@ -227,6 +226,7 @@ open class Worker(val dispatcher: Dispatcher) {
 
     private fun parse(msg: RunTask): TaskCommand {
         val task = getTask("${msg.taskName}")
+
         val parameterTypes = msg.methodParameterTypes
         val method = if (parameterTypes == null) {
             getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodInput.size)
@@ -266,7 +266,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskRetry = msg.taskRetry
         )
 
-        dispatcher.toTaskEngine(taskAttemptStarted)
+        sendToTaskEngine(taskAttemptStarted)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
@@ -279,7 +279,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskAttemptError = TaskAttemptError.from(error)
         )
 
-        dispatcher.toTaskEngine(taskAttemptFailed)
+        sendToTaskEngine(taskAttemptFailed)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -291,7 +291,7 @@ open class Worker(val dispatcher: Dispatcher) {
             taskOutput = MethodOutput.from(output)
         )
 
-        dispatcher.toTaskEngine(taskAttemptCompleted)
+        sendToTaskEngine(taskAttemptCompleted)
     }
 
     @PublishedApi

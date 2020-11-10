@@ -33,10 +33,6 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation(project(":infinitic-avro"))
-    testImplementation(project(":infinitic-messaging-api"))
-    testImplementation(project(":infinitic-storage-pulsar"))
-    testImplementation(project(":infinitic-storage-inmemory"))
     testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-engine"))
     testImplementation(project(":infinitic-client"))

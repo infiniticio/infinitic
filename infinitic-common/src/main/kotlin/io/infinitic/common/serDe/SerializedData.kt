@@ -32,6 +32,7 @@ import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringDeserialization
 import io.infinitic.common.tasks.exceptions.ExceptionDuringJsonDeserialization
 import io.infinitic.common.tasks.exceptions.ExceptionDuringKotlinDeserialization
 import io.infinitic.common.tasks.exceptions.SerializerNotFoundDuringDeserialization
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -53,7 +54,7 @@ data class SerializedData(
         /**
          * @return serialized value
          */
-        fun from(value: Any?): SerializedData {
+        fun <T: Any> from(value: T?): SerializedData {
             val bytes: ByteArray
             val type: SerializedDataType
             val meta = mapOf(META_JAVA_CLASS to (value ?: "")::class.java.name.toByteArray(charset = Charsets.UTF_8))
@@ -72,12 +73,13 @@ data class SerializedData(
                     type = SerializedDataType.AVRO_JAVA
                 }
                 else -> {
-                    val serializer = getKSerializerOrNull(value::class.java)
+                    val serializer= getKSerializerOrNull(value::class.java)
                     if (serializer == null) {
                         bytes = toJsonJacksonByteArray(value)
                         type = SerializedDataType.JSON_JACKSON
                     } else {
-                        bytes = toJsonKotlinByteArray(value, serializer)
+                        @Suppress("UNCHECKED_CAST")
+                        bytes = toJsonKotlinByteArray(serializer as KSerializer<T>, value)
                         type = SerializedDataType.JSON_KOTLIN
                     }
                 }
@@ -88,7 +90,7 @@ data class SerializedData(
         private fun toJsonJacksonByteArray(value: Any): ByteArray =
             JsonJackson.stringify(value).toByteArray(charset = Charsets.UTF_8)
 
-        private fun <T : Any> toJsonKotlinByteArray(value: T, serializer: KSerializer<T>): ByteArray =
+        private fun <T: Any> toJsonKotlinByteArray(serializer: KSerializer<T>, value: T): ByteArray =
             JsonKotlin.encodeToString(serializer, value).toByteArray(charset = Charsets.UTF_8)
 
         private fun toAvroJavaByteArray(value: SpecificRecordBase): ByteArray =
@@ -118,7 +120,7 @@ data class SerializedData(
     }
 
     override fun toString() = try { "${deserialize()}" } catch (e: Throwable) {
-        "** error during deserialization:**\n$e"
+        "** SerializedData - can't display due to deserialization error :**\n$e"
     }
 
     override fun equals(other: Any?): Boolean {
@@ -149,7 +151,7 @@ data class SerializedData(
     private fun <T : Any> fromJsonJackson(klass: Class<out T>): T = try {
         JsonJackson.parse(String(bytes, Charsets.UTF_8), klass)
     } catch (e: JsonProcessingException) {
-        throw ExceptionDuringJsonDeserialization(klass.name, cause = e)
+        throw ExceptionDuringJsonDeserialization(klass.name, causeString = e.toString())
     }
 
     private fun fromJsonKotlin(klass: Class<*>): Any? {
@@ -158,7 +160,7 @@ data class SerializedData(
         return try {
             JsonKotlin.decodeFromString(serializer, String(bytes, Charsets.UTF_8))
         } catch (e: SerializationException) {
-            throw ExceptionDuringKotlinDeserialization(klass.name, cause = e)
+            throw ExceptionDuringKotlinDeserialization(klass.name, causeString = e.toString())
         }
     }
 

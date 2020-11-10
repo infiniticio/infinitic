@@ -25,7 +25,6 @@
 
 package io.infinitic.worker
 
-import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -64,10 +63,10 @@ import kotlinx.coroutines.coroutineScope
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 class WorkerTests : StringSpec({
-    val dispatcher = mockk<Dispatcher>()
+    val sendToTaskEngine = mockk<SendToTaskEngine>()
     val slots = mutableListOf<TaskEngineMessage>()
-    coEvery { dispatcher.toTaskEngine(capture(slots)) } just Runs
-    val worker = Worker(dispatcher)
+    coEvery { sendToTaskEngine(capture(slots)) } just Runs
+    val worker = Worker(sendToTaskEngine)
 
     // ensure slots are emptied between each test
     beforeTest {

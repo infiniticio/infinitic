@@ -8,10 +8,14 @@ import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.serDe.kotlin.writeBinary
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.exceptions.ExceptionDuringKotlinDeserialization
+import io.infinitic.common.tasks.exceptions.SerializerNotFoundDuringDeserialization
 import io.infinitic.common.tasks.states.TaskState
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.Step
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
 import io.kotest.matchers.shouldBe
@@ -20,19 +24,21 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.serializer
+import java.lang.RuntimeException
+import java.lang.reflect.Modifier.isStatic
 import java.util.*
+import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.createType
 import kotlin.reflect.typeOf
 
 fun main() {
-    val m = TaskOptions(2F)
-    println(m)
-    val b1 = Avro.default.encodeToByteArray(TaskOptions.serializer(), m)
-    val b2 =  Avro.default.encodeToByteArray(TaskOptions.serializer(), m)
-    println(b1)
-    println(b2)
 
-    println(b1.contentEquals(b2))
+   val e = TestFactory.random<WorkflowTaskInput>()
+
+    val s = SerializedData.from(e)
+
+    println(s.type)
+    print(s)
 
 //    val m2 = m.deepCopy()
 
@@ -68,4 +74,5 @@ fun main() {
 //    val s2 = Json.decodeFromString(SerializedData.serializer(), json)
 //    println(s2)
 //    println(s2.deserialize())
+
 }

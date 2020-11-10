@@ -29,7 +29,6 @@ import io.infinitic.client.samples.FakeWorkflow
 import io.infinitic.common.tasks.data.MethodInput
 import io.infinitic.common.tasks.data.MethodName
 import io.infinitic.common.tasks.data.MethodParameterTypes
-import io.infinitic.messaging.api.dispatcher.Dispatcher
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -45,15 +44,16 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class ClientWorkflowTests : StringSpec({
-    val dispatcher = mockk<Dispatcher>()
+    val sendToTaskEngine = mockk<SendToTaskEngine>()
+    val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
 
     val taskSlot = slot<TaskEngineMessage>()
-    coEvery { dispatcher.toTaskEngine(capture(taskSlot)) } just Runs
+    coEvery { sendToTaskEngine(capture(taskSlot)) } just Runs
 
     val workflowSlot = slot<WorkflowEngineMessage>()
-    coEvery { dispatcher.toWorkflowEngine(capture(workflowSlot)) } just Runs
+    coEvery { sendToWorkflowEngine(capture(workflowSlot)) } just Runs
 
-    val client = Client(dispatcher)
+    val client = Client(sendToTaskEngine, sendToWorkflowEngine)
 
     beforeTest {
         taskSlot.clear()

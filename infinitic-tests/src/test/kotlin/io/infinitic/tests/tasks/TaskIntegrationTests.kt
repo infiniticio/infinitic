@@ -23,47 +23,119 @@
 
 package io.infinitic.tests.tasks
 
+import io.infinitic.client.Client
 import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.storage.inmemory.inMemory
+import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
+import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
+import io.infinitic.engines.monitoringGlobal.engine.MonitoringGlobalEngine
+import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateInMemoryStorage
+import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
+import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateInMemoryStorage
+import io.infinitic.engines.tasks.engine.TaskEngine
+import io.infinitic.engines.tasks.storage.TaskStateInMemoryStorage
 import io.infinitic.tests.tasks.samples.Status
 import io.infinitic.tests.tasks.samples.TaskTest
 import io.infinitic.tests.tasks.samples.TaskTestImpl
-import io.infinitic.tests.tasks.inMemory.InMemoryDispatcherTest
-import io.infinitic.tests.tasks.inMemory.InMemoryStorageTest
+import io.infinitic.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-private val internalStorage = inMemory()
-private val storage = InMemoryStorageTest(internalStorage)
-private val dispatcher = InMemoryDispatcherTest(storage)
-private val client = dispatcher.client
-private val worker = dispatcher.worker
+private val taskStateStorage = TaskStateInMemoryStorage()
+private val monitoringPerNameStateStorage = MonitoringPerNameStateInMemoryStorage()
+private val monitoringGlobalStateStorage = MonitoringGlobalStateInMemoryStorage()
+private var taskStatus : TaskStatus? = null
+private val taskTest = TaskTestImpl()
+
+lateinit var taskEngine: TaskEngine
+lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
+lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
+lateinit var worker: Worker
+lateinit var client: Client
+
+fun CoroutineScope.send(msg: TaskEngineMessage, after: Float) {
+    launch {
+        if (after > 0F) {
+            delay((1000 * after).toLong())
+        }
+        taskEngine.handle(msg)
+    }
+}
+
+fun CoroutineScope.send(msg: MonitoringPerNameEngineMessage) {
+    launch {
+        monitoringPerNameEngine.handle(msg)
+
+        // catch status update
+        if(msg is TaskStatusUpdated) {
+            taskStatus = msg.newStatus
+        }
+    }
+}
+
+fun CoroutineScope.send(msg: MonitoringGlobalMessage) {
+    launch {
+        monitoringGlobalEngine.handle(msg)
+    }
+}
+
+fun CoroutineScope.send(msg: WorkerMessage) {
+    launch {
+        worker.handle(msg)
+    }
+}
+
+fun CoroutineScope.init() {
+    taskStateStorage.flush()
+    monitoringPerNameStateStorage.flush()
+    monitoringGlobalStateStorage.flush()
+    taskStatus = null
+
+    client = Client(
+        { msg: TaskEngineMessage -> send(msg, 0F) },
+        { Unit },
+    )
+
+    taskEngine = TaskEngine(
+        taskStateStorage,
+        { msg: TaskEngineMessage, after: Float -> send(msg, after) },
+        { msg: MonitoringPerNameEngineMessage -> send(msg) },
+        { msg: WorkerMessage -> send(msg) }
+    )
+
+    monitoringPerNameEngine = MonitoringPerNameEngine(monitoringPerNameStateStorage) {
+        msg: MonitoringGlobalMessage -> send(msg)
+    }
+
+    monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
+
+    worker = Worker { msg: TaskEngineMessage -> send(msg, 0F) }
+    worker.register(TaskTest::class.java.name) { taskTest }
+}
 
 class TaskIntegrationTests : StringSpec({
-    val taskTest = TaskTestImpl()
-    worker.register(TaskTest::class.java.name) { taskTest }
     var task: TaskInstance
-
-    beforeTest {
-        storage.reset()
-        dispatcher.reset()
-    }
 
     "Task succeeds at first try" {
         // task will succeed
         taskTest.behavior = { _, _ -> Status.SUCCESS }
         // run system
         coroutineScope {
-            dispatcher.scope = this
-            task = client.dispatch(TaskTest::class.java) { log() }
+            init()
+            task = client.dispatch<TaskTest> { log() }
         }
         // check that task is terminated
-        storage.isTerminated(task) shouldBe true
+        taskStateStorage.getState(task.taskId) shouldBe null
         // check that task is completed
-        dispatcher.taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
         taskTest.log shouldBe "1"
     }
@@ -73,13 +145,13 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
         coroutineScope {
-            dispatcher.scope = this
-            task = client.dispatch(TaskTest::class.java) { log() }
+            init()
+            task = client.dispatch<TaskTest> { log() }
         }
         // check that task is terminated
-        storage.isTerminated(task) shouldBe true
+        taskStateStorage.getState(task.taskId) shouldBe null
         // check that task is completed
-        dispatcher.taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
         taskTest.log shouldBe "0001"
     }
@@ -89,13 +161,13 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, _ -> Status.FAILED_WITHOUT_RETRY }
         // run system
         coroutineScope {
-            dispatcher.scope = this
-            task = client.dispatch(TaskTest::class.java) { log() }
+            init()
+            task = client.dispatch<TaskTest> { log() }
         }
         // check that task is not terminated
-        storage.isTerminated(task) shouldBe false
+        taskStateStorage.getState(task.taskId) shouldNotBe null
         // check that task is failed
-        dispatcher.taskStatus shouldBe TaskStatus.RUNNING_ERROR
+        taskStatus shouldBe TaskStatus.RUNNING_ERROR
         // checks number of task processing
         taskTest.log shouldBe "0"
     }
@@ -105,13 +177,13 @@ class TaskIntegrationTests : StringSpec({
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY }
         // run system
         coroutineScope {
-            dispatcher.scope = this
-            task = client.dispatch(TaskTest::class.java) { log() }
+            init()
+            task = client.dispatch<TaskTest> { log() }
         }
         // check that task is not terminated
-        storage.isTerminated(task) shouldBe false
+        taskStateStorage.getState(task.taskId) shouldNotBe null
         // check that task is failed
-        dispatcher.taskStatus shouldBe TaskStatus.RUNNING_ERROR
+        taskStatus shouldBe TaskStatus.RUNNING_ERROR
         // checks number of task processing
         taskTest.log shouldBe "0000"
     }
@@ -127,17 +199,17 @@ class TaskIntegrationTests : StringSpec({
         }
         // run system
         coroutineScope {
-            dispatcher.scope = this
-            task = client.dispatch(TaskTest::class.java) { log() }
-            while (dispatcher.taskStatus != TaskStatus.RUNNING_ERROR ) {
+            init()
+            task = client.dispatch<TaskTest> { log() }
+            while (taskStatus != TaskStatus.RUNNING_ERROR ) {
                 delay(50)
             }
             client.retryTask(id = "${task.taskId}")
         }
         // check that task is terminated
-        storage.isTerminated(task)
+        taskStateStorage.getState(task.taskId) shouldBe null
         // check that task is completed
-        dispatcher.taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
         taskTest.log shouldBe "0000001"
     }
@@ -148,14 +220,14 @@ class TaskIntegrationTests : StringSpec({
         // run system
         // run system
         coroutineScope {
-            dispatcher.scope = this
-            task = client.dispatch(TaskTest::class.java) { log() }
+            init()
+            task = client.dispatch<TaskTest> { log() }
             delay(100)
             client.cancelTask(id = "${task.taskId}")
         }
         // check that task is terminated
-        storage.isTerminated(task)
+        taskStateStorage.getState(task.taskId) shouldBe null
         // check that task is completed
-        dispatcher.taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
+        taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
     }
 })

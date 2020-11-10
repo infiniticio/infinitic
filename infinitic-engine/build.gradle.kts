@@ -35,8 +35,6 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     implementation(project(":infinitic-storage-api"))
-    implementation(project(":infinitic-messaging-api"))
-    implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-common"))
 
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")

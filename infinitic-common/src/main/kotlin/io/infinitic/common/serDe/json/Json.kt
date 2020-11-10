@@ -43,8 +43,7 @@ object Json {
     }
 
     abstract class ExceptionMixIn {
-        @JsonIgnore
-        abstract fun getMessage(): String
+        @JsonIgnore abstract fun getMessage(): String
     }
 
     fun stringify(msg: Any?, pretty: Boolean = false): String = if (pretty) {

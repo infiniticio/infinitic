@@ -95,18 +95,18 @@ data class SerializerNotFoundDuringDeserialization(
 @Serializable
 data class ExceptionDuringKotlinDeserialization(
     val name: String,
-    @Contextual override val cause: Throwable
+    val causeString: String
 ) : UserExceptionInCommon(
-    msg = "Trying to deserialize data into \"$name\$ but an error occurred during Kotlin deserialization: $cause",
+    msg = "Trying to deserialize data into \"$name\$ but an error occurred during Kotlin deserialization: $causeString",
     help = "Please make sure your class \"$name\$ can be safely serialized/deserialized using kotlinx.serialization and avro4k"
 )
 
 @Serializable
 data class ExceptionDuringJsonDeserialization(
     val name: String,
-    @Contextual override val cause: Throwable
+    val causeString: String
 ) : UserExceptionInCommon(
-    msg = "Trying to deserialize data into \"$name\$ but an error occurred during json deserialization: $cause",
+    msg = "Trying to deserialize data into \"$name\$ but an error occurred during json deserialization: $causeString",
     help = "Please make sure your class \"$name\$ can be safely serialized/deserialized in Json using FasterXML/jackson"
 )
 

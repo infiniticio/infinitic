@@ -11,16 +11,34 @@ import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
 import java.io.ByteArrayOutputStream
+import java.lang.reflect.Modifier.isStatic
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType
 import kotlin.reflect.typeOf
 
-@OptIn(ExperimentalStdlibApi::class)
-inline fun <reified T : Any> getKSerializerOrNull(klass: Class<out T>) = try {
+//@OptIn(ExperimentalStdlibApi::class)
+//fun getKSerializerOrNull(klass: Class<*>) = try {
+//    @Suppress("UNCHECKED_CAST")
+//    serializer(klass.kotlin.createType())
+//} catch (e: Exception) {
+//    null
+//}
+
+fun getKSerializerOrNull(klass: Class<*>) : KSerializer<*>? {
+    val companionField = klass.declaredFields.find {
+        it.name == "Companion" && isStatic(it.modifiers)
+    } ?: return null
+    val companion = companionField.get(klass)
+    val serializerMethod = try {
+        companion::class.java.getMethod("serializer")
+    } catch (e: NoSuchMethodException) {
+        return null
+    }
+    if (serializerMethod.returnType.name !=  KSerializer::class.qualifiedName) {
+        return null
+    }
     @Suppress("UNCHECKED_CAST")
-    serializer(typeOf<T>()) as KSerializer<T>
-} catch (e: SerializationException) {
-    null
+    return serializerMethod.invoke(companion) as KSerializer<*>
 }
 
 fun <T> writeBinary(t: T, serializer: SerializationStrategy<T>): ByteArray {

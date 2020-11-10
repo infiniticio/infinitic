@@ -34,8 +34,6 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.slf4j:slf4j-api:1.7.+")
 
-    api(project(":infinitic-messaging-api"))
-    implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-common"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")

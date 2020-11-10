@@ -36,9 +36,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
 
-    implementation(project(":infinitic-avro"))
     api(project(":infinitic-common"))
-    api(project(":infinitic-messaging-api"))
 
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
