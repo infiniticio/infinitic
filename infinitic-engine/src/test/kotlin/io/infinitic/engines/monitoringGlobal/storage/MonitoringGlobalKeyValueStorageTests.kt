@@ -24,9 +24,8 @@
 package io.infinitic.engines.monitoringGlobal.storage
 
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.states.MonitoringGlobalState
-import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateKeyValueStorage
-import io.infinitic.storage.api.KeyValueStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified
@@ -75,7 +74,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
             val binSlot = slot<ByteBuffer>()
 
-            every { storage.putState( "monitoringGlobal.state", capture(binSlot)) } returns Unit
+            every { storage.putState("monitoringGlobal.state", capture(binSlot)) } returns Unit
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage)
             // when

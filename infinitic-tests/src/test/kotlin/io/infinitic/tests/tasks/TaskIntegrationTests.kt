@@ -32,11 +32,12 @@ import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUp
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
 import io.infinitic.engines.monitoringGlobal.engine.MonitoringGlobalEngine
-import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateInMemoryStorage
+import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
-import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateInMemoryStorage
+import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.engines.tasks.engine.TaskEngine
-import io.infinitic.engines.tasks.storage.TaskStateInMemoryStorage
+import io.infinitic.engines.tasks.storage.TaskStateKeyValueStorage
+import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tests.tasks.samples.Status
 import io.infinitic.tests.tasks.samples.TaskTest
 import io.infinitic.tests.tasks.samples.TaskTestImpl
@@ -49,19 +50,20 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val taskStateStorage = TaskStateInMemoryStorage()
-private val monitoringPerNameStateStorage = MonitoringPerNameStateInMemoryStorage()
-private val monitoringGlobalStateStorage = MonitoringGlobalStateInMemoryStorage()
-private var taskStatus : TaskStatus? = null
+private var taskStatus: TaskStatus? = null
 private val taskTest = TaskTestImpl()
 
-lateinit var taskEngine: TaskEngine
-lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
-lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
-lateinit var worker: Worker
-lateinit var client: Client
+private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage())
+private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
+private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
 
-fun CoroutineScope.send(msg: TaskEngineMessage, after: Float) {
+private lateinit var taskEngine: TaskEngine
+private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
+private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
+private lateinit var worker: Worker
+private lateinit var client: Client
+
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
     launch {
         if (after > 0F) {
             delay((1000 * after).toLong())
@@ -70,24 +72,24 @@ fun CoroutineScope.send(msg: TaskEngineMessage, after: Float) {
     }
 }
 
-fun CoroutineScope.send(msg: MonitoringPerNameEngineMessage) {
+fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) {
     launch {
         monitoringPerNameEngine.handle(msg)
 
         // catch status update
-        if(msg is TaskStatusUpdated) {
+        if (msg is TaskStatusUpdated) {
             taskStatus = msg.newStatus
         }
     }
 }
 
-fun CoroutineScope.send(msg: MonitoringGlobalMessage) {
+fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
     launch {
         monitoringGlobalEngine.handle(msg)
     }
 }
 
-fun CoroutineScope.send(msg: WorkerMessage) {
+fun CoroutineScope.sendToWorkers(msg: WorkerMessage) {
     launch {
         worker.handle(msg)
     }
@@ -100,24 +102,25 @@ fun CoroutineScope.init() {
     taskStatus = null
 
     client = Client(
-        { msg: TaskEngineMessage -> send(msg, 0F) },
+        { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) },
         { Unit },
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        { msg: TaskEngineMessage, after: Float -> send(msg, after) },
-        { msg: MonitoringPerNameEngineMessage -> send(msg) },
-        { msg: WorkerMessage -> send(msg) }
+        { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) },
+        { msg: MonitoringPerNameEngineMessage -> sendToMonitoringPerName(msg) },
+        { msg: WorkerMessage -> sendToWorkers(msg) }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(monitoringPerNameStateStorage) {
-        msg: MonitoringGlobalMessage -> send(msg)
+        msg: MonitoringGlobalMessage ->
+        sendToMonitoringGlobal(msg)
     }
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    worker = Worker { msg: TaskEngineMessage -> send(msg, 0F) }
+    worker = Worker { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) }
     worker.register(TaskTest::class.java.name) { taskTest }
 }
 
@@ -201,7 +204,7 @@ class TaskIntegrationTests : StringSpec({
         coroutineScope {
             init()
             task = client.dispatch<TaskTest> { log() }
-            while (taskStatus != TaskStatus.RUNNING_ERROR ) {
+            while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
             client.retryTask(id = "${task.taskId}")

@@ -36,7 +36,8 @@ import kotlin.reflect.jvm.javaType
 fun setWorkflowProperties(
     workflow: Workflow,
     propertiesHashValue: Map<PropertyHash, PropertyValue>,
-    propertiesNameHash: Map<PropertyName, PropertyHash>) {
+    propertiesNameHash: Map<PropertyName, PropertyHash>
+) {
     val properties = propertiesNameHash.mapValues {
         propertiesHashValue[it.value] ?: throw RuntimeException("This should not happen: unknown hash ${it.value} in $propertiesHashValue")
     }

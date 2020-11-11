@@ -255,9 +255,9 @@ private suspend fun dispatchTask(
         methodName = command.methodName,
         methodParameterTypes = command.methodParameterTypes,
         methodInput = command.methodInput,
-        taskMeta = command.taskMeta
-            + (WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}")
-            + (WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}")
+        taskMeta = command.taskMeta +
+            (WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}") +
+            (WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}")
     )
     sendToTaskEngine(msg)
 

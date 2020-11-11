@@ -21,46 +21,36 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.engines.tasks.storage
+package io.infinitic.storage.inMemory
 
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.states.TaskState
+import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.LongAdder
 
-/**
- * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
- */
-open class TaskStateKeyValueStorage(
-    protected val storage: KeyValueStorage
-) : TaskStateStorage {
+class InMemoryStorage() : KeyValueStorage, Flushable {
+    private val stateStorage = ConcurrentHashMap<String, ByteBuffer>()
+    private val counterStorage = ConcurrentHashMap<String, LongAdder>()
 
-    override fun getState(taskId: TaskId) = storage
-        .getState(getTaskStateKey(taskId))
-        ?.let { TaskState.fromByteBuffer(it) }
+    override fun getState(key: String): ByteBuffer? = stateStorage[key]
 
-    override fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?) {
-        storage.putState(
-            getTaskStateKey(taskId),
-            newState.toByteBuffer()
-        )
+    override fun putState(key: String, value: ByteBuffer) {
+        stateStorage[key] = value
     }
 
-    override fun deleteState(taskId: TaskId) {
-        storage.deleteState(getTaskStateKey(taskId))
+    override fun updateState(key: String, value: ByteBuffer) = putState(key, value)
+
+    override fun deleteState(key: String) {
+        stateStorage.remove(key)
     }
 
-    /*
-    Use for tests
-     */
-    fun flush() {
-        if (storage is Flushable) {
-            storage.flush()
-        } else {
-            throw Exception("Storage non flushable")
-        }
-    }
+    override fun incrementCounter(key: String, amount: Long) = counterStorage.computeIfAbsent(key) { LongAdder() }.add(amount)
 
-    private fun getTaskStateKey(taskId: TaskId) = "task.state.$taskId"
+    override fun getCounter(key: String): Long = counterStorage.computeIfAbsent(key) { LongAdder() }.sum()
+
+    override fun flush() {
+        stateStorage.clear()
+        counterStorage.clear()
+    }
 }

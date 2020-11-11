@@ -97,4 +97,3 @@ suspend fun dispatchWorkflowTask(
 
     state.runningWorkflowTaskId = workflowTaskId
 }
-

@@ -3,7 +3,6 @@ package io.infinitic.common.serDe.kotlin
 import com.sksamuel.avro4k.Avro
 import com.sksamuel.avro4k.io.AvroFormat
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 import org.apache.avro.file.SeekableByteArrayInput
@@ -12,19 +11,16 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Modifier.isStatic
-import kotlin.reflect.KType
-import kotlin.reflect.full.createType
-import kotlin.reflect.typeOf
 
-//@OptIn(ExperimentalStdlibApi::class)
-//fun getKSerializerOrNull(klass: Class<*>) = try {
+// @OptIn(ExperimentalStdlibApi::class)
+// fun getKSerializerOrNull(klass: Class<*>) = try {
 //    @Suppress("UNCHECKED_CAST")
 //    serializer(klass.kotlin.createType())
-//} catch (e: Exception) {
+// } catch (e: Exception) {
 //    null
-//}
+// }
 
-fun getKSerializerOrNull(klass: Class<*>) : KSerializer<*>? {
+fun getKSerializerOrNull(klass: Class<*>): KSerializer<*>? {
     val companionField = klass.declaredFields.find {
         it.name == "Companion" && isStatic(it.modifiers)
     } ?: return null
@@ -34,7 +30,7 @@ fun getKSerializerOrNull(klass: Class<*>) : KSerializer<*>? {
     } catch (e: NoSuchMethodException) {
         return null
     }
-    if (serializerMethod.returnType.name !=  KSerializer::class.qualifiedName) {
+    if (serializerMethod.returnType.name != KSerializer::class.qualifiedName) {
         return null
     }
     @Suppress("UNCHECKED_CAST")

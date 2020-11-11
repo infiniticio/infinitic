@@ -81,7 +81,4 @@ fun main() {
     File(System.getProperty("user.dir") + "/build/schemas/Worker.schema")
         .also { it.parentFile.mkdirs() }
         .writeText(Json.stringify(PulsarSchema(Avro.default.schema(WorkerEnvelope.serializer()).toString())))
-
-
 }
-

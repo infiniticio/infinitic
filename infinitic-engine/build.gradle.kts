@@ -34,13 +34,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.slf4j:slf4j-api:1.7.+")
 
-    implementation(project(":infinitic-storage-api"))
     implementation(project(":infinitic-common"))
 
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
+
     testImplementation(testFixtures(project(":infinitic-common")))
 }
 

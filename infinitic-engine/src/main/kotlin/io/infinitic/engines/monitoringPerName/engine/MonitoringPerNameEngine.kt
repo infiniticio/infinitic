@@ -28,7 +28,6 @@ import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlo
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCompleted
 import io.infinitic.common.tasks.states.MonitoringPerNameState
 import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateStorage
 

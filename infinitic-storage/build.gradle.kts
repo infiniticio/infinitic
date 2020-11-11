@@ -23,27 +23,19 @@
 
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization")
     id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+
+    // Apply the java-library plugin for API and implementation separation.
+    `java-library`
 }
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.slf4j:slf4j-api:1.7.+")
+    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
+    implementation("redis.clients:jedis:3.3.+")
 
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-engine"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-worker"))
-    testImplementation(project(":infinitic-storage"))
-
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
-    testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
-    testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
+    implementation(project(":infinitic-common"))
 }
 
 java {

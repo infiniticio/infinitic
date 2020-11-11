@@ -21,23 +21,6 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.common.tasks.states
+package io.infinitic.common.storage.keyValue
 
-import com.sksamuel.avro4k.Avro
-import io.infinitic.common.tasks.data.TaskName
-import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
-
-@Serializable
-data class MonitoringGlobalState(
-    val taskNames: MutableSet<TaskName> = mutableSetOf()
-) {
-    companion object {
-        fun fromByteArray(bytes: ByteArray): MonitoringGlobalState = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer): MonitoringGlobalState = fromByteArray(bytes.array())
-    }
-
-    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
-    fun toByteBuffer() = ByteBuffer.wrap(toByteArray())
-    fun deepCopy() = MonitoringGlobalState.fromByteArray(toByteArray())
-}
+interface KeyValueStorage : StateKeyValueStorage, CounterKeyValueStorage

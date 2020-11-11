@@ -48,7 +48,6 @@ import org.koin.dsl.module
 import org.koin.ktor.ext.Koin
 import java.io.FileNotFoundException
 import java.sql.DriverManager
-import java.util.UUID
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 

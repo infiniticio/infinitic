@@ -24,7 +24,6 @@
 package io.infinitic.tests.workflows
 
 import io.infinitic.client.Client
-import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
 import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
@@ -33,14 +32,15 @@ import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.engines.monitoringGlobal.engine.MonitoringGlobalEngine
-import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateInMemoryStorage
+import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
-import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateInMemoryStorage
+import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.engines.tasks.engine.TaskEngine
-import io.infinitic.engines.tasks.storage.TaskStateInMemoryStorage
+import io.infinitic.engines.tasks.storage.TaskStateKeyValueStorage
 import io.infinitic.engines.workflows.engine.WorkflowEngine
-import io.infinitic.engines.workflows.engine.workflowHook
-import io.infinitic.engines.workflows.storage.WorkflowStateInMemoryStorage
+import io.infinitic.engines.workflows.engine.taskEngineInWorkflowEngine
+import io.infinitic.engines.workflows.storage.WorkflowStateKeyValueStorage
+import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tests.workflows.samples.TaskA
 import io.infinitic.tests.workflows.samples.TaskAImpl
 import io.infinitic.tests.workflows.samples.WorkflowA
@@ -57,20 +57,20 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val workflowStateStorage = WorkflowStateInMemoryStorage()
-private val taskStateStorage = TaskStateInMemoryStorage()
-private val monitoringPerNameStateStorage = MonitoringPerNameStateInMemoryStorage()
-private val monitoringGlobalStateStorage = MonitoringGlobalStateInMemoryStorage()
-var workflowOutput: Any? = null
+private var workflowOutput: Any? = null
+private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage())
+private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage())
+private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
+private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
 
-lateinit var workflowEngine: WorkflowEngine
-lateinit var taskEngine: TaskEngine
-lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
-lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
-lateinit var worker: Worker
-lateinit var client: Client
+private lateinit var workflowEngine: WorkflowEngine
+private lateinit var taskEngine: TaskEngine
+private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
+private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
+private lateinit var worker: Worker
+private lateinit var client: Client
 
-fun CoroutineScope.send(msg: WorkflowEngineMessage, after: Float) {
+fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
     launch {
         if (after > 0F) {
             delay((1000 * after).toLong())
@@ -84,31 +84,28 @@ fun CoroutineScope.send(msg: WorkflowEngineMessage, after: Float) {
     }
 }
 
-fun CoroutineScope.send(msg: TaskEngineMessage, after: Float) {
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
     launch {
         if (after > 0F) {
             delay((1000 * after).toLong())
         }
         taskEngine.handle(msg)
-
-        // workflow hook (need to send taskCompleted to workflow engine)
-        taskEngine.workflowHook(msg)?.let { send(it, 0F) }
     }
 }
 
-fun CoroutineScope.send(msg: MonitoringPerNameEngineMessage) {
+fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) {
     launch {
         monitoringPerNameEngine.handle(msg)
     }
 }
 
-fun CoroutineScope.send(msg: MonitoringGlobalMessage) {
+fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
     launch {
         monitoringGlobalEngine.handle(msg)
     }
 }
 
-fun CoroutineScope.send(msg: WorkerMessage) {
+fun CoroutineScope.sendToWorkers(msg: WorkerMessage) {
     launch {
         worker.handle(msg)
     }
@@ -122,30 +119,32 @@ fun CoroutineScope.init() {
     workflowOutput = null
 
     client = Client(
-        { msg: TaskEngineMessage -> send(msg, 0F) },
-        { msg: WorkflowEngineMessage -> send(msg, 0F) }
+        { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) },
+        { msg: WorkflowEngineMessage -> sendToWorkflowEngine(msg, 0F) }
     )
 
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
-        { msg: WorkflowEngineMessage, after: Float -> send(msg, after) },
-        { msg: TaskEngineMessage -> send(msg, 0F) }
+        { msg: WorkflowEngineMessage, after: Float -> sendToWorkflowEngine(msg, after) },
+        { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) }
     )
 
-    taskEngine = TaskEngine(
+    taskEngine = taskEngineInWorkflowEngine(
         taskStateStorage,
-        { msg: TaskEngineMessage, after: Float -> send(msg, after) },
-        { msg: MonitoringPerNameEngineMessage -> send(msg) },
-        { msg: WorkerMessage -> send(msg) }
+        { msg: WorkflowEngineMessage, after: Float -> sendToWorkflowEngine(msg, after) },
+        { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) },
+        { msg: MonitoringPerNameEngineMessage -> sendToMonitoringPerName(msg) },
+        { msg: WorkerMessage -> sendToWorkers(msg) }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(monitoringPerNameStateStorage) {
-        msg: MonitoringGlobalMessage -> send(msg)
+        msg: MonitoringGlobalMessage ->
+        sendToMonitoringGlobal(msg)
     }
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    worker = Worker { msg: TaskEngineMessage -> send(msg, 0F) }
+    worker = Worker { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) }
     worker.register<TaskA> { TaskAImpl() }
     worker.register<WorkflowA> { WorkflowAImpl() }
     worker.register<WorkflowB> { WorkflowBImpl() }

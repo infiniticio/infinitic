@@ -48,9 +48,7 @@ dependencies {
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-engine"))
     implementation(project(":infinitic-messaging-pulsar"))
-    implementation(project(":infinitic-storage-pulsar"))
-    implementation(project(":infinitic-storage-redis"))
-    implementation(project(":infinitic-storage-inmemory"))
+    implementation(project(":infinitic-storage"))
     testImplementation(testFixtures(project(":infinitic-common")))
 
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")

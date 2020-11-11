@@ -23,7 +23,8 @@
 
 package io.infinitic.engines.workflows.storage
 
-import io.infinitic.storage.api.KeyValueStorage
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.states.WorkflowState
 
@@ -31,7 +32,9 @@ import io.infinitic.common.workflows.states.WorkflowState
  * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-open class WorkflowStateKeyValueStorage(private val storage: KeyValueStorage) : WorkflowStateStorage {
+open class WorkflowStateKeyValueStorage(
+    private val storage: KeyValueStorage
+) : WorkflowStateStorage {
 
     override fun createState(workflowId: WorkflowId, state: WorkflowState) {
         storage.putState(
@@ -53,6 +56,17 @@ open class WorkflowStateKeyValueStorage(private val storage: KeyValueStorage) : 
 
     override fun deleteState(workflowId: WorkflowId) {
         storage.deleteState(getWorkflowStateKey(workflowId))
+    }
+
+    /*
+    Use for tests
+     */
+    fun flush() {
+        if (storage is Flushable) {
+            storage.flush()
+        } else {
+            throw Exception("Storage non flushable")
+        }
     }
 
     private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"

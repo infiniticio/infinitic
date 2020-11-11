@@ -38,8 +38,8 @@ data class MonitoringPerNameState(
     var terminatedCanceledCount: Long = 0
 ) {
     companion object {
-        fun fromByteArray(bytes: ByteArray) : MonitoringPerNameState = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) : MonitoringPerNameState = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray): MonitoringPerNameState = Avro.default.decodeFromByteArray(serializer(), bytes)
+        fun fromByteBuffer(bytes: ByteBuffer): MonitoringPerNameState = fromByteArray(bytes.array())
     }
 
     fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)

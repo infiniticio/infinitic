@@ -53,14 +53,13 @@ data class TaskState(
     var lastTaskAttemptError: TaskAttemptError? = null,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
-)  {
+) {
     companion object {
-        fun fromByteArray(bytes: ByteArray) : TaskState = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) : TaskState = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray): TaskState = Avro.default.decodeFromByteArray(serializer(), bytes)
+        fun fromByteBuffer(bytes: ByteBuffer): TaskState = fromByteArray(bytes.array())
     }
 
     fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
     fun toByteBuffer() = ByteBuffer.wrap(toByteArray())
     fun deepCopy() = TaskState.fromByteArray(toByteArray())
 }
-

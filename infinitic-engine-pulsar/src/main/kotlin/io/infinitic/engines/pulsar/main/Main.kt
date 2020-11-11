@@ -29,7 +29,7 @@ import io.infinitic.engines.tasks.storage.TaskStateKeyValueStorage
 import io.infinitic.engines.workflows.storage.WorkflowStateKeyValueStorage
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.pulsar.PulsarTransport
-import io.infinitic.storage.inmemory.inMemory
+import io.infinitic.storage.inMemory.inMemory
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 

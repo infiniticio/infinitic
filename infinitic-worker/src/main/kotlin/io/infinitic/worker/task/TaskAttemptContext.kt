@@ -23,7 +23,6 @@
 
 package io.infinitic.worker.task
 
-import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.worker.Worker
 

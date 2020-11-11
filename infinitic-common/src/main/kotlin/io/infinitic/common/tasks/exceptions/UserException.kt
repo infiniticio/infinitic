@@ -27,7 +27,6 @@ import io.infinitic.common.json.Json
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskOptions
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 /*

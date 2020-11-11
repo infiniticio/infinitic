@@ -23,9 +23,7 @@
 
 package io.infinitic.worker
 
-import io.infinitic.common.json.Json
 import io.infinitic.common.tasks.Constants
-import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation

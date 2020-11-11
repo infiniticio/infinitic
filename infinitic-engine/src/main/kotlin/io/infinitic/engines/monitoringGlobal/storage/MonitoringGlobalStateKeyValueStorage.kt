@@ -23,15 +23,18 @@
 
 package io.infinitic.engines.monitoringGlobal.storage
 
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.states.MonitoringGlobalState
-import io.infinitic.storage.api.KeyValueStorage
 import java.nio.ByteBuffer
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-open class MonitoringGlobalStateKeyValueStorage(protected val storage: KeyValueStorage) : MonitoringGlobalStateStorage {
+open class MonitoringGlobalStateKeyValueStorage(
+    protected val storage: KeyValueStorage
+) : MonitoringGlobalStateStorage {
     override fun getState(): MonitoringGlobalState? {
         return storage.getState(getMonitoringGlobalStateKey())?.let {
             MonitoringGlobalState.fromByteArray(it.array())
@@ -47,4 +50,15 @@ open class MonitoringGlobalStateKeyValueStorage(protected val storage: KeyValueS
     }
 
     internal fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
+
+    /*
+    Use for tests
+     */
+    fun flush() {
+        if (storage is Flushable) {
+            storage.flush()
+        } else {
+            throw Exception("Storage non flushable")
+        }
+    }
 }

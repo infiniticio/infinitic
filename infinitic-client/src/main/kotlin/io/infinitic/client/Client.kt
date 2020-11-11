@@ -106,7 +106,7 @@ class Client(
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
         apply: T.() -> Any?
-    ) : TaskInstance {
+    ): TaskInstance {
         // get a proxy for T
         val handler = MethodProxyHandler(taskInterface)
 

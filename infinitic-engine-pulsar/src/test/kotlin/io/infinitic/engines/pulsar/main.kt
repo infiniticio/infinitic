@@ -52,19 +52,19 @@ fun main() {
 //    client.close()
 }
 
-//class TaskEngineEnvelopeWriter: SchemaWriter<TaskEngineEnvelope> {
+// class TaskEngineEnvelopeWriter: SchemaWriter<TaskEngineEnvelope> {
 //    override fun write(message: TaskEngineEnvelope): ByteArray {
 //        println("writing msg:$message")
 //        return writeBinary(message, TaskEngineEnvelope.serializer())
 //    }
-//}
+// }
 //
-//class TaskEngineEnvelopeReader: SchemaReader<TaskEngineEnvelope> {
+// class TaskEngineEnvelopeReader: SchemaReader<TaskEngineEnvelope> {
 //    override fun read(bytes: ByteArray, offset: Int, length: Int) = read(bytes.inputStream(offset,length))
 //    override fun read(inputStream: InputStream) = readBinary(inputStream.readBytes(), TaskEngineEnvelope.serializer())
-//}
+// }
 //
-//fun <T> writeBinary(msg: T, serializer: SerializationStrategy<T>): ByteArray {
+// fun <T> writeBinary(msg: T, serializer: SerializationStrategy<T>): ByteArray {
 //    val schema = Avro.default.schema(serializer)
 //    val out = ByteArrayOutputStream()
 //    Avro.default.openOutputStream(serializer) {
@@ -72,12 +72,12 @@ fun main() {
 //        this.schema = schema
 //    }.to(out).write(msg).close()
 //    return out.toByteArray()
-//}
+// }
 //
-//fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>): T {
+// fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>): T {
 //    val schema = Avro.default.schema(serializer)
 //    val datumReader = GenericDatumReader<GenericRecord>(schema)
 //    val decoder = org.apache.avro.io.DecoderFactory.get().binaryDecoder(SeekableByteArrayInput(bytes), null)
 //    val genericRecord =  datumReader.read(null, decoder)
 //    return  Avro.default.fromRecord(serializer, genericRecord)
-//}
+// }

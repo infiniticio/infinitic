@@ -24,7 +24,6 @@
 package io.infinitic.common.workflows.states
 
 import com.sksamuel.avro4k.Avro
-import io.infinitic.common.tasks.states.MonitoringGlobalState
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -108,8 +107,8 @@ data class WorkflowState(
     val bufferedCommands: MutableList<CommandId> = mutableListOf()
 ) {
     companion object {
-        fun fromByteArray(bytes: ByteArray) : WorkflowState = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) : WorkflowState = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray): WorkflowState = Avro.default.decodeFromByteArray(serializer(), bytes)
+        fun fromByteBuffer(bytes: ByteBuffer): WorkflowState = fromByteArray(bytes.array())
     }
 
     fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
