@@ -46,7 +46,7 @@ dependencies {
     implementation("com.xenomachina:kotlin-argparser:2.0.+")
 
     implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-engine"))
+    implementation(project(":infinitic-engines"))
     implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage"))
 

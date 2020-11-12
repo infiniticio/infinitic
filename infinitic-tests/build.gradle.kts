@@ -33,7 +33,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
 
     testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-engine"))
+    testImplementation(project(":infinitic-engines"))
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-worker"))
     testImplementation(project(":infinitic-storage"))

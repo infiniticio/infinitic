@@ -23,7 +23,6 @@
 
 package io.infinitic.engines.pulsar.main
 
-import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.engines.pulsar.extensions.newMonitoringGlobalConsumer
 import io.infinitic.engines.pulsar.extensions.newMonitoringPerNameConsumer
 import io.infinitic.engines.pulsar.extensions.newTaskEngineConsumer

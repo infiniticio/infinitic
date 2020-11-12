@@ -24,15 +24,13 @@
 rootProject.name = "io.infinitic"
 
 include("infinitic-rest-api")
-include("infinitic-avro")
 include("infinitic-storage")
-//include("infinitic-messaging-api")
 include("infinitic-messaging-pulsar")
 include("infinitic-common")
 include("infinitic-worker")
 include("infinitic-worker-pulsar")
 include("infinitic-client")
-include("infinitic-engine")
+include("infinitic-engines")
 include("infinitic-engine-pulsar")
 include("infinitic-tests")
 

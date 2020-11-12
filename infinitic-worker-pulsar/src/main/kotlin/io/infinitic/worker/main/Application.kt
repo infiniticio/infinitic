@@ -23,7 +23,6 @@
 
 package io.infinitic.worker.main
 
-import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.worker.Worker
 import io.infinitic.messaging.pulsar.extensions.acknowledgeSuspend
