@@ -37,16 +37,46 @@ to a different Pulsar cluster and/or using a different port, use the `--pulsar-u
 ./bin/infinitic-engine-pulsar --pulsar-url=my-pulsar-cluster.somewhere.com:16650
 ```
 
+#### State storage
+
+The storage to use to persist states of workflows and tasks can be configured using the `--storage` option.
+Possible values are:
+
+- `memory`: The engine keeps states in memory. This storage is not persistent and is not suitable for production. Stopping
+the engine will make it loose all states.
+- `redis`: The engine keeps states using a redis instance. Connection settings can be configured using the various
+`--redis-*` options. You can find the list of all available options [here](#available-options)".
+
+#### Available options
+
 The complete list of options can be displayed using the `-h` option:
 
 ```shell script
 $ ./bin/infinitic-engine-pulsar -h
-usage: [-h] [--pulsar-url PULSAR_URL]
+usage: [-h] [--storage STORAGE] [--pulsar-url PULSAR_URL]
+       [--redis-host REDIS_HOST] [--redis-port REDIS_PORT]
+       [--redis-timeout REDIS_TIMEOUT] [--redis-user REDIS_USER]
+       [--redis-password REDIS_PASSWORD] [--redis-database REDIS_DATABASE]
 
 optional arguments:
-  -h, --help                show this help message and exit
+  -h, --help                        show this help message and exit
 
-  --pulsar-url PULSAR_URL   The Pulsar cluster URL
+  --storage STORAGE                 The storage adapter to use
+
+  --pulsar-url PULSAR_URL           The Pulsar cluster URL
+
+  --redis-host REDIS_HOST           Redis hostname
+
+  --redis-port REDIS_PORT           Redis port
+
+  --redis-timeout REDIS_TIMEOUT     Redis timeout
+
+  --redis-user REDIS_USER           Redis user
+
+  --redis-password REDIS_PASSWORD   Redis password
+
+  --redis-database REDIS_DATABASE   Redis database
+
 ```
 
 ### Pulsar Functions

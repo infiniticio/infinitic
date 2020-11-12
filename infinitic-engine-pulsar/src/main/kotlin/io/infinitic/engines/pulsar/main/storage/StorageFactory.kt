@@ -21,19 +21,26 @@
 //
 // Licensor: infinitic.io
 
-package io.infinitic.storage.redis
+package io.infinitic.engines.pulsar.main.storage
 
-import redis.clients.jedis.Protocol
+import io.infinitic.engines.pulsar.main.ApplicationArgs
+import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.storage.redis.redis
 
-class RedisStorageConfig {
-    var host = Protocol.DEFAULT_HOST
-    var port = Protocol.DEFAULT_PORT
-    var timeout = Protocol.DEFAULT_TIMEOUT
-    var user = ""
-    var password = ""
-    var database = Protocol.DEFAULT_DATABASE
+class StorageFactory {
+    fun createStorage(args: ApplicationArgs) = when (args.storage) {
+        StorageType.InMemory -> createInMemoryStorage()
+        StorageType.Redis -> createRedisStorage(args)
+    }
 
-    companion object {
-        val defaultConfig = RedisStorageConfig()
+    private fun createInMemoryStorage() = InMemoryStorage()
+
+    private fun createRedisStorage(args: ApplicationArgs) = redis {
+        host = args.redisHost
+        port = args.redisPort
+        timeout = args.redisTimeout
+        user = args.redisUser
+        password = args.redisPassword
+        database = args.redisDatabase
     }
 }
