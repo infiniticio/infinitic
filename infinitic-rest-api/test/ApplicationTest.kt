@@ -23,20 +23,14 @@
 
 package io.infinitic
 
-import io.ktor.application.*
-import io.ktor.response.*
-import io.ktor.request.*
-import io.ktor.routing.*
-import io.ktor.http.*
-import io.ktor.auth.*
-import com.fasterxml.jackson.databind.*
 import io.infinitic.api.module
 import io.ktor.config.MapApplicationConfig
-import io.ktor.jackson.*
-import io.ktor.features.*
-import kotlin.test.*
-import io.ktor.server.testing.*
+import io.ktor.http.HttpMethod
+import io.ktor.server.testing.handleRequest
+import io.ktor.server.testing.withTestApplication
 import io.ktor.util.KtorExperimentalAPI
+import kotlin.test.Test
+import kotlin.test.assertFalse
 
 class ApplicationTest {
     @OptIn(KtorExperimentalAPI::class)

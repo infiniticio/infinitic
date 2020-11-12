@@ -74,7 +74,6 @@ class PulsarTransportTests : StringSpec({
 
 private fun shouldBeAbleToSendMessageToTaskEngineTopic(msg: TaskEngineMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to TaskEngine topic" {
-        val envelope = TaskEngineEnvelope.from(msg)
         // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<TaskEngineEnvelope>>()
@@ -92,7 +91,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineTopic(msg: TaskEngineMessage) =
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskEngineEnvelope>()).avroSchema
         confirmVerified(context)
         verifyAll {
-            builder.value(envelope)
+            builder.value(TaskEngineEnvelope.from(msg))
             builder.key("${msg.taskId}")
             builder.send()
         }
@@ -102,7 +101,6 @@ private fun shouldBeAbleToSendMessageToTaskEngineTopic(msg: TaskEngineMessage) =
 
 private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPerNameEngineMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MonitoringPerName topic " {
-        val envelope = MonitoringPerNameEnvelope.from(msg)
         // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<MonitoringPerNameEnvelope>>()
@@ -120,7 +118,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringPerNameEnvelope>()).avroSchema
         confirmVerified(context)
         verifyAll {
-            builder.value(envelope)
+            builder.value(MonitoringPerNameEnvelope.from(msg))
             builder.key("${msg.taskName}")
             builder.send()
         }
@@ -130,7 +128,6 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
 
 private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlobalMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MonitoringGlobal topic " {
-        val envelope = MonitoringGlobalEnvelope.from(msg)
         // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<MonitoringGlobalEnvelope>>()
@@ -146,7 +143,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get()
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringGlobalEnvelope>()).avroSchema
-        verify(exactly = 1) { builder.value(envelope) }
+        verify(exactly = 1) { builder.value(MonitoringGlobalEnvelope.from(msg)) }
         verify(exactly = 1) { builder.send() }
         confirmVerified(context)
         confirmVerified(builder)
@@ -155,13 +152,13 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
 
 private fun shouldBeAbleToSendMessageToWorkerTopic(msg: WorkerMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to Worker topic" {
-        val envelope = WorkerEnvelope.from(msg) // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<WorkerEnvelope>>()
         val slotSchema = slot<AvroSchema<WorkerEnvelope>>()
         val slotTopic = slot<String>()
         every { context.newOutputMessage<WorkerEnvelope>(capture(slotTopic), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
+        every { builder.key(any()) } returns builder
         every { builder.send() } returns mockk<MessageId>()
         // when
         getSendToWorkers(context.messageBuilder())(msg)
@@ -169,7 +166,8 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: WorkerMessage) = stringS
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe Topic.WORKERS.get("${msg.taskName}")
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<WorkerEnvelope>()).avroSchema
-        verify(exactly = 1) { builder.value(envelope) }
+        verify(exactly = 1) { builder.value(WorkerEnvelope.from(msg)) }
+        verify(exactly = 1) { builder.key("${msg.taskName}") }
         verify(exactly = 1) { builder.send() }
         confirmVerified(context)
         confirmVerified(builder)

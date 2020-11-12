@@ -65,6 +65,7 @@ fun getSendToMonitoringPerName(pulsarMessageBuilder: PulsarMessageBuilder): Send
                 Topic.MONITORING_PER_NAME.get(),
                 AvroSchema.of(schemaDefinition(MonitoringPerNameEnvelope::class))
             )
+            .key("${message.taskName}")
             .value(MonitoringPerNameEnvelope.from(message))
             .send()
         Unit
@@ -78,6 +79,7 @@ fun getSendToTaskEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToTaskE
                 Topic.TASK_ENGINE.get(),
                 AvroSchema.of(schemaDefinition(TaskEngineEnvelope::class))
             )
+            .key("${message.taskId}")
             .value(TaskEngineEnvelope.from(message))
             .also {
                 if (after > 0F) {
@@ -96,6 +98,7 @@ fun getSendToWorkflowEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToW
                 Topic.WORKFLOW_ENGINE.get(),
                 AvroSchema.of(schemaDefinition(WorkflowEngineEnvelope::class))
             )
+            .key("${message.workflowId}")
             .value(WorkflowEngineEnvelope.from(message))
             .also {
                 if (after > 0F) {
@@ -114,6 +117,7 @@ fun getSendToWorkers(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkers 
                 Topic.WORKERS.get("${message.taskName}"),
                 AvroSchema.of(schemaDefinition(WorkerEnvelope::class))
             )
+            .key("${message.taskName}")
             .value(WorkerEnvelope.from(message))
             .send()
         Unit

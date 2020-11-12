@@ -23,17 +23,18 @@
 
 package io.infinitic.api
 
-import io.infinitic.api.extensions.io.ktor.application.*
+import io.infinitic.api.extensions.io.ktor.application.getPath
 import io.infinitic.api.support.BuildInfo
 import io.infinitic.api.task.repositories.TaskRepository
 import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
 import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
-import io.ktor.application.*
+import io.ktor.application.call
 import io.ktor.config.ApplicationConfig
 import io.ktor.features.NotFoundException
 import io.ktor.http.HttpStatusCode
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.response.respond
+import io.ktor.routing.Routing
+import io.ktor.routing.get
 import io.ktor.util.KtorExperimentalAPI
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException

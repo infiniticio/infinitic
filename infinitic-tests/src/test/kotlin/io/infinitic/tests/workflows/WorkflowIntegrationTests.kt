@@ -126,7 +126,7 @@ fun CoroutineScope.init() {
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
         { msg: WorkflowEngineMessage, after: Float -> sendToWorkflowEngine(msg, after) },
-        { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) }
+        { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
     )
 
     taskEngine = taskEngineInWorkflowEngine(
@@ -144,7 +144,7 @@ fun CoroutineScope.init() {
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    worker = Worker { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) }
+    worker = Worker { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
     worker.register<TaskA> { TaskAImpl() }
     worker.register<WorkflowA> { WorkflowAImpl() }
     worker.register<WorkflowB> { WorkflowBImpl() }

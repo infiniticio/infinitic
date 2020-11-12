@@ -23,6 +23,7 @@
 
 package io.infinitic.engines.monitoringPerName.engine
 
+import io.infinitic.common.SendToMonitoringGlobal
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.monitoringGlobal.messages.TaskCreated

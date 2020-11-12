@@ -120,7 +120,7 @@ fun CoroutineScope.init() {
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    worker = Worker { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) }
+    worker = Worker { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
     worker.register(TaskTest::class.java.name) { taskTest }
 }
 

@@ -24,13 +24,9 @@
 package io.infinitic.common.fixtures
 
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.avro.taskManager.data.AvroSerializedData
-import io.infinitic.avro.taskManager.data.AvroSerializedDataType
-import io.infinitic.common.workflows.avro.AvroConverter
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.avro.workflowManager.data.steps.AvroStep
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
@@ -73,12 +69,10 @@ object TestFactory {
             .randomize(Any::class.java) { random<String>() }
             .randomize(Step::class.java) { randomStep() }
             .randomize(String::class.java) { String(random<ByteArray>(), Charsets.UTF_8) }
-            .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
             .randomize(MethodInput::class.java) { MethodInput.from(random<ByteArray>(), random<String>()) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
-            .randomize(AvroSerializedData::class.java) { randomAvroSerializedData() }
             .randomize(WorkflowEngineEnvelope::class.java) {
                 val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
                 WorkflowEngineEnvelope.from(random(sub))
@@ -125,15 +119,6 @@ object TestFactory {
             "A AND (B AND C)" to Step.And(listOf(stepA, Step.And(listOf(stepB, stepC)))),
             "A OR (B AND (C OR D))" to Step.Or(listOf(stepA, Step.And(listOf(stepB, Step.Or(listOf(stepC, stepD))))))
         )
-    }
-
-    private fun randomAvroSerializedData(): AvroSerializedData {
-        val data = random<SerializedData>()
-        return AvroSerializedData.newBuilder()
-            .setBytes(ByteBuffer.wrap(data.bytes))
-            .setType(AvroSerializedDataType.JSON)
-            .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
-            .build()
     }
 
     private fun randomStep(): Step {
