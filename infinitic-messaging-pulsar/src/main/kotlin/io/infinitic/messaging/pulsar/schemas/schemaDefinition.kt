@@ -28,7 +28,7 @@ import io.infinitic.common.serDe.kotlin.kserializer
 import org.apache.pulsar.client.api.schema.SchemaDefinition
 import kotlin.reflect.KClass
 
-fun <T:Any> schemaDefinition(klass: KClass<T>) =
+fun <T : Any> schemaDefinition(klass: KClass<T>) =
     SchemaDefinition.builder<T>()
         .withAlwaysAllowNull(true)
         .withJSR310ConversionEnabled(true)
@@ -38,4 +38,4 @@ fun <T:Any> schemaDefinition(klass: KClass<T>) =
         .withSupportSchemaVersioning(true)
         .build()
 
-inline fun <reified T:Any> schemaDefinition() = schemaDefinition(T::class)
+inline fun <reified T : Any> schemaDefinition() = schemaDefinition(T::class)

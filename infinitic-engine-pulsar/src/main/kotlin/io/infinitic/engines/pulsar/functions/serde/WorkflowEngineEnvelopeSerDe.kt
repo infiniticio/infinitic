@@ -26,7 +26,7 @@ package io.infinitic.engines.pulsar.functions.serde
 import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
 import org.apache.pulsar.functions.api.SerDe
 
-class WorkflowEngineEnvelopeSerDe: SerDe<WorkflowEngineEnvelope> {
+class WorkflowEngineEnvelopeSerDe : SerDe<WorkflowEngineEnvelope> {
     override fun deserialize(input: ByteArray) =
         WorkflowEngineEnvelope.fromByteArray(input)
 

@@ -26,7 +26,7 @@ package io.infinitic.engines.pulsar.functions.serde
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import org.apache.pulsar.functions.api.SerDe
 
-class MonitoringGlobalEnvelopeSerDe: SerDe<MonitoringGlobalEnvelope> {
+class MonitoringGlobalEnvelopeSerDe : SerDe<MonitoringGlobalEnvelope> {
     override fun deserialize(input: ByteArray) =
         MonitoringGlobalEnvelope.fromByteArray(input)
 

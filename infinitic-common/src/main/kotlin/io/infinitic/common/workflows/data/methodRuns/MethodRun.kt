@@ -37,16 +37,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MethodRun(
-        val methodRunId: MethodRunId = MethodRunId(),
-        val isMain: Boolean,
-        val parentWorkflowId: WorkflowId? = null,
-        val parentMethodRunId: MethodRunId? = null,
-        val methodName: MethodName,
-        val methodParameterTypes: MethodParameterTypes?,
-        val methodInput: MethodInput,
-        var methodOutput: MethodOutput? = null,
-        val workflowTaskIndexAtStart: WorkflowTaskIndex = WorkflowTaskIndex(0),
-        val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
-        val pastCommands: MutableList<PastCommand> = mutableListOf(),
-        val pastSteps: MutableList<PastStep> = mutableListOf()
+    val methodRunId: MethodRunId = MethodRunId(),
+    val isMain: Boolean,
+    val parentWorkflowId: WorkflowId? = null,
+    val parentMethodRunId: MethodRunId? = null,
+    val methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes?,
+    val methodInput: MethodInput,
+    var methodOutput: MethodOutput? = null,
+    val workflowTaskIndexAtStart: WorkflowTaskIndex = WorkflowTaskIndex(0),
+    val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
+    val pastCommands: MutableList<PastCommand> = mutableListOf(),
+    val pastSteps: MutableList<PastStep> = mutableListOf()
 )

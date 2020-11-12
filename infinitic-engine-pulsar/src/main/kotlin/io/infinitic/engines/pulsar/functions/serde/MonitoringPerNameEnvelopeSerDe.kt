@@ -26,7 +26,7 @@ package io.infinitic.engines.pulsar.functions.serde
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
 import org.apache.pulsar.functions.api.SerDe
 
-class MonitoringPerNameEnvelopeSerDe: SerDe<MonitoringPerNameEnvelope> {
+class MonitoringPerNameEnvelopeSerDe : SerDe<MonitoringPerNameEnvelope> {
     override fun deserialize(input: ByteArray) =
         MonitoringPerNameEnvelope.fromByteArray(input)
 

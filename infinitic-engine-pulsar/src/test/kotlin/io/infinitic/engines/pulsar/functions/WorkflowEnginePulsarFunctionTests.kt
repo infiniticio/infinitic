@@ -23,11 +23,9 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.common.workflows.avro.AvroConverter
 import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.engines.workflows.engine.WorkflowEngine
 import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
-import io.infinitic.engines.pulsar.functions.WorkflowEnginePulsarFunction
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.Runs
@@ -36,7 +34,6 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import org.apache.pulsar.functions.api.Context

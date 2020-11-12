@@ -23,9 +23,9 @@
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.kotlin.dsl.support.serviceOf
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     application

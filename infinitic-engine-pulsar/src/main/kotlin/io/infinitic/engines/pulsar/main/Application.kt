@@ -61,7 +61,7 @@ class Application(
     private val sendToMonitoringPerName: SendToMonitoringPerName,
     private val sendToMonitoringGlobal: SendToMonitoringGlobal,
     private val sendToWorkers: SendToWorkers
-    ) : CoroutineScope {
+) : CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + Job()
 

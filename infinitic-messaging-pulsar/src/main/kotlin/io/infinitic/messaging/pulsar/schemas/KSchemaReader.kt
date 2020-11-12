@@ -29,9 +29,9 @@ import org.apache.pulsar.client.api.schema.SchemaReader
 import java.io.InputStream
 import kotlin.reflect.KClass
 
-class KSchemaReader<T : Any>(private val klass: KClass<T>): SchemaReader<T> {
+class KSchemaReader<T : Any>(private val klass: KClass<T>) : SchemaReader<T> {
     override fun read(bytes: ByteArray, offset: Int, length: Int) =
-        read(bytes.inputStream(offset,length))
+        read(bytes.inputStream(offset, length))
 
     override fun read(inputStream: InputStream) =
         readBinary(inputStream.readBytes(), kserializer(klass))

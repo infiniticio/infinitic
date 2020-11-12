@@ -43,15 +43,14 @@ fun getKSerializerOrNull(klass: Class<*>): KSerializer<*>? {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <T: Any> kserializer(klass: KClass<T>) = when (klass) {
+fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     MonitoringGlobalEnvelope::class -> MonitoringGlobalEnvelope.serializer()
     MonitoringPerNameEnvelope::class -> MonitoringPerNameEnvelope.serializer()
-    TaskEngineEnvelope::class-> TaskEngineEnvelope.serializer()
-    WorkflowEngineEnvelope::class-> WorkflowEngineEnvelope.serializer()
+    TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
+    WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
     WorkerEnvelope::class -> WorkerEnvelope.serializer()
     else -> throw RuntimeException("This should not happen: apply kserializer with  ${klass.qualifiedName}")
 } as KSerializer <T>
-
 
 fun <T> writeBinary(t: T, serializer: SerializationStrategy<T>): ByteArray {
     val schema = Avro.default.schema(serializer)

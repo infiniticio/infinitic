@@ -51,8 +51,8 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
         null
     }
 
-    internal fun getTaskEngine(context: Context)=
-        taskEngineInWorkflowEngine (
+    internal fun getTaskEngine(context: Context) =
+        taskEngineInWorkflowEngine(
             TaskStateKeyValueStorage(context.keyValueStorage()),
             getSendToWorkflowEngine(context.messageBuilder()),
             getSendToTaskEngine(context.messageBuilder()),

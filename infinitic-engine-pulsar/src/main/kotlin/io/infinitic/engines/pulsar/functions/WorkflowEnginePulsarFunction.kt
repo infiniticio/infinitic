@@ -49,7 +49,7 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
         null
     }
 
-    internal fun getWorkflowEngine(context: Context)=
+    internal fun getWorkflowEngine(context: Context) =
         WorkflowEngine(
             WorkflowStateKeyValueStorage(context.keyValueStorage()),
             getSendToWorkflowEngine(context.messageBuilder()),

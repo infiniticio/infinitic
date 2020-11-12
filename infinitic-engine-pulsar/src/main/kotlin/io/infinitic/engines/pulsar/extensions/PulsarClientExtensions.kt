@@ -61,4 +61,3 @@ fun PulsarClient.newWorkflowEngineConsumer(): Consumer<WorkflowEngineEnvelope> =
         .subscriptionName("infinitic-workflow-engine") // FIXME: Should be in a constant somewhere
         .subscriptionType(SubscriptionType.Key_Shared)
         .subscribe()
-

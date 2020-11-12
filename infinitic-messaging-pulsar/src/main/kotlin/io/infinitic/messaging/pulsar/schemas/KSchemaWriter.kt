@@ -28,6 +28,6 @@ import io.infinitic.common.serDe.kotlin.writeBinary
 import org.apache.pulsar.client.api.schema.SchemaWriter
 import kotlin.reflect.KClass
 
-class KSchemaWriter<T : Any> (private val klass: KClass<T>): SchemaWriter<T> {
-    override fun write(message: T)= writeBinary(message, kserializer(klass))
+class KSchemaWriter<T : Any> (private val klass: KClass<T>) : SchemaWriter<T> {
+    override fun write(message: T) = writeBinary(message, kserializer(klass))
 }

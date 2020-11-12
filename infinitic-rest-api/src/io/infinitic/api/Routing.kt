@@ -38,7 +38,6 @@ import io.ktor.util.KtorExperimentalAPI
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
 import org.koin.ktor.ext.inject
-import java.nio.ByteBuffer
 
 @OptIn(KtorExperimentalAPI::class)
 fun Routing.root() {

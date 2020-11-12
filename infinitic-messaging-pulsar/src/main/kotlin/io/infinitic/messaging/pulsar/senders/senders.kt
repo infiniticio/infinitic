@@ -70,7 +70,7 @@ fun getSendToMonitoringPerName(pulsarMessageBuilder: PulsarMessageBuilder): Send
         Unit
     }
 
-fun getSendToTaskEngine(pulsarMessageBuilder: PulsarMessageBuilder) : SendToTaskEngine =
+fun getSendToTaskEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToTaskEngine =
     {
         message: TaskEngineMessage, after: Float ->
         pulsarMessageBuilder
@@ -88,7 +88,7 @@ fun getSendToTaskEngine(pulsarMessageBuilder: PulsarMessageBuilder) : SendToTask
         Unit
     }
 
-fun getSendToWorkflowEngine(pulsarMessageBuilder: PulsarMessageBuilder) : SendToWorkflowEngine =
+fun getSendToWorkflowEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkflowEngine =
     {
         message: WorkflowEngineMessage, after: Float ->
         pulsarMessageBuilder
@@ -106,7 +106,7 @@ fun getSendToWorkflowEngine(pulsarMessageBuilder: PulsarMessageBuilder) : SendTo
         Unit
     }
 
-fun getSendToWorkers(pulsarMessageBuilder: PulsarMessageBuilder) : SendToWorkers =
+fun getSendToWorkers(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkers =
     {
         message: WorkerMessage ->
         pulsarMessageBuilder
