@@ -23,8 +23,8 @@
 
 package io.infinitic.engines.workflows.engine
 
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCompleted
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.TaskCompleted
+import io.infinitic.common.tasks.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
@@ -32,11 +32,12 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.messages.TaskCompleted as TaskCompletedInWorkflow
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
-import io.infinitic.engines.tasks.engine.SendToMonitoringPerName
-import io.infinitic.engines.tasks.engine.SendToWorkers
+import io.infinitic.common.SendToMonitoringPerName
+import io.infinitic.common.SendToWorkers
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.engines.tasks.engine.TaskEngine
 import io.infinitic.engines.tasks.storage.TaskStateStorage
-import io.infinitic.engines.tasks.engine.SendToTaskEngine
 
 fun taskEngineInWorkflowEngine(
     storage: TaskStateStorage,

@@ -23,7 +23,7 @@
 
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.tasks.proxies.MethodProxyHandler
+import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.Deferred
 import io.infinitic.common.workflows.DeferredStatus
 import io.infinitic.common.workflows.Workflow

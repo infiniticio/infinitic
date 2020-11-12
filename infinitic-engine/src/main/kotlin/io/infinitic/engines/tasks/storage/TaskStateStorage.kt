@@ -24,7 +24,7 @@
 package io.infinitic.engines.tasks.storage
 
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.states.TaskState
+import io.infinitic.common.tasks.state.TaskState
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.

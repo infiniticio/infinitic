@@ -26,11 +26,11 @@ package io.infinitic.tests.tasks
 import io.infinitic.client.Client
 import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.engines.monitoringGlobal.engine.MonitoringGlobalEngine
 import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine

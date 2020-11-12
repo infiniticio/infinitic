@@ -25,11 +25,17 @@ package io.infinitic.engines.pulsar.main
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
+import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateKeyValueStorage
+import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateKeyValueStorage
+import io.infinitic.messaging.pulsar.senders.getSendToMonitoringGlobal
+import io.infinitic.messaging.pulsar.senders.getSendToMonitoringPerName
+import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
+import io.infinitic.messaging.pulsar.senders.getSendToWorkers
+import io.infinitic.messaging.pulsar.senders.getSendToWorkflowEngine
 import io.infinitic.engines.tasks.storage.TaskStateKeyValueStorage
 import io.infinitic.engines.workflows.storage.WorkflowStateKeyValueStorage
-import io.infinitic.messaging.api.dispatcher.AvroDispatcher
-import io.infinitic.messaging.pulsar.PulsarTransport
-import io.infinitic.storage.inMemory.inMemory
+import io.infinitic.messaging.pulsar.extensions.messageBuilder
+import io.infinitic.storage.inMemory.InMemoryStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 
@@ -43,14 +49,24 @@ fun main(args: Array<String>) = mainBody {
             .build()
 
         // FIXME: This must be configurable using a configuration file or command line arguments
-        val storage = inMemory()
-        val taskStateStorage = TaskStateKeyValueStorage(storage)
-        val workflowStateStorage = WorkflowStateKeyValueStorage(storage)
+        val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage())
+        val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage())
+        val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
+        val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
 
         // FIXME: This must be configurable using a configuration file or command line arguments
-        val dispatcher = AvroDispatcher(PulsarTransport.forPulsarClient(client))
-
-        val application = Application.create(client, taskStateStorage, workflowStateStorage, dispatcher)
+        val application = Application(
+            client,
+            workflowStateStorage,
+            taskStateStorage,
+            monitoringPerNameStateStorage,
+            monitoringGlobalStateStorage,
+            getSendToWorkflowEngine(client.messageBuilder()),
+            getSendToTaskEngine(client.messageBuilder()),
+            getSendToMonitoringPerName(client.messageBuilder()),
+            getSendToMonitoringGlobal(client.messageBuilder()),
+            getSendToWorkers(client.messageBuilder())
+        )
         application.run()
     }
 }

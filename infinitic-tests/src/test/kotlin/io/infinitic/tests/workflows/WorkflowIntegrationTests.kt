@@ -24,10 +24,10 @@
 package io.infinitic.tests.workflows
 
 import io.infinitic.client.Client
-import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.common.workflows.messages.WorkflowEngineMessage

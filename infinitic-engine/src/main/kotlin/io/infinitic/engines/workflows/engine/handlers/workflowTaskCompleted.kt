@@ -26,8 +26,7 @@ package io.infinitic.engines.workflows.engine.handlers
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.plus
-import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.tasks.messages.DispatchTask
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
@@ -47,11 +46,10 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.common.workflows.messages.WorkflowCompleted
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
-import io.infinitic.common.workflows.states.WorkflowState
-import io.infinitic.engines.workflows.engine.SendToTaskEngine
-import io.infinitic.engines.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.state.WorkflowState
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.engines.workflows.engine.WorkflowEngine
 import io.infinitic.engines.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.engines.workflows.engine.helpers.dispatchWorkflowTask
@@ -202,8 +200,8 @@ private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: Work
 }
 
 private suspend fun endAsync(
-    sendToWorkflowEngine: suspend (_: WorkflowEngineMessage, delay: Float) -> Unit,
-    sendToTaskEngine: suspend (_: TaskEngineMessage) -> Unit,
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToTaskEngine: SendToTaskEngine,
     methodRun: MethodRun,
     newCommand: NewCommand,
     state: WorkflowState
@@ -242,7 +240,7 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
 }
 
 private suspend fun dispatchTask(
-    sendToTaskEngine: suspend (_: TaskEngineMessage) -> Unit,
+    sendToTaskEngine: SendToTaskEngine,
     methodRun: MethodRun,
     newCommand: NewCommand,
     state: WorkflowState
@@ -259,13 +257,13 @@ private suspend fun dispatchTask(
             (WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}") +
             (WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}")
     )
-    sendToTaskEngine(msg)
+    sendToTaskEngine(msg, 0F)
 
     addPastCommand(methodRun, newCommand)
 }
 
 private suspend fun dispatchChildWorkflow(
-    sendToWorkflowEngine: suspend (_: WorkflowEngineMessage, delay: Float) -> Unit,
+    sendToWorkflowEngine: SendToWorkflowEngine,
     methodRun: MethodRun,
     newCommand: NewCommand,
     state: WorkflowState

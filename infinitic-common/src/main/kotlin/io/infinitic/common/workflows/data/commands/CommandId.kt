@@ -24,7 +24,7 @@
 package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.bases.Id
+import io.infinitic.common.data.Id
 import io.infinitic.common.workflows.data.DelayId
 import io.infinitic.common.workflows.data.events.EventId
 import io.infinitic.common.workflows.data.workflows.WorkflowId

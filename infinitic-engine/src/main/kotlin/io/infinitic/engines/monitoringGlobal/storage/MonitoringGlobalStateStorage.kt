@@ -23,7 +23,7 @@
 
 package io.infinitic.engines.monitoringGlobal.storage
 
-import io.infinitic.common.tasks.states.MonitoringGlobalState
+import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.

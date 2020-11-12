@@ -23,15 +23,14 @@
 
 package io.infinitic.engines.monitoringPerName.engine
 
+import io.infinitic.common.SendToMonitoringGlobal
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.common.tasks.states.MonitoringPerNameState
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoringGlobal.messages.TaskCreated
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
+import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
 import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateStorage
-
-typealias SendToMonitoringGlobal = suspend (MonitoringGlobalMessage) -> Unit
 
 class MonitoringPerNameEngine(
     val storage: MonitoringPerNameStateStorage,

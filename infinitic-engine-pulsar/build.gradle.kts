@@ -25,6 +25,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.kotlin.dsl.support.serviceOf
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     application
@@ -44,13 +45,12 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
     implementation("com.xenomachina:kotlin-argparser:2.0.+")
 
-    implementation(project(":infinitic-avro"))
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-engine"))
     implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage"))
-    testImplementation(testFixtures(project(":infinitic-common")))
 
+    testImplementation(testFixtures(project(":infinitic-common")))
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
@@ -66,7 +66,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 

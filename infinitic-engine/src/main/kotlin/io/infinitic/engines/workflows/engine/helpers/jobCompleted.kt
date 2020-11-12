@@ -29,9 +29,9 @@ import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.states.WorkflowState
-import io.infinitic.engines.workflows.engine.SendToTaskEngine
-import io.infinitic.engines.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.state.WorkflowState
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkflowEngine
 
 suspend fun jobCompleted(
     sendToWorkflowEngine: SendToWorkflowEngine,

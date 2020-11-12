@@ -33,9 +33,6 @@ enum class Topic {
     WORKERS {
         override fun get(name: String) = "tasks-workers-$name"
     },
-    MONITORING_PER_INSTANCE {
-        override fun get(name: String) = "tasks-monitoring-per-instance"
-    },
     MONITORING_PER_NAME {
         override fun get(name: String) = "tasks-monitoring-per-name"
     },

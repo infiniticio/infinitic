@@ -24,7 +24,7 @@
 package io.infinitic.common.workflows.data.properties
 
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.tasks.data.bases.Data
+import io.infinitic.common.data.Data
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor

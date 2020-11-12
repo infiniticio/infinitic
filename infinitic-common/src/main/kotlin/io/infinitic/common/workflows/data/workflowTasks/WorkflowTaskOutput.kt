@@ -23,7 +23,7 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
-import io.infinitic.common.tasks.data.MethodOutput
+import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.properties.PropertyName

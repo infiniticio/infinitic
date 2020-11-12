@@ -25,9 +25,9 @@ package io.infinitic.engines.monitoringPerName.engine
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.monitoringGlobalMessages.TaskCreated
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.common.tasks.states.MonitoringPerNameState
+import io.infinitic.common.monitoringGlobal.messages.TaskCreated
+import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
+import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
 import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe

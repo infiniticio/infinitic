@@ -23,6 +23,9 @@
 
 package io.infinitic.engines.tasks.engine
 
+import io.infinitic.common.SendToMonitoringPerName
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkers
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -30,27 +33,23 @@ import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.TaskStatusUpdated
-import io.infinitic.common.tasks.messages.taskEngineMessages.CancelTask
-import io.infinitic.common.tasks.messages.taskEngineMessages.DispatchTask
-import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTask
-import io.infinitic.common.tasks.messages.taskEngineMessages.RetryTaskAttempt
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptDispatched
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCanceled
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskCompleted
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.workerMessages.RunTask
-import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
-import io.infinitic.common.tasks.states.TaskState
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
+import io.infinitic.common.tasks.messages.CancelTask
+import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.tasks.messages.RetryTask
+import io.infinitic.common.tasks.messages.RetryTaskAttempt
+import io.infinitic.common.tasks.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.TaskAttemptDispatched
+import io.infinitic.common.tasks.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.TaskAttemptStarted
+import io.infinitic.common.tasks.messages.TaskCanceled
+import io.infinitic.common.tasks.messages.TaskCompleted
+import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.workers.messages.RunTask
+import io.infinitic.common.workers.messages.WorkerMessage
+import io.infinitic.common.tasks.state.TaskState
 import io.infinitic.engines.tasks.storage.TaskStateStorage
-
-typealias SendToTaskEngine = suspend (TaskEngineMessage, Float) -> Unit
-typealias SendToMonitoringPerName = suspend (MonitoringPerNameEngineMessage) -> Unit
-typealias SendToWorkers = suspend (WorkerMessage) -> Unit
 
 open class TaskEngine(
     protected val storage: TaskStateStorage,

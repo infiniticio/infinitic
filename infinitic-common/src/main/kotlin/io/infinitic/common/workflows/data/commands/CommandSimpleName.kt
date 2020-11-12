@@ -23,7 +23,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.tasks.data.bases.Name
+import io.infinitic.common.data.Name
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind

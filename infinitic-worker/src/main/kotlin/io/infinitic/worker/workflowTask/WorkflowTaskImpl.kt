@@ -23,9 +23,9 @@
 
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask

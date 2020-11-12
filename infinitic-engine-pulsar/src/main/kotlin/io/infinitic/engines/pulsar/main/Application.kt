@@ -28,14 +28,20 @@ import io.infinitic.engines.pulsar.extensions.newMonitoringGlobalConsumer
 import io.infinitic.engines.pulsar.extensions.newMonitoringPerNameConsumer
 import io.infinitic.engines.pulsar.extensions.newTaskEngineConsumer
 import io.infinitic.engines.pulsar.extensions.newWorkflowEngineConsumer
-import io.infinitic.engines.pulsar.extensions.startConsumer
 import io.infinitic.engines.monitoringGlobal.engine.MonitoringGlobalEngine
+import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateStorage
 import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
+import io.infinitic.common.SendToMonitoringGlobal
+import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateStorage
+import io.infinitic.common.SendToMonitoringPerName
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkers
 import io.infinitic.engines.tasks.storage.TaskStateStorage
-import io.infinitic.engines.workflows.engine.ForWorkflowTaskEngine
+import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.engines.workflows.engine.WorkflowEngine
+import io.infinitic.engines.workflows.engine.taskEngineInWorkflowEngine
 import io.infinitic.engines.workflows.storage.WorkflowStateStorage
-import io.infinitic.messaging.api.dispatcher.Dispatcher
+import io.infinitic.messaging.pulsar.extensions.startConsumer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,12 +51,18 @@ import org.apache.pulsar.client.api.PulsarClientException
 import kotlin.concurrent.thread
 import kotlin.coroutines.CoroutineContext
 
-class Application private constructor(
+class Application(
     private val pulsarClient: PulsarClient,
-    private val taskStateStorage: TaskStateStorage,
     private val workflowStateStorage: WorkflowStateStorage,
-    private val dispatcher: Dispatcher
-) : CoroutineScope {
+    private val taskStateStorage: TaskStateStorage,
+    private val monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
+    private val monitoringGlobalStateStorage: MonitoringGlobalStateStorage,
+    private val sendToWorkflowEngine: SendToWorkflowEngine,
+    private val sendToTaskEngine: SendToTaskEngine,
+    private val sendToMonitoringPerName: SendToMonitoringPerName,
+    private val sendToMonitoringGlobal: SendToMonitoringGlobal,
+    private val sendToWorkers: SendToWorkers
+    ) : CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + Job()
 
@@ -63,10 +75,25 @@ class Application private constructor(
     }
 
     fun run() {
-        val taskEngine = ForWorkflowTaskEngine(taskStateStorage, dispatcher)
-        val monitoringPerName = MonitoringPerNameEngine(taskStateStorage, dispatcher)
-        val monitoringGlobal = MonitoringGlobalEngine(taskStateStorage)
-        val workflowEngine = WorkflowEngine(workflowStateStorage, dispatcher)
+        val workflowEngine = WorkflowEngine(
+            workflowStateStorage,
+            sendToWorkflowEngine,
+            sendToTaskEngine
+        )
+        val taskEngine = taskEngineInWorkflowEngine(
+            taskStateStorage,
+            sendToWorkflowEngine,
+            sendToTaskEngine,
+            sendToMonitoringPerName,
+            sendToWorkers
+        )
+        val monitoringPerName = MonitoringPerNameEngine(
+            monitoringPerNameStateStorage,
+            sendToMonitoringGlobal
+        )
+        val monitoringGlobal = MonitoringGlobalEngine(
+            monitoringGlobalStateStorage
+        )
 
         try {
             val taskEngineConsumer = pulsarClient.newTaskEngineConsumer()
@@ -74,25 +101,20 @@ class Application private constructor(
             val monitoringGlobalConsumer = pulsarClient.newMonitoringGlobalConsumer()
             val workflowEngineConsumer = pulsarClient.newWorkflowEngineConsumer()
 
-            startConsumer(workflowEngineConsumer) { message ->
-                message.value
-                    .let { io.infinitic.common.workflows.avro.AvroConverter.fromWorkflowEngine(it) }
-                    .let { workflowEngine.handle(it) }
+            startConsumer(workflowEngineConsumer) {
+                workflowEngine.handle(it.value.message())
             }
-            startConsumer(taskEngineConsumer) { message ->
-                message.value
-                    .let { AvroConverter.fromTaskEngine(it) }
-                    .let { taskEngine.handle(it) }
+
+            startConsumer(taskEngineConsumer) {
+                taskEngine.handle(it.value.message())
             }
-            startConsumer(monitoringPerNameConsumer) { message ->
-                message.value
-                    .let { AvroConverter.fromMonitoringPerName(it) }
-                    .let { monitoringPerName.handle(it) }
+
+            startConsumer(monitoringPerNameConsumer) {
+                monitoringPerName.handle(it.value.message())
             }
-            startConsumer(monitoringGlobalConsumer) { message ->
-                message.value
-                    .let { AvroConverter.fromMonitoringGlobal(it) }
-                    .let { monitoringGlobal.handle(it) }
+
+            startConsumer(monitoringGlobalConsumer) {
+                monitoringGlobal.handle(it.value.message())
             }
         } catch (e: PulsarClientException) {
             println(e) // FIXME: Remove and replace by a logger
@@ -103,9 +125,5 @@ class Application private constructor(
     fun stop() {
         cancel()
         pulsarClient.close()
-    }
-
-    companion object {
-        fun create(pulsarClient: PulsarClient, taskStateStorage: TaskStateStorage, workflowStateStorage: WorkflowStateStorage, dispatcher: Dispatcher) = Application(pulsarClient, taskStateStorage, workflowStateStorage, dispatcher)
     }
 }

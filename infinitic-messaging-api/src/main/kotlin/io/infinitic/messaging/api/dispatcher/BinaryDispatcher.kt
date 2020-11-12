@@ -26,10 +26,10 @@ package io.infinitic.messaging.api.dispatcher
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.messaging.api.dispatcher.transport.BinaryTransport
 import io.infinitic.common.serDe.avro.AvroConverter as TaskAvroConverter
-import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.common.workflows.avro.AvroConverter as WorkflowAvroConverter
 import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 

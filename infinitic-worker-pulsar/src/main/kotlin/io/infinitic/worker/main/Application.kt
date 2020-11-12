@@ -24,13 +24,14 @@
 package io.infinitic.worker.main
 
 import io.infinitic.common.serDe.avro.AvroConverter
-import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
-import io.infinitic.messaging.api.dispatcher.Dispatcher
+import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.worker.Worker
-import io.infinitic.worker.extensions.acknowledgeSuspend
+import io.infinitic.messaging.pulsar.extensions.acknowledgeSuspend
+import io.infinitic.messaging.pulsar.extensions.messageBuilder
+import io.infinitic.messaging.pulsar.extensions.receiveSuspend
+import io.infinitic.messaging.pulsar.extensions.startConsumer
+import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
 import io.infinitic.worker.extensions.newTaskConsumer
-import io.infinitic.worker.extensions.receiveSuspend
-import io.infinitic.worker.extensions.startConsumer
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +45,10 @@ import org.apache.pulsar.client.api.PulsarClientException
 import kotlin.concurrent.thread
 import kotlin.coroutines.CoroutineContext
 
-class Application internal constructor(private val pulsarClient: PulsarClient, private val worker: Worker) : CoroutineScope {
+class Application internal constructor(
+    private val pulsarClient: PulsarClient,
+    private val worker: Worker
+) : CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + Job()
 
@@ -72,11 +76,7 @@ class Application internal constructor(private val pulsarClient: PulsarClient, p
         worker.getRegisteredTasks().map { name ->
             pulsarClient.newTaskConsumer(name)
         }.forEach { consumer ->
-            startConsumer(consumer) { message ->
-                message
-                    .let { AvroConverter.fromWorkers(it.value) }
-                    .let { worker.handle(it) }
-            }
+            startConsumer(consumer) { worker.handle(it.value.message()) }
         }
     }
 
@@ -101,10 +101,14 @@ class Application internal constructor(private val pulsarClient: PulsarClient, p
             // launch 1 consumer
             launch(CoroutineName("consumer-$taskName")) {
                 while (isActive) {
-                    val message = consumer.receiveSuspend()
-                    message
-                        .let { AvroConverter.fromWorkers(it.value) }
-                        .let { workerInputChannel.send(MessageToProcess(message.messageId, it, resultChannel)) }
+                    val envelope = consumer.receiveSuspend()
+                    workerInputChannel.send(
+                        MessageToProcess(
+                            envelope.messageId,
+                            envelope.value.message(),
+                            resultChannel
+                        )
+                    )
                 }
             }
 
@@ -123,8 +127,8 @@ class Application internal constructor(private val pulsarClient: PulsarClient, p
     }
 }
 
-fun worker(pulsarClient: PulsarClient, dispatcher: Dispatcher, block: Worker.() -> Unit): Application {
-    val worker = Worker(dispatcher)
+fun worker(pulsarClient: PulsarClient, block: Worker.() -> Unit): Application {
+    val worker = Worker(getSendToTaskEngine(pulsarClient.messageBuilder()))
     worker.block()
 
     return Application(pulsarClient, worker)

@@ -23,8 +23,9 @@
 
 package io.infinitic.engines.workflows.engine
 
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
-import io.infinitic.common.workflows.states.WorkflowState
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkflowEngine
+import io.infinitic.common.workflows.state.WorkflowState
 import io.infinitic.common.workflows.messages.CancelWorkflow
 import io.infinitic.common.workflows.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
@@ -44,9 +45,6 @@ import io.infinitic.engines.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.engines.workflows.engine.handlers.taskCompleted
 import io.infinitic.engines.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.engines.workflows.storage.WorkflowStateStorage
-
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
-typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit
 
 class WorkflowEngine(
     private val storage: WorkflowStateStorage,

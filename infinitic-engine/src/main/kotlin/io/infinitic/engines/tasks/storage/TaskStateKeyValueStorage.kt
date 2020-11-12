@@ -26,7 +26,7 @@ package io.infinitic.engines.tasks.storage
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.states.TaskState
+import io.infinitic.common.tasks.state.TaskState
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves

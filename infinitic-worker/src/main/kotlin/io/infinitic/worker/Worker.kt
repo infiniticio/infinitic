@@ -23,20 +23,20 @@
 
 package io.infinitic.worker
 
+import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskAttemptError
-import io.infinitic.common.tasks.data.MethodOutput
+import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.workerMessages.RunTask
-import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
+import io.infinitic.common.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.tasks.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.TaskAttemptStarted
+import io.infinitic.common.workers.messages.RunTask
+import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
@@ -60,7 +60,6 @@ import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
 typealias InstanceFactory = () -> Any
-typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit
 
 open class Worker(
     val sendToTaskEngine: SendToTaskEngine
@@ -264,7 +263,7 @@ open class Worker(
             taskRetry = msg.taskRetry
         )
 
-        sendToTaskEngine(taskAttemptStarted)
+        sendToTaskEngine(taskAttemptStarted, 0F)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
@@ -277,7 +276,7 @@ open class Worker(
             taskAttemptError = TaskAttemptError.from(error)
         )
 
-        sendToTaskEngine(taskAttemptFailed)
+        sendToTaskEngine(taskAttemptFailed, 0F)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -289,7 +288,7 @@ open class Worker(
             taskOutput = MethodOutput.from(output)
         )
 
-        sendToTaskEngine(taskAttemptCompleted)
+        sendToTaskEngine(taskAttemptCompleted, 0F)
     }
 
     @PublishedApi

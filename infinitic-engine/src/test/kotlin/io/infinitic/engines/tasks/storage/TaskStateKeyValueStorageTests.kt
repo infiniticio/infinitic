@@ -26,7 +26,7 @@ package io.infinitic.engines.tasks.storage
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.states.TaskState
+import io.infinitic.common.tasks.state.TaskState
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified

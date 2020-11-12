@@ -2,14 +2,14 @@ package io.infinitic.common.tasks
 
 import com.sksamuel.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalEnvelope
-import io.infinitic.common.tasks.messages.monitoringGlobalMessages.MonitoringGlobalMessage
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.monitoringPerNameMessages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineEnvelope
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.workerMessages.WorkerEnvelope
-import io.infinitic.common.tasks.messages.workerMessages.WorkerMessage
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.tasks.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.workers.messages.WorkerEnvelope
+import io.infinitic.common.workers.messages.WorkerMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

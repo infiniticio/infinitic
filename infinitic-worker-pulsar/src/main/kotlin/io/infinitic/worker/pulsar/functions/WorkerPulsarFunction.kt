@@ -23,23 +23,23 @@
 
 package io.infinitic.worker.pulsar.functions
 
-import io.infinitic.messaging.api.dispatcher.AvroDispatcher
-import io.infinitic.messaging.pulsar.PulsarTransport
-import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.common.workers.messages.WorkerEnvelope
+import io.infinitic.messaging.pulsar.extensions.messageBuilder
+import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
 import io.infinitic.worker.Worker
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-open class WorkerPulsarFunction : Function<AvroEnvelopeForWorker, Void> {
+open class WorkerPulsarFunction : Function<WorkerEnvelope, Void> {
 
-    override fun process(input: AvroEnvelopeForWorker, context: Context?): Void? = runBlocking {
+    override fun process(envelope: WorkerEnvelope, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
-            getWorker(context).handle(input)
+            getWorker(context).handle(envelope.message())
         } catch (e: Exception) {
-            ctx.logger.error("Error:%s for message:%s", e, input)
+            ctx.logger.error("Error:%s for message:%s", e, envelope)
             throw e
         }
 
@@ -47,6 +47,6 @@ open class WorkerPulsarFunction : Function<AvroEnvelopeForWorker, Void> {
     }
 
     fun getWorker(context: Context): Worker {
-        return Worker(AvroDispatcher(PulsarTransport.forPulsarFunctionContext(context)))
+        return Worker(getSendToTaskEngine(context.messageBuilder()))
     }
 }

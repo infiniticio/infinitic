@@ -25,28 +25,29 @@
 
 package io.infinitic.worker
 
+import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.MethodInput
-import io.infinitic.common.tasks.data.MethodName
+import io.infinitic.common.data.methods.MethodInput
+import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.data.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterCount
 import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterTypes
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.common.tasks.exceptions.TooManyMethodsFoundWithParameterCount
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.workerMessages.RunTask
+import io.infinitic.common.tasks.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.messages.TaskAttemptStarted
+import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.workers.messages.RunTask
 import io.infinitic.worker.samples.TestingSampleTask
 import io.infinitic.worker.samples.SampleTaskWithRetry
 import io.infinitic.worker.samples.SampleTaskWithBadTypeRetry
@@ -57,15 +58,15 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.just
 
 class WorkerTests : StringSpec({
     val sendToTaskEngine = mockk<SendToTaskEngine>()
     val slots = mutableListOf<TaskEngineMessage>()
-    coEvery { sendToTaskEngine(capture(slots)) } just Runs
+    coEvery { sendToTaskEngine(capture(slots), any()) } just Runs
     val worker = Worker(sendToTaskEngine)
 
     // ensure slots are emptied between each test

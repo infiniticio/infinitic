@@ -24,7 +24,7 @@
 package io.infinitic.engines.workflows.engine.helpers
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.states.WorkflowState
+import io.infinitic.common.workflows.state.WorkflowState
 
 fun getMethodRun(state: WorkflowState, methodRunId: MethodRunId) =
     state.methodRuns.first { it.methodRunId == methodRunId }

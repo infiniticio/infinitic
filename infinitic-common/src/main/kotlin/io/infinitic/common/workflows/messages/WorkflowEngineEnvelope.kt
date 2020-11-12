@@ -23,8 +23,10 @@
 
 package io.infinitic.common.workflows.messages
 
+import com.sksamuel.avro4k.Avro
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
+import java.nio.ByteBuffer
 
 @Serializable
 data class WorkflowEngineEnvelope(
@@ -69,7 +71,7 @@ data class WorkflowEngineEnvelope(
             }
         }
 
-        require(noNull.first() == value()) {
+        require(noNull.first() == message()) {
             "Provided type $type inconsistent with message ${noNull.first()}"
         }
 
@@ -146,9 +148,12 @@ data class WorkflowEngineEnvelope(
                 workflowCompleted = msg
             )
         }
+
+        fun fromByteArray(bytes: ByteArray) = Avro.default.decodeFromByteArray(serializer(), bytes)
+        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
-    fun value(): WorkflowEngineMessage = when (type) {
+    fun message(): WorkflowEngineMessage = when (type) {
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!
@@ -163,4 +168,7 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.WORKFLOW_CANCELED -> workflowCanceled!!
         WorkflowEngineMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
     }
+
+    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
+    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
 }

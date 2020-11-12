@@ -26,10 +26,10 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
-import io.infinitic.common.tasks.data.MethodInput
-import io.infinitic.common.tasks.data.MethodName
-import io.infinitic.common.tasks.data.MethodParameterTypes
-import io.infinitic.common.tasks.messages.taskEngineMessages.TaskEngineMessage
+import io.infinitic.common.data.methods.MethodInput
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.tasks.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions

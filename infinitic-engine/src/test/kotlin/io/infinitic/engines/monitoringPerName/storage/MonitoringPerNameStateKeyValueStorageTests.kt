@@ -28,7 +28,7 @@ import io.infinitic.common.serDe.avro.AvroConverter
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.states.MonitoringPerNameState
+import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.confirmVerified

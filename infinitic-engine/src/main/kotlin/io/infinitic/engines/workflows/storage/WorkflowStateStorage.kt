@@ -24,7 +24,7 @@
 package io.infinitic.engines.workflows.storage
 
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.states.WorkflowState
+import io.infinitic.common.workflows.state.WorkflowState
 
 interface WorkflowStateStorage {
     fun createState(workflowId: WorkflowId, state: WorkflowState)

@@ -2,10 +2,10 @@ package io.infinitic.common.tasks
 
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tasks.data.MethodInput
-import io.infinitic.common.tasks.data.MethodName
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.data.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodInput
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry

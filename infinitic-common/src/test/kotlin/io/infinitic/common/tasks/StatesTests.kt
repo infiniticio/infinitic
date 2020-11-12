@@ -1,9 +1,9 @@
 package io.infinitic.common.tasks
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tasks.states.MonitoringGlobalState
-import io.infinitic.common.tasks.states.MonitoringPerNameState
-import io.infinitic.common.tasks.states.TaskState
+import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
+import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
+import io.infinitic.common.tasks.state.TaskState
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
