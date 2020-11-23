@@ -28,3 +28,69 @@ ignorePaths:
 
 hasLicensePatterns:
   - '"commons clause" license condition v1.0'
+
+# File extension commenting format configuration
+fileExtensions:
+  - extensions: [".c", ".h"]
+    top: "/*"
+    mid: " * "
+    bot: "*/"
+  - extensions: [".js", ".mjs", ".cjs", ".jsx", ".tsx", ".css", ".tf", ".ts", ".java", ".kt", ".kts"]
+    top: "/**"
+    mid: " * "
+    bot: " */"
+  - extensions:
+      [
+          ".cc",
+          ".cpp",
+          ".cs",
+          ".go",
+          ".hh",
+          ".hpp",
+          ".m",
+          ".mm",
+          ".proto",
+          ".rs",
+          ".scala",
+          ".swift",
+          ".dart",
+          ".groovy",
+          ".php",
+      ]
+    top: ""
+    mid: "// "
+    bot: ""
+  - extensions:
+      [
+          ".py",
+          ".sh",
+          ".yaml",
+          ".yml",
+          ".dockerfile",
+          "dockerfile",
+          ".rb",
+          "gemfile",
+      ]
+    top: ""
+    mid: "# "
+    bot: ""
+  - extensions: [".el", ".lisp"]
+    top: ""
+    mid: ";; "
+    bot: ""
+  - extensions: [".erl"]
+    top: ""
+    mid: "% "
+    bot: ""
+  - extensions: [".hs", ".sql"]
+    top: ""
+    mid: "-- "
+    bot: ""
+  - extensions: [".html", ".xml", ".vue"]
+    top: "<!--"
+    mid: " "
+    bot: "-->"
+  - extensions: [".ml", ".mli", ".mll", ".mly"]
+    top: "(**"
+    mid: "   "
+    bot: "*)"
