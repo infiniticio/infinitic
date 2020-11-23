@@ -34,7 +34,6 @@ plugins {
 }
 
 dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
@@ -44,12 +43,6 @@ dependencies {
     implementation(project(":infinitic-engines"))
     implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage"))
-
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
-    testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
-    testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
-
-    testImplementation(testFixtures(project(":infinitic-common")))
 }
 
 application {

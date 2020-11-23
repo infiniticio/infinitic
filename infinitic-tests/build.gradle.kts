@@ -24,15 +24,9 @@
  */
 
 dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-
     testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-engines"))
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-worker"))
     testImplementation(project(":infinitic-storage"))
-
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
-    testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
-    testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
 }
