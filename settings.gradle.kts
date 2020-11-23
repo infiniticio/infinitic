@@ -31,7 +31,7 @@ include("infinitic-worker")
 include("infinitic-worker-pulsar")
 include("infinitic-client")
 include("infinitic-engines")
-include("infinitic-engine-pulsar")
+include("infinitic-engines-pulsar")
 include("infinitic-tests")
 
 pluginManagement {

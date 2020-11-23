@@ -103,7 +103,7 @@ fun CoroutineScope.init() {
 
     client = Client(
         { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) },
-        { Unit },
+        { Unit }
     )
 
     taskEngine = TaskEngine(
