@@ -29,12 +29,12 @@ import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.messages.interfaces.FailingTaskAttemptMessage
 import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
 import kotlinx.serialization.Serializable

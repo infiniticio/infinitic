@@ -27,8 +27,8 @@ import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.messages.TaskEngineEnvelope
 import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
-import io.infinitic.messaging.pulsar.schemas.schemaDefinition
 import io.infinitic.messaging.pulsar.Topic
+import io.infinitic.messaging.pulsar.schemas.schemaDefinition
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema

@@ -24,11 +24,11 @@
 package io.infinitic.engines.monitoringPerName.engine
 
 import io.infinitic.common.SendToMonitoringGlobal
-import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.monitoringGlobal.messages.TaskCreated
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
+import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateStorage
 
 class MonitoringPerNameEngine(

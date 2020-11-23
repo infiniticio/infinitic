@@ -25,13 +25,13 @@ package io.infinitic.common.workflows.state
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions

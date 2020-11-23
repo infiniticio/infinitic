@@ -23,9 +23,9 @@
 
 package io.infinitic.engines.monitoringGlobal.storage
 
+import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
 import java.nio.ByteBuffer
 
 /**

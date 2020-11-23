@@ -23,11 +23,11 @@
 
 package io.infinitic.engines.workflows.engine.handlers
 
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.common.workflows.state.WorkflowState
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.engines.workflows.engine.helpers.dispatchWorkflowTask
 
 suspend fun dispatchWorkflow(

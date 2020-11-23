@@ -28,9 +28,9 @@ import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.SendToWorkers
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.messages.CancelTask
 import io.infinitic.common.tasks.messages.DispatchTask
 import io.infinitic.common.tasks.messages.RetryTask
@@ -42,9 +42,9 @@ import io.infinitic.common.tasks.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.messages.TaskCanceled
 import io.infinitic.common.tasks.messages.TaskCompleted
 import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.tasks.state.TaskState
 import io.infinitic.common.workers.messages.RunTask
 import io.infinitic.common.workers.messages.WorkerMessage
-import io.infinitic.common.tasks.state.TaskState
 import io.infinitic.engines.tasks.storage.TaskStateStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

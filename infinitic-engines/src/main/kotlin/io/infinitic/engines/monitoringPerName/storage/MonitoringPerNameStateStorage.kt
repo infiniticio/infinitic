@@ -23,8 +23,8 @@
 
 package io.infinitic.engines.monitoringPerName.storage
 
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
+import io.infinitic.common.tasks.data.TaskName
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.

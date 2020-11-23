@@ -24,12 +24,12 @@
 package io.infinitic.worker.main
 
 import io.infinitic.common.workers.messages.WorkerMessage
-import io.infinitic.worker.Worker
 import io.infinitic.messaging.pulsar.extensions.acknowledgeSuspend
 import io.infinitic.messaging.pulsar.extensions.messageBuilder
 import io.infinitic.messaging.pulsar.extensions.receiveSuspend
 import io.infinitic.messaging.pulsar.extensions.startConsumer
 import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
+import io.infinitic.worker.Worker
 import io.infinitic.worker.extensions.newTaskConsumer
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope

@@ -23,8 +23,8 @@
 
 package io.infinitic.common.workflows.data.workflows
 
-import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.data.Meta
+import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.MapSerializer

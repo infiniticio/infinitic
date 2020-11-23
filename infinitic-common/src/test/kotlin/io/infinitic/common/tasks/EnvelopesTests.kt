@@ -27,8 +27,8 @@ import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.messages.TaskEngineMessage
 import io.infinitic.common.workers.messages.WorkerEnvelope

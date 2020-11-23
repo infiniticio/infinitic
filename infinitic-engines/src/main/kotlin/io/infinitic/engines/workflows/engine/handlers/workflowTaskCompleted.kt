@@ -23,6 +23,8 @@
 
 package io.infinitic.engines.workflows.engine.handlers
 
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.plus
@@ -48,8 +50,6 @@ import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.state.WorkflowState
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.engines.workflows.engine.WorkflowEngine
 import io.infinitic.engines.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.engines.workflows.engine.helpers.dispatchWorkflowTask

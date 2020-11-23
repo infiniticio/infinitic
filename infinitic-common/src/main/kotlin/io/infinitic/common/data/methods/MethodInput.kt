@@ -23,8 +23,8 @@
 
 package io.infinitic.common.data.methods
 
-import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.data.Input
+import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer

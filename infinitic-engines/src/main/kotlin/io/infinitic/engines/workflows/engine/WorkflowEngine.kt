@@ -25,12 +25,10 @@ package io.infinitic.engines.workflows.engine
 
 import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.SendToWorkflowEngine
-import io.infinitic.common.workflows.state.WorkflowState
 import io.infinitic.common.workflows.messages.CancelWorkflow
 import io.infinitic.common.workflows.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.messages.DispatchWorkflow
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.messages.ObjectReceived
 import io.infinitic.common.workflows.messages.TaskCanceled
 import io.infinitic.common.workflows.messages.TaskCompleted
@@ -38,8 +36,10 @@ import io.infinitic.common.workflows.messages.TaskDispatched
 import io.infinitic.common.workflows.messages.TimerCompleted
 import io.infinitic.common.workflows.messages.WorkflowCanceled
 import io.infinitic.common.workflows.messages.WorkflowCompleted
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
+import io.infinitic.common.workflows.state.WorkflowState
 import io.infinitic.engines.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.engines.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.engines.workflows.engine.handlers.taskCompleted

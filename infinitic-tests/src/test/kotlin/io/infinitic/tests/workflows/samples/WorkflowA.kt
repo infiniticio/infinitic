@@ -24,11 +24,11 @@
 package io.infinitic.tests.workflows.samples
 
 import io.infinitic.common.workflows.Deferred
+import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.and
-import io.infinitic.common.workflows.or
-import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.async
+import io.infinitic.common.workflows.or
 import io.infinitic.common.workflows.task
 import io.infinitic.common.workflows.workflow
 import java.time.LocalDateTime

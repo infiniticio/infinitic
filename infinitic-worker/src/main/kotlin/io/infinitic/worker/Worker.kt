@@ -24,14 +24,14 @@
 package io.infinitic.worker
 
 import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskAttemptError
-import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
-import io.infinitic.common.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.tasks.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.messages.TaskAttemptStarted

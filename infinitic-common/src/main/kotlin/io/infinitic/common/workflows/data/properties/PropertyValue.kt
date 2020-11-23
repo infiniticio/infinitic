@@ -23,8 +23,8 @@
 
 package io.infinitic.common.workflows.data.properties
 
-import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.data.Data
+import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor

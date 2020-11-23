@@ -27,8 +27,8 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
-import io.infinitic.common.workflows.data.steps.Step.Or
 import io.infinitic.common.workflows.data.steps.Step.And
+import io.infinitic.common.workflows.data.steps.Step.Or
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

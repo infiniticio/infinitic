@@ -24,9 +24,9 @@
 package io.infinitic.common.tasks.messages.interfaces
 
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskRetry
 
 interface TaskAttemptMessage {
     val taskId: TaskId

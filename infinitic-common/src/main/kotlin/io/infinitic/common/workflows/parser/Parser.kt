@@ -23,8 +23,8 @@
 
 package io.infinitic.common.workflows.parser
 
-import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties

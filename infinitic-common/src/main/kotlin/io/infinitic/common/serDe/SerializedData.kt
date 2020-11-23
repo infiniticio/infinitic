@@ -25,20 +25,20 @@ package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.common.json.Json as JsonJackson
 import io.infinitic.common.serDe.kotlin.getKSerializerOrNull
-import io.infinitic.common.tasks.exceptions.MissingMetaJavaClassDuringDeserialization
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringDeserialization
 import io.infinitic.common.tasks.exceptions.ExceptionDuringJsonDeserialization
 import io.infinitic.common.tasks.exceptions.ExceptionDuringKotlinDeserialization
+import io.infinitic.common.tasks.exceptions.MissingMetaJavaClassDuringDeserialization
 import io.infinitic.common.tasks.exceptions.SerializerNotFoundDuringDeserialization
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json as JsonKotlin
 import org.apache.avro.specific.SpecificRecordBase
 import java.math.BigInteger
 import java.security.MessageDigest
+import io.infinitic.common.json.Json as JsonJackson
+import kotlinx.serialization.json.Json as JsonKotlin
 
 @Serializable
 data class SerializedData(

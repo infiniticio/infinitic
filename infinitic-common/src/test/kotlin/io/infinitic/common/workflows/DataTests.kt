@@ -23,8 +23,8 @@
 
 package io.infinitic.common.workflows
 
-import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput

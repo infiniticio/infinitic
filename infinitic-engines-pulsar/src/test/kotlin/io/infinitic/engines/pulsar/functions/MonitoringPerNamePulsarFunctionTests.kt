@@ -23,9 +23,9 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
+import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.Runs

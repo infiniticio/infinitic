@@ -26,17 +26,17 @@
 package io.infinitic.worker
 
 import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskRetry
-import io.infinitic.common.tasks.data.TaskAttemptRetry
-import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.tasks.data.TaskAttemptId
+import io.infinitic.common.tasks.data.TaskAttemptRetry
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.data.methods.MethodOutput
-import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterCount
 import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterTypes
@@ -48,20 +48,20 @@ import io.infinitic.common.tasks.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.messages.TaskEngineMessage
 import io.infinitic.common.workers.messages.RunTask
-import io.infinitic.worker.samples.TestingSampleTask
-import io.infinitic.worker.samples.SampleTaskWithRetry
 import io.infinitic.worker.samples.SampleTaskWithBadTypeRetry
 import io.infinitic.worker.samples.SampleTaskWithBuggyRetry
 import io.infinitic.worker.samples.SampleTaskWithContext
+import io.infinitic.worker.samples.SampleTaskWithRetry
 import io.infinitic.worker.samples.SampleTaskWithTimeout
+import io.infinitic.worker.samples.TestingSampleTask
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
-import io.kotest.matchers.types.shouldBeInstanceOf
-import io.mockk.just
 
 class WorkerTests : StringSpec({
     val sendToTaskEngine = mockk<SendToTaskEngine>()

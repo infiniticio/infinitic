@@ -24,10 +24,10 @@
 package io.infinitic.common.workflows.data.commands
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
