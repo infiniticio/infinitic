@@ -53,7 +53,7 @@ open class TaskEngine(
     protected val storage: TaskStateStorage,
     protected val sendToTaskEngine: SendToTaskEngine,
     protected val sendToMonitoringPerName: SendToMonitoringPerName,
-    protected val sendToWorkers: SendToWorkers,
+    protected val sendToWorkers: SendToWorkers
 ) {
     open suspend fun handle(message: TaskEngineMessage) {
         // immediately discard messages that are non managed
