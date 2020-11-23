@@ -24,7 +24,7 @@
 package io.infinitic.common.serDe.kotlin
 
 import com.github.avrokotlin.avro4k.Avro
-import com.github.avrokotlin.avro4k.io.AvroFormat
+import com.github.avrokotlin.avro4k.io.AvroEncodeFormat
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.messages.TaskEngineEnvelope
@@ -79,7 +79,7 @@ fun <T> writeBinary(t: T, serializer: SerializationStrategy<T>): ByteArray {
     val schema = Avro.default.schema(serializer)
     val out = ByteArrayOutputStream()
     Avro.default.openOutputStream(serializer) {
-        format = AvroFormat.BinaryFormat
+        encodeFormat = AvroEncodeFormat.Binary
         this.schema = schema
     }.to(out).write(t).close()
     return out.toByteArray()
