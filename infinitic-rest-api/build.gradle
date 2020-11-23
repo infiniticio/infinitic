@@ -17,11 +17,6 @@ apply plugin: 'com.github.johnrengelman.shadow'
 
 mainClassName = "io.ktor.server.netty.EngineMain"
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 compileKotlin {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
@@ -63,7 +58,7 @@ dependencies {
 
 processResources {
     filter ReplaceTokens, tokens: [
-        "project.version": project.property("version")
+            "project.version": project.property("version")
     ]
 }
 
