@@ -25,8 +25,6 @@
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(kotlin("stdlib-jdk8"))
-    implementation("org.slf4j:slf4j-api:1.7.+")
 
     testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-engines"))
@@ -34,9 +32,6 @@ dependencies {
     testImplementation(project(":infinitic-worker"))
     testImplementation(project(":infinitic-storage"))
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")

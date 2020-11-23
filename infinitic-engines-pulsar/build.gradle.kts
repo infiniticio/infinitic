@@ -35,12 +35,9 @@ plugins {
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(kotlin("stdlib-jdk8"))
-    implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("org.slf4j:slf4j-api:1.7.+")
     implementation("com.xenomachina:kotlin-argparser:2.0.+")
 
     implementation(project(":infinitic-common"))
@@ -48,11 +45,11 @@ dependencies {
     implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage"))
 
-    testImplementation(testFixtures(project(":infinitic-common")))
-    testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
+
+    testImplementation(testFixtures(project(":infinitic-common")))
 }
 
 application {

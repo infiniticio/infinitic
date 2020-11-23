@@ -24,6 +24,7 @@
  */
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.ir.backend.js.compile
 
 allprojects {
     repositories {
@@ -42,8 +43,10 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
+
     version = "1.0.0-SNAPSHOT"
 
+    extra["slf4j_version"] = "1.7.+"
     extra["kotlin-reflect_version"] = "1.4.10"
     extra["kotest_version"] = "4.2.+"
     extra["mockk_version"] = "1.10.+"

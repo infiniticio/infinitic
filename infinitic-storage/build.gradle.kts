@@ -29,7 +29,6 @@ plugins {
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(kotlin("stdlib-jdk8"))
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("redis.clients:jedis:3.3.+")
 

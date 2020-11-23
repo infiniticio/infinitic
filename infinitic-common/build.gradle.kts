@@ -29,12 +29,10 @@ plugins {
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.+")
-    implementation("org.apache.avro:avro:1.10.+")
     implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.0.0")
 
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
