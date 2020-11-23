@@ -22,7 +22,6 @@
 #
 # Licensor: infinitic.io
 
-
 # Variables definitions
 
 DEFAULT_PULSAR_ADMIN_URL=http://localhost:8080
