@@ -23,7 +23,7 @@
 
 plugins {
     kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
 
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
