@@ -23,10 +23,7 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    kotlin("jvm") version "1.4.10" apply false
-    kotlin("plugin.serialization") version "1.4.10" apply false
-}
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 allprojects {
     repositories {
@@ -34,7 +31,17 @@ allprojects {
     }
 }
 
+plugins {
+    kotlin("jvm") version "1.4.10" apply false
+    kotlin("plugin.serialization") version "1.4.10" apply false
+    id("org.jlleitschuh.gradle.ktlint") version "9.4.1" apply false
+}
+
 subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
     version = "1.0.0-SNAPSHOT"
 
     extra["kotlin-reflect_version"] = "1.4.10"
@@ -43,4 +50,19 @@ subprojects {
     extra["kotlinx_coroutines_version"] = "1.3.+"
     extra["pulsar_version"] = "2.6.+"
     extra["easyrandom_version"] = "4.2.+"
+
+    tasks.withType<JavaCompile> {
+        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
+        targetCompatibility = JavaVersion.VERSION_1_8.toString()
+    }
+
+    if (name != "infinitic-rest-api") {
+        tasks.withType<Test> {
+            useJUnitPlatform()
+        }
+
+        tasks.withType<KotlinCompile> {
+            kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+        }
+    }
 }

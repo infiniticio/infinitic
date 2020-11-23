@@ -24,9 +24,6 @@
  */
 
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization")
-    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
     id("java-test-fixtures")
 }
 
@@ -46,17 +43,4 @@ dependencies {
 
     testFixturesImplementation("org.jetbrains.kotlin:kotlin-reflect:${project.extra["kotlin-reflect_version"]}")
     testFixturesImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
 }

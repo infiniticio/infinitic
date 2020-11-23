@@ -23,14 +23,6 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization")
-    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
-
-    application
-}
-
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
@@ -48,22 +40,4 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
-
-application {
-    // Define the main class for the application.
-    mainClassName = "infinitic.examples.AppKt"
 }

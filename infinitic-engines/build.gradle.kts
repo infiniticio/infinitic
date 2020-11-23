@@ -25,11 +25,6 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-plugins {
-    kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
-}
-
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
@@ -44,17 +39,4 @@ dependencies {
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
 
     testImplementation(testFixtures(project(":infinitic-common")))
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
 }

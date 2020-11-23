@@ -24,10 +24,6 @@
  */
 
 plugins {
-    kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
-
-    // Apply the java-library plugin for API and implementation separation.
     `java-library`
 }
 
@@ -38,17 +34,4 @@ dependencies {
     implementation("redis.clients:jedis:3.3.+")
 
     implementation(project(":infinitic-common"))
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
 }

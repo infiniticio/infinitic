@@ -25,16 +25,12 @@
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.kotlin.dsl.support.serviceOf
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
 plugins {
     application
-    kotlin("jvm")
-    kotlin("plugin.serialization")
     id("com.github.johnrengelman.shadow") version "5.2.0"
-    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
 }
 
 dependencies {
@@ -61,19 +57,6 @@ dependencies {
 
 application {
     mainClassName = "io.infinitic.engine.pulsar.main.MainKt"
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
 }
 
 tasks {
