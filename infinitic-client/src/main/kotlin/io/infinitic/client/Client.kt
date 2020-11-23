@@ -52,7 +52,7 @@ typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit
 
 class Client(
     val sendToTaskEngine: SendToTaskEngine,
-    val sendToWorkflowEngine: SendToWorkflowEngine,
+    val sendToWorkflowEngine: SendToWorkflowEngine
 ) {
 
     /*

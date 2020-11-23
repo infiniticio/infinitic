@@ -23,7 +23,7 @@
 
 package io.infinitic.common.monitoringGlobal.messages
 
-import com.sksamuel.avro4k.Avro
+import com.github.avrokotlin.avro4k.Avro
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer
 

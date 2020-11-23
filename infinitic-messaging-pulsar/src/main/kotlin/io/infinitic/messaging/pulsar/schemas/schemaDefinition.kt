@@ -23,7 +23,7 @@
 
 package io.infinitic.messaging.pulsar.schemas
 
-import com.sksamuel.avro4k.Avro
+import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.serDe.kotlin.kserializer
 import org.apache.pulsar.client.api.schema.SchemaDefinition
 import kotlin.reflect.KClass

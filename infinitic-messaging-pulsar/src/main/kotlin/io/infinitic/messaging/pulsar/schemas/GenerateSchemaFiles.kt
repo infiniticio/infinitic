@@ -23,7 +23,7 @@
 
 package io.infinitic.messaging.pulsar.schemas
 
-import com.sksamuel.avro4k.Avro
+import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.json.Json
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope

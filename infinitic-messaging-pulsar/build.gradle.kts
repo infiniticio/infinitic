@@ -36,8 +36,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("com.sksamuel.avro4k:avro4k-core:0.41.+")
-
+    implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.0.0")
     implementation(project(":infinitic-common"))
     api(project(":infinitic-storage"))
 

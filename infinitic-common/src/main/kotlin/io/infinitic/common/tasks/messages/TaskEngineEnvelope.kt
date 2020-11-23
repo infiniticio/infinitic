@@ -23,7 +23,7 @@
 
 package io.infinitic.common.tasks.messages
 
-import com.sksamuel.avro4k.Avro
+import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.tasks.data.TaskId
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer

@@ -23,8 +23,8 @@
 
 package io.infinitic.common.serDe.kotlin
 
-import com.sksamuel.avro4k.Avro
-import com.sksamuel.avro4k.io.AvroFormat
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.io.AvroFormat
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.messages.TaskEngineEnvelope

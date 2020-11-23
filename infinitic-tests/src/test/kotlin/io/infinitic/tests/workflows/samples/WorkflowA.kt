@@ -29,8 +29,8 @@ import io.infinitic.common.workflows.and
 import io.infinitic.common.workflows.or
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.async
-import io.infinitic.common.workflows.proxy
 import io.infinitic.common.workflows.task
+import io.infinitic.common.workflows.workflow
 import java.time.LocalDateTime
 
 interface WorkflowA : Workflow {
@@ -60,8 +60,8 @@ interface WorkflowA : Workflow {
 
 class WorkflowAImpl : WorkflowA {
     override lateinit var context: WorkflowTaskContext
-    private val taskA = proxy(TaskA::class)
-    private val workflowB = proxy(WorkflowB::class)
+    private val taskA = task<TaskA>()
+    private val workflowB = workflow<WorkflowB>()
     private var p1 = ""
 
     override fun empty() = "void"

@@ -28,7 +28,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
-internal class TaskProxyHandler<T : Any>(
+class TaskProxyHandler<T : Any>(
     private val klass: Class<T>,
     private val workflowTaskContextFun: () -> WorkflowTaskContext
 ) : InvocationHandler {

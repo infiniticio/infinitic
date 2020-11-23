@@ -23,7 +23,7 @@
 
 package io.infinitic.common.workflows
 
-import com.sksamuel.avro4k.Avro
+import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.messages.WorkflowEngineMessage

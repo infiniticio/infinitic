@@ -23,7 +23,7 @@
 
 package io.infinitic.common.tasks.state
 
-import com.sksamuel.avro4k.Avro
+import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskAttemptRetry

@@ -23,7 +23,7 @@
 
 package io.infinitic.common.workflows.messages
 
-import com.sksamuel.avro4k.Avro
+import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer

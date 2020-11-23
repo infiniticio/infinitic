@@ -23,7 +23,7 @@
 
 package io.infinitic.common.workflows.state
 
-import com.sksamuel.avro4k.Avro
+import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
