@@ -46,8 +46,8 @@ subprojects {
 
     dependencies {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))
-        "testImplementation"("io.kotest:kotest-runner-junit5-jvm:4.2.+")
-        "testImplementation"("io.kotest:kotest-property-jvm:4.2.+")
+        "testImplementation"("io.kotest:kotest-runner-junit5-jvm:4.3.+")
+        "testImplementation"("io.kotest:kotest-property-jvm:4.3.+")
         "testImplementation"("io.mockk:mockk:1.10.+")
 
         if (name != "infinitic-common") {
@@ -57,9 +57,7 @@ subprojects {
 
     extra["slf4j_version"] = "1.7.+"
     extra["kotlin_reflect_version"] = "1.4.10"
-    extra["kotest_version"] = "4.2.+"
-    extra["mockk_version"] = "1.10.+"
-    extra["kotlinx_coroutines_version"] = "1.3.+"
+    extra["kotlinx_coroutines_version"] = "1.4.+"
     extra["pulsar_version"] = "2.6.+"
     extra["easyrandom_version"] = "4.2.+"
 
