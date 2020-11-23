@@ -23,15 +23,32 @@
 
 package io.infinitic.common.workflows.data.workflows
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import io.infinitic.common.data.SerializedData
-import io.infinitic.common.tasks.data.bases.Meta
+import io.infinitic.common.data.Meta
+import io.infinitic.common.serDe.SerializedData
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class WorkflowMeta(override val data: Map<String, Any?> = mapOf()) : Meta(data), Map<String, Any?> by data {
+@Serializable(with = WorkflowMetaSerializer::class)
+data class WorkflowMeta(override val serialized: Map<String, SerializedData> = mapOf()) : Meta(serialized) {
     companion object {
-        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serialized: Map<String, SerializedData>) = fromSerialized<WorkflowMeta>(serialized)
+        fun from(data: Map<String, Any?>) = WorkflowMeta(data.mapValues { SerializedData.from(it) })
     }
+}
 
-    fun with(key: String, value: Any?) = withMeta<WorkflowMeta>(key, value)
+operator fun WorkflowMeta.plus(other: Pair<String, Any?>) =
+    WorkflowMeta(this.serialized + Pair(other.first, SerializedData.from(other.second)))
+
+operator fun WorkflowMeta.minus(other: String) =
+    WorkflowMeta(this.serialized - other)
+
+object WorkflowMetaSerializer : KSerializer<WorkflowMeta> {
+    val ser = MapSerializer(String.serializer(), SerializedData.serializer())
+    override val descriptor: SerialDescriptor = ser.descriptor
+    override fun serialize(encoder: Encoder, value: WorkflowMeta) { ser.serialize(encoder, value.serialized) }
+    override fun deserialize(decoder: Decoder) = WorkflowMeta(ser.deserialize(decoder))
 }

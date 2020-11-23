@@ -23,11 +23,21 @@
 
 package io.infinitic.common.tasks.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.tasks.data.bases.Id
+import io.infinitic.common.data.Id
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-data class TaskAttemptId
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val id: String = UUID.randomUUID().toString()) : Id(id)
+@Serializable(with = TaskAttemptIdSerializer::class)
+data class TaskAttemptId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+
+object TaskAttemptIdSerializer : KSerializer<TaskAttemptId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskAttemptId", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TaskAttemptId) { encoder.encodeString(value.id) }
+    override fun deserialize(decoder: Decoder) = TaskAttemptId(decoder.decodeString())
+}

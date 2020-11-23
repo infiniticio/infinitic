@@ -23,7 +23,8 @@
 
 plugins {
     kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    kotlin("plugin.serialization")
+    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
 }
 
 dependencies {
@@ -31,15 +32,13 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.slf4j:slf4j-api:1.7.+")
 
-    testImplementation(project(":infinitic-avro"))
-    testImplementation(project(":infinitic-messaging-api"))
-    testImplementation(project(":infinitic-storage-pulsar"))
-    testImplementation(project(":infinitic-storage-inmemory"))
     testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-engine"))
+    testImplementation(project(":infinitic-engines"))
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-worker"))
+    testImplementation(project(":infinitic-storage"))
 
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")

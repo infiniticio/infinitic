@@ -23,24 +23,26 @@
 
 plugins {
     kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    kotlin("plugin.serialization")
+    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
     id("java-test-fixtures")
 }
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.+")
-
-    implementation(project(":infinitic-avro"))
+    implementation("org.apache.avro:avro:1.10.+")
+    implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.0.0")
 
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
 
-    testFixturesImplementation(project(":infinitic-avro"))
+    testFixturesImplementation("org.jetbrains.kotlin:kotlin-reflect:${project.extra["kotlin-reflect_version"]}")
     testFixturesImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
 }
 

@@ -23,9 +23,20 @@
 
 package io.infinitic.common.workflows.data.properties
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
+import io.infinitic.common.data.Name
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class PropertyName
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue val name: String) : Comparable<String> by name
+@Serializable(with = PropertyNameSerializer::class)
+data class PropertyName(override val name: String) : Name(name)
+
+object PropertyNameSerializer : KSerializer<PropertyName> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("PropertyName", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: PropertyName) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = PropertyName(decoder.decodeString())
+}

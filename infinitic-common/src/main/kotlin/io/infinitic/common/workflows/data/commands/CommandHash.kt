@@ -23,10 +23,20 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.tasks.data.bases.Hash
+import io.infinitic.common.data.Hash
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class CommandHash
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue override val hash: String) : Hash(hash)
+@Serializable(with = CommandHashSerializer::class)
+data class CommandHash(override val hash: String) : Hash(hash)
+
+object CommandHashSerializer : KSerializer<CommandHash> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandHash", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CommandHash) { encoder.encodeString(value.hash) }
+    override fun deserialize(decoder: Decoder) = CommandHash(decoder.decodeString())
+}

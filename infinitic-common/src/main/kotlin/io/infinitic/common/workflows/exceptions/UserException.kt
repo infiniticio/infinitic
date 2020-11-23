@@ -23,34 +23,34 @@
 
 package io.infinitic.common.workflows.exceptions
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import kotlinx.serialization.Serializable
 
-/*
- *  @JsonIgnoreProperties and @JsonProperty annotations are here
- *  to allow correct JSON ser/deserialization through constructors
- */
+@Serializable
+sealed class UserException : RuntimeException()
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-sealed class UserException(
-    open val msg: String,
-    open val help: String
-) : RuntimeException("$msg.\n$help") // Must be an unchecked exception, to avoid UndeclaredThrowableException when thrown from a proxy
-
+@Serializable
 sealed class UserExceptionInCommon(
-    override val msg: String,
-    override val help: String
-) : UserException(msg, help)
+    val msg: String,
+    val help: String
+) : UserException() {
+    override val message = "$msg.\n$help"
+}
 
+@Serializable
 sealed class UserExceptionInClient(
-    override val msg: String,
-    override val help: String
-) : UserException(msg, help)
+    val msg: String,
+    val help: String
+) : UserException() {
+    override val message = "$msg.\n$help"
+}
 
+@Serializable
 sealed class UserExceptionInWorker(
-    override val msg: String,
-    override val help: String
-) : UserException(msg, help)
+    val msg: String,
+    val help: String
+) : UserException() {
+    override val message = "$msg.\n$help"
+}
 
 /***********************
  * Exceptions in common
@@ -64,49 +64,54 @@ sealed class UserExceptionInWorker(
  * Exceptions in worker
  ***********************/
 
-data class WorkflowTaskContextNotInitialized(
-    @JsonProperty("name") val name: String,
-    @JsonProperty("context") val context: String
-) : UserExceptionInWorker(
-    msg = "\"context\" property not initialized in $name",
-    help = "If you need to test your workflow, please initialize the context property by an instance of $context"
-)
-
-data class WorkflowUpdatedWhileRunning(
-    @JsonProperty("workflowName") val workflowName: String,
-    @JsonProperty("workflowMethodName") val workflowMethodName: String,
-    @JsonProperty("position") val position: String
+@Serializable
+data class WorkflowDefinitionUpdatedWhileOngoing(
+    val workflowName: String,
+    val workflowMethodName: String,
+    val position: String
 ) : UserExceptionInWorker(
     msg = "Definition of workflow \"$workflowName\" has been updated since its launch (detected at position $position in $workflowMethodName)",
     help = "You can either kill this instance or revert its previous definition to be able to resume it"
 )
 
+@Serializable
 data class NoMethodCallAtAsync(
-    @JsonProperty("name") val name: String
+    val name: String
 ) : UserExceptionInWorker(
     msg = "You must use a method of \"$name\" when using \"async\" method",
     help = "Make sure to call exactly one method of \"$name\" within the curly braces - example: async(foo) { bar(*args) }"
 )
 
-data class ShouldNotWaitInInlineTask(
-    @JsonProperty("unused") val unused: String = ""
+@Serializable
+data class ShouldNotWaitInsideInlinedTask(
+    val method: String
 ) : UserExceptionInWorker(
-    msg = "You can not suspend computations inside an inline task",
-    help = "Make sure you do not wait in your inline task"
+    msg = "You must not suspend computations inside an inlined task",
+    help = "In $method, make sure you do not wait for task or child workflow completion inside `task { ... }`"
 )
 
-data class WorkflowUsedAsTask(
-    @JsonProperty("name") val name: String,
-    @JsonProperty("workflow") val workflow: String
+@Serializable
+data class ShouldNotUseAsyncFunctionInsideInlinedTask(
+    val method: String
 ) : UserExceptionInWorker(
-    msg = "$name is used as a task, but registered implementation $workflow is a workflow ",
+    msg = "You must not suspend computations inside an inlined task",
+    help = "In $method, make sure you do not use `async { ... }` function inside `task { ... }`"
+)
+
+@Serializable
+data class WorkflowUsedAsTask(
+    val name: String,
+    val workflow: String
+) : UserExceptionInWorker(
+    msg = "$name is used as a task, but registered implementation $workflow is a workflow",
     help = "Check that you are using $name consistently between client and workers"
 )
 
+@Serializable
 data class TaskUsedAsWorkflow(
-    @JsonProperty("name") val name: String,
-    @JsonProperty("task") val task: String
+    val name: String,
+    val task: String
 ) : UserExceptionInWorker(
-    msg = "$name is used as a workflow, but registered implementation $task is a task ",
+    msg = "$name is used as a workflow, but registered implementation $task is a task",
     help = "Check that you are using $name consistently between client and workers"
 )

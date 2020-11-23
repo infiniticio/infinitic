@@ -50,7 +50,7 @@ describe('@infinitic/messages', () => {
     const value = random(types.AvroTaskAttemptCompleted);
     expect(value.taskId).toBeOfType('string');
     expect(value.taskAttemptId).toBeOfType('string');
-    expect(value.taskAttemptIndex).toBeOfType('number');
+    expect(value.taskRetry).toBeOfType('number');
     expect(value.taskAttemptRetry).toBeOfType('number');
   });
 
@@ -58,7 +58,7 @@ describe('@infinitic/messages', () => {
     const value = random(types.AvroTaskAttemptDispatched);
     expect(value.taskId).toBeOfType('string');
     expect(value.taskAttemptId).toBeOfType('string');
-    expect(value.taskAttemptIndex).toBeOfType('number');
+    expect(value.taskRetry).toBeOfType('number');
     expect(value.taskAttemptRetry).toBeOfType('number');
   });
 
@@ -67,7 +67,7 @@ describe('@infinitic/messages', () => {
     expect(value.taskId).toBeOfType('string');
     expect(value.taskAttemptId).toBeOfType('string');
     expect(value.taskAttemptRetry).toBeOfType('number');
-    expect(value.taskAttemptIndex).toBeOfType('number');
+    expect(value.taskRetry).toBeOfType('number');
     expect(value.taskAttemptDelayBeforeRetry).toBeOfTypeOrNull('number');
   });
 
@@ -76,7 +76,7 @@ describe('@infinitic/messages', () => {
     expect(value.taskId).toBeOfType('string');
     expect(value.taskAttemptId).toBeOfType('string');
     expect(value.taskAttemptRetry).toBeOfType('number');
-    expect(value.taskAttemptIndex).toBeOfType('number');
+    expect(value.taskRetry).toBeOfType('number');
   });
 
   it('exports a correct AvroTaskCanceled', () => {
@@ -99,6 +99,6 @@ describe('@infinitic/messages', () => {
     expect(value.taskId).toBeOfType('string');
     expect(value.taskAttemptId).toBeOfType('string');
     expect(value.taskAttemptRetry).toBeOfType('number');
-    expect(value.taskAttemptIndex).toBeOfType('number');
+    expect(value.taskRetry).toBeOfType('number');
   });
 });

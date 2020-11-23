@@ -23,22 +23,20 @@
 
 package io.infinitic.worker
 
-import io.infinitic.messaging.api.dispatcher.Dispatcher
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.tasks.Constants
-import io.infinitic.common.tasks.avro.AvroConverter
 import io.infinitic.common.tasks.data.TaskAttemptError
-import io.infinitic.common.tasks.data.MethodOutput
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
-import io.infinitic.common.tasks.messages.ForWorkerMessage
-import io.infinitic.common.tasks.messages.RunTask
 import io.infinitic.common.tasks.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.avro.taskManager.messages.envelopes.AvroEnvelopeForWorker
+import io.infinitic.common.workers.messages.RunTask
+import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
@@ -63,7 +61,9 @@ import kotlin.reflect.jvm.javaType
 
 typealias InstanceFactory = () -> Any
 
-open class Worker(val dispatcher: Dispatcher) {
+open class Worker(
+    val sendToTaskEngine: SendToTaskEngine
+) {
 
     // map taskName <> taskInstance
     private val registeredFactories = mutableMapOf<String, InstanceFactory>()
@@ -101,11 +101,7 @@ open class Worker(val dispatcher: Dispatcher) {
         registeredFactories.remove(name)
     }
 
-    suspend fun handle(avro: AvroEnvelopeForWorker) = when (val msg = AvroConverter.fromWorkers(avro)) {
-        is RunTask -> runTask(msg)
-    }
-
-    suspend fun handle(message: ForWorkerMessage) = when (message) {
+    suspend fun handle(message: WorkerMessage) = when (message) {
         is RunTask -> runTask(message)
     }
 
@@ -128,11 +124,12 @@ open class Worker(val dispatcher: Dispatcher) {
 
             val taskAttemptContext = TaskAttemptContext(
                 worker = worker,
-                taskId = msg.taskId,
-                taskAttemptId = msg.taskAttemptId,
-                taskAttemptIndex = msg.taskAttemptIndex,
-                taskAttemptRetry = msg.taskAttemptRetry,
-                taskMeta = msg.taskMeta,
+                taskId = "${msg.taskId}",
+                taskAttemptId = "${msg.taskAttemptId}",
+                taskRetry = msg.taskRetry.int,
+                taskAttemptRetry = msg.taskAttemptRetry.int,
+                lastTaskAttemptError = msg.lastTaskAttemptError?.get(),
+                taskMeta = msg.taskMeta.get(),
                 taskOptions = msg.taskOptions
             )
 
@@ -154,16 +151,16 @@ open class Worker(val dispatcher: Dispatcher) {
                 } else {
                     executeTask(method, task, parameters)
                 }
-
                 sendTaskCompleted(msg, output)
             } catch (e: InvocationTargetException) {
+//                println(e.cause?.cause?.stackTraceToString())
                 // update context with the cause (to be potentially used in getRetryDelay method)
-                taskAttemptContext.exception = e.cause
+                taskAttemptContext.currentTaskAttemptError = e.cause
                 // retrieve delay before retry
                 getRetryDelayAndFailTask(task, msg, taskAttemptContext)
             } catch (e: TimeoutCancellationException) {
                 // update context with the cause (to be potentially used in getRetryDelay method)
-                taskAttemptContext.exception = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
+                taskAttemptContext.currentTaskAttemptError = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
                 // returning a timeout
                 getRetryDelayAndFailTask(task, msg, taskAttemptContext)
             } catch (e: Exception) {
@@ -194,8 +191,8 @@ open class Worker(val dispatcher: Dispatcher) {
     private fun getInstance(name: String) =
         registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 
-    private suspend fun executeTask(method: Method, task: Any, parameters: Array<out Any?>) = coroutineScope {
-        val output = method.invoke(task, *parameters)
+    private suspend fun executeTask(method: Method, task: Any, parameters: List<Any?>) = coroutineScope {
+        val output = method.invoke(task, *parameters.toTypedArray())
         ensureActive()
         output
     }
@@ -215,7 +212,7 @@ open class Worker(val dispatcher: Dispatcher) {
         when (val delay = getDelayBeforeRetry(task)) {
             is RetryDelayRetrieved -> {
                 // returning the original cause
-                sendTaskFailed(msg, context.exception, delay.value)
+                sendTaskFailed(msg, context.currentTaskAttemptError, delay.value)
             }
             is RetryDelayFailed -> {
                 // returning the error in getRetryDelay, without retry
@@ -226,14 +223,15 @@ open class Worker(val dispatcher: Dispatcher) {
 
     private fun parse(msg: RunTask): TaskCommand {
         val task = getTask("${msg.taskName}")
+
         val parameterTypes = msg.methodParameterTypes
-        val method = if (parameterTypes.types == null) {
+        val method = if (parameterTypes == null) {
             getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodInput.size)
         } else {
-            getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types!!)
+            getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types)
         }
 
-        return TaskCommand(task, method, msg.methodInput.data, msg.taskOptions)
+        return TaskCommand(task, method, msg.methodInput.get(), msg.taskOptions)
     }
 
     // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
@@ -262,10 +260,10 @@ open class Worker(val dispatcher: Dispatcher) {
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskAttemptIndex = msg.taskAttemptIndex
+            taskRetry = msg.taskRetry
         )
 
-        dispatcher.toTaskEngine(taskAttemptStarted)
+        sendToTaskEngine(taskAttemptStarted, 0F)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
@@ -273,12 +271,12 @@ open class Worker(val dispatcher: Dispatcher) {
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskAttemptIndex = msg.taskAttemptIndex,
+            taskRetry = msg.taskRetry,
             taskAttemptDelayBeforeRetry = delay,
-            taskAttemptError = TaskAttemptError(error)
+            taskAttemptError = TaskAttemptError.from(error)
         )
 
-        dispatcher.toTaskEngine(taskAttemptFailed)
+        sendToTaskEngine(taskAttemptFailed, 0F)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -286,11 +284,11 @@ open class Worker(val dispatcher: Dispatcher) {
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskAttemptIndex = msg.taskAttemptIndex,
-            taskOutput = MethodOutput(output)
+            taskRetry = msg.taskRetry,
+            taskOutput = MethodOutput.from(output)
         )
 
-        dispatcher.toTaskEngine(taskAttemptCompleted)
+        sendToTaskEngine(taskAttemptCompleted, 0F)
     }
 
     @PublishedApi

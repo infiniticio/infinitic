@@ -70,14 +70,14 @@ export type RetryTaskAttempt = {
   taskId: string;
   taskAttemptId: string;
   taskAttemptRetry: number;
-  taskAttemptIndex: number;
+  taskRetry: number;
 };
 
 export type TaskAttemptCompleted = {
   taskId: string;
   taskAttemptId: string;
   taskAttemptRetry: number;
-  taskAttemptIndex: number;
+  taskRetry: number;
   taskOutput: TaskOutput | null;
 };
 
@@ -85,14 +85,14 @@ export type TaskAttemptDispatched = {
   taskId: string;
   taskAttemptId: string;
   taskAttemptRetry: number;
-  taskAttemptIndex: number;
+  taskRetry: number;
 };
 
 export type TaskAttemptFailed = {
   taskId: string;
   taskAttemptId: string;
   taskAttemptRetry: number;
-  taskAttemptIndex: number;
+  taskRetry: number;
   taskAttemptError: TaskAttemptError;
   taskAttemptDelayBeforeRetry: number | null;
 };
@@ -101,7 +101,7 @@ export type TaskAttemptStarted = {
   taskId: string;
   taskAttemptId: string;
   taskAttemptRetry: number;
-  taskAttemptIndex: number;
+  taskRetry: number;
 };
 
 export type TaskCanceled = {
@@ -206,7 +206,7 @@ export type RunTask = {
   methodInput: MethodInput;
   taskAttemptId: string;
   taskAttemptRetry: number;
-  taskAttemptIndex: number;
+  taskRetry: number;
   taskOptions: TaskOptions;
   taskMeta: Map<string, SerializedData>;
 };

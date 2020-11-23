@@ -23,7 +23,7 @@
 
 plugins {
     kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
 }
 
 dependencies {
@@ -34,7 +34,6 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.+")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
 
-    api(project(":infinitic-avro"))
     api(project(":infinitic-common"))
     api(project(":infinitic-worker"))
     api(project(":infinitic-messaging-pulsar"))

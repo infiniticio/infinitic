@@ -23,20 +23,25 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowChangeCheckMode
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class PastCommand(
     val commandPosition: MethodRunPosition,
     val commandType: CommandType,
     val commandId: CommandId,
     val commandHash: CommandHash,
     val commandSimpleName: CommandSimpleName,
-    var commandStatus: CommandStatus
+    var commandStatus: CommandStatus,
+    // property below are used only for start_async command
+    var propertiesNameHashAtStart: Map<PropertyName, PropertyHash>? = null,
+    var workflowTaskIndexAtStart: WorkflowTaskIndex? = null
 ) {
-
-    @JsonIgnore
     fun isTerminated() = this.commandStatus is CommandStatusCompleted || this.commandStatus is CommandStatusCanceled
 
     fun isSimilarTo(newCommand: NewCommand, mode: WorkflowChangeCheckMode): Boolean =

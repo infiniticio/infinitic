@@ -23,13 +23,26 @@
 
 package io.infinitic.common.tasks.data
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import io.infinitic.common.data.SerializedData
-import io.infinitic.common.tasks.data.bases.Data
+import io.infinitic.common.data.Data
+import io.infinitic.common.serDe.SerializedData
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class TaskAttemptError(override val data: Any?) : Data(data) {
+@Serializable(with = TaskAttemptErrorSerializer::class)
+data class TaskAttemptError(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        @JvmStatic @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-        fun fromSerialized(serializedData: SerializedData) = fromSerialized<TaskAttemptError>(serializedData)
+        fun from(data: Any?) = TaskAttemptError(SerializedData.from(data))
     }
+}
+
+object TaskAttemptErrorSerializer : KSerializer<TaskAttemptError> {
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: TaskAttemptError) {
+        SerializedData.serializer().serialize(encoder, value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        TaskAttemptError(SerializedData.serializer().deserialize(decoder))
 }

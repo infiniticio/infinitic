@@ -34,17 +34,19 @@ interface Workflow {
 /*
  * Proxy a task
  */
+inline fun <reified T : Any> Workflow.task() = TaskProxyHandler(T::class.java) { context }.instance()
 fun <T : Any> Workflow.proxy(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
 fun <T : Any> Workflow.proxy(klass: KClass<out T>) = TaskProxyHandler(klass.java) { context }.instance()
 
 /*
  * Proxy a child workflow
  */
+inline fun <reified T : Workflow> Workflow.workflow() = WorkflowProxyHandler(T::class.java) { context }.instance()
 fun <T : Workflow> Workflow.proxy(klass: Class<out T>) = WorkflowProxyHandler(klass) { context }.instance()
 fun <T : Workflow> Workflow.proxy(klass: KClass<out T>) = WorkflowProxyHandler(klass.java) { context }.instance()
 
 /*
- * Dispatch a task
+ * Dispatch
  */
 fun <T : Any, S> Workflow.async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
 

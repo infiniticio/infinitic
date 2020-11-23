@@ -30,7 +30,7 @@ internal class SampleTaskWithRetry() {
 
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 
-    fun getRetryDelay(): Float? = if (context.exception is IllegalStateException) 3F else 0F
+    fun getRetryDelay(): Float? = if (context.currentTaskAttemptError is IllegalStateException) 3F else 0F
 }
 
 internal class SampleTaskWithBadTypeRetry() {
@@ -46,5 +46,5 @@ internal class SampleTaskWithBuggyRetry() {
 
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 
-    fun getRetryDelay(): Float? = if (context.exception is IllegalStateException) throw IllegalArgumentException() else 3F
+    fun getRetryDelay(): Float? = if (context.currentTaskAttemptError is IllegalStateException) throw IllegalArgumentException() else 3F
 }

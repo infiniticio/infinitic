@@ -24,10 +24,15 @@
 package io.infinitic.common.workflows.data.steps
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class NewStep(
     val stepId: StepId = StepId(),
     val step: Step,
-    val stepPosition: MethodRunPosition,
-    val stepHash: StepHash = step.hash()
-)
+    val stepPosition: MethodRunPosition
+) {
+    // https://github.com/Kotlin/kotlinx.serialization/issues/133
+    val stepHash: StepHash
+        get() { return step.hash() }
+}

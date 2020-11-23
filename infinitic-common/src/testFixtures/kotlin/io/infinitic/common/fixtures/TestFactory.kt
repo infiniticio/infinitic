@@ -23,22 +23,28 @@
 
 package io.infinitic.common.fixtures
 
-import io.infinitic.common.data.SerializedData
-import io.infinitic.avro.taskManager.data.AvroSerializedData
-import io.infinitic.avro.taskManager.data.AvroSerializedDataType
-import io.infinitic.common.workflows.avro.AvroConverter
+import io.infinitic.common.data.methods.MethodInput
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.tasks.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.workers.messages.WorkerEnvelope
+import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.avro.workflowManager.data.steps.AvroStep
-import io.infinitic.common.tasks.data.MethodInput
-import java.nio.ByteBuffer
-import kotlin.random.Random
-import kotlin.reflect.KClass
+import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
 import org.jeasy.random.api.Randomizer
+import java.nio.ByteBuffer
+import kotlin.random.Random
+import kotlin.reflect.KClass
 
 object TestFactory {
     private var seed = 0L
@@ -60,23 +66,32 @@ object TestFactory {
             .scanClasspathForConcreteTypes(true)
             .overrideDefaultInitialization(true)
             .collectionSizeRange(1, 5)
-            // avoid providing a value for lateinit serializedData
-            .excludeField(FieldPredicates.named("serializedData"))
-            // provides a String for "Any" parameter
             .randomize(Any::class.java) { random<String>() }
+            .randomize(Step::class.java) { randomStep() }
             .randomize(String::class.java) { String(random<ByteArray>(), Charsets.UTF_8) }
-            .randomize(AvroStep::class.java) { AvroConverter.convertJson(randomStep()) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
             .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
-            .randomize(MethodInput::class.java) { MethodInput(random<ByteArray>(), random<String>()) }
+            .randomize(MethodInput::class.java) { MethodInput.from(random<ByteArray>(), random<String>()) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
-            .randomize(AvroSerializedData::class.java) {
-                val data = random<SerializedData>()
-                AvroSerializedData.newBuilder()
-                    .setBytes(ByteBuffer.wrap(data.bytes))
-                    .setType(AvroSerializedDataType.JSON)
-                    .setMeta(data.meta.mapValues { ByteBuffer.wrap(it.value) })
-                    .build()
+            .randomize(WorkflowEngineEnvelope::class.java) {
+                val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
+                WorkflowEngineEnvelope.from(random(sub))
+            }
+            .randomize(TaskEngineEnvelope::class.java) {
+                val sub = TaskEngineMessage::class.sealedSubclasses.shuffled().first()
+                TaskEngineEnvelope.from(random(sub))
+            }
+            .randomize(MonitoringPerNameEnvelope::class.java) {
+                val sub = MonitoringPerNameEngineMessage::class.sealedSubclasses.shuffled().first()
+                MonitoringPerNameEnvelope.from(random(sub))
+            }
+            .randomize(MonitoringGlobalEnvelope::class.java) {
+                val sub = MonitoringGlobalMessage::class.sealedSubclasses.shuffled().first()
+                MonitoringGlobalEnvelope.from(random(sub))
+            }
+            .randomize(WorkerEnvelope::class.java) {
+                val sub = WorkerMessage::class.sealedSubclasses.shuffled().first()
+                WorkerEnvelope.from(random(sub))
             }
 
         values?.forEach {
@@ -84,11 +99,6 @@ object TestFactory {
         }
 
         return EasyRandom(parameters).nextObject(klass.java)
-    }
-
-    private fun randomStep(): Step {
-        val steps = steps().values.toList()
-        return steps[Random.nextInt(until = steps.size - 1)]
     }
 
     fun steps(): Map<String, Step> {
@@ -109,5 +119,10 @@ object TestFactory {
             "A AND (B AND C)" to Step.And(listOf(stepA, Step.And(listOf(stepB, stepC)))),
             "A OR (B AND (C OR D))" to Step.Or(listOf(stepA, Step.And(listOf(stepB, Step.Or(listOf(stepC, stepD))))))
         )
+    }
+
+    private fun randomStep(): Step {
+        val steps = steps().values.toList()
+        return steps[Random.nextInt(until = steps.size - 1)]
     }
 }

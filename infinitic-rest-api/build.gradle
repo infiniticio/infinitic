@@ -53,7 +53,6 @@ dependencies {
     implementation "io.ktor:ktor-jackson:$ktor_version"
     testImplementation "io.ktor:ktor-server-tests:$ktor_version"
 
-    implementation project(":infinitic-avro")
     implementation project(":infinitic-common")
 
     implementation "io.prestosql:presto-jdbc:$prestojdbc_version"

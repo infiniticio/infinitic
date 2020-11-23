@@ -23,10 +23,26 @@
 
 package io.infinitic.common.workflows.data.events
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.data.Data
+import io.infinitic.common.serDe.SerializedData
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class EventData
-@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-constructor(@get:JsonValue val input: List<SerializedData>)
+@Serializable(with = EventDataSerializer::class)
+data class EventData(override val serializedData: SerializedData) : Data(serializedData) {
+    companion object {
+        fun from(data: Any?) = EventData(SerializedData.from(data))
+    }
+}
+
+object EventDataSerializer : KSerializer<EventData> {
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: EventData) {
+        SerializedData.serializer().serialize(encoder, value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        EventData(SerializedData.serializer().deserialize(decoder))
+}

@@ -23,15 +23,14 @@
 
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.tasks.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.parser.getMethodPerNameAndParameterCount
+import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflows.parser.setPropertiesToObject
 import io.infinitic.worker.task.TaskAttemptContext
 import java.lang.reflect.InvocationTargetException
 
@@ -40,47 +39,44 @@ class WorkflowTaskImpl : WorkflowTask {
 
     override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
         // get  instance workflow by name
-        val workflowInstance = taskAttemptContext.worker.getWorkflow("${workflowTaskInput.workflowName}")
+        val workflow = taskAttemptContext.worker.getWorkflow("${workflowTaskInput.workflowName}")
 
         // set methodContext
-        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput, workflowInstance)
-
-        // set workflow task context
-        workflowInstance.context = workflowTaskContext
+        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput, workflow)
 
         // set workflow's initial properties
-        val properties = workflowTaskInput.methodRun.propertiesAtStart.mapValues {
-            workflowTaskInput.workflowPropertyStore[it.value]
-        }
-        setPropertiesToObject(workflowInstance, properties)
+        setWorkflowProperties(
+            workflow,
+            workflowTaskInput.workflowPropertiesHashValue,
+            workflowTaskInput.methodRun.propertiesNameHashAtStart
+        )
 
         // get method
-        val method = getMethod(workflowInstance, workflowTaskInput.methodRun)
+        val method = getMethod(workflow, workflowTaskInput.methodRun)
 
-        // run method and get output
+        // run method and get output (null if end not reached)
         val methodOutput = try {
-            MethodOutput(method.invoke(workflowInstance, *workflowTaskInput.methodRun.methodInput.data))
+            MethodOutput.from(method.invoke(workflow, *workflowTaskInput.methodRun.methodInput.get().toTypedArray()))
         } catch (e: InvocationTargetException) {
             when (e.cause) {
-                is NewStepException -> null
-                is KnownStepException -> null
+                is WorkflowTaskException -> null
                 else -> throw e.cause!!
             }
         }
 
-        // TODO("Properties updates")
+        val properties = getWorkflowProperties(workflow)
+
         return WorkflowTaskOutput(
             workflowTaskInput.workflowId,
             workflowTaskInput.methodRun.methodRunId,
             workflowTaskContext.newCommands,
             workflowTaskContext.newSteps,
-            workflowTaskInput.methodRun.propertiesAtStart,
-            workflowTaskInput.workflowPropertyStore,
+            properties,
             methodOutput
         )
     }
 
-    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes.types == null) {
+    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes == null) {
         getMethodPerNameAndParameterCount(
             workflow,
             "${methodRun.methodName}",
@@ -90,7 +86,7 @@ class WorkflowTaskImpl : WorkflowTask {
         getMethodPerNameAndParameterTypes(
             workflow,
             "${methodRun.methodName}",
-            methodRun.methodParameterTypes.types!!
+            methodRun.methodParameterTypes!!.types
         )
     }
 }

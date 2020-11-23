@@ -23,27 +23,30 @@
 
 package io.infinitic.common.workflows.data.methodRuns
 
-import io.infinitic.common.tasks.data.MethodInput
-import io.infinitic.common.tasks.data.MethodName
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.data.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodInput
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.properties.Properties
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.PastStep
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class MethodRun(
     val methodRunId: MethodRunId = MethodRunId(),
     val isMain: Boolean,
     val parentWorkflowId: WorkflowId? = null,
     val parentMethodRunId: MethodRunId? = null,
     val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes,
+    val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
     var methodOutput: MethodOutput? = null,
-    val messageIndexAtStart: WorkflowMessageIndex,
-    val propertiesAtStart: Properties = Properties(),
+    val workflowTaskIndexAtStart: WorkflowTaskIndex = WorkflowTaskIndex(0),
+    val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
     val pastCommands: MutableList<PastCommand> = mutableListOf(),
     val pastSteps: MutableList<PastStep> = mutableListOf()
 )

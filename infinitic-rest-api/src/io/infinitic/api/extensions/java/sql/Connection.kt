@@ -28,8 +28,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import java.sql.Connection
-import java.sql.ResultSet
 import java.sql.PreparedStatement
+import java.sql.ResultSet
 
 typealias Binder = (PreparedStatement) -> Unit
 

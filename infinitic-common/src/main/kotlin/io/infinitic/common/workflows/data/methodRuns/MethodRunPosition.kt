@@ -23,9 +23,21 @@
 
 package io.infinitic.common.workflows.data.methodRuns
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonValue
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-data class MethodRunPosition @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(@get:JsonValue val position: String) {
+@Serializable(with = MethodRunPositionSerializer::class)
+data class MethodRunPosition(val position: String) {
     override fun toString() = position
+}
+
+object MethodRunPositionSerializer : KSerializer<MethodRunPosition> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MethodRunPosition", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MethodRunPosition) { encoder.encodeString(value.position) }
+    override fun deserialize(decoder: Decoder) = MethodRunPosition(decoder.decodeString())
 }

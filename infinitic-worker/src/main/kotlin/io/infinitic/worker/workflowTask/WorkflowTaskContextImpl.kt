@@ -23,9 +23,11 @@
 
 package io.infinitic.worker.workflowTask
 
-import io.infinitic.common.tasks.proxies.MethodProxyHandler
+import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.Deferred
 import io.infinitic.common.workflows.DeferredStatus
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -49,28 +51,34 @@ import io.infinitic.common.workflows.data.steps.StepStatusCompleted
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
-import io.infinitic.common.workflows.exceptions.ShouldNotWaitInInlineTask
-import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
-import io.infinitic.common.workflows.parser.setPropertiesToObject
-import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
+import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
+import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
+import io.infinitic.common.workflows.exceptions.WorkflowDefinitionUpdatedWhileOngoing
 import java.lang.reflect.Method
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
-    private val workflowInstance: Workflow
+    private val workflow: Workflow
 ) : WorkflowTaskContext {
-    // current position in the tree of method processing
-    private var methodLevel: MethodLevel = MethodLevel(messageIndex = workflowTaskInput.methodRun.messageIndexAtStart)
+    // position in the current method processing
+    private var methodRunIndex = MethodRunIndex()
+
+    // current workflowTaskIndex (useful to retrieve status of Deferred)
+    private var workflowTaskIndex = workflowTaskInput.methodRun.workflowTaskIndexAtStart
 
     // new commands (if any) discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
 
-    // new steps (if any) discovered during execution the method
+    // new steps (if any) discovered during execution the method (can be multiple due to `async` function)
     var newSteps: MutableList<NewStep> = mutableListOf()
 
+    init {
+        // set workflowTask context
+        workflow.context = this
+    }
+
     /*
-     * Async Task dispatching:
+     * Async Task dispatching
      */
     override fun <T : Any, S> async(
         proxy: T,
@@ -95,7 +103,7 @@ class WorkflowTaskContextImpl(
     }
 
     /*
-     * Async Task dispatching:
+     * Async Workflow dispatching
      */
     override fun <T : Workflow, S> async(
         proxy: T,
@@ -120,72 +128,92 @@ class WorkflowTaskContextImpl(
     }
 
     /*
-     * Async Branch dispatching:
+     * Async Branch dispatching
      */
     override fun <S> async(branch: () -> S): Deferred<S> {
         // increment position
         positionNext()
 
-        // set a new command
-        val dispatch = StartAsync
-        // create instruction that *may* be sent to engine
+        // create instruction that will be sent to engine only if new
         val newCommand = NewCommand(
-            command = dispatch,
+            command = StartAsync,
             commandSimpleName = CommandSimpleName("${CommandType.START_ASYNC}"),
-            commandPosition = methodLevel.methodPosition
+            commandPosition = methodRunIndex.methodPosition
         )
 
-        val pastCommand = getPastCommandSimilarTo(newCommand)
+        val pastCommand = findPastCommandSimilarTo(newCommand)
 
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
             newCommands.add(newCommand)
-            // run async branch
-            runAsync(branch)
 
             // returns a Deferred with an ongoing step
             return Deferred<S>(Step.Id.from(newCommand), this)
-        } else {
-            // branch is processed only if not yet completed or canceled
-            if (pastCommand.commandStatus is CommandStatusOngoing) {
-                runAsync(branch)
-            }
-
-            // returns a Deferred linked to pastCommand
-            return Deferred<S>(Step.Id.from(pastCommand), this)
         }
+
+        // async branch is processed only if on path of targetPosition
+        if (methodRunIndex.leadsTo(workflowTaskInput.targetPosition)) {
+            // update workflowTaskIndex to value linked to first processing of this branch
+            workflowTaskIndex = pastCommand.workflowTaskIndexAtStart!!
+
+            // update workflow instance properties
+            setWorkflowProperties(
+                workflow,
+                workflowTaskInput.workflowPropertiesHashValue,
+                pastCommand.propertiesNameHashAtStart!!
+            )
+
+            // go down
+            positionDown()
+
+            // exceptions caught by runMethod
+            val commandOutput = CommandOutput.from(branch())
+
+            // go up
+            positionUp()
+
+            newCommands.add(
+                NewCommand(
+                    command = EndAsync(commandOutput),
+                    commandSimpleName = CommandSimpleName("${CommandType.END_ASYNC}"),
+                    commandPosition = methodRunIndex.methodPosition
+                )
+            )
+
+            // async is completed
+            throw AsyncCompletedException()
+        }
+
+        // returns a Deferred linked to pastCommand
+        return Deferred<S>(Step.Id.from(pastCommand), this)
     }
 
     /*
-     * Inline task
+     * Inlined task
      */
     override fun <S> task(inline: () -> S): S {
         // increment position
         positionNext()
 
-        // set a new command
-        val dispatch = StartInlineTask
-        // create instruction that *may* be sent to engine
+        // create instruction that will be sent to engine only if new
         val startCommand = NewCommand(
-            command = dispatch,
+            command = StartInlineTask,
             commandSimpleName = CommandSimpleName("${CommandType.START_INLINE_TASK}"),
-            commandPosition = methodLevel.methodPosition
+            commandPosition = methodRunIndex.methodPosition
         )
 
-        val pastCommand = getPastCommandSimilarTo(startCommand)
+        val pastCommand = findPastCommandSimilarTo(startCommand)
 
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
             newCommands.add(startCommand)
-            // go down (it should be needed only if inline task dispatch some tasks)
+            // go down (in case this inline task asynchronously dispatches some tasks)
             positionDown()
             // run inline task
-            val commandOutput = try {
-                CommandOutput(inline())
-            } catch (e: Exception) {
+            val commandOutput = try { CommandOutput.from(inline()) } catch (e: Exception) {
                 when (e) {
-                    is NewStepException -> throw ShouldNotWaitInInlineTask()
-                    is KnownStepException -> throw ShouldNotWaitInInlineTask()
+                    is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskInput.getFullMethodName())
+                    is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskInput.getFullMethodName())
                     else -> throw e
                 }
             }
@@ -195,18 +223,18 @@ class WorkflowTaskContextImpl(
             val endCommand = NewCommand(
                 command = EndInlineTask(commandOutput),
                 commandSimpleName = CommandSimpleName("${CommandType.END_INLINE_TASK}"),
-                commandPosition = methodLevel.methodPosition
+                commandPosition = methodRunIndex.methodPosition
             )
             newCommands.add(endCommand)
             // returns a Deferred with an ongoing step
             @Suppress("UNCHECKED_CAST")
-            return commandOutput.data as S
+            return commandOutput.get() as S
         } else {
             @Suppress("UNCHECKED_CAST")
             return when (val status = pastCommand.commandStatus) {
                 is CommandStatusOngoing -> throw RuntimeException("This should not happen: uncompleted inline task")
                 is CommandStatusCanceled -> throw RuntimeException("This should not happen: canceled inline task")
-                is CommandStatusCompleted -> status.completionResult.data as S
+                is CommandStatusCompleted -> status.completionResult.get() as S
             }
         }
     }
@@ -217,16 +245,17 @@ class WorkflowTaskContextImpl(
     override fun <T> await(deferred: Deferred<T>): Deferred<T> {
         // increment position
         positionNext()
+
         // create a new step
         val newStep = NewStep(
             step = deferred.step,
-            stepPosition = methodLevel.methodPosition
+            stepPosition = methodRunIndex.methodPosition
         )
         val pastStep = getPastStepSimilarTo(newStep)
 
         // if this is really a new step, we check its status based on current workflow message index
         if (pastStep == null) {
-            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(methodLevel.messageIndex)
+            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(workflowTaskIndex)
             // if this deferred is still ongoing,
             if (deferred.stepStatus is StepStatusOngoing) {
                 // we add a new step
@@ -242,15 +271,18 @@ class WorkflowTaskContextImpl(
         deferred.stepStatus = pastStep.stepStatus
 
         // throw KnownStepException if ongoing else else update message index
-        methodLevel.messageIndex = when (val stepStatus = deferred.stepStatus) {
+        workflowTaskIndex = when (val stepStatus = deferred.stepStatus) {
             is StepStatusOngoing -> throw KnownStepException()
-            is StepStatusCompleted -> stepStatus.completionWorkflowMessageIndex
-            is StepStatusCanceled -> stepStatus.cancellationWorkflowMessageIndex
+            is StepStatusCompleted -> stepStatus.completionWorkflowTaskIndex
+            is StepStatusCanceled -> stepStatus.cancellationWorkflowTaskIndex
         }
 
         // update workflow instance properties
-        val properties = pastStep.propertiesAtTermination!!.mapValues { workflowTaskInput.workflowPropertyStore[it.value] }
-        setPropertiesToObject(workflowInstance, properties)
+        setWorkflowProperties(
+            workflow,
+            workflowTaskInput.workflowPropertiesHashValue,
+            pastStep.propertiesNameHashAtTermination!!
+        )
 
         // continue
         return deferred
@@ -261,15 +293,15 @@ class WorkflowTaskContextImpl(
      */
     @Suppress("UNCHECKED_CAST")
     override fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
-        is StepStatusOngoing -> throw RuntimeException("THIS SHOULD NOT HAPPEN: asking result of an ongoing deferred")
-        is StepStatusCompleted -> status.completionResult.data as T
-        is StepStatusCanceled -> status.cancellationResult.data as T
+        is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
+        is StepStatusCompleted -> status.completionResult.get() as T
+        is StepStatusCanceled -> status.cancellationResult.get() as T
     }
 
     /*
      * Deferred status()
      */
-    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(methodLevel.messageIndex)) {
+    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(workflowTaskIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
@@ -291,21 +323,21 @@ class WorkflowTaskContextImpl(
      * Go to next position within the same branch
      */
     private fun positionNext() {
-        methodLevel = methodLevel.next()
+        methodRunIndex = methodRunIndex.next()
     }
 
     /*
-     * Go to parent branch, this is done at the end of a async { ... } function
+     * End of a async { ... } function
      */
     private fun positionUp() {
-        methodLevel.up()?.let { methodLevel = it }
+        methodRunIndex.up()?.let { methodRunIndex = it }
     }
 
     /*
-     * Go to child branch, this is done at the start of a async { ... } function
+     * Start of a async { ... } function
      */
     private fun positionDown() {
-        methodLevel = methodLevel.down()
+        methodRunIndex = methodRunIndex.down()
     }
 
     private fun <S> dispatch(command: Command, commandSimpleName: CommandSimpleName): Deferred<S> {
@@ -316,10 +348,10 @@ class WorkflowTaskContextImpl(
         val newCommand = NewCommand(
             command = command,
             commandSimpleName = commandSimpleName,
-            commandPosition = methodLevel.methodPosition
+            commandPosition = methodRunIndex.methodPosition
         )
 
-        val pastCommand = getPastCommandSimilarTo(newCommand)
+        val pastCommand = findPastCommandSimilarTo(newCommand)
 
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
@@ -332,50 +364,17 @@ class WorkflowTaskContextImpl(
         }
     }
 
-    /*
-     * When running an async branch:
-     * - unknown step breaks only current branch
-     * - output is returned through a special EndAsync command
-     */
-    private fun <S> runAsync(branch: () -> S) {
-        // go down
-        positionDown()
-
-        val commandOutput = try {
-            CommandOutput(branch())
-        } catch (e: Exception) {
-            when (e) {
-                is NewStepException -> null
-                is KnownStepException -> null
-                else -> throw e
-            }
-        }
-        // go up - note that message index comes back to its previous value before going down
-        positionUp()
-
-        // if the branch is completed, then we send a special command to the engine
-        if (commandOutput != null) {
-            // create instruction that *may* be sent to engine
-            val newCommand = NewCommand(
-                command = EndAsync(commandOutput),
-                commandSimpleName = CommandSimpleName("${CommandType.END_ASYNC}"),
-                commandPosition = methodLevel.methodPosition
-            )
-            newCommands.add(newCommand)
-        }
-    }
-
-    private fun getPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
+    private fun findPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
         val pastCommand = workflowTaskInput.methodRun.pastCommands
-            .find { it.commandPosition == methodLevel.methodPosition }
+            .find { it.commandPosition == methodRunIndex.methodPosition }
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskInput.workflowOptions.workflowChangeCheckMode)) {
-            throw WorkflowUpdatedWhileRunning(
+            throw WorkflowDefinitionUpdatedWhileOngoing(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
-                "${methodLevel.methodPosition}"
+                "${methodRunIndex.methodPosition}"
             )
         }
 
@@ -385,14 +384,14 @@ class WorkflowTaskContextImpl(
     private fun getPastStepSimilarTo(newStep: NewStep): PastStep? {
         // find pastCommand in current position
         val pastStep = workflowTaskInput.methodRun.pastSteps
-            .find { it.stepPosition == methodLevel.methodPosition }
+            .find { it.stepPosition == methodRunIndex.methodPosition }
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
-            throw WorkflowUpdatedWhileRunning(
+            throw WorkflowDefinitionUpdatedWhileOngoing(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
-                "${methodLevel.methodPosition}"
+                "${methodRunIndex.methodPosition}"
             )
         }
 

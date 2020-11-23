@@ -23,11 +23,7 @@
 
 package io.infinitic.common.workflows.data.steps
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
-import io.infinitic.common.data.SerializedData
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandStatusCanceled
@@ -35,32 +31,25 @@ import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import kotlinx.serialization.Serializable
 import kotlin.Int.Companion.MAX_VALUE
 import kotlin.Int.Companion.MIN_VALUE
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes(
-    JsonSubTypes.Type(value = Step.Id::class, name = "ID"),
-    JsonSubTypes.Type(value = Step.And::class, name = "AND"),
-    JsonSubTypes.Type(value = Step.Or::class, name = "OR")
-)
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 sealed class Step {
-    @JsonIgnore
-    fun isTerminated() = isTerminatedAtMessageIndex(WorkflowMessageIndex(MAX_VALUE))
+    fun isTerminated() = isTerminatedAtMessageIndex(WorkflowTaskIndex(MAX_VALUE))
+    fun stepStatus() = stepStatusAtMessageIndex(WorkflowTaskIndex(MAX_VALUE))
 
-    fun stepStatus() = stepStatusAtMessageIndex(WorkflowMessageIndex(MAX_VALUE))
-
-    abstract fun isTerminatedAtMessageIndex(index: WorkflowMessageIndex): Boolean
-
-    abstract fun stepStatusAtMessageIndex(index: WorkflowMessageIndex): StepStatus
+    abstract fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex): Boolean
+    abstract fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus
 
     /*
      * hash function is defined to exclude commandStatus and provide a hopefully unique hash linked to the structure of the step
      */
     abstract fun hash(): StepHash
 
+    @Serializable
     data class Id(
         val commandId: CommandId,
         var commandStatus: CommandStatus
@@ -68,24 +57,23 @@ sealed class Step {
 
         override fun hash() = StepHash(SerializedData.from(commandId).hash())
 
-        @JsonIgnore
-        override fun isTerminatedAtMessageIndex(index: WorkflowMessageIndex) = when (stepStatusAtMessageIndex(index)) {
+        override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = when (stepStatusAtMessageIndex(index)) {
             is StepStatusCanceled -> true
             is StepStatusCompleted -> true
             is StepStatusOngoing -> false
         }
 
-        override fun stepStatusAtMessageIndex(index: WorkflowMessageIndex) = when (commandStatus) {
+        override fun stepStatusAtMessageIndex(index: WorkflowTaskIndex) = when (commandStatus) {
             is CommandStatusOngoing -> StepStatusOngoing
             is CommandStatusCompleted -> with(commandStatus as CommandStatusCompleted) {
-                when (index >= this.completionWorkflowMessageIndex) {
-                    true -> StepStatusCompleted(StepOutput(this.completionResult.data), this.completionWorkflowMessageIndex)
+                when (index >= this.completionWorkflowTaskIndex) {
+                    true -> StepStatusCompleted(StepOutput.from(this.completionResult.get()), this.completionWorkflowTaskIndex)
                     false -> StepStatusOngoing
                 }
             }
             is CommandStatusCanceled -> with(commandStatus as CommandStatusCanceled) {
-                when (index >= this.cancellationWorkflowMessageIndex) {
-                    true -> StepStatusCanceled(StepOutput(this.cancellationResult.data), this.cancellationWorkflowMessageIndex)
+                when (index >= this.cancellationWorkflowTaskIndex) {
+                    true -> StepStatusCanceled(StepOutput.from(this.cancellationResult.get()), this.cancellationWorkflowTaskIndex)
                     false -> StepStatusOngoing
                 }
             }
@@ -97,14 +85,14 @@ sealed class Step {
         }
     }
 
+    @Serializable
     data class And(var steps: List<Step>) : Step() {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        @JsonIgnore
-        override fun isTerminatedAtMessageIndex(index: WorkflowMessageIndex) = this.steps.all { s -> s.isTerminatedAtMessageIndex(index) }
+        override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = this.steps.all { s -> s.isTerminatedAtMessageIndex(index) }
 
-        override fun stepStatusAtMessageIndex(index: WorkflowMessageIndex): StepStatus {
+        override fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus {
             val statuses = steps.map { it.stepStatusAtMessageIndex(index) }
             if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing
 
@@ -117,42 +105,42 @@ sealed class Step {
             }
             val maxIndex = statuses.map {
                 when (it) {
-                    is StepStatusOngoing -> WorkflowMessageIndex(MIN_VALUE)
-                    is StepStatusCompleted -> it.completionWorkflowMessageIndex
-                    is StepStatusCanceled -> it.cancellationWorkflowMessageIndex
+                    is StepStatusOngoing -> WorkflowTaskIndex(MIN_VALUE)
+                    is StepStatusCompleted -> it.completionWorkflowTaskIndex
+                    is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
                 }
-            }.max()!!
+            }.maxOrNull()!!
 
-            if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(StepOutput(results.map { it.data }), maxIndex)
+            if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(StepOutput.from(results.map { it.get() }), maxIndex)
 
-            return StepStatusCanceled(StepOutput(results.map { it.data }), maxIndex)
+            return StepStatusCanceled(StepOutput.from(results.map { it.get() }), maxIndex)
         }
     }
 
+    @Serializable
     data class Or(var steps: List<Step>) : Step() {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        @JsonIgnore
-        override fun isTerminatedAtMessageIndex(index: WorkflowMessageIndex) = this.steps.any { s -> s.isTerminatedAtMessageIndex(index) }
+        override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = this.steps.any { s -> s.isTerminatedAtMessageIndex(index) }
 
-        override fun stepStatusAtMessageIndex(index: WorkflowMessageIndex): StepStatus {
+        override fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus {
             val statuses = steps.map { it.stepStatusAtMessageIndex(index) }
             // if all steps are ongoing then returns StepStatusOngoing
             if (statuses.all { it is StepStatusOngoing }) return StepStatusOngoing
             // find first step not ongoing
-            val minStep = statuses.minBy {
+            val minStep = statuses.minByOrNull {
                 when (it) {
-                    is StepStatusOngoing -> WorkflowMessageIndex(MAX_VALUE)
-                    is StepStatusCompleted -> it.completionWorkflowMessageIndex
-                    is StepStatusCanceled -> it.cancellationWorkflowMessageIndex
+                    is StepStatusOngoing -> WorkflowTaskIndex(MAX_VALUE)
+                    is StepStatusCompleted -> it.completionWorkflowTaskIndex
+                    is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
                 }
             }!!
 
             return when (minStep) {
                 is StepStatusOngoing -> throw RuntimeException("This should not happen")
-                is StepStatusCompleted -> StepStatusCompleted(minStep.completionResult, minStep.completionWorkflowMessageIndex)
-                is StepStatusCanceled -> StepStatusCanceled(minStep.cancellationResult, minStep.cancellationWorkflowMessageIndex)
+                is StepStatusCompleted -> StepStatusCompleted(minStep.completionResult, minStep.completionWorkflowTaskIndex)
+                is StepStatusCanceled -> StepStatusCanceled(minStep.cancellationResult, minStep.cancellationWorkflowTaskIndex)
             }
         }
     }

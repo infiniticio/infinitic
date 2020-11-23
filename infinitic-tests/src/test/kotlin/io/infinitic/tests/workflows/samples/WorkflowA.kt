@@ -24,13 +24,13 @@
 package io.infinitic.tests.workflows.samples
 
 import io.infinitic.common.workflows.Deferred
+import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.and
-import io.infinitic.common.workflows.or
-import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.async
-import io.infinitic.common.workflows.proxy
+import io.infinitic.common.workflows.or
 import io.infinitic.common.workflows.task
+import io.infinitic.common.workflows.workflow
 import java.time.LocalDateTime
 
 interface WorkflowA : Workflow {
@@ -50,13 +50,19 @@ interface WorkflowA : Workflow {
     fun inline3(): String
     fun child1(): String
     fun child2(): String
+    fun prop1(): String
+    fun prop2(): String
+    fun prop3(): String
+    fun prop4(): String
+    fun prop5(): String
+    fun prop6(): String
 }
 
-class WorkflowAImpl() : WorkflowA {
+class WorkflowAImpl : WorkflowA {
     override lateinit var context: WorkflowTaskContext
-
-    private val taskA = proxy(TaskA::class)
-    private val workflowB = proxy(WorkflowB::class)
+    private val taskA = task<TaskA>()
+    private val workflowB = workflow<WorkflowB>()
+    private var p1 = ""
 
     override fun empty() = "void"
 
@@ -191,5 +197,91 @@ class WorkflowAImpl() : WorkflowA {
         val d = async(workflowB) { concat(str) }
 
         return taskA.concat(d.result(), str) // should be "21abc21"
+    }
+
+    override fun prop1(): String {
+        p1 = "a"
+
+        async {
+            p1 += "b"
+        }
+        p1 += "c"
+
+        return p1 // should be "ac"
+    }
+
+    override fun prop2(): String {
+        p1 = "a"
+
+        async {
+            p1 += "b"
+        }
+        p1 += "c"
+        taskA.await(100)
+        p1 += "d"
+
+        return p1 // should be "acbd"
+    }
+
+    override fun prop3(): String {
+        p1 = "a"
+
+        async {
+            taskA.await(50)
+            p1 += "b"
+        }
+        p1 += "c"
+        taskA.await(100)
+        p1 += "d"
+
+        return p1 // should be "acbd"
+    }
+
+    override fun prop4(): String {
+        p1 = "a"
+
+        async {
+            taskA.await(150)
+            p1 += "b"
+        }
+        p1 += "c"
+        taskA.await(100)
+        p1 += "d"
+
+        return p1 // should be "acd"
+    }
+
+    override fun prop5(): String {
+        p1 = "a"
+
+        async {
+            p1 += "b"
+        }
+
+        async {
+            p1 += "c"
+        }
+        p1 += "d"
+        taskA.await(100)
+
+        return p1 // should be "adbc"
+    }
+
+    override fun prop6(): String {
+        val d1 = async(taskA) { reverse("12") }
+
+        val d2 = async {
+            d1.await()
+            p1 += "b"
+            p1
+        }
+        d1.await()
+        p1 += "a"
+        p1 = d2.result() + p1
+        // unfortunately p1 = p1 + d2.result() would fail the test
+        // because d2.result() updates p1 value too lately in the expression
+        // not sure, how to avoid that
+
+        return p1 // should be "abab"
     }
 }

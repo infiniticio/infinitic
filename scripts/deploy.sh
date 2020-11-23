@@ -146,7 +146,7 @@ else
 fi
 
 printf "Creating schema files ...\n"
-cd $tmp_dir && java -cp $JOB_MANAGER_JAR_PATH io.infinitic.engine.pulsar.taskManager.utils.GenerateSchemaFilesKt
+cd $tmp_dir && java -cp $JOB_MANAGER_JAR_PATH io.infinitic.engine.pulsar.schemas.GenerateSchemaFilesKt
 if [ $? -ne 0 ]; then
     print_error "Cannot generate schema files"
     print_error "$(cat <<-END
@@ -158,9 +158,9 @@ END
 fi
 
 printf "Uploading schemas to topics ...\n"
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --filename build/schemas/AvroEnvelopeForTaskEngine.schema && \
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-per-name --filename build/schemas/AvroEnvelopeForMonitoringPerName.schema && \
-pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-global --filename build/schemas/AvroEnvelopeForMonitoringGlobal.schema
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-engine --filename build/schemas/TaskEngine.schema && \
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-per-name --filename build/schemas/MonitoringPerName.schema && \
+pulsarctl --admin-service-url=$PULSAR_ADMIN_URL schemas upload $PULSAR_TENANT/$PULSAR_NAMESPACE/tasks-monitoring-global --filename build/schemas/MonitoringGlobal.schema
 if [ $? -ne 0 ]; then
     print_error "Cannot upload schema files to topic"
     exit 1

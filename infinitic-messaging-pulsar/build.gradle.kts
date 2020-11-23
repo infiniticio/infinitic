@@ -23,7 +23,8 @@
 
 plugins {
     kotlin("jvm")
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    kotlin("plugin.serialization")
+    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
 
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
@@ -35,19 +36,16 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
+    implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.0.0")
+    implementation(project(":infinitic-common"))
+    api(project(":infinitic-storage"))
 
-    implementation(project(":infinitic-avro"))
-    api(project(":infinitic-messaging-api"))
-    api(project(":infinitic-client"))
-    api(project(":infinitic-engine"))
-    api(project(":infinitic-worker"))
-
+    testImplementation(testFixtures(project(":infinitic-common")))
     testImplementation(kotlin("reflect"))
     testImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.kotest:kotest-property-jvm:${project.extra["kotest_version"]}")
     testImplementation("io.mockk:mockk:${project.extra["mockk_version"]}")
-    testImplementation(testFixtures(project(":infinitic-common")))
 }
 
 java {

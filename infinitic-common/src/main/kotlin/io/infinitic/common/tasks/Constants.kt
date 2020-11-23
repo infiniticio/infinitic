@@ -25,7 +25,6 @@ package io.infinitic.common.tasks
 
 class Constants {
     companion object {
-        const val WORKFLOW_TASK_METHOD = "handle"
         const val DELAY_BEFORE_RETRY_METHOD = "getRetryDelay"
     }
 }

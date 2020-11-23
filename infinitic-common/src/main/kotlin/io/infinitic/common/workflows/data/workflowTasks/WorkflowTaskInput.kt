@@ -24,18 +24,24 @@
 package io.infinitic.common.workflows.data.workflowTasks
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.properties.PropertyStore
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class WorkflowTaskInput(
     val workflowId: WorkflowId,
     val workflowName: WorkflowName,
     val workflowOptions: WorkflowOptions,
-    val workflowPropertyStore: PropertyStore,
-    val workflowMessageIndex: WorkflowMessageIndex,
+    val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
+    val workflowTaskIndex: WorkflowTaskIndex,
 
-    val methodRun: MethodRun
-)
+    val methodRun: MethodRun,
+    val targetPosition: MethodRunPosition = MethodRunPosition("")
+) {
+    fun getFullMethodName() = "$workflowName::${methodRun.methodName}"
+}

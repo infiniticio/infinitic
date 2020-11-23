@@ -23,21 +23,21 @@
 
 package io.infinitic.client
 
-import io.infinitic.common.tasks.data.MethodInput
-import io.infinitic.common.tasks.data.MethodName
-import io.infinitic.messaging.api.dispatcher.Dispatcher
-import io.infinitic.common.tasks.data.TaskInstance
+import io.infinitic.common.data.methods.MethodInput
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.data.MethodOutput
-import io.infinitic.common.tasks.data.MethodParameterTypes
 import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
 import io.infinitic.common.tasks.messages.CancelTask
 import io.infinitic.common.tasks.messages.DispatchTask
 import io.infinitic.common.tasks.messages.RetryTask
-import io.infinitic.common.tasks.proxies.MethodProxyHandler
+import io.infinitic.common.tasks.messages.TaskEngineMessage
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
@@ -45,11 +45,18 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.messages.DispatchWorkflow
+import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 
-class Client(val dispatcher: Dispatcher) {
+typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage) -> Unit
+typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit
+
+class Client(
+    val sendToTaskEngine: SendToTaskEngine,
+    val sendToWorkflowEngine: SendToWorkflowEngine
+) {
 
     /*
-    * Use this method to dispatch a workflow
+    Use this method to dispatch a workflow
     */
     suspend fun <T : Workflow> dispatch(
         workflowInterface: Class<T>,
@@ -77,13 +84,22 @@ class Client(val dispatcher: Dispatcher) {
             workflowMeta = meta,
             workflowOptions = options
         )
-        dispatcher.toWorkflowEngine(msg)
+        sendToWorkflowEngine(msg)
 
         return WorkflowInstance(msg.workflowId)
     }
 
     /*
-     * Use this method to dispatch a task
+    Use this method to dispatch a workflow
+    */
+    suspend inline fun <reified T : Workflow> dispatch(
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta(),
+        noinline apply: T.() -> Any?
+    ) = dispatch(T::class.java, options, meta, apply)
+
+    /*
+     Use this method to dispatch a task
      */
     suspend fun <T : Any> dispatch(
         taskInterface: Class<T>,
@@ -112,10 +128,19 @@ class Client(val dispatcher: Dispatcher) {
             taskOptions = options,
             taskMeta = meta
         )
-        dispatcher.toTaskEngine(msg)
+        sendToTaskEngine(msg)
 
         return TaskInstance(msg.taskId)
     }
+
+    /*
+    Use this method to dispatch a task
+    */
+    suspend inline fun <reified T : Any> dispatch(
+        options: TaskOptions = TaskOptions(),
+        meta: TaskMeta = TaskMeta(),
+        noinline apply: T.() -> Any?
+    ) = dispatch(T::class.java, options, meta, apply)
 
     /*
      * Use this method to manually retry a task
@@ -124,22 +149,22 @@ class Client(val dispatcher: Dispatcher) {
     suspend fun retryTask(
         id: String,
         name: TaskName? = null,
-        method: MethodName? = null,
-        parameterTypes: MethodParameterTypes? = null,
-        input: io.infinitic.common.tasks.data.MethodInput? = null,
-        options: TaskOptions? = null,
-        meta: TaskMeta? = null
+        methodName: MethodName? = null,
+        methodParameterTypes: MethodParameterTypes? = null,
+        methodInput: MethodInput? = null,
+        taskOptions: TaskOptions? = null,
+        taskMeta: TaskMeta? = null
     ) {
         val msg = RetryTask(
             taskId = TaskId(id),
             taskName = name,
-            methodName = method,
-            methodParameterTypes = parameterTypes,
-            methodInput = input,
-            taskOptions = options,
-            taskMeta = meta
+            methodName = methodName,
+            methodParameterTypes = methodParameterTypes,
+            methodInput = methodInput,
+            taskOptions = taskOptions,
+            taskMeta = taskMeta
         )
-        dispatcher.toTaskEngine(msg)
+        sendToTaskEngine(msg)
     }
 
     /*
@@ -151,8 +176,8 @@ class Client(val dispatcher: Dispatcher) {
     ) {
         val msg = CancelTask(
             taskId = TaskId(id),
-            taskOutput = MethodOutput(output)
+            taskOutput = MethodOutput.from(output)
         )
-        dispatcher.toTaskEngine(msg)
+        sendToTaskEngine(msg)
     }
 }

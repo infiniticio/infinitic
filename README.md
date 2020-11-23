@@ -65,4 +65,4 @@ Being able to define workflows as code provides you with a very flexible and pow
 
 ## Getting Started
 
-Please subscribe [here](https://infinitic.substack.com/) if interested
+Please subscribe [here](https://infinitic.substack.com) if interested

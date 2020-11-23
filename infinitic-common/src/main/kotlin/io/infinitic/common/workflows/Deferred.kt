@@ -24,9 +24,9 @@
 package io.infinitic.common.workflows
 
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.common.workflows.data.steps.StepStatus
-import io.infinitic.common.workflows.data.steps.Step.Or
 import io.infinitic.common.workflows.data.steps.Step.And
+import io.infinitic.common.workflows.data.steps.Step.Or
+import io.infinitic.common.workflows.data.steps.StepStatus
 
 data class Deferred<T> (
     val step: Step,

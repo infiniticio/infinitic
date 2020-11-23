@@ -26,33 +26,31 @@ package io.infinitic.common.workflows.data.steps
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.properties.Properties
-import io.infinitic.common.workflows.data.workflows.WorkflowMessageIndex
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class PastStep(
     val stepPosition: MethodRunPosition,
     val step: Step,
     val stepHash: StepHash,
     var stepStatus: StepStatus = StepStatusOngoing,
-    var propertiesAtTermination: Properties? = null,
-    var messageIndexAtTermination: WorkflowMessageIndex? = null
+    var propertiesNameHashAtTermination: Map<PropertyName, PropertyHash>? = null,
+    var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
-
     @JsonIgnore
     fun isTerminated() = stepStatus is StepStatusCompleted || stepStatus is StepStatusCanceled
 
-    fun terminateBy(pastCommand: PastCommand, properties: Properties): Boolean {
+    fun isTerminatedBy(pastCommand: PastCommand): Boolean {
+        // returns false if already terminated
         if (isTerminated()) return false
-
+        // apply update
         step.update(pastCommand.commandId, pastCommand.commandStatus)
         stepStatus = step.stepStatus()
-        return when (stepStatus) {
-            is StepStatusOngoing -> false
-            is StepStatusCanceled, is StepStatusCompleted -> {
-                propertiesAtTermination = properties
-                true
-            }
-        }
+        // returns true only if newly terminated
+        return isTerminated()
     }
 
     fun isSimilarTo(newStep: NewStep) = newStep.stepHash == stepHash
