@@ -23,8 +23,6 @@
  * Licensor: infinitic.io
  */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
