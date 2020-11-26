@@ -55,6 +55,7 @@ import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
 import java.util.Optional
+import java.util.concurrent.CompletableFuture
 
 class PulsarTransportTests : StringSpec({
     TaskEngineMessage::class.sealedSubclasses.forEach {
@@ -80,10 +81,10 @@ private fun shouldBeAbleToSendMessageToTaskEngineTopic(msg: TaskEngineMessage) =
         val context = context()
         val builder = mockk<TypedMessageBuilder<TaskEngineEnvelope>>()
         val slotSchema = slot<AvroSchema<TaskEngineEnvelope>>()
-        every { context.newOutputMessage<TaskEngineEnvelope>(any(), capture(slotSchema)) } returns builder
+        every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
-        every { builder.send() } returns mockk<MessageId>()
+        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
         getSendToTaskEngine(context.messageBuilder())(msg, 0F)
         // then
@@ -95,7 +96,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineTopic(msg: TaskEngineMessage) =
         verifyAll {
             builder.value(TaskEngineEnvelope.from(msg))
             builder.key("${msg.taskId}")
-            builder.send()
+            builder.sendAsync()
         }
         confirmVerified(builder)
     }
@@ -107,10 +108,10 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         val context = context()
         val builder = mockk<TypedMessageBuilder<MonitoringPerNameEnvelope>>()
         val slotSchema = slot<AvroSchema<MonitoringPerNameEnvelope>>()
-        every { context.newOutputMessage<MonitoringPerNameEnvelope>(any(), capture(slotSchema)) } returns builder
+        every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
-        every { builder.send() } returns mockk<MessageId>()
+        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
         getSendToMonitoringPerName(context.messageBuilder())(msg)
         // then
@@ -122,7 +123,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         verifyAll {
             builder.value(MonitoringPerNameEnvelope.from(msg))
             builder.key("${msg.taskName}")
-            builder.send()
+            builder.sendAsync()
         }
         confirmVerified(builder)
     }
@@ -135,10 +136,10 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         val builder = mockk<TypedMessageBuilder<MonitoringGlobalEnvelope>>()
         val slotSchema = slot<AvroSchema<MonitoringGlobalEnvelope>>()
         val slotTopic = slot<String>()
-        every { context.newOutputMessage<MonitoringGlobalEnvelope>(capture(slotTopic), capture(slotSchema)) } returns builder
+        every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
-        every { builder.send() } returns mockk<MessageId>()
+        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
         getSendToMonitoringGlobal(context.messageBuilder())(msg)
         // then
@@ -146,7 +147,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get()
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringGlobalEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(MonitoringGlobalEnvelope.from(msg)) }
-        verify(exactly = 1) { builder.send() }
+        verify(exactly = 1) { builder.sendAsync() }
         confirmVerified(context)
         confirmVerified(builder)
     }
@@ -158,10 +159,10 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         val builder = mockk<TypedMessageBuilder<TaskExecutorEnvelope>>()
         val slotSchema = slot<AvroSchema<TaskExecutorEnvelope>>()
         val slotTopic = slot<String>()
-        every { context.newOutputMessage<TaskExecutorEnvelope>(capture(slotTopic), capture(slotSchema)) } returns builder
+        every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
-        every { builder.send() } returns mockk<MessageId>()
+        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
         getSendToWorkers(context.messageBuilder())(msg)
         // then
@@ -170,7 +171,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(TaskExecutorEnvelope.from(msg)) }
         verify(exactly = 1) { builder.key("${msg.taskName}") }
-        verify(exactly = 1) { builder.send() }
+        verify(exactly = 1) { builder.sendAsync() }
         confirmVerified(context)
         confirmVerified(builder)
     }

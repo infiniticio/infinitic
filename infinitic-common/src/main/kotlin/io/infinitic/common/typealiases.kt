@@ -36,6 +36,4 @@ typealias SendToMonitoringGlobal = suspend (MonitoringGlobalMessage) -> Unit
 typealias SendToTaskEngine = suspend (TaskEngineMessage, Float) -> Unit
 typealias SendToMonitoringPerName = suspend (MonitoringPerNameEngineMessage) -> Unit
 typealias SendToWorkers = suspend (TaskExecutorMessage) -> Unit
-typealias SendToTaskExecutor = suspend (TaskExecutorMessage) -> Unit
-typealias SendToWorkflowExecutor = suspend (WorkflowExecutorMessage) -> Unit
 typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit

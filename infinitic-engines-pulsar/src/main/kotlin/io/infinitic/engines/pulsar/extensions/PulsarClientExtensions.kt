@@ -43,6 +43,13 @@ fun PulsarClient.newTaskEngineConsumer(): Consumer<TaskEngineEnvelope> =
         .subscriptionType(SubscriptionType.Key_Shared)
         .subscribe()
 
+fun PulsarClient.newWorkflowEngineConsumer(): Consumer<WorkflowEngineEnvelope> =
+    newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
+        .topic(Topic.WORKFLOW_ENGINE.get()) // FIXME: We are probably missing an abstraction somewhere to avoid going to the Topic class to properly get a consumer
+        .subscriptionName("infinitic-workflow-engine") // FIXME: Should be in a constant somewhere
+        .subscriptionType(SubscriptionType.Key_Shared)
+        .subscribe()
+
 fun PulsarClient.newMonitoringPerNameConsumer(): Consumer<MonitoringPerNameEnvelope> =
     newConsumer(Schema.AVRO(schemaDefinition<MonitoringPerNameEnvelope>()))
         .topic(Topic.MONITORING_PER_NAME.get()) // FIXME: We are probably missing an abstraction somewhere to avoid going to the Topic class to properly get a consumer
@@ -54,12 +61,5 @@ fun PulsarClient.newMonitoringGlobalConsumer(): Consumer<MonitoringGlobalEnvelop
     newConsumer(Schema.AVRO(schemaDefinition<MonitoringGlobalEnvelope>()))
         .topic(Topic.MONITORING_GLOBAL.get()) // FIXME: We are probably missing an abstraction somewhere to avoid going to the Topic class to properly get a consumer
         .subscriptionName("infinitic-monitoring-global-engine") // FIXME: Should be in a constant somewhere
-        .subscriptionType(SubscriptionType.Key_Shared)
-        .subscribe()
-
-fun PulsarClient.newWorkflowEngineConsumer(): Consumer<WorkflowEngineEnvelope> =
-    newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
-        .topic(Topic.WORKFLOW_ENGINE.get()) // FIXME: We are probably missing an abstraction somewhere to avoid going to the Topic class to properly get a consumer
-        .subscriptionName("infinitic-workflow-engine") // FIXME: Should be in a constant somewhere
         .subscriptionType(SubscriptionType.Key_Shared)
         .subscribe()
