@@ -30,7 +30,6 @@ import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMes
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.executors.messages.WorkflowExecutorMessage
 
 typealias SendToMonitoringGlobal = suspend (MonitoringGlobalMessage) -> Unit
 typealias SendToTaskEngine = suspend (TaskEngineMessage, Float) -> Unit
