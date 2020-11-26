@@ -23,27 +23,32 @@
  * Licensor: infinitic.io
  */
 
-rootProject.name = "io.infinitic"
+package io.infinitic.tasks.executor.pulsar.functions
 
-include("infinitic-rest-api")
-include("infinitic-storage")
-include("infinitic-messaging-pulsar")
-include("infinitic-common")
-include("infinitic-examples")
-include("infinitic-task-executor")
-include("infinitic-worker-pulsar")
-include("infinitic-client")
-include("infinitic-monitoring-engines")
-include("infinitic-task-engine")
-include("infinitic-task-tests")
-include("infinitic-workflow-engine")
-include("infinitic-workflow-tests")
-include("infinitic-engines-pulsar")
+import io.infinitic.common.workers.messages.WorkerEnvelope
+import io.infinitic.messaging.pulsar.extensions.messageBuilder
+import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
+import io.infinitic.tasks.executor.TaskExecutor
+import kotlinx.coroutines.runBlocking
+import org.apache.pulsar.functions.api.Context
+import org.apache.pulsar.functions.api.Function
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
+open class WorkerPulsarFunction : Function<WorkerEnvelope, Void> {
+
+    override fun process(envelope: WorkerEnvelope, context: Context?): Void? = runBlocking {
+        val ctx = context ?: throw NullPointerException("Null Context received")
+
+        try {
+            getWorker(context).handle(envelope.message())
+        } catch (e: Exception) {
+            ctx.logger.error("Error:%s for message:%s", e, envelope)
+            throw e
+        }
+
+        return@runBlocking null
+    }
+
+    fun getWorker(context: Context): TaskExecutor {
+        return TaskExecutor(getSendToTaskEngine(context.messageBuilder()))
     }
 }

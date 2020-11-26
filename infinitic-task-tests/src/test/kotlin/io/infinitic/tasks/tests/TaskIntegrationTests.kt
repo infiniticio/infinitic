@@ -40,10 +40,10 @@ import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyV
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
+import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.tests.samples.Status
 import io.infinitic.tasks.tests.samples.TaskTest
 import io.infinitic.tasks.tests.samples.TaskTestImpl
-import io.infinitic.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -62,7 +62,7 @@ private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(
 private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
-private lateinit var worker: Worker
+private lateinit var taskExecutor: TaskExecutor
 private lateinit var client: Client
 
 fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
@@ -93,7 +93,7 @@ fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
 
 fun CoroutineScope.sendToWorkers(msg: WorkerMessage) {
     launch {
-        worker.handle(msg)
+        taskExecutor.handle(msg)
     }
 }
 
@@ -122,8 +122,8 @@ fun CoroutineScope.init() {
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    worker = Worker { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
-    worker.register(TaskTest::class.java.name) { taskTest }
+    taskExecutor = TaskExecutor { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
+    taskExecutor.register(TaskTest::class.java.name) { taskTest }
 }
 
 class TaskIntegrationTests : StringSpec({

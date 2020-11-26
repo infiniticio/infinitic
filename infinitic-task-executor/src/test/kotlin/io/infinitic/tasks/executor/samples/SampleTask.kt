@@ -23,13 +23,16 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.tasks.executor.samples
 
-    api(project(":infinitic-common"))
-    api(project(":infinitic-messaging-pulsar"))
-    api(project(":infinitic-task-executor"))
+interface SampleTask {
+    fun handle(i: Int, j: String): String
+    fun handle(i: Int, j: Int): String
+    fun other(i: Int, j: String): String
+}
+
+class TestingSampleTask() : SampleTask {
+    override fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+    override fun handle(i: Int, j: Int) = (i * j).toString()
+    override fun other(i: Int, j: String) = (i * j.toInt()).toString()
 }

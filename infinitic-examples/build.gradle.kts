@@ -27,7 +27,7 @@ dependencies {
     testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-monitoring-engines"))
     testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-worker"))
+    testImplementation(project(":infinitic-task-executor"))
     testImplementation(project(":infinitic-storage"))
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")

@@ -23,13 +23,19 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.tasks.executor.task
 
-    api(project(":infinitic-common"))
-    api(project(":infinitic-messaging-pulsar"))
-    api(project(":infinitic-task-executor"))
-}
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.tasks.executor.TaskExecutor
+
+data class TaskAttemptContext(
+    val taskExecutor: TaskExecutor,
+    val taskId: String,
+    val taskRetry: Int,
+    val taskAttemptId: String,
+    val taskAttemptRetry: Int,
+    val lastTaskAttemptError: Any?,
+    var currentTaskAttemptError: Throwable? = null,
+    val taskMeta: Map<String, Any?>,
+    val taskOptions: TaskOptions
+)

@@ -23,13 +23,36 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.tasks.executor.task
 
-    api(project(":infinitic-common"))
-    api(project(":infinitic-messaging-pulsar"))
-    api(project(":infinitic-task-executor"))
+import io.infinitic.common.tasks.data.TaskOptions
+import java.lang.reflect.Method
+
+internal data class TaskCommand(
+    val job: Any,
+    val method: Method,
+    val input: List<Any?>,
+    val options: TaskOptions
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as TaskCommand
+
+        if (job != other.job) return false
+        if (method != other.method) return false
+        if (input != other.input) return false
+        if (options != other.options) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = job.hashCode()
+        result = 31 * result + method.hashCode()
+        result = 31 * result + input.hashCode()
+        result = 31 * result + options.hashCode()
+        return result
+    }
 }

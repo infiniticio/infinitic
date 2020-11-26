@@ -23,13 +23,30 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.tasks.executor.samples
 
-    api(project(":infinitic-common"))
-    api(project(":infinitic-messaging-pulsar"))
-    api(project(":infinitic-task-executor"))
+import io.infinitic.tasks.executor.task.TaskAttemptContext
+
+internal class SampleTaskWithRetry() {
+    lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    fun getRetryDelay(): Float? = if (context.currentTaskAttemptError is IllegalStateException) 3F else 0F
+}
+
+internal class SampleTaskWithBadTypeRetry() {
+    lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    fun getRetryDelay(): Int? = 3
+}
+
+internal class SampleTaskWithBuggyRetry() {
+    lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    fun getRetryDelay(): Float? = if (context.currentTaskAttemptError is IllegalStateException) throw IllegalArgumentException() else 3F
 }

@@ -23,13 +23,28 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.tasks.executor.workflowTask
 
-    api(project(":infinitic-common"))
-    api(project(":infinitic-messaging-pulsar"))
-    api(project(":infinitic-task-executor"))
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+
+const val POSITION_SEPARATOR = "."
+
+data class MethodRunIndex(
+    val parent: MethodRunIndex? = null,
+    val index: Int = -1,
+) {
+    val methodPosition: MethodRunPosition = when (parent) {
+        null -> MethodRunPosition("$index")
+        else -> MethodRunPosition("${parent.methodPosition}$POSITION_SEPARATOR$index")
+    }
+
+    override fun toString() = "$methodPosition"
+
+    fun next() = MethodRunIndex(parent, index + 1)
+
+    fun up() = parent
+
+    fun down() = MethodRunIndex(this, -1)
+
+    fun leadsTo(target: MethodRunPosition) = "${target}$POSITION_SEPARATOR".startsWith("$methodPosition$POSITION_SEPARATOR")
 }
