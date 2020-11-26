@@ -33,9 +33,12 @@ include("infinitic-examples")
 include("infinitic-worker")
 include("infinitic-worker-pulsar")
 include("infinitic-client")
-include("infinitic-engines")
+include("infinitic-monitoring-engines")
+include("infinitic-task-engine")
+include("infinitic-task-tests")
+include("infinitic-workflow-engine")
+include("infinitic-workflow-tests")
 include("infinitic-engines-pulsar")
-include("infinitic-tests")
 
 pluginManagement {
     repositories {
