@@ -43,43 +43,51 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.messaging.pulsar.Topic
 import io.infinitic.messaging.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.messaging.pulsar.schemas.schemaDefinition
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
-fun getSendToMonitoringGlobal(pulsarMessageBuilder: PulsarMessageBuilder): SendToMonitoringGlobal =
-    {
-        message: MonitoringGlobalMessage ->
-        suspendCancellableCoroutine {
-            cont ->
-            val future: CompletableFuture<MessageId> = pulsarMessageBuilder
+private fun <T> suspendableSend(
+    cont: CancellableContinuation<Unit>,
+    send: () -> CompletableFuture<T>
+) {
+    val future = send()
+
+    cont.invokeOnCancellation { future.cancel(true) }
+
+    future.whenComplete { _, exception ->
+        if (exception == null) {
+            cont.resumeWith(Result.success(Unit))
+        } else {
+            cont.resumeWith(Result.failure(exception))
+        }
+    }
+}
+
+fun getSendToMonitoringGlobal(pulsarMessageBuilder: PulsarMessageBuilder): SendToMonitoringGlobal = {
+    message: MonitoringGlobalMessage ->
+    suspendCancellableCoroutine {
+        cont ->
+        suspendableSend(cont) {
+            pulsarMessageBuilder
                 .newMessage(
                     Topic.MONITORING_GLOBAL.get(),
                     AvroSchema.of(schemaDefinition(MonitoringGlobalEnvelope::class))
                 )
                 .value(MonitoringGlobalEnvelope.from(message))
                 .sendAsync()
-
-            cont.invokeOnCancellation { future.cancel(true) }
-
-            future.whenComplete { _, exception ->
-                if (exception == null) {
-                    cont.resumeWith(Result.success(Unit))
-                } else {
-                    cont.resumeWith(Result.failure(exception))
-                }
-            }
         }
     }
+}
 
-fun getSendToMonitoringPerName(pulsarMessageBuilder: PulsarMessageBuilder): SendToMonitoringPerName =
-    {
-        message: MonitoringPerNameEngineMessage ->
-        suspendCancellableCoroutine {
-            cont ->
-            val future: CompletableFuture<MessageId> = pulsarMessageBuilder
+fun getSendToMonitoringPerName(pulsarMessageBuilder: PulsarMessageBuilder): SendToMonitoringPerName = {
+    message: MonitoringPerNameEngineMessage ->
+    suspendCancellableCoroutine {
+        cont ->
+        suspendableSend(cont) {
+            pulsarMessageBuilder
                 .newMessage(
                     Topic.MONITORING_PER_NAME.get(),
                     AvroSchema.of(schemaDefinition(MonitoringPerNameEnvelope::class))
@@ -87,25 +95,16 @@ fun getSendToMonitoringPerName(pulsarMessageBuilder: PulsarMessageBuilder): Send
                 .key("${message.taskName}")
                 .value(MonitoringPerNameEnvelope.from(message))
                 .sendAsync()
-
-            cont.invokeOnCancellation { future.cancel(true) }
-
-            future.whenComplete { _, exception ->
-                if (exception == null) {
-                    cont.resumeWith(Result.success(Unit))
-                } else {
-                    cont.resumeWith(Result.failure(exception))
-                }
-            }
         }
     }
+}
 
-fun getSendToTaskEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToTaskEngine =
-    {
-        message: TaskEngineMessage, after: Float ->
-        suspendCancellableCoroutine {
-            cont ->
-            val future: CompletableFuture<MessageId> = pulsarMessageBuilder
+fun getSendToTaskEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToTaskEngine = {
+    message: TaskEngineMessage, after: Float ->
+    suspendCancellableCoroutine {
+        cont ->
+        suspendableSend(cont) {
+            pulsarMessageBuilder
                 .newMessage(
                     Topic.TASK_ENGINE.get(),
                     AvroSchema.of(schemaDefinition(TaskEngineEnvelope::class))
@@ -118,25 +117,16 @@ fun getSendToTaskEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToTaskE
                     }
                 }
                 .sendAsync()
-
-            cont.invokeOnCancellation { future.cancel(true) }
-
-            future.whenComplete { _, exception ->
-                if (exception == null) {
-                    cont.resumeWith(Result.success(Unit))
-                } else {
-                    cont.resumeWith(Result.failure(exception))
-                }
-            }
         }
     }
+}
 
-fun getSendToWorkflowEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkflowEngine =
-    {
-        message: WorkflowEngineMessage, after: Float ->
-        suspendCancellableCoroutine {
-            cont ->
-            val future: CompletableFuture<MessageId> = pulsarMessageBuilder
+fun getSendToWorkflowEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkflowEngine = {
+    message: WorkflowEngineMessage, after: Float ->
+    suspendCancellableCoroutine {
+        cont ->
+        suspendableSend(cont) {
+            pulsarMessageBuilder
                 .newMessage(
                     Topic.WORKFLOW_ENGINE.get(),
                     AvroSchema.of(schemaDefinition(WorkflowEngineEnvelope::class))
@@ -149,25 +139,16 @@ fun getSendToWorkflowEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToW
                     }
                 }
                 .sendAsync()
-
-            cont.invokeOnCancellation { future.cancel(true) }
-
-            future.whenComplete { _, exception ->
-                if (exception == null) {
-                    cont.resumeWith(Result.success(Unit))
-                } else {
-                    cont.resumeWith(Result.failure(exception))
-                }
-            }
         }
     }
+}
 
-fun getSendToWorkers(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkers =
-    {
-        message: TaskExecutorMessage ->
-        suspendCancellableCoroutine {
-            cont ->
-            val future: CompletableFuture<MessageId> = pulsarMessageBuilder
+fun getSendToWorkers(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkers = {
+    message: TaskExecutorMessage ->
+    suspendCancellableCoroutine {
+        cont ->
+        suspendableSend(cont) {
+            pulsarMessageBuilder
                 .newMessage(
                     Topic.WORKERS.get("${message.taskName}"),
                     AvroSchema.of(schemaDefinition(TaskExecutorEnvelope::class))
@@ -175,18 +156,9 @@ fun getSendToWorkers(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkers 
                 .key("${message.taskName}")
                 .value(TaskExecutorEnvelope.from(message))
                 .sendAsync()
-
-            cont.invokeOnCancellation { future.cancel(true) }
-
-            future.whenComplete { _, exception ->
-                if (exception == null) {
-                    cont.resumeWith(Result.success(Unit))
-                } else {
-                    cont.resumeWith(Result.failure(exception))
-                }
-            }
         }
     }
+}
 
 // fun getSendToMonitoringGlobal(pulsarMessageBuilder: PulsarMessageBuilder): SendToMonitoringGlobal =
 //    {
