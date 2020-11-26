@@ -40,10 +40,10 @@ import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyV
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
+import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.tests.samples.Status
 import io.infinitic.tasks.tests.samples.TaskTest
 import io.infinitic.tasks.tests.samples.TaskTestImpl
-import io.infinitic.tasks.executor.TaskExecutor
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
