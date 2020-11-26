@@ -23,27 +23,11 @@
  * Licensor: infinitic.io
  */
 
-rootProject.name = "io.infinitic"
-
-include("infinitic-rest-api")
-include("infinitic-storage")
-include("infinitic-messaging-pulsar")
-include("infinitic-common")
-include("infinitic-examples")
-include("infinitic-worker")
-include("infinitic-worker-pulsar")
-include("infinitic-client")
-include("infinitic-monitoring-engines")
-include("infinitic-task-engine")
-include("infinitic-task-tests")
-include("infinitic-workflow-engine")
-include("infinitic-workflow-tests")
-include("infinitic-engines-pulsar")
-
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
-    }
+dependencies {
+    testImplementation(project(":infinitic-common"))
+    testImplementation(project(":infinitic-monitoring-engines"))
+    testImplementation(project(":infinitic-task-engine"))
+    testImplementation(project(":infinitic-client"))
+    testImplementation(project(":infinitic-worker"))
+    testImplementation(project(":infinitic-storage"))
 }

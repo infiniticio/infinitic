@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.tasks.samples
+package io.infinitic.tasks.tests.samples
 
 import io.infinitic.worker.task.TaskAttemptContext
 import kotlinx.coroutines.delay

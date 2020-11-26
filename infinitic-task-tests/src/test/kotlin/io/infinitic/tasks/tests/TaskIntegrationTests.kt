@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.tasks
+package io.infinitic.tasks.tests
 
 import io.infinitic.client.Client
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
@@ -40,9 +40,9 @@ import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyV
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
-import io.infinitic.tests.tasks.samples.Status
-import io.infinitic.tests.tasks.samples.TaskTest
-import io.infinitic.tests.tasks.samples.TaskTestImpl
+import io.infinitic.tasks.tests.samples.Status
+import io.infinitic.tasks.tests.samples.TaskTest
+import io.infinitic.tasks.tests.samples.TaskTestImpl
 import io.infinitic.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

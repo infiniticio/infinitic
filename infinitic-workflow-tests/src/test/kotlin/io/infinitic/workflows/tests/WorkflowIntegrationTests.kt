@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.workflows
+package io.infinitic.workflows.tests
 
 import io.infinitic.client.Client
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
@@ -40,16 +40,16 @@ import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyV
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
-import io.infinitic.tests.workflows.samples.TaskA
-import io.infinitic.tests.workflows.samples.TaskAImpl
-import io.infinitic.tests.workflows.samples.WorkflowA
-import io.infinitic.tests.workflows.samples.WorkflowAImpl
-import io.infinitic.tests.workflows.samples.WorkflowB
-import io.infinitic.tests.workflows.samples.WorkflowBImpl
 import io.infinitic.worker.Worker
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
 import io.infinitic.workflows.engine.taskEngineInWorkflowEngine
+import io.infinitic.workflows.tests.samples.TaskA
+import io.infinitic.workflows.tests.samples.TaskAImpl
+import io.infinitic.workflows.tests.samples.WorkflowA
+import io.infinitic.workflows.tests.samples.WorkflowAImpl
+import io.infinitic.workflows.tests.samples.WorkflowB
+import io.infinitic.workflows.tests.samples.WorkflowBImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
