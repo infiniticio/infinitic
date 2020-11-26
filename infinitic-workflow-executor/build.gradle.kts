@@ -23,12 +23,15 @@
  * Licensor: infinitic.io
  */
 
+plugins {
+    `java-library`
+}
+
 dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-task-engine"))
-    testImplementation(project(":infinitic-workflow-engine"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-workflow-executor"))
-    testImplementation(project(":infinitic-storage"))
+    implementation(kotlin("reflect"))
+    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+
+    api(project(":infinitic-common"))
+    api(project(":infinitic-task-executor"))
 }

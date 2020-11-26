@@ -23,12 +23,12 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-task-engine"))
-    testImplementation(project(":infinitic-workflow-engine"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-workflow-executor"))
-    testImplementation(project(":infinitic-storage"))
-}
+package io.infinitic.workflows.executor.workflowTask
+
+sealed class WorkflowTaskException : RuntimeException()
+
+class NewStepException() : WorkflowTaskException()
+
+class KnownStepException : WorkflowTaskException()
+
+class AsyncCompletedException : WorkflowTaskException()

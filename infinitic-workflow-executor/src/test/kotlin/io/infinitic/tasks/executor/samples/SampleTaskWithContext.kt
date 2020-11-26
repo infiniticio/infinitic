@@ -23,12 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.workflowTask
+package io.infinitic.tasks.executor.samples
 
-sealed class WorkflowTaskException : RuntimeException()
+import io.infinitic.tasks.executor.task.TaskAttemptContext
 
-class NewStepException() : WorkflowTaskException()
+internal class SampleTaskWithContext() {
+    private lateinit var context: TaskAttemptContext
 
-class KnownStepException : WorkflowTaskException()
-
-class AsyncCompletedException : WorkflowTaskException()
+    fun handle(i: Int, j: String) = (i * j.toInt() * context.taskRetry).toString()
+}

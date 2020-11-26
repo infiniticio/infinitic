@@ -23,12 +23,16 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-task-engine"))
-    testImplementation(project(":infinitic-workflow-engine"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-workflow-executor"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.samples
+
+import io.infinitic.tasks.executor.task.TaskAttemptContext
+
+internal class SampleTaskWithTimeout() {
+    lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String): String {
+        Thread.sleep(400)
+
+        return (i * j.toInt() * context.taskRetry).toString()
+    }
 }

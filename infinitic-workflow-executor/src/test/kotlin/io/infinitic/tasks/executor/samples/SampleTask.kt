@@ -23,12 +23,16 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-task-engine"))
-    testImplementation(project(":infinitic-workflow-engine"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-workflow-executor"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.samples
+
+interface SampleTask {
+    fun handle(i: Int, j: String): String
+    fun handle(i: Int, j: Int): String
+    fun other(i: Int, j: String): String
+}
+
+class TestingSampleTask() : SampleTask {
+    override fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+    override fun handle(i: Int, j: Int) = (i * j).toString()
+    override fun other(i: Int, j: String) = (i * j.toInt()).toString()
 }

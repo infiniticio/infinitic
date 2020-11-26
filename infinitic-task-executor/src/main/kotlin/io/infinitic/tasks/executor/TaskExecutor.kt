@@ -40,15 +40,12 @@ import io.infinitic.common.tasks.messages.TaskAttemptStarted
 import io.infinitic.common.workers.messages.RunTask
 import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
 import io.infinitic.common.workflows.exceptions.WorkflowUsedAsTask
 import io.infinitic.tasks.executor.task.RetryDelay
 import io.infinitic.tasks.executor.task.RetryDelayFailed
 import io.infinitic.tasks.executor.task.RetryDelayRetrieved
 import io.infinitic.tasks.executor.task.TaskAttemptContext
 import io.infinitic.tasks.executor.task.TaskCommand
-import io.infinitic.tasks.executor.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
@@ -64,16 +61,11 @@ import kotlin.reflect.jvm.javaType
 typealias InstanceFactory = () -> Any
 
 open class TaskExecutor(
-    val sendToTaskEngine: SendToTaskEngine
+    open val sendToTaskEngine: SendToTaskEngine
 ) {
 
     // map taskName <> taskInstance
     private val registeredFactories = mutableMapOf<String, InstanceFactory>()
-
-    // per default, WorkflowTask is registered
-    init {
-        register<WorkflowTask> { WorkflowTaskImpl() }
-    }
 
     /**
      * Register a factory to use for a given name
@@ -172,16 +164,14 @@ open class TaskExecutor(
         }
     }
 
-    fun getWorkflow(name: String): Workflow {
-        val instance = getInstance(name)
-        if (instance is Workflow) return instance
-        else throw TaskUsedAsWorkflow(name, instance::class.qualifiedName!!)
-    }
-
     private fun getTask(name: String): Any {
         val instance = getInstance(name)
         if (instance is Workflow) throw WorkflowUsedAsTask(name, instance::class.qualifiedName!!)
         else return instance
+    }
+
+    open fun getWorkflow(name: String): Workflow {
+        TODO("Refactor Executors to be able to remove")
     }
 
     fun getRegisteredTasks() =
@@ -190,7 +180,7 @@ open class TaskExecutor(
             .filterNot { (_, instance) -> instance is Workflow }
             .map { (name, _) -> name }
 
-    private fun getInstance(name: String) =
+    protected fun getInstance(name: String) =
         registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 
     private suspend fun executeTask(method: Method, task: Any, parameters: List<Any?>) = coroutineScope {

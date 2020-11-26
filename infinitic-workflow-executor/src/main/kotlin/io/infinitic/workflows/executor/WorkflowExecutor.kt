@@ -23,28 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.workflowTask
+package io.infinitic.workflows.executor
 
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
+import io.infinitic.tasks.executor.TaskExecutor
+import io.infinitic.workflows.executor.workflowTask.WorkflowTaskImpl
 
-const val POSITION_SEPARATOR = "."
+open class WorkflowExecutor(
+    override val sendToTaskEngine: SendToTaskEngine
+) : TaskExecutor(sendToTaskEngine) {
 
-data class MethodRunIndex(
-    val parent: MethodRunIndex? = null,
-    val index: Int = -1,
-) {
-    val methodPosition: MethodRunPosition = when (parent) {
-        null -> MethodRunPosition("$index")
-        else -> MethodRunPosition("${parent.methodPosition}$POSITION_SEPARATOR$index")
+    // register WorkflowTask
+    init {
+        register<WorkflowTask> { WorkflowTaskImpl() }
     }
 
-    override fun toString() = "$methodPosition"
-
-    fun next() = MethodRunIndex(parent, index + 1)
-
-    fun up() = parent
-
-    fun down() = MethodRunIndex(this, -1)
-
-    fun leadsTo(target: MethodRunPosition) = "${target}$POSITION_SEPARATOR".startsWith("$methodPosition$POSITION_SEPARATOR")
+    override fun getWorkflow(name: String): Workflow {
+        val instance = getInstance(name)
+        if (instance is Workflow) return instance
+        else throw TaskUsedAsWorkflow(name, instance::class.qualifiedName!!)
+    }
 }

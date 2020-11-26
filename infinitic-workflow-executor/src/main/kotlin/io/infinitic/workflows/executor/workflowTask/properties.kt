@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.workflowTask
+package io.infinitic.workflows.executor.workflowTask
 
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.WorkflowTaskContext

@@ -38,6 +38,7 @@ include("infinitic-task-engine")
 include("infinitic-task-tests")
 include("infinitic-workflow-engine")
 include("infinitic-workflow-tests")
+include("infinitic-workflow-executor")
 include("infinitic-engines-pulsar")
 
 pluginManagement {

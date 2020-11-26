@@ -23,12 +23,30 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-task-engine"))
-    testImplementation(project(":infinitic-workflow-engine"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-workflow-executor"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.samples
+
+import io.infinitic.tasks.executor.task.TaskAttemptContext
+
+internal class SampleTaskWithRetry() {
+    lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    fun getRetryDelay(): Float? = if (context.currentTaskAttemptError is IllegalStateException) 3F else 0F
+}
+
+internal class SampleTaskWithBadTypeRetry() {
+    lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    fun getRetryDelay(): Int? = 3
+}
+
+internal class SampleTaskWithBuggyRetry() {
+    lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
+
+    fun getRetryDelay(): Float? = if (context.currentTaskAttemptError is IllegalStateException) throw IllegalArgumentException() else 3F
 }
