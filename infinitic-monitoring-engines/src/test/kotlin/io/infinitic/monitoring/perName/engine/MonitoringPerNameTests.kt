@@ -36,12 +36,10 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerifyAll
-import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
-import io.mockk.verifyAll
 
 class MonitoringPerNameTests : ShouldSpec({
     context("TaskMetrics.handle") {

@@ -58,4 +58,3 @@ data class RunTask(
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
 ) : TaskExecutorMessage(), TaskAttemptMessage
-

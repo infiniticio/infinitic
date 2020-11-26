@@ -38,7 +38,6 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.unmockkAll
-import io.mockk.verify
 import org.apache.pulsar.functions.api.Context
 
 class MonitoringGlobalPulsarFunctionTests : ShouldSpec({

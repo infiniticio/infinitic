@@ -62,7 +62,6 @@ subprojects {
     extra["easyrandom_version"] = "4.2.+"
     extra["shadow_version"] = "6.1.+"
 
-
     tasks.withType<JavaCompile> {
         sourceCompatibility = JavaVersion.VERSION_1_8.toString()
         targetCompatibility = JavaVersion.VERSION_1_8.toString()
