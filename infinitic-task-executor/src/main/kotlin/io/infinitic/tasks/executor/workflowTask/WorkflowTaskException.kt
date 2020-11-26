@@ -23,13 +23,12 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.workflowTask
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-}
+sealed class WorkflowTaskException : RuntimeException()
+
+class NewStepException() : WorkflowTaskException()
+
+class KnownStepException : WorkflowTaskException()
+
+class AsyncCompletedException : WorkflowTaskException()

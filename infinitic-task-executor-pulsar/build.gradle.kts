@@ -24,12 +24,12 @@
  */
 
 dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
-    testImplementation(project(":infinitic-storage"))
+    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
+    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+    api(project(":infinitic-common"))
+    api(project(":infinitic-task-executor"))
+    api(project(":infinitic-messaging-pulsar"))
 }

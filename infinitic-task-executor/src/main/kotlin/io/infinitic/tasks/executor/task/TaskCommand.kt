@@ -23,13 +23,36 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.task
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+import io.infinitic.common.tasks.data.TaskOptions
+import java.lang.reflect.Method
+
+internal data class TaskCommand(
+    val job: Any,
+    val method: Method,
+    val input: List<Any?>,
+    val options: TaskOptions
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as TaskCommand
+
+        if (job != other.job) return false
+        if (method != other.method) return false
+        if (input != other.input) return false
+        if (options != other.options) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = job.hashCode()
+        result = 31 * result + method.hashCode()
+        result = 31 * result + input.hashCode()
+        result = 31 * result + options.hashCode()
+        return result
+    }
 }

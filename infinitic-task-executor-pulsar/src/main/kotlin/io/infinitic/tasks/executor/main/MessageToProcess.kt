@@ -23,13 +23,11 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.main
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-}
+import kotlinx.coroutines.channels.SendChannel
+import org.apache.pulsar.client.api.MessageId
+
+data class MessageToProcess<T>(val messageId: MessageId, val message: T, val replyTo: SendChannel<MessageProcessed>)
+
+data class MessageProcessed(val messageId: MessageId)

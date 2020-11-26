@@ -23,13 +23,16 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.samples
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+interface SampleTask {
+    fun handle(i: Int, j: String): String
+    fun handle(i: Int, j: Int): String
+    fun other(i: Int, j: String): String
+}
+
+class TestingSampleTask() : SampleTask {
+    override fun handle(i: Int, j: String) = (i * j.toInt()).toString()
+    override fun handle(i: Int, j: Int) = (i * j).toString()
+    override fun other(i: Int, j: String) = (i * j.toInt()).toString()
 }

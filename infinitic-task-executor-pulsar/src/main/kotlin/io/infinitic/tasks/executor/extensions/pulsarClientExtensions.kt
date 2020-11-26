@@ -23,13 +23,19 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.extensions
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-}
+import io.infinitic.common.workers.messages.WorkerEnvelope
+import io.infinitic.messaging.pulsar.Topic
+import io.infinitic.messaging.pulsar.schemas.schemaDefinition
+import org.apache.pulsar.client.api.Consumer
+import org.apache.pulsar.client.api.PulsarClient
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.SubscriptionType
+
+fun PulsarClient.newTaskConsumer(name: String): Consumer<WorkerEnvelope> =
+    newConsumer(Schema.AVRO(schemaDefinition<WorkerEnvelope>()))
+        .topic(Topic.WORKERS.get(name)) // FIXME: Should probably not be access an internal detail of the pulsar messaging
+        .subscriptionName("infinitic-worker-$name") // FIXME: Should be in a constant somewhere
+        .subscriptionType(SubscriptionType.Shared)
+        .subscribe()

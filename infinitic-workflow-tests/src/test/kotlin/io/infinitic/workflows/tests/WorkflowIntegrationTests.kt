@@ -40,7 +40,7 @@ import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyV
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
-import io.infinitic.worker.Worker
+import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
 import io.infinitic.workflows.engine.taskEngineInWorkflowEngine
@@ -69,7 +69,7 @@ private lateinit var workflowEngine: WorkflowEngine
 private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
-private lateinit var worker: Worker
+private lateinit var taskExecutor: TaskExecutor
 private lateinit var client: Client
 
 fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
@@ -109,7 +109,7 @@ fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
 
 fun CoroutineScope.sendToWorkers(msg: WorkerMessage) {
     launch {
-        worker.handle(msg)
+        taskExecutor.handle(msg)
     }
 }
 
@@ -146,10 +146,10 @@ fun CoroutineScope.init() {
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    worker = Worker { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
-    worker.register<TaskA> { TaskAImpl() }
-    worker.register<WorkflowA> { WorkflowAImpl() }
-    worker.register<WorkflowB> { WorkflowBImpl() }
+    taskExecutor = TaskExecutor { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
+    taskExecutor.register<TaskA> { TaskAImpl() }
+    taskExecutor.register<WorkflowA> { WorkflowAImpl() }
+    taskExecutor.register<WorkflowB> { WorkflowBImpl() }
 }
 
 class WorkflowIntegrationTests : StringSpec({

@@ -23,13 +23,12 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.samples
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+import io.infinitic.tasks.executor.task.TaskAttemptContext
+
+internal class SampleTaskWithContext() {
+    private lateinit var context: TaskAttemptContext
+
+    fun handle(i: Int, j: String) = (i * j.toInt() * context.taskRetry).toString()
 }

@@ -23,13 +23,28 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.tasks.executor.workflowTask
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+
+const val POSITION_SEPARATOR = "."
+
+data class MethodRunIndex(
+        val parent: MethodRunIndex? = null,
+        val index: Int = -1,
+) {
+    val methodPosition: MethodRunPosition = when (parent) {
+        null -> MethodRunPosition("$index")
+        else -> MethodRunPosition("${parent.methodPosition}$POSITION_SEPARATOR$index")
+    }
+
+    override fun toString() = "$methodPosition"
+
+    fun next() = MethodRunIndex(parent, index + 1)
+
+    fun up() = parent
+
+    fun down() = MethodRunIndex(this, -1)
+
+    fun leadsTo(target: MethodRunPosition) = "${target}$POSITION_SEPARATOR".startsWith("$methodPosition$POSITION_SEPARATOR")
 }

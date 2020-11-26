@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.tests.samples
 
-import io.infinitic.worker.task.TaskAttemptContext
+import io.infinitic.tasks.executor.task.TaskAttemptContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
