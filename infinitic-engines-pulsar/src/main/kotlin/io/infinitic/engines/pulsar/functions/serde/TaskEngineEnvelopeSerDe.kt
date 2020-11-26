@@ -25,7 +25,7 @@
 
 package io.infinitic.engines.pulsar.functions.serde
 
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import org.apache.pulsar.functions.api.SerDe
 
 class TaskEngineEnvelopeSerDe : SerDe<TaskEngineEnvelope> {

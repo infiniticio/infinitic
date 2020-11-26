@@ -32,6 +32,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -70,7 +71,7 @@ class MonitoringGlobalPulsarFunctionTests : ShouldSpec({
             // when
             monitoringGlobalPulsarFunction.process(envelope, context)
             // then
-            verify(exactly = 1) { monitoringGlobal.handle(msg) }
+            coVerify(exactly = 1) { monitoringGlobal.handle(msg) }
             unmockkAll()
         }
     }

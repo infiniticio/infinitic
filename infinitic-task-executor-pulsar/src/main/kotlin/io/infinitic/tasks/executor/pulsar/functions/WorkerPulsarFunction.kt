@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.executor.pulsar.functions
 
-import io.infinitic.common.workers.messages.WorkerEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.messaging.pulsar.extensions.messageBuilder
 import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
 import io.infinitic.tasks.executor.TaskExecutor
@@ -33,9 +33,9 @@ import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-open class WorkerPulsarFunction : Function<WorkerEnvelope, Void> {
+open class WorkerPulsarFunction : Function<TaskExecutorEnvelope, Void> {
 
-    override fun process(envelope: WorkerEnvelope, context: Context?): Void? = runBlocking {
+    override fun process(envelope: TaskExecutorEnvelope, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {

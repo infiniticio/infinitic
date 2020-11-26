@@ -25,8 +25,8 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec

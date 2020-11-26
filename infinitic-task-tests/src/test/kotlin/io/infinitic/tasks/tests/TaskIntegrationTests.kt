@@ -31,8 +31,8 @@ import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMes
 import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workers.messages.WorkerMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -91,7 +91,7 @@ fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
     }
 }
 
-fun CoroutineScope.sendToWorkers(msg: WorkerMessage) {
+fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) {
     launch {
         taskExecutor.handle(msg)
     }
@@ -112,7 +112,7 @@ fun CoroutineScope.init() {
         taskStateStorage,
         { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) },
         { msg: MonitoringPerNameEngineMessage -> sendToMonitoringPerName(msg) },
-        { msg: WorkerMessage -> sendToWorkers(msg) }
+        { msg: TaskExecutorMessage -> sendToWorkers(msg) }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(monitoringPerNameStateStorage) {

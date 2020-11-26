@@ -26,7 +26,7 @@
 package io.infinitic.tasks.engine.storage
 
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.state.TaskState
+import io.infinitic.common.tasks.engine.state.TaskState
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
@@ -35,7 +35,7 @@ import io.infinitic.common.tasks.state.TaskState
  * transformed before being stored. These details are left to the different implementations.
  */
 interface TaskStateStorage {
-    fun getState(taskId: TaskId): TaskState?
-    fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?)
-    fun deleteState(taskId: TaskId)
+    suspend fun getState(taskId: TaskId): TaskState?
+    suspend fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?)
+    suspend fun deleteState(taskId: TaskId)
 }

@@ -29,9 +29,9 @@ import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.io.AvroEncodeFormat
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.workers.messages.WorkerEnvelope
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationStrategy
 import org.apache.avro.file.SeekableByteArrayInput
@@ -73,7 +73,7 @@ fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     MonitoringPerNameEnvelope::class -> MonitoringPerNameEnvelope.serializer()
     TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
-    WorkerEnvelope::class -> WorkerEnvelope.serializer()
+    TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
     else -> throw RuntimeException("This should not happen: apply kserializer with  ${klass.qualifiedName}")
 } as KSerializer <T>
 

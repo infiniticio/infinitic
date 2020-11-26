@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.executor.main
 
-import io.infinitic.common.workers.messages.WorkerMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.messaging.pulsar.extensions.acknowledgeSuspend
 import io.infinitic.messaging.pulsar.extensions.messageBuilder
 import io.infinitic.messaging.pulsar.extensions.receiveSuspend
@@ -82,7 +82,7 @@ class Application internal constructor(
     }
 
     fun runWithConcurrency() {
-        val workerInputChannel = Channel<MessageToProcess<WorkerMessage>>()
+        val workerInputChannel = Channel<MessageToProcess<TaskExecutorMessage>>()
 
         // launch 8 workers
         repeat(8) {

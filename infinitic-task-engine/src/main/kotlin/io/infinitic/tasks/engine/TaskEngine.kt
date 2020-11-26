@@ -35,20 +35,20 @@ import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.CancelTask
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.RetryTask
-import io.infinitic.common.tasks.messages.RetryTaskAttempt
-import io.infinitic.common.tasks.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.TaskAttemptDispatched
-import io.infinitic.common.tasks.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.TaskCanceled
-import io.infinitic.common.tasks.messages.TaskCompleted
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
-import io.infinitic.common.tasks.state.TaskState
-import io.infinitic.common.workers.messages.RunTask
+import io.infinitic.common.tasks.engine.messages.CancelTask
+import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.RetryTask
+import io.infinitic.common.tasks.engine.messages.RetryTaskAttempt
+import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.engine.messages.TaskAttemptDispatched
+import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
+import io.infinitic.common.tasks.engine.messages.TaskCanceled
+import io.infinitic.common.tasks.engine.messages.TaskCompleted
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
+import io.infinitic.common.tasks.engine.state.TaskState
+import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 
 open class TaskEngine(
@@ -77,7 +77,7 @@ open class TaskEngine(
                 if (oldState.taskAttemptRetry != message.taskAttemptRetry) return
             }
         } else {
-            // discard message if task is already completed
+            // discard message if task is already terminated
             if (message !is DispatchTask) return
         }
 

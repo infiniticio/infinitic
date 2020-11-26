@@ -60,6 +60,8 @@ subprojects {
     extra["kotlinx_coroutines_version"] = "1.4.+"
     extra["pulsar_version"] = "2.6.+"
     extra["easyrandom_version"] = "4.2.+"
+    extra["shadow_version"] = "6.1.+"
+
 
     tasks.withType<JavaCompile> {
         sourceCompatibility = JavaVersion.VERSION_1_8.toString()

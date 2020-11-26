@@ -28,11 +28,11 @@ package io.infinitic.workflows.tests
 import io.infinitic.client.Client
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workers.messages.WorkerMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
-import io.infinitic.common.workflows.messages.WorkflowCompleted
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -40,10 +40,10 @@ import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyV
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
+import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
 import io.infinitic.workflows.engine.taskEngineInWorkflowEngine
-import io.infinitic.workflows.executor.WorkflowExecutor
 import io.infinitic.workflows.tests.samples.TaskA
 import io.infinitic.workflows.tests.samples.TaskAImpl
 import io.infinitic.workflows.tests.samples.WorkflowA
@@ -69,7 +69,7 @@ private lateinit var workflowEngine: WorkflowEngine
 private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
-private lateinit var executor: WorkflowExecutor
+private lateinit var executor: TaskExecutor
 private lateinit var client: Client
 
 fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
@@ -107,7 +107,7 @@ fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
     }
 }
 
-fun CoroutineScope.sendToWorkers(msg: WorkerMessage) {
+fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) {
     launch {
         executor.handle(msg)
     }
@@ -136,7 +136,7 @@ fun CoroutineScope.init() {
         { msg: WorkflowEngineMessage, after: Float -> sendToWorkflowEngine(msg, after) },
         { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) },
         { msg: MonitoringPerNameEngineMessage -> sendToMonitoringPerName(msg) },
-        { msg: WorkerMessage -> sendToWorkers(msg) }
+        { msg: TaskExecutorMessage -> sendToWorkers(msg) }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(monitoringPerNameStateStorage) {
@@ -146,7 +146,7 @@ fun CoroutineScope.init() {
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    executor = WorkflowExecutor { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
+    executor = TaskExecutor { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
     executor.register<TaskA> { TaskAImpl() }
     executor.register<WorkflowA> { WorkflowAImpl() }
     executor.register<WorkflowB> { WorkflowBImpl() }

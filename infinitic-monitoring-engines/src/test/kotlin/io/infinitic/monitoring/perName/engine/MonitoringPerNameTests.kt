@@ -57,15 +57,15 @@ class MonitoringPerNameTests : ShouldSpec({
             )
             val stateIn = TestFactory.random(MonitoringPerNameState::class, mapOf("taskName" to msg.taskName))
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getState(msg.taskName) } returns stateIn
-            every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
+            coEvery { storage.getState(msg.taskName) } returns stateIn
+            coEvery { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
 
             val monitoringPerName = MonitoringPerNameEngine(storage, sendToMonitoringGlobal)
 
             monitoringPerName.handle(msg)
 
             val stateOut = stateOutSlot.captured
-            verifyAll {
+            coVerifyAll {
                 storage.getState(msg.taskName)
                 storage.updateState(msg.taskName, stateOut, stateIn)
             }
@@ -84,8 +84,8 @@ class MonitoringPerNameTests : ShouldSpec({
                 )
             )
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getState(msg.taskName) } returns null
-            every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
+            coEvery { storage.getState(msg.taskName) } returns null
+            coEvery { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
             coEvery { sendToMonitoringGlobal(any<TaskCreated>()) } just runs
 
             val monitoringPerName = MonitoringPerNameEngine(storage, sendToMonitoringGlobal)

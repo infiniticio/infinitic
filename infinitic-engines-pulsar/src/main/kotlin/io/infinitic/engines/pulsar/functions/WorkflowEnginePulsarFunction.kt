@@ -25,7 +25,7 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.messaging.pulsar.extensions.keyValueStorage
 import io.infinitic.messaging.pulsar.extensions.messageBuilder
 import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine

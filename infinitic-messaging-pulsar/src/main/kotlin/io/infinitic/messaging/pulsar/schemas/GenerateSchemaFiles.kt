@@ -29,9 +29,9 @@ import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.json.Json
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.workers.messages.WorkerEnvelope
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import java.io.File
 
 /**
@@ -66,5 +66,5 @@ fun main() {
 
     File(System.getProperty("user.dir") + "/build/schemas/Worker.schema")
         .also { it.parentFile.mkdirs() }
-        .writeText(Json.stringify(PulsarSchema(Avro.default.schema(WorkerEnvelope.serializer()).toString())))
+        .writeText(Json.stringify(PulsarSchema(Avro.default.schema(TaskExecutorEnvelope.serializer()).toString())))
 }

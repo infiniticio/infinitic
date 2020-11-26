@@ -25,8 +25,8 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.tasks.engine.TaskEngine
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec

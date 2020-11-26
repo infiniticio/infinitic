@@ -45,11 +45,11 @@ import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterTypes
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.common.tasks.exceptions.TooManyMethodsFoundWithParameterCount
-import io.infinitic.common.tasks.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workers.messages.RunTask
+import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.tasks.executor.samples.SampleTaskWithBadTypeRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithBuggyRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithContext

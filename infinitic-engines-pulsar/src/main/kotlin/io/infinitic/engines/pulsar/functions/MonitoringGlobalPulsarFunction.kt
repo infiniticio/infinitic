@@ -29,12 +29,13 @@ import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.messaging.pulsar.extensions.keyValueStorage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
+import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
 class MonitoringGlobalPulsarFunction : Function<MonitoringGlobalEnvelope, Void> {
 
-    override fun process(envelope: MonitoringGlobalEnvelope, context: Context?): Void? {
+    override fun process(envelope: MonitoringGlobalEnvelope, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
@@ -44,7 +45,7 @@ class MonitoringGlobalPulsarFunction : Function<MonitoringGlobalEnvelope, Void> 
             throw e
         }
 
-        return null
+        null
     }
 
     internal fun getMonitoringGlobalEngine(context: Context): MonitoringGlobalEngine {

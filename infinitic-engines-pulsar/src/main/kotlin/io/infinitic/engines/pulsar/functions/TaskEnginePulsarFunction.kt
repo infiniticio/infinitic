@@ -25,7 +25,7 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.messaging.pulsar.extensions.keyValueStorage
 import io.infinitic.messaging.pulsar.extensions.messageBuilder
 import io.infinitic.messaging.pulsar.senders.getSendToMonitoringPerName

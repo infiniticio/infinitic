@@ -34,7 +34,7 @@ import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
  * transformed before being stored. These details are left to the different implementations.
  */
 interface MonitoringGlobalStateStorage {
-    fun getState(): MonitoringGlobalState?
-    fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?)
-    fun deleteState()
+    suspend fun getState(): MonitoringGlobalState?
+    suspend fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?)
+    suspend fun deleteState()
 }

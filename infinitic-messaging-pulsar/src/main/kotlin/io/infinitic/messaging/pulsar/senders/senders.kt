@@ -34,12 +34,12 @@ import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workers.messages.WorkerEnvelope
-import io.infinitic.common.workers.messages.WorkerMessage
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.messaging.pulsar.Topic
 import io.infinitic.messaging.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.messaging.pulsar.schemas.schemaDefinition
@@ -113,14 +113,14 @@ fun getSendToWorkflowEngine(pulsarMessageBuilder: PulsarMessageBuilder): SendToW
 
 fun getSendToWorkers(pulsarMessageBuilder: PulsarMessageBuilder): SendToWorkers =
     {
-        message: WorkerMessage ->
+        message: TaskExecutorMessage ->
         pulsarMessageBuilder
             .newMessage(
                 Topic.WORKERS.get("${message.taskName}"),
-                AvroSchema.of(schemaDefinition(WorkerEnvelope::class))
+                AvroSchema.of(schemaDefinition(TaskExecutorEnvelope::class))
             )
             .key("${message.taskName}")
-            .value(WorkerEnvelope.from(message))
+            .value(TaskExecutorEnvelope.from(message))
             .send()
         Unit
     }

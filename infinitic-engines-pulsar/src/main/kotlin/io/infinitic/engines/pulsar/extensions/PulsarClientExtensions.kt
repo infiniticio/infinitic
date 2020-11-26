@@ -27,8 +27,8 @@ package io.infinitic.engines.pulsar.extensions
 
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.messaging.pulsar.Topic
 import io.infinitic.messaging.pulsar.schemas.schemaDefinition
 import org.apache.pulsar.client.api.Consumer

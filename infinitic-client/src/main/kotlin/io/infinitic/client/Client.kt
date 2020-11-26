@@ -36,18 +36,18 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
-import io.infinitic.common.tasks.messages.CancelTask
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.RetryTask
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.tasks.engine.messages.CancelTask
+import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.RetryTask
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.messages.DispatchWorkflow
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.executors.Workflow
 
 typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage) -> Unit
 typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit

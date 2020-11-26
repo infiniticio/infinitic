@@ -25,7 +25,7 @@
 
 package io.infinitic.engines.pulsar.functions.serde
 
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import org.apache.pulsar.functions.api.SerDe
 
 class WorkflowEngineEnvelopeSerDe : SerDe<WorkflowEngineEnvelope> {

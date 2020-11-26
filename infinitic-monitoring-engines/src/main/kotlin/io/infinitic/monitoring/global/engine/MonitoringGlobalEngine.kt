@@ -33,7 +33,7 @@ import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorag
 class MonitoringGlobalEngine(
     val storage: MonitoringGlobalStateStorage
 ) {
-    fun handle(message: MonitoringGlobalMessage) {
+    suspend fun handle(message: MonitoringGlobalMessage) {
 
         // get associated state
         val oldState = storage.getState()

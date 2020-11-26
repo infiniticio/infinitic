@@ -28,7 +28,7 @@ package io.infinitic.tasks.engine.storage
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.state.TaskState
+import io.infinitic.common.tasks.engine.state.TaskState
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
@@ -38,18 +38,18 @@ open class TaskStateKeyValueStorage(
     protected val storage: KeyValueStorage
 ) : TaskStateStorage {
 
-    override fun getState(taskId: TaskId) = storage
+    override suspend fun getState(taskId: TaskId) = storage
         .getState(getTaskStateKey(taskId))
         ?.let { TaskState.fromByteBuffer(it) }
 
-    override fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?) {
+    override suspend fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?) {
         storage.putState(
             getTaskStateKey(taskId),
             newState.toByteBuffer()
         )
     }
 
-    override fun deleteState(taskId: TaskId) {
+    override suspend fun deleteState(taskId: TaskId) {
         storage.deleteState(getTaskStateKey(taskId))
     }
 

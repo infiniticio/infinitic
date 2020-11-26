@@ -35,7 +35,7 @@ import io.infinitic.common.tasks.data.TaskName
  * transformed before being stored. These details are left to the different implementations.
  */
 interface MonitoringPerNameStateStorage {
-    fun getState(taskName: TaskName): MonitoringPerNameState?
-    fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?)
-    fun deleteState(taskName: TaskName)
+    suspend fun getState(taskName: TaskName): MonitoringPerNameState?
+    suspend fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?)
+    suspend fun deleteState(taskName: TaskName)
 }

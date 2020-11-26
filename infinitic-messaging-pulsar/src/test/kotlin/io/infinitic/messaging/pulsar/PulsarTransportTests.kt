@@ -30,10 +30,10 @@ import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workers.messages.WorkerEnvelope
-import io.infinitic.common.workers.messages.WorkerMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.messaging.pulsar.extensions.messageBuilder
 import io.infinitic.messaging.pulsar.schemas.schemaDefinition
 import io.infinitic.messaging.pulsar.senders.getSendToMonitoringGlobal
@@ -69,7 +69,7 @@ class PulsarTransportTests : StringSpec({
         include(shouldBeAbleToSendMessageToMonitoringGlobalTopic(TestFactory.random(it)))
     }
 
-    WorkerMessage::class.sealedSubclasses.forEach {
+    TaskExecutorMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToWorkerTopic(TestFactory.random(it)))
     }
 })
@@ -152,13 +152,13 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
     }
 }
 
-private fun shouldBeAbleToSendMessageToWorkerTopic(msg: WorkerMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to Worker topic" {
         val context = context()
-        val builder = mockk<TypedMessageBuilder<WorkerEnvelope>>()
-        val slotSchema = slot<AvroSchema<WorkerEnvelope>>()
+        val builder = mockk<TypedMessageBuilder<TaskExecutorEnvelope>>()
+        val slotSchema = slot<AvroSchema<TaskExecutorEnvelope>>()
         val slotTopic = slot<String>()
-        every { context.newOutputMessage<WorkerEnvelope>(capture(slotTopic), capture(slotSchema)) } returns builder
+        every { context.newOutputMessage<TaskExecutorEnvelope>(capture(slotTopic), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.send() } returns mockk<MessageId>()
@@ -167,8 +167,8 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: WorkerMessage) = stringS
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe Topic.WORKERS.get("${msg.taskName}")
-        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<WorkerEnvelope>()).avroSchema
-        verify(exactly = 1) { builder.value(WorkerEnvelope.from(msg)) }
+        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorEnvelope>()).avroSchema
+        verify(exactly = 1) { builder.value(TaskExecutorEnvelope.from(msg)) }
         verify(exactly = 1) { builder.key("${msg.taskName}") }
         verify(exactly = 1) { builder.send() }
         confirmVerified(context)

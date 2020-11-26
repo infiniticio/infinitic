@@ -37,17 +37,17 @@ import java.nio.ByteBuffer
 open class MonitoringGlobalStateKeyValueStorage(
     protected val storage: KeyValueStorage
 ) : MonitoringGlobalStateStorage {
-    override fun getState(): MonitoringGlobalState? {
+    override suspend fun getState(): MonitoringGlobalState? {
         return storage.getState(getMonitoringGlobalStateKey())?.let {
             MonitoringGlobalState.fromByteArray(it.array())
         }
     }
 
-    override fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
+    override suspend fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
         storage.putState(getMonitoringGlobalStateKey(), ByteBuffer.wrap(newState.toByteArray()))
     }
 
-    override fun deleteState() {
+    override suspend fun deleteState() {
         storage.deleteState(getMonitoringGlobalStateKey())
     }
 

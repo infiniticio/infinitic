@@ -25,9 +25,9 @@
 
 package io.infinitic.workflows.tests.samples
 
-import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
-import io.infinitic.common.workflows.proxy
+import io.infinitic.common.workflows.executors.Workflow
+import io.infinitic.common.workflows.executors.WorkflowTaskContext
+import io.infinitic.common.workflows.executors.proxy
 
 interface WorkflowB : Workflow {
     fun concat(input: String): String

@@ -40,13 +40,13 @@ open class MonitoringPerNameStateKeyValueStorage(
     protected val storage: KeyValueStorage
 ) : MonitoringPerNameStateStorage {
 
-    override fun getState(taskName: TaskName): MonitoringPerNameState? {
+    override suspend fun getState(taskName: TaskName): MonitoringPerNameState? {
         return storage.getState(getMonitoringPerNameStateKey(taskName))?.let {
             MonitoringPerNameState.fromByteArray(it.array())
         }
     }
 
-    override fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
+    override suspend fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
         val counterOkKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_OK)
         val counterWarningKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_WARNING)
         val counterErrorKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_ERROR)
@@ -82,7 +82,7 @@ open class MonitoringPerNameStateKeyValueStorage(
         )
     }
 
-    override fun deleteState(taskName: TaskName) {
+    override suspend fun deleteState(taskName: TaskName) {
         storage.deleteState(getMonitoringPerNameStateKey(taskName))
     }
 

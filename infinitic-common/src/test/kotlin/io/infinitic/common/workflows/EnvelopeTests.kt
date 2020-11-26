@@ -27,8 +27,8 @@ package io.infinitic.common.workflows
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
