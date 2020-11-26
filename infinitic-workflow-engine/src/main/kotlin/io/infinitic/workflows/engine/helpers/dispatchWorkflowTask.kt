@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.workflows.engine.helpers
+package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.SendToWorkflowEngine
@@ -43,7 +43,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.state.WorkflowState
-import io.infinitic.engines.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.engine.WorkflowEngine
 
 suspend fun dispatchWorkflowTask(
     sendToWorkflowEngine: SendToWorkflowEngine,

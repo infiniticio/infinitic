@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.workflows.engine
+package io.infinitic.workflows.engine
 
 import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.SendToWorkflowEngine
@@ -42,11 +42,11 @@ import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.state.WorkflowState
-import io.infinitic.engines.workflows.engine.handlers.childWorkflowCompleted
-import io.infinitic.engines.workflows.engine.handlers.dispatchWorkflow
-import io.infinitic.engines.workflows.engine.handlers.taskCompleted
-import io.infinitic.engines.workflows.engine.handlers.workflowTaskCompleted
-import io.infinitic.engines.workflows.storage.WorkflowStateStorage
+import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
+import io.infinitic.workflows.engine.handlers.dispatchWorkflow
+import io.infinitic.workflows.engine.handlers.taskCompleted
+import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
+import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 
 class WorkflowEngine(
     private val storage: WorkflowStateStorage,

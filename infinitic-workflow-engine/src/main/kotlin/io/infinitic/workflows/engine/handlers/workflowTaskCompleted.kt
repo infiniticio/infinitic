@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.workflows.engine.handlers
+package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.SendToWorkflowEngine
@@ -52,12 +52,12 @@ import io.infinitic.common.workflows.messages.DispatchWorkflow
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.state.WorkflowState
-import io.infinitic.engines.workflows.engine.WorkflowEngine
-import io.infinitic.engines.workflows.engine.helpers.cleanMethodRunIfNeeded
-import io.infinitic.engines.workflows.engine.helpers.dispatchWorkflowTask
-import io.infinitic.engines.workflows.engine.helpers.getMethodRun
-import io.infinitic.engines.workflows.engine.helpers.getPastCommand
-import io.infinitic.engines.workflows.engine.helpers.jobCompleted
+import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
+import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
+import io.infinitic.workflows.engine.helpers.getMethodRun
+import io.infinitic.workflows.engine.helpers.getPastCommand
+import io.infinitic.workflows.engine.helpers.jobCompleted
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
 suspend fun workflowTaskCompleted(

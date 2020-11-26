@@ -23,12 +23,10 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-engines"))
-    testImplementation(project(":infinitic-task-engine"))
-    testImplementation(project(":infinitic-workflow-engine"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-worker"))
-    testImplementation(project(":infinitic-storage"))
-}
+package io.infinitic.workflows.engine.helpers
+
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+
+fun getPastCommand(methodRun: MethodRun, commandId: CommandId) =
+    methodRun.pastCommands.first { it.commandId == commandId }

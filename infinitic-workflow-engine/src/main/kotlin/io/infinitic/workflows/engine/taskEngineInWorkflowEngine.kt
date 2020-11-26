@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.workflows.engine
+package io.infinitic.workflows.engine
 
 import io.infinitic.common.SendToMonitoringPerName
 import io.infinitic.common.SendToTaskEngine

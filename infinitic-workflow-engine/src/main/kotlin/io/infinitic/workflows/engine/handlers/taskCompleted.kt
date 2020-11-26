@@ -23,10 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.workflows.engine.helpers
+package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.SendToTaskEngine
+import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.messages.TaskCompleted
+import io.infinitic.common.workflows.state.WorkflowState
+import io.infinitic.workflows.engine.helpers.jobCompleted
 
-fun getPastCommand(methodRun: MethodRun, commandId: CommandId) =
-    methodRun.pastCommands.first { it.commandId == commandId }
+suspend fun taskCompleted(
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToTaskEngine: SendToTaskEngine,
+    state: WorkflowState,
+    msg: TaskCompleted
+) {
+    jobCompleted(
+        sendToWorkflowEngine,
+        sendToTaskEngine,
+        state,
+        msg.methodRunId,
+        CommandId(msg.taskId),
+        CommandOutput(msg.taskOutput.serializedData)
+    )
+}

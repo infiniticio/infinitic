@@ -23,10 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.workflows.engine.helpers
+dependencies {
+    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
 
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.state.WorkflowState
-
-fun getMethodRun(state: WorkflowState, methodRunId: MethodRunId) =
-    state.methodRuns.first { it.methodRunId == methodRunId }
+    implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-task-engine"))
+}

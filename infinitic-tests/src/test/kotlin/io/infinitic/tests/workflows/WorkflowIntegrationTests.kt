@@ -36,10 +36,6 @@ import io.infinitic.common.workflows.messages.WorkflowEngineMessage
 import io.infinitic.engines.monitoringGlobal.engine.MonitoringGlobalEngine
 import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
-import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.engines.workflows.engine.WorkflowEngine
-import io.infinitic.engines.workflows.engine.taskEngineInWorkflowEngine
-import io.infinitic.engines.workflows.storage.WorkflowStateKeyValueStorage
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
@@ -50,6 +46,9 @@ import io.infinitic.tests.workflows.samples.WorkflowAImpl
 import io.infinitic.tests.workflows.samples.WorkflowB
 import io.infinitic.tests.workflows.samples.WorkflowBImpl
 import io.infinitic.worker.Worker
+import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
+import io.infinitic.workflows.engine.taskEngineInWorkflowEngine
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
