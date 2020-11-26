@@ -38,11 +38,11 @@ import io.infinitic.engines.pulsar.extensions.newMonitoringGlobalConsumer
 import io.infinitic.engines.pulsar.extensions.newMonitoringPerNameConsumer
 import io.infinitic.engines.pulsar.extensions.newTaskEngineConsumer
 import io.infinitic.engines.pulsar.extensions.newWorkflowEngineConsumer
-import io.infinitic.engines.tasks.storage.TaskStateStorage
 import io.infinitic.engines.workflows.engine.WorkflowEngine
 import io.infinitic.engines.workflows.engine.taskEngineInWorkflowEngine
 import io.infinitic.engines.workflows.storage.WorkflowStateStorage
 import io.infinitic.messaging.pulsar.extensions.startConsumer
+import io.infinitic.tasks.engine.storage.TaskStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

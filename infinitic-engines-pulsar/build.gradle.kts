@@ -41,6 +41,7 @@ dependencies {
 
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-engines"))
+    implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-messaging-pulsar"))
     implementation(project(":infinitic-storage"))
 }

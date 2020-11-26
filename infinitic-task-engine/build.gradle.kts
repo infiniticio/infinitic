@@ -23,19 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.tasks.storage
+dependencies {
+    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
 
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.state.TaskState
-
-/**
- * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-interface TaskStateStorage {
-    fun getState(taskId: TaskId): TaskState?
-    fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?)
-    fun deleteState(taskId: TaskId)
+    implementation(project(":infinitic-common"))
 }

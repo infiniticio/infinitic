@@ -34,6 +34,7 @@ include("infinitic-worker")
 include("infinitic-worker-pulsar")
 include("infinitic-client")
 include("infinitic-engines")
+include("infinitic-task-engine")
 include("infinitic-engines-pulsar")
 include("infinitic-tests")
 

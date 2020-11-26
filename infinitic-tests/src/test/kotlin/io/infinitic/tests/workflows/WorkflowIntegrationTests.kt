@@ -37,12 +37,12 @@ import io.infinitic.engines.monitoringGlobal.engine.MonitoringGlobalEngine
 import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
 import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.engines.tasks.engine.TaskEngine
-import io.infinitic.engines.tasks.storage.TaskStateKeyValueStorage
 import io.infinitic.engines.workflows.engine.WorkflowEngine
 import io.infinitic.engines.workflows.engine.taskEngineInWorkflowEngine
 import io.infinitic.engines.workflows.storage.WorkflowStateKeyValueStorage
 import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.tasks.engine.TaskEngine
+import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
 import io.infinitic.tests.workflows.samples.TaskA
 import io.infinitic.tests.workflows.samples.TaskAImpl
 import io.infinitic.tests.workflows.samples.WorkflowA

@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.tasks.engine
+package io.infinitic.tasks.engine
 
 import io.infinitic.common.SendToMonitoringPerName
 import io.infinitic.common.SendToTaskEngine
@@ -49,7 +49,7 @@ import io.infinitic.common.tasks.messages.TaskEngineMessage
 import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.state.TaskState
 import io.infinitic.common.workers.messages.RunTask
-import io.infinitic.engines.tasks.storage.TaskStateStorage
+import io.infinitic.tasks.engine.storage.TaskStateStorage
 
 open class TaskEngine(
     protected val storage: TaskStateStorage,

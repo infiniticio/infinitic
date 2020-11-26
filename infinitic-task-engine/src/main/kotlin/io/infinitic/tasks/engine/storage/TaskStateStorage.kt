@@ -23,46 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.tasks.storage
+package io.infinitic.tasks.engine.storage
 
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.state.TaskState
 
 /**
- * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
+ * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
+ *
+ * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
+ * transformed before being stored. These details are left to the different implementations.
  */
-open class TaskStateKeyValueStorage(
-    protected val storage: KeyValueStorage
-) : TaskStateStorage {
-
-    override fun getState(taskId: TaskId) = storage
-        .getState(getTaskStateKey(taskId))
-        ?.let { TaskState.fromByteBuffer(it) }
-
-    override fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?) {
-        storage.putState(
-            getTaskStateKey(taskId),
-            newState.toByteBuffer()
-        )
-    }
-
-    override fun deleteState(taskId: TaskId) {
-        storage.deleteState(getTaskStateKey(taskId))
-    }
-
-    /*
-    Use for tests
-     */
-    fun flush() {
-        if (storage is Flushable) {
-            storage.flush()
-        } else {
-            throw Exception("Storage non flushable")
-        }
-    }
-
-    private fun getTaskStateKey(taskId: TaskId) = "task.state.$taskId"
+interface TaskStateStorage {
+    fun getState(taskId: TaskId): TaskState?
+    fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?)
+    fun deleteState(taskId: TaskId)
 }
