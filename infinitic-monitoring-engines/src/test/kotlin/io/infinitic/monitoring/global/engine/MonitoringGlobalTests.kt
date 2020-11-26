@@ -23,13 +23,8 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-worker"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.monitoring.global.engine
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+class MonitoringGlobalTests {
+    // TODO Add tests for MonitoringGlobalEngine
 }

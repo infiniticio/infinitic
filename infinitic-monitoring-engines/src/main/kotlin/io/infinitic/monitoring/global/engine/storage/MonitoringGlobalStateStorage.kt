@@ -23,13 +23,18 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-worker"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.monitoring.global.engine.storage
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
+
+/**
+ * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
+ *
+ * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
+ * transformed before being stored. These details are left to the different implementations.
+ */
+interface MonitoringGlobalStateStorage {
+    fun getState(): MonitoringGlobalState?
+    fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?)
+    fun deleteState()
 }

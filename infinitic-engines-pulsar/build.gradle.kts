@@ -40,7 +40,7 @@ dependencies {
     implementation("com.xenomachina:kotlin-argparser:2.0.+")
 
     implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-engines"))
+    implementation(project(":infinitic-monitoring-engines"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-messaging-pulsar"))

@@ -23,13 +23,19 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-worker"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.monitoring.perName.engine.storage
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
+import io.infinitic.common.tasks.data.TaskName
+
+/**
+ * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
+ *
+ * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
+ * transformed before being stored. These details are left to the different implementations.
+ */
+interface MonitoringPerNameStateStorage {
+    fun getState(taskName: TaskName): MonitoringPerNameState?
+    fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?)
+    fun deleteState(taskName: TaskName)
 }

@@ -23,13 +23,33 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
-    testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-worker"))
-    testImplementation(project(":infinitic-storage"))
+package io.infinitic.monitoring.global.engine
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoringGlobal.messages.TaskCreated
+import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
+import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
+
+class MonitoringGlobalEngine(
+    val storage: MonitoringGlobalStateStorage
+) {
+    fun handle(message: MonitoringGlobalMessage) {
+
+        // get associated state
+        val oldState = storage.getState()
+        val newState = oldState?.deepCopy() ?: MonitoringGlobalState()
+
+        when (message) {
+            is TaskCreated -> handleTaskTypeCreated(message, newState)
+        }
+
+        // Update stored state if needed and existing
+        if (newState != oldState) {
+            storage.updateState(newState, oldState)
+        }
+    }
+
+    private fun handleTaskTypeCreated(message: TaskCreated, state: MonitoringGlobalState) {
+        state.taskNames.add(message.taskName)
+    }
 }

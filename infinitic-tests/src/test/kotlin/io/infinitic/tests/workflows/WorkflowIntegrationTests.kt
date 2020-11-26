@@ -33,9 +33,10 @@ import io.infinitic.common.workers.messages.WorkerMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.common.workflows.messages.WorkflowCompleted
 import io.infinitic.common.workflows.messages.WorkflowEngineMessage
-import io.infinitic.engines.monitoringGlobal.engine.MonitoringGlobalEngine
-import io.infinitic.engines.monitoringGlobal.storage.MonitoringGlobalStateKeyValueStorage
-import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
+import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
+import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
+import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
+import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage

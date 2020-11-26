@@ -26,11 +26,11 @@
 package io.infinitic.engines.pulsar.functions
 
 import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
-import io.infinitic.engines.monitoringPerName.engine.MonitoringPerNameEngine
-import io.infinitic.engines.monitoringPerName.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.messaging.pulsar.extensions.keyValueStorage
 import io.infinitic.messaging.pulsar.extensions.messageBuilder
 import io.infinitic.messaging.pulsar.senders.getSendToMonitoringGlobal
+import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
+import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
