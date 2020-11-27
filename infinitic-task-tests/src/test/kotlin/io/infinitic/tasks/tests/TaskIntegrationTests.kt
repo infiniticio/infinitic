@@ -33,6 +33,7 @@ import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -112,7 +113,8 @@ fun CoroutineScope.init() {
         taskStateStorage,
         { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) },
         { msg: MonitoringPerNameEngineMessage -> sendToMonitoringPerName(msg) },
-        { msg: TaskExecutorMessage -> sendToWorkers(msg) }
+        { msg: TaskExecutorMessage -> sendToWorkers(msg) },
+        { _: WorkflowEngineMessage, _: Float -> Unit }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(monitoringPerNameStateStorage) {

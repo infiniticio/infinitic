@@ -127,6 +127,8 @@ class Client(
             methodName = MethodName.from(method),
             methodParameterTypes = MethodParameterTypes.from(method),
             methodInput = MethodInput.from(method, handler.args),
+            workflowId = null,
+            methodRunId = null,
             taskOptions = options,
             taskMeta = meta
         )

@@ -43,7 +43,6 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.WorkflowEngine
 
 suspend fun dispatchWorkflowTask(
     sendToWorkflowEngine: SendToWorkflowEngine,
@@ -74,13 +73,10 @@ suspend fun dispatchWorkflowTask(
         methodName = MethodName(WorkflowTask.DEFAULT_METHOD),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskInput::class.java.name)),
         methodInput = MethodInput.from(workflowTaskInput),
+        workflowId = state.workflowId,
+        methodRunId = methodRun.methodRunId,
         taskOptions = TaskOptions(),
-        taskMeta = TaskMeta.from(
-            mapOf(
-                WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}",
-                WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}"
-            )
-        )
+        taskMeta = TaskMeta()
     )
 
     // dispatch workflow task

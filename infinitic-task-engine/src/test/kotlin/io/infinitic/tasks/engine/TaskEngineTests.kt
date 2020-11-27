@@ -47,6 +47,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -118,7 +119,13 @@ internal fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): Engine
     coEvery { sendToTaskEngine(capture(taskCompletedSlot), 0F) } just Runs
     coEvery { sendToMonitoringPerName(capture(taskStatusUpdatedSlot)) } just Runs
     // given
-    val engine = TaskEngine(taskStateStorage, sendToTaskEngine, sendToMonitoringPerName, sendToWorkers)
+    val engine = TaskEngine(
+        taskStateStorage,
+        sendToTaskEngine,
+        sendToMonitoringPerName,
+        sendToWorkers,
+        { _: WorkflowEngineMessage, _: Float -> Unit }
+    )
     // when
     engine.handle(msgIn)
     // then

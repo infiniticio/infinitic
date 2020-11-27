@@ -23,11 +23,6 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.worker
+package io.infinitic.worker.taskExecutorWorker
 
-import kotlinx.coroutines.channels.SendChannel
-import org.apache.pulsar.client.api.MessageId
-
-data class MessageToProcess<T>(val messageId: MessageId, val message: T, val replyTo: SendChannel<MessageProcessed>)
-
-data class MessageProcessed(val messageId: MessageId)
+class TaskExecutorWorker

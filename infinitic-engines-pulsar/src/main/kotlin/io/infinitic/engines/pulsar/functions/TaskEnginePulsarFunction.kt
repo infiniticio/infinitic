@@ -32,8 +32,8 @@ import io.infinitic.messaging.pulsar.senders.getSendToMonitoringPerName
 import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
 import io.infinitic.messaging.pulsar.senders.getSendToWorkers
 import io.infinitic.messaging.pulsar.senders.getSendToWorkflowEngine
+import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
-import io.infinitic.workflows.engine.taskEngineInWorkflowEngine
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -54,11 +54,11 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
     }
 
     internal fun getTaskEngine(context: Context) =
-        taskEngineInWorkflowEngine(
+        TaskEngine(
             TaskStateKeyValueStorage(context.keyValueStorage()),
-            getSendToWorkflowEngine(context.messageBuilder()),
             getSendToTaskEngine(context.messageBuilder()),
             getSendToMonitoringPerName(context.messageBuilder()),
-            getSendToWorkers(context.messageBuilder())
+            getSendToWorkers(context.messageBuilder()),
+            getSendToWorkflowEngine(context.messageBuilder())
         )
 }

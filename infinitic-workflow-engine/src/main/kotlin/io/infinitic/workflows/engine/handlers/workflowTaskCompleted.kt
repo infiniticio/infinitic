@@ -52,7 +52,6 @@ import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.helpers.getMethodRun
@@ -255,9 +254,9 @@ private suspend fun dispatchTask(
         methodName = command.methodName,
         methodParameterTypes = command.methodParameterTypes,
         methodInput = command.methodInput,
-        taskMeta = command.taskMeta +
-            (WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}") +
-            (WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}")
+        workflowId = state.workflowId,
+        methodRunId = methodRun.methodRunId,
+        taskMeta = command.taskMeta
     )
     sendToTaskEngine(msg, 0F)
 

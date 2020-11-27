@@ -53,12 +53,6 @@ class WorkflowEngine(
     private val sendToWorkflowEngine: SendToWorkflowEngine,
     private val sendToTaskEngine: SendToTaskEngine
 ) {
-
-    companion object {
-        const val META_WORKFLOW_ID = "workflowId"
-        const val META_METHOD_RUN_ID = "methodRunId"
-    }
-
     suspend fun handle(msg: WorkflowEngineMessage) {
         // immediately discard irrelevant messages
         when (msg) {

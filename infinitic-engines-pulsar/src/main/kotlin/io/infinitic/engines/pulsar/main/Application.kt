@@ -39,10 +39,10 @@ import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
+import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
-import io.infinitic.workflows.engine.taskEngineInWorkflowEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -81,12 +81,12 @@ class Application(
             sendToWorkflowEngine,
             sendToTaskEngine
         )
-        val taskEngine = taskEngineInWorkflowEngine(
+        val taskEngine = TaskEngine(
             taskStateStorage,
-            sendToWorkflowEngine,
             sendToTaskEngine,
             sendToMonitoringPerName,
-            sendToWorkers
+            sendToWorkers,
+            sendToWorkflowEngine
         )
         val monitoringPerName = MonitoringPerNameEngine(
             monitoringPerNameStateStorage,

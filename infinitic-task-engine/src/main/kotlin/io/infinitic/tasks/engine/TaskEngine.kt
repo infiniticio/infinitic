@@ -28,6 +28,7 @@ package io.infinitic.tasks.engine
 import io.infinitic.common.SendToMonitoringPerName
 import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.SendToWorkers
+import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.data.TaskAttemptError
@@ -49,13 +50,19 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.executors.messages.RunTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 open class TaskEngine(
-    protected val storage: TaskStateStorage,
+    protected val taskStateStorage: TaskStateStorage,
     protected val sendToTaskEngine: SendToTaskEngine,
     protected val sendToMonitoringPerName: SendToMonitoringPerName,
-    protected val sendToWorkers: SendToWorkers
+    protected val sendToWorkers: SendToWorkers,
+    protected val sendToWorkflowEngine: SendToWorkflowEngine
 ) {
     open suspend fun handle(message: TaskEngineMessage) {
         // immediately discard messages that are non managed
@@ -68,7 +75,7 @@ open class TaskEngine(
         }
 
         // get current state
-        val oldState = storage.getState(message.taskId)
+        val oldState = taskStateStorage.getState(message.taskId)
 
         if (oldState != null) {
             // discard message (except TaskAttemptCompleted) if state has already evolved
@@ -95,7 +102,7 @@ open class TaskEngine(
 
         // Update stored state if needed and existing
         if (newState != oldState && !newState.taskStatus.isTerminated) {
-            storage.updateState(message.taskId, newState, oldState)
+            taskStateStorage.updateState(message.taskId, newState, oldState)
         }
 
         // Send TaskStatusUpdated if needed
@@ -123,7 +130,7 @@ open class TaskEngine(
         sendToTaskEngine(tad, 0F)
 
         // Delete stored state
-        storage.deleteState(state.taskId)
+        taskStateStorage.deleteState(state.taskId)
 
         return state
     }
@@ -136,6 +143,8 @@ open class TaskEngine(
             methodName = msg.methodName,
             methodParameterTypes = msg.methodParameterTypes,
             methodInput = msg.methodInput,
+            workflowId = msg.workflowId,
+            methodRunId = msg.methodRunId,
             taskAttemptId = TaskAttemptId(),
             taskStatus = TaskStatus.RUNNING_OK,
             taskOptions = msg.taskOptions,
@@ -249,6 +258,26 @@ open class TaskEngine(
     private suspend fun taskAttemptCompleted(oldState: TaskState, msg: TaskAttemptCompleted): TaskState {
         val state = oldState.copy(taskStatus = TaskStatus.TERMINATED_COMPLETED)
 
+        // if this task belongs to a workflow, send back the adhoc message
+        state.workflowId?.let {
+            sendToWorkflowEngine(
+                when ("${state.taskName}") {
+                    WorkflowTask::class.java.name -> WorkflowTaskCompleted(
+                        workflowId = it,
+                        workflowTaskId = WorkflowTaskId("${state.taskId}"),
+                        workflowTaskOutput = msg.taskOutput.get() as WorkflowTaskOutput
+                    )
+                    else -> TaskCompletedInWorkflow(
+                        workflowId = it,
+                        methodRunId = state.methodRunId!!,
+                        taskId = state.taskId,
+                        taskOutput = msg.taskOutput
+                    )
+                },
+                0F
+            )
+        }
+
         // log event
         val tc = TaskCompleted(
             taskId = state.taskId,
@@ -259,7 +288,7 @@ open class TaskEngine(
         sendToTaskEngine(tc, 0F)
 
         // delete stored state
-        storage.deleteState(state.taskId)
+        taskStateStorage.deleteState(state.taskId)
 
         return state
     }

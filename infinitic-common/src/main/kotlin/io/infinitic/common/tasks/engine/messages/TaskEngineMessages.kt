@@ -39,6 +39,8 @@ import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.engine.messages.interfaces.FailingTaskAttemptMessage
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -59,6 +61,8 @@ data class DispatchTask(
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
+    val workflowId: WorkflowId?,
+    val methodRunId: MethodRunId?,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions = TaskOptions()
 ) : TaskEngineMessage()
