@@ -23,32 +23,26 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.pulsar.functions
+package io.infinitic.pulsar.extensions
 
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.pulsar.extensions.messageBuilder
-import io.infinitic.pulsar.transport.getSendToTaskEngine
-import io.infinitic.tasks.executor.TaskExecutor
-import kotlinx.coroutines.runBlocking
-import org.apache.pulsar.functions.api.Context
-import org.apache.pulsar.functions.api.Function
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import org.apache.pulsar.client.api.Consumer
+import org.apache.pulsar.client.api.Message
 
-open class WorkerPulsarFunction : Function<TaskExecutorEnvelope, Void> {
-
-    override fun process(envelope: TaskExecutorEnvelope, context: Context?): Void? = runBlocking {
-        val ctx = context ?: throw NullPointerException("Null Context received")
+fun <T : Any?> CoroutineScope.startConsumer(consumer: Consumer<T>, block: suspend (message: Message<T>) -> Unit) = launch(Dispatchers.IO) {
+    while (isActive) {
+        val message: Message<T> = consumer.receiveAsync().await()
 
         try {
-            getWorker(context).handle(envelope.message())
+            block(message)
+            consumer.acknowledgeAsync(message).await()
         } catch (e: Exception) {
-            ctx.logger.error("Error:%s for message:%s", e, envelope)
+            consumer.negativeAcknowledge(message)
             throw e
         }
-
-        return@runBlocking null
-    }
-
-    fun getWorker(context: Context): TaskExecutor {
-        return TaskExecutor(getSendToTaskEngine(context.messageBuilder()))
     }
 }

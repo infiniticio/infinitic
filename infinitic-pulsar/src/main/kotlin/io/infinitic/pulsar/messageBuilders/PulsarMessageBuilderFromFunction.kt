@@ -23,32 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.pulsar.functions
+package io.infinitic.pulsar.messageBuilders
 
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.pulsar.extensions.messageBuilder
-import io.infinitic.pulsar.transport.getSendToTaskEngine
-import io.infinitic.tasks.executor.TaskExecutor
-import kotlinx.coroutines.runBlocking
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.functions.api.Context
-import org.apache.pulsar.functions.api.Function
 
-open class WorkerPulsarFunction : Function<TaskExecutorEnvelope, Void> {
-
-    override fun process(envelope: TaskExecutorEnvelope, context: Context?): Void? = runBlocking {
-        val ctx = context ?: throw NullPointerException("Null Context received")
-
-        try {
-            getWorker(context).handle(envelope.message())
-        } catch (e: Exception) {
-            ctx.logger.error("Error:%s for message:%s", e, envelope)
-            throw e
-        }
-
-        return@runBlocking null
-    }
-
-    fun getWorker(context: Context): TaskExecutor {
-        return TaskExecutor(getSendToTaskEngine(context.messageBuilder()))
-    }
+class PulsarMessageBuilderFromFunction(private val context: Context) : PulsarMessageBuilder {
+    override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> =
+        context.newOutputMessage(topicName, schema)
 }

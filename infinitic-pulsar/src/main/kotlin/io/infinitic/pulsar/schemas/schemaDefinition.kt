@@ -23,18 +23,21 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.pulsar.schemas
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-task-executor"))
+import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.serDe.kotlin.kserializer
+import org.apache.pulsar.client.api.schema.SchemaDefinition
+import kotlin.reflect.KClass
 
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-}
+fun <T : Any> schemaDefinition(klass: KClass<T>) =
+    SchemaDefinition.builder<T>()
+        .withAlwaysAllowNull(true)
+        .withJSR310ConversionEnabled(true)
+        .withJsonDef(Avro.default.schema(kserializer(klass)).toString())
+        .withSchemaReader(KSchemaReader(klass))
+        .withSchemaWriter(KSchemaWriter(klass))
+        .withSupportSchemaVersioning(true)
+        .build()
+
+inline fun <reified T : Any> schemaDefinition() = schemaDefinition(T::class)

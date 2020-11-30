@@ -28,8 +28,9 @@ dependencies {
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
 
     api(project(":infinitic-common"))
     api(project(":infinitic-task-executor"))
-    api(project(":infinitic-messaging-pulsar"))
+    api(project(":infinitic-pulsar"))
 }

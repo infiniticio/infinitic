@@ -23,13 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.main
+package io.infinitic.worker
 
+import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.pulsar.extensions.messageBuilder
 import io.infinitic.pulsar.extensions.newTaskConsumer
-import io.infinitic.pulsar.extensions.startConsumer
-import io.infinitic.pulsar.transport.getSendToTaskEngine
+import io.infinitic.pulsar.transport.PulsarTransport
+import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -37,50 +37,53 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.PulsarClientException
-import kotlin.concurrent.thread
 import kotlin.coroutines.CoroutineContext
 
-class Application internal constructor(
-    private val pulsarClient: PulsarClient,
-    private val taskExecutor: TaskExecutor
-) : CoroutineScope {
+class TaskExecutorWorker(storage: KeyValueStorage) : CoroutineScope {
+
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + Job()
 
-    init {
-        Runtime.getRuntime().addShutdownHook(
-            thread(start = false) {
-                println("Stopping because of the shutdown hook.")
-                stop()
-            }
-        )
+    private val taskStateStorage = TaskStateKeyValueStorage(storage)
+    private var pulsarClient: PulsarClient? = null
+
+//    fun run() {
+//        try {
+//            start()
+//        } catch (e: PulsarClientException) {
+//            println(e) // FIXME: Remove and replace by a logger
+//            stop()
+//
+//            throw e
+//        }
+//    }
+
+    fun stop() {
+        cancel()
+        pulsarClient?.close()
     }
 
-    fun run() {
-        try {
-            runWithConcurrency()
-        } catch (e: PulsarClientException) {
-            println(e) // FIXME: Remove and replace by a logger
-            stop()
+//    fun runWithoutConcurrency() {
+//        taskExecutor.getRegisteredTasks().map { name ->
+//            pulsarClient.newTaskConsumer(name)
+//        }.forEach { consumer ->
+//            startConsumer(consumer) { taskExecutor.handle(it.value.message()) }
+//        }
+//    }
 
-            throw e
-        }
-    }
+    fun start(pulsarClient: PulsarClient) {
+        this.pulsarClient = pulsarClient
 
-    fun runWithoutConcurrency() {
-        taskExecutor.getRegisteredTasks().map { name ->
-            pulsarClient.newTaskConsumer(name)
-        }.forEach { consumer ->
-            startConsumer(consumer) { taskExecutor.handle(it.value.message()) }
-        }
-    }
+        val transport = PulsarTransport.from(pulsarClient)
 
-    fun runWithConcurrency() {
+        val taskExecutor = TaskExecutor(transport.sendToTaskEngine)
+
         val workerInputChannel = Channel<MessageToProcess<TaskExecutorMessage>>()
 
         // launch 8 workers
@@ -93,9 +96,8 @@ class Application internal constructor(
             }
         }
 
-        taskExecutor.getRegisteredTasks().map { name ->
-            Pair(name, pulsarClient.newTaskConsumer(name))
-        }.forEach { (taskName, consumer) ->
+        taskExecutor.getRegisteredTasks().forEach { taskName ->
+            val consumer = pulsarClient.newTaskConsumer(taskName)
             val resultChannel = Channel<MessageProcessed>(8)
 
             // launch 1 consumer
@@ -120,16 +122,12 @@ class Application internal constructor(
             }
         }
     }
-
-    fun stop() {
-        cancel()
-        pulsarClient.close()
-    }
 }
 
-fun worker(pulsarClient: PulsarClient, block: TaskExecutor.() -> Unit): Application {
-    val worker = TaskExecutor(getSendToTaskEngine(pulsarClient.messageBuilder()))
-    worker.block()
+data class MessageToProcess<T> (
+    val messageId: MessageId,
+    val message: T,
+    val replyTo: SendChannel<MessageProcessed>
+)
 
-    return Application(pulsarClient, worker)
-}
+data class MessageProcessed(val messageId: MessageId)

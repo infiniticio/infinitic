@@ -26,10 +26,10 @@
 package io.infinitic.engines.pulsar.functions
 
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.messaging.pulsar.extensions.keyValueStorage
-import io.infinitic.messaging.pulsar.extensions.messageBuilder
-import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
-import io.infinitic.messaging.pulsar.senders.getSendToWorkflowEngine
+import io.infinitic.pulsar.extensions.keyValueStorage
+import io.infinitic.pulsar.extensions.messageBuilder
+import io.infinitic.pulsar.transport.getSendToTaskEngine
+import io.infinitic.pulsar.transport.getSendToWorkflowEngine
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
 import kotlinx.coroutines.runBlocking

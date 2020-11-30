@@ -30,15 +30,15 @@ import io.infinitic.common.SendToMonitoringPerName
 import io.infinitic.common.SendToTaskEngine
 import io.infinitic.common.SendToWorkers
 import io.infinitic.common.SendToWorkflowEngine
-import io.infinitic.engines.pulsar.extensions.newMonitoringGlobalConsumer
-import io.infinitic.engines.pulsar.extensions.newMonitoringPerNameConsumer
-import io.infinitic.engines.pulsar.extensions.newTaskEngineConsumer
-import io.infinitic.engines.pulsar.extensions.newWorkflowEngineConsumer
-import io.infinitic.messaging.pulsar.extensions.startConsumer
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
+import io.infinitic.pulsar.extensions.newMonitoringGlobalEngineConsumer
+import io.infinitic.pulsar.extensions.newMonitoringPerNameEngineConsumer
+import io.infinitic.pulsar.extensions.newTaskEngineConsumer
+import io.infinitic.pulsar.extensions.newWorkflowEngineConsumer
+import io.infinitic.pulsar.extensions.startConsumer
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.workflows.engine.WorkflowEngine
@@ -98,8 +98,8 @@ class Application(
 
         try {
             val taskEngineConsumer = pulsarClient.newTaskEngineConsumer()
-            val monitoringPerNameConsumer = pulsarClient.newMonitoringPerNameConsumer()
-            val monitoringGlobalConsumer = pulsarClient.newMonitoringGlobalConsumer()
+            val monitoringPerNameConsumer = pulsarClient.newMonitoringPerNameEngineConsumer()
+            val monitoringGlobalConsumer = pulsarClient.newMonitoringGlobalEngineConsumer()
             val workflowEngineConsumer = pulsarClient.newWorkflowEngineConsumer()
 
             startConsumer(workflowEngineConsumer) {

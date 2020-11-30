@@ -33,10 +33,6 @@ import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
-import io.infinitic.worker.taskEngineWorker.TaskEngineWorker
-import io.infinitic.worker.taskExecutorWorker.TaskExecutorWorker
-import io.infinitic.worker.workflowEngineWorker.WorkflowEngineWorker
-import io.infinitic.worker.workflowExecutorWorker.WorkflowExecutorWorker
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 
 class Worker(
@@ -54,6 +50,8 @@ class Worker(
     val taskExecutorWorker: TaskExecutorWorker? = null
     val workflowEngineWorker: WorkflowEngineWorker? = null
     val workflowExecutorWorker: WorkflowExecutorWorker? = null
+    val monitoringGlobalEngineWorker: MonitoringGlobalEngineWorker? = null
+    val monitoringPerNameEngineWorker: MonitoringPerNameEngineWorker? = null
 
     companion object {
     }

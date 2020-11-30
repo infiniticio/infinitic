@@ -23,18 +23,6 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.worker
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-task-executor"))
-
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-}
+class WorkflowExecutorWorker

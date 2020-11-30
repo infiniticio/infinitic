@@ -27,7 +27,7 @@ rootProject.name = "io.infinitic"
 
 include("infinitic-rest-api")
 include("infinitic-storage")
-include("infinitic-messaging-pulsar")
+include("infinitic-pulsar")
 include("infinitic-common")
 include("infinitic-examples")
 include("infinitic-task-executor")

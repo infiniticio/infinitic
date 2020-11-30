@@ -57,14 +57,14 @@ import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
-open class TaskEngine(
-    protected val taskStateStorage: TaskStateStorage,
-    protected val sendToTaskEngine: SendToTaskEngine,
-    protected val sendToMonitoringPerName: SendToMonitoringPerName,
-    protected val sendToWorkers: SendToWorkers,
-    protected val sendToWorkflowEngine: SendToWorkflowEngine
+class TaskEngine(
+    private val taskStateStorage: TaskStateStorage,
+    private val sendToTaskEngine: SendToTaskEngine,
+    private val sendToMonitoringPerName: SendToMonitoringPerName,
+    private val sendToWorkers: SendToWorkers,
+    private val sendToWorkflowEngine: SendToWorkflowEngine
 ) {
-    open suspend fun handle(message: TaskEngineMessage) {
+    suspend fun handle(message: TaskEngineMessage) {
         // immediately discard messages that are non managed
         when (message) {
             is TaskAttemptDispatched -> return

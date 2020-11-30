@@ -43,7 +43,7 @@ dependencies {
     implementation(project(":infinitic-monitoring-engines"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-messaging-pulsar"))
+    implementation(project(":infinitic-pulsar"))
     implementation(project(":infinitic-storage"))
 }
 

@@ -23,18 +23,26 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.pulsar.messageBuilders
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-task-executor"))
+import org.apache.pulsar.client.api.Producer
+import org.apache.pulsar.client.api.PulsarClient
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.TypedMessageBuilder
+import java.util.concurrent.ConcurrentHashMap
 
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+class PulsarMessageBuilderFromClient(private val client: PulsarClient) : PulsarMessageBuilder {
+    private val producers = ConcurrentHashMap<String, Producer<*>>()
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> {
+        val producer = producers.computeIfAbsent(topicName) {
+            client
+                .newProducer(schema)
+                .topic(topicName)
+                .create()
+        } as Producer<O>
+
+        return producer.newMessage()
+    }
 }

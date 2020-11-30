@@ -23,18 +23,28 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
+package io.infinitic.pulsar
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-task-executor"))
+enum class Topic {
+    WORKFLOW_ENGINE {
+        override fun get(name: String) = "workflows-engine"
+    },
+    TASK_ENGINE {
+        override fun get(name: String) = "tasks-engine"
+    },
+    WORKERS {
+        override fun get(name: String) = "tasks-workers-$name"
+    },
+    MONITORING_PER_NAME {
+        override fun get(name: String) = "tasks-monitoring-per-name"
+    },
+    MONITORING_GLOBAL {
+        override fun get(name: String) = "tasks-monitoring-global"
+    },
+    LOGS {
+        override fun get(name: String) = "tasks-logs"
+    };
 
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+    // FIXME: This seems broken. The name parameter is only used for the WORKERS topic. Something is wrong I think
+    abstract fun get(name: String = ""): String
 }
