@@ -37,10 +37,6 @@ private fun CoroutineScope.startTaskEngine(
                         requested.remove(taskEngineMessage.taskId)
                         log("size: ${requested.size}")
                     }
-                    is TaskFailed -> {
-                        log("TaskFailed: ${taskEngineMessage.taskId}")
-                        workerChannel.send(RunTask(taskEngineMessage.taskId))
-                    }
                 }
             }
             dispatchChannel.onReceive { taskEngineMessage ->
@@ -48,6 +44,10 @@ private fun CoroutineScope.startTaskEngine(
                     is DispatchTask -> {
                         log("DispatchTask: ${taskEngineMessage.taskId}")
                         requested[taskEngineMessage.taskId] = true
+                        workerChannel.send(RunTask(taskEngineMessage.taskId))
+                    }
+                    is TaskFailed -> {
+                        log("TaskFailed: ${taskEngineMessage.taskId}")
                         workerChannel.send(RunTask(taskEngineMessage.taskId))
                     }
                 }
@@ -58,7 +58,8 @@ private fun CoroutineScope.startTaskEngine(
 
 private fun CoroutineScope.startWorker(
     workerChannel: ReceiveChannel<WorkerMessage>,
-    taskEngineChannel: SendChannel<TaskEngineMessage>
+    taskEngineChannel: SendChannel<TaskEngineMessage>,
+    errorChannel: SendChannel<TaskEngineMessage>,
 ) = launch(Dispatchers.Default) {
     for (workerMessage in workerChannel) {
         when (workerMessage) {
@@ -70,8 +71,8 @@ private fun CoroutineScope.startWorker(
                     taskEngineChannel.send(TaskCompleted(workerMessage.taskId, r.toLong()))
                 } else {
                     launch {
-                        delay(3000)
-                        taskEngineChannel.send(TaskFailed(workerMessage.taskId))
+                        delay(1000)
+                        errorChannel.send(TaskFailed(workerMessage.taskId))
                     }
                 }
             }
@@ -84,7 +85,7 @@ private fun CoroutineScope.processTasks(
 ) {
     val taskEngineChannel = Channel<TaskEngineMessage>(1)
     val workerChannel = Channel<WorkerMessage>()
-    repeat(N_WORKERS) { startWorker(workerChannel, taskEngineChannel) }
+    repeat(N_WORKERS) { startWorker(workerChannel, taskEngineChannel, dispatchChannel) }
     startTaskEngine(dispatchChannel, taskEngineChannel, workerChannel)
 }
 
