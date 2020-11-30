@@ -91,6 +91,7 @@ class TaskExecutorWorker(storage: KeyValueStorage) : CoroutineScope {
             launch(CoroutineName("worker-$it")) {
                 for (work in workerInputChannel) {
                     taskExecutor.handle(work.message)
+                    // TODO Handle unexpected error
                     work.replyTo.send(MessageProcessed(work.messageId))
                 }
             }
