@@ -10,32 +10,33 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withTimeout
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Random
 
 private fun log(msg: String) {
-    val time = SimpleDateFormat("HH:mm:ss.sss").format(Date())
-    println("$time [${Thread.currentThread().name}] $msg")
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+    println("${LocalDateTime.now().format(formatter)} [${Thread.currentThread().name}] $msg")
 }
 
-private const val N_WORKERS = 10
+private const val N_WORKERS = 100
 
 private fun CoroutineScope.startTaskEngine(
     dispatchChannel: ReceiveChannel<TaskEngineMessage>,
-    taskEngineChannel: ReceiveChannel<TaskEngineMessage>,
+    resultChannel: ReceiveChannel<TaskEngineMessage>,
     workerChannel: SendChannel<WorkerMessage>,
-    ) = launch {
+) = launch {
     val requested = mutableMapOf<Int, Boolean>()
 
-    while(true) {
+    while (true) {
         select<Unit> {
-            taskEngineChannel.onReceive { taskEngineMessage ->
+            resultChannel.onReceive { taskEngineMessage ->
                 when (taskEngineMessage) {
                     is TaskCompleted -> {
-                        log("TaskCompleted: ${taskEngineMessage.taskId}")
                         requested.remove(taskEngineMessage.taskId)
-                        log("size: ${requested.size}")
+                    }
+                    is TaskFailed -> {
+                        workerChannel.send(RunTask(taskEngineMessage.taskId))
                     }
                 }
             }
@@ -46,10 +47,27 @@ private fun CoroutineScope.startTaskEngine(
                         requested[taskEngineMessage.taskId] = true
                         workerChannel.send(RunTask(taskEngineMessage.taskId))
                     }
-                    is TaskFailed -> {
-                        log("TaskFailed: ${taskEngineMessage.taskId}")
-                        workerChannel.send(RunTask(taskEngineMessage.taskId))
-                    }
+                }
+            }
+        }
+    }
+}
+
+private fun CoroutineScope.startBufferWorker(
+    bufferChannel: ReceiveChannel<TaskEngineMessage>,
+    resultChannel: SendChannel<TaskEngineMessage>,
+) = launch {
+    for (taskEngineMessage in bufferChannel) {
+        when (taskEngineMessage) {
+            is TaskCompleted -> {
+                launch {
+                    resultChannel.send(taskEngineMessage)
+                }
+            }
+            is TaskFailed -> {
+                launch {
+                    delay(taskEngineMessage.delay)
+                    resultChannel.send(taskEngineMessage)
                 }
             }
         }
@@ -58,22 +76,22 @@ private fun CoroutineScope.startTaskEngine(
 
 private fun CoroutineScope.startWorker(
     workerChannel: ReceiveChannel<WorkerMessage>,
-    taskEngineChannel: SendChannel<TaskEngineMessage>,
-    errorChannel: SendChannel<TaskEngineMessage>,
+    bufferChannel: SendChannel<TaskEngineMessage>,
 ) = launch(Dispatchers.Default) {
     for (workerMessage in workerChannel) {
         when (workerMessage) {
             is RunTask -> {
+                log("RunTask: ${workerMessage.taskId}")
+                // processing
                 val r = Random().nextInt(100)
                 delay(r.toLong())
-//                Thread.sleep(r.toLong())
+                // result
                 if (r > 20) {
-                    taskEngineChannel.send(TaskCompleted(workerMessage.taskId, r.toLong()))
+                    log("TaskCompleted: ${workerMessage.taskId}")
+                    bufferChannel.send(TaskCompleted(workerMessage.taskId, r.toLong()))
                 } else {
-                    launch {
-                        delay(1000)
-                        errorChannel.send(TaskFailed(workerMessage.taskId))
-                    }
+                    log("TaskFailed: ${workerMessage.taskId}")
+                    bufferChannel.send(TaskFailed(workerMessage.taskId, 100L))
                 }
             }
         }
@@ -83,21 +101,21 @@ private fun CoroutineScope.startWorker(
 private fun CoroutineScope.processTasks(
     dispatchChannel: Channel<TaskEngineMessage>
 ) {
-    val taskEngineChannel = Channel<TaskEngineMessage>(1)
+    val resultChannel = Channel<TaskEngineMessage>()
+    val bufferChannel = Channel<TaskEngineMessage>()
     val workerChannel = Channel<WorkerMessage>()
-    repeat(N_WORKERS) { startWorker(workerChannel, taskEngineChannel, dispatchChannel) }
-    startTaskEngine(dispatchChannel, taskEngineChannel, workerChannel)
+    startBufferWorker(bufferChannel, resultChannel)
+    repeat(N_WORKERS) { startWorker(workerChannel, bufferChannel) }
+    startTaskEngine(dispatchChannel, resultChannel, workerChannel)
 }
 
 fun main() = runBlocking {
-    withTimeout(10000) {
+    withTimeout(1000000) {
         val dispatchChannel = Channel<TaskEngineMessage>()
         processTasks(dispatchChannel)
-        for (i in 1..1000) {
+        for (i in 1..100000) {
             dispatchChannel.send(DispatchTask(i))
         }
-
-        Unit
     }
 }
 
@@ -115,7 +133,8 @@ data class TaskCompleted(
 ) : TaskEngineMessage()
 
 data class TaskFailed(
-    override val taskId: Int
+    override val taskId: Int,
+    val delay: Long
 ) : TaskEngineMessage()
 
 sealed class WorkerMessage() {

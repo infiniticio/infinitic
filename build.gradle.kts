@@ -48,7 +48,7 @@ subprojects {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))
         "testImplementation"("io.kotest:kotest-runner-junit5-jvm:4.3.+")
         "testImplementation"("io.kotest:kotest-property-jvm:4.3.+")
-        "testImplementation"("io.mockk:mockk:1.10.+")
+        "testImplementation"("io.mockk:mockk:1.10.2")
 
         if (name != "infinitic-common") {
             "testImplementation"(testFixtures(project(":infinitic-common")))
