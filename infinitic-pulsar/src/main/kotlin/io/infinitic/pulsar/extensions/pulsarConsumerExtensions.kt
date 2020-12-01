@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
 
-fun <T : Any?> CoroutineScope.startConsumer(consumer: Consumer<T>, block: suspend (message: Message<T>) -> Unit) = launch(Dispatchers.IO) {
+fun <T : Any?> CoroutineScope.startConsumer(consumer: Consumer<T>, block: suspend (message: Message<T>) -> Unit) = launch(Dispatchers.Default) {
     while (isActive) {
         val message: Message<T> = consumer.receiveAsync().await()
 

@@ -1,0 +1,14 @@
+roles:
+  - TaskEngine
+  - WorkflowEngine
+  - TaskExecutor
+  - WorkflowExecutor
+  - MonitoringPerName
+  - MonitoringGlobal
+
+transport: InMemory
+
+stateStorage: InMemory
+
+eventStorage: InMemory
+

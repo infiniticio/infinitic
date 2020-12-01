@@ -23,19 +23,9 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+package io.infinitic.worker.config
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-task-executor"))
+enum class Storage {
+    InMemory,
+    Redis
 }

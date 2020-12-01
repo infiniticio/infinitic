@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.worker
+package io.infinitic.worker.pulsar
 
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.pulsar.extensions.newWorkflowEngineConsumer

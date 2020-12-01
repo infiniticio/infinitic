@@ -23,19 +23,19 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+package io.infinitic.tasks.engine.storage
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-task-executor"))
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.messages.TaskEventMessage
+import io.infinitic.common.tasks.engine.state.TaskState
+
+/**
+ * TaskEventStorage implementations are responsible for storing the different events
+ *
+ * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
+ * transformed before being stored. These details are left to the different implementations.
+ */
+interface TaskEventStorage {
+    suspend fun insert(msg: TaskEventMessage)
 }

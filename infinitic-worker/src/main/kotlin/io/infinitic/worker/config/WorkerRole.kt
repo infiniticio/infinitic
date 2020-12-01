@@ -23,6 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.worker
 
-class WorkflowExecutorWorker
+package io.infinitic.worker.config
+
+enum class WorkerRole {
+    TaskEngine,
+    WorkflowEngine,
+    TaskExecutor,
+    WorkflowExecutor,
+    MonitoringPerName,
+    MonitoringGlobal
+}
