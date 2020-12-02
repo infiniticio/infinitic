@@ -170,16 +170,6 @@ internal fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): Engine
 }
 
 internal class TaskEngineTests : StringSpec({
-    "TaskAttemptStarted" {
-        val stateIn = state()
-        val msgIn = taskAttemptStarted()
-        val o = engineHandle(stateIn, msgIn)
-        coVerifySequence {
-            o.insertTaskEvent(o.taskAttemptStarted!!)
-            o.taskStateStorage.getState(msgIn.taskId)
-        }
-    }
-
     "CancelTask" {
         val stateIn = state(mapOf("taskStatus" to TaskStatus.RUNNING_OK))
         val msgIn = cancelTask(mapOf("taskId" to stateIn.taskId))
@@ -273,24 +263,13 @@ internal class TaskEngineTests : StringSpec({
         o.taskStatusUpdated!!.newStatus shouldBe TaskStatus.RUNNING_WARNING
     }
 
-    "RetryTaskAttempt" {
-        val stateIn = state(
-            mapOf(
-                "taskStatus" to TaskStatus.RUNNING_ERROR
-            )
-        )
-        val msgIn = retryTaskAttempt(
-            mapOf(
-                "taskId" to stateIn.taskId,
-                "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry
-            )
-        )
+    "TaskAttemptStarted" {
+        val stateIn = state()
+        val msgIn = taskAttemptStarted()
         val o = engineHandle(stateIn, msgIn)
-        coVerify {
-            o.insertTaskEvent(o.retryTaskAttempt!!)
+        coVerifySequence {
+            o.insertTaskEvent(o.taskAttemptStarted!!)
         }
-        checkShouldRetryTaskAttempt(msgIn, stateIn, o)
     }
 
     "TaskAttemptCompleted" {
@@ -403,6 +382,26 @@ internal class TaskEngineTests : StringSpec({
         val o = engineHandle(stateIn, msgIn)
         coVerify {
             o.insertTaskEvent(o.taskAttemptFailed!!)
+        }
+        checkShouldRetryTaskAttempt(msgIn, stateIn, o)
+    }
+
+    "RetryTaskAttempt" {
+        val stateIn = state(
+            mapOf(
+                "taskStatus" to TaskStatus.RUNNING_ERROR
+            )
+        )
+        val msgIn = retryTaskAttempt(
+            mapOf(
+                "taskId" to stateIn.taskId,
+                "taskAttemptId" to stateIn.taskAttemptId,
+                "taskAttemptRetry" to stateIn.taskAttemptRetry
+            )
+        )
+        val o = engineHandle(stateIn, msgIn)
+        coVerify {
+            o.insertTaskEvent(o.retryTaskAttempt!!)
         }
         checkShouldRetryTaskAttempt(msgIn, stateIn, o)
     }

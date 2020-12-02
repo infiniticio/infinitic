@@ -25,6 +25,6 @@
 
 package io.infinitic.common.tasks.engine.storage
 
-import io.infinitic.common.tasks.engine.messages.TaskEventMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 
-typealias InsertTaskEvent = suspend (TaskEventMessage) -> Unit
+typealias InsertTaskEvent = suspend (TaskEngineMessage) -> Unit

@@ -34,12 +34,8 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.pulsar.extensions.messageBuilder
 import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.transport.getSendToMonitoringGlobal
-import io.infinitic.pulsar.transport.getSendToMonitoringPerName
-import io.infinitic.pulsar.transport.getSendToTaskEngine
-import io.infinitic.pulsar.transport.getSendToWorkers
+import io.infinitic.pulsar.transport.PulsarTransport
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -52,8 +48,6 @@ import io.mockk.verifyAll
 import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
-import org.slf4j.Logger
-import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
 class PulsarTransportTests : StringSpec({
@@ -85,7 +79,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineTopic(msg: TaskEngineMessage) =
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        getSendToTaskEngine(context.messageBuilder())(msg, 0F)
+        PulsarTransport.from(context).sendToTaskEngine(msg, 0F)
         // then
         verifyAll {
             context.newOutputMessage(Topic.TASK_ENGINE.get(), slotSchema.captured)
@@ -112,7 +106,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        getSendToMonitoringPerName(context.messageBuilder())(msg)
+        PulsarTransport.from(context).sendToMonitoringPerNameEngine(msg)
         // then
         verifyAll {
             context.newOutputMessage(Topic.MONITORING_PER_NAME.get(), slotSchema.captured)
@@ -140,7 +134,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        getSendToMonitoringGlobal(context.messageBuilder())(msg)
+        PulsarTransport.from(context).sendToMonitoringGlobalEngine(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get()
@@ -163,7 +157,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        getSendToWorkers(context.messageBuilder())(msg)
+        PulsarTransport.from(context).sendToExecutors(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe Topic.WORKERS.get("${msg.taskName}")
@@ -178,8 +172,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
 
 fun context(): Context {
     val context = mockk<Context>()
-    val optional = mockk<Optional<Any>>()
-    every { context.logger } returns mockk<Logger>(relaxed = true)
+    every { context.logger } returns mockk(relaxed = true)
 
     return context
 }

@@ -38,24 +38,30 @@ data class TaskEngineEnvelope(
     val retryTask: RetryTask? = null,
     val retryTaskAttempt: RetryTaskAttempt? = null,
     val cancelTask: CancelTask? = null,
+    val taskCanceled: TaskCanceled? = null,
+    val taskCompleted: TaskCompleted? = null,
+    val taskAttemptDispatched: TaskAttemptDispatched? = null,
     val taskAttemptCompleted: TaskAttemptCompleted? = null,
     val taskAttemptFailed: TaskAttemptFailed? = null,
     val taskAttemptStarted: TaskAttemptStarted? = null
 ) {
     init {
-        val notNull = listOfNotNull(
+        val noNull = listOfNotNull(
             dispatchTask,
             retryTask,
             retryTaskAttempt,
             cancelTask,
+            taskCanceled,
+            taskCompleted,
+            taskAttemptDispatched,
             taskAttemptCompleted,
             taskAttemptFailed,
             taskAttemptStarted
         )
 
-        require(notNull.size == 1)
-        require(notNull.first() == message())
-        require(notNull.first().taskId == taskId)
+        require(noNull.size == 1)
+        require(noNull.first() == message())
+        require(noNull.first().taskId == taskId)
     }
 
     companion object {
@@ -79,6 +85,21 @@ data class TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.CANCEL_TASK,
                 cancelTask = msg
+            )
+            is TaskCanceled -> TaskEngineEnvelope(
+                msg.taskId,
+                TaskEngineMessageType.TASK_CANCELED,
+                taskCanceled = msg
+            )
+            is TaskCompleted -> TaskEngineEnvelope(
+                msg.taskId,
+                TaskEngineMessageType.TASK_COMPLETED,
+                taskCompleted = msg
+            )
+            is TaskAttemptDispatched -> TaskEngineEnvelope(
+                msg.taskId,
+                TaskEngineMessageType.TASK_ATTEMPT_DISPATCHED,
+                taskAttemptDispatched = msg
             )
             is TaskAttemptCompleted -> TaskEngineEnvelope(
                 msg.taskId,
@@ -106,6 +127,9 @@ data class TaskEngineEnvelope(
         TaskEngineMessageType.RETRY_TASK -> retryTask!!
         TaskEngineMessageType.RETRY_TASK_ATTEMPT -> retryTaskAttempt!!
         TaskEngineMessageType.CANCEL_TASK -> cancelTask!!
+        TaskEngineMessageType.TASK_CANCELED -> taskCanceled!!
+        TaskEngineMessageType.TASK_COMPLETED -> taskCompleted!!
+        TaskEngineMessageType.TASK_ATTEMPT_DISPATCHED -> taskAttemptDispatched!!
         TaskEngineMessageType.TASK_ATTEMPT_COMPLETED -> taskAttemptCompleted!!
         TaskEngineMessageType.TASK_ATTEMPT_FAILED -> taskAttemptFailed!!
         TaskEngineMessageType.TASK_ATTEMPT_STARTED -> taskAttemptStarted!!

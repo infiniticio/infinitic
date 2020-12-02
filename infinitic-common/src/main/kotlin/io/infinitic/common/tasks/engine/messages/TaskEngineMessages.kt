@@ -44,8 +44,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class TaskEngineMessage() : TaskEventMessage() {
-    abstract override val taskId: TaskId
+sealed class TaskEngineMessage() {
+    abstract val taskId: TaskId
 }
 
 @Serializable
@@ -66,6 +66,29 @@ data class DispatchTask(
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions = TaskOptions()
 ) : TaskEngineMessage()
+
+@Serializable
+data class TaskCanceled(
+    override val taskId: TaskId,
+    val taskOutput: MethodOutput,
+    val taskMeta: TaskMeta
+) : TaskEngineMessage()
+
+@Serializable
+data class TaskCompleted(
+    override val taskId: TaskId,
+    val taskName: TaskName,
+    val taskOutput: MethodOutput,
+    val taskMeta: TaskMeta
+) : TaskEngineMessage()
+
+@Serializable
+data class TaskAttemptDispatched(
+    override val taskId: TaskId,
+    override val taskAttemptId: TaskAttemptId,
+    override val taskAttemptRetry: TaskAttemptRetry,
+    override val taskRetry: TaskRetry
+) : TaskEngineMessage(), TaskAttemptMessage
 
 @Serializable
 data class TaskAttemptCompleted(

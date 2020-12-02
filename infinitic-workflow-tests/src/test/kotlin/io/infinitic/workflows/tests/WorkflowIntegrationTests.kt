@@ -29,7 +29,6 @@ import io.infinitic.client.Client
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.messages.TaskEventMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
@@ -133,7 +132,7 @@ fun CoroutineScope.init() {
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        { _: TaskEventMessage -> Unit },
+        { _: TaskEngineMessage -> Unit },
         { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) },
         { msg: MonitoringPerNameEngineMessage -> sendToMonitoringPerName(msg) },
         { msg: TaskExecutorMessage -> sendToWorkers(msg) },

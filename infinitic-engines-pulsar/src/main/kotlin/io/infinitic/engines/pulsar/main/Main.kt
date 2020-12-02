@@ -27,15 +27,10 @@ package io.infinitic.engines.pulsar.main
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
-import io.infinitic.common.tasks.engine.messages.TaskEventMessage
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.pulsar.extensions.messageBuilder
-import io.infinitic.pulsar.transport.getSendToMonitoringGlobal
-import io.infinitic.pulsar.transport.getSendToMonitoringPerName
-import io.infinitic.pulsar.transport.getSendToTaskEngine
-import io.infinitic.pulsar.transport.getSendToWorkers
-import io.infinitic.pulsar.transport.getSendToWorkflowEngine
+import io.infinitic.pulsar.storage.PulsarEventStorage
+import io.infinitic.pulsar.transport.PulsarTransport
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
@@ -56,20 +51,22 @@ fun main(args: Array<String>) = mainBody {
         val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage())
         val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
         val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
+        val transport = PulsarTransport.from(client)
+        val eventStorage = PulsarEventStorage.from(client)
 
         // FIXME: This must be configurable using a configuration file or command line arguments
         val application = Application(
             client,
             workflowStateStorage,
             taskStateStorage,
-            { _: TaskEventMessage -> Unit },
+            eventStorage.insertTaskEvent,
             monitoringPerNameStateStorage,
             monitoringGlobalStateStorage,
-            getSendToWorkflowEngine(client.messageBuilder()),
-            getSendToTaskEngine(client.messageBuilder()),
-            getSendToMonitoringPerName(client.messageBuilder()),
-            getSendToMonitoringGlobal(client.messageBuilder()),
-            getSendToWorkers(client.messageBuilder())
+            transport.sendToWorkflowEngine,
+            transport.sendToTaskEngine,
+            transport.sendToMonitoringPerNameEngine,
+            transport.sendToMonitoringGlobalEngine,
+            transport.sendToExecutors
         )
         application.run()
     }

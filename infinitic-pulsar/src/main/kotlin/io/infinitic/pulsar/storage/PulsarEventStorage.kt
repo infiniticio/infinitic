@@ -25,17 +25,12 @@
 
 package io.infinitic.pulsar.storage
 
-import io.infinitic.common.tasks.engine.messages.TaskEventEnvelope
-import io.infinitic.common.tasks.engine.messages.TaskEventMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
-import io.infinitic.pulsar.Topic
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
-import io.infinitic.pulsar.schemas.schemaDefinition
-import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 
 class PulsarEventStorage(private val pulsarMessageBuilder: PulsarMessageBuilder) {
@@ -51,17 +46,8 @@ class PulsarEventStorage(private val pulsarMessageBuilder: PulsarMessageBuilder)
         fun from(context: Context) = PulsarEventStorage(PulsarMessageBuilderFromFunction(context))
     }
 
-    val insertTaskEvent: InsertTaskEvent = { event: TaskEventMessage ->
-        pulsarMessageBuilder
-            .newMessage(
-                Topic.TASK_EVENTS.get(),
-                AvroSchema.of(schemaDefinition(TaskEventEnvelope::class))
-            )
-            .key("${event.taskId}")
-            .value(TaskEventEnvelope.from(event))
-            .sendAsync()
-            .await()
-
-        Unit
-    }
+    /*
+    No need to store task event as the task engine topic stores them already
+     */
+    val insertTaskEvent: InsertTaskEvent = { _: TaskEngineMessage -> Unit }
 }

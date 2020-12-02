@@ -26,10 +26,9 @@
 package io.infinitic.tasks.executor.main
 
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.pulsar.extensions.messageBuilder
 import io.infinitic.pulsar.extensions.newTaskConsumer
 import io.infinitic.pulsar.extensions.startConsumer
-import io.infinitic.pulsar.transport.getSendToTaskEngine
+import io.infinitic.pulsar.transport.PulsarTransport
 import io.infinitic.tasks.executor.TaskExecutor
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -129,7 +128,7 @@ class Application internal constructor(
 }
 
 fun worker(pulsarClient: PulsarClient, block: TaskExecutor.() -> Unit): Application {
-    val worker = TaskExecutor(getSendToTaskEngine(pulsarClient.messageBuilder()))
+    val worker = TaskExecutor(PulsarTransport.from(pulsarClient).sendToTaskEngine)
     worker.block()
 
     return Application(pulsarClient, worker)

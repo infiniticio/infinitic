@@ -70,6 +70,15 @@ class TaskEngine(
         // store event
         insertTaskEvent(message)
 
+        // immediately discard messages useless messages
+        when (message) {
+            is TaskAttemptDispatched -> return
+            is TaskAttemptStarted -> return
+            is TaskCompleted -> return
+            is TaskCanceled -> return
+            else -> Unit
+        }
+
         // get current state
         val oldState = taskStateStorage.getState(message.taskId)
 
