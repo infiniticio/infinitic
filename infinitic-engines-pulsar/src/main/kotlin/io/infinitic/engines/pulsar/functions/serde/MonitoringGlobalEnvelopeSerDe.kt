@@ -25,7 +25,7 @@
 
 package io.infinitic.engines.pulsar.functions.serde
 
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import org.apache.pulsar.functions.api.SerDe
 
 class MonitoringGlobalEnvelopeSerDe : SerDe<MonitoringGlobalEnvelope> {

@@ -25,12 +25,10 @@
 
 package io.infinitic.tasks.engine
 
-import io.infinitic.common.SendToMonitoringPerName
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkers
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
+import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.CancelTask
@@ -45,10 +43,12 @@ import io.infinitic.common.tasks.engine.messages.TaskCanceled
 import io.infinitic.common.tasks.engine.messages.TaskCompleted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.state.TaskState
+import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.executors.SendToExecutors
 import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.tasks.engine.storage.TaskEventStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -57,7 +57,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.coVerifyAll
 import io.mockk.coVerifyOrder
 import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
@@ -65,16 +64,15 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verifySequence
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 
 internal class EngineResults {
     lateinit var sendToTaskEngine: SendToTaskEngine
-    lateinit var sendToWorkers: SendToWorkers
+    lateinit var sendToExecutors: SendToExecutors
     lateinit var sendToMonitoringPerName: SendToMonitoringPerName
     lateinit var taskStateStorage: TaskStateStorage
-    lateinit var taskEventStorage: TaskEventStorage
+    lateinit var insertTaskEvent: InsertTaskEvent
     lateinit var logger: Logger
     var state: TaskState? = null
     var taskExecutorMessage: TaskExecutorMessage? = null
@@ -98,9 +96,9 @@ internal fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): Engine
     // mocking
     val logger = mockk<Logger>()
     val taskStateStorage = mockk<TaskStateStorage>()
-    val taskEventStorage = mockk<TaskEventStorage>()
+    val insertTaskEvent = mockk<InsertTaskEvent>()
     val sendToTaskEngine = mockk<SendToTaskEngine>()
-    val sendToWorkers = mockk<SendToWorkers>()
+    val sendToWorkers = mockk<SendToExecutors>()
     val sendToMonitoringPerName = mockk<SendToMonitoringPerName>()
     val stateSlot = slot<TaskState>()
     val dispatchTaskSlot = slot<DispatchTask>()
@@ -123,21 +121,21 @@ internal fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): Engine
     coEvery { taskStateStorage.deleteState(any()) } just Runs
     coEvery { sendToWorkers(capture(workerMessageSlot)) } just Runs
     coEvery { sendToTaskEngine(capture(retryTaskAttemptSlot), capture(retryTaskAttemptDelaySlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(cancelTaskSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(dispatchTaskSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(retryTaskSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(retryTaskAttemptSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(taskAttemptCompletedSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(taskAttemptDispatchedSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(taskAttemptFailedSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(taskAttemptStartedSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(taskCanceledSlot)) } just Runs
-    coEvery { taskEventStorage.insert(capture(taskCompletedSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(cancelTaskSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(dispatchTaskSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(retryTaskSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(retryTaskAttemptSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(taskAttemptCompletedSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(taskAttemptDispatchedSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(taskAttemptFailedSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(taskAttemptStartedSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(taskCanceledSlot)) } just Runs
+    coEvery { insertTaskEvent(capture(taskCompletedSlot)) } just Runs
     coEvery { sendToMonitoringPerName(capture(taskStatusUpdatedSlot)) } just Runs
     // given
     val engine = TaskEngine(
         taskStateStorage,
-        taskEventStorage,
+        insertTaskEvent,
         sendToTaskEngine,
         sendToMonitoringPerName,
         sendToWorkers,
@@ -148,10 +146,10 @@ internal fun engineHandle(stateIn: TaskState?, msgIn: TaskEngineMessage): Engine
     // then
     val o = EngineResults()
     o.sendToTaskEngine = sendToTaskEngine
-    o.sendToWorkers = sendToWorkers
+    o.sendToExecutors = sendToWorkers
     o.sendToMonitoringPerName = sendToMonitoringPerName
     o.taskStateStorage = taskStateStorage
-    o.taskEventStorage = taskEventStorage
+    o.insertTaskEvent = insertTaskEvent
     o.logger = logger
     if (stateSlot.isCaptured) o.state = stateSlot.captured
     if (workerMessageSlot.isCaptured) o.taskExecutorMessage = workerMessageSlot.captured
@@ -177,7 +175,7 @@ internal class TaskEngineTests : StringSpec({
         val msgIn = taskAttemptStarted()
         val o = engineHandle(stateIn, msgIn)
         coVerifySequence {
-            o.taskEventStorage.insert(o.taskAttemptStarted!!)
+            o.insertTaskEvent(o.taskAttemptStarted!!)
             o.taskStateStorage.getState(msgIn.taskId)
         }
     }
@@ -187,9 +185,9 @@ internal class TaskEngineTests : StringSpec({
         val msgIn = cancelTask(mapOf("taskId" to stateIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         coVerifySequence {
-            o.taskEventStorage.insert(o.cancelTask!!)
+            o.insertTaskEvent(o.cancelTask!!)
             o.taskStateStorage.getState(msgIn.taskId)
-            o.taskEventStorage.insert(o.taskCanceled!!)
+            o.insertTaskEvent(o.taskCanceled!!)
             o.taskStateStorage.deleteState(msgIn.taskId)
             o.sendToMonitoringPerName(o.taskStatusUpdated!!)
         }
@@ -203,10 +201,10 @@ internal class TaskEngineTests : StringSpec({
         val msgIn = dispatchTask()
         val o = engineHandle(null, msgIn)
         coVerifySequence {
-            o.taskEventStorage.insert(o.dispatchTask!!)
+            o.insertTaskEvent(o.dispatchTask!!)
             o.taskStateStorage.getState(msgIn.taskId)
-            o.sendToWorkers(o.taskExecutorMessage!!)
-            o.taskEventStorage.insert(o.taskAttemptDispatched!!)
+            o.sendToExecutors(o.taskExecutorMessage!!)
+            o.insertTaskEvent(o.taskAttemptDispatched!!)
             o.taskStateStorage.updateState(msgIn.taskId, o.state!!, null)
             o.sendToMonitoringPerName(o.taskStatusUpdated!!)
         }
@@ -248,10 +246,10 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerifySequence {
-            o.taskEventStorage.insert(o.retryTask!!)
+            o.insertTaskEvent(o.retryTask!!)
             o.taskStateStorage.getState(msgIn.taskId)
-            o.sendToWorkers(o.taskExecutorMessage!!)
-            o.taskEventStorage.insert(o.taskAttemptDispatched!!)
+            o.sendToExecutors(o.taskExecutorMessage!!)
+            o.insertTaskEvent(o.taskAttemptDispatched!!)
             o.taskStateStorage.updateState(msgIn.taskId, o.state!!, stateIn)
             o.sendToMonitoringPerName(o.taskStatusUpdated!!)
         }
@@ -290,7 +288,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerify {
-            o.taskEventStorage.insert(o.retryTaskAttempt!!)
+            o.insertTaskEvent(o.retryTaskAttempt!!)
         }
         checkShouldRetryTaskAttempt(msgIn, stateIn, o)
     }
@@ -300,9 +298,9 @@ internal class TaskEngineTests : StringSpec({
         val msgIn = taskAttemptCompleted(mapOf("taskId" to stateIn.taskId))
         val o = engineHandle(stateIn, msgIn)
         coVerifySequence {
-            o.taskEventStorage.insert(o.taskAttemptCompleted!!)
+            o.insertTaskEvent(o.taskAttemptCompleted!!)
             o.taskStateStorage.getState(msgIn.taskId)
-            o.taskEventStorage.insert(o.taskCompleted!!)
+            o.insertTaskEvent(o.taskCompleted!!)
             o.taskStateStorage.deleteState(msgIn.taskId)
             o.sendToMonitoringPerName(o.taskStatusUpdated!!)
         }
@@ -328,7 +326,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerifySequence {
-            o.taskEventStorage.insert(o.taskAttemptFailed!!)
+            o.insertTaskEvent(o.taskAttemptFailed!!)
             o.taskStateStorage.getState(msgIn.taskId)
             o.taskStateStorage.updateState(msgIn.taskId, o.state!!, stateIn)
             o.sendToMonitoringPerName(o.taskStatusUpdated!!)
@@ -351,7 +349,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerifySequence {
-            o.taskEventStorage.insert(o.taskAttemptFailed!!)
+            o.insertTaskEvent(o.taskAttemptFailed!!)
             o.taskStateStorage.getState(msgIn.taskId)
             o.sendToTaskEngine(o.retryTaskAttempt!!, o.retryTaskAttemptDelay!!)
             o.taskStateStorage.updateState(msgIn.taskId, o.state!!, stateIn)
@@ -383,7 +381,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerify {
-            o.taskEventStorage.insert(o.taskAttemptFailed!!)
+            o.insertTaskEvent(o.taskAttemptFailed!!)
         }
         checkShouldRetryTaskAttempt(msgIn, stateIn, o)
     }
@@ -404,7 +402,7 @@ internal class TaskEngineTests : StringSpec({
         )
         val o = engineHandle(stateIn, msgIn)
         coVerify {
-            o.taskEventStorage.insert(o.taskAttemptFailed!!)
+            o.insertTaskEvent(o.taskAttemptFailed!!)
         }
         checkShouldRetryTaskAttempt(msgIn, stateIn, o)
     }
@@ -419,8 +417,8 @@ private fun checkShouldDoNothing(o: EngineResults) {
 private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskState, o: EngineResults) {
     coVerifyOrder {
         o.taskStateStorage.getState(msgIn.taskId)
-        o.sendToWorkers(o.taskExecutorMessage!!)
-        o.taskEventStorage.insert(o.taskAttemptDispatched!!)
+        o.sendToExecutors(o.taskExecutorMessage!!)
+        o.insertTaskEvent(o.taskAttemptDispatched!!)
         o.taskStateStorage.updateState(msgIn.taskId, o.state!!, stateIn)
         o.sendToMonitoringPerName(o.taskStatusUpdated!!)
     }
@@ -446,7 +444,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
 }
 
 private fun checkConfirmVerified(o: EngineResults) {
-    confirmVerified(o.sendToWorkers)
+    confirmVerified(o.sendToExecutors)
     confirmVerified(o.sendToTaskEngine)
     confirmVerified(o.sendToMonitoringPerName)
     confirmVerified(o.taskStateStorage)

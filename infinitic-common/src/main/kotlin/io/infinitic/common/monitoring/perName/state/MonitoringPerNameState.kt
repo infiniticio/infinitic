@@ -23,19 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine.storage
+package io.infinitic.common.monitoring.perName.state
 
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.tasks.data.TaskName
+import kotlinx.serialization.Serializable
+import java.nio.ByteBuffer
 
-/**
- * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-interface MonitoringPerNameStateStorage {
-    suspend fun getState(taskName: TaskName): MonitoringPerNameState?
-    suspend fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?)
-    suspend fun deleteState(taskName: TaskName)
+@Serializable
+data class MonitoringPerNameState(
+    val taskName: TaskName,
+    var runningOkCount: Long = 0,
+    var runningWarningCount: Long = 0,
+    var runningErrorCount: Long = 0,
+    var terminatedCompletedCount: Long = 0,
+    var terminatedCanceledCount: Long = 0
+) {
+    companion object {
+        fun fromByteArray(bytes: ByteArray): MonitoringPerNameState = Avro.default.decodeFromByteArray(serializer(), bytes)
+        fun fromByteBuffer(bytes: ByteBuffer): MonitoringPerNameState = fromByteArray(bytes.array())
+    }
+
+    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
+    fun toByteBuffer() = ByteBuffer.wrap(toByteArray())
+    fun deepCopy() = fromByteArray(toByteArray())
 }

@@ -25,11 +25,12 @@
 
 package io.infinitic.engines.pulsar.main
 
-import io.infinitic.common.SendToMonitoringGlobal
-import io.infinitic.common.SendToMonitoringPerName
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkers
-import io.infinitic.common.SendToWorkflowEngine
+import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
+import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -56,13 +57,14 @@ class Application(
     private val pulsarClient: PulsarClient,
     private val workflowStateStorage: WorkflowStateStorage,
     private val taskStateStorage: TaskStateStorage,
+    private val insertTaskEvent: InsertTaskEvent,
     private val monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
     private val monitoringGlobalStateStorage: MonitoringGlobalStateStorage,
     private val sendToWorkflowEngine: SendToWorkflowEngine,
     private val sendToTaskEngine: SendToTaskEngine,
     private val sendToMonitoringPerName: SendToMonitoringPerName,
     private val sendToMonitoringGlobal: SendToMonitoringGlobal,
-    private val sendToWorkers: SendToWorkers
+    private val sendToExecutors: SendToExecutors
 ) : CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + Job()
@@ -83,9 +85,10 @@ class Application(
         )
         val taskEngine = TaskEngine(
             taskStateStorage,
+            insertTaskEvent,
             sendToTaskEngine,
             sendToMonitoringPerName,
-            sendToWorkers,
+            sendToExecutors,
             sendToWorkflowEngine
         )
         val monitoringPerName = MonitoringPerNameEngine(

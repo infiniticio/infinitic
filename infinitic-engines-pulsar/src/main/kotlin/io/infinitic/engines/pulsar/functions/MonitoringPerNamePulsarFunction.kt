@@ -25,12 +25,11 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.pulsar.extensions.keyValueStorage
-import io.infinitic.pulsar.extensions.messageBuilder
-import io.infinitic.pulsar.transport.getSendToMonitoringGlobal
+import io.infinitic.pulsar.transport.PulsarTransport
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -50,9 +49,12 @@ class MonitoringPerNamePulsarFunction : Function<MonitoringPerNameEnvelope, Void
         null
     }
 
-    internal fun getMonitoringPerNameEngine(context: Context) =
-        MonitoringPerNameEngine(
+    internal fun getMonitoringPerNameEngine(context: Context): MonitoringPerNameEngine {
+        val transport = PulsarTransport.from(context)
+
+        return MonitoringPerNameEngine(
             MonitoringPerNameStateKeyValueStorage(context.keyValueStorage()),
-            getSendToMonitoringGlobal(context.messageBuilder())
+            transport.sendToMonitoringGlobalEngine
         )
+    }
 }

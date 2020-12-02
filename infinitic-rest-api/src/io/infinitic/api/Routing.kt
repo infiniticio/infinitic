@@ -28,8 +28,8 @@ package io.infinitic.api
 import io.infinitic.api.extensions.io.ktor.application.getPath
 import io.infinitic.api.support.BuildInfo
 import io.infinitic.api.task.repositories.TaskRepository
-import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
-import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
+import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.ktor.application.call
 import io.ktor.config.ApplicationConfig
 import io.ktor.features.NotFoundException

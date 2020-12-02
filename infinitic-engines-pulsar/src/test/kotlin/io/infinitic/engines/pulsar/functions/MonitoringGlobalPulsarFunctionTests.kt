@@ -25,8 +25,8 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec

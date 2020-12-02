@@ -26,12 +26,12 @@
 package io.infinitic.worker
 
 import com.sksamuel.hoplite.ConfigLoader
-import io.infinitic.common.SendToMonitoringGlobal
-import io.infinitic.common.SendToMonitoringPerName
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkers
-import io.infinitic.common.SendToWorkflowEngine
+import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
+import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 import io.infinitic.storage.inMemory.InMemoryStorage
@@ -54,7 +54,7 @@ class Worker(
     sendToTaskEngine: SendToTaskEngine,
     sendToMonitoringPerName: SendToMonitoringPerName,
     sendToMonitoringGlobal: SendToMonitoringGlobal,
-    sendToWorkers: SendToWorkers,
+    sendToExecutors: SendToExecutors,
     workflowStateStorage: WorkflowStateStorage,
     taskStateStorage: TaskStateStorage,
     monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
@@ -69,8 +69,6 @@ class Worker(
 
     companion object {
     }
-
-
 }
 
 fun main() = runBlocking {
@@ -83,18 +81,17 @@ fun main() = runBlocking {
     }
 
     if (config.roles.contains(WorkerRole.MonitoringPerName)) {
-
     }
 }
 
-fun getStateStorage(config: Config) : KeyValueStorage  = when(config.stateStorage) {
+fun getStateStorage(config: Config): KeyValueStorage = when (config.stateStorage) {
     Storage.InMemory -> InMemoryStorage()
     Storage.Redis -> redis {
-        config.redis?.host?. let { host = it}
-        config.redis?.port?. let { port = it}
-        config.redis?.timeout?. let { timeout = it}
-        config.redis?.user?. let { user = it}
-        config.redis?.password?. let { password = it}
-        config.redis?.database?. let { database = it}
+        config.redis?.host?. let { host = it }
+        config.redis?.port?. let { port = it }
+        config.redis?.timeout?. let { timeout = it }
+        config.redis?.user?. let { user = it }
+        config.redis?.password?. let { password = it }
+        config.redis?.database?. let { database = it }
     }
 }

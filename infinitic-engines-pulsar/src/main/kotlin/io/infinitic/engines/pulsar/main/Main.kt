@@ -27,6 +27,7 @@ package io.infinitic.engines.pulsar.main
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
+import io.infinitic.common.tasks.engine.messages.TaskEventMessage
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.pulsar.extensions.messageBuilder
@@ -61,6 +62,7 @@ fun main(args: Array<String>) = mainBody {
             client,
             workflowStateStorage,
             taskStateStorage,
+            { _: TaskEventMessage -> Unit },
             monitoringPerNameStateStorage,
             monitoringGlobalStateStorage,
             getSendToWorkflowEngine(client.messageBuilder()),

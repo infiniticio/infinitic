@@ -23,15 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoringGlobal.messages
+package io.infinitic.common.monitoring.perName.messages
 
-import io.infinitic.common.tasks.data.TaskName
-import kotlinx.serialization.Serializable
-
-@Serializable
-sealed class MonitoringGlobalMessage
-
-@Serializable
-data class TaskCreated(
-    val taskName: TaskName
-) : MonitoringGlobalMessage()
+enum class MonitoringPerNameMessageType {
+    TASK_STATUS_UPDATED
+}

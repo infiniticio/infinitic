@@ -50,7 +50,7 @@ data class TaskExecutorEnvelope(
         fun from(msg: TaskExecutorMessage) = when (msg) {
             is RunTask -> TaskExecutorEnvelope(
                 msg.taskName,
-                TaskExecutorMessageType.RUN_TASK,
+                TaskExecutorMessageType.EXECUTE_TASK,
                 runTask = msg
             )
         }
@@ -60,7 +60,7 @@ data class TaskExecutorEnvelope(
     }
 
     fun message(): TaskExecutorMessage = when (type) {
-        TaskExecutorMessageType.RUN_TASK -> runTask!!
+        TaskExecutorMessageType.EXECUTE_TASK -> runTask!!
     }
 
     fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)

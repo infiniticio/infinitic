@@ -25,7 +25,7 @@
 
 package io.infinitic.monitoring.perName.engine.storage
 
-import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskName

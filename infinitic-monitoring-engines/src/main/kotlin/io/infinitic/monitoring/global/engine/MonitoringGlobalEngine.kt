@@ -25,9 +25,9 @@
 
 package io.infinitic.monitoring.global.engine
 
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoringGlobal.messages.TaskCreated
-import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoring.global.messages.TaskCreated
+import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 
 class MonitoringGlobalEngine(

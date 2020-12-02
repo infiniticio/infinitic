@@ -23,22 +23,16 @@
  * Licensor: infinitic.io
  */
 
-
 package io.infinitic.worker.inMemory
 
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkers
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.SendToExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateStorage
-import io.infinitic.worker.DispatchTask
-import io.infinitic.worker.RunTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
 
 private fun CoroutineScope.startTaskEngine(
     taskStateStorage: TaskStateStorage,
@@ -47,32 +41,32 @@ private fun CoroutineScope.startTaskEngine(
     workerChannel: SendChannel<TaskExecutorMessage>,
 ) = launch {
 
-    val sendToWorkers: SendToWorkers = { msg: TaskExecutorMessage -> workerChannel.send(msg) }
+    val sendToExecutors: SendToExecutors = { msg: TaskExecutorMessage -> workerChannel.send(msg) }
 
-    val taskEngine = TaskEngine(
-        taskStateStorage
-    )
+//    val taskEngine = TaskEngine(
+//        taskStateStorage
+//    )
 
-    while (true) {
-        select<Unit> {
-            resultChannel.onReceive { taskEngineMessage ->
-                when (taskEngineMessage) {
-                    is TaskCompleted -> {
-                        requested.remove(taskEngineMessage.taskId)
-                    }
-                    is TaskFailed -> {
-                        workerChannel.send(RunTask(taskEngineMessage.taskId))
-                    }
-                }
-            }
-            dispatchChannel.onReceive { taskEngineMessage ->
-                when (taskEngineMessage) {
-                    is DispatchTask -> {
-                        requested[taskEngineMessage.taskId] = true
-                        workerChannel.send(RunTask(taskEngineMessage.taskId))
-                    }
-                }
-            }
-        }
-    }
+//    while (true) {
+//        select<Unit> {
+//            resultChannel.onReceive { taskEngineMessage ->
+//                when (taskEngineMessage) {
+//                    is TaskCompleted -> {
+//                        requested.remove(taskEngineMessage.taskId)
+//                    }
+//                    is TaskFailed -> {
+//                        workerChannel.send(RunTask(taskEngineMessage.taskId))
+//                    }
+//                }
+//            }
+//            dispatchChannel.onReceive { taskEngineMessage ->
+//                when (taskEngineMessage) {
+//                    is DispatchTask -> {
+//                        requested[taskEngineMessage.taskId] = true
+//                        workerChannel.send(RunTask(taskEngineMessage.taskId))
+//                    }
+//                }
+//            }
+//        }
+//    }
 }

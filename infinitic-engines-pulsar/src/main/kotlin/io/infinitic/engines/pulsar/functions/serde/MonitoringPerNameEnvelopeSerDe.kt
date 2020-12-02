@@ -25,7 +25,7 @@
 
 package io.infinitic.engines.pulsar.functions.serde
 
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import org.apache.pulsar.functions.api.SerDe
 
 class MonitoringPerNameEnvelopeSerDe : SerDe<MonitoringPerNameEnvelope> {

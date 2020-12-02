@@ -23,19 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine.storage
+package io.infinitic.common.monitoring.perName.messages
 
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskStatus
+import kotlinx.serialization.Serializable
 
-/**
- * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-interface MonitoringPerNameStateStorage {
-    suspend fun getState(taskName: TaskName): MonitoringPerNameState?
-    suspend fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?)
-    suspend fun deleteState(taskName: TaskName)
+@Serializable
+sealed class MonitoringPerNameEngineMessage {
+    abstract val taskName: TaskName
 }
+
+@Serializable
+data class TaskStatusUpdated constructor(
+    override val taskName: TaskName,
+    val taskId: TaskId,
+    val oldStatus: TaskStatus?,
+    val newStatus: TaskStatus
+) : MonitoringPerNameEngineMessage()

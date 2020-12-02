@@ -27,9 +27,7 @@ package io.infinitic.engines.pulsar.functions
 
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.extensions.keyValueStorage
-import io.infinitic.pulsar.extensions.messageBuilder
-import io.infinitic.pulsar.transport.getSendToTaskEngine
-import io.infinitic.pulsar.transport.getSendToWorkflowEngine
+import io.infinitic.pulsar.transport.PulsarTransport
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
 import kotlinx.coroutines.runBlocking
@@ -51,10 +49,13 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
         null
     }
 
-    internal fun getWorkflowEngine(context: Context) =
-        WorkflowEngine(
+    internal fun getWorkflowEngine(context: Context): WorkflowEngine {
+        val transport = PulsarTransport.from(context)
+
+        return WorkflowEngine(
             WorkflowStateKeyValueStorage(context.keyValueStorage()),
-            getSendToWorkflowEngine(context.messageBuilder()),
-            getSendToTaskEngine(context.messageBuilder())
+            transport.sendToWorkflowEngine,
+            transport.sendToTaskEngine
         )
+    }
 }

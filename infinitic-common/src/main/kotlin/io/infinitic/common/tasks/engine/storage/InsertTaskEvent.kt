@@ -23,8 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoringGlobal.messages
+package io.infinitic.common.tasks.engine.storage
 
-enum class MonitoringGlobalMessageType {
-    TASK_CREATED
-}
+import io.infinitic.common.tasks.engine.messages.TaskEventMessage
+
+typealias InsertTaskEvent = suspend (TaskEventMessage) -> Unit

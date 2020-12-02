@@ -23,19 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.engine.storage
+package io.infinitic.common.monitoring.global.transport
 
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.messages.TaskEventMessage
-import io.infinitic.common.tasks.engine.state.TaskState
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 
-/**
- * TaskEventStorage implementations are responsible for storing the different events
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-interface TaskEventStorage {
-    suspend fun insert(msg: TaskEventMessage)
-}
+typealias SendToMonitoringGlobal = suspend (MonitoringGlobalMessage) -> Unit

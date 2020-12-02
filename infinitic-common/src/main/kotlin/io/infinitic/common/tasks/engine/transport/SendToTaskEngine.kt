@@ -23,8 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoringPerName.messages
+package io.infinitic.common.tasks.engine.transport
 
-enum class MonitoringPerNameMessageType {
-    TASK_STATUS_UPDATED
-}
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+
+typealias SendToTaskEngine = suspend (TaskEngineMessage, Float) -> Unit

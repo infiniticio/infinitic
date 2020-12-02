@@ -23,44 +23,40 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoringPerName.messages
+package io.infinitic.common.monitoring.global.messages
 
 import com.github.avrokotlin.avro4k.Avro
-import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer
 
 @Serializable
-data class MonitoringPerNameEnvelope(
-    val taskName: TaskName,
-    val type: MonitoringPerNameMessageType,
-    val taskStatusUpdated: TaskStatusUpdated? = null
+data class MonitoringGlobalEnvelope(
+    val type: MonitoringGlobalMessageType,
+    val taskCreated: TaskCreated? = null
 ) {
     init {
         val noNull = listOfNotNull(
-            taskStatusUpdated
+            taskCreated
         )
 
         require(noNull.size == 1)
         require(noNull.first() == message())
-        require(noNull.first().taskName == taskName)
     }
 
     companion object {
-        fun from(msg: MonitoringPerNameEngineMessage) = when (msg) {
-            is TaskStatusUpdated -> MonitoringPerNameEnvelope(
-                msg.taskName,
-                MonitoringPerNameMessageType.TASK_STATUS_UPDATED,
-                taskStatusUpdated = msg
+        fun from(msg: MonitoringGlobalMessage) = when (msg) {
+            is TaskCreated -> MonitoringGlobalEnvelope(
+                MonitoringGlobalMessageType.TASK_CREATED,
+                taskCreated = msg
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray): MonitoringGlobalEnvelope = Avro.default.decodeFromByteArray(serializer(), bytes)
+        fun fromByteBuffer(bytes: ByteBuffer): MonitoringGlobalEnvelope = fromByteArray(bytes.array())
     }
 
-    fun message(): MonitoringPerNameEngineMessage = when (type) {
-        MonitoringPerNameMessageType.TASK_STATUS_UPDATED -> taskStatusUpdated!!
+    fun message(): MonitoringGlobalMessage = when (type) {
+        MonitoringGlobalMessageType.TASK_CREATED -> taskCreated!!
     }
 
     fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)

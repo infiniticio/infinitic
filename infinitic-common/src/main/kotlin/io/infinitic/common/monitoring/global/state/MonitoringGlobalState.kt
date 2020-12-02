@@ -23,16 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common
+package io.infinitic.common.monitoring.global.state
 
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.tasks.data.TaskName
+import kotlinx.serialization.Serializable
+import java.nio.ByteBuffer
 
-typealias SendToMonitoringGlobal = suspend (MonitoringGlobalMessage) -> Unit
-typealias SendToTaskEngine = suspend (TaskEngineMessage, Float) -> Unit
-typealias SendToMonitoringPerName = suspend (MonitoringPerNameEngineMessage) -> Unit
-typealias SendToWorkers = suspend (TaskExecutorMessage) -> Unit
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+@Serializable
+data class MonitoringGlobalState(
+    val taskNames: MutableSet<TaskName> = mutableSetOf()
+) {
+    companion object {
+        fun fromByteArray(bytes: ByteArray): MonitoringGlobalState = Avro.default.decodeFromByteArray(serializer(), bytes)
+        fun fromByteBuffer(bytes: ByteBuffer): MonitoringGlobalState = fromByteArray(bytes.array())
+    }
+
+    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
+    fun toByteBuffer() = ByteBuffer.wrap(toByteArray())
+    fun deepCopy() = fromByteArray(toByteArray())
+}

@@ -23,7 +23,6 @@
  * Licensor: infinitic.io
  */
 
-
 package io.infinitic.worker.config
 
 enum class WorkerRole {

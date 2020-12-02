@@ -26,5 +26,5 @@
 package io.infinitic.common.tasks.executors.messages
 
 enum class TaskExecutorMessageType {
-    RUN_TASK
+    EXECUTE_TASK
 }

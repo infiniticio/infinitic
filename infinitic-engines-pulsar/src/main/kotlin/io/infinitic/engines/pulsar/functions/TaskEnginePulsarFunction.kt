@@ -27,11 +27,8 @@ package io.infinitic.engines.pulsar.functions
 
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.extensions.keyValueStorage
-import io.infinitic.pulsar.extensions.messageBuilder
-import io.infinitic.pulsar.transport.getSendToMonitoringPerName
-import io.infinitic.pulsar.transport.getSendToTaskEngine
-import io.infinitic.pulsar.transport.getSendToWorkers
-import io.infinitic.pulsar.transport.getSendToWorkflowEngine
+import io.infinitic.pulsar.storage.PulsarEventStorage
+import io.infinitic.pulsar.transport.PulsarTransport
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
 import kotlinx.coroutines.runBlocking
@@ -53,12 +50,17 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
         null
     }
 
-    internal fun getTaskEngine(context: Context) =
-        TaskEngine(
+    internal fun getTaskEngine(context: Context): TaskEngine {
+        val transport = PulsarTransport.from(context)
+        val taskEventStorage = PulsarEventStorage.from(context)
+
+        return TaskEngine(
             TaskStateKeyValueStorage(context.keyValueStorage()),
-            getSendToTaskEngine(context.messageBuilder()),
-            getSendToMonitoringPerName(context.messageBuilder()),
-            getSendToWorkers(context.messageBuilder()),
-            getSendToWorkflowEngine(context.messageBuilder())
+            taskEventStorage.insertTaskEvent,
+            transport.sendToTaskEngine,
+            transport.sendToMonitoringPerNameEngine,
+            transport.sendToExecutors,
+            transport.sendToWorkflowEngine
         )
+    }
 }

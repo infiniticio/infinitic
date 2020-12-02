@@ -23,28 +23,15 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoringPerName.state
+package io.infinitic.common.monitoring.global.messages
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
-data class MonitoringPerNameState(
-    val taskName: TaskName,
-    var runningOkCount: Long = 0,
-    var runningWarningCount: Long = 0,
-    var runningErrorCount: Long = 0,
-    var terminatedCompletedCount: Long = 0,
-    var terminatedCanceledCount: Long = 0
-) {
-    companion object {
-        fun fromByteArray(bytes: ByteArray): MonitoringPerNameState = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer): MonitoringPerNameState = fromByteArray(bytes.array())
-    }
+sealed class MonitoringGlobalMessage
 
-    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
-    fun toByteBuffer() = ByteBuffer.wrap(toByteArray())
-    fun deepCopy() = fromByteArray(toByteArray())
-}
+@Serializable
+data class TaskCreated(
+    val taskName: TaskName
+) : MonitoringGlobalMessage()

@@ -25,11 +25,11 @@
 
 package io.infinitic.monitoring.perName.engine
 
-import io.infinitic.common.SendToMonitoringGlobal
-import io.infinitic.common.monitoringGlobal.messages.TaskCreated
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
-import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
+import io.infinitic.common.monitoring.global.messages.TaskCreated
+import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 

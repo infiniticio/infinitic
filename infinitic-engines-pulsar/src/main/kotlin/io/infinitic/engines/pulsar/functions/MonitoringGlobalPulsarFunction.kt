@@ -25,7 +25,7 @@
 
 package io.infinitic.engines.pulsar.functions
 
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.pulsar.extensions.keyValueStorage
