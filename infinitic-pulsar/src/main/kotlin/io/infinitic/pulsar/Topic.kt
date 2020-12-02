@@ -29,14 +29,8 @@ enum class Topic {
     WORKFLOW_ENGINE {
         override fun get(name: String) = "workflows-engine"
     },
-    WORKFLOW_EVENTS {
-        override fun get(name: String) = "workflows-events"
-    },
     TASK_ENGINE {
         override fun get(name: String) = "tasks-engine"
-    },
-    TASK_EVENTS {
-        override fun get(name: String) = "tasks-events"
     },
     WORKERS {
         override fun get(name: String) = "tasks-workers-$name"
@@ -46,8 +40,7 @@ enum class Topic {
     },
     MONITORING_GLOBAL {
         override fun get(name: String) = "tasks-monitoring-global"
-    },
-    ;
+    };
 
     // FIXME: This seems broken. The name parameter is only used for the WORKERS topic. Something is wrong I think
     abstract fun get(name: String = ""): String
