@@ -31,6 +31,7 @@ import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToExecutors
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.storage.InsertWorkflowEvent
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -56,6 +57,7 @@ import kotlin.coroutines.CoroutineContext
 class Application(
     private val pulsarClient: PulsarClient,
     private val workflowStateStorage: WorkflowStateStorage,
+    private val insertWorkflowEvent: InsertWorkflowEvent,
     private val taskStateStorage: TaskStateStorage,
     private val insertTaskEvent: InsertTaskEvent,
     private val monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
@@ -80,6 +82,7 @@ class Application(
     fun run() {
         val workflowEngine = WorkflowEngine(
             workflowStateStorage,
+            insertWorkflowEvent,
             sendToWorkflowEngine,
             sendToTaskEngine
         )

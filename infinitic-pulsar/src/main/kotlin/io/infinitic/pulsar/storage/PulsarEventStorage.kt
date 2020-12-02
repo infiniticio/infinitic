@@ -27,6 +27,8 @@ package io.infinitic.pulsar.storage
 
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.storage.InsertWorkflowEvent
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
@@ -47,7 +49,12 @@ class PulsarEventStorage(private val pulsarMessageBuilder: PulsarMessageBuilder)
     }
 
     /*
-    No need to store task event as the task engine topic stores them already
+    No need to store task events as the task engine topic stores them already
      */
     val insertTaskEvent: InsertTaskEvent = { _: TaskEngineMessage -> Unit }
+
+    /*
+    No need to store workflow events as the workflow engine topic stores them already
+     */
+    val insertWorkflowEvent: InsertWorkflowEvent = { _: WorkflowEngineMessage -> Unit }
 }

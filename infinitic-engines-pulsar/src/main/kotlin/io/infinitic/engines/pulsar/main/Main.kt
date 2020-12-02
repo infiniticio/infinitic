@@ -58,6 +58,7 @@ fun main(args: Array<String>) = mainBody {
         val application = Application(
             client,
             workflowStateStorage,
+            eventStorage.insertWorkflowEvent,
             taskStateStorage,
             eventStorage.insertTaskEvent,
             monitoringPerNameStateStorage,

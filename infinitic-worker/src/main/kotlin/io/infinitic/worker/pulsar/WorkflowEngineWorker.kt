@@ -28,6 +28,7 @@ package io.infinitic.worker.pulsar
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.pulsar.extensions.newWorkflowEngineConsumer
 import io.infinitic.pulsar.extensions.startConsumer
+import io.infinitic.pulsar.storage.PulsarEventStorage
 import io.infinitic.pulsar.transport.PulsarTransport
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
@@ -65,9 +66,11 @@ class WorkflowEngineWorker(storage: KeyValueStorage) : CoroutineScope {
         this.pulsarClient = pulsarClient
 
         val transport = PulsarTransport.from(pulsarClient)
+        val eventStorage = PulsarEventStorage.from(pulsarClient)
 
         val workflowEngine = WorkflowEngine(
             workflowStateStorage,
+            eventStorage.insertWorkflowEvent,
             transport.sendToWorkflowEngine,
             transport.sendToTaskEngine
         )
