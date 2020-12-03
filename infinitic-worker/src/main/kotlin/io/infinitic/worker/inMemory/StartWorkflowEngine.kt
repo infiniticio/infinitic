@@ -63,7 +63,6 @@ fun CoroutineScope.startWorkflowEngine(
         taskClientChannel.send(msg)
     }
 
-
     val workflowEngine = WorkflowEngine(
         workflowStateStorage,
         insertWorkflowEvent,

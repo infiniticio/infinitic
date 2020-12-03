@@ -25,20 +25,13 @@
 
 package io.infinitic.worker.inMemory
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
 private const val N_WORKERS = 10
@@ -48,7 +41,7 @@ private fun CoroutineScope.processWorkflows(
     workflowClientChannel: ReceiveChannel<WorkflowEngineMessage>,
 ) = launch {
 
-    val taskClientChannel =  Channel<TaskEngineMessage>()
+    val taskClientChannel = Channel<TaskEngineMessage>()
     val workflowResultChannel = Channel<WorkflowEngineMessage>()
 
     processTasks(

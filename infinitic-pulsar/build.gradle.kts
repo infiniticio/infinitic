@@ -39,4 +39,3 @@ dependencies {
 
     testImplementation(kotlin("reflect"))
 }
-

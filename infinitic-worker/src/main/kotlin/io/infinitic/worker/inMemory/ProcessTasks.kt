@@ -50,7 +50,7 @@ fun CoroutineScope.processTasks(
 
     val monitoringPerNameChannel = Channel<MonitoringPerNameEngineMessage>()
     val monitoringGlobalChannel = Channel<MonitoringGlobalMessage>()
-    val taskResultChannel=  Channel<TaskEngineMessage>()
+    val taskResultChannel = Channel<TaskEngineMessage>()
     val executorChannel = Channel<TaskExecutorMessage>()
 
     startMonitoringGlobalEngine(
