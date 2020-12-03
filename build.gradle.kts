@@ -55,10 +55,13 @@ subprojects {
         }
     }
 
+    extra["jackson_version"] = "2.11.+"
+    extra["avro4k_version"] = "1.0.+"
     extra["hoplite_version"] = "1.3.+"
     extra["slf4j_version"] = "1.7.+"
     extra["kotlin_reflect_version"] = "1.4.10"
     extra["kotlinx_coroutines_version"] = "1.4.+"
+    extra["kotlinx_serialization_version"] = "1.0.+"
     extra["pulsar_version"] = "2.6.+"
     extra["easyrandom_version"] = "4.2.+"
     extra["shadow_version"] = "6.1.+"

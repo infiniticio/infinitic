@@ -26,5 +26,5 @@
 dependencies {
     implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
 
-    implementation(project(":infinitic-common"))
+    api(project(":infinitic-common"))
 }

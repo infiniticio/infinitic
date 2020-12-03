@@ -39,12 +39,12 @@ dependencies {
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("com.xenomachina:kotlin-argparser:2.0.+")
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-storage"))
+    api(project(":infinitic-common"))
+    api(project(":infinitic-monitoring-engines"))
+    api(project(":infinitic-task-engine"))
+    api(project(":infinitic-workflow-engine"))
+    api(project(":infinitic-pulsar"))
+    api(project(":infinitic-storage"))
 }
 
 application {

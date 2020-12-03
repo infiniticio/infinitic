@@ -28,9 +28,8 @@ plugins {
 }
 
 dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("redis.clients:jedis:3.3.+")
 
-    implementation(project(":infinitic-common"))
+    api(project(":infinitic-common"))
 }
