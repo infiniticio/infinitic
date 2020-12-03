@@ -23,20 +23,26 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
+package io.infinitic.worker.inMemory
+
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
+import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
+
+fun CoroutineScope.startMonitoringGlobalEngine(
+    monitoringGlobalStateStorage: MonitoringGlobalStateStorage,
+    monitoringGlobalChannel: ReceiveChannel<MonitoringGlobalMessage>
+) = launch {
+
+    val monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
+
+    while (true) {
+        select<Unit> {
+            monitoringGlobalChannel.onReceive { monitoringGlobalEngine.handle(it) }
+        }
+    }
 }
-
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.0.0")
-
-    implementation(project(":infinitic-common"))
-    api(project(":infinitic-storage"))
-
-    testImplementation(kotlin("reflect"))
-}
-

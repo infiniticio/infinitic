@@ -50,7 +50,7 @@ import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 
 class WorkflowEngine(
-    private val storage: WorkflowStateStorage,
+    private val stateStorage: WorkflowStateStorage,
     private val insertWorkflowEvent: InsertWorkflowEvent,
     private val sendToWorkflowEngine: SendToWorkflowEngine,
     private val sendToTaskEngine: SendToTaskEngine
@@ -69,13 +69,13 @@ class WorkflowEngine(
         }
 
         // get associated state
-        var state = storage.getState(message.workflowId)
+        var state = stateStorage.getState(message.workflowId)
 
         // if no state (can happen for a newly created workflow or a terminated workflow)
         if (state == null) {
             if (message is DispatchWorkflow) {
                 state = dispatchWorkflow(sendToWorkflowEngine, sendToTaskEngine, message)
-                storage.createState(message.workflowId, state)
+                stateStorage.createState(message.workflowId, state)
             }
             // discard all other types of message as its workflow is already terminated
             return
@@ -86,7 +86,7 @@ class WorkflowEngine(
             // buffer this message
             state.bufferedMessages.add(message)
             // update state
-            storage.updateState(message.workflowId, state)
+            stateStorage.updateState(message.workflowId, state)
 
             return
         }
@@ -106,9 +106,9 @@ class WorkflowEngine(
 
         // update state
         if (state.methodRuns.size == 0) {
-            storage.deleteState(message.workflowId)
+            stateStorage.deleteState(message.workflowId)
         } else {
-            storage.updateState(message.workflowId, state)
+            stateStorage.updateState(message.workflowId, state)
         }
     }
 

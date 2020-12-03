@@ -38,12 +38,26 @@ gradle update
 ```
 
 ## Pulsar Manager
-Once Docker run, you can access it at `http://127.0.0.1:9527`
+Once Docker run, you can access it at `http://localhost:9527`
 
-Connect with user = `pulsar` and password = `pulsar`
+Create an admin user with:
+
+```bash
+CSRF_TOKEN=$(curl http://localhost:7750/pulsar-manager/csrf-token)
+curl \
+    -H "X-XSRF-TOKEN: $CSRF_TOKEN" \
+    -H "Cookie: XSRF-TOKEN=$CSRF_TOKEN;" \
+    -H 'Content-Type: application/json' \
+    -X PUT http://localhost:7750/pulsar-manager/users/superuser \
+    -d '{"name": "admin", "password": "apachepulsar", "description": "test", "email": "username@test.org"}'
+```
+
+Connect with user = `admin` and password = `apachepulsar`
 
 To obtain the service url of Pulsar *from the Pulsar Manager container*, do:
-```sh
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' infinitic_pulsar_1
+
+```bash
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pulsar_pulsar_1
 ```
-you should obtain something like `172.18.0.2`. Then the service url to use for adding an environment is `http://172.18.0.2:8080`
+you should obtain something like `172.18.0.2`.
+Then the service url to use for adding an environment is `http://172.18.0.2:8080`
