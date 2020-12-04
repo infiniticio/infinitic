@@ -73,10 +73,11 @@ tasks.register("setSchemas") {
     dependsOn("assemble")
     doLast {
         createSchemaFiles()
-//        uploadSchemaToTopic(
-//            name = "AvroEnvelopeForWorkflowEngine",
-//            topic = Topic.WORKFLOW_ENGINE.get()
-//        )
+
+        uploadSchemaToTopic(
+            name = "WorkflowEngine",
+            topic = Topic.WORKFLOW_ENGINE.get()
+        )
         uploadSchemaToTopic(
             name = "TaskEngine",
             topic = Topic.TASK_ENGINE.get()
@@ -213,7 +214,7 @@ enum class Topic {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    exec("java -cp ./build/libs/$jar io.infinitic.engine.pulsar.schemas.GenerateSchemaFilesKt")
+    exec("java -cp ./build/libs/$jar io.infinitic.pulsar.schemas.GenerateSchemaFilesKt")
 }
 
 fun uploadSchemaToTopic(

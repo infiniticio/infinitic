@@ -29,45 +29,47 @@ import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.json.Json
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.serDe.kotlin.kserializer
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import org.apache.pulsar.client.impl.schema.SchemaDefinitionBuilderImpl.ALWAYS_ALLOW_NULL
+import org.apache.pulsar.client.impl.schema.SchemaDefinitionBuilderImpl.JSR310_CONVERSION_ENABLED
+import org.apache.pulsar.common.protocol.schema.PostSchemaPayload
 import java.io.File
+import kotlin.reflect.KClass
 
 /**
- * This class creates files in /build/schemas, used to upload schemas to topics
+ * Creates pulsar schema files in /build/schemas
  */
 fun main() {
+    println(getPostSchemaPayload(WorkflowEngineEnvelope::class))
 
-    class PulsarSchema(schema: String) {
-        val type = "AVRO"
-        val properties = mapOf(
-            "__alwaysAllowNull" to "true",
-            "__jsr310ConversionEnabled" to "false"
-        )
-        val schema = schema
-    }
+    // make sure target directory exists
+    val path = System.getProperty("user.dir") + "/build/schemas"
+    File(path).mkdir()
 
+    File("$path/WorkflowEngine.schema")
+        .writeText(Json.stringify(getPostSchemaPayload(WorkflowEngineEnvelope::class)))
 
-        File(System.getProperty("user.dir") + "/build/schemas/WorkflowEngine.schema")
-            .also { it.parentFile.mkdirs() }
-            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(WorkflowEngineEnvelope.serializer()).toString())))
+    File("$path/TaskEngine.schema")
+        .writeText(Json.stringify(getPostSchemaPayload(TaskEngineEnvelope::class)))
 
-        File(System.getProperty("user.dir") + "/build/schemas/TaskEngine.schema")
-            .also { it.parentFile.mkdirs() }
-            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(TaskEngineEnvelope.serializer()).toString())))
+    File("$path/MonitoringPerName.schema")
+        .writeText(Json.stringify(getPostSchemaPayload(MonitoringPerNameEnvelope::class)))
 
-        File(System.getProperty("user.dir") + "/build/schemas/MonitoringPerName.schema")
-            .also { it.parentFile.mkdirs() }
-            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(MonitoringPerNameEnvelope.serializer()).toString())))
+    File("$path/MonitoringGlobal.schema")
+        .writeText(Json.stringify(getPostSchemaPayload(MonitoringGlobalEnvelope::class)))
 
-        File(System.getProperty("user.dir") + "/build/schemas/MonitoringGlobal.schema")
-            .also { it.parentFile.mkdirs() }
-            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(MonitoringGlobalEnvelope.serializer()).toString())))
-
-        File(System.getProperty("user.dir") + "/build/schemas/Worker.schema")
-            .also { it.parentFile.mkdirs() }
-            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(TaskExecutorEnvelope.serializer()).toString())))
-
-
+    File("$path/TaskExecutor.schema")
+        .writeText(Json.stringify(getPostSchemaPayload(TaskExecutorEnvelope::class)))
 }
+
+fun <T : Any> getPostSchemaPayload(klass: KClass<T>) = PostSchemaPayload(
+    "AVRO",
+    Avro.default.schema(kserializer(klass)).toString(),
+    mapOf(
+        ALWAYS_ALLOW_NULL to "true",
+        JSR310_CONVERSION_ENABLED to "false"
+    )
+)

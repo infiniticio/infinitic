@@ -32,9 +32,11 @@ import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
@@ -50,10 +52,10 @@ class ClientWorkflowTests : StringSpec({
     val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
 
     val taskSlot = slot<TaskEngineMessage>()
-    coEvery { sendToTaskEngine(capture(taskSlot)) } just Runs
+    coEvery { sendToTaskEngine(capture(taskSlot), 0F) } just Runs
 
     val workflowSlot = slot<WorkflowEngineMessage>()
-    coEvery { sendToWorkflowEngine(capture(workflowSlot)) } just Runs
+    coEvery { sendToWorkflowEngine(capture(workflowSlot), 0F) } just Runs
 
     val client = Client(sendToTaskEngine, sendToWorkflowEngine)
 

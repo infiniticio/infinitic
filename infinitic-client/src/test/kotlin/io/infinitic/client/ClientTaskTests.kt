@@ -36,6 +36,8 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
@@ -48,7 +50,7 @@ class ClientTaskTests : StringSpec({
     val sendToTaskEngine = mockk<SendToTaskEngine>()
     val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
     val slot = slot<TaskEngineMessage>()
-    coEvery { sendToTaskEngine(capture(slot)) } just Runs
+    coEvery { sendToTaskEngine(capture(slot), 0F) } just Runs
     val client = Client(sendToTaskEngine, sendToWorkflowEngine)
 
     beforeTest {

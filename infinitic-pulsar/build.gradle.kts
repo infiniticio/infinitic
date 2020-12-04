@@ -1,3 +1,5 @@
+
+
 /**
  * "Commons Clause" License Condition v1.0
  *
@@ -31,11 +33,19 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+    implementation("org.apache.pulsar:pulsar-client-admin:2.6.+")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("com.github.avro-kotlin.avro4k:avro4k-core:${project.extra["avro4k_version"]}")
 
     api(project(":infinitic-common"))
+    api(project(":infinitic-client"))
     api(project(":infinitic-storage"))
 
     testImplementation(kotlin("reflect"))
+}
+
+task("generateSchemaFiles", JavaExec::class) {
+    group = "infinitic"
+    classpath = sourceSets["main"].runtimeClasspath
+    main = "io.infinitic.pulsar.schemas.GenerateSchemaFilesKt"
 }

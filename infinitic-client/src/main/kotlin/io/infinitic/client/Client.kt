@@ -38,19 +38,16 @@ import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.executors.Workflow
-
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage) -> Unit
-typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit
 
 class Client(
     val sendToTaskEngine: SendToTaskEngine,
@@ -86,7 +83,7 @@ class Client(
             workflowMeta = meta,
             workflowOptions = options
         )
-        sendToWorkflowEngine(msg)
+        sendToWorkflowEngine(msg, 0F)
 
         return WorkflowInstance(msg.workflowId)
     }
@@ -132,7 +129,7 @@ class Client(
             taskOptions = options,
             taskMeta = meta
         )
-        sendToTaskEngine(msg)
+        sendToTaskEngine(msg, 0F)
 
         return TaskInstance(msg.taskId)
     }
@@ -168,7 +165,7 @@ class Client(
             taskOptions = taskOptions,
             taskMeta = taskMeta
         )
-        sendToTaskEngine(msg)
+        sendToTaskEngine(msg, 0F)
     }
 
     /*
@@ -182,6 +179,6 @@ class Client(
             taskId = TaskId(id),
             taskOutput = MethodOutput.from(output)
         )
-        sendToTaskEngine(msg)
+        sendToTaskEngine(msg, 0F)
     }
 }
