@@ -120,8 +120,8 @@ fun CoroutineScope.init() {
     workflowOutput = null
 
     client = Client(
-        { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) },
-        { msg: WorkflowEngineMessage -> sendToWorkflowEngine(msg, 0F) }
+        { msg: TaskEngineMessage, _: Float -> sendToTaskEngine(msg, 0F) },
+        { msg: WorkflowEngineMessage, _: Float -> sendToWorkflowEngine(msg, 0F) }
     )
 
     workflowEngine = WorkflowEngine(
