@@ -105,17 +105,17 @@ fun CoroutineScope.init() {
     taskStatus = null
 
     client = Client(
-        { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) },
-        { Unit }
+        { msg: TaskEngineMessage, _: Float -> sendToTaskEngine(msg, 0F) },
+        { _: WorkflowEngineMessage, _: Float -> }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        { _: TaskEngineMessage -> Unit },
+        { },
         { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) },
         { msg: MonitoringPerNameEngineMessage -> sendToMonitoringPerName(msg) },
         { msg: TaskExecutorMessage -> sendToWorkers(msg) },
-        { _: WorkflowEngineMessage, _: Float -> Unit }
+        { _: WorkflowEngineMessage, _: Float -> }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(monitoringPerNameStateStorage) {

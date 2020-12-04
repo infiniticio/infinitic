@@ -34,6 +34,8 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.schemas.KSchemaReader
 import io.infinitic.pulsar.schemas.KSchemaWriter
 import io.infinitic.pulsar.transport.PulsarTransport
+import io.infinitic.workflows.tests.samples.WorkflowA
+import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.PulsarClient
@@ -73,30 +75,32 @@ fun main() {
         transport.sendToWorkflowEngine
     )
 
-//        client.dispatch(WorkflowA::class.java) { seq1() }
+    runBlocking {
+        client.dispatch(WorkflowA::class.java) { seq1() }
+    }
 
-    val msg = WorkflowEngineEnvelope.from(TestFactory.random<DispatchWorkflow>())
-    println(msg)
-
-    val schema: Schema<WorkflowEngineEnvelope> = Schema.AVRO(
-        SchemaDefinition.builder<WorkflowEngineEnvelope>()
-            .withAlwaysAllowNull(true)
-            .withJSR310ConversionEnabled(true)
-            .withJsonDef(Avro.default.schema(kserializer(WorkflowEngineEnvelope::class)).toString())
-            .withSchemaReader(KSchemaReader(WorkflowEngineEnvelope::class))
-            .withSchemaWriter(KSchemaWriter(WorkflowEngineEnvelope::class))
-            .withSupportSchemaVersioning(true)
-            .build()
-    )
-
-    val producer: Producer<WorkflowEngineEnvelope> = pulsarClient
-        .newProducer(schema)
-        .topic("persistent://public/default/workflows-engine")
-        .create()
-
-    schema.encode(msg)
-
-    producer.newMessage().value(msg).send()
+//    val msg = WorkflowEngineEnvelope.from(TestFactory.random<DispatchWorkflow>())
+//    println(msg)
+//
+//    val schema: Schema<WorkflowEngineEnvelope> = Schema.AVRO(
+//        SchemaDefinition.builder<WorkflowEngineEnvelope>()
+//            .withAlwaysAllowNull(true)
+//            .withJSR310ConversionEnabled(true)
+//            .withJsonDef(Avro.default.schema(kserializer(WorkflowEngineEnvelope::class)).toString())
+//            .withSchemaReader(KSchemaReader(WorkflowEngineEnvelope::class))
+//            .withSchemaWriter(KSchemaWriter(WorkflowEngineEnvelope::class))
+//            .withSupportSchemaVersioning(true)
+//            .build()
+//    )
+//
+//    val producer: Producer<WorkflowEngineEnvelope> = pulsarClient
+//        .newProducer(schema)
+//        .topic("persistent://public/default/workflows-engine")
+//        .create()
+//
+//    schema.encode(msg)
+//
+//    producer.newMessage().value(msg).send()
 
     println("done")
 }
