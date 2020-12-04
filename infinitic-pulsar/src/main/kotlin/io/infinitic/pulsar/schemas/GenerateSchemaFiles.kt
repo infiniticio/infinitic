@@ -48,23 +48,26 @@ fun main() {
         val schema = schema
     }
 
-    File(System.getProperty("user.dir") + "/build/schemas/WorkflowEngine.schema")
-        .also { it.parentFile.mkdirs() }
-        .writeText(Json.stringify(PulsarSchema(Avro.default.schema(WorkflowEngineEnvelope.serializer()).toString())))
 
-    File(System.getProperty("user.dir") + "/build/schemas/TaskEngine.schema")
-        .also { it.parentFile.mkdirs() }
-        .writeText(Json.stringify(PulsarSchema(Avro.default.schema(TaskEngineEnvelope.serializer()).toString())))
+        File(System.getProperty("user.dir") + "/build/schemas/WorkflowEngine.schema")
+            .also { it.parentFile.mkdirs() }
+            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(WorkflowEngineEnvelope.serializer()).toString())))
 
-    File(System.getProperty("user.dir") + "/build/schemas/MonitoringPerName.schema")
-        .also { it.parentFile.mkdirs() }
-        .writeText(Json.stringify(PulsarSchema(Avro.default.schema(MonitoringPerNameEnvelope.serializer()).toString())))
+        File(System.getProperty("user.dir") + "/build/schemas/TaskEngine.schema")
+            .also { it.parentFile.mkdirs() }
+            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(TaskEngineEnvelope.serializer()).toString())))
 
-    File(System.getProperty("user.dir") + "/build/schemas/MonitoringGlobal.schema")
-        .also { it.parentFile.mkdirs() }
-        .writeText(Json.stringify(PulsarSchema(Avro.default.schema(MonitoringGlobalEnvelope.serializer()).toString())))
+        File(System.getProperty("user.dir") + "/build/schemas/MonitoringPerName.schema")
+            .also { it.parentFile.mkdirs() }
+            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(MonitoringPerNameEnvelope.serializer()).toString())))
 
-    File(System.getProperty("user.dir") + "/build/schemas/Worker.schema")
-        .also { it.parentFile.mkdirs() }
-        .writeText(Json.stringify(PulsarSchema(Avro.default.schema(TaskExecutorEnvelope.serializer()).toString())))
+        File(System.getProperty("user.dir") + "/build/schemas/MonitoringGlobal.schema")
+            .also { it.parentFile.mkdirs() }
+            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(MonitoringGlobalEnvelope.serializer()).toString())))
+
+        File(System.getProperty("user.dir") + "/build/schemas/Worker.schema")
+            .also { it.parentFile.mkdirs() }
+            .writeText(Json.stringify(PulsarSchema(Avro.default.schema(TaskExecutorEnvelope.serializer()).toString())))
+
+
 }

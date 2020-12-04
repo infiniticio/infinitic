@@ -31,8 +31,8 @@ services:
     volumes:
       - "pulsardata:/pulsar/data"
       - "pulsarconf:/pulsar/conf"
-      - "../infinitic-engine-pulsar/build/libs:/infinitic/libs:delegated"
-      - "../infinitic-engine-pulsar/build/schemas:/infinitic/schemas:delegated"
+      - "../infinitic-pulsar/build/libs:/infinitic/libs:delegated"
+      - "../infinitic-pulsar/build/schemas:/infinitic/schemas:delegated"
     ports:
       - "6650:6650"
       - "8080:8080"
