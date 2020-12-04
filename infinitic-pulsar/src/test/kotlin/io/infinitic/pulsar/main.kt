@@ -25,22 +25,12 @@
 
 package io.infinitic.pulsar
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.client.Client
-import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.serDe.kotlin.kserializer
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.pulsar.schemas.KSchemaReader
-import io.infinitic.pulsar.schemas.KSchemaWriter
 import io.infinitic.pulsar.transport.PulsarTransport
 import io.infinitic.workflows.tests.samples.WorkflowA
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.admin.PulsarAdmin
-import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.schema.SchemaDefinition
 
 fun main() {
     val url = "http://localhost:8080"
