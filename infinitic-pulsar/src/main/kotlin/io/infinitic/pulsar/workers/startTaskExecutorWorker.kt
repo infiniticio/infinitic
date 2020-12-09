@@ -23,21 +23,17 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.workers.taskEngine
+package io.infinitic.pulsar.workers
 
 import io.infinitic.common.serDe.kotlin.readBinary
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
-import io.infinitic.pulsar.topics.TaskEngineEventsTopic
-import io.infinitic.pulsar.transport.PulsarTaskEngineOutput
-import io.infinitic.pulsar.workers.PulsarMessageToProcess
-import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
-import io.infinitic.tasks.engine.transport.TaskEngineInput
-import io.infinitic.tasks.engine.worker.startTaskEngine
+import io.infinitic.pulsar.topics.TaskExecutorTopic
+import io.infinitic.pulsar.transport.PulsarTaskExecutorOutput
+import io.infinitic.tasks.executor.transport.TaskExecutorInput
+import io.infinitic.tasks.executor.worker.startTaskExecutor
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -50,42 +46,35 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType
 
-typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMessage>
+typealias PulsarTaskExecutorMessageToProcess = PulsarMessageToProcess<TaskExecutorMessage>
 
-fun CoroutineScope.startEngineTaskWorker(
+fun CoroutineScope.startExecutorWorker(
     pulsarClient: PulsarClient,
-    keyValueStorage: KeyValueStorage,
-
+    name: String,
+    instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
-    val taskCommandsChannel = Channel<PulsarTaskEngineMessageToProcess>()
-    val taskEventsChannel = Channel<PulsarTaskEngineMessageToProcess>()
-    val taskResultsChannel = Channel<PulsarTaskEngineMessageToProcess>()
+    val taskExecutorChannel = Channel<PulsarTaskExecutorMessageToProcess>()
+    val taskExecutorResultsChannel = Channel<PulsarTaskExecutorMessageToProcess>()
 
     // Starting Task Engine
-    startTaskEngine(
-        TaskStateKeyValueStorage(keyValueStorage),
-        NoTaskEventStorage(),
-        TaskEngineInput(
-            taskCommandsChannel,
-            taskEventsChannel,
-            taskResultsChannel
-        ),
-        PulsarTaskEngineOutput.from(pulsarClient)
+    startTaskExecutor(
+        TaskExecutorInput(taskExecutorChannel, taskExecutorResultsChannel),
+        PulsarTaskExecutorOutput.from(pulsarClient)
     )
 
-    repeat(1) {
+    repeat(instancesNumber) {
         // create task engine consumer
-        val taskEngineConsumer: Consumer<TaskEngineEnvelope> =
-            pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
-                .topics(listOf(TaskEngineCommandsTopic.name, TaskEngineEventsTopic.name))
-                .subscriptionName("task-engine-consumer") // FIXME: Should be in a constant somewhere
-                .subscriptionType(SubscriptionType.Key_Shared)
+        val taskEngineConsumer: Consumer<TaskExecutorEnvelope> =
+            pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorEnvelope>()))
+                .topics(listOf(TaskExecutorTopic.name(name)))
+                .subscriptionName("task-executor-consumer-$it-$name") // FIXME: Should be in a constant somewhere
+                .subscriptionType(SubscriptionType.Shared)
                 .subscribe()
 
         // coroutine dedicated to pulsar message acknowledging
-        launch {
-            for (messageToProcess in taskResultsChannel) {
+        launch(CoroutineName("task-engine-message-acknowledger-$it")) {
+            for (messageToProcess in taskExecutorResultsChannel) {
                 if (messageToProcess.exception == null) {
                     taskEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
                 } else {
@@ -95,15 +84,15 @@ fun CoroutineScope.startEngineTaskWorker(
         }
 
         // coroutine dedicated to pulsar message pulling
-        launch {
+        launch(CoroutineName("task-engine-message-puller-$it")) {
             while (isActive) {
-                val message: Message<TaskEngineEnvelope> = taskEngineConsumer.receiveAsync().await()
+                val message: Message<TaskExecutorEnvelope> = taskEngineConsumer.receiveAsync().await()
 
                 try {
-                    val envelope = readBinary(message.data, TaskEngineEnvelope.serializer())
-                    taskCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
+                    val envelope = readBinary(message.data, TaskExecutorEnvelope.serializer())
+                    taskExecutorChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
                 } catch (e: Exception) {
-                    taskEngineConsumer.negativeAcknowledge(message)
+                    taskEngineConsumer.negativeAcknowledge(message.messageId)
                     throw e
                 }
             }

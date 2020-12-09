@@ -27,13 +27,14 @@ package io.infinitic.tasks.executor.worker
 
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
+import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-fun CoroutineScope.startTaskExecutor(
-    taskExecutorInput: TaskExecutorInput,
+fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
+    taskExecutorInput: TaskExecutorInput<T>,
     taskExecutorOutput: TaskExecutorOutput
 ) = launch(Dispatchers.Default) {
 

@@ -28,13 +28,14 @@ package io.infinitic.monitoring.perName.engine.worker
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInput
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-fun CoroutineScope.startMonitoringPerNameEngine(
+fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNameEngine(
     monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
-    monitoringPerNameInput: MonitoringPerNameInput,
+    monitoringPerNameInput: MonitoringPerNameInput<T>,
     monitoringPerNameOutput: MonitoringPerNameOutput
 ) = launch {
 

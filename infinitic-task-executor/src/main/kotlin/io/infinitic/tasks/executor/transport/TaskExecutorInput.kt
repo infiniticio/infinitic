@@ -32,7 +32,7 @@ import kotlinx.coroutines.channels.SendChannel
 
 typealias TaskExecutorMessageToProcess = MessageToProcess<TaskExecutorMessage>
 
-data class TaskExecutorInput(
-    val taskExecutorChannel: ReceiveChannel<TaskExecutorMessageToProcess>,
-    val taskExecutorResultsChannel: SendChannel<TaskExecutorMessageToProcess>
+data class TaskExecutorInput<T : MessageToProcess<*>>(
+    val taskExecutorChannel: ReceiveChannel<T>,
+    val taskExecutorResultsChannel: SendChannel<T>
 )

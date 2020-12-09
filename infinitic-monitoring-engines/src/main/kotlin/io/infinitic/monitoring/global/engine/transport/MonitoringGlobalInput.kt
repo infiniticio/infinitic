@@ -32,7 +32,7 @@ import kotlinx.coroutines.channels.SendChannel
 
 typealias MonitoringGlobalMessageToProcess = MessageToProcess<MonitoringGlobalMessage>
 
-data class MonitoringGlobalInput(
-    val monitoringGlobalChannel: ReceiveChannel<MonitoringGlobalMessageToProcess>,
-    val monitoringGlobalResultsChannel: SendChannel<MonitoringGlobalMessageToProcess>
+data class MonitoringGlobalInput<T : MessageToProcess<*>>(
+    val monitoringGlobalChannel: ReceiveChannel<T>,
+    val monitoringGlobalResultsChannel: SendChannel<T>
 )

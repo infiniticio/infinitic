@@ -32,7 +32,7 @@ import kotlinx.coroutines.channels.SendChannel
 
 typealias MonitoringPerNameMessageToProcess = MessageToProcess<MonitoringPerNameEngineMessage>
 
-data class MonitoringPerNameInput(
-    val monitoringPerNameChannel: ReceiveChannel<MonitoringPerNameMessageToProcess>,
-    val monitoringPerNameResultsChannel: SendChannel<MonitoringPerNameMessageToProcess>
+data class MonitoringPerNameInput<T : MessageToProcess<*>>(
+    val monitoringPerNameChannel: ReceiveChannel<T>,
+    val monitoringPerNameResultsChannel: SendChannel<T>
 )
