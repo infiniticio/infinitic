@@ -97,7 +97,7 @@ open class MonitoringPerNameStateKeyValueStorage(
         }
     }
 
-    private fun incrementCounter(key: String, amount: Long, force: Boolean = false) {
+    private suspend fun incrementCounter(key: String, amount: Long, force: Boolean = false) {
         if (force || amount != 0L) {
             storage.incrementCounter(key, amount)
         }

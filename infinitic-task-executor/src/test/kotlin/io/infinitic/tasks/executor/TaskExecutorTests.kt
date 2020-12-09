@@ -56,6 +56,7 @@ import io.infinitic.tasks.executor.samples.SampleTaskWithContext
 import io.infinitic.tasks.executor.samples.SampleTaskWithRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithTimeout
 import io.infinitic.tasks.executor.samples.TestingSampleTask
+import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -65,11 +66,17 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
 
+class MockTaskExecutorOutput(slots: MutableList<TaskEngineMessage>) : TaskExecutorOutput {
+    override val sendToTaskEngine = mockk<SendToTaskEngine>()
+
+    init {
+        coEvery { sendToTaskEngine(capture(slots), any()) } just Runs
+    }
+}
+
 class TaskExecutorTests : StringSpec({
-    val sendToTaskEngine = mockk<SendToTaskEngine>()
     val slots = mutableListOf<TaskEngineMessage>()
-    coEvery { sendToTaskEngine(capture(slots), any()) } just Runs
-    val taskExecutor = TaskExecutor(sendToTaskEngine)
+    val taskExecutor = TaskExecutor(MockTaskExecutorOutput(slots))
 
     // ensure slots are emptied between each test
     beforeTest {

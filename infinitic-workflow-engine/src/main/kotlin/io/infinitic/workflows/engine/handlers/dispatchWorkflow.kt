@@ -25,16 +25,14 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
+import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
 suspend fun dispatchWorkflow(
-    sendToWorkflowEngine: SendToWorkflowEngine,
-    sendToTaskEngine: SendToTaskEngine,
+    workflowEngineOutput: WorkflowEngineOutput,
     msg: DispatchWorkflow
 ): WorkflowState {
     val methodRun = MethodRun(
@@ -55,7 +53,7 @@ suspend fun dispatchWorkflow(
         methodRuns = mutableListOf(methodRun)
     )
 
-    dispatchWorkflowTask(sendToWorkflowEngine, sendToTaskEngine, state, methodRun)
+    dispatchWorkflowTask(workflowEngineOutput, state, methodRun)
 
     return state
 }

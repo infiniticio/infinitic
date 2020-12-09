@@ -27,13 +27,7 @@ package io.infinitic.engines.pulsar.main
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.pulsar.storage.PulsarEventStorage
-import io.infinitic.pulsar.transport.PulsarTransport
 import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
-import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 
@@ -47,27 +41,9 @@ fun main(args: Array<String>) = mainBody {
             .build()
 
         // FIXME: This must be configurable using a configuration file or command line arguments
-        val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage())
-        val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage())
-        val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
-        val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
-        val transport = PulsarTransport.from(client)
-        val eventStorage = PulsarEventStorage.from(client)
-
-        // FIXME: This must be configurable using a configuration file or command line arguments
         val application = Application(
             client,
-            workflowStateStorage,
-            eventStorage.insertWorkflowEvent,
-            taskStateStorage,
-            eventStorage.insertTaskEvent,
-            monitoringPerNameStateStorage,
-            monitoringGlobalStateStorage,
-            transport.sendToWorkflowEngine,
-            transport.sendToTaskEngine,
-            transport.sendToMonitoringPerNameEngine,
-            transport.sendToMonitoringGlobalEngine,
-            transport.sendToExecutors
+            InMemoryStorage(),
         )
         application.run()
     }

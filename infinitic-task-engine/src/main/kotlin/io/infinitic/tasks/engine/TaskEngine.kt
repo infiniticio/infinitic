@@ -27,7 +27,6 @@ package io.infinitic.tasks.engine
 
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -46,29 +45,24 @@ import io.infinitic.common.tasks.engine.messages.TaskCompleted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
 import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
-import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.tasks.engine.storage.events.TaskEventStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateStorage
+import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine(
     private val taskStateStorage: TaskStateStorage,
-    private val insertTaskEvent: InsertTaskEvent,
-    private val sendToTaskEngine: SendToTaskEngine,
-    private val sendToMonitoringPerName: SendToMonitoringPerName,
-    private val sendToExecutors: SendToExecutors,
-    private val sendToWorkflowEngine: SendToWorkflowEngine
+    private val taskEventStorage: TaskEventStorage,
+    private val taskEngineOutput: TaskEngineOutput
 ) {
     suspend fun handle(message: TaskEngineMessage) {
         // store event
-        insertTaskEvent(message)
+        taskEventStorage.insertTaskEvent(message)
 
         // immediately discard messages useless messages
         when (message) {
@@ -120,7 +114,7 @@ class TaskEngine(
                 newStatus = newState.taskStatus
             )
 
-            sendToMonitoringPerName(tsc)
+            taskEngineOutput.sendToMonitoringPerName(tsc)
         }
     }
 
@@ -133,7 +127,7 @@ class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        insertTaskEvent(tad)
+        taskEngineOutput.sendToTaskEngine(tad, 0F)
 
         // Delete stored state
         taskStateStorage.deleteState(state.taskId)
@@ -171,7 +165,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        sendToExecutors(rt)
+        taskEngineOutput.sendToExecutors(rt)
 
         // log events
         val tad = TaskAttemptDispatched(
@@ -180,7 +174,7 @@ class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskRetry = state.taskRetry
         )
-        insertTaskEvent(tad)
+        taskEngineOutput.sendToTaskEngine(tad, 0F)
 
         return state
     }
@@ -213,7 +207,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        sendToExecutors(rt)
+        taskEngineOutput.sendToExecutors(rt)
 
         // log event
         val tad = TaskAttemptDispatched(
@@ -222,7 +216,7 @@ class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskRetry = state.taskRetry
         )
-        insertTaskEvent(tad)
+        taskEngineOutput.sendToTaskEngine(tad, 0F)
 
         return state
     }
@@ -247,7 +241,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        sendToExecutors(rt)
+        taskEngineOutput.sendToExecutors(rt)
 
         // log event
         val tar = TaskAttemptDispatched(
@@ -256,7 +250,7 @@ class TaskEngine(
             taskRetry = state.taskRetry,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        insertTaskEvent(tar)
+        taskEngineOutput.sendToTaskEngine(tar, 0F)
 
         return state
     }
@@ -272,7 +266,7 @@ class TaskEngine(
 
         // if this task belongs to a workflow, send back the adhoc message
         state.workflowId?.let {
-            sendToWorkflowEngine(
+            taskEngineOutput.sendToWorkflowEngine(
                 when ("${state.taskName}") {
                     WorkflowTask::class.java.name -> WorkflowTaskCompleted(
                         workflowId = it,
@@ -297,7 +291,7 @@ class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        insertTaskEvent(tc)
+        taskEngineOutput.sendToTaskEngine(tc, 0F)
 
         // delete stored state
         taskStateStorage.deleteState(state.taskId)
@@ -338,7 +332,7 @@ class TaskEngine(
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        sendToTaskEngine(tar, delay)
+        taskEngineOutput.sendToTaskEngine(tar, delay)
 
         return state
     }

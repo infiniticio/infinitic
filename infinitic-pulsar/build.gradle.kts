@@ -33,13 +33,17 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
     implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-client-admin:2.6.+")
+    implementation("org.apache.pulsar:pulsar-client-admin:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("com.github.avro-kotlin.avro4k:avro4k-core:${project.extra["avro4k_version"]}")
 
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))
     api(project(":infinitic-storage"))
+    api(project(":infinitic-monitoring-engines"))
+    api(project(":infinitic-task-engine"))
+    api(project(":infinitic-task-executor"))
+    api(project(":infinitic-workflow-engine"))
 
     testImplementation(kotlin("reflect"))
 }

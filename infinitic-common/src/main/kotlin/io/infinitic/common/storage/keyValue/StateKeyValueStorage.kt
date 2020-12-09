@@ -28,8 +28,8 @@ package io.infinitic.common.storage.keyValue
 import java.nio.ByteBuffer
 
 interface StateKeyValueStorage {
-    fun getState(key: String): ByteBuffer?
-    fun putState(key: String, value: ByteBuffer)
-    fun updateState(key: String, value: ByteBuffer)
-    fun deleteState(key: String)
+    suspend fun getState(key: String): ByteBuffer?
+    suspend fun putState(key: String, value: ByteBuffer)
+    suspend fun updateState(key: String, value: ByteBuffer)
+    suspend fun deleteState(key: String)
 }

@@ -26,16 +26,16 @@
 package io.infinitic.monitoring.perName.engine
 
 import io.infinitic.common.monitoring.global.messages.TaskCreated
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 
 class MonitoringPerNameEngine(
-    val storage: MonitoringPerNameStateStorage,
-    val sendToMonitoringGlobal: SendToMonitoringGlobal
+    private val storage: MonitoringPerNameStateStorage,
+    private val monitoringPerNameOutput: MonitoringPerNameOutput
 ) {
     suspend fun handle(message: MonitoringPerNameEngineMessage) {
 
@@ -56,11 +56,11 @@ class MonitoringPerNameEngine(
         if (oldState == null) {
             val tsc = TaskCreated(taskName = message.taskName)
 
-            sendToMonitoringGlobal(tsc)
+            monitoringPerNameOutput.sendToMonitoringGlobal(tsc)
         }
     }
 
-    private suspend fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MonitoringPerNameState) {
+    private fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MonitoringPerNameState) {
         when (message.oldStatus) {
             TaskStatus.RUNNING_OK -> state.runningOkCount--
             TaskStatus.RUNNING_WARNING -> state.runningWarningCount--

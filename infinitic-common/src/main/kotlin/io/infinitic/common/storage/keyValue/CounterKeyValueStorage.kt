@@ -26,6 +26,6 @@
 package io.infinitic.common.storage.keyValue
 
 interface CounterKeyValueStorage {
-    fun incrementCounter(key: String, amount: Long)
-    fun getCounter(key: String): Long
+    suspend fun incrementCounter(key: String, amount: Long)
+    suspend fun getCounter(key: String): Long
 }

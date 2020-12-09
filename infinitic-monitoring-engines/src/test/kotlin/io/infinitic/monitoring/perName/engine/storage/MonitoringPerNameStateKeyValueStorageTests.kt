@@ -32,14 +32,14 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.coVerifyAll
 import io.mockk.confirmVerified
-import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.unmockkAll
-import io.mockk.verify
-import io.mockk.verifyAll
 import java.nio.ByteBuffer
 
 class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
@@ -49,12 +49,12 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             // given
             val taskName = TaskName(TestFactory.random(String::class))
             val context = mockk<KeyValueStorage>()
-            every { context.getState(any()) } returns null
+            coEvery { context.getState(any()) } returns null
             // when
             val stateStorage = MonitoringPerNameStateKeyValueStorage(context)
             val state = stateStorage.getState(taskName)
             // then
-            verify(exactly = 1) { context.getState("monitoringPerName.state.$taskName") }
+            coVerify(exactly = 1) { context.getState("monitoringPerName.state.$taskName") }
             confirmVerified(context)
             state shouldBe null
         }
@@ -63,12 +63,12 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             // given
             val stateIn = TestFactory.random(MonitoringPerNameState::class)
             val context = mockk<KeyValueStorage>()
-            every { context.getState(any()) } returns ByteBuffer.wrap(stateIn.toByteArray())
+            coEvery { context.getState(any()) } returns ByteBuffer.wrap(stateIn.toByteArray())
             // when
             val stateStorage = MonitoringPerNameStateKeyValueStorage(context)
             val stateOut = stateStorage.getState(stateIn.taskName)
             // then
-            verify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName}") }
+            coVerify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }
@@ -88,15 +88,15 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
                     "terminatedCanceledCount" to 0L
                 )
             )
-            every { storage.incrementCounter(any(), any()) } just runs
-            every { storage.getState(any()) } returns mockk()
-            every { storage.getCounter(any()) } returnsMany listOf(14L, 2L, 1L, 30L, 100L)
-            every { storage.putState(any(), any()) } just runs
+            coEvery { storage.incrementCounter(any(), any()) } just runs
+            coEvery { storage.getState(any()) } returns mockk()
+            coEvery { storage.getCounter(any()) } returnsMany listOf(14L, 2L, 1L, 30L, 100L)
+            coEvery { storage.putState(any(), any()) } just runs
 
             val stateStorage = MonitoringPerNameStateKeyValueStorage(storage)
             stateStorage.updateState(newState.taskName, newState, null)
 
-            verifyAll {
+            coVerifyAll {
                 storage.incrementCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_OK), newState.runningOkCount)
                 storage.incrementCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_WARNING), newState.runningWarningCount)
                 storage.incrementCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_ERROR), newState.runningErrorCount)
@@ -131,15 +131,15 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
                     "terminatedCompletedCount" to 22L
                 )
             )
-            every { storage.incrementCounter(any(), any()) } just runs
-            every { storage.getState(any()) } returns mockk()
-            every { storage.getCounter(any()) } returnsMany listOf(14L, 2L, 1L, 30L, 100L)
-            every { storage.putState(any(), any()) } just runs
+            coEvery { storage.incrementCounter(any(), any()) } just runs
+            coEvery { storage.getState(any()) } returns mockk()
+            coEvery { storage.getCounter(any()) } returnsMany listOf(14L, 2L, 1L, 30L, 100L)
+            coEvery { storage.putState(any(), any()) } just runs
 
             val stateStorage = MonitoringPerNameStateKeyValueStorage(storage)
             stateStorage.updateState(newState.taskName, newState, oldState)
 
-            verifyAll {
+            coVerifyAll {
                 storage.incrementCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_ERROR), newState.runningErrorCount - oldState.runningErrorCount)
                 storage.incrementCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.TERMINATED_CANCELED), newState.terminatedCanceledCount - oldState.terminatedCanceledCount)
                 storage.getCounter(stateStorage.getMonitoringPerNameCounterKey(newState.taskName, TaskStatus.RUNNING_OK))
@@ -159,12 +159,12 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             // given
             val stateIn = TestFactory.random(MonitoringPerNameState::class)
             val storage = mockk<KeyValueStorage>()
-            every { storage.deleteState(any()) } returns Unit
+            coEvery { storage.deleteState(any()) } just runs
             // when
             val stateStorage = MonitoringPerNameStateKeyValueStorage(storage)
             stateStorage.deleteState(stateIn.taskName)
             // then
-            verify(exactly = 1) { storage.deleteState(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }
+            coVerify(exactly = 1) { storage.deleteState(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }
             confirmVerified(storage)
         }
     }

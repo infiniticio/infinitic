@@ -33,8 +33,6 @@ import io.infinitic.common.serDe.kotlin.kserializer
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import org.apache.pulsar.client.impl.schema.SchemaDefinitionBuilderImpl.ALWAYS_ALLOW_NULL
-import org.apache.pulsar.client.impl.schema.SchemaDefinitionBuilderImpl.JSR310_CONVERSION_ENABLED
 import org.apache.pulsar.common.protocol.schema.PostSchemaPayload
 import java.io.File
 import kotlin.reflect.KClass
@@ -68,8 +66,5 @@ fun main() {
 fun <T : Any> getPostSchemaPayload(klass: KClass<T>) = PostSchemaPayload(
     "AVRO",
     Avro.default.schema(kserializer(klass)).toString(),
-    mapOf(
-        ALWAYS_ALLOW_NULL to "true",
-        JSR310_CONVERSION_ENABLED to "false"
-    )
+    mapOf()
 )

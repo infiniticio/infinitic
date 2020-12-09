@@ -25,26 +25,25 @@
 
 package io.infinitic.engines.pulsar.main
 
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
-import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.common.workflows.engine.storage.InsertWorkflowEvent
+import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
+import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
-import io.infinitic.pulsar.extensions.newMonitoringGlobalEngineConsumer
-import io.infinitic.pulsar.extensions.newMonitoringPerNameEngineConsumer
-import io.infinitic.pulsar.extensions.newTaskEngineConsumer
-import io.infinitic.pulsar.extensions.newWorkflowEngineConsumer
-import io.infinitic.pulsar.extensions.startConsumer
+import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
+import io.infinitic.pulsar.consumers.newMonitoringGlobalEngineConsumer
+import io.infinitic.pulsar.consumers.newMonitoringPerNameEngineConsumer
+import io.infinitic.pulsar.consumers.newTaskEngineConsumer
+import io.infinitic.pulsar.consumers.newWorkflowEngineConsumer
+import io.infinitic.pulsar.consumers.startConsumer
+import io.infinitic.pulsar.transport.PulsarMonitoringPerNameOutput
+import io.infinitic.pulsar.transport.PulsarTaskEngineOutput
+import io.infinitic.pulsar.transport.PulsarWorkflowEngineOutput
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
+import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -56,17 +55,8 @@ import kotlin.coroutines.CoroutineContext
 
 class Application(
     private val pulsarClient: PulsarClient,
-    private val workflowStateStorage: WorkflowStateStorage,
-    private val insertWorkflowEvent: InsertWorkflowEvent,
-    private val taskStateStorage: TaskStateStorage,
-    private val insertTaskEvent: InsertTaskEvent,
-    private val monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
-    private val monitoringGlobalStateStorage: MonitoringGlobalStateStorage,
-    private val sendToWorkflowEngine: SendToWorkflowEngine,
-    private val sendToTaskEngine: SendToTaskEngine,
-    private val sendToMonitoringPerName: SendToMonitoringPerName,
-    private val sendToMonitoringGlobal: SendToMonitoringGlobal,
-    private val sendToExecutors: SendToExecutors
+    private val keyValueStorage: KeyValueStorage
+
 ) : CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + Job()
@@ -80,23 +70,24 @@ class Application(
     }
 
     fun run() {
+        val workflowStateStorage = WorkflowStateKeyValueStorage(keyValueStorage)
+        val taskStateStorage = TaskStateKeyValueStorage(keyValueStorage)
+        val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(keyValueStorage)
+        val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(keyValueStorage)
+
         val workflowEngine = WorkflowEngine(
             workflowStateStorage,
-            insertWorkflowEvent,
-            sendToWorkflowEngine,
-            sendToTaskEngine
+            NoWorkflowEventStorage(),
+            PulsarWorkflowEngineOutput.from(pulsarClient)
         )
         val taskEngine = TaskEngine(
             taskStateStorage,
-            insertTaskEvent,
-            sendToTaskEngine,
-            sendToMonitoringPerName,
-            sendToExecutors,
-            sendToWorkflowEngine
+            NoTaskEventStorage(),
+            PulsarTaskEngineOutput.from(pulsarClient)
         )
         val monitoringPerName = MonitoringPerNameEngine(
             monitoringPerNameStateStorage,
-            sendToMonitoringGlobal
+            PulsarMonitoringPerNameOutput.from(pulsarClient)
         )
         val monitoringGlobal = MonitoringGlobalEngine(
             monitoringGlobalStateStorage

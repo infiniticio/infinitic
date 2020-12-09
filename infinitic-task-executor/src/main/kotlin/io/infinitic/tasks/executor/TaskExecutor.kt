@@ -33,7 +33,6 @@ import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
@@ -48,6 +47,7 @@ import io.infinitic.tasks.executor.task.RetryDelayFailed
 import io.infinitic.tasks.executor.task.RetryDelayRetrieved
 import io.infinitic.tasks.executor.task.TaskAttemptContext
 import io.infinitic.tasks.executor.task.TaskCommand
+import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.executor.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -64,7 +64,7 @@ import kotlin.reflect.jvm.javaType
 typealias InstanceFactory = () -> Any
 
 open class TaskExecutor(
-    open val sendToTaskEngine: SendToTaskEngine
+    open val taskExecutorOutput: TaskExecutorOutput
 ) {
 
     // map taskName <> taskInstance
@@ -265,7 +265,7 @@ open class TaskExecutor(
             taskRetry = msg.taskRetry
         )
 
-        sendToTaskEngine(taskAttemptStarted, 0F)
+        taskExecutorOutput.sendToTaskEngine(taskAttemptStarted, 0F)
     }
 
     private suspend fun sendTaskFailed(msg: RunTask, error: Throwable?, delay: Float? = null) {
@@ -278,7 +278,7 @@ open class TaskExecutor(
             taskAttemptError = TaskAttemptError.from(error)
         )
 
-        sendToTaskEngine(taskAttemptFailed, 0F)
+        taskExecutorOutput.sendToTaskEngine(taskAttemptFailed, 0F)
     }
 
     private suspend fun sendTaskCompleted(msg: RunTask, output: Any?) {
@@ -290,7 +290,7 @@ open class TaskExecutor(
             taskOutput = MethodOutput.from(output)
         )
 
-        sendToTaskEngine(taskAttemptCompleted, 0F)
+        taskExecutorOutput.sendToTaskEngine(taskAttemptCompleted, 0F)
     }
 
     @PublishedApi

@@ -34,19 +34,17 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.DispatchTask
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
 suspend fun dispatchWorkflowTask(
-    sendToWorkflowEngine: SendToWorkflowEngine,
-    sendToTaskEngine: SendToTaskEngine,
+    workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,
     branchPosition: MethodRunPosition = MethodRunPosition("")
@@ -80,10 +78,10 @@ suspend fun dispatchWorkflowTask(
     )
 
     // dispatch workflow task
-    sendToTaskEngine(workflowTask, 0F)
+    workflowEngineOutput.sendToTaskEngine(workflowTask, 0F)
 
     // log event
-    sendToWorkflowEngine(
+    workflowEngineOutput.sendToWorkflowEngine(
         WorkflowTaskDispatched(
             workflowTaskId = workflowTaskId,
             workflowId = state.workflowId,

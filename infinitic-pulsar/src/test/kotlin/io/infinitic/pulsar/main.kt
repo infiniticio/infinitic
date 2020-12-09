@@ -25,12 +25,8 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.client.Client
-import io.infinitic.pulsar.transport.PulsarTransport
-import io.infinitic.workflows.tests.samples.WorkflowA
-import kotlinx.coroutines.runBlocking
+import io.infinitic.pulsar.admin.initInfinitic
 import org.apache.pulsar.client.admin.PulsarAdmin
-import org.apache.pulsar.client.api.PulsarClient
 
 fun main() {
     val url = "http://localhost:8080"
@@ -48,6 +44,7 @@ fun main() {
         .allowTlsInsecureConnection(tlsAllowInsecureConnection)
         .build()
 
+    admin.initInfinitic("infinitic", "dev")
 //    val schema = admin.schemas().getSchemaInfo("persistent://public/default/workflows-engine")
 
 //    println(schema)
@@ -57,17 +54,40 @@ fun main() {
 //        getPostSchemaPayload(WorkflowEngineEnvelope::class)
 //    ))
 
-    val pulsarClient = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
-    val transport = PulsarTransport.from(pulsarClient)
-
-    val client = Client(
-        transport.sendToTaskEngine,
-        transport.sendToWorkflowEngine
-    )
-
-    runBlocking {
-        client.dispatch(WorkflowA::class.java) { seq1() }
-    }
+//    val pulsarClient = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
+//    val transport = PulsarTransport.from(pulsarClient)
+//
+//    val client = Client(
+//        transport.sendToTaskEngineCommands,
+//        transport.sendToWorkflowEngineCommands
+//    )
+//
+//    val consumer =  pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
+//        .topic(Topic.WORKFLOW_ENGINE.get())
+//        .subscriptionName("infinitic-workflow-engine")
+//        .subscriptionType(SubscriptionType.Key_Shared)
+//        .subscribe()
+//
+//    runBlocking {
+//
+//        launch {
+//            while (isActive) {
+//                val message: Message<WorkflowEngineEnvelope> = consumer.receiveAsync().await()
+//
+//                try {
+//                    println(readBinary(message.data, WorkflowEngineEnvelope.serializer()))
+//                    consumer.acknowledgeAsync(message).await()
+//                } catch (e: Exception) {
+//                    consumer.negativeAcknowledge(message)
+//                    throw e
+//                }
+//            }
+//        }
+//
+//        client.dispatch(WorkflowA::class.java) { seq1() }
+//        client.dispatch(WorkflowA::class.java) { seq1() }
+//        client.dispatch(WorkflowA::class.java) { seq1() }
+//    }
 
 //    val msg = WorkflowEngineEnvelope.from(TestFactory.random<DispatchWorkflow>())
 //    println(msg)

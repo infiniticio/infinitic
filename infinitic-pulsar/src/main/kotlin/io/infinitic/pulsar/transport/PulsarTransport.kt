@@ -40,11 +40,17 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.pulsar.Topic
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.schemas.schemaDefinition
+import io.infinitic.pulsar.topics.MonitoringGlobalTopic
+import io.infinitic.pulsar.topics.MonitoringPerNameTopic
+import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
+import io.infinitic.pulsar.topics.TaskEngineEventsTopic
+import io.infinitic.pulsar.topics.TaskExecutorTopic
+import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
+import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.schema.AvroSchema
@@ -64,82 +70,85 @@ class PulsarTransport(private val pulsarMessageBuilder: PulsarMessageBuilder) {
         fun from(context: Context) = PulsarTransport(PulsarMessageBuilderFromFunction(context))
     }
 
-    val sendToMonitoringGlobalEngine: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
-        pulsarMessageBuilder
-            .newMessage(
-                Topic.MONITORING_GLOBAL.get(),
-                AvroSchema.of(schemaDefinition(MonitoringGlobalEnvelope::class))
-            )
-            .value(MonitoringGlobalEnvelope.from(message))
-            .sendAsync()
-            .await()
+    val sendToWorkflowEngineCommands: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
+        sendPulsarMessage(
+            WorkflowEngineCommandsTopic.name,
+            WorkflowEngineEnvelope.from(message),
+            "${message.workflowId}",
+            after
+        )
+    }
 
-        Unit
+    val sendToWorkflowEngineEvents: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
+        sendPulsarMessage(
+            WorkflowEngineEventsTopic.name,
+            WorkflowEngineEnvelope.from(message),
+            "${message.workflowId}",
+            after
+        )
+    }
+
+    val sendToTaskEngineCommands: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+        sendPulsarMessage(
+            TaskEngineCommandsTopic.name,
+            TaskEngineEnvelope.from(message),
+            "${message.taskId}",
+            after
+        )
+    }
+
+    val sendToTaskEngineEvents: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+        sendPulsarMessage(
+            TaskEngineEventsTopic.name,
+            TaskEngineEnvelope.from(message),
+            "${message.taskId}",
+            after
+        )
     }
 
     val sendToMonitoringPerNameEngine: SendToMonitoringPerName = { message: MonitoringPerNameEngineMessage ->
-        pulsarMessageBuilder
-            .newMessage(
-                Topic.MONITORING_PER_NAME.get(),
-                AvroSchema.of(schemaDefinition(MonitoringPerNameEnvelope::class))
-            )
-            .key("${message.taskName}")
-            .value(MonitoringPerNameEnvelope.from(message))
-            .sendAsync()
-            .await()
-
-        Unit
+        sendPulsarMessage(
+            MonitoringPerNameTopic.name,
+            MonitoringPerNameEnvelope.from(message),
+            "${message.taskName}",
+            0F
+        )
     }
 
-    val sendToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
-        pulsarMessageBuilder
-            .newMessage(
-                Topic.TASK_ENGINE.get(),
-                AvroSchema.of(schemaDefinition(TaskEngineEnvelope::class))
-            )
-            .key("${message.taskId}")
-            .value(TaskEngineEnvelope.from(message))
-            .also {
-                if (after > 0F) {
-                    it.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
-                }
-            }
-            .sendAsync()
-            .await()
-
-        Unit
-    }
-
-    val sendToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
-        pulsarMessageBuilder
-            .newMessage(
-                Topic.WORKFLOW_ENGINE.get(),
-                AvroSchema.of(schemaDefinition(WorkflowEngineEnvelope::class))
-            )
-            .key("${message.workflowId}")
-            .value(WorkflowEngineEnvelope.from(message))
-            .also {
-                if (after > 0F) {
-                    it.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
-                }
-            }
-            .sendAsync()
-            .await()
-
-        Unit
+    val sendToMonitoringGlobalEngine: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+        sendPulsarMessage(
+            MonitoringGlobalTopic.name,
+            MonitoringGlobalEnvelope.from(message),
+            null,
+            0F
+        )
     }
 
     val sendToExecutors: SendToExecutors = { message: TaskExecutorMessage ->
+        sendPulsarMessage(
+            TaskExecutorTopic.name("${message.taskName}"),
+            TaskExecutorEnvelope.from(message),
+            "${message.taskName}",
+            0F
+        )
+    }
+
+    private suspend inline fun <reified T : Any> sendPulsarMessage(topic: String, msg: T, key: String?, after: Float) {
         pulsarMessageBuilder
             .newMessage(
-                Topic.WORKERS.get("${message.taskName}"),
-                AvroSchema.of(schemaDefinition(TaskExecutorEnvelope::class))
+                topic,
+                AvroSchema.of(schemaDefinition<T>())
             )
-            .key("${message.taskName}")
-            .value(TaskExecutorEnvelope.from(message))
+            .value(msg)
+            .also {
+                if (key != null) {
+                    it.key(key)
+                }
+                if (after > 0F) {
+                    it.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
+                }
+            }
             .sendAsync()
             .await()
-
-        Unit
     }
 }

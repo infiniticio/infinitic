@@ -33,7 +33,6 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationStrategy
 import org.apache.avro.file.SeekableByteArrayInput
 import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
@@ -77,7 +76,7 @@ fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     else -> throw RuntimeException("This should not happen: apply kserializer with  ${klass.qualifiedName}")
 } as KSerializer <T>
 
-fun <T> writeBinary(t: T, serializer: SerializationStrategy<T>): ByteArray {
+fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
     val schema = Avro.default.schema(serializer)
     val out = ByteArrayOutputStream()
     Avro.default.openOutputStream(serializer) {

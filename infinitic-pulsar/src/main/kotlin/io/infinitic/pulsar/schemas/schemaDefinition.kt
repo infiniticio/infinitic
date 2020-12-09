@@ -30,10 +30,8 @@ import io.infinitic.common.serDe.kotlin.kserializer
 import org.apache.pulsar.client.api.schema.SchemaDefinition
 import kotlin.reflect.KClass
 
-fun <T : Any> schemaDefinition(klass: KClass<T>) =
+fun <T : Any> schemaDefinition(klass: KClass<T>): SchemaDefinition<T> =
     SchemaDefinition.builder<T>()
-        .withAlwaysAllowNull(true)
-        .withJSR310ConversionEnabled(true)
         .withJsonDef(Avro.default.schema(kserializer(klass)).toString())
         .withSchemaReader(KSchemaReader(klass))
         .withSchemaWriter(KSchemaWriter(klass))

@@ -28,6 +28,6 @@ dependencies {
     testImplementation(project(":infinitic-monitoring-engines"))
     testImplementation(project(":infinitic-task-engine"))
     testImplementation(project(":infinitic-client"))
-    testImplementation(project(":infinitic-task-executor-pulsar"))
+    testImplementation(project(":infinitic-task-executor"))
     testImplementation(project(":infinitic-storage"))
 }

@@ -51,10 +51,10 @@ class PulsarEventStorage(private val pulsarMessageBuilder: PulsarMessageBuilder)
     /*
     No need to store task events as the task engine topic stores them already
      */
-    val insertTaskEvent: InsertTaskEvent = { _: TaskEngineMessage -> Unit }
+    val insertTaskEvent: InsertTaskEvent = { _: TaskEngineMessage -> }
 
     /*
     No need to store workflow events as the workflow engine topic stores them already
      */
-    val insertWorkflowEvent: InsertWorkflowEvent = { _: WorkflowEngineMessage -> Unit }
+    val insertWorkflowEvent: InsertWorkflowEvent = { _: WorkflowEngineMessage -> }
 }

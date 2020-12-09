@@ -26,7 +26,7 @@
 package io.infinitic.tasks.executor.pulsar.functions
 
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.pulsar.transport.PulsarTransport
+import io.infinitic.pulsar.transport.PulsarTaskExecutorOutput
 import io.infinitic.tasks.executor.TaskExecutor
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
@@ -48,6 +48,6 @@ open class WorkerPulsarFunction : Function<TaskExecutorEnvelope, Void> {
     }
 
     fun getWorker(context: Context): TaskExecutor {
-        return TaskExecutor(PulsarTransport.from(context).sendToTaskEngine)
+        return TaskExecutor(PulsarTaskExecutorOutput.from(context))
     }
 }

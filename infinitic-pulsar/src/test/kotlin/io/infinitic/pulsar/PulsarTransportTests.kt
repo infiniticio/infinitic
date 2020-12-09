@@ -34,7 +34,10 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
+import io.infinitic.pulsar.topics.TaskExecutorTopic
 import io.infinitic.pulsar.transport.PulsarTransport
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
@@ -51,8 +54,12 @@ import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.CompletableFuture
 
 class PulsarTransportTests : StringSpec({
+    WorkflowEngineMessage::class.sealedSubclasses.forEach {
+        include(shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(TestFactory.random(it)))
+    }
+
     TaskEngineMessage::class.sealedSubclasses.forEach {
-        include(shouldBeAbleToSendMessageToTaskEngineTopic(TestFactory.random(it)))
+        include(shouldBeAbleToSendMessageToTaskEngineCommandsTopic(TestFactory.random(it)))
     }
 
     MonitoringPerNameEngineMessage::class.sealedSubclasses.forEach {
@@ -68,8 +75,35 @@ class PulsarTransportTests : StringSpec({
     }
 })
 
-private fun shouldBeAbleToSendMessageToTaskEngineTopic(msg: TaskEngineMessage) = stringSpec {
-    "${msg::class.simpleName!!} can be send to TaskEngine topic" {
+private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: WorkflowEngineMessage) = stringSpec {
+    "${msg::class.simpleName!!} can be send to WorkflowEngineCommands topic" {
+        // given
+        val context = context()
+        val builder = mockk<TypedMessageBuilder<WorkflowEngineEnvelope>>()
+        val slotSchema = slot<AvroSchema<WorkflowEngineEnvelope>>()
+        every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
+        every { builder.value(any()) } returns builder
+        every { builder.key(any()) } returns builder
+        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
+        // when
+        PulsarTransport.from(context).sendToWorkflowEngineCommands(msg, 0F)
+        // then
+        verifyAll {
+            context.newOutputMessage("workflow-engine-commands", slotSchema.captured)
+        }
+        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<WorkflowEngineEnvelope>()).avroSchema
+        confirmVerified(context)
+        verifyAll {
+            builder.value(WorkflowEngineEnvelope.from(msg))
+            builder.key("${msg.workflowId}")
+            builder.sendAsync()
+        }
+        confirmVerified(builder)
+    }
+}
+
+private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMessage) = stringSpec {
+    "${msg::class.simpleName!!} can be send to TaskEngineCommands topic" {
         // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<TaskEngineEnvelope>>()
@@ -79,10 +113,10 @@ private fun shouldBeAbleToSendMessageToTaskEngineTopic(msg: TaskEngineMessage) =
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarTransport.from(context).sendToTaskEngine(msg, 0F)
+        PulsarTransport.from(context).sendToTaskEngineCommands(msg, 0F)
         // then
         verifyAll {
-            context.newOutputMessage(Topic.TASK_ENGINE.get(), slotSchema.captured)
+            context.newOutputMessage("task-engine-commands", slotSchema.captured)
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskEngineEnvelope>()).avroSchema
         confirmVerified(context)
@@ -109,7 +143,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         PulsarTransport.from(context).sendToMonitoringPerNameEngine(msg)
         // then
         verifyAll {
-            context.newOutputMessage(Topic.MONITORING_PER_NAME.get(), slotSchema.captured)
+            context.newOutputMessage("monitoring-per-name", slotSchema.captured)
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringPerNameEnvelope>()).avroSchema
         confirmVerified(context)
@@ -137,7 +171,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         PulsarTransport.from(context).sendToMonitoringGlobalEngine(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe Topic.MONITORING_GLOBAL.get()
+        slotTopic.captured shouldBe "monitoring-global"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringGlobalEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(MonitoringGlobalEnvelope.from(msg)) }
         verify(exactly = 1) { builder.sendAsync() }
@@ -160,7 +194,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         PulsarTransport.from(context).sendToExecutors(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe Topic.WORKERS.get("${msg.taskName}")
+        slotTopic.captured shouldBe TaskExecutorTopic.name("${msg.taskName}")
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(TaskExecutorEnvelope.from(msg)) }
         verify(exactly = 1) { builder.key("${msg.taskName}") }

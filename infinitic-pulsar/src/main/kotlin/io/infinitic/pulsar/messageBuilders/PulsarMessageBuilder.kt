@@ -25,9 +25,32 @@
 
 package io.infinitic.pulsar.messageBuilders
 
+import io.infinitic.pulsar.schemas.schemaDefinition
+import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.TypedMessageBuilder
+import org.apache.pulsar.client.impl.schema.AvroSchema
+import java.util.concurrent.TimeUnit
 
 interface PulsarMessageBuilder {
     fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O>
+}
+
+suspend inline fun <reified T : Any> PulsarMessageBuilder.sendPulsarMessage(topic: String, msg: T, key: String?, after: Float) {
+    this
+        .newMessage(
+            topic,
+            AvroSchema.of(schemaDefinition<T>())
+        )
+        .value(msg)
+        .also {
+            if (key != null) {
+                it.key(key)
+            }
+            if (after > 0F) {
+                it.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
+            }
+        }
+        .sendAsync()
+        .await()
 }
