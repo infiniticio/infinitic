@@ -31,16 +31,18 @@ import io.infinitic.tasks.engine.storage.states.TaskStateStorage
 import io.infinitic.tasks.engine.transport.TaskEngineInput
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 
 fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
+    coroutineName: String,
     taskStateStorage: TaskStateStorage,
     taskEventStorage: TaskEventStorage,
     taskEngineInput: TaskEngineInput<T>,
     taskEngineOutput: TaskEngineOutput
-) = launch {
+) = launch(CoroutineName(coroutineName)) {
 
     val taskEngine = TaskEngine(
         taskStateStorage,

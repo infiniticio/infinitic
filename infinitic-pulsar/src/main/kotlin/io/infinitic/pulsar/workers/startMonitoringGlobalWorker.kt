@@ -56,17 +56,18 @@ fun CoroutineScope.startMonitoringGlobalWorker(
     val monitoringGlobalChannel = Channel<PulsarMonitoringGlobalMessageToProcess>()
     val monitoringGlobalResultsChannel = Channel<PulsarMonitoringGlobalMessageToProcess>()
 
-    // Starting Monitoring Per Name Engine
+    // starting monitoring global engine
     startMonitoringGlobalEngine(
+        "monitoring-global",
         MonitoringGlobalStateKeyValueStorage(keyValueStorage),
         MonitoringGlobalInput(monitoringGlobalChannel, monitoringGlobalResultsChannel)
     )
 
-    // create task engine consumer
+    // create monitoring global consumer
     val monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringGlobalEnvelope>()))
             .topics(listOf(MonitoringGlobalTopic.name))
-            .subscriptionName("monitoring-global-consumer") // FIXME: Should be in a constant somewhere
+            .subscriptionName("monitoring-global-consumer")
             .subscribe()
 
     // coroutine dedicated to pulsar message acknowledging

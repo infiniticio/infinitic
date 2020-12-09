@@ -58,24 +58,25 @@ fun CoroutineScope.startWorkflowEngineWorker(
     instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
-    val workflowCommandsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
-    val workflowEventsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
-    val workflowResultsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
-
-    // Starting Workflow Engine
-    startWorkflowEngine(
-        WorkflowStateKeyValueStorage(keyValueStorage),
-        NoWorkflowEventStorage(),
-        WorkflowEngineInput(workflowCommandsChannel, workflowEventsChannel, workflowResultsChannel),
-        PulsarWorkflowEngineOutput.from(pulsarClient)
-    )
-
     repeat(instancesNumber) {
+        val workflowCommandsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
+        val workflowEventsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
+        val workflowResultsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
+
+        // Starting Workflow Engine
+        startWorkflowEngine(
+            "workflow-engine-$it",
+            WorkflowStateKeyValueStorage(keyValueStorage),
+            NoWorkflowEventStorage(),
+            WorkflowEngineInput(workflowCommandsChannel, workflowEventsChannel, workflowResultsChannel),
+            PulsarWorkflowEngineOutput.from(pulsarClient)
+        )
+
         // create workflow engine consumer
         val workflowEngineConsumer: Consumer<WorkflowEngineEnvelope> =
             pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
                 .topics(listOf(WorkflowEngineCommandsTopic.name, WorkflowEngineEventsTopic.name))
-                .subscriptionName("workflow-engine-consumer-$it") // FIXME: Should be in a constant somewhere
+                .subscriptionName("workflow-engine-consumer-$it")
                 .subscriptionType(SubscriptionType.Key_Shared)
                 .subscribe()
 

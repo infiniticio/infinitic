@@ -29,13 +29,15 @@ import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInput
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 fun <T : MonitoringGlobalMessageToProcess> CoroutineScope.startMonitoringGlobalEngine(
+    coroutineName: String,
     monitoringGlobalStateStorage: MonitoringGlobalStateStorage,
     monitoringGlobalInput: MonitoringGlobalInput<T>
-) = launch {
+) = launch(CoroutineName(coroutineName)) {
 
     val monitoringGlobalEngine = MonitoringGlobalEngine(
         monitoringGlobalStateStorage

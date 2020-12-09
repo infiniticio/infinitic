@@ -58,24 +58,25 @@ fun CoroutineScope.startTaskEngineWorker(
     instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
-    val taskCommandsChannel = Channel<PulsarTaskEngineMessageToProcess>()
-    val taskEventsChannel = Channel<PulsarTaskEngineMessageToProcess>()
-    val taskResultsChannel = Channel<PulsarTaskEngineMessageToProcess>()
-
-    // Starting Task Engine
-    startTaskEngine(
-        TaskStateKeyValueStorage(keyValueStorage),
-        NoTaskEventStorage(),
-        TaskEngineInput(taskCommandsChannel, taskEventsChannel, taskResultsChannel),
-        PulsarTaskEngineOutput.from(pulsarClient)
-    )
-
     repeat(instancesNumber) {
+        val taskCommandsChannel = Channel<PulsarTaskEngineMessageToProcess>()
+        val taskEventsChannel = Channel<PulsarTaskEngineMessageToProcess>()
+        val taskResultsChannel = Channel<PulsarTaskEngineMessageToProcess>()
+
+        // Starting Task Engine
+        startTaskEngine(
+            "task-engine-$it",
+            TaskStateKeyValueStorage(keyValueStorage),
+            NoTaskEventStorage(),
+            TaskEngineInput(taskCommandsChannel, taskEventsChannel, taskResultsChannel),
+            PulsarTaskEngineOutput.from(pulsarClient)
+        )
+
         // create task engine consumer
         val taskEngineConsumer: Consumer<TaskEngineEnvelope> =
             pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
                 .topics(listOf(TaskEngineCommandsTopic.name, TaskEngineEventsTopic.name))
-                .subscriptionName("task-engine-consumer-$it") // FIXME: Should be in a constant somewhere
+                .subscriptionName("task-engine-consumer-$it")
                 .subscriptionType(SubscriptionType.Key_Shared)
                 .subscribe()
 

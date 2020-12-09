@@ -29,14 +29,16 @@ import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
+    coroutineName: String,
     taskExecutorInput: TaskExecutorInput<T>,
     taskExecutorOutput: TaskExecutorOutput
-) = launch(Dispatchers.Default) {
+) = launch(Dispatchers.Default + CoroutineName(coroutineName)) {
 
     val taskExecutor = TaskExecutor(taskExecutorOutput)
     val out = taskExecutorInput.taskExecutorResultsChannel

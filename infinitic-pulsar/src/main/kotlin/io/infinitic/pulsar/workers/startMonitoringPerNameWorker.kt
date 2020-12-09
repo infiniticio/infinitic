@@ -56,22 +56,23 @@ fun CoroutineScope.startMonitoringPerNameWorker(
     instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
-    val monitoringPerNameChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
-    val monitoringPerNameResultsChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
-
-    // Starting Monitoring Per Name Engine
-    startMonitoringPerNameEngine(
-        MonitoringPerNameStateKeyValueStorage(keyValueStorage),
-        MonitoringPerNameInput(monitoringPerNameChannel, monitoringPerNameResultsChannel),
-        PulsarMonitoringPerNameOutput.from(pulsarClient)
-    )
-
     repeat(instancesNumber) {
-        // create task engine consumer
+        val monitoringPerNameChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
+        val monitoringPerNameResultsChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
+
+        // starting monitoring per name Engine
+        startMonitoringPerNameEngine(
+            "monitoring-per-name-$it",
+            MonitoringPerNameStateKeyValueStorage(keyValueStorage),
+            MonitoringPerNameInput(monitoringPerNameChannel, monitoringPerNameResultsChannel),
+            PulsarMonitoringPerNameOutput.from(pulsarClient)
+        )
+
+        // create monitoring per name consumer
         val monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope> =
             pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringPerNameEnvelope>()))
                 .topics(listOf(MonitoringPerNameTopic.name))
-                .subscriptionName("monitoring-per-name-consumer-$it") // FIXME: Should be in a constant somewhere
+                .subscriptionName("monitoring-per-name-consumer-$it")
                 .subscriptionType(SubscriptionType.Key_Shared)
                 .subscribe()
 

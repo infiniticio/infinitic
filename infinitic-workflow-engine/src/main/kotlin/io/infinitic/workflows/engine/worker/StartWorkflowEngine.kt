@@ -31,16 +31,18 @@ import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineInput
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
+    coroutineName: String,
     workflowStateStorage: WorkflowStateStorage,
     workflowEventStorage: WorkflowEventStorage,
     workflowEngineInput: WorkflowEngineInput<T>,
     workflowEngineOutput: WorkflowEngineOutput
-) = launch {
+) = launch(CoroutineName(coroutineName)) {
 
     val workflowEngine = WorkflowEngine(
         workflowStateStorage,

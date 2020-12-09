@@ -66,6 +66,7 @@ private fun CoroutineScope.processWorkflows(
     }
 
     startWorkflowEngine(
+        "workflow-engine",
         WorkflowStateKeyValueStorage(keyValueStorage),
         NoWorkflowEventStorage(),
         WorkflowEngineInput(

@@ -77,6 +77,7 @@ fun CoroutineScope.processTasks(
     }
 
     startMonitoringGlobalEngine(
+        "monitoring-global-engine",
         MonitoringGlobalStateKeyValueStorage(keyValueStorage),
         MonitoringGlobalInput(
             monitoringGlobalChannel,
@@ -96,6 +97,7 @@ fun CoroutineScope.processTasks(
     }
 
     startMonitoringPerNameEngine(
+        "monitoring-per-name-engine",
         MonitoringPerNameStateKeyValueStorage(keyValueStorage),
         MonitoringPerNameInput(
             monitoringPerNameChannel,
@@ -120,6 +122,7 @@ fun CoroutineScope.processTasks(
 
     repeat(N_WORKERS) {
         startTaskExecutor(
+            "task-executor-$it",
             TaskExecutorInput(
                 executorChannel,
                 executorResultsChannel
@@ -143,6 +146,7 @@ fun CoroutineScope.processTasks(
     // Starting Task Engine
 
     startTaskEngine(
+        "task-engine",
         TaskStateKeyValueStorage(keyValueStorage),
         NoTaskEventStorage(),
         TaskEngineInput(

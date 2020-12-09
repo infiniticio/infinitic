@@ -30,14 +30,16 @@ import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStor
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInput
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNameEngine(
+    coroutineName: String,
     monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
     monitoringPerNameInput: MonitoringPerNameInput<T>,
     monitoringPerNameOutput: MonitoringPerNameOutput
-) = launch {
+) = launch(CoroutineName(coroutineName)) {
 
     val monitoringPerNameEngine = MonitoringPerNameEngine(
         monitoringPerNameStateStorage,

@@ -58,43 +58,44 @@ fun CoroutineScope.startExecutorWorker(
     val taskExecutorResultsChannel = Channel<PulsarTaskExecutorMessageToProcess>()
 
     // Starting Task Engine
-    startTaskExecutor(
-        TaskExecutorInput(taskExecutorChannel, taskExecutorResultsChannel),
-        PulsarTaskExecutorOutput.from(pulsarClient)
-    )
-
     repeat(instancesNumber) {
-        // create task engine consumer
-        val taskEngineConsumer: Consumer<TaskExecutorEnvelope> =
-            pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorEnvelope>()))
-                .topics(listOf(TaskExecutorTopic.name(name)))
-                .subscriptionName("task-executor-consumer-$it-$name") // FIXME: Should be in a constant somewhere
-                .subscriptionType(SubscriptionType.Shared)
-                .subscribe()
+        startTaskExecutor(
+            "task-executor-$it",
+            TaskExecutorInput(taskExecutorChannel, taskExecutorResultsChannel),
+            PulsarTaskExecutorOutput.from(pulsarClient)
+        )
+    }
 
-        // coroutine dedicated to pulsar message acknowledging
-        launch(CoroutineName("task-engine-message-acknowledger-$it")) {
-            for (messageToProcess in taskExecutorResultsChannel) {
-                if (messageToProcess.exception == null) {
-                    taskEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
-                } else {
-                    taskEngineConsumer.negativeAcknowledge(messageToProcess.messageId)
-                }
+    // create task executor consumer
+    val taskEngineConsumer: Consumer<TaskExecutorEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorEnvelope>()))
+            .topics(listOf(TaskExecutorTopic.name(name)))
+            .subscriptionName("task-executor-consumer-$name")
+            .subscriptionType(SubscriptionType.Shared)
+            .subscribe()
+
+    // coroutine dedicated to pulsar message acknowledging
+    launch(CoroutineName("task-engine-message-acknowledger")) {
+        for (messageToProcess in taskExecutorResultsChannel) {
+            if (messageToProcess.exception == null) {
+                taskEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
+            } else {
+                taskEngineConsumer.negativeAcknowledge(messageToProcess.messageId)
             }
         }
+    }
 
-        // coroutine dedicated to pulsar message pulling
-        launch(CoroutineName("task-engine-message-puller-$it")) {
-            while (isActive) {
-                val message: Message<TaskExecutorEnvelope> = taskEngineConsumer.receiveAsync().await()
+    // coroutine dedicated to pulsar message pulling
+    launch(CoroutineName("task-engine-message-puller")) {
+        while (isActive) {
+            val message: Message<TaskExecutorEnvelope> = taskEngineConsumer.receiveAsync().await()
 
-                try {
-                    val envelope = readBinary(message.data, TaskExecutorEnvelope.serializer())
-                    taskExecutorChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
-                } catch (e: Exception) {
-                    taskEngineConsumer.negativeAcknowledge(message.messageId)
-                    throw e
-                }
+            try {
+                val envelope = readBinary(message.data, TaskExecutorEnvelope.serializer())
+                taskExecutorChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
+            } catch (e: Exception) {
+                taskEngineConsumer.negativeAcknowledge(message.messageId)
+                throw e
             }
         }
     }
