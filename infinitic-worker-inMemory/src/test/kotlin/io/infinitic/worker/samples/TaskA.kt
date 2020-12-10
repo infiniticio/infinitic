@@ -23,27 +23,19 @@
  * Licensor: infinitic.io
  */
 
-rootProject.name = "io.infinitic"
+package io.infinitic.worker.samples
 
-include("infinitic-common")
-include("infinitic-rest-api")
-include("infinitic-storage")
-include("infinitic-client")
-include("infinitic-examples")
-include("infinitic-monitoring-engines")
-include("infinitic-task-engine")
-include("infinitic-task-tests")
-include("infinitic-task-executor")
-include("infinitic-workflow-engine")
-include("infinitic-workflow-tests")
-include("infinitic-engines-pulsar")
-include("infinitic-worker-inMemory")
-include("infinitic-worker-pulsar")
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
-    }
+interface TaskA {
+    fun concat(str1: String, str2: String): String
+    fun reverse(str: String): String
+    fun await(delay: Long)
+}
+
+class TaskAImpl : TaskA {
+    override fun concat(str1: String, str2: String) = str1 + str2
+    override fun reverse(str: String) = str.reversed()
+    override fun await(delay: Long) = runBlocking { delay(2000) }
 }

@@ -43,7 +43,7 @@ dependencies {
     api(project(":infinitic-monitoring-engines"))
     api(project(":infinitic-task-engine"))
     api(project(":infinitic-workflow-engine"))
-    api(project(":infinitic-pulsar"))
+    api(project(":infinitic-worker-pulsar"))
     api(project(":infinitic-storage"))
 }
 

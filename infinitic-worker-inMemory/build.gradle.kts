@@ -23,27 +23,18 @@
  * Licensor: infinitic.io
  */
 
-rootProject.name = "io.infinitic"
+dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
+    implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
+    implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
+    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
 
-include("infinitic-common")
-include("infinitic-rest-api")
-include("infinitic-storage")
-include("infinitic-client")
-include("infinitic-examples")
-include("infinitic-monitoring-engines")
-include("infinitic-task-engine")
-include("infinitic-task-tests")
-include("infinitic-task-executor")
-include("infinitic-workflow-engine")
-include("infinitic-workflow-tests")
-include("infinitic-engines-pulsar")
-include("infinitic-worker-inMemory")
-include("infinitic-worker-pulsar")
-
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
-    }
+    api(project(":infinitic-common"))
+    api(project(":infinitic-client"))
+    api(project(":infinitic-storage"))
+    api(project(":infinitic-task-engine"))
+    api(project(":infinitic-workflow-engine"))
+    api(project(":infinitic-monitoring-engines"))
+    api(project(":infinitic-task-executor"))
 }
