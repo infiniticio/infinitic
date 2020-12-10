@@ -25,7 +25,7 @@
 
 package io.infinitic.monitoring.global.engine.storage
 
-import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
+import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
@@ -34,7 +34,7 @@ import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
  * transformed before being stored. These details are left to the different implementations.
  */
 interface MonitoringGlobalStateStorage {
-    fun getState(): MonitoringGlobalState?
-    fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?)
-    fun deleteState()
+    suspend fun getState(): MonitoringGlobalState?
+    suspend fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?)
+    suspend fun deleteState()
 }

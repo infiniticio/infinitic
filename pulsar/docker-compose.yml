@@ -23,7 +23,7 @@
 
 services:
   pulsar:
-    image: apachepulsar/pulsar-all:2.6.1
+    image: apachepulsar/pulsar-all:2.7.0
     environment:
       - BOOKIE_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
     command: >
@@ -31,8 +31,8 @@ services:
     volumes:
       - "pulsardata:/pulsar/data"
       - "pulsarconf:/pulsar/conf"
-      - "../infinitic-engine-pulsar/build/libs:/infinitic/libs:delegated"
-      - "../infinitic-engine-pulsar/build/schemas:/infinitic/schemas:delegated"
+      - "../infinitic-pulsar/build/libs:/infinitic/libs:delegated"
+      - "../infinitic-pulsar/build/schemas:/infinitic/schemas:delegated"
     ports:
       - "6650:6650"
       - "8080:8080"
@@ -54,15 +54,15 @@ services:
       SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties
 
   # Uncomment the following block if you want to use a Redis storage for persistence of states. There is also a volume to uncomment at the bottom of the file.
-#  redis:
-#    image: redis:6.0-alpine
-#    ports:
-#      - "6379:6379"
-#    volumes:
-#      - "redisdata:/data"
+  redis:
+    image: redis:6.0-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - "redisdata:/data"
 
 volumes:
   pulsardata:
   pulsarconf:
   # Uncomment the following volume if you want to use a Redis storage for persistance of states
-#  redisdata:
+  redisdata:

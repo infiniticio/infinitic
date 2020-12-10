@@ -26,24 +26,35 @@
 package io.infinitic.tasks.tests
 
 import io.infinitic.client.Client
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
+import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workers.messages.WorkerMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.transport.TaskEngineOutput
+import io.infinitic.tasks.executor.TaskExecutor
+import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.tests.samples.Status
 import io.infinitic.tasks.tests.samples.TaskTest
 import io.infinitic.tasks.tests.samples.TaskTestImpl
-import io.infinitic.worker.Worker
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -62,69 +73,8 @@ private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(
 private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
-private lateinit var worker: Worker
+private lateinit var taskExecutor: TaskExecutor
 private lateinit var client: Client
-
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
-    launch {
-        if (after > 0F) {
-            delay((1000 * after).toLong())
-        }
-        taskEngine.handle(msg)
-    }
-}
-
-fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) {
-    launch {
-        monitoringPerNameEngine.handle(msg)
-
-        // catch status update
-        if (msg is TaskStatusUpdated) {
-            taskStatus = msg.newStatus
-        }
-    }
-}
-
-fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
-    launch {
-        monitoringGlobalEngine.handle(msg)
-    }
-}
-
-fun CoroutineScope.sendToWorkers(msg: WorkerMessage) {
-    launch {
-        worker.handle(msg)
-    }
-}
-
-fun CoroutineScope.init() {
-    taskStateStorage.flush()
-    monitoringPerNameStateStorage.flush()
-    monitoringGlobalStateStorage.flush()
-    taskStatus = null
-
-    client = Client(
-        { msg: TaskEngineMessage -> sendToTaskEngine(msg, 0F) },
-        { Unit }
-    )
-
-    taskEngine = TaskEngine(
-        taskStateStorage,
-        { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) },
-        { msg: MonitoringPerNameEngineMessage -> sendToMonitoringPerName(msg) },
-        { msg: WorkerMessage -> sendToWorkers(msg) }
-    )
-
-    monitoringPerNameEngine = MonitoringPerNameEngine(monitoringPerNameStateStorage) {
-        msg: MonitoringGlobalMessage ->
-        sendToMonitoringGlobal(msg)
-    }
-
-    monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
-
-    worker = Worker { msg: TaskEngineMessage, after: Float -> sendToTaskEngine(msg, after) }
-    worker.register(TaskTest::class.java.name) { taskTest }
-}
 
 class TaskIntegrationTests : StringSpec({
     var task: TaskInstance
@@ -236,3 +186,93 @@ class TaskIntegrationTests : StringSpec({
         taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
     }
 })
+
+class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
+    override val sendToWorkflowEngine: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
+
+    override val sendToTaskEngine: SendToTaskEngine =
+        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+
+    override val sendToExecutors: SendToExecutors =
+        { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
+
+    override val sendToMonitoringPerName: SendToMonitoringPerName =
+        { msg: MonitoringPerNameEngineMessage -> scope.sendToMonitoringPerName(msg) }
+}
+
+class TestMonitoringPerNameOutput(private val scope: CoroutineScope) : MonitoringPerNameOutput {
+
+    override val sendToMonitoringGlobal: SendToMonitoringGlobal =
+        { msg: MonitoringGlobalMessage -> scope.sendToMonitoringGlobal(msg) }
+}
+
+class TestTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
+
+    override val sendToTaskEngine: SendToTaskEngine =
+        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+}
+
+class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
+
+    override val sendToTaskEngine: SendToTaskEngine =
+        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+
+    override val sendToWorkflowEngine: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
+}
+
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
+    launch {
+        if (after > 0F) {
+            delay((1000 * after).toLong())
+        }
+        taskEngine.handle(msg)
+    }
+}
+
+fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) {
+    launch {
+        monitoringPerNameEngine.handle(msg)
+
+        // catch status update
+        if (msg is TaskStatusUpdated) {
+            taskStatus = msg.newStatus
+        }
+    }
+}
+
+fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
+    launch {
+        monitoringGlobalEngine.handle(msg)
+    }
+}
+
+fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) {
+    launch {
+        taskExecutor.handle(msg)
+    }
+}
+
+fun CoroutineScope.init() {
+    taskStateStorage.flush()
+    monitoringPerNameStateStorage.flush()
+    monitoringGlobalStateStorage.flush()
+    taskStatus = null
+
+    client = Client(TestClientOutput(this))
+
+    taskEngine = TaskEngine(
+        taskStateStorage,
+        NoTaskEventStorage(),
+        TestTaskEngineOutput(this)
+    )
+
+    monitoringPerNameEngine = MonitoringPerNameEngine(
+        monitoringPerNameStateStorage,
+        TestMonitoringPerNameOutput(this)
+    )
+
+    monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
+
+    taskExecutor = TaskExecutor(TestTaskExecutorOutput(this))
+    taskExecutor.register(TaskTest::class.java.name) { taskTest }
+}

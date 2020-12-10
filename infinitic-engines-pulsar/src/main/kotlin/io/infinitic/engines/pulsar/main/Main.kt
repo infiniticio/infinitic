@@ -27,17 +27,7 @@ package io.infinitic.engines.pulsar.main
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
-import io.infinitic.messaging.pulsar.extensions.messageBuilder
-import io.infinitic.messaging.pulsar.senders.getSendToMonitoringGlobal
-import io.infinitic.messaging.pulsar.senders.getSendToMonitoringPerName
-import io.infinitic.messaging.pulsar.senders.getSendToTaskEngine
-import io.infinitic.messaging.pulsar.senders.getSendToWorkers
-import io.infinitic.messaging.pulsar.senders.getSendToWorkflowEngine
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.tasks.engine.storage.TaskStateKeyValueStorage
-import io.infinitic.workflows.engine.storage.WorkflowStateKeyValueStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 
@@ -51,23 +41,9 @@ fun main(args: Array<String>) = mainBody {
             .build()
 
         // FIXME: This must be configurable using a configuration file or command line arguments
-        val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage())
-        val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage())
-        val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
-        val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
-
-        // FIXME: This must be configurable using a configuration file or command line arguments
         val application = Application(
             client,
-            workflowStateStorage,
-            taskStateStorage,
-            monitoringPerNameStateStorage,
-            monitoringGlobalStateStorage,
-            getSendToWorkflowEngine(client.messageBuilder()),
-            getSendToTaskEngine(client.messageBuilder()),
-            getSendToMonitoringPerName(client.messageBuilder()),
-            getSendToMonitoringGlobal(client.messageBuilder()),
-            getSendToWorkers(client.messageBuilder())
+            InMemoryStorage(),
         )
         application.run()
     }

@@ -28,5 +28,5 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":infinitic-common"))
+    api(project(":infinitic-common"))
 }

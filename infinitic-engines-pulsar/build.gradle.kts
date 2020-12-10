@@ -30,7 +30,7 @@ import java.io.InputStreamReader
 
 plugins {
     application
-    id("com.github.johnrengelman.shadow") version "5.2.0"
+    id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 dependencies {
@@ -39,12 +39,12 @@ dependencies {
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("com.xenomachina:kotlin-argparser:2.0.+")
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-messaging-pulsar"))
-    implementation(project(":infinitic-storage"))
+    api(project(":infinitic-common"))
+    api(project(":infinitic-monitoring-engines"))
+    api(project(":infinitic-task-engine"))
+    api(project(":infinitic-workflow-engine"))
+    api(project(":infinitic-pulsar"))
+    api(project(":infinitic-storage"))
 }
 
 application {
@@ -73,10 +73,11 @@ tasks.register("setSchemas") {
     dependsOn("assemble")
     doLast {
         createSchemaFiles()
-//        uploadSchemaToTopic(
-//            name = "AvroEnvelopeForWorkflowEngine",
-//            topic = Topic.WORKFLOW_ENGINE.get()
-//        )
+
+        uploadSchemaToTopic(
+            name = "WorkflowEngine",
+            topic = Topic.WORKFLOW_ENGINE.get()
+        )
         uploadSchemaToTopic(
             name = "TaskEngine",
             topic = Topic.TASK_ENGINE.get()
@@ -213,7 +214,7 @@ enum class Topic {
 fun createSchemaFiles() {
     // create schema files
     println("Creating schemas files...")
-    exec("java -cp ./build/libs/$jar io.infinitic.engine.pulsar.schemas.GenerateSchemaFilesKt")
+    exec("java -cp ./build/libs/$jar io.infinitic.pulsar.schemas.GenerateSchemaFilesKt")
 }
 
 fun uploadSchemaToTopic(

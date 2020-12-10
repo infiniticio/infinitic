@@ -25,29 +25,27 @@
 
 package io.infinitic.monitoring.perName.engine
 
-import io.infinitic.common.SendToMonitoringGlobal
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.monitoringGlobal.messages.TaskCreated
-import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
-import io.infinitic.common.monitoringPerName.state.MonitoringPerNameState
+import io.infinitic.common.monitoring.global.messages.TaskCreated
+import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
+import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerifyAll
-import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
-import io.mockk.verifyAll
 
 class MonitoringPerNameTests : ShouldSpec({
     context("TaskMetrics.handle") {
         should("should update TaskMetricsState when receiving TaskStatusUpdate message") {
             val storage = mockk<MonitoringPerNameStateStorage>()
-            val sendToMonitoringGlobal = mockk<SendToMonitoringGlobal>()
             val msg = TestFactory.random(
                 TaskStatusUpdated::class,
                 mapOf(
@@ -57,15 +55,18 @@ class MonitoringPerNameTests : ShouldSpec({
             )
             val stateIn = TestFactory.random(MonitoringPerNameState::class, mapOf("taskName" to msg.taskName))
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getState(msg.taskName) } returns stateIn
-            every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
+            coEvery { storage.getState(msg.taskName) } returns stateIn
+            coEvery { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
 
-            val monitoringPerName = MonitoringPerNameEngine(storage, sendToMonitoringGlobal)
+            val monitoringPerName = MonitoringPerNameEngine(
+                storage,
+                MockMonitoringPerNameOutput()
+            )
 
             monitoringPerName.handle(msg)
 
             val stateOut = stateOutSlot.captured
-            verifyAll {
+            coVerifyAll {
                 storage.getState(msg.taskName)
                 storage.updateState(msg.taskName, stateOut, stateIn)
             }
@@ -74,8 +75,6 @@ class MonitoringPerNameTests : ShouldSpec({
         }
 
         should("dispatch message when discovering a new task type") {
-            val storage = mockk<MonitoringPerNameStateStorage>()
-            val sendToMonitoringGlobal = mockk<SendToMonitoringGlobal>()
             val msg = TestFactory.random(
                 TaskStatusUpdated::class,
                 mapOf(
@@ -83,12 +82,12 @@ class MonitoringPerNameTests : ShouldSpec({
                     "newStatus" to TaskStatus.RUNNING_OK
                 )
             )
+            val storage = mockk<MonitoringPerNameStateStorage>()
             val stateOutSlot = slot<MonitoringPerNameState>()
-            every { storage.getState(msg.taskName) } returns null
-            every { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
-            coEvery { sendToMonitoringGlobal(any<TaskCreated>()) } just runs
-
-            val monitoringPerName = MonitoringPerNameEngine(storage, sendToMonitoringGlobal)
+            coEvery { storage.getState(msg.taskName) } returns null
+            coEvery { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
+            val monitoringPerNameOutput = MockMonitoringPerNameOutput()
+            val monitoringPerName = MonitoringPerNameEngine(storage, monitoringPerNameOutput)
 
             // when
             monitoringPerName.handle(msg)
@@ -97,8 +96,16 @@ class MonitoringPerNameTests : ShouldSpec({
             coVerifyAll {
                 storage.getState(msg.taskName)
                 storage.updateState(msg.taskName, stateOut, null)
-                sendToMonitoringGlobal(ofType<TaskCreated>())
+                monitoringPerNameOutput.sendToMonitoringGlobal(ofType<TaskCreated>())
             }
         }
     }
 })
+
+class MockMonitoringPerNameOutput : MonitoringPerNameOutput {
+    override val sendToMonitoringGlobal = mockk<SendToMonitoringGlobal>()
+
+    init {
+        coEvery { sendToMonitoringGlobal(any()) } just runs
+    }
+}

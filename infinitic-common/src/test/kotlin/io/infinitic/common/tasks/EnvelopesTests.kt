@@ -27,14 +27,14 @@ package io.infinitic.common.tasks
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workers.messages.WorkerEnvelope
-import io.infinitic.common.workers.messages.WorkerMessage
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -83,13 +83,13 @@ class EnvelopesTests : StringSpec({
         }
     }
 
-    WorkerMessage::class.sealedSubclasses.map {
+    TaskExecutorMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
         "WorkerEnvelope(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-                val envelope = WorkerEnvelope.from(msg)
-                val ser = WorkerEnvelope.serializer()
+                val envelope = TaskExecutorEnvelope.from(msg)
+                val ser = TaskExecutorEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2

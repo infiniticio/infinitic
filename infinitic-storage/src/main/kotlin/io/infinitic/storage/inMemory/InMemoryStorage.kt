@@ -35,21 +35,21 @@ class InMemoryStorage() : KeyValueStorage, Flushable {
     private val stateStorage = ConcurrentHashMap<String, ByteBuffer>()
     private val counterStorage = ConcurrentHashMap<String, LongAdder>()
 
-    override fun getState(key: String): ByteBuffer? = stateStorage[key]
+    override suspend fun getState(key: String): ByteBuffer? = stateStorage[key]
 
-    override fun putState(key: String, value: ByteBuffer) {
+    override suspend fun putState(key: String, value: ByteBuffer) {
         stateStorage[key] = value
     }
 
-    override fun updateState(key: String, value: ByteBuffer) = putState(key, value)
+    override suspend fun updateState(key: String, value: ByteBuffer) = putState(key, value)
 
-    override fun deleteState(key: String) {
+    override suspend fun deleteState(key: String) {
         stateStorage.remove(key)
     }
 
-    override fun incrementCounter(key: String, amount: Long) = counterStorage.computeIfAbsent(key) { LongAdder() }.add(amount)
+    override suspend fun incrementCounter(key: String, amount: Long) = counterStorage.computeIfAbsent(key) { LongAdder() }.add(amount)
 
-    override fun getCounter(key: String): Long = counterStorage.computeIfAbsent(key) { LongAdder() }.sum()
+    override suspend fun getCounter(key: String): Long = counterStorage.computeIfAbsent(key) { LongAdder() }.sum()
 
     override fun flush() {
         stateStorage.clear()

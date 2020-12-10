@@ -26,20 +26,20 @@
 package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.methods.MethodInput
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.workers.messages.WorkerEnvelope
-import io.infinitic.common.workers.messages.WorkerMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
@@ -91,9 +91,9 @@ object TestFactory {
                 val sub = MonitoringGlobalMessage::class.sealedSubclasses.shuffled().first()
                 MonitoringGlobalEnvelope.from(random(sub))
             }
-            .randomize(WorkerEnvelope::class.java) {
-                val sub = WorkerMessage::class.sealedSubclasses.shuffled().first()
-                WorkerEnvelope.from(random(sub))
+            .randomize(TaskExecutorEnvelope::class.java) {
+                val sub = TaskExecutorMessage::class.sealedSubclasses.shuffled().first()
+                TaskExecutorEnvelope.from(random(sub))
             }
 
         values?.forEach {

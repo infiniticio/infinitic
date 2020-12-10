@@ -25,40 +25,46 @@
 
 package io.infinitic.tasks.engine
 
-import io.infinitic.common.SendToMonitoringPerName
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkers
 import io.infinitic.common.data.interfaces.plus
-import io.infinitic.common.monitoringPerName.messages.TaskStatusUpdated
+import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.common.tasks.messages.CancelTask
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.RetryTask
-import io.infinitic.common.tasks.messages.RetryTaskAttempt
-import io.infinitic.common.tasks.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.messages.TaskAttemptDispatched
-import io.infinitic.common.tasks.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.messages.TaskCanceled
-import io.infinitic.common.tasks.messages.TaskCompleted
-import io.infinitic.common.tasks.messages.TaskEngineMessage
-import io.infinitic.common.tasks.messages.interfaces.TaskAttemptMessage
-import io.infinitic.common.tasks.state.TaskState
-import io.infinitic.common.workers.messages.RunTask
-import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.common.tasks.engine.messages.CancelTask
+import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.RetryTask
+import io.infinitic.common.tasks.engine.messages.RetryTaskAttempt
+import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
+import io.infinitic.common.tasks.engine.messages.TaskAttemptDispatched
+import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
+import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
+import io.infinitic.common.tasks.engine.messages.TaskCanceled
+import io.infinitic.common.tasks.engine.messages.TaskCompleted
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
+import io.infinitic.common.tasks.engine.state.TaskState
+import io.infinitic.common.tasks.executors.messages.RunTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
+import io.infinitic.tasks.engine.storage.events.TaskEventStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateStorage
+import io.infinitic.tasks.engine.transport.TaskEngineOutput
+import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
-open class TaskEngine(
-    protected val storage: TaskStateStorage,
-    protected val sendToTaskEngine: SendToTaskEngine,
-    protected val sendToMonitoringPerName: SendToMonitoringPerName,
-    protected val sendToWorkers: SendToWorkers
+class TaskEngine(
+    private val taskStateStorage: TaskStateStorage,
+    private val taskEventStorage: TaskEventStorage,
+    private val taskEngineOutput: TaskEngineOutput
 ) {
-    open suspend fun handle(message: TaskEngineMessage) {
-        // immediately discard messages that are non managed
+    suspend fun handle(message: TaskEngineMessage) {
+        // store event
+        taskEventStorage.insertTaskEvent(message)
+
+        // immediately discard messages useless messages
         when (message) {
             is TaskAttemptDispatched -> return
             is TaskAttemptStarted -> return
@@ -68,7 +74,7 @@ open class TaskEngine(
         }
 
         // get current state
-        val oldState = storage.getState(message.taskId)
+        val oldState = taskStateStorage.getState(message.taskId)
 
         if (oldState != null) {
             // discard message (except TaskAttemptCompleted) if state has already evolved
@@ -77,7 +83,7 @@ open class TaskEngine(
                 if (oldState.taskAttemptRetry != message.taskAttemptRetry) return
             }
         } else {
-            // discard message if task is already completed
+            // discard message if task is already terminated
             if (message !is DispatchTask) return
         }
 
@@ -88,6 +94,7 @@ open class TaskEngine(
                 is CancelTask -> cancelTask(oldState, message)
                 is RetryTask -> retryTask(oldState, message)
                 is RetryTaskAttempt -> retryTaskAttempt(oldState)
+                is TaskAttemptStarted -> taskAttemptStarted(oldState, message)
                 is TaskAttemptFailed -> taskAttemptFailed(oldState, message)
                 is TaskAttemptCompleted -> taskAttemptCompleted(oldState, message)
                 else -> throw Exception("Unknown EngineMessage: $message")
@@ -95,7 +102,7 @@ open class TaskEngine(
 
         // Update stored state if needed and existing
         if (newState != oldState && !newState.taskStatus.isTerminated) {
-            storage.updateState(message.taskId, newState, oldState)
+            taskStateStorage.updateState(message.taskId, newState, oldState)
         }
 
         // Send TaskStatusUpdated if needed
@@ -107,7 +114,7 @@ open class TaskEngine(
                 newStatus = newState.taskStatus
             )
 
-            sendToMonitoringPerName(tsc)
+            taskEngineOutput.sendToMonitoringPerName(tsc)
         }
     }
 
@@ -120,10 +127,10 @@ open class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        sendToTaskEngine(tad, 0F)
+        taskEngineOutput.sendToTaskEngine(tad, 0F)
 
         // Delete stored state
-        storage.deleteState(state.taskId)
+        taskStateStorage.deleteState(state.taskId)
 
         return state
     }
@@ -136,6 +143,8 @@ open class TaskEngine(
             methodName = msg.methodName,
             methodParameterTypes = msg.methodParameterTypes,
             methodInput = msg.methodInput,
+            workflowId = msg.workflowId,
+            methodRunId = msg.methodRunId,
             taskAttemptId = TaskAttemptId(),
             taskStatus = TaskStatus.RUNNING_OK,
             taskOptions = msg.taskOptions,
@@ -156,7 +165,7 @@ open class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        sendToWorkers(rt)
+        taskEngineOutput.sendToExecutors(rt)
 
         // log events
         val tad = TaskAttemptDispatched(
@@ -165,7 +174,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskRetry = state.taskRetry
         )
-        sendToTaskEngine(tad, 0F)
+        taskEngineOutput.sendToTaskEngine(tad, 0F)
 
         return state
     }
@@ -198,7 +207,7 @@ open class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        sendToWorkers(rt)
+        taskEngineOutput.sendToExecutors(rt)
 
         // log event
         val tad = TaskAttemptDispatched(
@@ -207,7 +216,7 @@ open class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskRetry = state.taskRetry
         )
-        sendToTaskEngine(tad, 0F)
+        taskEngineOutput.sendToTaskEngine(tad, 0F)
 
         return state
     }
@@ -232,7 +241,7 @@ open class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        sendToWorkers(rt)
+        taskEngineOutput.sendToExecutors(rt)
 
         // log event
         val tar = TaskAttemptDispatched(
@@ -241,13 +250,39 @@ open class TaskEngine(
             taskRetry = state.taskRetry,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        sendToTaskEngine(tar, 0F)
+        taskEngineOutput.sendToTaskEngine(tar, 0F)
+
+        return state
+    }
+
+    private suspend fun taskAttemptStarted(oldState: TaskState, msg: TaskAttemptStarted): TaskState {
+        val state = oldState.copy()
 
         return state
     }
 
     private suspend fun taskAttemptCompleted(oldState: TaskState, msg: TaskAttemptCompleted): TaskState {
         val state = oldState.copy(taskStatus = TaskStatus.TERMINATED_COMPLETED)
+
+        // if this task belongs to a workflow, send back the adhoc message
+        state.workflowId?.let {
+            taskEngineOutput.sendToWorkflowEngine(
+                when ("${state.taskName}") {
+                    WorkflowTask::class.java.name -> WorkflowTaskCompleted(
+                        workflowId = it,
+                        workflowTaskId = WorkflowTaskId("${state.taskId}"),
+                        workflowTaskOutput = msg.taskOutput.get() as WorkflowTaskOutput
+                    )
+                    else -> TaskCompletedInWorkflow(
+                        workflowId = it,
+                        methodRunId = state.methodRunId!!,
+                        taskId = state.taskId,
+                        taskOutput = msg.taskOutput
+                    )
+                },
+                0F
+            )
+        }
 
         // log event
         val tc = TaskCompleted(
@@ -256,10 +291,10 @@ open class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        sendToTaskEngine(tc, 0F)
+        taskEngineOutput.sendToTaskEngine(tc, 0F)
 
         // delete stored state
-        storage.deleteState(state.taskId)
+        taskStateStorage.deleteState(state.taskId)
 
         return state
     }
@@ -297,7 +332,7 @@ open class TaskEngine(
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        sendToTaskEngine(tar, delay)
+        taskEngineOutput.sendToTaskEngine(tar, delay)
 
         return state
     }

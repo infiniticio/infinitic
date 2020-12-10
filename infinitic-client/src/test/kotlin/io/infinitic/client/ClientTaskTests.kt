@@ -34,39 +34,37 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.messages.DispatchTask
-import io.infinitic.common.tasks.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.Runs
-import io.mockk.coEvery
-import io.mockk.just
-import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTaskTests : StringSpec({
-    val sendToTaskEngine = mockk<SendToTaskEngine>()
-    val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
-    val slot = slot<TaskEngineMessage>()
-    coEvery { sendToTaskEngine(capture(slot)) } just Runs
-    val client = Client(sendToTaskEngine, sendToWorkflowEngine)
+    val taskSlot = slot<TaskEngineMessage>()
+    val workflowSlot = slot<WorkflowEngineMessage>()
+    val client = Client(MockClientOutput(taskSlot, workflowSlot))
 
     beforeTest {
-        slot.clear()
+        taskSlot.clear()
+        workflowSlot.clear()
     }
 
     "Should be able to dispatch method without parameter" {
         // when
         val task = client.dispatch(FakeTask::class.java) { m1() }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodInput = MethodInput(),
+            workflowId = null,
+            methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -76,14 +74,16 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m1(0) }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name)),
             methodInput = MethodInput.from(0),
+            workflowId = null,
+            methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -93,14 +93,16 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m1(null) }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodInput = MethodInput.from(null),
+            workflowId = null,
+            methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -110,14 +112,16 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m1("a") }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodInput = MethodInput.from("a"),
+            workflowId = null,
+            methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -127,14 +131,16 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m1(0, "a") }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodInput = MethodInput.from(0, "a"),
+            workflowId = null,
+            methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -145,8 +151,8 @@ class ClientTaskTests : StringSpec({
         val fake = FakeClass()
         val task = client.dispatch(FakeTask::class.java) { m1(fake) }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
             taskId = task.taskId,
@@ -154,6 +160,8 @@ class ClientTaskTests : StringSpec({
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             methodInput = MethodInput.from(fake),
+            workflowId = null,
+            methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -163,8 +171,8 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m2() }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
             taskId = task.taskId,
@@ -172,6 +180,8 @@ class ClientTaskTests : StringSpec({
             methodName = MethodName("m2"),
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodInput = MethodInput(),
+            workflowId = null,
+            methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )

@@ -27,11 +27,10 @@ rootProject.name = "io.infinitic"
 
 include("infinitic-rest-api")
 include("infinitic-storage")
-include("infinitic-messaging-pulsar")
+include("infinitic-pulsar")
 include("infinitic-common")
 include("infinitic-examples")
-include("infinitic-worker")
-include("infinitic-worker-pulsar")
+include("infinitic-task-executor")
 include("infinitic-client")
 include("infinitic-monitoring-engines")
 include("infinitic-task-engine")
@@ -39,6 +38,7 @@ include("infinitic-task-tests")
 include("infinitic-workflow-engine")
 include("infinitic-workflow-tests")
 include("infinitic-engines-pulsar")
+include("infinitic-worker")
 
 pluginManagement {
     repositories {

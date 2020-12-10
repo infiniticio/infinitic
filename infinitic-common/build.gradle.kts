@@ -28,11 +28,11 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.11.+")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.+")
-    implementation("com.github.avro-kotlin.avro4k:avro4k-core:1.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${project.extra["kotlinx_serialization_version"]}")
+    implementation("com.fasterxml.jackson.core:jackson-databind:${project.extra["jackson_version"]}")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${project.extra["jackson_version"]}")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${project.extra["jackson_version"]}")
+    implementation("com.github.avro-kotlin.avro4k:avro4k-core:${project.extra["avro4k_version"]}")
 
     testFixturesImplementation("org.jetbrains.kotlin:kotlin-reflect:${project.extra["kotlin_reflect_version"]}")
     testFixturesImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")

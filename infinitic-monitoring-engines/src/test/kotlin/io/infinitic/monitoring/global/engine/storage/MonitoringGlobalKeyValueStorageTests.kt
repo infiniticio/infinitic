@@ -26,15 +26,15 @@
 package io.infinitic.monitoring.global.engine.storage
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
+import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.confirmVerified
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
 import java.nio.ByteBuffer
 
 class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
@@ -42,13 +42,13 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
         should("return null when state does not exist") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            every { storage.getState(any()) } returns null
+            coEvery { storage.getState(any()) } returns null
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage)
             // when
             val state = stateStorage.getState()
             // then
-            verify(exactly = 1) { storage.getState("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.getState("monitoringGlobal.state") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -57,13 +57,13 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
-            every { storage.getState(any()) } returns ByteBuffer.wrap(stateIn.toByteArray())
+            coEvery { storage.getState(any()) } returns ByteBuffer.wrap(stateIn.toByteArray())
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage)
             // when
             val stateOut = stateStorage.getState()
             // then
-            verify(exactly = 1) { storage.getState("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.getState("monitoringGlobal.state") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
@@ -76,7 +76,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
             val binSlot = slot<ByteBuffer>()
 
-            every { storage.putState("monitoringGlobal.state", capture(binSlot)) } returns Unit
+            coEvery { storage.putState("monitoringGlobal.state", capture(binSlot)) } returns Unit
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage)
             // when
@@ -91,13 +91,13 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
         should("delete state") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            every { storage.deleteState(any()) } returns Unit
+            coEvery { storage.deleteState(any()) } returns Unit
             // given
             val stageStorage = MonitoringGlobalStateKeyValueStorage(storage)
             // when
             stageStorage.deleteState()
             // then
-            verify(exactly = 1) { storage.deleteState("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.deleteState("monitoringGlobal.state") }
             confirmVerified(storage)
         }
     }

@@ -27,13 +27,12 @@ package io.infinitic.common.serDe.kotlin
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.io.AvroEncodeFormat
-import io.infinitic.common.monitoringGlobal.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoringPerName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.messages.TaskEngineEnvelope
-import io.infinitic.common.workers.messages.WorkerEnvelope
-import io.infinitic.common.workflows.messages.WorkflowEngineEnvelope
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationStrategy
 import org.apache.avro.file.SeekableByteArrayInput
 import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
@@ -73,11 +72,11 @@ fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     MonitoringPerNameEnvelope::class -> MonitoringPerNameEnvelope.serializer()
     TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
-    WorkerEnvelope::class -> WorkerEnvelope.serializer()
+    TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
     else -> throw RuntimeException("This should not happen: apply kserializer with  ${klass.qualifiedName}")
 } as KSerializer <T>
 
-fun <T> writeBinary(t: T, serializer: SerializationStrategy<T>): ByteArray {
+fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
     val schema = Avro.default.schema(serializer)
     val out = ByteArrayOutputStream()
     Avro.default.openOutputStream(serializer) {

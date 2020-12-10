@@ -27,7 +27,7 @@ package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
-import io.infinitic.common.workflows.state.WorkflowState
+import io.infinitic.common.workflows.engine.state.WorkflowState
 
 fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
     // if everything is completed in methodRun then filter state

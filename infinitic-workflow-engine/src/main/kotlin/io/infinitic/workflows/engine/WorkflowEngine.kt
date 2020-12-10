@@ -25,43 +25,40 @@
 
 package io.infinitic.workflows.engine
 
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkflowEngine
-import io.infinitic.common.workflows.messages.CancelWorkflow
-import io.infinitic.common.workflows.messages.ChildWorkflowCanceled
-import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
-import io.infinitic.common.workflows.messages.DispatchWorkflow
-import io.infinitic.common.workflows.messages.ObjectReceived
-import io.infinitic.common.workflows.messages.TaskCanceled
-import io.infinitic.common.workflows.messages.TaskCompleted
-import io.infinitic.common.workflows.messages.TaskDispatched
-import io.infinitic.common.workflows.messages.TimerCompleted
-import io.infinitic.common.workflows.messages.WorkflowCanceled
-import io.infinitic.common.workflows.messages.WorkflowCompleted
-import io.infinitic.common.workflows.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
-import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
-import io.infinitic.common.workflows.state.WorkflowState
+import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
+import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.ObjectReceived
+import io.infinitic.common.workflows.engine.messages.TaskCanceled
+import io.infinitic.common.workflows.engine.messages.TaskCompleted
+import io.infinitic.common.workflows.engine.messages.TaskDispatched
+import io.infinitic.common.workflows.engine.messages.TimerCompleted
+import io.infinitic.common.workflows.engine.messages.WorkflowCanceled
+import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
+import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
+import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.workflows.engine.storage.events.WorkflowEventStorage
+import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
+import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
 class WorkflowEngine(
-    private val storage: WorkflowStateStorage,
-    private val sendToWorkflowEngine: SendToWorkflowEngine,
-    private val sendToTaskEngine: SendToTaskEngine
+    private val workflowStateStorage: WorkflowStateStorage,
+    private val workflowEventStorage: WorkflowEventStorage,
+    private val workflowEngineOutput: WorkflowEngineOutput
 ) {
+    suspend fun handle(message: WorkflowEngineMessage) {
+        // store event
+        workflowEventStorage.insertWorkflowEvent(message)
 
-    companion object {
-        const val META_WORKFLOW_ID = "workflowId"
-        const val META_METHOD_RUN_ID = "methodRunId"
-    }
-
-    suspend fun handle(msg: WorkflowEngineMessage) {
         // immediately discard irrelevant messages
-        when (msg) {
+        when (message) {
             is WorkflowTaskDispatched -> return
             is TaskDispatched -> return
             is WorkflowCanceled -> return
@@ -70,30 +67,30 @@ class WorkflowEngine(
         }
 
         // get associated state
-        var state = storage.getState(msg.workflowId)
+        var state = workflowStateStorage.getState(message.workflowId)
 
         // if no state (can happen for a newly created workflow or a terminated workflow)
         if (state == null) {
-            if (msg is DispatchWorkflow) {
-                state = dispatchWorkflow(sendToWorkflowEngine, sendToTaskEngine, msg)
-                storage.createState(msg.workflowId, state)
+            if (message is DispatchWorkflow) {
+                state = dispatchWorkflow(workflowEngineOutput, message)
+                workflowStateStorage.createState(message.workflowId, state)
             }
             // discard all other types of message as its workflow is already terminated
             return
         }
 
         // if a workflow task is ongoing then buffer this message (except for WorkflowTaskCompleted)
-        if (state.runningWorkflowTaskId != null && msg !is WorkflowTaskCompleted) {
+        if (state.runningWorkflowTaskId != null && message !is WorkflowTaskCompleted) {
             // buffer this message
-            state.bufferedMessages.add(msg)
+            state.bufferedMessages.add(message)
             // update state
-            storage.updateState(msg.workflowId, state)
+            workflowStateStorage.updateState(message.workflowId, state)
 
             return
         }
 
         // process this message
-        processMessage(state, msg)
+        processMessage(state, message)
 
         // process all buffered messages
         while (
@@ -107,23 +104,23 @@ class WorkflowEngine(
 
         // update state
         if (state.methodRuns.size == 0) {
-            storage.deleteState(msg.workflowId)
+            workflowStateStorage.deleteState(message.workflowId)
         } else {
-            storage.updateState(msg.workflowId, state)
+            workflowStateStorage.updateState(message.workflowId, state)
         }
     }
 
-    private suspend fun processMessage(state: WorkflowState, msg: WorkflowEngineMessage) {
-        when (msg) {
-            is CancelWorkflow -> cancelWorkflow(state, msg)
-            is ChildWorkflowCanceled -> childWorkflowCanceled(state, msg)
-            is ChildWorkflowCompleted -> childWorkflowCompleted(sendToWorkflowEngine, sendToTaskEngine, state, msg)
-            is WorkflowTaskCompleted -> workflowTaskCompleted(sendToWorkflowEngine, sendToTaskEngine, state, msg)
-            is TimerCompleted -> timerCompleted(state, msg)
-            is ObjectReceived -> objectReceived(state, msg)
-            is TaskCanceled -> taskCanceled(state, msg)
-            is TaskCompleted -> taskCompleted(sendToWorkflowEngine, sendToTaskEngine, state, msg)
-            else -> throw RuntimeException("Unknown ForWorkflowEngineMessage: ${msg::class.qualifiedName}")
+    private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
+        when (message) {
+            is CancelWorkflow -> cancelWorkflow(state, message)
+            is ChildWorkflowCanceled -> childWorkflowCanceled(state, message)
+            is ChildWorkflowCompleted -> childWorkflowCompleted(workflowEngineOutput, state, message)
+            is WorkflowTaskCompleted -> workflowTaskCompleted(workflowEngineOutput, state, message)
+            is TimerCompleted -> timerCompleted(state, message)
+            is ObjectReceived -> objectReceived(state, message)
+            is TaskCanceled -> taskCanceled(state, message)
+            is TaskCompleted -> taskCompleted(workflowEngineOutput, state, message)
+            else -> throw RuntimeException("Unknown ForWorkflowEngineMessage: ${message::class.qualifiedName}")
         }
     }
 

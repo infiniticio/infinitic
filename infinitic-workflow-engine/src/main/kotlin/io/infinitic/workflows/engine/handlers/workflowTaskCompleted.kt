@@ -25,12 +25,10 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.plus
-import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
@@ -47,22 +45,22 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.messages.ChildWorkflowCompleted
-import io.infinitic.common.workflows.messages.DispatchWorkflow
-import io.infinitic.common.workflows.messages.WorkflowCompleted
-import io.infinitic.common.workflows.messages.WorkflowTaskCompleted
-import io.infinitic.common.workflows.state.WorkflowState
-import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
+import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.helpers.getMethodRun
 import io.infinitic.workflows.engine.helpers.getPastCommand
 import io.infinitic.workflows.engine.helpers.jobCompleted
+import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
 suspend fun workflowTaskCompleted(
-    sendToWorkflowEngine: SendToWorkflowEngine,
-    sendToTaskEngine: SendToTaskEngine,
+    workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: WorkflowTaskCompleted
 ) {
@@ -87,10 +85,10 @@ suspend fun workflowTaskCompleted(
     // add new commands to past commands
     workflowTaskOutput.newCommands.map {
         when (it.command) {
-            is DispatchTaskInWorkflow -> dispatchTask(sendToTaskEngine, methodRun, it, state)
-            is DispatchChildWorkflow -> dispatchChildWorkflow(sendToWorkflowEngine, methodRun, it, state)
+            is DispatchTaskInWorkflow -> dispatchTask(workflowEngineOutput.sendToTaskEngine, methodRun, it, state)
+            is DispatchChildWorkflow -> dispatchChildWorkflow(workflowEngineOutput.sendToWorkflowEngine, methodRun, it, state)
             is StartAsync -> startAsync(methodRun, it, state)
-            is EndAsync -> endAsync(sendToWorkflowEngine, sendToTaskEngine, methodRun, it, state)
+            is EndAsync -> endAsync(workflowEngineOutput, methodRun, it, state)
             is StartInlineTask -> startInlineTask(methodRun, it)
             is EndInlineTask -> endInlineTask(methodRun, it, state)
             is DispatchTimer -> TODO()
@@ -117,7 +115,7 @@ suspend fun workflowTaskCompleted(
 
         // if this is the main method, it means the workflow is completed
         if (methodRun.isMain) {
-            sendToWorkflowEngine(
+            workflowEngineOutput.sendToWorkflowEngine(
                 WorkflowCompleted(
                     workflowId = state.workflowId,
                     workflowOutput = methodRun.methodOutput!!
@@ -128,7 +126,7 @@ suspend fun workflowTaskCompleted(
 
         // tell parent workflow if any
         methodRun.parentWorkflowId?.let {
-            sendToWorkflowEngine(
+            workflowEngineOutput.sendToWorkflowEngine(
                 ChildWorkflowCompleted(
                     workflowId = it,
                     methodRunId = methodRun.parentMethodRunId!!,
@@ -152,8 +150,7 @@ suspend fun workflowTaskCompleted(
                 pastCommand.workflowTaskIndexAtStart = state.workflowTaskIndex + 1
                 // dispatch a new workflowTask
                 dispatchWorkflowTask(
-                    sendToWorkflowEngine,
-                    sendToTaskEngine,
+                    workflowEngineOutput,
                     state,
                     methodRun,
                     pastCommand.commandPosition
@@ -178,8 +175,7 @@ suspend fun workflowTaskCompleted(
                     pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
                     // dispatch a new workflowTask
                     dispatchWorkflowTask(
-                        sendToWorkflowEngine,
-                        sendToTaskEngine,
+                        workflowEngineOutput,
                         state,
                         methodRun,
                         pastStep.stepPosition
@@ -202,8 +198,7 @@ private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: Work
 }
 
 private suspend fun endAsync(
-    sendToWorkflowEngine: SendToWorkflowEngine,
-    sendToTaskEngine: SendToTaskEngine,
+    workflowEngineOutput: WorkflowEngineOutput,
     methodRun: MethodRun,
     newCommand: NewCommand,
     state: WorkflowState
@@ -215,8 +210,7 @@ private suspend fun endAsync(
     }
 
     jobCompleted(
-        sendToWorkflowEngine,
-        sendToTaskEngine,
+        workflowEngineOutput,
         state,
         methodRun.methodRunId,
         pastStartAsync.commandId,
@@ -255,9 +249,9 @@ private suspend fun dispatchTask(
         methodName = command.methodName,
         methodParameterTypes = command.methodParameterTypes,
         methodInput = command.methodInput,
-        taskMeta = command.taskMeta +
-            (WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}") +
-            (WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}")
+        workflowId = state.workflowId,
+        methodRunId = methodRun.methodRunId,
+        taskMeta = command.taskMeta
     )
     sendToTaskEngine(msg, 0F)
 

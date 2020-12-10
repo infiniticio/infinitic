@@ -25,7 +25,7 @@
 
 package io.infinitic.monitoring.global.engine.storage
 
-import io.infinitic.common.monitoringGlobal.state.MonitoringGlobalState
+import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import java.nio.ByteBuffer
@@ -37,17 +37,17 @@ import java.nio.ByteBuffer
 open class MonitoringGlobalStateKeyValueStorage(
     protected val storage: KeyValueStorage
 ) : MonitoringGlobalStateStorage {
-    override fun getState(): MonitoringGlobalState? {
+    override suspend fun getState(): MonitoringGlobalState? {
         return storage.getState(getMonitoringGlobalStateKey())?.let {
             MonitoringGlobalState.fromByteArray(it.array())
         }
     }
 
-    override fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
+    override suspend fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
         storage.putState(getMonitoringGlobalStateKey(), ByteBuffer.wrap(newState.toByteArray()))
     }
 
-    override fun deleteState() {
+    override suspend fun deleteState() {
         storage.deleteState(getMonitoringGlobalStateKey())
     }
 

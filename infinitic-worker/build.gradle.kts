@@ -23,14 +23,19 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
-}
-
 dependencies {
-    implementation(kotlin("reflect"))
-    implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
+    implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
+    implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
+    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
 
     api(project(":infinitic-common"))
+    api(project(":infinitic-monitoring-engines"))
+    api(project(":infinitic-task-engine"))
+    api(project(":infinitic-workflow-engine"))
+    api(project(":infinitic-pulsar"))
+    api(project(":infinitic-storage"))
+    api(project(":infinitic-pulsar"))
+    api(project(":infinitic-task-executor"))
 }

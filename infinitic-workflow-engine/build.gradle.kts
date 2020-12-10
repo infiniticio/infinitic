@@ -25,7 +25,8 @@
 
 dependencies {
     implementation("org.slf4j:slf4j-api:${project.extra["slf4j_version"]}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-task-engine"))
+    api(project(":infinitic-common"))
+    api(project(":infinitic-task-engine"))
 }

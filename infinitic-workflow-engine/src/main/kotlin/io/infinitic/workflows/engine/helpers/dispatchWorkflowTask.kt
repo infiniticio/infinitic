@@ -25,8 +25,6 @@
 
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.common.data.interfaces.inc
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
@@ -35,19 +33,18 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
-import io.infinitic.common.workflows.messages.WorkflowTaskDispatched
-import io.infinitic.common.workflows.state.WorkflowState
-import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
 suspend fun dispatchWorkflowTask(
-    sendToWorkflowEngine: SendToWorkflowEngine,
-    sendToTaskEngine: SendToTaskEngine,
+    workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,
     branchPosition: MethodRunPosition = MethodRunPosition("")
@@ -74,20 +71,17 @@ suspend fun dispatchWorkflowTask(
         methodName = MethodName(WorkflowTask.DEFAULT_METHOD),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskInput::class.java.name)),
         methodInput = MethodInput.from(workflowTaskInput),
+        workflowId = state.workflowId,
+        methodRunId = methodRun.methodRunId,
         taskOptions = TaskOptions(),
-        taskMeta = TaskMeta.from(
-            mapOf(
-                WorkflowEngine.META_WORKFLOW_ID to "${state.workflowId}",
-                WorkflowEngine.META_METHOD_RUN_ID to "${methodRun.methodRunId}"
-            )
-        )
+        taskMeta = TaskMeta()
     )
 
     // dispatch workflow task
-    sendToTaskEngine(workflowTask, 0F)
+    workflowEngineOutput.sendToTaskEngine(workflowTask, 0F)
 
     // log event
-    sendToWorkflowEngine(
+    workflowEngineOutput.sendToWorkflowEngine(
         WorkflowTaskDispatched(
             workflowTaskId = workflowTaskId,
             workflowId = state.workflowId,

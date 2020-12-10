@@ -25,19 +25,17 @@
 
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.SendToTaskEngine
-import io.infinitic.common.SendToWorkflowEngine
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
-import io.infinitic.common.workflows.state.WorkflowState
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
 suspend fun jobCompleted(
-    sendToWorkflowEngine: SendToWorkflowEngine,
-    sendToTaskEngine: SendToTaskEngine,
+    workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRunId: MethodRunId,
     commandId: CommandId,
@@ -62,8 +60,7 @@ suspend fun jobCompleted(
             it.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
             // dispatch a new workflowTask
             dispatchWorkflowTask(
-                sendToWorkflowEngine,
-                sendToTaskEngine,
+                workflowEngineOutput,
                 state,
                 methodRun,
                 it.stepPosition
