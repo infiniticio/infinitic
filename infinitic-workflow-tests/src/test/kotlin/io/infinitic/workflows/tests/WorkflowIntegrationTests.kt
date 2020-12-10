@@ -26,6 +26,7 @@
 package io.infinitic.workflows.tests
 
 import io.infinitic.client.Client
+import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -390,6 +391,15 @@ class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecut
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 }
 
+class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
+
+    override val sendToTaskEngine: SendToTaskEngine =
+        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+
+    override val sendToWorkflowEngine: SendToWorkflowEngine =
+        { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
+}
+
 fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
     launch {
         if (after > 0F) {
@@ -438,10 +448,7 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     workflowOutput = null
 
-    client = Client(
-        { msg: TaskEngineMessage, _: Float -> sendToTaskEngine(msg, 0F) },
-        { msg: WorkflowEngineMessage, _: Float -> sendToWorkflowEngine(msg, 0F) }
-    )
+    client = Client(TestClientOutput(this))
 
     workflowEngine = WorkflowEngine(
         workflowStateStorage,

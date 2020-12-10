@@ -50,10 +50,11 @@ fun main() {
             InMemoryClientOutput(this, taskEngineCommandsChannel, workflowEngineCommandsChannel)
         )
 
-        val taskExecutorRegister = TaskExecutorRegisterImpl()
-        taskExecutorRegister.register(TaskA::class.java.name) { TaskAImpl() }
-        taskExecutorRegister.register(WorkflowA::class.java.name) { WorkflowAImpl() }
-        taskExecutorRegister.register(WorkflowB::class.java.name) { WorkflowBImpl() }
+        val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
+            register(TaskA::class.java.name) { TaskAImpl() }
+            register(WorkflowA::class.java.name) { WorkflowAImpl() }
+            register(WorkflowB::class.java.name) { WorkflowBImpl() }
+        }
 
         startInMemory(taskExecutorRegister, InMemoryStorage(), taskEngineCommandsChannel, workflowEngineCommandsChannel)
 

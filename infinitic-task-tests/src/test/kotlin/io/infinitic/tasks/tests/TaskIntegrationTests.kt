@@ -26,6 +26,7 @@
 package io.infinitic.tasks.tests
 
 import io.infinitic.client.Client
+import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -186,7 +187,7 @@ class TaskIntegrationTests : StringSpec({
     }
 })
 
-class InMemoryTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
+class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
     override val sendToWorkflowEngine: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
 
     override val sendToTaskEngine: SendToTaskEngine =
@@ -199,16 +200,24 @@ class InMemoryTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOu
         { msg: MonitoringPerNameEngineMessage -> scope.sendToMonitoringPerName(msg) }
 }
 
-class InMemoryMonitoringPerNameOutput(private val scope: CoroutineScope) : MonitoringPerNameOutput {
+class TestMonitoringPerNameOutput(private val scope: CoroutineScope) : MonitoringPerNameOutput {
 
     override val sendToMonitoringGlobal: SendToMonitoringGlobal =
         { msg: MonitoringGlobalMessage -> scope.sendToMonitoringGlobal(msg) }
 }
 
-class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
+class TestTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
 
     override val sendToTaskEngine: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+}
+
+class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
+
+    override val sendToTaskEngine: SendToTaskEngine =
+        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+
+    override val sendToWorkflowEngine: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
 }
 
 fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
@@ -249,24 +258,21 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     taskStatus = null
 
-    client = Client(
-        { msg: TaskEngineMessage, _: Float -> sendToTaskEngine(msg, 0F) },
-        { _: WorkflowEngineMessage, _: Float -> }
-    )
+    client = Client(TestClientOutput(this))
 
     taskEngine = TaskEngine(
         taskStateStorage,
         NoTaskEventStorage(),
-        InMemoryTaskEngineOutput(this)
+        TestTaskEngineOutput(this)
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(
         monitoringPerNameStateStorage,
-        InMemoryMonitoringPerNameOutput(this)
+        TestMonitoringPerNameOutput(this)
     )
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    taskExecutor = TaskExecutor(InMemoryTaskExecutorOutput(this))
+    taskExecutor = TaskExecutor(TestTaskExecutorOutput(this))
     taskExecutor.register(TaskTest::class.java.name) { taskTest }
 }
