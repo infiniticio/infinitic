@@ -23,8 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.client.transport
 
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+interface ClientOutput {
+    val sendToWorkflowEngine: SendToWorkflowEngine
+    val sendToTaskEngine: SendToTaskEngine
+}

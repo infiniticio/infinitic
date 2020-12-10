@@ -41,7 +41,7 @@ class WorkflowTaskImpl : WorkflowTask {
 
     override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
         // get  instance workflow by name
-        val workflow = taskAttemptContext.taskExecutor.getWorkflow("${workflowTaskInput.workflowName}")
+        val workflow = taskAttemptContext.taskExecutor.getWorkflowInstance("${workflowTaskInput.workflowName}")
 
         // set methodContext
         val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput, workflow)

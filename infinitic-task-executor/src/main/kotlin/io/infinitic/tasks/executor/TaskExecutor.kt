@@ -33,22 +33,19 @@ import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
-import io.infinitic.common.workflows.exceptions.WorkflowUsedAsTask
-import io.infinitic.common.workflows.executors.Workflow
+import io.infinitic.tasks.executor.register.InstanceFactory
+import io.infinitic.tasks.executor.register.TaskExecutorRegister
+import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.task.RetryDelay
 import io.infinitic.tasks.executor.task.RetryDelayFailed
 import io.infinitic.tasks.executor.task.RetryDelayRetrieved
 import io.infinitic.tasks.executor.task.TaskAttemptContext
 import io.infinitic.tasks.executor.task.TaskCommand
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
-import io.infinitic.tasks.executor.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
@@ -61,46 +58,25 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-typealias InstanceFactory = () -> Any
+// typealias InstanceFactory = () -> Any
 
 open class TaskExecutor(
-    open val taskExecutorOutput: TaskExecutorOutput
-) {
-
-    // map taskName <> taskInstance
-    private val registeredFactories = mutableMapOf<String, InstanceFactory>()
-
-    // register WorkflowTask
-    init {
-        register<WorkflowTask> { WorkflowTaskImpl() }
-    }
+    open val taskExecutorOutput: TaskExecutorOutput,
+    val taskExecutorRegister: TaskExecutorRegister = TaskExecutorRegisterImpl()
+) : TaskExecutorRegister by taskExecutorRegister {
 
     /**
      * Register a factory to use for a given name
      */
     inline fun <reified T> register(noinline factory: InstanceFactory) {
-        `access$registeredFactories`[T::class.java.name] = factory
-    }
-
-    /**
-     * Register a factory to use for a given name
-     */
-    fun register(name: String, factory: () -> Any) {
-        registeredFactories[name] = factory
+        taskExecutorRegister.register(T::class.java.name, factory)
     }
 
     /**
      * Unregister a given name (mostly used in tests)
      */
     inline fun <reified T> unregister() {
-        `access$registeredFactories`.remove(T::class.java.name)
-    }
-
-    /**
-     * Unregister a given name (mostly used in tests)
-     */
-    fun unregister(name: String) {
-        registeredFactories.remove(name)
+        taskExecutorRegister.unregister(T::class.java.name)
     }
 
     suspend fun handle(message: TaskExecutorMessage) = when (message) {
@@ -172,27 +148,6 @@ open class TaskExecutor(
         }
     }
 
-    private fun getTask(name: String): Any {
-        val instance = getInstance(name)
-        if (instance is Workflow) throw WorkflowUsedAsTask(name, instance::class.qualifiedName!!)
-        else return instance
-    }
-
-    fun getWorkflow(name: String): Workflow {
-        val instance = getInstance(name)
-        if (instance is Workflow) return instance
-        else throw TaskUsedAsWorkflow(name, instance::class.qualifiedName!!)
-    }
-
-    fun getRegisteredTasks() =
-        registeredFactories
-            .map { (name, factory) -> name to factory() }
-            .filterNot { (_, instance) -> instance is Workflow }
-            .map { (name, _) -> name }
-
-    protected fun getInstance(name: String) =
-        registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
-
     private suspend fun executeTask(method: Method, task: Any, parameters: List<Any?>) = coroutineScope {
         val output = method.invoke(task, *parameters.toTypedArray())
         ensureActive()
@@ -224,7 +179,7 @@ open class TaskExecutor(
     }
 
     private fun parse(msg: RunTask): TaskCommand {
-        val task = getTask("${msg.taskName}")
+        val task = getTaskInstance("${msg.taskName}")
 
         val parameterTypes = msg.methodParameterTypes
         val method = if (parameterTypes == null) {
@@ -292,8 +247,4 @@ open class TaskExecutor(
 
         taskExecutorOutput.sendToTaskEngine(taskAttemptCompleted, 0F)
     }
-
-    @PublishedApi
-    internal val `access$registeredFactories`: MutableMap<String, InstanceFactory>
-        get() = registeredFactories
 }

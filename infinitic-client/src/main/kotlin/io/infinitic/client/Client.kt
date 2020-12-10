@@ -25,6 +25,7 @@
 
 package io.infinitic.client
 
+import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
@@ -38,20 +39,17 @@ import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.executors.Workflow
 
 class Client(
-    val sendToTaskEngine: SendToTaskEngine,
-    val sendToWorkflowEngine: SendToWorkflowEngine
+    private val clientOutput: ClientOutput
 ) {
 
     /*
@@ -83,7 +81,7 @@ class Client(
             workflowMeta = meta,
             workflowOptions = options
         )
-        sendToWorkflowEngine(msg, 0F)
+        clientOutput.sendToWorkflowEngine(msg, 0F)
 
         return WorkflowInstance(msg.workflowId)
     }
@@ -129,7 +127,7 @@ class Client(
             taskOptions = options,
             taskMeta = meta
         )
-        sendToTaskEngine(msg, 0F)
+        clientOutput.sendToTaskEngine(msg, 0F)
 
         return TaskInstance(msg.taskId)
     }
@@ -165,7 +163,7 @@ class Client(
             taskOptions = taskOptions,
             taskMeta = taskMeta
         )
-        sendToTaskEngine(msg, 0F)
+        clientOutput.sendToTaskEngine(msg, 0F)
     }
 
     /*
@@ -179,6 +177,6 @@ class Client(
             taskId = TaskId(id),
             taskOutput = MethodOutput.from(output)
         )
-        sendToTaskEngine(msg, 0F)
+        clientOutput.sendToTaskEngine(msg, 0F)
     }
 }

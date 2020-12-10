@@ -45,12 +45,12 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.helpers.getMethodRun

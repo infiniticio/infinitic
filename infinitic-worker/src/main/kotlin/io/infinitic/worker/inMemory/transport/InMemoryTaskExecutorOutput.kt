@@ -23,8 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.worker.inMemory.transport
 
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
+import io.infinitic.tasks.executor.transport.TaskExecutorOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+class InMemoryTaskExecutorOutput(
+    scope: CoroutineScope,
+    taskEventChannel: Channel<TaskEngineMessageToProcess>
+) : TaskExecutorOutput {
+    override val sendToTaskEngine: SendToTaskEngine = { msg: TaskEngineMessage, after: Float ->
+        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+        scope.launch {
+            // TODO inMemory resilience implies to find a way to persist delayed messages
+            delay((1000 * after).toLong())
+            taskEventChannel.send(InMemoryMessageToProcess(msg))
+        }
+    }
+}

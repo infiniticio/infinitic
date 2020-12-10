@@ -23,8 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.worker.inMemory.transport
 
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workers.MessageToProcess
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+data class InMemoryMessageToProcess<T> (
+    override val message: T
+) : MessageToProcess<T> {
+    override var exception: Exception? = null
+    override var output: Any? = null
+}

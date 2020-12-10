@@ -23,8 +23,15 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.pulsar.transport
 
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workers.MessageToProcess
+import org.apache.pulsar.client.api.MessageId
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+data class PulsarMessageToProcess<T> (
+    override val message: T,
+    val messageId: MessageId
+) : MessageToProcess<T> {
+    override var exception: Exception? = null
+    override var output: Any? = null
+}

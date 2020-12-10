@@ -23,8 +23,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.tasks.executor.register
 
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.executors.Workflow
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+typealias InstanceFactory = () -> Any
+
+interface TaskExecutorRegister {
+
+    /**
+     * Register an instance factory for task or workflow name
+     */
+    fun register(name: String, factory: InstanceFactory)
+
+    /**
+     * Unregister a given name (mostly used in tests)
+     */
+    fun unregister(name: String)
+
+    /**
+     * Get task instance per name
+     */
+    fun getTaskInstance(name: String): Any
+
+    /**
+     * Get workflow instance per name
+     */
+    fun getWorkflowInstance(name: String): Workflow
+
+    /**
+     * Get list of all registered tasks
+     */
+    fun getTasks(): List<String>
+}

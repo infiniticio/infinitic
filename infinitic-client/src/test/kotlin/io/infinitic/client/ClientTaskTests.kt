@@ -36,33 +36,27 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.Runs
-import io.mockk.coEvery
-import io.mockk.just
-import io.mockk.mockk
 import io.mockk.slot
 
 class ClientTaskTests : StringSpec({
-    val sendToTaskEngine = mockk<SendToTaskEngine>()
-    val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
-    val slot = slot<TaskEngineMessage>()
-    coEvery { sendToTaskEngine(capture(slot), 0F) } just Runs
-    val client = Client(sendToTaskEngine, sendToWorkflowEngine)
+    val taskSlot = slot<TaskEngineMessage>()
+    val workflowSlot = slot<WorkflowEngineMessage>()
+    val client = Client(MockClientOutput(taskSlot, workflowSlot))
 
     beforeTest {
-        slot.clear()
+        taskSlot.clear()
+        workflowSlot.clear()
     }
 
     "Should be able to dispatch method without parameter" {
         // when
         val task = client.dispatch(FakeTask::class.java) { m1() }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -80,8 +74,8 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m1(0) }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -99,8 +93,8 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m1(null) }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -118,8 +112,8 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m1("a") }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -137,8 +131,8 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m1(0, "a") }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
         msg shouldBe DispatchTask(
             taskId = task.taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -157,8 +151,8 @@ class ClientTaskTests : StringSpec({
         val fake = FakeClass()
         val task = client.dispatch(FakeTask::class.java) { m1(fake) }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
             taskId = task.taskId,
@@ -177,8 +171,8 @@ class ClientTaskTests : StringSpec({
         // when
         val task = client.dispatch(FakeTask::class.java) { m2() }
         // then
-        slot.isCaptured shouldBe true
-        val msg = slot.captured
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
             taskId = task.taskId,

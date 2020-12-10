@@ -23,8 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.client
 
+import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.mockk.CapturingSlot
+import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.just
+import io.mockk.mockk
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+internal class MockClientOutput(
+    taskSlot: CapturingSlot<TaskEngineMessage>,
+    workflowSlot: CapturingSlot<WorkflowEngineMessage>
+) : ClientOutput {
+    override val sendToTaskEngine = mockk<SendToTaskEngine>()
+    override val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
+
+    init {
+        coEvery { sendToTaskEngine(capture(taskSlot), 0F) } just Runs
+        coEvery { sendToWorkflowEngine(capture(workflowSlot), 0F) } just Runs
+    }
+}

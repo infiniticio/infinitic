@@ -23,8 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.worker.samples
 
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+interface TaskA {
+    fun concat(str1: String, str2: String): String
+    fun reverse(str: String): String
+    fun await(delay: Long)
+}
+
+class TaskAImpl : TaskA {
+    override fun concat(str1: String, str2: String) = str1 + str2
+    override fun reverse(str: String) = str.reversed()
+    override fun await(delay: Long) = runBlocking { delay(delay) }
+}

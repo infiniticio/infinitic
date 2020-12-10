@@ -23,8 +23,39 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.workflows.tests.samples
 
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.executors.Workflow
+import io.infinitic.common.workflows.executors.WorkflowTaskContext
+import io.infinitic.common.workflows.executors.proxy
+import io.infinitic.worker.samples.TaskA
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+interface WorkflowB : Workflow {
+    fun concat(input: String): String
+    fun factorial(n: Long): Long
+}
+
+class WorkflowBImpl() : WorkflowB {
+    override lateinit var context: WorkflowTaskContext
+
+    private val task = proxy(TaskA::class)
+    private val workflow = proxy(WorkflowB::class)
+
+    override fun concat(input: String): String {
+        var str = input
+
+        str = task.concat(str, "a")
+        str = task.concat(str, "b")
+        str = task.concat(str, "c")
+
+        return str // should be "${input}123"
+    }
+
+    override fun factorial(n: Long): Long {
+        return if (n > 1) {
+            n * workflow.factorial(n - 1)
+        } else {
+            1
+        }
+    }
+}

@@ -26,7 +26,7 @@
 package io.infinitic.workflows.engine.transport
 
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
 interface WorkflowEngineOutput {
     val sendToWorkflowEngine: SendToWorkflowEngine

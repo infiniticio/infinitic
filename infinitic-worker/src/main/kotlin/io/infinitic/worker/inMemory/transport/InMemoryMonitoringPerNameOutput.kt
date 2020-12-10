@@ -23,8 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.worker.inMemory.transport
 
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
+import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, Float) -> Unit
+class InMemoryMonitoringPerNameOutput(
+    scope: CoroutineScope,
+    monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>
+) : MonitoringPerNameOutput {
+
+    override val sendToMonitoringGlobal: SendToMonitoringGlobal = {
+        monitoringGlobalChannel.send(InMemoryMessageToProcess(it))
+    }
+}

@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar.transport
 
+import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -35,23 +36,31 @@ import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
-import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
+import io.infinitic.pulsar.topics.TaskEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
 
-class PulsarWorkflowEngineOutput(private val pulsarMessageBuilder: PulsarMessageBuilder) : WorkflowEngineOutput {
+class PulsarClientOutput(private val pulsarMessageBuilder: PulsarMessageBuilder) : ClientOutput {
     companion object {
         /*
         Create a new PulsarTransport from a Pulsar Client
          */
-        fun from(client: PulsarClient) = PulsarWorkflowEngineOutput(PulsarMessageBuilderFromClient(client))
+        fun from(client: PulsarClient) = PulsarClientOutput(PulsarMessageBuilderFromClient(client))
 
         /*
         Create a new PulsarTransport from a Pulsar Function Context
          */
-        fun from(context: Context) = PulsarWorkflowEngineOutput(PulsarMessageBuilderFromFunction(context))
+        fun from(context: Context) = PulsarClientOutput(PulsarMessageBuilderFromFunction(context))
+    }
+
+    override val sendToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+        pulsarMessageBuilder.sendPulsarMessage(
+            TaskEngineEventsTopic.name,
+            TaskEngineEnvelope.from(message),
+            "${message.taskId}",
+            after
+        )
     }
 
     override val sendToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
@@ -59,15 +68,6 @@ class PulsarWorkflowEngineOutput(private val pulsarMessageBuilder: PulsarMessage
             WorkflowEngineEventsTopic.name,
             WorkflowEngineEnvelope.from(message),
             "${message.workflowId}",
-            after
-        )
-    }
-
-    override val sendToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
-        pulsarMessageBuilder.sendPulsarMessage(
-            TaskEngineCommandsTopic.name,
-            TaskEngineEnvelope.from(message),
-            "${message.taskId}",
             after
         )
     }

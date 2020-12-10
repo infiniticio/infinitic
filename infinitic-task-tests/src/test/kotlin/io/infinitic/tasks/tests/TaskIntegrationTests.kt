@@ -37,8 +37,8 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
