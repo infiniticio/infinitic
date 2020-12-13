@@ -27,7 +27,6 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
@@ -38,11 +37,13 @@ import io.infinitic.pulsar.transport.PulsarWorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineInput
+import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -57,6 +58,7 @@ typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<Workflow
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
     pulsarClient: PulsarClient,
     keyValueStorage: KeyValueStorage,
+    logChannel: SendChannel<WorkflowEngineMessageToProcess>?,
     instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
@@ -85,13 +87,12 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
         // coroutine dedicated to pulsar message acknowledging
         launch(CoroutineName("workflow-engine-message-acknowledger-$it")) {
             for (messageToProcess in workflowResultsChannel) {
-//                println("WORKFLOW_ENGINE: ${messageToProcess.message}")
                 if (messageToProcess.exception == null) {
-                    if (messageToProcess.message is WorkflowCompleted) println(messageToProcess.message)
                     workflowEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
                 } else {
                     workflowEngineConsumer.negativeAcknowledge(messageToProcess.messageId)
                 }
+                logChannel?.send(messageToProcess)
             }
         }
 

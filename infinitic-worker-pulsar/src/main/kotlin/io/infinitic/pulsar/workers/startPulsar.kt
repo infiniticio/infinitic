@@ -25,12 +25,21 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.PulsarClient
+import java.lang.RuntimeException
 
 private const val N_WORKERS = 100
 
@@ -40,29 +49,54 @@ fun CoroutineScope.startPulsar(
     keyValueStorage: KeyValueStorage
 ) = launch(Dispatchers.IO) {
 
+    val logChannel = Channel<MessageToProcess<Any>>()
+
+    launch(CoroutineName("logger")) {
+        for (messageToProcess in logChannel) {
+            when (val message = messageToProcess.message) {
+                is MonitoringGlobalMessage ->
+                    println("Monitoring Global  : $message")
+                is MonitoringPerNameEngineMessage ->
+                    println("Monitoring Per Name: $message")
+                is TaskExecutorMessage ->
+                    println("Task Executor      : $message")
+                is TaskEngineMessage ->
+                    println("Task engine        : $message")
+                is WorkflowEngineMessage ->
+                    println("Workflow engine    : $message")
+                else -> throw RuntimeException("Unknown messageToProcess type: $messageToProcess")
+            }
+        }
+    }
+
     startPulsarMonitoringGlobalWorker(
         pulsarClient,
-        keyValueStorage
+        keyValueStorage,
+        logChannel
     )
 
     startPulsarMonitoringPerNameWorker(
         pulsarClient,
-        keyValueStorage
+        keyValueStorage,
+        logChannel
     )
 
     startPulsarTaskExecutorWorker(
         pulsarClient,
         taskExecutorRegister,
-        N_WORKERS
+        logChannel,
+        N_WORKERS,
     )
 
     startPulsarTaskEngineWorker(
         pulsarClient,
-        keyValueStorage
+        keyValueStorage,
+        logChannel
     )
 
     startPulsarWorkflowEngineWorker(
         pulsarClient,
-        keyValueStorage
+        keyValueStorage,
+        logChannel
     )
 }

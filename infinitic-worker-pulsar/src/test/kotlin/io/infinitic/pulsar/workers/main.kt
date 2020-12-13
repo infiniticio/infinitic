@@ -53,10 +53,10 @@ fun main() {
 
         startPulsar(taskExecutorRegister, pulsarClient, InMemoryStorage())
 
-        while (true) {
+        repeat(1000) {
 //            client.dispatch<TaskA> { reverse("abc") }
-            delay(100)
             client.dispatch(WorkflowA::class.java) { seq1() }
+            delay(100)
         }
     }
 }

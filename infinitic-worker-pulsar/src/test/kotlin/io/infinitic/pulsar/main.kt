@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.pulsar.admin.initInfinitic
+import io.infinitic.pulsar.admin.infiniticInit
 import org.apache.pulsar.client.admin.PulsarAdmin
 
 fun main() {
@@ -44,7 +44,7 @@ fun main() {
         .allowTlsInsecureConnection(tlsAllowInsecureConnection)
         .build()
 
-    admin.initInfinitic("infinitic", "dev")
+    admin.infiniticInit("infinitic", "dev")
 //    val schema = admin.schemas().getSchemaInfo("persistent://public/default/workflows-engine")
 
 //    println(schema)

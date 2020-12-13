@@ -31,6 +31,7 @@ import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInput
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.MonitoringPerNameTopic
@@ -40,6 +41,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -54,6 +56,7 @@ typealias PulsarMonitoringPerNameMessageToProcess = PulsarMessageToProcess<Monit
 fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     pulsarClient: PulsarClient,
     keyValueStorage: KeyValueStorage,
+    logChannel: SendChannel<MonitoringPerNameMessageToProcess>?,
     instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
@@ -80,12 +83,12 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
         // coroutine dedicated to pulsar message acknowledging
         launch(CoroutineName("monitoring-per-name-message-acknowledger-$it")) {
             for (messageToProcess in monitoringPerNameResultsChannel) {
-//                println("MONITORING_PER_NAME: ${messageToProcess.message}")
                 if (messageToProcess.exception == null) {
                     monitoringPerNameConsumer.acknowledgeAsync(messageToProcess.messageId).await()
                 } else {
                     monitoringPerNameConsumer.negativeAcknowledge(messageToProcess.messageId)
                 }
+                logChannel?.send(messageToProcess)
             }
         }
 

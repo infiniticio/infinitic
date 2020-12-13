@@ -41,7 +41,7 @@ import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.common.policies.data.TenantInfo
 import kotlin.reflect.KClass
 
-fun PulsarAdmin.initInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>? = null) {
+fun PulsarAdmin.infiniticInit(tenant: String, namespace: String, allowedClusters: Set<String>? = null) {
     createTenant(this, tenant, getAllowedClusters(this, allowedClusters))
 
     createNamespace(this, tenant, namespace)

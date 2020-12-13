@@ -34,11 +34,13 @@ import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarTaskExecutorOutput
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
+import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -53,6 +55,7 @@ typealias PulsarTaskExecutorMessageToProcess = PulsarMessageToProcess<TaskExecut
 fun CoroutineScope.startPulsarTaskExecutorWorker(
     pulsarClient: PulsarClient,
     taskExecutorRegister: TaskExecutorRegister,
+    logChannel: SendChannel<TaskExecutorMessageToProcess>?,
     instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
@@ -83,12 +86,12 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
         // coroutine dedicated to pulsar message acknowledging
         launch(CoroutineName("task-engine-message-acknowledger-$name")) {
             for (messageToProcess in taskExecutorResultsChannel) {
-//                println("TASK_EXECUTOR: ${messageToProcess.message}")
                 if (messageToProcess.exception == null) {
                     taskEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
                 } else {
                     taskEngineConsumer.negativeAcknowledge(messageToProcess.messageId)
                 }
+                logChannel?.send(messageToProcess)
             }
         }
 

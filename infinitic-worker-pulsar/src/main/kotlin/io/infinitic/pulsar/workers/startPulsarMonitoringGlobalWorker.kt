@@ -31,6 +31,7 @@ import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInput
+import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
@@ -39,6 +40,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -51,7 +53,8 @@ typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<Monito
 
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     pulsarClient: PulsarClient,
-    keyValueStorage: KeyValueStorage
+    keyValueStorage: KeyValueStorage,
+    logChannel: SendChannel<MonitoringGlobalMessageToProcess>?
 ) = launch(Dispatchers.IO) {
 
     val monitoringGlobalChannel = Channel<PulsarMonitoringGlobalMessageToProcess>()
@@ -74,12 +77,12 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("monitoring-global-message-acknowledger")) {
         for (messageToProcess in monitoringGlobalResultsChannel) {
-//            println("MONITORING_GLOBAL: ${messageToProcess.message}")
             if (messageToProcess.exception == null) {
                 monitoringGlobalConsumer.acknowledgeAsync(messageToProcess.messageId).await()
             } else {
                 monitoringGlobalConsumer.negativeAcknowledge(messageToProcess.messageId)
             }
+            logChannel?.send(messageToProcess)
         }
     }
 
