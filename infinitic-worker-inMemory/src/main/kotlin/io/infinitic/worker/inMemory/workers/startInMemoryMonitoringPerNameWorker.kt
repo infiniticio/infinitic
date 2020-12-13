@@ -26,15 +26,16 @@
 package io.infinitic.worker.inMemory
 
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInput
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
 import io.infinitic.worker.inMemory.transport.InMemoryMonitoringPerNameOutput
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
 private const val N_WORKERS = 10
@@ -42,19 +43,17 @@ private const val N_WORKERS = 10
 fun CoroutineScope.startInMemoryMonitoringPerNameWorker(
     keyValueStorage: KeyValueStorage,
     monitoringPerNameChannel: Channel<MonitoringPerNameMessageToProcess>,
-    monitoringPerNameResultsChannel: Channel<MonitoringPerNameMessageToProcess>,
-    monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>
+    monitoringPerNameResultsChannel: SendChannel<MonitoringPerNameMessageToProcess>,
+    monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>,
+    logChannel: SendChannel<MessageToProcess<Any>>?
 ) = launch {
 
-    launch(CoroutineName("monitoring-per-name-message-acknowledger")) {
-        for (result in monitoringPerNameResultsChannel) {
-            println("MONITORING_PER_NAME: ${result.message}")
-            // no message acknowledging for inMemory implementation
-            if (result.exception != null) {
-                println(result.exception)
-            }
-        }
-    }
+//    launch(CoroutineName("monitoring-per-name-message-acknowledger")) {
+//        for (result in monitoringPerNameResultsChannel) {
+//            logChannel?.send(result)
+//            // no message acknowledging for inMemory implementation
+//        }
+//    }
 
     startMonitoringPerNameEngine(
         "monitoring-per-name-engine",

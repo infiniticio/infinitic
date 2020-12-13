@@ -31,33 +31,23 @@ import io.infinitic.tasks.executor.transport.TaskExecutorInput
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import io.infinitic.worker.inMemory.transport.InMemoryTaskExecutorOutput
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
 fun CoroutineScope.startInMemoryTaskExecutorWorker(
     taskExecutorRegister: TaskExecutorRegister,
     taskEngineEventsChannel: Channel<TaskEngineMessageToProcess>,
     taskExecutorChannel: Channel<TaskExecutorMessageToProcess>,
-    taskExecutorResultsChannel: Channel<TaskExecutorMessageToProcess>,
+    logChannel: SendChannel<TaskExecutorMessageToProcess>,
     instancesNumber: Int = 1
 ) = launch {
-
-    launch(CoroutineName("task-executor-message-acknowledger")) {
-        for (result in taskExecutorResultsChannel) {
-            println("TASK_EXECUTOR: ${result.message}")
-            // no message acknowledging for inMemory implementation
-            if (result.exception != null) {
-                println(result.exception)
-            }
-        }
-    }
 
     repeat(instancesNumber) {
         startTaskExecutor(
             taskExecutorRegister,
-            TaskExecutorInput(taskExecutorChannel, taskExecutorResultsChannel),
+            TaskExecutorInput(taskExecutorChannel, logChannel),
             InMemoryTaskExecutorOutput(this, taskEngineEventsChannel),
             "-$it"
         )

@@ -35,6 +35,7 @@ import io.infinitic.workflows.tests.samples.WorkflowA
 import io.infinitic.workflows.tests.samples.WorkflowAImpl
 import io.infinitic.workflows.tests.samples.WorkflowB
 import io.infinitic.workflows.tests.samples.WorkflowBImpl
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 
@@ -52,8 +53,9 @@ fun main() {
 
         startPulsar(taskExecutorRegister, pulsarClient, InMemoryStorage())
 
-        repeat(10) {
+        while (true) {
 //            client.dispatch<TaskA> { reverse("abc") }
+            delay(100)
             client.dispatch(WorkflowA::class.java) { seq1() }
         }
     }

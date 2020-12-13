@@ -33,28 +33,18 @@ import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineInput
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
 fun CoroutineScope.startInMemoryWorkflowEngineWorker(
     keyValueStorage: KeyValueStorage,
     workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>,
     workflowEngineEventsChannel: Channel<WorkflowEngineMessageToProcess>,
-    workflowEngineResultsChannel: Channel<WorkflowEngineMessageToProcess>,
+    logChannel: SendChannel<WorkflowEngineMessageToProcess>,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>
 ) = launch {
-
-    launch(CoroutineName("workflow-engine-message-acknowledger")) {
-        for (result in workflowEngineResultsChannel) {
-            println("WORKFLOW_ENGINE: ${result.message}")
-            // no message acknowledging for inMemory implementation
-            if (result.exception != null) {
-                println(result.exception)
-            }
-        }
-    }
 
     startWorkflowEngine(
         "workflow-engine",
@@ -63,7 +53,7 @@ fun CoroutineScope.startInMemoryWorkflowEngineWorker(
         WorkflowEngineInput(
             workflowEngineCommandsChannel,
             workflowEngineEventsChannel,
-            workflowEngineResultsChannel
+            logChannel
         ),
         InMemoryWorkflowEngineOutput(
             this,

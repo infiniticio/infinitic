@@ -58,8 +58,8 @@ fun main() {
 
         startInMemory(taskExecutorRegister, InMemoryStorage(), taskEngineCommandsChannel, workflowEngineCommandsChannel)
 
-        repeat(100) {
-            client.dispatch<TaskA> { await(2000) }
+        repeat(1) {
+//            client.dispatch<TaskA> { await(2000) }
             client.dispatch(WorkflowA::class.java) { seq1() }
         }
     }

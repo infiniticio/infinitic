@@ -27,6 +27,7 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
@@ -86,8 +87,7 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
             for (messageToProcess in workflowResultsChannel) {
 //                println("WORKFLOW_ENGINE: ${messageToProcess.message}")
                 if (messageToProcess.exception == null) {
-//                    if (messageToProcess.message is WorkflowCompleted)
-                    println(messageToProcess.message)
+                    if (messageToProcess.message is WorkflowCompleted) println(messageToProcess.message)
                     workflowEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
                 } else {
                     workflowEngineConsumer.negativeAcknowledge(messageToProcess.messageId)

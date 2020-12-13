@@ -35,9 +35,9 @@ import io.infinitic.tasks.engine.worker.startTaskEngine
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.worker.inMemory.transport.InMemoryTaskEngineOutput
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
 private const val N_WORKERS = 10
@@ -46,21 +46,11 @@ fun CoroutineScope.startInMemoryTaskEngineWorker(
     keyValueStorage: KeyValueStorage,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
     taskEngineEventsChannel: Channel<TaskEngineMessageToProcess>,
-    taskEngineResultsChannel: Channel<TaskEngineMessageToProcess>,
+    logChannel: SendChannel<TaskEngineMessageToProcess>,
     taskExecutorChannel: Channel<TaskExecutorMessageToProcess>,
     monitoringPerNameChannel: Channel<MonitoringPerNameMessageToProcess>,
-    workflowEngineEventsChannel: Channel<WorkflowEngineMessageToProcess>
+    workflowEngineEventsChannel: Channel<WorkflowEngineMessageToProcess>,
 ) = launch {
-
-    launch(CoroutineName("task-engine-message-acknowledger")) {
-        for (result in taskEngineResultsChannel) {
-            println("TASK_ENGINE: ${result.message}")
-            // no message acknowledging for inMemory implementation
-            if (result.exception != null) {
-                println(result.exception)
-            }
-        }
-    }
 
     // Starting Task Engine
 
@@ -71,7 +61,7 @@ fun CoroutineScope.startInMemoryTaskEngineWorker(
         TaskEngineInput(
             taskEngineCommandsChannel,
             taskEngineEventsChannel,
-            taskEngineResultsChannel
+            logChannel
         ),
         InMemoryTaskEngineOutput(
             this,

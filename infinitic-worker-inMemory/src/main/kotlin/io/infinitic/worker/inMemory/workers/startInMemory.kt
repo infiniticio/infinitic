@@ -25,17 +25,25 @@
 
 package io.infinitic.worker.inMemory
 
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import java.lang.RuntimeException
 
 private const val N_WORKERS = 10
 
@@ -46,35 +54,50 @@ fun CoroutineScope.startInMemory(
     workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>
 ) = launch(Dispatchers.IO) {
 
+    val logChannel = Channel<MessageToProcess<Any>>()
     val workflowEngineEventsChannel = Channel<WorkflowEngineMessageToProcess>()
-    val workflowEngineResultsChannel = Channel<WorkflowEngineMessageToProcess>()
     val taskEngineEventsChannel = Channel<TaskEngineMessageToProcess>()
-    val taskEngineResultsChannel = Channel<TaskEngineMessageToProcess>()
     val taskExecutorChannel = Channel<TaskExecutorMessageToProcess>()
-    val taskExecutorResultsChannel = Channel<TaskExecutorMessageToProcess>()
     val monitoringPerNameChannel = Channel<MonitoringPerNameMessageToProcess>()
-    val monitoringPerNameResultsChannel = Channel<MonitoringPerNameMessageToProcess>()
     val monitoringGlobalChannel = Channel<MonitoringGlobalMessageToProcess>()
-    val monitoringGlobalResultsChannel = Channel<MonitoringGlobalMessageToProcess>()
+
+    launch(CoroutineName("logger")) {
+        for (messageToProcess in logChannel) {
+            when (val message = messageToProcess.message) {
+                is MonitoringGlobalMessage ->
+                    println("Monitoring Global  : $message")
+                is MonitoringPerNameEngineMessage ->
+                    println("Monitoring Per Name: $message")
+                is TaskExecutorMessage ->
+                    println("Task Executor      : $message")
+                is TaskEngineMessage ->
+                    println("Task engine        : $message")
+                is WorkflowEngineMessage ->
+                    println("Workflow engine    : $message")
+                else -> throw RuntimeException("Unknown messageToProcess type: $messageToProcess")
+            }
+        }
+    }
 
     startInMemoryMonitoringGlobalWorker(
         keyValueStorage,
         monitoringGlobalChannel,
-        monitoringGlobalResultsChannel
+        logChannel
     )
 
     startInMemoryMonitoringPerNameWorker(
         keyValueStorage,
         monitoringPerNameChannel,
-        monitoringPerNameResultsChannel,
-        monitoringGlobalChannel
+        logChannel,
+        monitoringGlobalChannel,
+        logChannel
     )
 
     startInMemoryTaskExecutorWorker(
         taskExecutorRegister,
         taskEngineEventsChannel,
         taskExecutorChannel,
-        taskExecutorResultsChannel,
+        logChannel,
         N_WORKERS
     )
 
@@ -82,7 +105,7 @@ fun CoroutineScope.startInMemory(
         keyValueStorage,
         taskEngineCommandsChannel,
         taskEngineEventsChannel,
-        taskEngineResultsChannel,
+        logChannel,
         taskExecutorChannel,
         monitoringPerNameChannel,
         workflowEngineEventsChannel
@@ -92,7 +115,7 @@ fun CoroutineScope.startInMemory(
         keyValueStorage,
         workflowEngineCommandsChannel,
         workflowEngineEventsChannel,
-        workflowEngineResultsChannel,
+        logChannel,
         taskEngineCommandsChannel
     )
 }

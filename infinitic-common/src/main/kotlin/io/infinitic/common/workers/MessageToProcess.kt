@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workers
 
-interface MessageToProcess<T> {
+interface MessageToProcess<out T> {
     val message: T
     var exception: Exception?
     var output: Any?

@@ -30,9 +30,9 @@ import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyVal
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInput
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
 private const val N_WORKERS = 10
@@ -40,25 +40,15 @@ private const val N_WORKERS = 10
 fun CoroutineScope.startInMemoryMonitoringGlobalWorker(
     keyValueStorage: KeyValueStorage,
     monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>,
-    monitoringGlobalResultsChannel: Channel<MonitoringGlobalMessageToProcess>
+    logChannel: SendChannel<MonitoringGlobalMessageToProcess>
 ) = launch {
-
-    launch(CoroutineName("monitoring-global-message-acknowledger")) {
-        for (result in monitoringGlobalResultsChannel) {
-            println("MONITORING_GLOBAL: ${result.message}")
-            // no message acknowledging for inMemory implementation
-            if (result.exception != null) {
-                println(result.exception)
-            }
-        }
-    }
 
     startMonitoringGlobalEngine(
         "monitoring-global-engine",
         MonitoringGlobalStateKeyValueStorage(keyValueStorage),
         MonitoringGlobalInput(
             monitoringGlobalChannel,
-            monitoringGlobalResultsChannel
+            logChannel
         )
     )
 }
