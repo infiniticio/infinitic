@@ -25,10 +25,10 @@
 
 package io.infinitic.common.monitoring.perName.messages
 
-import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.serDe.kotlin.readBinary
+import io.infinitic.common.serDe.kotlin.writeBinary
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class MonitoringPerNameEnvelope(
@@ -55,14 +55,12 @@ data class MonitoringPerNameEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
     }
 
     fun message(): MonitoringPerNameEngineMessage = when (type) {
         MonitoringPerNameMessageType.TASK_STATUS_UPDATED -> taskStatusUpdated!!
     }
 
-    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
+    fun toByteArray() = writeBinary(this, serializer())
 }

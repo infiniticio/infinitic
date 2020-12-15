@@ -26,6 +26,9 @@
 package io.infinitic.common.workflows.engine.state
 
 import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.serDe.kotlin.readBinary
+import io.infinitic.common.serDe.kotlin.writeBinary
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -109,10 +112,10 @@ data class WorkflowState(
     val bufferedCommands: MutableList<CommandId> = mutableListOf()
 ) {
     companion object {
-        fun fromByteArray(bytes: ByteArray): WorkflowState = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer): WorkflowState = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
+        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
-    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
-    fun toByteBuffer() = ByteBuffer.wrap(toByteArray())
+    fun toByteArray() = writeBinary(this, serializer())
+    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
 }

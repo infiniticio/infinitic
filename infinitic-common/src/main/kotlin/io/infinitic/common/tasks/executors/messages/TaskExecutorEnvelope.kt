@@ -54,15 +54,9 @@ data class TaskExecutorEnvelope(
                 runTask = msg
             )
         }
-
-        fun fromByteArray(bytes: ByteArray) = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
     fun message(): TaskExecutorMessage = when (type) {
         TaskExecutorMessageType.EXECUTE_TASK -> runTask!!
     }
-
-    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
 }

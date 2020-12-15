@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.transport
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.io.AvroEncodeFormat
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
@@ -35,6 +37,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -52,10 +55,20 @@ import io.infinitic.pulsar.topics.TaskExecutorTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import kotlinx.coroutines.future.await
+import kotlinx.serialization.KSerializer
+import org.apache.avro.file.SeekableByteArrayInput
+import org.apache.avro.generic.GenericDatumReader
+import org.apache.avro.generic.GenericRecord
+import org.apache.avro.io.DecoderFactory
 import org.apache.pulsar.client.api.PulsarClient
+import org.apache.pulsar.client.api.schema.SchemaReader
+import org.apache.pulsar.client.api.schema.SchemaWriter
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
 import java.util.concurrent.TimeUnit
+import org.apache.pulsar.client.impl.schema.SchemaDefinitionBuilderImpl
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 
 class PulsarTransport(private val pulsarMessageBuilder: PulsarMessageBuilder) {
     companion object {
@@ -151,4 +164,21 @@ class PulsarTransport(private val pulsarMessageBuilder: PulsarMessageBuilder) {
             .sendAsync()
             .await()
     }
+}
+
+fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
+    val out = ByteArrayOutputStream()
+    Avro.default.openOutputStream(serializer) {
+        encodeFormat = AvroEncodeFormat.Binary
+        schema = Avro.default.schema(serializer)
+    }.to(out).write(t).close()
+
+    return out.toByteArray()
+}
+
+fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>): T {
+    val datumReader = GenericDatumReader<GenericRecord>(Avro.default.schema(serializer))
+    val decoder = DecoderFactory.get().binaryDecoder(SeekableByteArrayInput(bytes), null)
+
+    return Avro.default.fromRecord(serializer, datumReader.read(null, decoder))
 }
