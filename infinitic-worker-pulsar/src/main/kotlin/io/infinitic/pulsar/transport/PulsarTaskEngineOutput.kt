@@ -80,7 +80,7 @@ class PulsarTaskEngineOutput(private val pulsarMessageBuilder: PulsarMessageBuil
         )
     }
 
-    override val sendToExecutors: SendToExecutors = { message: TaskExecutorMessage ->
+    override val sendToTaskExecutors: SendToExecutors = { message: TaskExecutorMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             TaskExecutorTopic.name("${message.taskName}"),
             TaskExecutorEnvelope.from(message),

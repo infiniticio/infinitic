@@ -25,19 +25,12 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tasks.engine.messages.TaskCompleted
-import io.infinitic.pulsar.admin.infiniticInit
-import org.apache.pulsar.client.admin.PulsarAdmin
-import org.apache.pulsar.client.api.Schema
+// val test: (Int) -> Int = { a:Int -> 2*a }
+// pow = lambda  a: a*a
+// pow([2, 4, 3], 2)
 
-//val test: (Int) -> Int = { a:Int -> 2*a }
-//pow = lambda  a: a*a
-//pow([2, 4, 3], 2)
-
-//list(map(pow, [2, 4, 3]))
-//val w = test(test(3))
-
+// list(map(pow, [2, 4, 3]))
+// val w = test(test(3))
 
 fun main() {
 
@@ -50,7 +43,7 @@ fun main() {
     val tlsAllowInsecureConnection = false
     val tlsTrustCertsFilePath = null
 //    val admin = PulsarAdmin.builder()
-////        .authentication(authPluginClassName,authParams)
+// //        .authentication(authPluginClassName,authParams)
 //        .serviceHttpUrl(url)
 //        .tlsTrustCertsFilePath(tlsTrustCertsFilePath)
 //        .allowTlsInsecureConnection(tlsAllowInsecureConnection)
@@ -58,10 +51,6 @@ fun main() {
 
 //    admin.infiniticInit("infinitic", "dev")
 
-    val msg = TestFactory.random<TaskCompleted>()
-    println(msg)
-    val schema = Schema.JSON(TaskCompleted::class.java)
-    println(schema)
 //    val schema = admin.schemas().getSchemaInfo("persistent://public/default/workflows-engine")
 
 //    println(schema)

@@ -36,6 +36,8 @@ dependencies {
     implementation("org.apache.pulsar:pulsar-client-admin:${project.extra["pulsar_version"]}")
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("com.github.avro-kotlin.avro4k:avro4k-core:${project.extra["avro4k_version"]}")
+    implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
+    implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
 
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))

@@ -25,7 +25,6 @@
 
 package io.infinitic.common.tasks.engine.state
 
-import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes

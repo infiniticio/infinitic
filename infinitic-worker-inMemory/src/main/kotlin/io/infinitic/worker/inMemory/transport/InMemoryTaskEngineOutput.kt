@@ -67,7 +67,7 @@ class InMemoryTaskEngineOutput(
         }
     }
 
-    override val sendToExecutors: SendToExecutors = {
+    override val sendToTaskExecutors: SendToExecutors = {
         executorChannel.send(InMemoryMessageToProcess(it))
     }
 

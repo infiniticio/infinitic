@@ -36,8 +36,8 @@ import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
-import io.infinitic.pulsar.topics.TaskEngineEventsTopic
-import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
+import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
+import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
 
@@ -56,7 +56,7 @@ class PulsarClientOutput(private val pulsarMessageBuilder: PulsarMessageBuilder)
 
     override val sendToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
-            TaskEngineEventsTopic.name,
+            TaskEngineCommandsTopic.name,
             TaskEngineEnvelope.from(message),
             "${message.taskId}",
             after
@@ -65,7 +65,7 @@ class PulsarClientOutput(private val pulsarMessageBuilder: PulsarMessageBuilder)
 
     override val sendToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
-            WorkflowEngineEventsTopic.name,
+            WorkflowEngineCommandsTopic.name,
             WorkflowEngineEnvelope.from(message),
             "${message.workflowId}",
             after

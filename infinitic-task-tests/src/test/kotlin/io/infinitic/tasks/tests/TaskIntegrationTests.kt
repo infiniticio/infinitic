@@ -193,7 +193,7 @@ class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput
     override val sendToTaskEngine: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 
-    override val sendToExecutors: SendToExecutors =
+    override val sendToTaskExecutors: SendToExecutors =
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
 
     override val sendToMonitoringPerName: SendToMonitoringPerName =

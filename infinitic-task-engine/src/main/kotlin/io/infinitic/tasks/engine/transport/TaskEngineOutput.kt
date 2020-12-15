@@ -33,6 +33,6 @@ import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 interface TaskEngineOutput {
     val sendToWorkflowEngine: SendToWorkflowEngine
     val sendToTaskEngine: SendToTaskEngine
-    val sendToExecutors: SendToExecutors
+    val sendToTaskExecutors: SendToExecutors
     val sendToMonitoringPerName: SendToMonitoringPerName
 }

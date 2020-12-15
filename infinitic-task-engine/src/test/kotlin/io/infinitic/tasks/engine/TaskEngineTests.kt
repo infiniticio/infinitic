@@ -119,7 +119,7 @@ class MockTaskEventStorage() : TaskEventStorage {
 class MockTaskEngineOutput : TaskEngineOutput {
     override val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
     override val sendToTaskEngine = mockk<SendToTaskEngine>()
-    override val sendToExecutors = mockk<SendToExecutors>()
+    override val sendToTaskExecutors = mockk<SendToExecutors>()
     override val sendToMonitoringPerName = mockk<SendToMonitoringPerName>()
 
     val workerMessageSlot = slot<TaskExecutorMessage>()
@@ -131,7 +131,7 @@ class MockTaskEngineOutput : TaskEngineOutput {
     val taskAttemptDispatchedSlot = slot<TaskAttemptDispatched>()
     val taskCompletedSlot = slot<TaskCompleted>()
     init {
-        coEvery { sendToExecutors(capture(workerMessageSlot)) } just Runs
+        coEvery { sendToTaskExecutors(capture(workerMessageSlot)) } just Runs
         coEvery { sendToMonitoringPerName(capture(taskStatusUpdatedSlot)) } just Runs
         coEvery { sendToTaskEngine(capture(retryTaskAttemptSlot), capture(retryTaskAttemptDelaySlot)) } just Runs
         coEvery { sendToTaskEngine(capture(taskCanceledSlot), 0F) } just Runs
@@ -200,7 +200,7 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.dispatchTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToExecutors(runTask)
+            taskEngineOutput.sendToTaskExecutors(runTask)
             taskEngineOutput.sendToTaskEngine(taskAttemptDispatched, 0F)
             taskStateStorage.updateState(msgIn.taskId, state, null)
             taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)
@@ -252,7 +252,7 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.retryTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToExecutors(runTask)
+            taskEngineOutput.sendToTaskExecutors(runTask)
             taskEngineOutput.sendToTaskEngine(taskAttemptDispatched, 0F)
             taskStateStorage.updateState(msgIn.taskId, state, stateIn)
             taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)
@@ -483,7 +483,7 @@ private fun checkShouldRetryTaskAttempt(
 
     coVerifyOrder {
         taskStateStorage.getState(msgIn.taskId)
-        taskEngineOutput.sendToExecutors(runTask)
+        taskEngineOutput.sendToTaskExecutors(runTask)
         taskEngineOutput.sendToTaskEngine(taskAttemptDispatched, 0F)
         taskStateStorage.updateState(msgIn.taskId, state, stateIn)
         taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)

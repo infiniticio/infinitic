@@ -165,7 +165,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        taskEngineOutput.sendToExecutors(rt)
+        taskEngineOutput.sendToTaskExecutors(rt)
 
         // log events
         val tad = TaskAttemptDispatched(
@@ -207,7 +207,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        taskEngineOutput.sendToExecutors(rt)
+        taskEngineOutput.sendToTaskExecutors(rt)
 
         // log event
         val tad = TaskAttemptDispatched(
@@ -241,7 +241,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        taskEngineOutput.sendToExecutors(rt)
+        taskEngineOutput.sendToTaskExecutors(rt)
 
         // log event
         val tar = TaskAttemptDispatched(

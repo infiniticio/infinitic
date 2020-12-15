@@ -25,8 +25,6 @@
 
 package io.infinitic.common.monitoring.perName.state
 
-import com.github.avrokotlin.avro4k.Avro
-import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.serDe.kotlin.writeBinary
 import io.infinitic.common.tasks.data.TaskName
