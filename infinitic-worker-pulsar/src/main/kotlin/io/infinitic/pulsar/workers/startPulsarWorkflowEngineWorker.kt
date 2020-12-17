@@ -29,7 +29,7 @@ import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
@@ -51,7 +51,7 @@ import org.apache.pulsar.client.api.Message
 typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<WorkflowEngineMessage>
 
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
-    consumerFactory: ConsumerFactory,
+    pulsarConsumerFactory: PulsarConsumerFactory,
     workflowEngineOutput: WorkflowEngineOutput,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<WorkflowEngineMessageToProcess>?,
@@ -73,7 +73,7 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
         )
 
         // create workflow engine consumer
-        val workflowEngineConsumer: Consumer<WorkflowEngineEnvelope> = consumerFactory
+        val workflowEngineConsumer: Consumer<WorkflowEngineEnvelope> = pulsarConsumerFactory
             .newWorkflowEngineConsumer(
                 if (instancesNumber > 1) "$it" else null
             )

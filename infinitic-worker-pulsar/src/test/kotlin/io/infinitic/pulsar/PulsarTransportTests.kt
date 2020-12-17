@@ -38,7 +38,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.TaskExecutorTopic
-import io.infinitic.pulsar.transport.PulsarOutputFactory
+import io.infinitic.pulsar.transport.PulsarOutputs
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -88,7 +88,7 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputFactory.from(context).clientOutput.sendToWorkflowEngine(msg, 0F)
+        PulsarOutputs.from(context).clientOutput.sendToWorkflowEngine(msg, 0F)
         // then
         verify {
             context.newOutputMessage(
@@ -118,7 +118,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputFactory.from(context).clientOutput.sendToTaskEngine(msg, 0F)
+        PulsarOutputs.from(context).clientOutput.sendToTaskEngine(msg, 0F)
         // then
         verify {
             context.newOutputMessage("persistent://tenant/namespace/task-engine-commands", slotSchema.captured)
@@ -146,7 +146,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputFactory.from(context).taskEngineOutput.sendToMonitoringPerName(msg)
+        PulsarOutputs.from(context).taskEngineOutput.sendToMonitoringPerName(msg)
         // then
         verify {
             context.newOutputMessage("persistent://tenant/namespace/monitoring-per-name", slotSchema.captured)
@@ -175,7 +175,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputFactory.from(context).monitoringPerNameOutput.sendToMonitoringGlobal(msg)
+        PulsarOutputs.from(context).monitoringPerNameOutput.sendToMonitoringGlobal(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/monitoring-global"
@@ -199,7 +199,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputFactory.from(context).taskEngineOutput.sendToTaskExecutors(msg)
+        PulsarOutputs.from(context).taskEngineOutput.sendToTaskExecutors(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/${TaskExecutorTopic.name("${msg.taskName}")}"

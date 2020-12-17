@@ -28,7 +28,7 @@ package io.infinitic.pulsar.workers
 import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
@@ -49,7 +49,7 @@ import org.apache.pulsar.client.api.Message
 typealias PulsarTaskExecutorMessageToProcess = PulsarMessageToProcess<TaskExecutorMessage>
 
 fun CoroutineScope.startPulsarTaskExecutorWorker(
-    consumerFactory: ConsumerFactory,
+    pulsarConsumerFactory: PulsarConsumerFactory,
     taskExecutorOutput: TaskExecutorOutput,
     taskExecutorRegister: TaskExecutorRegister,
     logChannel: SendChannel<TaskExecutorMessageToProcess>?,
@@ -73,7 +73,7 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
         }
 
         // create task executor consumer
-        val taskEngineConsumer: Consumer<TaskExecutorEnvelope> = consumerFactory
+        val taskEngineConsumer: Consumer<TaskExecutorEnvelope> = pulsarConsumerFactory
             .newExecutorTaskConsumer(name)
 
         // coroutine dedicated to pulsar message acknowledging

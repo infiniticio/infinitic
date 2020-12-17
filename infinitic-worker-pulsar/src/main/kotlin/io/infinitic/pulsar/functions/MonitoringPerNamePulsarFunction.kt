@@ -28,7 +28,7 @@ package io.infinitic.pulsar.functions
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.pulsar.transport.PulsarOutputFactory
+import io.infinitic.pulsar.transport.PulsarOutputs
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -50,6 +50,6 @@ class MonitoringPerNamePulsarFunction : Function<MonitoringPerNameEnvelope, Void
 
     internal fun getMonitoringPerNameEngine(context: Context) = MonitoringPerNameEngine(
         MonitoringPerNameStateKeyValueStorage(context.keyValueStorage()),
-        PulsarOutputFactory.from(context).monitoringPerNameOutput
+        PulsarOutputs.from(context).monitoringPerNameOutput
     )
 }

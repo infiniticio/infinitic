@@ -26,8 +26,8 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.client.Client
-import io.infinitic.pulsar.consumers.ConsumerFactory
-import io.infinitic.pulsar.transport.PulsarOutputFactory
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
+import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.tests.samples.TaskA
@@ -42,14 +42,14 @@ import org.apache.pulsar.client.api.PulsarClient
 
 fun main() {
     val pulsarClient = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
-    val tenant = "Infinitic"
+    val tenant = "infinitic"
     val namespace = "dev"
 
-    val consumerFactory = ConsumerFactory(pulsarClient, tenant, namespace)
-    val pulsarOutputFactory = PulsarOutputFactory.from(pulsarClient, tenant, namespace)
+    val consumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
+    val pulsarOutputFactory = PulsarOutputs.from(pulsarClient, tenant, namespace)
 
     runBlocking {
-        val client = Client(PulsarOutputFactory.from(pulsarClient, tenant, namespace).clientOutput)
+        val client = Client(PulsarOutputs.from(pulsarClient, tenant, namespace).clientOutput)
 
         val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
             register(TaskA::class.java.name) { TaskAImpl() }

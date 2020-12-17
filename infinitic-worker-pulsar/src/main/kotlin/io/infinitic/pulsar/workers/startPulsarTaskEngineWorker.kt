@@ -29,7 +29,7 @@ import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
@@ -51,7 +51,7 @@ import org.apache.pulsar.client.api.Message
 typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMessage>
 
 fun CoroutineScope.startPulsarTaskEngineWorker(
-    consumerFactory: ConsumerFactory,
+    pulsarConsumerFactory: PulsarConsumerFactory,
     taskEngineOutput: TaskEngineOutput,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<TaskEngineMessageToProcess>?,
@@ -73,7 +73,7 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
         )
 
         // create task engine consumer
-        val taskEngineConsumer: Consumer<TaskEngineEnvelope> = consumerFactory
+        val taskEngineConsumer: Consumer<TaskEngineEnvelope> = pulsarConsumerFactory
             .newTaskEngineConsumer(
                 if (instancesNumber > 1) "$it" else null
             )

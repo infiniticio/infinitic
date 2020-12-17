@@ -34,7 +34,7 @@ import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputCh
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
-import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -50,7 +50,7 @@ import org.apache.pulsar.client.api.Message
 typealias PulsarMonitoringPerNameMessageToProcess = PulsarMessageToProcess<MonitoringPerNameEngineMessage>
 
 fun CoroutineScope.startPulsarMonitoringPerNameWorker(
-    consumerFactory: ConsumerFactory,
+    pulsarConsumerFactory: PulsarConsumerFactory,
     monitoringPerNameOutput: MonitoringPerNameOutput,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<MonitoringPerNameMessageToProcess>?,
@@ -70,7 +70,7 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
         )
 
         // create monitoring per name consumer
-        val monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope> = consumerFactory
+        val monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope> = pulsarConsumerFactory
             .newMonitoringPerNameEngineConsumer(
                 if (instancesNumber > 1) "$it" else null
             )

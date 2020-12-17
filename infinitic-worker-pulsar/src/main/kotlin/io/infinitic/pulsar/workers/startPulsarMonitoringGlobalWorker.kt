@@ -33,7 +33,7 @@ import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyVal
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
-import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +49,7 @@ import org.apache.pulsar.client.api.Message
 typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<MonitoringGlobalMessage>
 
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
-    consumerFactory: ConsumerFactory,
+    pulsarConsumerFactory: PulsarConsumerFactory,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<MonitoringGlobalMessageToProcess>?
 ) = launch(Dispatchers.IO) {
@@ -65,7 +65,7 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     )
 
     // create monitoring global consumer
-    val monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope> = consumerFactory
+    val monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope> = pulsarConsumerFactory
         .newMonitoringGlobalEngineConsumer()
 
     // coroutine dedicated to pulsar message acknowledging

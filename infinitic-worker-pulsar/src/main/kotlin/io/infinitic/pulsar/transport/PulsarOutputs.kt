@@ -60,7 +60,7 @@ import io.infinitic.workflows.engine.transport.WorkflowEngineDataOutput
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
 
-class PulsarOutputFactory(
+class PulsarOutputs(
     private val pulsarMessageBuilder: PulsarMessageBuilder,
     private val pulsarTenant: String,
     private val pulsarNamespace: String
@@ -71,13 +71,13 @@ class PulsarOutputFactory(
         Create a new PulsarTransport from a Pulsar Client
          */
         fun from(pulsarClient: PulsarClient, pulsarTenant: String, pulsarNamespace: String) =
-            PulsarOutputFactory(PulsarMessageBuilderFromClient(pulsarClient), pulsarTenant, pulsarNamespace)
+            PulsarOutputs(PulsarMessageBuilderFromClient(pulsarClient), pulsarTenant, pulsarNamespace)
 
         /*
         Create a new PulsarTransport from a Pulsar Function Context
          */
         fun from(context: Context) =
-            PulsarOutputFactory(PulsarMessageBuilderFromFunction(context), context.tenant, context.namespace)
+            PulsarOutputs(PulsarMessageBuilderFromFunction(context), context.tenant, context.namespace)
     }
 
     private val sendToWorkflowEngineCommands: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->

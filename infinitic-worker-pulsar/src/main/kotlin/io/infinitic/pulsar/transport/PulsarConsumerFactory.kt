@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.consumers
+package io.infinitic.pulsar.transport
 
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
@@ -44,8 +44,8 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType
 
-class ConsumerFactory(
-    val pulsarClient: PulsarClient,
+class PulsarConsumerFactory(
+    private val pulsarClient: PulsarClient,
     private val pulsarTenant: String,
     private val pulsarNamespace: String
 ) {

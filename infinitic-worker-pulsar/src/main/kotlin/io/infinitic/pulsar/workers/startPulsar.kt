@@ -32,8 +32,8 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.pulsar.consumers.ConsumerFactory
-import io.infinitic.pulsar.transport.PulsarOutputFactory
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
+import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -45,8 +45,8 @@ import java.lang.RuntimeException
 private const val N_WORKERS = 100
 
 fun CoroutineScope.startPulsar(
-    consumerFactory: ConsumerFactory,
-    pulsarOutputFactory: PulsarOutputFactory,
+    pulsarConsumerFactory: PulsarConsumerFactory,
+    pulsarOutputs: PulsarOutputs,
     taskExecutorRegister: TaskExecutorRegister,
     keyValueStorage: KeyValueStorage
 ) = launch(Dispatchers.IO) {
@@ -72,36 +72,36 @@ fun CoroutineScope.startPulsar(
     }
 
     startPulsarMonitoringGlobalWorker(
-        consumerFactory,
+        pulsarConsumerFactory,
         keyValueStorage,
         logChannel
     )
 
     startPulsarMonitoringPerNameWorker(
-        consumerFactory,
-        pulsarOutputFactory.monitoringPerNameOutput,
+        pulsarConsumerFactory,
+        pulsarOutputs.monitoringPerNameOutput,
         keyValueStorage,
         logChannel
     )
 
     startPulsarTaskExecutorWorker(
-        consumerFactory,
-        pulsarOutputFactory.taskExecutorOutput,
+        pulsarConsumerFactory,
+        pulsarOutputs.taskExecutorOutput,
         taskExecutorRegister,
         logChannel,
         N_WORKERS,
     )
 
     startPulsarTaskEngineWorker(
-        consumerFactory,
-        pulsarOutputFactory.taskEngineOutput,
+        pulsarConsumerFactory,
+        pulsarOutputs.taskEngineOutput,
         keyValueStorage,
         logChannel
     )
 
     startPulsarWorkflowEngineWorker(
-        consumerFactory,
-        pulsarOutputFactory.workflowEngineOutput,
+        pulsarConsumerFactory,
+        pulsarOutputs.workflowEngineOutput,
         keyValueStorage,
         logChannel
     )
