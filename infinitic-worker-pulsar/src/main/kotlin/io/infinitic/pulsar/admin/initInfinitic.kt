@@ -128,4 +128,3 @@ private suspend fun <T : Any> setSchema(admin: PulsarAdmin, tenant: String, name
 
 private fun getFullNamespace(tenantName: String, namespace: String) =
     "$tenantName/$namespace"
-

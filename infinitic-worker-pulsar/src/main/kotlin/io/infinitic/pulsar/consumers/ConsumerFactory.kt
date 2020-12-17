@@ -48,7 +48,7 @@ class ConsumerFactory(
     val pulsarClient: PulsarClient,
     private val pulsarTenant: String,
     private val pulsarNamespace: String
-    ) {
+) {
 
     companion object {
         const val TASK_ENGINE_SUBSCRIPTION_NAME = "task-engine-subscription"
@@ -60,10 +60,12 @@ class ConsumerFactory(
 
     fun newTaskEngineConsumer(subscriptionNamePostfix: String? = null): Consumer<TaskEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
-            .topics(listOf(
-                getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
-                getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name)
-            ))
+            .topics(
+                listOf(
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name)
+                )
+            )
             .let {
                 val postfix = subscriptionNamePostfix?.let { "-$it" } ?: ""
                 it.subscriptionName("$TASK_ENGINE_SUBSCRIPTION_NAME$postfix")
@@ -73,10 +75,12 @@ class ConsumerFactory(
 
     fun newWorkflowEngineConsumer(subscriptionNamePostfix: String? = null): Consumer<WorkflowEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
-            .topics(listOf(
-                getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name),
-                getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name)
-            ))
+            .topics(
+                listOf(
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name),
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name)
+                )
+            )
             .let {
                 val postfix = subscriptionNamePostfix?.let { "-$it" } ?: ""
                 it.subscriptionName("$WORKFLOW_ENGINE_SUBSCRIPTION_NAME$postfix")

@@ -64,7 +64,7 @@ class PulsarOutputFactory(
     private val pulsarMessageBuilder: PulsarMessageBuilder,
     private val pulsarTenant: String,
     private val pulsarNamespace: String
-    ) {
+) {
 
     companion object {
         /*

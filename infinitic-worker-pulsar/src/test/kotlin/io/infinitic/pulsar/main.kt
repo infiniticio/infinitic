@@ -47,7 +47,7 @@ fun main() {
     val tlsAllowInsecureConnection = false
     val tlsTrustCertsFilePath = null
     val admin = PulsarAdmin.builder()
- //        .authentication(authPluginClassName,authParams)
+        //        .authentication(authPluginClassName,authParams)
         .serviceHttpUrl(url)
         .tlsTrustCertsFilePath(tlsTrustCertsFilePath)
         .allowTlsInsecureConnection(tlsAllowInsecureConnection)

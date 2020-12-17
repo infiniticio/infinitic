@@ -92,7 +92,8 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/workflow-engine-commands", slotSchema.captured)
+                "persistent://tenant/namespace/workflow-engine-commands", slotSchema.captured
+            )
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<WorkflowEngineEnvelope>()).avroSchema
         verifyAll {

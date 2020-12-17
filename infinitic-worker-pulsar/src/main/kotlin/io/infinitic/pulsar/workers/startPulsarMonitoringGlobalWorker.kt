@@ -35,7 +35,6 @@ import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageTo
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
 import io.infinitic.pulsar.consumers.ConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
-import io.infinitic.pulsar.transport.PulsarOutputFactory
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

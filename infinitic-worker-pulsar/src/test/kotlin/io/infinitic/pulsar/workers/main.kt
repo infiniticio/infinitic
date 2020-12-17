@@ -46,7 +46,7 @@ fun main() {
     val namespace = "dev"
 
     val consumerFactory = ConsumerFactory(pulsarClient, tenant, namespace)
-    val pulsarOutputFactory  = PulsarOutputFactory.from(pulsarClient, tenant, namespace)
+    val pulsarOutputFactory = PulsarOutputFactory.from(pulsarClient, tenant, namespace)
 
     runBlocking {
         val client = Client(PulsarOutputFactory.from(pulsarClient, tenant, namespace).clientOutput)
