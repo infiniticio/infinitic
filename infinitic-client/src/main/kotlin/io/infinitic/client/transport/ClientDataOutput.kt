@@ -23,28 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.pulsar.main
+package io.infinitic.client.transport
 
-import com.xenomachina.argparser.ArgParser
-import com.xenomachina.argparser.mainBody
-import io.infinitic.storage.inMemory.InMemoryStorage
-import kotlinx.coroutines.runBlocking
-import org.apache.pulsar.client.api.PulsarClient
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
-fun main(args: Array<String>) = mainBody {
-    runBlocking {
-        val parsedArgs = ArgParser(args).parseInto(::ApplicationArgs)
-
-        // FIXME: This must be configurable using a configuration file or command line arguments
-        val client: PulsarClient = PulsarClient.builder()
-            .serviceUrl(parsedArgs.pulsarUrl)
-            .build()
-
-        // FIXME: This must be configurable using a configuration file or command line arguments
-        val application = Application(
-            client,
-            InMemoryStorage(),
-        )
-        application.run()
-    }
-}
+data class ClientDataOutput(
+    override val sendToWorkflowEngine: SendToWorkflowEngine,
+    override val sendToTaskEngine: SendToTaskEngine
+) : ClientOutput

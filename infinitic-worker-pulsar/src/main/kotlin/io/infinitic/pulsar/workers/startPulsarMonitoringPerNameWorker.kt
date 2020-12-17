@@ -30,13 +30,12 @@ import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInput
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
-import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.topics.MonitoringPerNameTopic
+import io.infinitic.pulsar.consumers.ConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
-import io.infinitic.pulsar.transport.PulsarMonitoringPerNameOutput
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,14 +46,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.SubscriptionType
 
 typealias PulsarMonitoringPerNameMessageToProcess = PulsarMessageToProcess<MonitoringPerNameEngineMessage>
 
 fun CoroutineScope.startPulsarMonitoringPerNameWorker(
-    pulsarClient: PulsarClient,
+    consumerFactory: ConsumerFactory,
+    monitoringPerNameOutput: MonitoringPerNameOutput,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<MonitoringPerNameMessageToProcess>?,
     instancesNumber: Int = 1
@@ -68,17 +65,15 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
         startMonitoringPerNameEngine(
             "monitoring-per-name-$it",
             MonitoringPerNameStateKeyValueStorage(keyValueStorage),
-            MonitoringPerNameInput(monitoringPerNameChannel, monitoringPerNameResultsChannel),
-            PulsarMonitoringPerNameOutput.from(pulsarClient)
+            MonitoringPerNameInputChannels(monitoringPerNameChannel, monitoringPerNameResultsChannel),
+            monitoringPerNameOutput
         )
 
         // create monitoring per name consumer
-        val monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope> =
-            pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringPerNameEnvelope>()))
-                .topics(listOf(MonitoringPerNameTopic.name))
-                .subscriptionName("monitoring-per-name-consumer-$it")
-                .subscriptionType(SubscriptionType.Key_Shared)
-                .subscribe()
+        val monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope> = consumerFactory
+            .newMonitoringPerNameEngineConsumer(
+                if (instancesNumber > 1) "$it" else null
+            )
 
         // coroutine dedicated to pulsar message acknowledging
         launch(CoroutineName("monitoring-per-name-message-acknowledger-$it")) {

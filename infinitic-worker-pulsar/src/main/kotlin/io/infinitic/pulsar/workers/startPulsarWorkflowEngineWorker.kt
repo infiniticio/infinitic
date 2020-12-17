@@ -29,15 +29,13 @@ import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
-import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
+import io.infinitic.pulsar.consumers.ConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
-import io.infinitic.pulsar.transport.PulsarWorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineInput
+import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
+import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -49,14 +47,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.SubscriptionType
 
 typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<WorkflowEngineMessage>
 
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
-    pulsarClient: PulsarClient,
+    consumerFactory: ConsumerFactory,
+    workflowEngineOutput: WorkflowEngineOutput,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<WorkflowEngineMessageToProcess>?,
     instancesNumber: Int = 1
@@ -72,17 +68,15 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
             "workflow-engine-$it",
             WorkflowStateKeyValueStorage(keyValueStorage),
             NoWorkflowEventStorage(),
-            WorkflowEngineInput(workflowCommandsChannel, workflowEventsChannel, workflowResultsChannel),
-            PulsarWorkflowEngineOutput.from(pulsarClient)
+            WorkflowEngineInputChannels(workflowCommandsChannel, workflowEventsChannel, workflowResultsChannel),
+            workflowEngineOutput
         )
 
         // create workflow engine consumer
-        val workflowEngineConsumer: Consumer<WorkflowEngineEnvelope> =
-            pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
-                .topics(listOf(WorkflowEngineCommandsTopic.name, WorkflowEngineEventsTopic.name))
-                .subscriptionName("workflow-engine-consumer-$it")
-                .subscriptionType(SubscriptionType.Key_Shared)
-                .subscribe()
+        val workflowEngineConsumer: Consumer<WorkflowEngineEnvelope> = consumerFactory
+            .newWorkflowEngineConsumer(
+                if (instancesNumber > 1) "$it" else null
+            )
 
         // coroutine dedicated to pulsar message acknowledging
         launch(CoroutineName("workflow-engine-message-acknowledger-$it")) {

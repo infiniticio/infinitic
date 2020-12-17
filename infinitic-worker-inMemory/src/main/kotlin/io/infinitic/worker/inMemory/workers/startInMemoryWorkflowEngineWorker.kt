@@ -30,7 +30,7 @@ import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.worker.inMemory.transport.InMemoryWorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineInput
+import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineScope
@@ -50,7 +50,7 @@ fun CoroutineScope.startInMemoryWorkflowEngineWorker(
         "workflow-engine",
         WorkflowStateKeyValueStorage(keyValueStorage),
         NoWorkflowEventStorage(),
-        WorkflowEngineInput(
+        WorkflowEngineInputChannels(
             workflowEngineCommandsChannel,
             workflowEngineEventsChannel,
             logChannel

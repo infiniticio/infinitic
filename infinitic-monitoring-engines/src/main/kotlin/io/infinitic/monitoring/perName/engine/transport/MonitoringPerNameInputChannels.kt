@@ -23,18 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.pulsar.main.storage
+package io.infinitic.monitoring.perName.engine.transport
 
-enum class StorageType {
-    InMemory,
-    Redis;
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.workers.MessageToProcess
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 
-    companion object {
-        fun of(id: String): StorageType = when (id.toLowerCase()) {
-            "memory" -> InMemory
-            "inmemory" -> InMemory
-            "redis" -> Redis
-            else -> throw IllegalArgumentException("No storage adapter corresponding to the '$id' name")
-        }
-    }
-}
+typealias MonitoringPerNameMessageToProcess = MessageToProcess<MonitoringPerNameEngineMessage>
+
+data class MonitoringPerNameInputChannels<T : MessageToProcess<*>>(
+    val monitoringPerNameChannel: ReceiveChannel<T>,
+    val monitoringPerNameResultsChannel: SendChannel<T>
+)

@@ -23,26 +23,10 @@
  * Licensor: infinitic.io
  */
 
-rootProject.name = "io.infinitic"
+package io.infinitic.monitoring.perName.engine.transport
 
-include("infinitic-common")
-include("infinitic-rest-api")
-include("infinitic-storage")
-include("infinitic-client")
-include("infinitic-examples")
-include("infinitic-monitoring-engines")
-include("infinitic-task-engine")
-include("infinitic-task-tests")
-include("infinitic-task-executor")
-include("infinitic-workflow-engine")
-include("infinitic-workflow-tests")
-include("infinitic-worker-inMemory")
-include("infinitic-worker-pulsar")
+import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
-    }
-}
+data class MonitoringPerNameDataOutput(
+    override val sendToMonitoringGlobal: SendToMonitoringGlobal
+) : MonitoringPerNameOutput

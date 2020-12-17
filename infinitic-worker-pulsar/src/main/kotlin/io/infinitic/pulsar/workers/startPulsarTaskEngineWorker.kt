@@ -29,15 +29,13 @@ import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
-import io.infinitic.pulsar.topics.TaskEngineEventsTopic
+import io.infinitic.pulsar.consumers.ConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
-import io.infinitic.pulsar.transport.PulsarTaskEngineOutput
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
-import io.infinitic.tasks.engine.transport.TaskEngineInput
+import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
+import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.infinitic.tasks.engine.worker.startTaskEngine
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -49,14 +47,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.SubscriptionType
 
 typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMessage>
 
 fun CoroutineScope.startPulsarTaskEngineWorker(
-    pulsarClient: PulsarClient,
+    consumerFactory: ConsumerFactory,
+    taskEngineOutput: TaskEngineOutput,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<TaskEngineMessageToProcess>?,
     instancesNumber: Int = 1
@@ -72,17 +68,15 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
             "task-engine-$it",
             TaskStateKeyValueStorage(keyValueStorage),
             NoTaskEventStorage(),
-            TaskEngineInput(taskCommandsChannel, taskEventsChannel, taskResultsChannel),
-            PulsarTaskEngineOutput.from(pulsarClient)
+            TaskEngineInputChannels(taskCommandsChannel, taskEventsChannel, taskResultsChannel),
+            taskEngineOutput
         )
 
         // create task engine consumer
-        val taskEngineConsumer: Consumer<TaskEngineEnvelope> =
-            pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
-                .topics(listOf(TaskEngineCommandsTopic.name, TaskEngineEventsTopic.name))
-                .subscriptionName("task-engine-consumer-$it")
-                .subscriptionType(SubscriptionType.Key_Shared)
-                .subscribe()
+        val taskEngineConsumer: Consumer<TaskEngineEnvelope> = consumerFactory
+            .newTaskEngineConsumer(
+                if (instancesNumber > 1) "$it" else null
+            )
 
         // coroutine dedicated to pulsar message acknowledging
         launch(CoroutineName("task-engine-message-acknowledger-$it")) {

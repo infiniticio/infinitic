@@ -23,26 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.engines.pulsar.main.storage
+package io.infinitic.workflows.engine.transport
 
-import io.infinitic.engines.pulsar.main.ApplicationArgs
-import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.storage.redis.redis
+import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 
-class StorageFactory {
-    fun createStorage(args: ApplicationArgs) = when (args.storage) {
-        StorageType.InMemory -> createInMemoryStorage()
-        StorageType.Redis -> createRedisStorage(args)
-    }
+typealias WorkflowEngineMessageToProcess = MessageToProcess<WorkflowEngineMessage>
 
-    private fun createInMemoryStorage() = InMemoryStorage()
-
-    private fun createRedisStorage(args: ApplicationArgs) = redis {
-        host = args.redisHost
-        port = args.redisPort
-        timeout = args.redisTimeout
-        user = args.redisUser
-        password = args.redisPassword
-        database = args.redisDatabase
-    }
-}
+data class WorkflowEngineInputChannels<T : MessageToProcess<*>>(
+    val workflowCommandsChannel: ReceiveChannel<T>,
+    val workflowEventsChannel: Channel<T>,
+    val workflowResultsChannel: SendChannel<T>
+)

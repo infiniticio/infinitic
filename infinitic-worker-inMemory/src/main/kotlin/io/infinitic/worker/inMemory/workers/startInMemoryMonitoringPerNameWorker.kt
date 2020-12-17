@@ -29,7 +29,7 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInput
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
 import io.infinitic.worker.inMemory.transport.InMemoryMonitoringPerNameOutput
@@ -58,7 +58,7 @@ fun CoroutineScope.startInMemoryMonitoringPerNameWorker(
     startMonitoringPerNameEngine(
         "monitoring-per-name-engine",
         MonitoringPerNameStateKeyValueStorage(keyValueStorage),
-        MonitoringPerNameInput(
+        MonitoringPerNameInputChannels(
             monitoringPerNameChannel,
             monitoringPerNameResultsChannel
         ),

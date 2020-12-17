@@ -23,18 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.transport
+package io.infinitic.tasks.engine.transport
 
-import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
+import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
-typealias WorkflowEngineMessageToProcess = MessageToProcess<WorkflowEngineMessage>
-
-data class WorkflowEngineInput<T : MessageToProcess<*>>(
-    val workflowCommandsChannel: ReceiveChannel<T>,
-    val workflowEventsChannel: Channel<T>,
-    val workflowResultsChannel: SendChannel<T>
-)
+data class TaskEngineDataOutput(
+    override val sendToWorkflowEngine: SendToWorkflowEngine,
+    override val sendToTaskEngine: SendToTaskEngine,
+    override val sendToTaskExecutors: SendToExecutors,
+    override val sendToMonitoringPerName: SendToMonitoringPerName
+) : TaskEngineOutput

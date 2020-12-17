@@ -28,7 +28,7 @@ package io.infinitic.workflows.engine.worker
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.events.WorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineInput
+import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineName
@@ -40,7 +40,7 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     coroutineName: String,
     workflowStateStorage: WorkflowStateStorage,
     workflowEventStorage: WorkflowEventStorage,
-    workflowEngineInput: WorkflowEngineInput<T>,
+    workflowEngineInputChannels: WorkflowEngineInputChannels<T>,
     workflowEngineOutput: WorkflowEngineOutput
 ) = launch(CoroutineName(coroutineName)) {
 
@@ -50,9 +50,9 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
         workflowEngineOutput
     )
 
-    val out = workflowEngineInput.workflowResultsChannel
-    val events = workflowEngineInput.workflowEventsChannel
-    val commands = workflowEngineInput.workflowCommandsChannel
+    val out = workflowEngineInputChannels.workflowResultsChannel
+    val events = workflowEngineInputChannels.workflowEventsChannel
+    val commands = workflowEngineInputChannels.workflowCommandsChannel
 
     while (true) {
         select<Unit> {

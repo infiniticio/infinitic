@@ -30,12 +30,12 @@ import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
-import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInput
+import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
-import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.topics.MonitoringGlobalTopic
+import io.infinitic.pulsar.consumers.ConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import io.infinitic.pulsar.transport.PulsarOutputFactory
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,13 +46,11 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.client.api.Schema
 
 typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<MonitoringGlobalMessage>
 
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
-    pulsarClient: PulsarClient,
+    consumerFactory: ConsumerFactory,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<MonitoringGlobalMessageToProcess>?
 ) = launch(Dispatchers.IO) {
@@ -64,15 +62,12 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     startMonitoringGlobalEngine(
         "monitoring-global",
         MonitoringGlobalStateKeyValueStorage(keyValueStorage),
-        MonitoringGlobalInput(monitoringGlobalChannel, monitoringGlobalResultsChannel)
+        MonitoringGlobalInputChannels(monitoringGlobalChannel, monitoringGlobalResultsChannel)
     )
 
     // create monitoring global consumer
-    val monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringGlobalEnvelope>()))
-            .topics(listOf(MonitoringGlobalTopic.name))
-            .subscriptionName("monitoring-global-consumer")
-            .subscribe()
+    val monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope> = consumerFactory
+        .newMonitoringGlobalEngineConsumer()
 
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("monitoring-global-message-acknowledger")) {

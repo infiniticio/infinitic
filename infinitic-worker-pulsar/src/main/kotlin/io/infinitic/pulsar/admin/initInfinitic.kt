@@ -36,12 +36,13 @@ import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
 import io.infinitic.pulsar.topics.TaskEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
+import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.common.policies.data.TenantInfo
 import kotlin.reflect.KClass
 
-fun PulsarAdmin.infiniticInit(tenant: String, namespace: String, allowedClusters: Set<String>? = null) {
+suspend fun PulsarAdmin.infiniticInit(tenant: String, namespace: String, allowedClusters: Set<String>? = null) {
     createTenant(this, tenant, getAllowedClusters(this, allowedClusters))
 
     createNamespace(this, tenant, namespace)
@@ -61,9 +62,12 @@ fun PulsarAdmin.infiniticInit(tenant: String, namespace: String, allowedClusters
     setSchema(this, tenant, namespace, MonitoringGlobalTopic.name, MonitoringGlobalEnvelope::class)
 }
 
-private fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<String>? = null): Set<String> {
+fun getPersistentTopicFullName(tenantName: String, namespace: String, topic: String) =
+    "persistent://$tenantName/$namespace/$topic"
+
+private suspend fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<String>? = null): Set<String> {
     // get all existing clusters
-    val existingClusters: Set<String> = admin.clusters().clusters.toSet()
+    val existingClusters: Set<String> = admin.clusters().clustersAsync.await().toSet()
 
     // if authorized clusters are provided, check that they exist
     allowedClusters?.map {
@@ -74,7 +78,7 @@ private fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<String>?
     return allowedClusters ?: existingClusters
 }
 
-private fun createTenant(admin: PulsarAdmin, tenant: String, allowedClusters: Set<String>) {
+private suspend fun createTenant(admin: PulsarAdmin, tenant: String, allowedClusters: Set<String>) {
     // create Infinitic tenant info
     // if authorizedClusters is not provided, default is all clusters
     val tenantInfo = TenantInfo().apply {
@@ -82,48 +86,46 @@ private fun createTenant(admin: PulsarAdmin, tenant: String, allowedClusters: Se
     }
 
     // get all existing tenant
-    val tenants: List<String> = admin.tenants().tenants
+    val tenants = admin.tenants().tenantsAsync.await()
 
     // create or update infinitic tenant
     if (!tenants.contains(tenant)) {
-        admin.tenants().createTenant(tenant, tenantInfo)
+        admin.tenants().createTenantAsync(tenant, tenantInfo).await()
     } else {
-        admin.tenants().updateTenant(tenant, tenantInfo)
+        admin.tenants().updateTenantAsync(tenant, tenantInfo).await()
     }
 }
 
-private fun createNamespace(admin: PulsarAdmin, tenant: String, namespace: String) {
+private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespace: String) {
     // get all existing namespaces
-    val existingNamespaces = admin.namespaces().getNamespaces(tenant)
+    val existingNamespaces = admin.namespaces().getNamespacesAsync(tenant).await()
 
     // create namespace if it does not exist
     val fullNamespace = getFullNamespace(tenant, namespace)
 
     if (!existingNamespaces.contains(fullNamespace)) {
-        admin.namespaces().createNamespace(fullNamespace)
+        admin.namespaces().createNamespaceAsync(fullNamespace).await()
     }
 }
 
-private fun createPartitionedTopic(admin: PulsarAdmin, tenant: String, namespace: String, topic: String) {
+private suspend fun createPartitionedTopic(admin: PulsarAdmin, tenant: String, namespace: String, topic: String) {
     // create topic as partitioned topic with one partition
     val topicFullName = getPersistentTopicFullName(tenant, namespace, topic)
 
     try {
-        admin.topics().createPartitionedTopic(topicFullName, 1)
+        admin.topics().createPartitionedTopicAsync(topicFullName, 1).await()
     } catch (e: PulsarAdminException.ConflictException) {
-        // the topic already exist
+        // the topic already exists
     }
 }
 
-private fun <T : Any> setSchema(admin: PulsarAdmin, tenant: String, namespace: String, topic: String, klass: KClass<T>) {
-    admin.schemas().createSchema(
+private suspend fun <T : Any> setSchema(admin: PulsarAdmin, tenant: String, namespace: String, topic: String, klass: KClass<T>) {
+    admin.schemas().createSchemaAsync(
         getPersistentTopicFullName(tenant, namespace, topic),
         getPostSchemaPayload(klass)
-    )
+    ).await()
 }
 
 private fun getFullNamespace(tenantName: String, namespace: String) =
     "$tenantName/$namespace"
 
-private fun getPersistentTopicFullName(tenantName: String, namespace: String, topic: String) =
-    "persistent://$tenantName/$namespace/$topic"

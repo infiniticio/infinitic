@@ -26,7 +26,8 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.client.Client
-import io.infinitic.pulsar.transport.PulsarClientOutput
+import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.transport.PulsarOutputFactory
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.tests.samples.TaskA
@@ -41,9 +42,14 @@ import org.apache.pulsar.client.api.PulsarClient
 
 fun main() {
     val pulsarClient = PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build()
+    val tenant = "Infinitic"
+    val namespace = "dev"
+
+    val consumerFactory = ConsumerFactory(pulsarClient, tenant, namespace)
+    val pulsarOutputFactory  = PulsarOutputFactory.from(pulsarClient, tenant, namespace)
 
     runBlocking {
-        val client = Client(PulsarClientOutput.from(pulsarClient))
+        val client = Client(PulsarOutputFactory.from(pulsarClient, tenant, namespace).clientOutput)
 
         val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
             register(TaskA::class.java.name) { TaskAImpl() }
@@ -51,7 +57,7 @@ fun main() {
             register(WorkflowB::class.java.name) { WorkflowBImpl() }
         }
 
-        startPulsar(taskExecutorRegister, pulsarClient, InMemoryStorage())
+        startPulsar(consumerFactory, pulsarOutputFactory, taskExecutorRegister, InMemoryStorage())
 
         repeat(1000) {
 //            client.dispatch<TaskA> { reverse("abc") }

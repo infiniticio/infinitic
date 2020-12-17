@@ -28,7 +28,7 @@ package io.infinitic.tasks.engine.worker
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.events.TaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateStorage
-import io.infinitic.tasks.engine.transport.TaskEngineInput
+import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import kotlinx.coroutines.CoroutineName
@@ -40,7 +40,7 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     coroutineName: String,
     taskStateStorage: TaskStateStorage,
     taskEventStorage: TaskEventStorage,
-    taskEngineInput: TaskEngineInput<T>,
+    taskEngineInputChannels: TaskEngineInputChannels<T>,
     taskEngineOutput: TaskEngineOutput
 ) = launch(CoroutineName(coroutineName)) {
 
@@ -50,9 +50,9 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
         taskEngineOutput
     )
 
-    val out = taskEngineInput.taskResultsChannel
-    val events = taskEngineInput.taskEventsChannel
-    val commands = taskEngineInput.taskCommandsChannel
+    val out = taskEngineInputChannels.taskResultsChannel
+    val events = taskEngineInputChannels.taskEventsChannel
+    val commands = taskEngineInputChannels.taskCommandsChannel
 
     while (true) {
         select<Unit> {

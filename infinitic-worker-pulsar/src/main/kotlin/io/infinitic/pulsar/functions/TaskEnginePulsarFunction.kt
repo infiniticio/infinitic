@@ -26,7 +26,7 @@
 package io.infinitic.pulsar.functions
 
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.pulsar.transport.PulsarTaskEngineOutput
+import io.infinitic.pulsar.transport.PulsarOutputFactory
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
@@ -52,6 +52,6 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
     internal fun getTaskEngine(context: Context) = TaskEngine(
         TaskStateKeyValueStorage(context.keyValueStorage()),
         NoTaskEventStorage(),
-        PulsarTaskEngineOutput.from(context)
+        PulsarOutputFactory.from(context).taskEngineOutput
     )
 }

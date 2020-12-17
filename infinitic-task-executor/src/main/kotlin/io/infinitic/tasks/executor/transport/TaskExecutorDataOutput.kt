@@ -23,16 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.global.engine.transport
+package io.infinitic.tasks.executor.transport
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.workers.MessageToProcess
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 
-typealias MonitoringGlobalMessageToProcess = MessageToProcess<MonitoringGlobalMessage>
-
-data class MonitoringGlobalInput<T : MessageToProcess<*>>(
-    val monitoringGlobalChannel: ReceiveChannel<T>,
-    val monitoringGlobalResultsChannel: SendChannel<T>
-)
+data class TaskExecutorDataOutput(
+    override val sendToTaskEngine: SendToTaskEngine
+) : TaskExecutorOutput

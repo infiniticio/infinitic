@@ -25,6 +25,10 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.pulsar.admin.infiniticInit
+import kotlinx.coroutines.runBlocking
+import org.apache.pulsar.client.admin.PulsarAdmin
+
 // val test: (Int) -> Int = { a:Int -> 2*a }
 // pow = lambda  a: a*a
 // pow([2, 4, 3], 2)
@@ -42,14 +46,16 @@ fun main() {
     val useTls = false
     val tlsAllowInsecureConnection = false
     val tlsTrustCertsFilePath = null
-//    val admin = PulsarAdmin.builder()
-// //        .authentication(authPluginClassName,authParams)
-//        .serviceHttpUrl(url)
-//        .tlsTrustCertsFilePath(tlsTrustCertsFilePath)
-//        .allowTlsInsecureConnection(tlsAllowInsecureConnection)
-//        .build()
+    val admin = PulsarAdmin.builder()
+ //        .authentication(authPluginClassName,authParams)
+        .serviceHttpUrl(url)
+        .tlsTrustCertsFilePath(tlsTrustCertsFilePath)
+        .allowTlsInsecureConnection(tlsAllowInsecureConnection)
+        .build()
 
-//    admin.infiniticInit("infinitic", "dev")
+    runBlocking {
+        admin.infiniticInit("infinitic", "dev")
+    }
 
 //    val schema = admin.schemas().getSchemaInfo("persistent://public/default/workflows-engine")
 
@@ -118,5 +124,6 @@ fun main() {
 //
 //    producer.newMessage().value(msg).send()
 
-    println("done")
+//        println("done")
+//    }
 }

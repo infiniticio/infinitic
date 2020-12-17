@@ -38,9 +38,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.TaskExecutorTopic
-import io.infinitic.pulsar.transport.PulsarClientOutput
-import io.infinitic.pulsar.transport.PulsarMonitoringPerNameOutput
-import io.infinitic.pulsar.transport.PulsarTaskEngineOutput
+import io.infinitic.pulsar.transport.PulsarOutputFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -84,17 +82,19 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         val builder = mockk<TypedMessageBuilder<WorkflowEngineEnvelope>>()
         val slotSchema = slot<AvroSchema<WorkflowEngineEnvelope>>()
         every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
+        every { context.tenant } returns "tenant"
+        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarClientOutput.from(context).sendToWorkflowEngine(msg, 0F)
+        PulsarOutputFactory.from(context).clientOutput.sendToWorkflowEngine(msg, 0F)
         // then
-        verifyAll {
-            context.newOutputMessage("workflow-engine-commands", slotSchema.captured)
+        verify {
+            context.newOutputMessage(
+                "persistent://tenant/namespace/workflow-engine-commands", slotSchema.captured)
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<WorkflowEngineEnvelope>()).avroSchema
-        confirmVerified(context)
         verifyAll {
             builder.value(WorkflowEngineEnvelope.from(msg))
             builder.key("${msg.workflowId}")
@@ -111,17 +111,18 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         val builder = mockk<TypedMessageBuilder<TaskEngineEnvelope>>()
         val slotSchema = slot<AvroSchema<TaskEngineEnvelope>>()
         every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
+        every { context.tenant } returns "tenant"
+        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarClientOutput.from(context).sendToTaskEngine(msg, 0F)
+        PulsarOutputFactory.from(context).clientOutput.sendToTaskEngine(msg, 0F)
         // then
-        verifyAll {
-            context.newOutputMessage("task-engine-commands", slotSchema.captured)
+        verify {
+            context.newOutputMessage("persistent://tenant/namespace/task-engine-commands", slotSchema.captured)
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskEngineEnvelope>()).avroSchema
-        confirmVerified(context)
         verifyAll {
             builder.value(TaskEngineEnvelope.from(msg))
             builder.key("${msg.taskId}")
@@ -138,17 +139,18 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         val builder = mockk<TypedMessageBuilder<MonitoringPerNameEnvelope>>()
         val slotSchema = slot<AvroSchema<MonitoringPerNameEnvelope>>()
         every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
+        every { context.tenant } returns "tenant"
+        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarTaskEngineOutput.from(context).sendToMonitoringPerName(msg)
+        PulsarOutputFactory.from(context).taskEngineOutput.sendToMonitoringPerName(msg)
         // then
-        verifyAll {
-            context.newOutputMessage("monitoring-per-name", slotSchema.captured)
+        verify {
+            context.newOutputMessage("persistent://tenant/namespace/monitoring-per-name", slotSchema.captured)
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringPerNameEnvelope>()).avroSchema
-        confirmVerified(context)
         verifyAll {
             builder.value(MonitoringPerNameEnvelope.from(msg))
             builder.key("${msg.taskName}")
@@ -166,18 +168,19 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         val slotSchema = slot<AvroSchema<MonitoringGlobalEnvelope>>()
         val slotTopic = slot<String>()
         every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
+        every { context.tenant } returns "tenant"
+        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarMonitoringPerNameOutput.from(context).sendToMonitoringGlobal(msg)
+        PulsarOutputFactory.from(context).monitoringPerNameOutput.sendToMonitoringGlobal(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe "monitoring-global"
+        slotTopic.captured shouldBe "persistent://tenant/namespace/monitoring-global"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringGlobalEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(MonitoringGlobalEnvelope.from(msg)) }
         verify(exactly = 1) { builder.sendAsync() }
-        confirmVerified(context)
         confirmVerified(builder)
     }
 }
@@ -189,19 +192,20 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         val slotSchema = slot<AvroSchema<TaskExecutorEnvelope>>()
         val slotTopic = slot<String>()
         every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
+        every { context.tenant } returns "tenant"
+        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarTaskEngineOutput.from(context).sendToTaskExecutors(msg)
+        PulsarOutputFactory.from(context).taskEngineOutput.sendToTaskExecutors(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe TaskExecutorTopic.name("${msg.taskName}")
+        slotTopic.captured shouldBe "persistent://tenant/namespace/${TaskExecutorTopic.name("${msg.taskName}")}"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(TaskExecutorEnvelope.from(msg)) }
         verify(exactly = 1) { builder.key("${msg.taskName}") }
         verify(exactly = 1) { builder.sendAsync() }
-        confirmVerified(context)
         confirmVerified(builder)
     }
 }

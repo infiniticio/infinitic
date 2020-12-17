@@ -29,7 +29,7 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
-import io.infinitic.tasks.engine.transport.TaskEngineInput
+import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.worker.startTaskEngine
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
@@ -58,7 +58,7 @@ fun CoroutineScope.startInMemoryTaskEngineWorker(
         "task-engine",
         TaskStateKeyValueStorage(keyValueStorage),
         NoTaskEventStorage(),
-        TaskEngineInput(
+        TaskEngineInputChannels(
             taskEngineCommandsChannel,
             taskEngineEventsChannel,
             logChannel

@@ -23,16 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine.transport
+package io.infinitic.tasks.engine.transport
 
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workers.MessageToProcess
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 
-typealias MonitoringPerNameMessageToProcess = MessageToProcess<MonitoringPerNameEngineMessage>
+typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 
-data class MonitoringPerNameInput<T : MessageToProcess<*>>(
-    val monitoringPerNameChannel: ReceiveChannel<T>,
-    val monitoringPerNameResultsChannel: SendChannel<T>
+data class TaskEngineInputChannels<T : MessageToProcess<*>>(
+    val taskCommandsChannel: ReceiveChannel<T>,
+    val taskEventsChannel: Channel<T>,
+    val taskResultsChannel: SendChannel<T>
 )

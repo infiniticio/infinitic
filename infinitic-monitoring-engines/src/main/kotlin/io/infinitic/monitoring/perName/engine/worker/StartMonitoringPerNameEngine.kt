@@ -27,7 +27,7 @@ package io.infinitic.monitoring.perName.engine.worker
 
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInput
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import kotlinx.coroutines.CoroutineName
@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNameEngine(
     coroutineName: String,
     monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
-    monitoringPerNameInput: MonitoringPerNameInput<T>,
+    monitoringPerNameInputChannels: MonitoringPerNameInputChannels<T>,
     monitoringPerNameOutput: MonitoringPerNameOutput
 ) = launch(CoroutineName(coroutineName)) {
 
@@ -46,9 +46,9 @@ fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNam
         monitoringPerNameOutput
     )
 
-    val out = monitoringPerNameInput.monitoringPerNameResultsChannel
+    val out = monitoringPerNameInputChannels.monitoringPerNameResultsChannel
 
-    for (message in monitoringPerNameInput.monitoringPerNameChannel) {
+    for (message in monitoringPerNameInputChannels.monitoringPerNameChannel) {
         try {
             message.output = monitoringPerNameEngine.handle(message.message)
         } catch (e: Exception) {

@@ -32,20 +32,22 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.pulsar.consumers.ConsumerFactory
+import io.infinitic.pulsar.transport.PulsarOutputFactory
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import org.apache.pulsar.client.api.PulsarClient
 import java.lang.RuntimeException
 
 private const val N_WORKERS = 100
 
 fun CoroutineScope.startPulsar(
+    consumerFactory: ConsumerFactory,
+    pulsarOutputFactory: PulsarOutputFactory,
     taskExecutorRegister: TaskExecutorRegister,
-    pulsarClient: PulsarClient,
     keyValueStorage: KeyValueStorage
 ) = launch(Dispatchers.IO) {
 
@@ -70,32 +72,36 @@ fun CoroutineScope.startPulsar(
     }
 
     startPulsarMonitoringGlobalWorker(
-        pulsarClient,
+        consumerFactory,
         keyValueStorage,
         logChannel
     )
 
     startPulsarMonitoringPerNameWorker(
-        pulsarClient,
+        consumerFactory,
+        pulsarOutputFactory.monitoringPerNameOutput,
         keyValueStorage,
         logChannel
     )
 
     startPulsarTaskExecutorWorker(
-        pulsarClient,
+        consumerFactory,
+        pulsarOutputFactory.taskExecutorOutput,
         taskExecutorRegister,
         logChannel,
         N_WORKERS,
     )
 
     startPulsarTaskEngineWorker(
-        pulsarClient,
+        consumerFactory,
+        pulsarOutputFactory.taskEngineOutput,
         keyValueStorage,
         logChannel
     )
 
     startPulsarWorkflowEngineWorker(
-        pulsarClient,
+        consumerFactory,
+        pulsarOutputFactory.workflowEngineOutput,
         keyValueStorage,
         logChannel
     )

@@ -46,37 +46,36 @@ import org.apache.pulsar.client.api.SubscriptionType
 
 fun PulsarClient.messageBuilder() = PulsarMessageBuilderFromClient(this)
 
-fun PulsarClient.newTaskEngineConsumer(): Consumer<TaskEngineEnvelope> =
+fun PulsarClient.newTaskEngineConsumer(subscriptionNamePostfix: String = ""): Consumer<TaskEngineEnvelope> =
     newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
         .topics(listOf(TaskEngineCommandsTopic.name, TaskEngineEventsTopic.name))
-        .subscriptionName("task-engine-consumer") // FIXME: Should be in a constant somewhere
+        .subscriptionName("task-engine-consumer$subscriptionNamePostfix") // FIXME: Should be in a constant somewhere
         .subscriptionType(SubscriptionType.Key_Shared)
         .subscribe()
 
-fun PulsarClient.newWorkflowEngineConsumer(): Consumer<WorkflowEngineEnvelope> =
+fun PulsarClient.newWorkflowEngineConsumer(subscriptionNamePostfix: String = ""): Consumer<WorkflowEngineEnvelope> =
     newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
         .topics(listOf(WorkflowEngineCommandsTopic.name, WorkflowEngineEventsTopic.name))
-        .subscriptionName("workflow-engine-consumer") // FIXME: Should be in a constant somewhere
+        .subscriptionName("workflow-engine-consumer$subscriptionNamePostfix") // FIXME: Should be in a constant somewhere
         .subscriptionType(SubscriptionType.Key_Shared)
         .subscribe()
 
-fun PulsarClient.newMonitoringPerNameEngineConsumer(): Consumer<MonitoringPerNameEnvelope> =
+fun PulsarClient.newMonitoringPerNameEngineConsumer(subscriptionNamePostfix: String = ""): Consumer<MonitoringPerNameEnvelope> =
     newConsumer(Schema.AVRO(schemaDefinition<MonitoringPerNameEnvelope>()))
         .topic(MonitoringPerNameTopic.name)
-        .subscriptionName("monitoring-per-name-consumer") // FIXME: Should be in a constant somewhere
+        .subscriptionName("monitoring-per-name-consumer$subscriptionNamePostfix") // FIXME: Should be in a constant somewhere
         .subscriptionType(SubscriptionType.Key_Shared)
         .subscribe()
 
-fun PulsarClient.newMonitoringGlobalEngineConsumer(): Consumer<MonitoringGlobalEnvelope> =
+fun PulsarClient.newMonitoringGlobalEngineConsumer(subscriptionNamePostfix: String = ""): Consumer<MonitoringGlobalEnvelope> =
     newConsumer(Schema.AVRO(schemaDefinition<MonitoringGlobalEnvelope>()))
         .topic(MonitoringGlobalTopic.name)
-        .subscriptionName("monitoring-global-consumer") // FIXME: Should be in a constant somewhere
-        .subscriptionType(SubscriptionType.Key_Shared)
+        .subscriptionName("monitoring-global-consumer$subscriptionNamePostfix") // FIXME: Should be in a constant somewhere
         .subscribe()
 
-fun PulsarClient.newTaskConsumer(name: String): Consumer<TaskExecutorEnvelope> =
+fun PulsarClient.newExecutorTaskConsumer(taskName: String, subscriptionNamePostfix: String = ""): Consumer<TaskExecutorEnvelope> =
     newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorEnvelope>()))
-        .topic(TaskExecutorTopic.name(name))
-        .subscriptionName("task-executor-consumer-$name") // FIXME: Should be in a constant somewhere
+        .topic(TaskExecutorTopic.name(taskName))
+        .subscriptionName("task-executor-consumer-$taskName$subscriptionNamePostfix") // FIXME: Should be in a constant somewhere
         .subscriptionType(SubscriptionType.Shared)
         .subscribe()

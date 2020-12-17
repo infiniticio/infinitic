@@ -26,7 +26,7 @@
 package io.infinitic.pulsar.functions
 
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.pulsar.transport.PulsarWorkflowEngineOutput
+import io.infinitic.pulsar.transport.PulsarOutputFactory
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
@@ -52,6 +52,6 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
     internal fun getWorkflowEngine(context: Context) = WorkflowEngine(
         WorkflowStateKeyValueStorage(context.keyValueStorage()),
         NoWorkflowEventStorage(),
-        PulsarWorkflowEngineOutput.from(context)
+        PulsarOutputFactory.from(context).workflowEngineOutput
     )
 }
