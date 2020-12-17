@@ -92,7 +92,8 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/workflow-engine-commands", slotSchema.captured
+                "persistent://tenant/namespace/workflow-engine-commands",
+                slotSchema.captured
             )
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<WorkflowEngineEnvelope>()).avroSchema
@@ -121,7 +122,10 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         PulsarOutputs.from(context).clientOutput.sendToTaskEngine(msg, 0F)
         // then
         verify {
-            context.newOutputMessage("persistent://tenant/namespace/task-engine-commands", slotSchema.captured)
+            context.newOutputMessage(
+                "persistent://tenant/namespace/task-engine-commands",
+                slotSchema.captured
+            )
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskEngineEnvelope>()).avroSchema
         verifyAll {
@@ -149,7 +153,10 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         PulsarOutputs.from(context).taskEngineOutput.sendToMonitoringPerName(msg)
         // then
         verify {
-            context.newOutputMessage("persistent://tenant/namespace/monitoring-per-name", slotSchema.captured)
+            context.newOutputMessage(
+                "persistent://tenant/namespace/monitoring-per-name",
+                slotSchema.captured
+            )
         }
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringPerNameEnvelope>()).avroSchema
         verifyAll {

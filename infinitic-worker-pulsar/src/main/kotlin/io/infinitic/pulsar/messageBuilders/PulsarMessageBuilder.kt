@@ -36,12 +36,14 @@ interface PulsarMessageBuilder {
     fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O>
 }
 
-suspend inline fun <reified T : Any> PulsarMessageBuilder.sendPulsarMessage(topic: String, msg: T, key: String?, after: Float) {
+suspend inline fun <reified T : Any> PulsarMessageBuilder.sendPulsarMessage(
+    topic: String,
+    msg: T,
+    key: String?,
+    after: Float
+) {
     this
-        .newMessage(
-            topic,
-            AvroSchema.of(schemaDefinition<T>())
-        )
+        .newMessage(topic, AvroSchema.of(schemaDefinition<T>()))
         .value(msg)
         .also {
             if (key != null) {
@@ -51,6 +53,5 @@ suspend inline fun <reified T : Any> PulsarMessageBuilder.sendPulsarMessage(topi
                 it.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
             }
         }
-        .sendAsync()
-        .await()
+        .sendAsync().await()
 }
