@@ -36,7 +36,7 @@ import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
@@ -193,7 +193,7 @@ class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput
     override val sendToTaskEngine: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 
-    override val sendToTaskExecutors: SendToExecutors =
+    override val sendToTaskExecutors: SendToTaskExecutors =
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
 
     override val sendToMonitoringPerName: SendToMonitoringPerName =

@@ -28,7 +28,7 @@ package io.infinitic.worker.inMemory.transport
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
@@ -67,7 +67,7 @@ class InMemoryTaskEngineOutput(
         }
     }
 
-    override val sendToTaskExecutors: SendToExecutors = {
+    override val sendToTaskExecutors: SendToTaskExecutors = {
         executorChannel.send(InMemoryMessageToProcess(it))
     }
 

@@ -39,7 +39,12 @@ import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
+import org.apache.pulsar.common.policies.data.AutoTopicCreationOverride
+import org.apache.pulsar.common.policies.data.Policies
+import org.apache.pulsar.common.policies.data.RetentionPolicies
+import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
+import org.apache.pulsar.common.policies.data.TopicType
 import kotlin.reflect.KClass
 
 suspend fun PulsarAdmin.infiniticInit(tenant: String, namespace: String, allowedClusters: Set<String>? = null) {
@@ -104,7 +109,28 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
     val fullNamespace = getFullNamespace(tenant, namespace)
 
     if (!existingNamespaces.contains(fullNamespace)) {
-        admin.namespaces().createNamespaceAsync(fullNamespace).await()
+        val policies = Policies().apply {
+            // all new topics (especially tasks and workflows) are partitioned
+            autoTopicCreationOverride = AutoTopicCreationOverride(
+                true,
+                TopicType.PARTITIONED.toString(),
+                1
+            )
+            // default retention : 7j && 1Gb
+            retention_policies = RetentionPolicies(
+                60 * 24 * 7,
+                1024
+            )
+            // default ttl : 30j
+            message_ttl_in_seconds = 3600 * 24 * 30
+            // schema are mandatory for producers/consumers
+            schema_validation_enforced = true
+            // this allow topic auto creation for task / workflows
+            is_allow_auto_update_schema = true
+            // Changes allowed: add optional fields, delete fields
+            schema_compatibility_strategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE
+        }
+        admin.namespaces().createNamespaceAsync(fullNamespace, policies).await()
     }
 }
 

@@ -33,7 +33,6 @@ import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyVal
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
-import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -48,8 +47,12 @@ import org.apache.pulsar.client.api.Message
 
 typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<MonitoringGlobalMessage>
 
+const val MONITORING_GLOBAL_PROCESSING_COROUTINE_NAME = "monitoring-global-processing"
+const val MONITORING_GLOBAL_ACKNOWLEDGING_COROUTINE_NAME = "monitoring-global-acknowledging"
+const val MONITORING_GLOBAL_PULLING_COROUTINE_NAME = "monitoring-global-pulling"
+
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
-    pulsarConsumerFactory: PulsarConsumerFactory,
+    monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope>,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<MonitoringGlobalMessageToProcess>?
 ) = launch(Dispatchers.IO) {
@@ -59,17 +62,13 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
 
     // starting monitoring global engine
     startMonitoringGlobalEngine(
-        "monitoring-global",
+        MONITORING_GLOBAL_PROCESSING_COROUTINE_NAME,
         MonitoringGlobalStateKeyValueStorage(keyValueStorage),
         MonitoringGlobalInputChannels(monitoringGlobalChannel, monitoringGlobalResultsChannel)
     )
 
-    // create monitoring global consumer
-    val monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope> = pulsarConsumerFactory
-        .newMonitoringGlobalEngineConsumer()
-
     // coroutine dedicated to pulsar message acknowledging
-    launch(CoroutineName("monitoring-global-message-acknowledger")) {
+    launch(CoroutineName(MONITORING_GLOBAL_ACKNOWLEDGING_COROUTINE_NAME)) {
         for (messageToProcess in monitoringGlobalResultsChannel) {
             if (messageToProcess.exception == null) {
                 monitoringGlobalConsumer.acknowledgeAsync(messageToProcess.messageId).await()
@@ -81,7 +80,7 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     }
 
     // coroutine dedicated to pulsar message pulling
-    launch(CoroutineName("monitoring-global-message-puller")) {
+    launch(CoroutineName(MONITORING_GLOBAL_PULLING_COROUTINE_NAME)) {
         while (isActive) {
             val message: Message<MonitoringGlobalEnvelope> = monitoringGlobalConsumer.receiveAsync().await()
 

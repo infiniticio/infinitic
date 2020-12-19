@@ -39,6 +39,8 @@ include("infinitic-workflow-tests")
 include("infinitic-worker-inMemory")
 include("infinitic-worker-pulsar")
 
+include("example-pulsar")
+
 pluginManagement {
     repositories {
         gradlePluginPortal()

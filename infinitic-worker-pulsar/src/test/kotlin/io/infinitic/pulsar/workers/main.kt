@@ -57,7 +57,7 @@ fun main() {
             register(WorkflowB::class.java.name) { WorkflowBImpl() }
         }
 
-        startPulsar(consumerFactory, pulsarOutputFactory, taskExecutorRegister, InMemoryStorage())
+        startPulsarWorkers(consumerFactory, pulsarOutputFactory, taskExecutorRegister, InMemoryStorage())
 
         repeat(1000) {
 //            client.dispatch<TaskA> { reverse("abc") }

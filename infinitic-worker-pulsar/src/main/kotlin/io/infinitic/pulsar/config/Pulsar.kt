@@ -23,8 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.config
 
-object WorkflowEngineCommandsTopic {
-    const val name = "system: workflow-engine-commands"
+data class Pulsar(
+    val serviceUrl: String = "pulsar://localhost:6650/",
+    val serviceHttpUrl: String = "http://localhost:8080",
+    val tenant: String,
+    val namespace: String
+) {
+    init {
+        require(serviceUrl.startsWith("pulsar://")) { "serviceUrl MUST start with pulsar://" }
+        require(
+            serviceHttpUrl.startsWith("http://") || serviceHttpUrl.startsWith("https://")
+        ) { "serviceUrl MUST start with http(s)://" }
+        require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
+        require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
+    }
 }

@@ -29,7 +29,6 @@ import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
@@ -50,58 +49,54 @@ import org.apache.pulsar.client.api.Message
 
 typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<WorkflowEngineMessage>
 
+const val WORKFLOW_ENGINE_PROCESSING_COROUTINE_NAME = "workflow-engine-processing"
+const val WORKFLOW_ENGINE_ACKNOWLEDGING_COROUTINE_NAME = "workflow-engine-acknowledging"
+const val WORKFLOW_ENGINE_PULLING_COROUTINE_NAME = "workflow-engine-pulling"
+
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
-    pulsarConsumerFactory: PulsarConsumerFactory,
+    consumerCounter: Int,
+    workflowEngineConsumer: Consumer<WorkflowEngineEnvelope>,
     workflowEngineOutput: WorkflowEngineOutput,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<WorkflowEngineMessageToProcess>?,
-    instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
-    repeat(instancesNumber) {
-        val workflowCommandsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
-        val workflowEventsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
-        val workflowResultsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
+    val workflowCommandsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
+    val workflowEventsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
+    val workflowResultsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
 
-        // Starting Workflow Engine
-        startWorkflowEngine(
-            "workflow-engine-$it",
-            WorkflowStateKeyValueStorage(keyValueStorage),
-            NoWorkflowEventStorage(),
-            WorkflowEngineInputChannels(workflowCommandsChannel, workflowEventsChannel, workflowResultsChannel),
-            workflowEngineOutput
-        )
+    // Starting Workflow Engine
+    startWorkflowEngine(
+        "$WORKFLOW_ENGINE_PROCESSING_COROUTINE_NAME-$consumerCounter",
+        WorkflowStateKeyValueStorage(keyValueStorage),
+        NoWorkflowEventStorage(),
+        WorkflowEngineInputChannels(workflowCommandsChannel, workflowEventsChannel, workflowResultsChannel),
+        workflowEngineOutput
+    )
 
-        // create workflow engine consumer
-        val workflowEngineConsumer: Consumer<WorkflowEngineEnvelope> = pulsarConsumerFactory
-            .newWorkflowEngineConsumer(
-                if (instancesNumber > 1) "$it" else null
-            )
-
-        // coroutine dedicated to pulsar message acknowledging
-        launch(CoroutineName("workflow-engine-message-acknowledger-$it")) {
-            for (messageToProcess in workflowResultsChannel) {
-                if (messageToProcess.exception == null) {
-                    workflowEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
-                } else {
-                    workflowEngineConsumer.negativeAcknowledge(messageToProcess.messageId)
-                }
-                logChannel?.send(messageToProcess)
+    // coroutine dedicated to pulsar message acknowledging
+    launch(CoroutineName("$WORKFLOW_ENGINE_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
+        for (messageToProcess in workflowResultsChannel) {
+            if (messageToProcess.exception == null) {
+                workflowEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
+            } else {
+                workflowEngineConsumer.negativeAcknowledge(messageToProcess.messageId)
             }
+            logChannel?.send(messageToProcess)
         }
+    }
 
-        // coroutine dedicated to pulsar message pulling
-        launch(CoroutineName("workflow-engine-message-puller-$it")) {
-            while (isActive) {
-                val message: Message<WorkflowEngineEnvelope> = workflowEngineConsumer.receiveAsync().await()
+    // coroutine dedicated to pulsar message pulling
+    launch(CoroutineName("$WORKFLOW_ENGINE_PULLING_COROUTINE_NAME-$consumerCounter")) {
+        while (isActive) {
+            val message: Message<WorkflowEngineEnvelope> = workflowEngineConsumer.receiveAsync().await()
 
-                try {
-                    val envelope = readBinary(message.data, WorkflowEngineEnvelope.serializer())
-                    workflowCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
-                } catch (e: Exception) {
-                    workflowEngineConsumer.negativeAcknowledge(message.messageId)
-                    throw e
-                }
+            try {
+                val envelope = readBinary(message.data, WorkflowEngineEnvelope.serializer())
+                workflowCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
+            } catch (e: Exception) {
+                workflowEngineConsumer.negativeAcknowledge(message.messageId)
+                throw e
             }
         }
     }

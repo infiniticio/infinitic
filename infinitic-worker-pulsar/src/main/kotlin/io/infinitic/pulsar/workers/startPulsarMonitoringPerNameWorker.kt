@@ -34,7 +34,6 @@ import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputCh
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
-import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -49,56 +48,52 @@ import org.apache.pulsar.client.api.Message
 
 typealias PulsarMonitoringPerNameMessageToProcess = PulsarMessageToProcess<MonitoringPerNameEngineMessage>
 
+const val MONITORING_PER_NAME_PROCESSING_COROUTINE_NAME = "monitoring-per-name-processing"
+const val MONITORING_PER_NAME_ACKNOWLEDGING_COROUTINE_NAME = "monitoring-per-name-acknowledging"
+const val MONITORING_PER_NAME_PULLING_COROUTINE_NAME = "monitoring-per-name-pulling"
+
 fun CoroutineScope.startPulsarMonitoringPerNameWorker(
-    pulsarConsumerFactory: PulsarConsumerFactory,
+    consumerCounter: Int,
+    monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope>,
     monitoringPerNameOutput: MonitoringPerNameOutput,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<MonitoringPerNameMessageToProcess>?,
-    instancesNumber: Int = 1
 ) = launch(Dispatchers.IO) {
 
-    repeat(instancesNumber) {
-        val monitoringPerNameChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
-        val monitoringPerNameResultsChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
+    val monitoringPerNameChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
+    val monitoringPerNameResultsChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
 
-        // starting monitoring per name Engine
-        startMonitoringPerNameEngine(
-            "monitoring-per-name-$it",
-            MonitoringPerNameStateKeyValueStorage(keyValueStorage),
-            MonitoringPerNameInputChannels(monitoringPerNameChannel, monitoringPerNameResultsChannel),
-            monitoringPerNameOutput
-        )
+    // starting monitoring per name Engine
+    startMonitoringPerNameEngine(
+        "$MONITORING_PER_NAME_PROCESSING_COROUTINE_NAME-$consumerCounter",
+        MonitoringPerNameStateKeyValueStorage(keyValueStorage),
+        MonitoringPerNameInputChannels(monitoringPerNameChannel, monitoringPerNameResultsChannel),
+        monitoringPerNameOutput
+    )
 
-        // create monitoring per name consumer
-        val monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope> = pulsarConsumerFactory
-            .newMonitoringPerNameEngineConsumer(
-                if (instancesNumber > 1) "$it" else null
-            )
-
-        // coroutine dedicated to pulsar message acknowledging
-        launch(CoroutineName("monitoring-per-name-message-acknowledger-$it")) {
-            for (messageToProcess in monitoringPerNameResultsChannel) {
-                if (messageToProcess.exception == null) {
-                    monitoringPerNameConsumer.acknowledgeAsync(messageToProcess.messageId).await()
-                } else {
-                    monitoringPerNameConsumer.negativeAcknowledge(messageToProcess.messageId)
-                }
-                logChannel?.send(messageToProcess)
+    // coroutine dedicated to pulsar message acknowledging
+    launch(CoroutineName("$MONITORING_PER_NAME_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
+        for (messageToProcess in monitoringPerNameResultsChannel) {
+            if (messageToProcess.exception == null) {
+                monitoringPerNameConsumer.acknowledgeAsync(messageToProcess.messageId).await()
+            } else {
+                monitoringPerNameConsumer.negativeAcknowledge(messageToProcess.messageId)
             }
+            logChannel?.send(messageToProcess)
         }
+    }
 
-        // coroutine dedicated to pulsar message pulling
-        launch(CoroutineName("monitoring-per-name-message-puller-$it")) {
-            while (isActive) {
-                val message: Message<MonitoringPerNameEnvelope> = monitoringPerNameConsumer.receiveAsync().await()
+    // coroutine dedicated to pulsar message pulling
+    launch(CoroutineName("$MONITORING_PER_NAME_PULLING_COROUTINE_NAME-$consumerCounter")) {
+        while (isActive) {
+            val message: Message<MonitoringPerNameEnvelope> = monitoringPerNameConsumer.receiveAsync().await()
 
-                try {
-                    val envelope = readBinary(message.data, MonitoringPerNameEnvelope.serializer())
-                    monitoringPerNameChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
-                } catch (e: Exception) {
-                    monitoringPerNameConsumer.negativeAcknowledge(message.messageId)
-                    throw e
-                }
+            try {
+                val envelope = readBinary(message.data, MonitoringPerNameEnvelope.serializer())
+                monitoringPerNameChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
+            } catch (e: Exception) {
+                monitoringPerNameConsumer.negativeAcknowledge(message.messageId)
+                throw e
             }
         }
     }

@@ -58,8 +58,6 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-// typealias InstanceFactory = () -> Any
-
 open class TaskExecutor(
     open val taskExecutorOutput: TaskExecutorOutput,
     val taskExecutorRegister: TaskExecutorRegister = TaskExecutorRegisterImpl()
@@ -96,7 +94,7 @@ open class TaskExecutor(
             } catch (e: Exception) {
                 // returning the exception (no retry)
                 sendTaskFailed(msg, e, null)
-                // we stop here
+                // stop here
                 return@withContext
             }
 
@@ -117,7 +115,7 @@ open class TaskExecutor(
             } catch (e: Exception) {
                 // returning the exception (no retry)
                 sendTaskFailed(msg, e, null)
-                // we stop here
+                // stop here
                 return@withContext
             }
 
@@ -191,7 +189,6 @@ open class TaskExecutor(
         return TaskCommand(task, method, msg.methodInput.get(), msg.taskOptions)
     }
 
-    // TODO: currently it's not possible to use class extension to implement a working getRetryDelay() method
     private fun getDelayBeforeRetry(task: Any): RetryDelay {
         val method = try {
             task::class.java.getMethod(Constants.DELAY_BEFORE_RETRY_METHOD)

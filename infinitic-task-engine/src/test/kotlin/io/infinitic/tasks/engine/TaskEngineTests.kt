@@ -45,7 +45,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -119,7 +119,7 @@ class MockTaskEventStorage() : TaskEventStorage {
 class MockTaskEngineOutput : TaskEngineOutput {
     override val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
     override val sendToTaskEngine = mockk<SendToTaskEngine>()
-    override val sendToTaskExecutors = mockk<SendToExecutors>()
+    override val sendToTaskExecutors = mockk<SendToTaskExecutors>()
     override val sendToMonitoringPerName = mockk<SendToMonitoringPerName>()
 
     val workerMessageSlot = slot<TaskExecutorMessage>()

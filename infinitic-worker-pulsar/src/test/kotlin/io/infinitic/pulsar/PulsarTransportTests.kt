@@ -37,7 +37,6 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.topics.TaskExecutorTopic
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
@@ -92,7 +91,7 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/workflow-engine-commands",
+                "persistent://tenant/namespace/system: workflow-engine-commands",
                 slotSchema.captured
             )
         }
@@ -123,7 +122,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/task-engine-commands",
+                "persistent://tenant/namespace/system: task-engine-commands",
                 slotSchema.captured
             )
         }
@@ -154,7 +153,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/monitoring-per-name",
+                "persistent://tenant/namespace/system: monitoring-per-name",
                 slotSchema.captured
             )
         }
@@ -185,7 +184,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         PulsarOutputs.from(context).monitoringPerNameOutput.sendToMonitoringGlobal(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe "persistent://tenant/namespace/monitoring-global"
+        slotTopic.captured shouldBe "persistent://tenant/namespace/system: monitoring-global"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringGlobalEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(MonitoringGlobalEnvelope.from(msg)) }
         verify(exactly = 1) { builder.sendAsync() }
@@ -209,7 +208,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         PulsarOutputs.from(context).taskEngineOutput.sendToTaskExecutors(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe "persistent://tenant/namespace/${TaskExecutorTopic.name("${msg.taskName}")}"
+        slotTopic.captured shouldBe "persistent://tenant/namespace/task: ${msg.taskName}"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(TaskExecutorEnvelope.from(msg)) }
         verify(exactly = 1) { builder.key("${msg.taskName}") }

@@ -23,8 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.config
 
-object WorkflowEngineCommandsTopic {
-    const val name = "system: workflow-engine-commands"
+data class TaskEngine(
+    var mode: Mode? = null,
+    val consumers: Int = 1,
+    val stateStorage: StateStorage
+) {
+    init {
+        require(consumers >= 0) { "concurrency MUST be positive" }
+    }
 }

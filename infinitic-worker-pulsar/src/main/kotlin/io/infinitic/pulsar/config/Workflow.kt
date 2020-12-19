@@ -23,8 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.config
 
-object WorkflowEngineCommandsTopic {
-    const val name = "system: workflow-engine-commands"
+data class Workflow(
+    val name: String,
+    val `class`: String,
+    var mode: Mode? = null,
+    val consumers: Int = 1,
+    val concurrency: Int = 1
+) {
+    init {
+        require(consumers >= 0) { "consumers MUST be positive" }
+        require(concurrency >= 1) { "concurrency MUST be positive" }
+        require(name.isNotEmpty()) { "name can NOT be empty" }
+        require(`class`.isNotEmpty()) { "class can NOT be empty" }
+        require(try { Class.forName(`class`); true } catch (e: ClassNotFoundException) { false }) {
+            "class $`class` unknown"
+        }
+    }
+
+    fun getInstance(): Any = try {
+        Class.forName(`class`).newInstance()
+    } catch (e: Exception) {
+        throw IllegalArgumentException("class $`class` instantiation throws: $e")
+    }
 }

@@ -23,8 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.config
 
-object WorkflowEngineCommandsTopic {
-    const val name = "system: workflow-engine-commands"
+@Suppress("EnumEntryName")
+enum class Mode {
+    function,
+    worker
 }

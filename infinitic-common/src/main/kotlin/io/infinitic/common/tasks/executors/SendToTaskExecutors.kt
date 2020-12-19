@@ -27,4 +27,4 @@ package io.infinitic.common.tasks.executors
 
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 
-typealias SendToExecutors = suspend (TaskExecutorMessage) -> Unit
+typealias SendToTaskExecutors = suspend (TaskExecutorMessage) -> Unit

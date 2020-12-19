@@ -27,12 +27,12 @@ package io.infinitic.tasks.engine.transport
 
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
 interface TaskEngineOutput {
     val sendToWorkflowEngine: SendToWorkflowEngine
     val sendToTaskEngine: SendToTaskEngine
-    val sendToTaskExecutors: SendToExecutors
+    val sendToTaskExecutors: SendToTaskExecutors
     val sendToMonitoringPerName: SendToMonitoringPerName
 }

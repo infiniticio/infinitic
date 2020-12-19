@@ -23,8 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.worker.config
 
-object WorkflowEngineCommandsTopic {
-    const val name = "system: workflow-engine-commands"
-}
+data class Redis(
+    val host: String? = "localhost",
+    val port: Int? = 6379,
+    val timeout: Int? = 2000,
+    val user: String? = "",
+    val password: String? = "",
+    val database: Int? = 0,
+)

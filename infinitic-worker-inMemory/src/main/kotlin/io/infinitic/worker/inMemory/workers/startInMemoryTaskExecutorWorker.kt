@@ -36,6 +36,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
+const val TASK_EXECUTOR_PROCESSING_COROUTINE_NAME = "task-executor-processing"
+
 fun CoroutineScope.startInMemoryTaskExecutorWorker(
     taskExecutorRegister: TaskExecutorRegister,
     taskEngineEventsChannel: Channel<TaskEngineMessageToProcess>,
@@ -46,10 +48,10 @@ fun CoroutineScope.startInMemoryTaskExecutorWorker(
 
     repeat(instancesNumber) {
         startTaskExecutor(
+            "$TASK_EXECUTOR_PROCESSING_COROUTINE_NAME-$it",
             taskExecutorRegister,
             TaskExecutorInput(taskExecutorChannel, logChannel),
             InMemoryTaskExecutorOutput(this, taskEngineEventsChannel),
-            "-$it"
         )
     }
 }

@@ -51,29 +51,14 @@ class PulsarConsumerFactory(
 ) {
 
     companion object {
-        const val TASK_ENGINE_SUBSCRIPTION_NAME = "task-engine-subscription"
-        const val WORKFLOW_ENGINE_SUBSCRIPTION_NAME = "workflow-engine-subscription"
-        const val MONITORING_PER_NAME_SUBSCRIPTION = "monitoring-per-name-subscription"
-        const val MONITORING_GLOBAL_SUBSCRIPTION = "monitoring-global-subscription"
-        const val TASK_EXECUTOR_SUBSCRIPTION = "task-executor-subscription"
+        const val WORKFLOW_ENGINE_SUBSCRIPTION_NAME = "workflow-engine"
+        const val TASK_ENGINE_SUBSCRIPTION_NAME = "task-engine"
+        const val TASK_EXECUTOR_SUBSCRIPTION = "task-executor"
+        const val MONITORING_PER_NAME_SUBSCRIPTION = "monitoring-per-name"
+        const val MONITORING_GLOBAL_SUBSCRIPTION = "monitoring-global"
     }
 
-    fun newTaskEngineConsumer(subscriptionNamePostfix: String? = null): Consumer<TaskEngineEnvelope> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
-            .topics(
-                listOf(
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name)
-                )
-            )
-            .let {
-                val postfix = subscriptionNamePostfix?.let { "-$it" } ?: ""
-                it.subscriptionName("$TASK_ENGINE_SUBSCRIPTION_NAME$postfix")
-            }
-            .subscriptionType(SubscriptionType.Key_Shared)
-            .subscribe()
-
-    fun newWorkflowEngineConsumer(subscriptionNamePostfix: String? = null): Consumer<WorkflowEngineEnvelope> =
+    fun newWorkflowEngineConsumer(workerName: String, consumerCounter: Int): Consumer<WorkflowEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
             .topics(
                 listOf(
@@ -81,36 +66,45 @@ class PulsarConsumerFactory(
                     getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name)
                 )
             )
-            .let {
-                val postfix = subscriptionNamePostfix?.let { "-$it" } ?: ""
-                it.subscriptionName("$WORKFLOW_ENGINE_SUBSCRIPTION_NAME$postfix")
-            }
+            .consumerName("$workerName-$consumerCounter")
+            .subscriptionName(WORKFLOW_ENGINE_SUBSCRIPTION_NAME)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscribe()
 
-    fun newMonitoringPerNameEngineConsumer(subscriptionNamePostfix: String? = null): Consumer<MonitoringPerNameEnvelope> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringPerNameEnvelope>()))
-            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name))
-            .let {
-                val postfix = subscriptionNamePostfix?.let { "-$it" } ?: ""
-                it.subscriptionName("$MONITORING_PER_NAME_SUBSCRIPTION$postfix")
-            }
+    fun newTaskEngineConsumer(workerName: String, consumerCounter: Int): Consumer<TaskEngineEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
+            .topics(
+                listOf(
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name)
+                )
+            )
+            .consumerName("$workerName-$consumerCounter")
+            .subscriptionName(TASK_ENGINE_SUBSCRIPTION_NAME)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscribe()
 
-    fun newMonitoringGlobalEngineConsumer(): Consumer<MonitoringGlobalEnvelope> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringGlobalEnvelope>()))
-            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name))
-            .subscriptionName(MONITORING_GLOBAL_SUBSCRIPTION)
-            .subscribe()
-
-    fun newExecutorTaskConsumer(taskName: String, subscriptionNamePostfix: String? = null): Consumer<TaskExecutorEnvelope> =
+    fun newTaskExecutorConsumer(workerName: String, consumerCounter: Int, taskName: String): Consumer<TaskExecutorEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorEnvelope>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskExecutorTopic.name(taskName)))
-            .let {
-                val postfix = subscriptionNamePostfix?.let { "-$it" } ?: ""
-                it.subscriptionName("$TASK_EXECUTOR_SUBSCRIPTION-$taskName$postfix")
-            }
+            .consumerName("$workerName-$consumerCounter")
+            .subscriptionName(TASK_EXECUTOR_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Shared)
+            .subscribe()
+
+    fun newMonitoringPerNameEngineConsumer(workerName: String, consumerCounter: Int): Consumer<MonitoringPerNameEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringPerNameEnvelope>()))
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name))
+            .consumerName("$workerName-$consumerCounter")
+            .subscriptionName(MONITORING_PER_NAME_SUBSCRIPTION)
+            .subscriptionType(SubscriptionType.Key_Shared)
+            .subscribe()
+
+    fun newMonitoringGlobalEngineConsumer(workerName: String): Consumer<MonitoringGlobalEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringGlobalEnvelope>()))
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name))
+            .consumerName("$workerName")
+            .subscriptionName(MONITORING_GLOBAL_SUBSCRIPTION)
+            .subscriptionType(SubscriptionType.Failover)
             .subscribe()
 }

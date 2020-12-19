@@ -35,7 +35,7 @@ import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -116,7 +116,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToTaskExecutors: SendToExecutors = { message: TaskExecutorMessage ->
+    private val sendToTaskExecutors: SendToTaskExecutors = { message: TaskExecutorMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskExecutorTopic.name("${message.taskName}")),
             TaskExecutorEnvelope.from(message),

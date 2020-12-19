@@ -44,7 +44,7 @@ import java.lang.RuntimeException
 
 private const val N_WORKERS = 100
 
-fun CoroutineScope.startPulsar(
+fun CoroutineScope.startPulsarWorkers(
     pulsarConsumerFactory: PulsarConsumerFactory,
     pulsarOutputs: PulsarOutputs,
     taskExecutorRegister: TaskExecutorRegister,
@@ -71,37 +71,54 @@ fun CoroutineScope.startPulsar(
         }
     }
 
+    val name = "inMemory-test"
+
+    repeat(1) {
+        startPulsarWorkflowEngineWorker(
+            it,
+            pulsarConsumerFactory.newWorkflowEngineConsumer(name, it),
+            pulsarOutputs.workflowEngineOutput,
+            keyValueStorage,
+            logChannel
+        )
+    }
+
+    repeat(1) {
+        startPulsarTaskEngineWorker(
+            it,
+            pulsarConsumerFactory.newTaskEngineConsumer(name, it),
+            pulsarOutputs.taskEngineOutput,
+            keyValueStorage,
+            logChannel
+        )
+    }
+
+    taskExecutorRegister.getTasks().forEach { taskName ->
+        repeat(1) {
+            startPulsarTaskExecutorWorker(
+                taskName,
+                it,
+                pulsarConsumerFactory.newTaskExecutorConsumer(name, it, taskName),
+                pulsarOutputs.taskExecutorOutput,
+                taskExecutorRegister,
+                logChannel,
+                N_WORKERS,
+            )
+        }
+    }
+
+    repeat(1) {
+        startPulsarMonitoringPerNameWorker(
+            it,
+            pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(name, it),
+            pulsarOutputs.monitoringPerNameOutput,
+            keyValueStorage,
+            logChannel
+        )
+    }
+
     startPulsarMonitoringGlobalWorker(
-        pulsarConsumerFactory,
-        keyValueStorage,
-        logChannel
-    )
-
-    startPulsarMonitoringPerNameWorker(
-        pulsarConsumerFactory,
-        pulsarOutputs.monitoringPerNameOutput,
-        keyValueStorage,
-        logChannel
-    )
-
-    startPulsarTaskExecutorWorker(
-        pulsarConsumerFactory,
-        pulsarOutputs.taskExecutorOutput,
-        taskExecutorRegister,
-        logChannel,
-        N_WORKERS,
-    )
-
-    startPulsarTaskEngineWorker(
-        pulsarConsumerFactory,
-        pulsarOutputs.taskEngineOutput,
-        keyValueStorage,
-        logChannel
-    )
-
-    startPulsarWorkflowEngineWorker(
-        pulsarConsumerFactory,
-        pulsarOutputs.workflowEngineOutput,
+        pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(name),
         keyValueStorage,
         logChannel
     )
