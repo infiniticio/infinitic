@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.worker.inMemory
+package io.infinitic.worker.inMemory.workers
 
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegister

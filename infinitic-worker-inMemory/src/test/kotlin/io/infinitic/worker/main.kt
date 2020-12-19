@@ -29,8 +29,8 @@ import io.infinitic.client.Client
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.worker.inMemory.startInMemory
 import io.infinitic.worker.inMemory.transport.InMemoryClientOutput
+import io.infinitic.worker.inMemory.workers.startInMemory
 import io.infinitic.worker.samples.TaskA
 import io.infinitic.worker.samples.TaskAImpl
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess

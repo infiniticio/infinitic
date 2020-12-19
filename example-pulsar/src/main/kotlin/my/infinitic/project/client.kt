@@ -46,5 +46,7 @@ fun main() {
         repeat(10) {
             client.dispatch(Add10AndMultiplyBy2::class.java) { handle(10) }
         }
+
+        pulsarClient.close()
     }
 }

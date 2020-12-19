@@ -82,7 +82,7 @@ fun main(args: Array<String>) {
             }
         }
 
-        if (config.workflowEngine.mode!! == Mode.worker) {
+        if (config.workflowEngine.mode == Mode.worker) {
             repeat(config.workflowEngine.consumers) {
                 startPulsarWorkflowEngineWorker(
                     it,
@@ -94,7 +94,7 @@ fun main(args: Array<String>) {
             }
         }
 
-        if (config.taskEngine.mode!! == Mode.worker) {
+        if (config.taskEngine.mode == Mode.worker) {
             repeat(config.taskEngine.consumers) {
                 startPulsarTaskEngineWorker(
                     it,
@@ -106,7 +106,7 @@ fun main(args: Array<String>) {
             }
         }
 
-        if (config.monitoring.mode!! == Mode.worker) {
+        if (config.monitoring.mode == Mode.worker) {
             repeat(config.monitoring.consumers) {
                 startPulsarMonitoringPerNameWorker(
                     it,
@@ -129,11 +129,23 @@ fun main(args: Array<String>) {
         for (workflow in config.workflows) {
             if (workflow.mode == Mode.worker) {
                 taskExecutorRegister.register(workflow.name) { workflow.getInstance() }
+
+                repeat(workflow.consumers) {
+                    startPulsarTaskExecutorWorker(
+                        workflow.name,
+                        it,
+                        pulsarConsumerFactory.newWorkflowExecutorConsumer(config.name, it, workflow.name),
+                        pulsarOutputs.taskExecutorOutput,
+                        taskExecutorRegister,
+                        logChannel,
+                        workflow.concurrency
+                    )
+                }
             }
         }
 
         for (task in config.tasks) {
-            if (task.mode!! == Mode.worker) {
+            if (task.mode == Mode.worker) {
                 if (task.shared) {
                     val instance = task.getInstance()
                     taskExecutorRegister.register(task.name) { instance }

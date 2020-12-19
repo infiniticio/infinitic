@@ -39,6 +39,7 @@ import io.infinitic.pulsar.topics.TaskEngineEventsTopic
 import io.infinitic.pulsar.topics.TaskExecutorTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
+import io.infinitic.pulsar.topics.WorkflowExecutorTopic
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
@@ -54,6 +55,7 @@ class PulsarConsumerFactory(
         const val WORKFLOW_ENGINE_SUBSCRIPTION_NAME = "workflow-engine"
         const val TASK_ENGINE_SUBSCRIPTION_NAME = "task-engine"
         const val TASK_EXECUTOR_SUBSCRIPTION = "task-executor"
+        const val WORKFLOW_EXECUTOR_SUBSCRIPTION = "workflow-executor"
         const val MONITORING_PER_NAME_SUBSCRIPTION = "monitoring-per-name"
         const val MONITORING_GLOBAL_SUBSCRIPTION = "monitoring-global"
     }
@@ -89,6 +91,14 @@ class PulsarConsumerFactory(
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskExecutorTopic.name(taskName)))
             .consumerName("$workerName-$consumerCounter")
             .subscriptionName(TASK_EXECUTOR_SUBSCRIPTION)
+            .subscriptionType(SubscriptionType.Shared)
+            .subscribe()
+
+    fun newWorkflowExecutorConsumer(workerName: String, consumerCounter: Int, workflowName: String): Consumer<TaskExecutorMessage> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorMessage>()))
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowExecutorTopic.name(workflowName)))
+            .consumerName("$workerName-$consumerCounter")
+            .subscriptionName(WORKFLOW_EXECUTOR_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Shared)
             .subscribe()
 

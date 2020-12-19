@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.worker.inMemory
+package io.infinitic.worker.inMemory.workers
 
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
