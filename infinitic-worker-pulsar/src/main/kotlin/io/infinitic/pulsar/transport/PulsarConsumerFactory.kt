@@ -28,7 +28,7 @@ package io.infinitic.pulsar.transport
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.admin.getPersistentTopicFullName
 import io.infinitic.pulsar.schemas.schemaDefinition
@@ -84,8 +84,8 @@ class PulsarConsumerFactory(
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscribe()
 
-    fun newTaskExecutorConsumer(workerName: String, consumerCounter: Int, taskName: String): Consumer<TaskExecutorEnvelope> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorEnvelope>()))
+    fun newTaskExecutorConsumer(workerName: String, consumerCounter: Int, taskName: String): Consumer<TaskExecutorMessage> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorMessage>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskExecutorTopic.name(taskName)))
             .consumerName("$workerName-$consumerCounter")
             .subscriptionName(TASK_EXECUTOR_SUBSCRIPTION)

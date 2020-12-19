@@ -31,7 +31,7 @@ import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.serDe.kotlin.kserializer
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import org.apache.pulsar.common.protocol.schema.PostSchemaPayload
 import java.io.File
@@ -60,7 +60,7 @@ fun main() {
         .writeText(Json.stringify(getPostSchemaPayload(MonitoringGlobalEnvelope::class)))
 
     File("$path/TaskExecutor.schema")
-        .writeText(Json.stringify(getPostSchemaPayload(TaskExecutorEnvelope::class)))
+        .writeText(Json.stringify(getPostSchemaPayload(TaskExecutorMessage::class)))
 }
 
 fun <T : Any> getPostSchemaPayload(klass: KClass<T>) = PostSchemaPayload(

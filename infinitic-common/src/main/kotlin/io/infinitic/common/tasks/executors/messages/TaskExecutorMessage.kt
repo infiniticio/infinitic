@@ -40,13 +40,8 @@ import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class TaskExecutorMessage {
-    abstract val taskName: TaskName
-}
-
-@Serializable
-data class RunTask(
-    override val taskName: TaskName,
+data class TaskExecutorMessage(
+    val taskName: TaskName,
     override val taskId: TaskId,
     override val taskRetry: TaskRetry,
     override val taskAttemptId: TaskAttemptId,
@@ -57,4 +52,4 @@ data class RunTask(
     val methodInput: MethodInput,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
-) : TaskExecutorMessage(), TaskAttemptMessage
+) : TaskAttemptMessage

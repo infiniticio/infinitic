@@ -33,8 +33,6 @@ import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.steps.Step
@@ -90,10 +88,6 @@ object TestFactory {
             .randomize(MonitoringGlobalEnvelope::class.java) {
                 val sub = MonitoringGlobalMessage::class.sealedSubclasses.shuffled().first()
                 MonitoringGlobalEnvelope.from(random(sub))
-            }
-            .randomize(TaskExecutorEnvelope::class.java) {
-                val sub = TaskExecutorMessage::class.sealedSubclasses.shuffled().first()
-                TaskExecutorEnvelope.from(random(sub))
             }
 
         values?.forEach {

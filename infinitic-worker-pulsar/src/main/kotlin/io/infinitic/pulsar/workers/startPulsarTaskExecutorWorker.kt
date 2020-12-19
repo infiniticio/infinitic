@@ -26,7 +26,6 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.serDe.kotlin.readBinary
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
@@ -54,7 +53,7 @@ const val TASK_EXECUTOR_PULLING_COROUTINE_NAME = "task-executor-pulling"
 fun CoroutineScope.startPulsarTaskExecutorWorker(
     taskName: String,
     consumerCounter: Int,
-    taskExecutorConsumer: Consumer<TaskExecutorEnvelope>,
+    taskExecutorConsumer: Consumer<TaskExecutorMessage>,
     taskExecutorOutput: TaskExecutorOutput,
     taskExecutorRegister: TaskExecutorRegister,
     logChannel: SendChannel<TaskExecutorMessageToProcess>?,
@@ -89,11 +88,11 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
     // coroutine dedicated to pulsar message pulling
     launch(CoroutineName("$TASK_EXECUTOR_PULLING_COROUTINE_NAME-$taskName-$consumerCounter")) {
         while (isActive) {
-            val message: Message<TaskExecutorEnvelope> = taskExecutorConsumer.receiveAsync().await()
+            val message: Message<TaskExecutorMessage> = taskExecutorConsumer.receiveAsync().await()
 
             try {
-                val envelope = readBinary(message.data, TaskExecutorEnvelope.serializer())
-                taskExecutorChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
+                val taskExecutorMessage = readBinary(message.data, TaskExecutorMessage.serializer())
+                taskExecutorChannel.send(PulsarMessageToProcess(taskExecutorMessage, message.messageId))
             } catch (e: Exception) {
                 taskExecutorConsumer.negativeAcknowledge(message.messageId)
                 throw e

@@ -28,7 +28,7 @@ pulsar:
   serviceUrl: "pulsar://localhost:6650"
   serviceHttpUrl: "http://localhost:8080"
   tenant: "infinitic"
-  namespace: "dev4"
+  namespace: "dev5"
 
 workflowEngine:
   stateStorage: inMemory

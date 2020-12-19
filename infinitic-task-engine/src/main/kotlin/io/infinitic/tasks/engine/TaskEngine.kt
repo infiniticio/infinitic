@@ -45,7 +45,7 @@ import io.infinitic.common.tasks.engine.messages.TaskCompleted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.executors.messages.RunTask
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
@@ -152,7 +152,7 @@ class TaskEngine(
         )
 
         // send task to workers
-        val rt = RunTask(
+        val rt = TaskExecutorMessage(
             taskId = state.taskId,
             taskRetry = state.taskRetry,
             taskAttemptId = state.taskAttemptId,
@@ -194,7 +194,7 @@ class TaskEngine(
         )
 
         // send task to workers
-        val rt = RunTask(
+        val rt = TaskExecutorMessage(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry,
@@ -228,7 +228,7 @@ class TaskEngine(
         )
 
         // send task to workers
-        val rt = RunTask(
+        val rt = TaskExecutorMessage(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry,

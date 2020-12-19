@@ -53,6 +53,6 @@ fun main() {
         .build()
 
     runBlocking {
-        admin.infiniticInit("infinitic", "dev4")
+        admin.infiniticInit("infinitic", "dev5")
     }
 }

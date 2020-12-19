@@ -46,7 +46,6 @@ import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
-import io.infinitic.common.tasks.executors.messages.RunTask
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
@@ -205,7 +204,7 @@ internal class TaskEngineTests : StringSpec({
             taskStateStorage.updateState(msgIn.taskId, state, null)
             taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)
         }
-        runTask.shouldBeInstanceOf<RunTask>()
+        runTask.shouldBeInstanceOf<TaskExecutorMessage>()
         runTask.taskId shouldBe msgIn.taskId
         runTask.taskName shouldBe msgIn.taskName
         runTask.methodInput shouldBe msgIn.methodInput
@@ -257,7 +256,7 @@ internal class TaskEngineTests : StringSpec({
             taskStateStorage.updateState(msgIn.taskId, state, stateIn)
             taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)
         }
-        runTask.shouldBeInstanceOf<RunTask>()
+        runTask.shouldBeInstanceOf<TaskExecutorMessage>()
         runTask.taskId shouldBe stateIn.taskId
         runTask.taskAttemptId shouldNotBe stateIn.taskAttemptId
         runTask.taskAttemptRetry.int shouldBe 0
@@ -488,7 +487,7 @@ private fun checkShouldRetryTaskAttempt(
         taskStateStorage.updateState(msgIn.taskId, state, stateIn)
         taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)
     }
-    runTask.shouldBeInstanceOf<RunTask>()
+    runTask.shouldBeInstanceOf<TaskExecutorMessage>()
     runTask.taskId shouldBe stateIn.taskId
     runTask.taskAttemptId shouldBe stateIn.taskAttemptId
     runTask.taskAttemptRetry shouldBe stateIn.taskAttemptRetry + 1
