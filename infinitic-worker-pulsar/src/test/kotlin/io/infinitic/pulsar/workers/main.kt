@@ -25,17 +25,17 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.client.Client
+import io.infinitic.client.InfiniticClient
+import io.infinitic.pulsar.samples.TaskA
+import io.infinitic.pulsar.samples.TaskAImpl
+import io.infinitic.pulsar.samples.WorkflowA
+import io.infinitic.pulsar.samples.WorkflowAImpl
+import io.infinitic.pulsar.samples.WorkflowB
+import io.infinitic.pulsar.samples.WorkflowBImpl
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.workflows.tests.samples.TaskA
-import io.infinitic.workflows.tests.samples.TaskAImpl
-import io.infinitic.workflows.tests.samples.WorkflowA
-import io.infinitic.workflows.tests.samples.WorkflowAImpl
-import io.infinitic.workflows.tests.samples.WorkflowB
-import io.infinitic.workflows.tests.samples.WorkflowBImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
@@ -49,7 +49,7 @@ fun main() {
     val pulsarOutputFactory = PulsarOutputs.from(pulsarClient, tenant, namespace)
 
     runBlocking {
-        val client = Client(PulsarOutputs.from(pulsarClient, tenant, namespace).clientOutput)
+        val client = InfiniticClient(PulsarOutputs.from(pulsarClient, tenant, namespace).clientOutput)
 
         val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
             register(TaskA::class.java.name) { TaskAImpl() }
@@ -60,8 +60,8 @@ fun main() {
         startPulsarWorkers(consumerFactory, pulsarOutputFactory, taskExecutorRegister, InMemoryStorage())
 
         repeat(1000) {
-//            client.dispatch<TaskA> { reverse("abc") }
-            client.dispatch(WorkflowA::class.java) { seq1() }
+            client.startTask<TaskA> { reverse("abc") }
+            client.startWorkflow<WorkflowA> { seq1() }
             delay(100)
         }
     }

@@ -28,24 +28,59 @@ package io.infinitic.pulsar.config
 import io.infinitic.worker.config.Redis
 
 data class Config(
+    /*
+    Worker name - used to identify
+     */
     val name: String,
+
+    /*
+    Default running mode
+     */
     var mode: Mode,
+    /*
+    Pulsar configuration
+     */
     val pulsar: Pulsar,
+
+    /*
+    Redis configuration
+     */
     val redis: Redis? = null,
+
+    /*
+    Infinitic workflow engine configuration
+     */
     val workflowEngine: WorkflowEngine = WorkflowEngine(Mode.function, 5, StateStorage.pulsarState),
+
+    /*
+    Infinitic task engine configuration
+     */
     val taskEngine: TaskEngine = TaskEngine(Mode.function, 10, StateStorage.pulsarState),
+
+    /*
+    Infinitic monitoring configuration
+     */
     val monitoring: Monitoring = Monitoring(Mode.function, 4, StateStorage.pulsarState),
+
+    /*
+    Tasks configuration
+     */
     val tasks: List<Task> = listOf(),
+
+    /*
+    Workflows configuration
+     */
     val workflows: List<Workflow> = listOf()
 ) {
     init {
-        // apply default mode
+        // apply default mode, if mode not set
         workflowEngine.mode = workflowEngine.mode ?: mode
         taskEngine.mode = taskEngine.mode ?: mode
         monitoring.mode = monitoring.mode ?: mode
         tasks.map { it.mode = it.mode ?: mode }
         workflows.map { it.mode = it.mode ?: mode }
 
+        // consistency check
         checkStateStorage(workflowEngine.stateStorage, workflowEngine.mode!!, "workflowEngine.stateStorage")
         checkStateStorage(taskEngine.stateStorage, taskEngine.mode!!, "taskEngine.stateStorage")
         checkStateStorage(monitoring.stateStorage, monitoring.mode!!, "monitoring.stateStorage")

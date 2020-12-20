@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.executors
+package io.infinitic.common.workflows
 
 import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
 import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler

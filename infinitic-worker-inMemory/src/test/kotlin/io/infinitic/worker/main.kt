@@ -25,7 +25,7 @@
 
 package io.infinitic.worker
 
-import io.infinitic.client.Client
+import io.infinitic.client.InfiniticClient
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
@@ -46,7 +46,7 @@ fun main() {
     val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
 
     runBlocking {
-        val client = Client(
+        val client = InfiniticClient(
             InMemoryClientOutput(this, taskEngineCommandsChannel, workflowEngineCommandsChannel)
         )
 
@@ -59,8 +59,8 @@ fun main() {
         startInMemory(taskExecutorRegister, InMemoryStorage(), taskEngineCommandsChannel, workflowEngineCommandsChannel)
 
         repeat(1) {
-//            client.dispatch<TaskA> { await(2000) }
-            client.dispatch(WorkflowA::class.java) { seq1() }
+            client.startTask<TaskA> { await(2000) }
+            client.startWorkflow<WorkflowA> { seq1() }
         }
     }
 }

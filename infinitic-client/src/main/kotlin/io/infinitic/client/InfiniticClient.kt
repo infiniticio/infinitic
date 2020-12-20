@@ -32,7 +32,6 @@ import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskInstance
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
@@ -40,29 +39,30 @@ import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
+import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowInstance
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.executors.Workflow
 
-class Client(
-    private val clientOutput: ClientOutput
+open class InfiniticClient(
+    val clientOutput: ClientOutput
 ) {
+    companion object {
+        // Container for static extensions
+    }
 
     /*
     Use this method to dispatch a workflow
     */
-    suspend fun <T : Workflow> dispatch(
-        workflowInterface: Class<T>,
+    suspend inline fun <reified T : Workflow> startWorkflow(
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta(),
-        apply: T.() -> Any?
-    ): WorkflowInstance {
+        noinline apply: T.() -> Any?
+    ): String {
         // get a proxy for T
-        val handler = MethodProxyHandler(workflowInterface)
+        val handler = MethodProxyHandler(T::class.java)
 
         val klass = handler.instance()
 
@@ -70,7 +70,7 @@ class Client(
         klass.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(workflowInterface.name, "dispatchWorkflow")
+        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchWorkflow")
 
         val msg = DispatchWorkflow(
             workflowId = WorkflowId(),
@@ -83,29 +83,19 @@ class Client(
         )
         clientOutput.sendToWorkflowEngine(msg, 0F)
 
-        return WorkflowInstance(msg.workflowId)
+        return "${msg.workflowId}"
     }
 
     /*
-    Use this method to dispatch a workflow
+    Use this method to dispatch a task
     */
-    suspend inline fun <reified T : Workflow> dispatch(
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: WorkflowMeta = WorkflowMeta(),
-        noinline apply: T.() -> Any?
-    ) = dispatch(T::class.java, options, meta, apply)
-
-    /*
-     Use this method to dispatch a task
-     */
-    suspend fun <T : Any> dispatch(
-        taskInterface: Class<T>,
+    suspend inline fun <reified T : Any> startTask(
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
-        apply: T.() -> Any?
-    ): TaskInstance {
+        noinline apply: T.() -> Any?
+    ): String {
         // get a proxy for T
-        val handler = MethodProxyHandler(taskInterface)
+        val handler = MethodProxyHandler(T::class.java)
 
         // get a proxy instance
         val klass = handler.instance()
@@ -114,7 +104,7 @@ class Client(
         klass.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(taskInterface.name, "dispatchTask")
+        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchTask")
 
         val msg = DispatchTask(
             taskId = TaskId(),
@@ -129,17 +119,8 @@ class Client(
         )
         clientOutput.sendToTaskEngine(msg, 0F)
 
-        return TaskInstance(msg.taskId)
+        return "${msg.taskId}"
     }
-
-    /*
-    Use this method to dispatch a task
-    */
-    suspend inline fun <reified T : Any> dispatch(
-        options: TaskOptions = TaskOptions(),
-        meta: TaskMeta = TaskMeta(),
-        noinline apply: T.() -> Any?
-    ) = dispatch(T::class.java, options, meta, apply)
 
     /*
      * Use this method to manually retry a task

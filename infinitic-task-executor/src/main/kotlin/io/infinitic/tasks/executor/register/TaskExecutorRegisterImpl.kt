@@ -26,10 +26,10 @@
 package io.infinitic.tasks.executor.register
 
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
+import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
 import io.infinitic.common.workflows.exceptions.WorkflowUsedAsTask
-import io.infinitic.common.workflows.executors.Workflow
 import io.infinitic.tasks.executor.workflowTask.WorkflowTaskImpl
 
 class TaskExecutorRegisterImpl : TaskExecutorRegister {

@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.tests.samples
+package io.infinitic.pulsar.samples
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

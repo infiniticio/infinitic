@@ -28,11 +28,11 @@ package io.infinitic.tasks.executor.workflowTask
 import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
-import io.infinitic.common.workflows.executors.Workflow
 import io.infinitic.tasks.executor.task.TaskAttemptContext
 import java.lang.reflect.InvocationTargetException
 

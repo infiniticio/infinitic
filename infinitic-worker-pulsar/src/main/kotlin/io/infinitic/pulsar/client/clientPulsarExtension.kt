@@ -23,10 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.executors
+package io.infinitic.pulsar.client
 
-enum class DeferredStatus {
-    ONGOING,
-    COMPLETED,
-    CANCELED,
-}
+import io.infinitic.client.InfiniticClient
+import io.infinitic.pulsar.transport.PulsarOutputs
+import org.apache.pulsar.client.api.PulsarClient
+
+fun InfiniticClient.Companion.fromPulsar(
+    pulsarClient: PulsarClient,
+    pulsarTenant: String,
+    pulsarNamespace: String
+) = InfiniticClient(
+    PulsarOutputs.from(pulsarClient, pulsarTenant, pulsarNamespace).clientOutput
+)

@@ -31,6 +31,7 @@ import io.infinitic.client.samples.FakeTask
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
@@ -44,7 +45,7 @@ import io.mockk.slot
 class ClientTaskTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
-    val client = Client(MockClientOutput(taskSlot, workflowSlot))
+    val client = InfiniticClient(MockClientOutput(taskSlot, workflowSlot))
 
     beforeTest {
         taskSlot.clear()
@@ -53,12 +54,12 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch method without parameter" {
         // when
-        val task = client.dispatch(FakeTask::class.java) { m1() }
+        val taskId = TaskId(client.startTask<FakeTask> { m1() })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            taskId = task.taskId,
+            taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -72,12 +73,12 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as parameter" {
         // when
-        val task = client.dispatch(FakeTask::class.java) { m1(0) }
+        val taskId = TaskId(client.startTask<FakeTask> { m1(0) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            taskId = task.taskId,
+            taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name)),
@@ -91,12 +92,12 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with null as parameter" {
         // when
-        val task = client.dispatch(FakeTask::class.java) { m1(null) }
+        val taskId = TaskId(client.startTask<FakeTask> { m1(null) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            taskId = task.taskId,
+            taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
@@ -110,12 +111,12 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with multiple definition" {
         // when
-        val task = client.dispatch(FakeTask::class.java) { m1("a") }
+        val taskId = TaskId(client.startTask<FakeTask> { m1("a") })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            taskId = task.taskId,
+            taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
@@ -129,12 +130,12 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with multiple parameters" {
         // when
-        val task = client.dispatch(FakeTask::class.java) { m1(0, "a") }
+        val taskId = TaskId(client.startTask<FakeTask> { m1(0, "a") })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            taskId = task.taskId,
+            taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
@@ -149,13 +150,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with an interface as parameter" {
         // when
         val fake = FakeClass()
-        val task = client.dispatch(FakeTask::class.java) { m1(fake) }
+        val taskId = TaskId(client.startTask<FakeTask> { m1(fake) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
-            taskId = task.taskId,
+            taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
@@ -169,13 +170,13 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as return value" {
         // when
-        val task = client.dispatch(FakeTask::class.java) { m2() }
+        val taskId = TaskId(client.startTask<FakeTask> { m2() })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
-            taskId = task.taskId,
+            taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m2"),
             methodParameterTypes = MethodParameterTypes(listOf()),

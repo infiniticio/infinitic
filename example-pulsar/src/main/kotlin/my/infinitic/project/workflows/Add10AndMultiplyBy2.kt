@@ -25,9 +25,9 @@
 
 package my.infinitic.project.workflows
 
-import io.infinitic.common.workflows.executors.Workflow
-import io.infinitic.common.workflows.executors.WorkflowTaskContext
-import io.infinitic.common.workflows.executors.proxy
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.WorkflowTaskContext
+import io.infinitic.common.workflows.proxy
 import my.infinitic.project.tasks.Add
 import my.infinitic.project.tasks.Multiply
 
