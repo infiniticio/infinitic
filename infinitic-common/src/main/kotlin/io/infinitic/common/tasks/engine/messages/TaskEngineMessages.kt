@@ -49,12 +49,6 @@ sealed class TaskEngineMessage() {
 }
 
 @Serializable
-data class CancelTask(
-    override val taskId: TaskId,
-    val taskOutput: MethodOutput
-) : TaskEngineMessage()
-
-@Serializable
 data class DispatchTask(
     override val taskId: TaskId,
     val taskName: TaskName,
@@ -65,6 +59,12 @@ data class DispatchTask(
     val methodRunId: MethodRunId?,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions = TaskOptions()
+) : TaskEngineMessage()
+
+@Serializable
+data class CancelTask(
+    override val taskId: TaskId,
+    val taskOutput: MethodOutput
 ) : TaskEngineMessage()
 
 @Serializable

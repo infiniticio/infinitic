@@ -36,11 +36,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
+    coroutineName: String,
     taskExecutorRegister: TaskExecutorRegister,
     taskExecutorInput: TaskExecutorInput<T>,
     taskExecutorOutput: TaskExecutorOutput,
     coroutineNamePostfix: String = ""
-) = launch(Dispatchers.Default + CoroutineName("task-executor$coroutineNamePostfix")) {
+) = launch(Dispatchers.Default + CoroutineName(coroutineName)) {
 
     val taskExecutor = TaskExecutor(taskExecutorOutput, taskExecutorRegister)
     val out = taskExecutorInput.taskExecutorResultsChannel

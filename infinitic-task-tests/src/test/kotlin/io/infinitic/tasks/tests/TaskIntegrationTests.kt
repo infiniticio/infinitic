@@ -25,18 +25,18 @@
 
 package io.infinitic.tasks.tests
 
-import io.infinitic.client.Client
+import io.infinitic.client.InfiniticClient
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
-import io.infinitic.common.tasks.data.TaskInstance
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
@@ -74,10 +74,10 @@ private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
 private lateinit var taskExecutor: TaskExecutor
-private lateinit var client: Client
+private lateinit var infiniticClient: InfiniticClient
 
 class TaskIntegrationTests : StringSpec({
-    var task: TaskInstance
+    var taskId: TaskId
 
     "Task succeeds at first try" {
         // task will succeed
@@ -85,10 +85,10 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            task = client.dispatch<TaskTest> { log() }
+            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
         }
         // check that task is terminated
-        taskStateStorage.getState(task.taskId) shouldBe null
+        taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
@@ -101,10 +101,10 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            task = client.dispatch<TaskTest> { log() }
+            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
         }
         // check that task is terminated
-        taskStateStorage.getState(task.taskId) shouldBe null
+        taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
@@ -117,10 +117,10 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            task = client.dispatch<TaskTest> { log() }
+            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
         }
         // check that task is not terminated
-        taskStateStorage.getState(task.taskId) shouldNotBe null
+        taskStateStorage.getState(taskId) shouldNotBe null
         // check that task is failed
         taskStatus shouldBe TaskStatus.RUNNING_ERROR
         // checks number of task processing
@@ -133,10 +133,10 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            task = client.dispatch<TaskTest> { log() }
+            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
         }
         // check that task is not terminated
-        taskStateStorage.getState(task.taskId) shouldNotBe null
+        taskStateStorage.getState(taskId) shouldNotBe null
         // check that task is failed
         taskStatus shouldBe TaskStatus.RUNNING_ERROR
         // checks number of task processing
@@ -155,14 +155,14 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            task = client.dispatch<TaskTest> { log() }
+            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
-            client.retryTask(id = "${task.taskId}")
+            infiniticClient.retryTask(id = "$taskId")
         }
         // check that task is terminated
-        taskStateStorage.getState(task.taskId) shouldBe null
+        taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
@@ -176,12 +176,12 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            task = client.dispatch<TaskTest> { log() }
+            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
             delay(100)
-            client.cancelTask(id = "${task.taskId}")
+            infiniticClient.cancelTask(id = "$taskId")
         }
         // check that task is terminated
-        taskStateStorage.getState(task.taskId) shouldBe null
+        taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
     }
@@ -193,7 +193,7 @@ class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput
     override val sendToTaskEngine: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 
-    override val sendToExecutors: SendToExecutors =
+    override val sendToTaskExecutors: SendToTaskExecutors =
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
 
     override val sendToMonitoringPerName: SendToMonitoringPerName =
@@ -258,7 +258,7 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     taskStatus = null
 
-    client = Client(TestClientOutput(this))
+    infiniticClient = InfiniticClient(TestClientOutput(this))
 
     taskEngine = TaskEngine(
         taskStateStorage,

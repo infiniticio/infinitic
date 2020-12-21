@@ -25,11 +25,11 @@
 
 package io.infinitic.tasks.executor.workflowTask
 
+import io.infinitic.common.workflows.Workflow
+import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
-import io.infinitic.common.workflows.executors.Workflow
-import io.infinitic.common.workflows.executors.WorkflowTaskContext
 import io.infinitic.common.workflows.executors.parser.getPropertiesFromObject
 import io.infinitic.common.workflows.executors.parser.setPropertiesToObject
 import java.lang.RuntimeException

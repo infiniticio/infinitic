@@ -25,10 +25,10 @@
 
 package io.infinitic.common.tasks.engine.messages
 
-import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.serDe.kotlin.readBinary
+import io.infinitic.common.serDe.kotlin.writeBinary
 import io.infinitic.common.tasks.data.TaskId
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class TaskEngineEnvelope(
@@ -118,8 +118,7 @@ data class TaskEngineEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
     }
 
     fun message(): TaskEngineMessage = when (type) {
@@ -135,6 +134,5 @@ data class TaskEngineEnvelope(
         TaskEngineMessageType.TASK_ATTEMPT_STARTED -> taskAttemptStarted!!
     }
 
-    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
+    fun toByteArray() = writeBinary(this, serializer())
 }

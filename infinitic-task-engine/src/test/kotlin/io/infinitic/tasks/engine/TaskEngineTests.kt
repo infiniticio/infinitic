@@ -45,8 +45,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToExecutors
-import io.infinitic.common.tasks.executors.messages.RunTask
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
@@ -119,7 +118,7 @@ class MockTaskEventStorage() : TaskEventStorage {
 class MockTaskEngineOutput : TaskEngineOutput {
     override val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
     override val sendToTaskEngine = mockk<SendToTaskEngine>()
-    override val sendToExecutors = mockk<SendToExecutors>()
+    override val sendToTaskExecutors = mockk<SendToTaskExecutors>()
     override val sendToMonitoringPerName = mockk<SendToMonitoringPerName>()
 
     val workerMessageSlot = slot<TaskExecutorMessage>()
@@ -131,7 +130,7 @@ class MockTaskEngineOutput : TaskEngineOutput {
     val taskAttemptDispatchedSlot = slot<TaskAttemptDispatched>()
     val taskCompletedSlot = slot<TaskCompleted>()
     init {
-        coEvery { sendToExecutors(capture(workerMessageSlot)) } just Runs
+        coEvery { sendToTaskExecutors(capture(workerMessageSlot)) } just Runs
         coEvery { sendToMonitoringPerName(capture(taskStatusUpdatedSlot)) } just Runs
         coEvery { sendToTaskEngine(capture(retryTaskAttemptSlot), capture(retryTaskAttemptDelaySlot)) } just Runs
         coEvery { sendToTaskEngine(capture(taskCanceledSlot), 0F) } just Runs
@@ -200,12 +199,12 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.dispatchTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToExecutors(runTask)
+            taskEngineOutput.sendToTaskExecutors(runTask)
             taskEngineOutput.sendToTaskEngine(taskAttemptDispatched, 0F)
             taskStateStorage.updateState(msgIn.taskId, state, null)
             taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)
         }
-        runTask.shouldBeInstanceOf<RunTask>()
+        runTask.shouldBeInstanceOf<TaskExecutorMessage>()
         runTask.taskId shouldBe msgIn.taskId
         runTask.taskName shouldBe msgIn.taskName
         runTask.methodInput shouldBe msgIn.methodInput
@@ -252,12 +251,12 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.retryTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToExecutors(runTask)
+            taskEngineOutput.sendToTaskExecutors(runTask)
             taskEngineOutput.sendToTaskEngine(taskAttemptDispatched, 0F)
             taskStateStorage.updateState(msgIn.taskId, state, stateIn)
             taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)
         }
-        runTask.shouldBeInstanceOf<RunTask>()
+        runTask.shouldBeInstanceOf<TaskExecutorMessage>()
         runTask.taskId shouldBe stateIn.taskId
         runTask.taskAttemptId shouldNotBe stateIn.taskAttemptId
         runTask.taskAttemptRetry.int shouldBe 0
@@ -483,12 +482,12 @@ private fun checkShouldRetryTaskAttempt(
 
     coVerifyOrder {
         taskStateStorage.getState(msgIn.taskId)
-        taskEngineOutput.sendToExecutors(runTask)
+        taskEngineOutput.sendToTaskExecutors(runTask)
         taskEngineOutput.sendToTaskEngine(taskAttemptDispatched, 0F)
         taskStateStorage.updateState(msgIn.taskId, state, stateIn)
         taskEngineOutput.sendToMonitoringPerName(taskStatusUpdated)
     }
-    runTask.shouldBeInstanceOf<RunTask>()
+    runTask.shouldBeInstanceOf<TaskExecutorMessage>()
     runTask.taskId shouldBe stateIn.taskId
     runTask.taskAttemptId shouldBe stateIn.taskAttemptId
     runTask.taskAttemptRetry shouldBe stateIn.taskAttemptRetry + 1

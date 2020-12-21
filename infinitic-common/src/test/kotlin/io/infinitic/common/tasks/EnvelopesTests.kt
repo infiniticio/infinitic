@@ -33,7 +33,6 @@ import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMe
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -83,17 +82,13 @@ class EnvelopesTests : StringSpec({
         }
     }
 
-    TaskExecutorMessage::class.sealedSubclasses.map {
-        val msg = TestFactory.random(it)
-
-        "WorkerEnvelope(${msg::class.simpleName}) should be avro-convertible" {
-            shouldNotThrowAny {
-                val envelope = TaskExecutorEnvelope.from(msg)
-                val ser = TaskExecutorEnvelope.serializer()
-                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
-                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
-                envelope shouldBe envelope2
-            }
+    "TaskExecutorMessage should be avro-convertible" {
+        shouldNotThrowAny {
+            val msg = TestFactory.random(TaskExecutorMessage::class)
+            val ser = TaskExecutorMessage.serializer()
+            val byteArray = Avro.default.encodeToByteArray(ser, msg)
+            val msg2 = Avro.default.decodeFromByteArray(ser, byteArray)
+            msg shouldBe msg2
         }
     }
 })

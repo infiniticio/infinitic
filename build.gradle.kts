@@ -35,6 +35,7 @@ plugins {
     kotlin("jvm") version "1.4.10" apply false
     kotlin("plugin.serialization") version "1.4.10" apply false
     id("org.jlleitschuh.gradle.ktlint") version "9.4.1" apply false
+    id("org.jetbrains.dokka") version "1.4.20" apply false
 }
 
 subprojects {
@@ -42,7 +43,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
-    version = "1.0.0-SNAPSHOT"
+    version = "0.0.1-SNAPSHOT"
 
     dependencies {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))

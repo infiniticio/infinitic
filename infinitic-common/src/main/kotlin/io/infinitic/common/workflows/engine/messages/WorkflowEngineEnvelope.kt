@@ -25,10 +25,10 @@
 
 package io.infinitic.common.workflows.engine.messages
 
-import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.serDe.kotlin.readBinary
+import io.infinitic.common.serDe.kotlin.writeBinary
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class WorkflowEngineEnvelope(
@@ -151,8 +151,7 @@ data class WorkflowEngineEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
     }
 
     fun message(): WorkflowEngineMessage = when (type) {
@@ -171,6 +170,5 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
     }
 
-    fun toByteArray() = Avro.default.encodeToByteArray(serializer(), this)
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
+    fun toByteArray() = writeBinary(this, serializer())
 }

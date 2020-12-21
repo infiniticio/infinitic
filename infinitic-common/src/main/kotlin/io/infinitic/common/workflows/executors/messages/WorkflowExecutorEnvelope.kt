@@ -25,10 +25,10 @@
 
 package io.infinitic.common.workflows.executors.messages
 
-import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.serDe.kotlin.readBinary
+import io.infinitic.common.serDe.kotlin.writeBinary
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class WorkflowExecutorEnvelope(
@@ -53,14 +53,12 @@ data class WorkflowExecutorEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = Avro.default.decodeFromByteArray(serializer(), bytes)
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
+        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
     }
 
     fun message(): WorkflowExecutorMessage = when (type) {
         WorkflowExecutorMessageType.RUN_WORKFLOW -> runWorkflow!!
     }
 
-    fun toByteArray(): ByteArray = Avro.default.encodeToByteArray(serializer(), this)
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
+    fun toByteArray() = writeBinary(this, serializer())
 }

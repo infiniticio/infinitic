@@ -30,7 +30,7 @@ import com.github.avrokotlin.avro4k.io.AvroEncodeFormat
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import kotlinx.serialization.KSerializer
 import org.apache.avro.file.SeekableByteArrayInput
@@ -72,23 +72,23 @@ fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     MonitoringPerNameEnvelope::class -> MonitoringPerNameEnvelope.serializer()
     TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
-    TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
+    TaskExecutorMessage::class -> TaskExecutorMessage.serializer()
     else -> throw RuntimeException("This should not happen: apply kserializer with  ${klass.qualifiedName}")
 } as KSerializer <T>
 
 fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
-    val schema = Avro.default.schema(serializer)
     val out = ByteArrayOutputStream()
     Avro.default.openOutputStream(serializer) {
         encodeFormat = AvroEncodeFormat.Binary
-        this.schema = schema
+        schema = Avro.default.schema(serializer)
     }.to(out).write(t).close()
+
     return out.toByteArray()
 }
 
 fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>): T {
-    val schema = Avro.default.schema(serializer)
-    val datumReader = GenericDatumReader<GenericRecord>(schema)
+    val datumReader = GenericDatumReader<GenericRecord>(Avro.default.schema(serializer))
     val decoder = DecoderFactory.get().binaryDecoder(SeekableByteArrayInput(bytes), null)
+
     return Avro.default.fromRecord(serializer, datumReader.read(null, decoder))
 }

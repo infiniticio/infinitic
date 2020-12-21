@@ -74,7 +74,7 @@ suspend fun dispatchWorkflowTask(
         workflowId = state.workflowId,
         methodRunId = methodRun.methodRunId,
         taskOptions = TaskOptions(),
-        taskMeta = TaskMeta()
+        taskMeta = TaskMeta.from(mapOf(WorkflowTask.META_WORKFLOW_NAME to "${state.workflowName}"))
     )
 
     // dispatch workflow task

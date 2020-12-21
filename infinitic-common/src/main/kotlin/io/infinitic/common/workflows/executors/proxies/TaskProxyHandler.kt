@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.executors.proxies
 
-import io.infinitic.common.workflows.executors.WorkflowTaskContext
+import io.infinitic.common.workflows.WorkflowTaskContext
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
