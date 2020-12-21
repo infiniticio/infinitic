@@ -33,7 +33,7 @@ allprojects {
 }
 
 plugins {
-    kotlin("jvm") version "1.4.10" apply false
+    kotlin("jvm") version "1.4.21" apply false
     kotlin("plugin.serialization") version "1.4.10" apply false
     id("org.jlleitschuh.gradle.ktlint") version "9.4.1" apply false
     id("org.jetbrains.dokka") version "1.4.20" apply false
@@ -48,8 +48,8 @@ subprojects {
 
     dependencies {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))
-        "testImplementation"("io.kotest:kotest-runner-junit5-jvm:4.3.+")
-        "testImplementation"("io.kotest:kotest-property-jvm:4.3.+")
+        "testImplementation"("io.kotest:kotest-runner-junit5-jvm:4.3.2")
+        "testImplementation"("io.kotest:kotest-property-jvm:4.3.2")
         "testImplementation"("io.mockk:mockk:1.10.2")
 
         if (name != "infinitic-common") {
@@ -57,16 +57,15 @@ subprojects {
         }
     }
 
-    extra["jackson_version"] = "2.12.+"
-    extra["avro4k_version"] = "1.0.+"
-    extra["hoplite_version"] = "1.3.+"
-    extra["slf4j_version"] = "1.7.+"
-    extra["kotlin_reflect_version"] = "1.4.10"
-    extra["kotlinx_coroutines_version"] = "1.4.+"
-    extra["kotlinx_serialization_version"] = "1.0.+"
-    extra["pulsar_version"] = "2.7.+"
-    extra["easyrandom_version"] = "4.2.+"
-    extra["shadow_version"] = "6.1.+"
+    extra["jackson_version"] = "2.12.0"
+    extra["avro4k_version"] = "1.0.0"
+    extra["hoplite_version"] = "1.3.11"
+    extra["slf4j_version"] = "1.7.30"
+    extra["kotlin_reflect_version"] = "1.4.21"
+    extra["kotlinx_coroutines_version"] = "1.4.2"
+    extra["kotlinx_serialization_version"] = "1.0.1"
+    extra["pulsar_version"] = "2.7.0"
+    extra["easyrandom_version"] = "4.2.0"
 
     tasks.withType<JavaCompile> {
         sourceCompatibility = JavaVersion.VERSION_1_8.toString()

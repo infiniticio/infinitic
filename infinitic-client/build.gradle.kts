@@ -23,10 +23,6 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
-}
-
 dependencies {
-    api(project(":infinitic-common"))
+    implementation(project(":infinitic-common"))
 }
