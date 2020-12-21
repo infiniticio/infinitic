@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 allprojects {
     repositories {
         mavenCentral()
+        jcenter()
     }
 }
 
@@ -43,7 +44,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
-    version = "0.0.1-SNAPSHOT"
+    version = "0.0.1"
 
     dependencies {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))

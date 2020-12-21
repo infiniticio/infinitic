@@ -34,6 +34,7 @@ dependencies {
     implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
     implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
     implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
+//    implementation("io.infinitic:infinitic-pulsar:0.0.1-SNAPSHOT")
 
     api(project(":infinitic-client"))
     api(project(":infinitic-worker-pulsar"))
