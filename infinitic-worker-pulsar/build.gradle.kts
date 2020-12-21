@@ -1,5 +1,3 @@
-
-
 /**
  * "Commons Clause" License Condition v1.0
  *
@@ -27,6 +25,8 @@
 
 plugins {
     `java-library`
+    `maven-publish`
+    id("com.vanniktech.maven.publish") version "0.13.0"
 }
 
 dependencies {
@@ -46,12 +46,4 @@ dependencies {
     api(project(":infinitic-task-engine"))
     api(project(":infinitic-task-executor"))
     api(project(":infinitic-workflow-engine"))
-
-    testImplementation(kotlin("reflect"))
-}
-
-task("generateSchemaFiles", JavaExec::class) {
-    group = "infinitic"
-    classpath = sourceSets["main"].runtimeClasspath
-    main = "io.infinitic.pulsar.schemas.GenerateSchemaFilesKt"
 }

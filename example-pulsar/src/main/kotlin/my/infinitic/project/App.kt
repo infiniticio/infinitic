@@ -27,4 +27,6 @@ package my.infinitic.project
 
 import io.infinitic.pulsar.InfiniticWorker
 
-fun main(args: Array<String>) = InfiniticWorker(configPath = "/infinitic.yml").start()
+fun main(args: Array<String>) {
+    InfiniticWorker(configPath = "/infinitic.yml").start()
+}

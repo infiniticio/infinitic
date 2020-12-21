@@ -58,7 +58,7 @@ class InfiniticWorker(
     pulsarClient: PulsarClient? = null
 ) {
     init {
-        require(configPath != null || config != null) { "Please provide a config" }
+        require(configPath != null || config != null) { "Please provide a configuration" }
     }
 
     // useful for Java users
@@ -73,6 +73,7 @@ class InfiniticWorker(
         fun build() = InfiniticWorker(configPath, config, pulsarClient)
     }
 
+    // loaf config from file
     private val configFromFile: Config? = configPath?.let { ConfigLoader().loadConfigOrThrow(it) }
 
     // merge config **with precedence from file**
@@ -81,7 +82,7 @@ class InfiniticWorker(
     }
 
     // build pulsar client if not provided
-    private val pulsarClient: PulsarClient = pulsarClient
+    private val pulsarClient = pulsarClient
         ?: PulsarClient.builder().serviceUrl(this.config.pulsar.serviceUrl).build()
 
     fun start() = runBlocking {
@@ -95,17 +96,18 @@ class InfiniticWorker(
 
         launch(CoroutineName("logger")) {
             for (messageToProcess in logChannel) {
+                val failed = if (messageToProcess.exception == null) "" else "(failed) "
                 when (val message = messageToProcess.message) {
                     is MonitoringGlobalMessage ->
-                        println("Monitoring Global  : $message")
+                        println("Monitoring Global  : $failed$message")
                     is MonitoringPerNameEngineMessage ->
-                        println("Monitoring Per Name: $message")
+                        println("Monitoring Per Name: $failed$message")
                     is TaskExecutorMessage ->
-                        println("Task Executor      : $message")
+                        println("Task Executor      : $failed$message")
                     is TaskEngineMessage ->
-                        println("Task engine        : $message")
+                        println("Task engine        : $failed$message")
                     is WorkflowEngineMessage ->
-                        println("Workflow engine    : $message")
+                        println("Workflow engine    : $failed$message")
                     else -> throw RuntimeException("Unknown messageToProcess type: $messageToProcess")
                 }
             }
