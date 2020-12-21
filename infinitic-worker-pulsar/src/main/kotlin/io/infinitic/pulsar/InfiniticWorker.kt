@@ -77,12 +77,12 @@ class InfiniticWorker(
     private val configFromFile: Config? = configPath?.let { ConfigLoader().loadConfigOrThrow(it) }
 
     // merge config **with precedence from file**
-    private val config: Config = if (config == null) configFromFile!! else {
+    val config: Config = if (config == null) configFromFile!! else {
         if (configFromFile == null) config else (config merge configFromFile)
     }
 
     // build pulsar client if not provided
-    private val pulsarClient = pulsarClient
+    val pulsarClient: PulsarClient = pulsarClient
         ?: PulsarClient.builder().serviceUrl(this.config.pulsar.serviceUrl).build()
 
     fun start() = runBlocking {

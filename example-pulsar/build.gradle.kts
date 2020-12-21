@@ -30,15 +30,9 @@ plugins {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
-//    implementation("io.infinitic:infinitic-pulsar:0.0.1-SNAPSHOT")
+//    implementation("io.infinitic:infinitic-pulsar:0.0.1")
 
-    api(project(":infinitic-client"))
     api(project(":infinitic-worker-pulsar"))
-    api(project(":infinitic-task-executor"))
 }
 
 application {

@@ -44,7 +44,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
-    version = "0.0.1"
+    version = "0.0.2"
 
     dependencies {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))

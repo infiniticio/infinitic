@@ -23,10 +23,13 @@
  * Licensor: infinitic.io
  */
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     `java-library`
     `maven-publish`
     id("com.vanniktech.maven.publish") version "0.13.0"
+    id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 dependencies {
@@ -46,4 +49,10 @@ dependencies {
     api(project(":infinitic-task-engine"))
     api(project(":infinitic-task-executor"))
     api(project(":infinitic-workflow-engine"))
+}
+
+tasks {
+    named<ShadowJar>("shadowJar") {
+        mergeServiceFiles()
+    }
 }

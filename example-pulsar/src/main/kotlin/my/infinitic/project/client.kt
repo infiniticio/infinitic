@@ -25,17 +25,16 @@
 
 package my.infinitic.project
 
-import com.sksamuel.hoplite.ConfigLoader
 import io.infinitic.client.InfiniticClient
+import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.client.fromPulsar
-import io.infinitic.pulsar.config.Config
 import kotlinx.coroutines.runBlocking
 import my.infinitic.project.workflows.Add10AndMultiplyBy2
-import org.apache.pulsar.client.api.PulsarClient
 
 fun main() {
-    val config: Config = ConfigLoader().loadConfigOrThrow("/infinitic.yml")
-    val pulsarClient = PulsarClient.builder().serviceUrl(config.pulsar.serviceUrl).build()
+    val worker = InfiniticWorker(configPath = "/infinitic.yml")
+    val pulsarClient = worker.pulsarClient
+    val config = worker.config
 
     runBlocking {
         val client = InfiniticClient.fromPulsar(pulsarClient, config.pulsar.tenant, config.pulsar.namespace)
