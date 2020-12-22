@@ -34,3 +34,5 @@ dependencies {
 
     implementation(project(":infinitic-common"))
 }
+
+apply("../publish.gradle.kts")

@@ -23,12 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package my.infinitic.project.tasks
-
-interface Add {
-    fun add(a: Int, b: Int): Int
+plugins {
+    `java-library`
 }
 
-class AddImpl : Add {
-    override fun add(a: Int, b: Int): Int = a + b
+dependencies {
+    api(Libs.Coroutines.core)
+    api(Libs.Coroutines.jdk8)
+    api(Libs.Pulsar.client)
+    api(Libs.Pulsar.clientAdmin)
+    api(Libs.Pulsar.functions)
+    api(Libs.Avro4k.core)
+    api(Libs.Hoplite.core)
+    api(Libs.Hoplite.yaml)
+
+    api(project(":infinitic-common"))
+    api(project(":infinitic-client"))
+    api(project(":infinitic-storage"))
+    api(project(":infinitic-monitoring-engines"))
+    api(project(":infinitic-task-engine"))
+    api(project(":infinitic-task-executor"))
+    api(project(":infinitic-workflow-engine"))
 }
+
+apply("../publish.gradle.kts")

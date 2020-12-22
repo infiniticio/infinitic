@@ -37,3 +37,5 @@ dependencies {
     testFixturesImplementation(Libs.Kotlin.reflect)
     testFixturesImplementation(Libs.EasyRandom.core)
 }
+
+apply("../publish.gradle.kts")

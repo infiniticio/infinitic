@@ -30,3 +30,5 @@ dependencies {
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-task-engine"))
 }
+
+apply("../publish.gradle.kts")

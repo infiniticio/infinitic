@@ -24,9 +24,11 @@
  */
 
 dependencies {
-    implementation(Libs.Slf4j.api)
-    implementation(Libs.Coroutines.core)
+    api(Libs.Slf4j.api)
+    api(Libs.Coroutines.core)
 
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-task-engine"))
+    api(project(":infinitic-common"))
+    api(project(":infinitic-task-engine"))
 }
+
+apply("../publish.gradle.kts")
