@@ -28,8 +28,8 @@ plugins {
 }
 
 dependencies {
-//    implementation("io.infinitic:infinitic-pulsar:0.0.1")
-    api(project(":infinitic-worker-pulsar"))
+    implementation("io.infinitic:infinitic-pulsar:0.0.+")
+//    api(project(":infinitic-worker-pulsar"))
 }
 
 application {

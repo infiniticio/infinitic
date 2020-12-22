@@ -50,11 +50,11 @@ dependencies {
     api(project(":infinitic-workflow-engine"))
 }
 
+
+
 tasks {
     named<ShadowJar>("shadowJar") {
         mergeServiceFiles()
-        println("user = ${System.getenv("SONATYPE_NEXUS_USERNAME")}")
-        println("user = ${System.getenv("SONATYPE_NEXUS_USERNAME")}")
     }
 }
 
@@ -89,11 +89,6 @@ fun Project.java(configure: JavaPluginExtension.() -> Unit): Unit = configure(co
 val publications: PublicationContainer = (extensions.getByName("publishing") as PublishingExtension).publications
 
 signing {
-    useGpgCmd()
-    if (signingKey != null && signingPassword != null) {
-        @Suppress("UnstableApiUsage")
-        useInMemoryPgpKeys(signingKey, signingPassword)
-    }
     if (Ci.isRelease) {
         sign(publications)
     }
@@ -104,6 +99,10 @@ java {
     withSourcesJar()
 }
 
+
+val ossSonatypeOrgUsername: String? by project
+val ossSonatypeOrgPassword: String? by project
+
 publishing {
     repositories {
         val releasesRepoUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
@@ -112,8 +111,8 @@ publishing {
             name = "deploy"
             url = if (Ci.isRelease) releasesRepoUrl else snapshotsRepoUrl
             credentials {
-                username = System.getenv("SONATYPE_NEXUS_USERNAME") ?: ""
-                password = System.getenv("SONATYPE_NEXUS_PASSWORD") ?: ""
+                username = System.getenv("OSSRH_USERNAME") ?: ossSonatypeOrgUsername
+                password = System.getenv("OSSRH_PASSWORD") ?: ossSonatypeOrgPassword
             }
         }
     }
