@@ -29,6 +29,6 @@ dependencies {
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-storage"))
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.+")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
+    testImplementation(Libs.Serialization.json)
+    testImplementation(Libs.Coroutines.core)
 }

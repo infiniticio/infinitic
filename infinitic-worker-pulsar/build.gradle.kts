@@ -28,19 +28,18 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     `java-library`
     `maven-publish`
-    id("com.vanniktech.maven.publish") version "0.13.0"
-    id("com.github.johnrengelman.shadow") version "6.1.0"
+    id("com.github.johnrengelman.shadow").version(Libs.shadowVersion)
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-client-admin:${project.extra["pulsar_version"]}")
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("com.github.avro-kotlin.avro4k:avro4k-core:${project.extra["avro4k_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
+    api(Libs.Coroutines.core)
+    api(Libs.Coroutines.jdk8)
+    api(Libs.Pulsar.client)
+    api(Libs.Pulsar.clientAdmin)
+    api(Libs.Pulsar.functions)
+    api(Libs.Avro4k.core)
+    api(Libs.Hoplite.core)
+    api(Libs.Hoplite.yaml)
 
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))
@@ -54,5 +53,101 @@ dependencies {
 tasks {
     named<ShadowJar>("shadowJar") {
         mergeServiceFiles()
+        println("user = ${System.getenv("SONATYPE_NEXUS_USERNAME")}")
+        println("user = ${System.getenv("SONATYPE_NEXUS_USERNAME")}")
+    }
+}
+
+// apply("../publish.gradle.kts")
+apply(plugin = "java")
+apply(plugin = "java-library")
+apply(plugin = "maven-publish")
+apply(plugin = "signing")
+
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven(url = uri("https://oss.sonatype.org/content/repositories/snapshots/"))
+        maven(url = uri("https://plugins.gradle.org/m2/"))
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+val signingKey: String? by project
+val signingPassword: String? by project
+
+fun Project.publishing(action: PublishingExtension.() -> Unit) = configure(action)
+
+fun Project.signing(configure: SigningExtension.() -> Unit): Unit = configure(configure)
+
+fun Project.java(configure: JavaPluginExtension.() -> Unit): Unit = configure(configure)
+
+val publications: PublicationContainer = (extensions.getByName("publishing") as PublishingExtension).publications
+
+signing {
+    useGpgCmd()
+    if (signingKey != null && signingPassword != null) {
+        @Suppress("UnstableApiUsage")
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    }
+    if (Ci.isRelease) {
+        sign(publications)
+    }
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    repositories {
+        val releasesRepoUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+        val snapshotsRepoUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+        maven {
+            name = "deploy"
+            url = if (Ci.isRelease) releasesRepoUrl else snapshotsRepoUrl
+            credentials {
+                username = System.getenv("SONATYPE_NEXUS_USERNAME") ?: ""
+                password = System.getenv("SONATYPE_NEXUS_PASSWORD") ?: ""
+            }
+        }
+    }
+
+    publications {
+        register("mavenJava", MavenPublication::class) {
+            from(components["java"])
+//            artifact(tasks["shadowJar"])
+            pom {
+                name.set("infinitic")
+                description.set("Configuration for Kotlin")
+                url.set("https://github.com/infiniticio/infinitic/")
+
+                scm {
+                    connection.set("scm:git:https://github.com/infiniticio/infinitic/")
+                    developerConnection.set("scm:git:https://github.com/infiniticio/infinitic/")
+                    url.set("https://github.com/infiniticio/infinitic/")
+                }
+
+                licenses {
+                    license {
+                        name.set("Commons Clause (MIT License)")
+                        url.set("https://commonsclause.com")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("geomagilles")
+                        name.set("Gilles Barbier")
+                        email.set("geomagilles@gmail.com")
+                    }
+                }
+            }
+        }
     }
 }

@@ -24,18 +24,14 @@
  */
 
 plugins {
-    // Apply the application plugin to add support for building a CLI application.
     application
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
 //    implementation("io.infinitic:infinitic-pulsar:0.0.1")
-
     api(project(":infinitic-worker-pulsar"))
 }
 
 application {
-    // Define the main class for the application.
     mainClassName = "my.infinitic.project.MainKt"
 }

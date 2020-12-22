@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-rootProject.name = "io.infinitic"
+enableFeaturePreview("GRADLE_METADATA")
 
 include("infinitic-common")
 include("infinitic-rest-api")
@@ -40,11 +40,3 @@ include("infinitic-worker-inMemory")
 include("infinitic-worker-pulsar")
 
 include("example-pulsar")
-
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
-    }
-}

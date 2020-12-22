@@ -25,47 +25,45 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-allprojects {
+buildscript {
     repositories {
-        mavenCentral()
+        gradlePluginPortal()
         jcenter()
+        maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
     }
 }
 
 plugins {
-    kotlin("jvm") version "1.4.21" apply false
-    kotlin("plugin.serialization") version "1.4.10" apply false
-    id("org.jlleitschuh.gradle.ktlint") version "9.4.1" apply false
-    id("org.jetbrains.dokka") version "1.4.20" apply false
+    kotlin("jvm").version(Libs.kotlinVersion) apply false
+    kotlin("plugin.serialization").version(Libs.serializationVersion) apply false
+    id("org.jlleitschuh.gradle.ktlint").version(Libs.ktlintVersion) apply false
+    id("org.jetbrains.dokka").version(Libs.dokkaVersion) apply false
 }
 
 subprojects {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
-    version = "0.0.2"
+    group = Libs.org
+    version = Ci.version
 
     dependencies {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))
-        "testImplementation"("io.kotest:kotest-runner-junit5-jvm:4.3.2")
-        "testImplementation"("io.kotest:kotest-property-jvm:4.3.2")
-        "testImplementation"("io.mockk:mockk:1.10.2")
+
+        "testImplementation"(Libs.Kotest.junit5)
+        "testImplementation"(Libs.Kotest.property)
+        "testImplementation"(Libs.Mockk.mockk)
 
         if (name != "infinitic-common") {
             "testImplementation"(testFixtures(project(":infinitic-common")))
         }
     }
-
-    extra["jackson_version"] = "2.12.0"
-    extra["avro4k_version"] = "1.0.0"
-    extra["hoplite_version"] = "1.3.11"
-    extra["slf4j_version"] = "1.7.30"
-    extra["kotlin_reflect_version"] = "1.4.21"
-    extra["kotlinx_coroutines_version"] = "1.4.2"
-    extra["kotlinx_serialization_version"] = "1.0.1"
-    extra["pulsar_version"] = "2.7.0"
-    extra["easyrandom_version"] = "4.2.0"
 
     tasks.withType<JavaCompile> {
         sourceCompatibility = JavaVersion.VERSION_1_8.toString()

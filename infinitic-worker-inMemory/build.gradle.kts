@@ -24,11 +24,11 @@
  */
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["kotlinx_coroutines_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-core:${project.extra["hoplite_version"]}")
-    implementation("com.sksamuel.hoplite:hoplite-yaml:${project.extra["hoplite_version"]}")
-    implementation("org.apache.pulsar:pulsar-client:${project.extra["pulsar_version"]}")
+    api(Libs.Coroutines.core)
+    api(Libs.Coroutines.jdk8)
+    api(Libs.Hoplite.core)
+    api(Libs.Hoplite.yaml)
+    api(Libs.Pulsar.client)
 
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))

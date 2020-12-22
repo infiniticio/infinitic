@@ -23,13 +23,9 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
-}
-
 dependencies {
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("redis.clients:jedis:3.3.+")
+    implementation(Libs.Pulsar.functions)
+    implementation(Libs.Redis.clients)
 
-    api(project(":infinitic-common"))
+    implementation(project(":infinitic-common"))
 }
