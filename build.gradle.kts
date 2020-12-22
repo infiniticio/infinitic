@@ -65,11 +65,6 @@ subprojects {
         }
     }
 
-    tasks.withType<JavaCompile> {
-        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
-        targetCompatibility = JavaVersion.VERSION_1_8.toString()
-    }
-
     if (name != "infinitic-rest-api") {
         tasks.withType<Test> {
             useJUnitPlatform()
