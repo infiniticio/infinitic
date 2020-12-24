@@ -28,7 +28,6 @@ dependencies {
     api(Libs.Coroutines.jdk8)
     api(Libs.Hoplite.core)
     api(Libs.Hoplite.yaml)
-    api(Libs.Pulsar.client)
 
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))

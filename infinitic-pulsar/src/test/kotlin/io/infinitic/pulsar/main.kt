@@ -25,9 +25,13 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.pulsar.admin.infiniticInit
-import kotlinx.coroutines.runBlocking
-import org.apache.pulsar.client.admin.PulsarAdmin
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.pulsar.samples.TaskA
+import io.infinitic.pulsar.schemas.schemaDefinition
+import org.apache.avro.reflect.ReflectData
+import org.apache.pulsar.client.impl.schema.AvroSchema
+import org.apache.pulsar.client.impl.schema.util.SchemaUtil
+import org.apache.pulsar.common.schema.SchemaType
 
 // val test: (Int) -> Int = { a:Int -> 2*a }
 // pow = lambda  a: a*a
@@ -37,22 +41,29 @@ import org.apache.pulsar.client.admin.PulsarAdmin
 // val w = test(test(3))
 
 fun main() {
-    val url = "http://localhost:8080"
-    // Pass auth-plugin class fully-qualified name if Pulsar-security enabled
-    val authPluginClassName = "com.org.MyAuthPluginClass"
-    // Pass auth-param if auth-plugin class requires it
-    val authParams = "param1=value1"
-    val useTls = false
-    val tlsAllowInsecureConnection = false
-    val tlsTrustCertsFilePath = null
-    val admin = PulsarAdmin.builder()
-        //        .authentication(authPluginClassName,authParams)
-        .serviceHttpUrl(url)
-        .tlsTrustCertsFilePath(tlsTrustCertsFilePath)
-        .allowTlsInsecureConnection(tlsAllowInsecureConnection)
-        .build()
+    val s = schemaDefinition<WorkflowEngineEnvelope>()
+    val sc = SchemaUtil.parseSchemaInfo(s, SchemaType.AVRO)
 
-    runBlocking {
-        admin.infiniticInit("infinitic", "dev5")
-    }
+    AvroSchema.addLogicalTypeConversions(ReflectData(), true)
+
+    val d = AvroSchema.of(TaskA::class.java)
+
+//    val url = "http://localhost:8080"
+//    // Pass auth-plugin class fully-qualified name if Pulsar-security enabled
+//    val authPluginClassName = "com.org.MyAuthPluginClass"
+//    // Pass auth-param if auth-plugin class requires it
+//    val authParams = "param1=value1"
+//    val useTls = false
+//    val tlsAllowInsecureConnection = false
+//    val tlsTrustCertsFilePath = null
+//    val admin = PulsarAdmin.builder()
+//        //        .authentication(authPluginClassName,authParams)
+//        .serviceHttpUrl(url)
+//        .tlsTrustCertsFilePath(tlsTrustCertsFilePath)
+//        .allowTlsInsecureConnection(tlsAllowInsecureConnection)
+//        .build()
+//
+//    runBlocking {
+//        admin.infiniticInit("infinitic", "dev5")
+//    }
 }

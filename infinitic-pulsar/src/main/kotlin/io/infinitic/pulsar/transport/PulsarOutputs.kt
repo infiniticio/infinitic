@@ -42,7 +42,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameDataOutput
-import io.infinitic.pulsar.admin.getPersistentTopicFullName
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
@@ -55,6 +54,7 @@ import io.infinitic.pulsar.topics.TaskExecutorTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorTopic
+import io.infinitic.pulsar.topics.getPersistentTopicFullName
 import io.infinitic.tasks.engine.transport.TaskEngineDataOutput
 import io.infinitic.tasks.executor.transport.TaskExecutorDataOutput
 import io.infinitic.workflows.engine.transport.WorkflowEngineDataOutput

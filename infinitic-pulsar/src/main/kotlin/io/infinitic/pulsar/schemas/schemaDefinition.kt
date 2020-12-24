@@ -36,6 +36,7 @@ fun <T : Any> schemaDefinition(klass: KClass<T>): SchemaDefinition<T> =
         .withSchemaReader(KSchemaReader(klass))
         .withSchemaWriter(KSchemaWriter(klass))
         .withSupportSchemaVersioning(true)
+        .withJSR310ConversionEnabled(true)
         .build()
 
 inline fun <reified T : Any> schemaDefinition() = schemaDefinition(T::class)

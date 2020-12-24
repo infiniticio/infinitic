@@ -23,28 +23,22 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
+package io.infinitic.pulsar.storage
+
+import io.infinitic.common.storage.keyValue.KeyValueStorage
+import org.apache.pulsar.functions.api.Context
+import java.nio.ByteBuffer
+
+class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
+    override suspend fun getState(key: String): ByteBuffer? = context.getState(key)
+
+    override suspend fun putState(key: String, value: ByteBuffer) = context.putState(key, value)
+
+    override suspend fun updateState(key: String, value: ByteBuffer) = context.putState(key, value)
+
+    override suspend fun deleteState(key: String) = context.deleteState(key)
+
+    override suspend fun incrementCounter(key: String, amount: Long) = context.incrCounter(key, amount)
+
+    override suspend fun getCounter(key: String): Long = context.getCounter(key)
 }
-
-dependencies {
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
-    api(Libs.Pulsar.clientAdmin)
-    implementation(Libs.Pulsar.functions)
-    implementation(Libs.Avro4k.core)
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    api(Libs.Pulsar.client)
-
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-client"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-workflow-engine"))
-}
-
-apply("../publish.gradle.kts")

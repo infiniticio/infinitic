@@ -23,22 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.pulsar
+package io.infinitic.pulsar.topics
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import org.apache.pulsar.functions.api.Context
-import java.nio.ByteBuffer
-
-class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
-    override suspend fun getState(key: String): ByteBuffer? = context.getState(key)
-
-    override suspend fun putState(key: String, value: ByteBuffer) = context.putState(key, value)
-
-    override suspend fun updateState(key: String, value: ByteBuffer) = context.putState(key, value)
-
-    override suspend fun deleteState(key: String) = context.deleteState(key)
-
-    override suspend fun incrementCounter(key: String, amount: Long) = context.incrCounter(key, amount)
-
-    override suspend fun getCounter(key: String): Long = context.getCounter(key)
-}
+fun getPersistentTopicFullName(tenantName: String, namespace: String, topic: String) =
+    "persistent://$tenantName/$namespace/$topic"

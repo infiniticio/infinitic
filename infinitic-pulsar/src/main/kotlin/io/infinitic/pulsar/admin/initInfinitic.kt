@@ -36,6 +36,7 @@ import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
 import io.infinitic.pulsar.topics.TaskEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
+import io.infinitic.pulsar.topics.getPersistentTopicFullName
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
@@ -47,7 +48,7 @@ import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicType
 import kotlin.reflect.KClass
 
-suspend fun PulsarAdmin.infiniticInit(tenant: String, namespace: String, allowedClusters: Set<String>? = null) {
+suspend fun PulsarAdmin.initInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>? = null) {
     createTenant(this, tenant, getAllowedClusters(this, allowedClusters))
 
     createNamespace(this, tenant, namespace)
@@ -66,9 +67,6 @@ suspend fun PulsarAdmin.infiniticInit(tenant: String, namespace: String, allowed
     setSchema(this, tenant, namespace, MonitoringPerNameTopic.name, MonitoringPerNameEnvelope::class)
     setSchema(this, tenant, namespace, MonitoringGlobalTopic.name, MonitoringGlobalEnvelope::class)
 }
-
-fun getPersistentTopicFullName(tenantName: String, namespace: String, topic: String) =
-    "persistent://$tenantName/$namespace/$topic"
 
 private suspend fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<String>? = null): Set<String> {
     // get all existing clusters

@@ -24,7 +24,6 @@
  */
 
 dependencies {
-    implementation(Libs.Pulsar.functions)
     implementation(Libs.Redis.clients)
 
     implementation(project(":infinitic-common"))

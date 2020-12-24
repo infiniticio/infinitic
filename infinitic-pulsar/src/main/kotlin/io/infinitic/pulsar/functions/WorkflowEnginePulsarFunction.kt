@@ -26,6 +26,7 @@
 package io.infinitic.pulsar.functions
 
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
