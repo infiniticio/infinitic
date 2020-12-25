@@ -23,19 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis
+package io.infinitic.storage
 
-import redis.clients.jedis.Protocol
-
-class RedisStorageConfig {
-    var host = Protocol.DEFAULT_HOST
-    var port = Protocol.DEFAULT_PORT
-    var timeout = Protocol.DEFAULT_TIMEOUT
-    var user = ""
-    var password = ""
-    var database = Protocol.DEFAULT_DATABASE
-
-    companion object {
-        val defaultConfig = RedisStorageConfig()
-    }
+@Suppress("EnumEntryName")
+enum class StateStorage {
+    inMemory,
+    pulsarState,
+    redis,
+    kodein
 }

@@ -23,13 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.worker.config
+package io.infinitic.storage.kodein
 
-data class Redis(
-    val host: String? = "localhost",
-    val port: Int? = 6379,
-    val timeout: Int? = 2000,
-    val user: String? = "",
-    val password: String? = "",
-    val database: Int? = 0,
+import org.kodein.db.model.Id
+import java.nio.ByteBuffer
+
+data class State(
+    @Id val uid: String,
+    val value: ByteBuffer
 )

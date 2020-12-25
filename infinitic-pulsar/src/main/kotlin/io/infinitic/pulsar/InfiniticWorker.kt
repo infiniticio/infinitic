@@ -34,6 +34,7 @@ import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.config.Config
 import io.infinitic.pulsar.config.Mode
+import io.infinitic.pulsar.config.getKeyValueStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startPulsarMonitoringGlobalWorker
@@ -49,41 +50,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 import java.lang.RuntimeException
-import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.primaryConstructor
 
 class InfiniticWorker(
-    configPath: String? = null,
-    config: Config? = null,
-    pulsarClient: PulsarClient? = null
+    val config: Config,
+    val pulsarClient: PulsarClient
 ) {
-    init {
-        require(configPath != null || config != null) { "Please provide a configuration" }
+    companion object {
+        fun fromConfigFile(configPath: String): InfiniticWorker {
+            // loaf Config instance
+            val config: Config = ConfigLoader().loadConfigOrThrow(configPath)
+            // build Pulsar client from config
+            val pulsarClient: PulsarClient = PulsarClient.builder().serviceUrl(config.pulsar.serviceUrl).build()
+
+            return InfiniticWorker(config, pulsarClient)
+        }
     }
-
-    // useful for Java users
-    data class Builder(
-        var configPath: String? = null,
-        var config: Config? = null,
-        var pulsarClient: PulsarClient? = null,
-    ) {
-        fun configPath(configPath: String) = apply { this.configPath = configPath }
-        fun config(config: Config) = apply { this.config = config }
-        fun pulsarClient(pulsarClient: PulsarClient) = apply { this.pulsarClient = pulsarClient }
-        fun build() = InfiniticWorker(configPath, config, pulsarClient)
-    }
-
-    // loaf config from file
-    private val configFromFile: Config? = configPath?.let { ConfigLoader().loadConfigOrThrow(it) }
-
-    // merge config **with precedence from file**
-    val config: Config = if (config == null) configFromFile!! else {
-        if (configFromFile == null) config else (config merge configFromFile)
-    }
-
-    // build pulsar client if not provided
-    val pulsarClient: PulsarClient = pulsarClient
-        ?: PulsarClient.builder().serviceUrl(this.config.pulsar.serviceUrl).build()
 
     fun start() = runBlocking {
         val tenant = config.pulsar.tenant
@@ -114,36 +95,39 @@ class InfiniticWorker(
         }
 
         if (config.workflowEngine.mode == Mode.worker) {
+            val keyValueStorage = config.workflowEngine.stateStorage!!.getKeyValueStorage(config, "workflowStates")
             repeat(config.workflowEngine.consumers) {
                 startPulsarWorkflowEngineWorker(
                     it,
                     pulsarConsumerFactory.newWorkflowEngineConsumer(config.name, it),
                     pulsarOutputs.workflowEngineOutput,
-                    InMemoryStorage(),
+                    keyValueStorage,
                     logChannel,
                 )
             }
         }
 
         if (config.taskEngine.mode == Mode.worker) {
+            val keyValueStorage = config.workflowEngine.stateStorage!!.getKeyValueStorage(config, "taskStates")
             repeat(config.taskEngine.consumers) {
                 startPulsarTaskEngineWorker(
                     it,
                     pulsarConsumerFactory.newTaskEngineConsumer(config.name, it),
                     pulsarOutputs.taskEngineOutput,
-                    InMemoryStorage(),
+                    keyValueStorage,
                     logChannel
                 )
             }
         }
 
         if (config.monitoring.mode == Mode.worker) {
+            val keyValueStorage = config.workflowEngine.stateStorage!!.getKeyValueStorage(config, "monitoringStates")
             repeat(config.monitoring.consumers) {
                 startPulsarMonitoringPerNameWorker(
                     it,
                     pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(config.name, it),
                     pulsarOutputs.monitoringPerNameOutput,
-                    InMemoryStorage(),
+                    keyValueStorage,
                     logChannel,
                 )
             }
@@ -198,32 +182,4 @@ class InfiniticWorker(
             }
         }
     }
-}
-
-/**
- * Merge two data classes
- *
- * The resulting data class will contain:
- * - all fields of `other` which are non null
- * - the fields of `this` for the fields which are null in `other`
- *
- * The function is immutable, the original data classes are not changed
- * and a new data class instance is returned.
- *
- * Example usage:
- *
- *     val a = MyDataClass(...)
- *     val b = MyDataClass(...)
- *     val c = a merge b
- *
- *     https://gist.github.com/josdejong/fbb43ae33fcdd922040dac4ffc31aeaf
- */
-inline infix fun <reified T : Any> T.merge(other: T): T {
-    val nameToProperty = T::class.declaredMemberProperties.associateBy { it.name }
-    val primaryConstructor = T::class.primaryConstructor!!
-    val args = primaryConstructor.parameters.associate { parameter ->
-        val property = nameToProperty[parameter.name]!!
-        parameter to (property.get(other) ?: property.get(this))
-    }
-    return primaryConstructor.callBy(args)
 }

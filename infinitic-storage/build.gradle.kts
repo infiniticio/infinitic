@@ -25,6 +25,9 @@
 
 dependencies {
     implementation(Libs.Redis.clients)
+    implementation(Libs.Kodein.jni)
+    implementation(Libs.Kodein.jvm)
+    implementation(Libs.Kodein.kryo)
 
     implementation(project(":infinitic-common"))
 }

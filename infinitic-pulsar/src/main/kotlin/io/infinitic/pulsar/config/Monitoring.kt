@@ -25,10 +25,12 @@
 
 package io.infinitic.pulsar.config
 
+import io.infinitic.storage.StateStorage
+
 data class Monitoring(
     var mode: Mode? = null,
     val consumers: Int = 1,
-    val stateStorage: StateStorage? = null
+    var stateStorage: StateStorage? = null
 ) {
     init {
         require(consumers >= 0) { "concurrency MUST be positive" }

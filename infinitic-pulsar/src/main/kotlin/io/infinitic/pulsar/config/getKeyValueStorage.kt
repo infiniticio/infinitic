@@ -22,17 +22,26 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.pulsar.config
 
+import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.StateStorage
+import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.storage.kodein.KodeinStorage
+import io.infinitic.storage.redis.RedisStorage
+import java.io.File
 
-data class TaskEngine(
-    var mode: Mode? = null,
-    val consumers: Int = 1,
-    var stateStorage: StateStorage? = null
-) {
-    init {
-        require(consumers >= 0) { "concurrency MUST be positive" }
-    }
+fun StateStorage.getKeyValueStorage(config: Config, type: String): KeyValueStorage = when (this) {
+    StateStorage.inMemory -> InMemoryStorage()
+    StateStorage.kodein -> getKodeinKeyValueStorage(config, type)
+    StateStorage.redis -> RedisStorage(config.redis!!)
+    StateStorage.pulsarState -> InMemoryStorage()
+}
+
+private fun getKodeinKeyValueStorage(config: Config, type: String): KodeinStorage {
+    val path = "${config.kodein!!.path.trimEnd('/')}/${config.name}/$type/"
+    val dir = File(path)
+    if (!dir.exists()) dir.mkdirs()
+
+    return KodeinStorage(config.kodein.copy(path = path))
 }

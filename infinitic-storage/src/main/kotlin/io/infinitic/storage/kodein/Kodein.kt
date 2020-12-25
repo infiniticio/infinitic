@@ -23,16 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.storage.kodein
 
-import io.infinitic.storage.StateStorage
-
-data class TaskEngine(
-    var mode: Mode? = null,
-    val consumers: Int = 1,
-    var stateStorage: StateStorage? = null
-) {
-    init {
-        require(consumers >= 0) { "concurrency MUST be positive" }
-    }
-}
+data class Kodein(
+    val path: String
+)

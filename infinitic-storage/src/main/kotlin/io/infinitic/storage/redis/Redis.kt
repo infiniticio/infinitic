@@ -23,11 +23,15 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.storage.redis
 
-@Suppress("EnumEntryName")
-enum class StateStorage {
-    inMemory,
-    pulsarState,
-    redis
-}
+import redis.clients.jedis.Protocol
+
+data class Redis(
+    val host: String = Protocol.DEFAULT_HOST,
+    var port: Int = Protocol.DEFAULT_PORT,
+    var timeout: Int = Protocol.DEFAULT_TIMEOUT,
+    var user: String,
+    var password: String,
+    var database: Int = Protocol.DEFAULT_DATABASE
+)

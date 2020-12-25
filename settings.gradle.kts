@@ -23,8 +23,6 @@
  * Licensor: infinitic.io
  */
 
-enableFeaturePreview("GRADLE_METADATA")
-
 include("infinitic-common")
 include("infinitic-rest-api")
 include("infinitic-storage")

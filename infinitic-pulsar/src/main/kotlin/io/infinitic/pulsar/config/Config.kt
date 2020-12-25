@@ -25,11 +25,13 @@
 
 package io.infinitic.pulsar.config
 
-import io.infinitic.worker.config.Redis
+import io.infinitic.storage.StateStorage
+import io.infinitic.storage.kodein.Kodein
+import io.infinitic.storage.redis.Redis
 
 data class Config(
     /*
-    Worker name - used to identify
+    Worker name - used to identify multiple workers
      */
     val name: String,
 
@@ -37,30 +39,31 @@ data class Config(
     Default running mode
      */
     var mode: Mode,
+
+    /*
+    Default state storage
+     */
+    var stateStorage: StateStorage,
+
     /*
     Pulsar configuration
      */
     val pulsar: Pulsar,
 
     /*
-    Redis configuration
-     */
-    val redis: Redis? = null,
-
-    /*
     Infinitic workflow engine configuration
      */
-    val workflowEngine: WorkflowEngine = WorkflowEngine(Mode.function, 5, StateStorage.pulsarState),
+    val workflowEngine: WorkflowEngine = WorkflowEngine(mode, 1, stateStorage),
 
     /*
     Infinitic task engine configuration
      */
-    val taskEngine: TaskEngine = TaskEngine(Mode.function, 10, StateStorage.pulsarState),
+    val taskEngine: TaskEngine = TaskEngine(mode, 1, stateStorage),
 
     /*
     Infinitic monitoring configuration
      */
-    val monitoring: Monitoring = Monitoring(Mode.function, 4, StateStorage.pulsarState),
+    val monitoring: Monitoring = Monitoring(mode, 1, stateStorage),
 
     /*
     Tasks configuration
@@ -70,15 +73,30 @@ data class Config(
     /*
     Workflows configuration
      */
-    val workflows: List<Workflow> = listOf()
+    val workflows: List<Workflow> = listOf(),
+
+    /*
+    Redis configuration
+     */
+    val redis: Redis? = null,
+
+    /*
+    Kodein configuration
+     */
+    val kodein: Kodein? = null
 ) {
     init {
-        // apply default mode, if mode not set
+        // apply default mode, if not set
         workflowEngine.mode = workflowEngine.mode ?: mode
         taskEngine.mode = taskEngine.mode ?: mode
         monitoring.mode = monitoring.mode ?: mode
         tasks.map { it.mode = it.mode ?: mode }
         workflows.map { it.mode = it.mode ?: mode }
+
+        // apply default stateStorage, if not set
+        workflowEngine.stateStorage = workflowEngine.stateStorage ?: stateStorage
+        taskEngine.stateStorage = taskEngine.stateStorage ?: stateStorage
+        monitoring.stateStorage = monitoring.stateStorage ?: stateStorage
 
         // consistency check
         checkStateStorage(workflowEngine.stateStorage, workflowEngine.mode!!, "workflowEngine.stateStorage")
@@ -89,6 +107,10 @@ data class Config(
     private fun checkStateStorage(stateStorage: StateStorage?, mode: Mode, name: String) {
         if (stateStorage == StateStorage.redis) {
             require(redis != null) { "`${StateStorage.redis}` is used for $name but not configured" }
+        }
+
+        if (stateStorage == StateStorage.kodein) {
+            require(kodein != null) { "`${StateStorage.kodein}` is used for $name but not configured" }
         }
 
         if (stateStorage == StateStorage.pulsarState) {

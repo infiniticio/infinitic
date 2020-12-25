@@ -28,10 +28,10 @@ package io.infinitic.pulsar
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.samples.TaskA
 import io.infinitic.pulsar.schemas.schemaDefinition
-import org.apache.avro.reflect.ReflectData
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.client.impl.schema.util.SchemaUtil
 import org.apache.pulsar.common.schema.SchemaType
+import org.apache.pulsar.shade.org.apache.avro.reflect.ReflectData
 
 // val test: (Int) -> Int = { a:Int -> 2*a }
 // pow = lambda  a: a*a
