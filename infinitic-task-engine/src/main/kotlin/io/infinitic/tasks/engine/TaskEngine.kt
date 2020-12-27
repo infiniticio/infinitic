@@ -53,6 +53,8 @@ import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.tasks.engine.storage.events.TaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine(
@@ -60,7 +62,12 @@ class TaskEngine(
     private val taskEventStorage: TaskEventStorage,
     private val taskEngineOutput: TaskEngineOutput
 ) {
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
     suspend fun handle(message: TaskEngineMessage) {
+        logger.debug("taskId {} - receiving {}", message.taskId, message)
+
         // store event
         taskEventStorage.insertTaskEvent(message)
 
@@ -79,12 +86,21 @@ class TaskEngine(
         if (oldState != null) {
             // discard message (except TaskAttemptCompleted) if state has already evolved
             if (message is TaskAttemptMessage && message !is TaskAttemptCompleted) {
-                if (oldState.taskAttemptId != message.taskAttemptId) return
-                if (oldState.taskAttemptRetry != message.taskAttemptRetry) return
+                if ((oldState.taskAttemptId != message.taskAttemptId) ||
+                    (oldState.taskAttemptRetry != message.taskAttemptRetry)
+                ) {
+                    logger.info("taskId {} - discarding {}", message.taskId, message)
+
+                    return
+                }
             }
         } else {
             // discard message if task is already terminated
-            if (message !is DispatchTask) return
+            if (message !is DispatchTask) {
+                logger.info("taskId {} - discarding {}", message.taskId, message)
+
+                return
+            }
         }
 
         val newState =
@@ -114,7 +130,7 @@ class TaskEngine(
                 newStatus = newState.taskStatus
             )
 
-            taskEngineOutput.sendToMonitoringPerName(tsc)
+            taskEngineOutput.sendToMonitoringPerName(message.taskId, tsc)
         }
     }
 
@@ -127,7 +143,7 @@ class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        taskEngineOutput.sendToTaskEngine(tad, 0F)
+        taskEngineOutput.sendToTaskEngine(state.taskId, tad, 0F)
 
         // Delete stored state
         taskStateStorage.deleteState(state.taskId)
@@ -165,7 +181,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        taskEngineOutput.sendToTaskExecutors(rt)
+        taskEngineOutput.sendToTaskExecutors(state.taskId, rt)
 
         // log events
         val tad = TaskAttemptDispatched(
@@ -174,7 +190,7 @@ class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskRetry = state.taskRetry
         )
-        taskEngineOutput.sendToTaskEngine(tad, 0F)
+        taskEngineOutput.sendToTaskEngine(state.taskId, tad, 0F)
 
         return state
     }
@@ -207,7 +223,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        taskEngineOutput.sendToTaskExecutors(rt)
+        taskEngineOutput.sendToTaskExecutors(state.taskId, rt)
 
         // log event
         val tad = TaskAttemptDispatched(
@@ -216,7 +232,7 @@ class TaskEngine(
             taskAttemptRetry = state.taskAttemptRetry,
             taskRetry = state.taskRetry
         )
-        taskEngineOutput.sendToTaskEngine(tad, 0F)
+        taskEngineOutput.sendToTaskEngine(state.taskId, tad, 0F)
 
         return state
     }
@@ -241,7 +257,7 @@ class TaskEngine(
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
-        taskEngineOutput.sendToTaskExecutors(rt)
+        taskEngineOutput.sendToTaskExecutors(state.taskId, rt)
 
         // log event
         val tar = TaskAttemptDispatched(
@@ -250,7 +266,7 @@ class TaskEngine(
             taskRetry = state.taskRetry,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        taskEngineOutput.sendToTaskEngine(tar, 0F)
+        taskEngineOutput.sendToTaskEngine(state.taskId, tar, 0F)
 
         return state
     }
@@ -267,6 +283,7 @@ class TaskEngine(
         // if this task belongs to a workflow, send back the adhoc message
         state.workflowId?.let {
             taskEngineOutput.sendToWorkflowEngine(
+                state.taskId,
                 when ("${state.taskName}") {
                     WorkflowTask::class.java.name -> WorkflowTaskCompleted(
                         workflowId = it,
@@ -291,7 +308,7 @@ class TaskEngine(
             taskOutput = msg.taskOutput,
             taskMeta = state.taskMeta
         )
-        taskEngineOutput.sendToTaskEngine(tc, 0F)
+        taskEngineOutput.sendToTaskEngine(state.taskId, tc, 0F)
 
         // delete stored state
         taskStateStorage.deleteState(state.taskId)
@@ -332,7 +349,7 @@ class TaskEngine(
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        taskEngineOutput.sendToTaskEngine(tar, delay)
+        taskEngineOutput.sendToTaskEngine(state.taskId, tar, delay)
 
         return state
     }

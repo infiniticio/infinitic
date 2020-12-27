@@ -78,10 +78,15 @@ suspend fun dispatchWorkflowTask(
     )
 
     // dispatch workflow task
-    workflowEngineOutput.sendToTaskEngine(workflowTask, 0F)
+    workflowEngineOutput.sendToTaskEngine(
+        state.workflowId,
+        workflowTask,
+        0F
+    )
 
     // log event
     workflowEngineOutput.sendToWorkflowEngine(
+        state.workflowId,
         WorkflowTaskDispatched(
             workflowTaskId = workflowTaskId,
             workflowId = state.workflowId,

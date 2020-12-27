@@ -23,13 +23,13 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
-}
-
 dependencies {
-    implementation("org.apache.pulsar:pulsar-functions-api:${project.extra["pulsar_version"]}")
-    implementation("redis.clients:jedis:3.3.+")
+    implementation(Libs.Redis.clients)
+    implementation(Libs.Kodein.jni)
+    implementation(Libs.Kodein.jvm)
+    implementation(Libs.Kodein.kryo)
 
-    api(project(":infinitic-common"))
+    implementation(project(":infinitic-common"))
 }
+
+apply("../publish.gradle.kts")

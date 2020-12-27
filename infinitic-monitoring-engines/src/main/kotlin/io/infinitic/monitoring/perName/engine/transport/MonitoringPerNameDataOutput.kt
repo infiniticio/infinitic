@@ -28,5 +28,5 @@ package io.infinitic.monitoring.perName.engine.transport
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 
 data class MonitoringPerNameDataOutput(
-    override val sendToMonitoringGlobal: SendToMonitoringGlobal
+    override val sendToMonitoringGlobalFn: SendToMonitoringGlobal
 ) : MonitoringPerNameOutput

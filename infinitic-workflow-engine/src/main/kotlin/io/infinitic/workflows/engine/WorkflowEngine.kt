@@ -47,13 +47,18 @@ import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.storage.events.WorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import org.slf4j.LoggerFactory
 
 class WorkflowEngine(
     private val workflowStateStorage: WorkflowStateStorage,
     private val workflowEventStorage: WorkflowEventStorage,
     private val workflowEngineOutput: WorkflowEngineOutput
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     suspend fun handle(message: WorkflowEngineMessage) {
+        logger.debug("workflowId {} - receiving {}", message.workflowId, message)
+
         // store event
         workflowEventStorage.insertWorkflowEvent(message)
 
@@ -75,7 +80,9 @@ class WorkflowEngine(
                 state = dispatchWorkflow(workflowEngineOutput, message)
                 workflowStateStorage.createState(message.workflowId, state)
             }
-            // discard all other types of message as its workflow is already terminated
+            // discard all other message types as this workflow is already terminated
+            logger.info("workflowId {} - discarding {}", message.workflowId, message)
+
             return
         }
 
@@ -120,7 +127,7 @@ class WorkflowEngine(
             is ObjectReceived -> objectReceived(state, message)
             is TaskCanceled -> taskCanceled(state, message)
             is TaskCompleted -> taskCompleted(workflowEngineOutput, state, message)
-            else -> throw RuntimeException("Unknown ForWorkflowEngineMessage: ${message::class.qualifiedName}")
+            else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
         }
     }
 

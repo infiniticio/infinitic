@@ -1,0 +1,57 @@
+# "Commons Clause" License Condition v1.0
+#
+# The Software is provided to you by the Licensor under the License, as defined
+# below, subject to the following condition.
+#
+# Without limiting other conditions in the License, the grant of rights under the
+# License will not include, and the License does not grant to you, the right to
+# Sell the Software.
+#
+# For purposes of the foregoing, “Sell” means practicing any or all of the rights
+# granted to you under the License to provide to third parties, for a fee or
+# other consideration (including without limitation fees for hosting or
+# consulting/ support services related to the Software), a product or service
+# whose value derives, entirely or substantially, from the functionality of the
+# Software. Any license notice or attribution required by the License must also
+# include this Commons Clause License Condition notice.
+#
+# Software: Infinitic
+#
+# License: MIT License (https://opensource.org/licenses/MIT)
+#
+# Licensor: infinitic.io
+
+# Configuration for probot-stale - https://github.com/probot/stale
+
+# Number of days of inactivity before an Issue or Pull Request becomes stale
+daysUntilStale: 60
+
+# Number of days of inactivity before an Issue or Pull Request with the stale label is closed.
+# Set to false to disable. If disabled, issues still need to be closed manually, but will remain marked as stale.
+daysUntilClose: 7
+
+# Only issues or pull requests with all of these labels are check if stale. Defaults to `[]` (disabled)
+onlyLabels: []
+
+# Issues or Pull Requests with these labels will never be considered stale. Set to `[]` to disable
+exemptLabels:
+  - pinned
+  - "[Status] Maybe Later"
+
+# Set to true to ignore issues in a project (defaults to false)
+exemptProjects: false
+
+# Set to true to ignore issues in a milestone (defaults to false)
+exemptMilestones: false
+
+# Set to true to ignore issues with an assignee (defaults to false)
+exemptAssignees: false
+
+# Label to use when marking as stale
+staleLabel: wontfix
+
+# Comment to post when marking as stale. Set to `false` to disable
+markComment: >
+  This issue has been automatically marked as stale because it has not had
+  recent activity. It will be closed if no further activity occurs. Thank you
+  for your contributions.

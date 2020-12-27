@@ -31,8 +31,16 @@ import redis.clients.jedis.JedisPoolConfig
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-class RedisStorage internal constructor(private val config: RedisStorageConfig) : KeyValueStorage {
+class RedisStorage(private val config: Redis) : KeyValueStorage {
     private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
+
+    init {
+        Runtime.getRuntime().addShutdownHook(
+            Thread() {
+                pool.close()
+            }
+        )
+    }
 
     override suspend fun getState(key: String): ByteBuffer? =
         pool.resource.use { jedis ->
@@ -73,12 +81,3 @@ fun ByteBuffer.toByteArray(): ByteArray {
 
     return byteArray
 }
-
-fun redis(init: RedisStorageConfig.() -> Unit = RedisStorageConfig::defaultConfigLambda): RedisStorage {
-    val config = RedisStorageConfig()
-    config.init()
-
-    return RedisStorage(config)
-}
-
-fun RedisStorageConfig.defaultConfigLambda() {}

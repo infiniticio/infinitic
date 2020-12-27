@@ -25,10 +25,36 @@
 
 package io.infinitic.workflows.engine.transport
 
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 interface WorkflowEngineOutput {
-    val sendToWorkflowEngine: SendToWorkflowEngine
-    val sendToTaskEngine: SendToTaskEngine
+    val sendToWorkflowEngineFn: SendToWorkflowEngine
+    val sendToTaskEngineFn: SendToTaskEngine
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun sendToWorkflowEngine(
+        workflowId: WorkflowId,
+        workflowEngineMessage: WorkflowEngineMessage,
+        after: Float
+    ) {
+        sendToWorkflowEngineFn(workflowEngineMessage, after)
+        logger.debug("workflowId {} - after {} sendToWorkflowEngine {}", workflowId, after, workflowEngineMessage)
+    }
+
+    suspend fun sendToTaskEngine(
+        workflowId: WorkflowId,
+        taskEngineMessage: TaskEngineMessage,
+        after: Float
+    ) {
+        sendToTaskEngineFn(taskEngineMessage, after)
+        logger.debug("workflowId {} - after {} sendToTaskEngine {}", workflowId, after, taskEngineMessage)
+    }
 }

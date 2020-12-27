@@ -23,10 +23,8 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
-}
-
 dependencies {
     api(project(":infinitic-common"))
 }
+
+apply("../publish.gradle.kts")

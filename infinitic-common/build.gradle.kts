@@ -28,12 +28,14 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${project.extra["kotlinx_serialization_version"]}")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${project.extra["jackson_version"]}")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${project.extra["jackson_version"]}")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${project.extra["jackson_version"]}")
-    implementation("com.github.avro-kotlin.avro4k:avro4k-core:${project.extra["avro4k_version"]}")
+    implementation(Libs.Serialization.json)
+    implementation(Libs.Jackson.databind)
+    implementation(Libs.Jackson.module)
+    implementation(Libs.Jackson.jsr310)
+    implementation(Libs.Avro4k.core)
 
-    testFixturesImplementation("org.jetbrains.kotlin:kotlin-reflect:${project.extra["kotlin_reflect_version"]}")
-    testFixturesImplementation("org.jeasy:easy-random-core:${project.extra["easyrandom_version"]}")
+    testFixturesImplementation(Libs.Kotlin.reflect)
+    testFixturesImplementation(Libs.EasyRandom.core)
 }
+
+apply("../publish.gradle.kts")

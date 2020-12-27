@@ -40,11 +40,11 @@ internal class MockClientOutput(
     taskSlot: CapturingSlot<TaskEngineMessage>,
     workflowSlot: CapturingSlot<WorkflowEngineMessage>
 ) : ClientOutput {
-    override val sendToTaskEngine = mockk<SendToTaskEngine>()
-    override val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
+    override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
+    override val sendToWorkflowEngineFn = mockk<SendToWorkflowEngine>()
 
     init {
-        coEvery { sendToTaskEngine(capture(taskSlot), 0F) } just Runs
-        coEvery { sendToWorkflowEngine(capture(workflowSlot), 0F) } just Runs
+        coEvery { sendToTaskEngineFn(capture(taskSlot), 0F) } just Runs
+        coEvery { sendToWorkflowEngineFn(capture(workflowSlot), 0F) } just Runs
     }
 }

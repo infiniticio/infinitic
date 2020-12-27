@@ -29,6 +29,6 @@ import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
 data class ClientDataOutput(
-    override val sendToWorkflowEngine: SendToWorkflowEngine,
-    override val sendToTaskEngine: SendToTaskEngine
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine,
+    override val sendToTaskEngineFn: SendToTaskEngine
 ) : ClientOutput

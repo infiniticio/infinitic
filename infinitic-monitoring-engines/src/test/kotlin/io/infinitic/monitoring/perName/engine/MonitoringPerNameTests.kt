@@ -96,16 +96,16 @@ class MonitoringPerNameTests : ShouldSpec({
             coVerifyAll {
                 storage.getState(msg.taskName)
                 storage.updateState(msg.taskName, stateOut, null)
-                monitoringPerNameOutput.sendToMonitoringGlobal(ofType<TaskCreated>())
+                monitoringPerNameOutput.sendToMonitoringGlobal(msg.taskName, ofType<TaskCreated>())
             }
         }
     }
 })
 
 class MockMonitoringPerNameOutput : MonitoringPerNameOutput {
-    override val sendToMonitoringGlobal = mockk<SendToMonitoringGlobal>()
+    override val sendToMonitoringGlobalFn = mockk<SendToMonitoringGlobal>()
 
     init {
-        coEvery { sendToMonitoringGlobal(any()) } just runs
+        coEvery { sendToMonitoringGlobalFn(any()) } just runs
     }
 }

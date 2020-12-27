@@ -25,9 +25,40 @@
 
 package io.infinitic.workflows.engine.storage.states
 
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 interface WorkflowStateStorage {
-    val createState: CreateWorkflowState
-    val getState: GetWorkflowState
-    val updateState: UpdateWorkflowState
-    val deleteState: DeleteWorkflowState
+    val createStateFn: CreateWorkflowState
+    val getStateFn: GetWorkflowState
+    val updateStateFn: UpdateWorkflowState
+    val deleteStateFn: DeleteWorkflowState
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun createState(workflowId: WorkflowId, workflowState: WorkflowState) {
+        createStateFn(workflowId, workflowState)
+        logger.debug("workflowId {} - createState {}", workflowId, workflowState)
+    }
+
+    suspend fun getState(workflowId: WorkflowId): WorkflowState? {
+        val workflowState = getStateFn(workflowId)
+        logger.debug("workflowId {} - getState {}", workflowId, workflowState)
+
+        return workflowState
+    }
+
+    suspend fun updateState(workflowId: WorkflowId, workflowState: WorkflowState) {
+        updateStateFn(workflowId, workflowState)
+        logger.debug("workflowId {} - updateState {}", workflowId, workflowState)
+    }
+
+    suspend fun deleteState(workflowId: WorkflowId) {
+        deleteStateFn(workflowId)
+
+        logger.debug("workflowId {} - deleteState", workflowId)
+    }
 }

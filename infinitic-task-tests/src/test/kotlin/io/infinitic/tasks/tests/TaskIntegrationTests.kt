@@ -188,36 +188,36 @@ class TaskIntegrationTests : StringSpec({
 })
 
 class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
-    override val sendToWorkflowEngine: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
 
-    override val sendToTaskEngine: SendToTaskEngine =
+    override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 
-    override val sendToTaskExecutors: SendToTaskExecutors =
+    override val sendToTaskExecutorsFn: SendToTaskExecutors =
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
 
-    override val sendToMonitoringPerName: SendToMonitoringPerName =
+    override val sendToMonitoringPerNameFn: SendToMonitoringPerName =
         { msg: MonitoringPerNameEngineMessage -> scope.sendToMonitoringPerName(msg) }
 }
 
 class TestMonitoringPerNameOutput(private val scope: CoroutineScope) : MonitoringPerNameOutput {
 
-    override val sendToMonitoringGlobal: SendToMonitoringGlobal =
+    override val sendToMonitoringGlobalFn: SendToMonitoringGlobal =
         { msg: MonitoringGlobalMessage -> scope.sendToMonitoringGlobal(msg) }
 }
 
 class TestTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
 
-    override val sendToTaskEngine: SendToTaskEngine =
+    override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 }
 
 class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
 
-    override val sendToTaskEngine: SendToTaskEngine =
+    override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 
-    override val sendToWorkflowEngine: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
 }
 
 fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {

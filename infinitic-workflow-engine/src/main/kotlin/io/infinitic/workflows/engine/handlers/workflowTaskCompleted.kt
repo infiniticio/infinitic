@@ -28,7 +28,6 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.DispatchTask
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
@@ -50,7 +49,6 @@ import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.helpers.getMethodRun
@@ -85,8 +83,8 @@ suspend fun workflowTaskCompleted(
     // add new commands to past commands
     workflowTaskOutput.newCommands.map {
         when (it.command) {
-            is DispatchTaskInWorkflow -> dispatchTask(workflowEngineOutput.sendToTaskEngine, methodRun, it, state)
-            is DispatchChildWorkflow -> dispatchChildWorkflow(workflowEngineOutput.sendToWorkflowEngine, methodRun, it, state)
+            is DispatchTaskInWorkflow -> dispatchTask(workflowEngineOutput, methodRun, it, state)
+            is DispatchChildWorkflow -> dispatchChildWorkflow(workflowEngineOutput, methodRun, it, state)
             is StartAsync -> startAsync(methodRun, it, state)
             is EndAsync -> endAsync(workflowEngineOutput, methodRun, it, state)
             is StartInlineTask -> startInlineTask(methodRun, it)
@@ -116,6 +114,7 @@ suspend fun workflowTaskCompleted(
         // if this is the main method, it means the workflow is completed
         if (methodRun.isMain) {
             workflowEngineOutput.sendToWorkflowEngine(
+                state.workflowId,
                 WorkflowCompleted(
                     workflowId = state.workflowId,
                     workflowOutput = methodRun.methodOutput!!
@@ -127,6 +126,7 @@ suspend fun workflowTaskCompleted(
         // tell parent workflow if any
         methodRun.parentWorkflowId?.let {
             workflowEngineOutput.sendToWorkflowEngine(
+                state.workflowId,
                 ChildWorkflowCompleted(
                     workflowId = it,
                     methodRunId = methodRun.parentMethodRunId!!,
@@ -236,7 +236,7 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
 }
 
 private suspend fun dispatchTask(
-    sendToTaskEngine: SendToTaskEngine,
+    workflowEngineOutput: WorkflowEngineOutput,
     methodRun: MethodRun,
     newCommand: NewCommand,
     state: WorkflowState
@@ -253,13 +253,13 @@ private suspend fun dispatchTask(
         methodRunId = methodRun.methodRunId,
         taskMeta = command.taskMeta
     )
-    sendToTaskEngine(msg, 0F)
+    workflowEngineOutput.sendToTaskEngine(state.workflowId, msg, 0F)
 
     addPastCommand(methodRun, newCommand)
 }
 
 private suspend fun dispatchChildWorkflow(
-    sendToWorkflowEngine: SendToWorkflowEngine,
+    workflowEngineOutput: WorkflowEngineOutput,
     methodRun: MethodRun,
     newCommand: NewCommand,
     state: WorkflowState
@@ -277,7 +277,7 @@ private suspend fun dispatchChildWorkflow(
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )
-    sendToWorkflowEngine(msg, 0F)
+    workflowEngineOutput.sendToWorkflowEngine(state.workflowId, msg, 0F)
 
     addPastCommand(methodRun, newCommand)
 }

@@ -37,21 +37,25 @@ import java.nio.ByteBuffer
 open class MonitoringGlobalStateKeyValueStorage(
     protected val storage: KeyValueStorage
 ) : MonitoringGlobalStateStorage {
-    override suspend fun getState(): MonitoringGlobalState? {
-        return storage.getState(getMonitoringGlobalStateKey())?.let {
-            MonitoringGlobalState.fromByteArray(it.array())
-        }
+
+    override val getStateFn: GetMonitoringGlobalState = {
+        storage
+            .getState(getMonitoringGlobalStateKey())
+            ?.let { MonitoringGlobalState.fromByteArray(it.array()) }
     }
 
-    override suspend fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
+    override val updateStateFn: UpdateMonitoringGlobalState = {
+        newState: MonitoringGlobalState,
+        oldState: MonitoringGlobalState?
+        ->
         storage.putState(getMonitoringGlobalStateKey(), ByteBuffer.wrap(newState.toByteArray()))
     }
 
-    override suspend fun deleteState() {
+    override val deleteStateFn: DeleteMonitoringGlobalState = {
         storage.deleteState(getMonitoringGlobalStateKey())
     }
 
-    internal fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
+    private fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
 
     /*
     Use for tests
@@ -60,7 +64,7 @@ open class MonitoringGlobalStateKeyValueStorage(
         if (storage is Flushable) {
             storage.flush()
         } else {
-            throw Exception("Storage non flushable")
+            throw RuntimeException("Storage non flushable")
         }
     }
 }
