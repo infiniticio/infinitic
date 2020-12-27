@@ -38,20 +38,20 @@ open class TaskStateKeyValueStorage(
     protected val storage: KeyValueStorage
 ) : TaskStateStorage {
 
-    override val getState: GetTaskState = { taskId: TaskId ->
+    override val getStateFn: GetTaskState = { taskId: TaskId ->
         storage
             .getState(getTaskStateKey(taskId))
             ?.let { TaskState.fromByteBuffer(it) }
     }
 
-    override val updateState: UpdateTaskState = { taskId: TaskId, newState: TaskState, oldState: TaskState? ->
+    override val updateStateFn: UpdateTaskState = { taskId: TaskId, newState: TaskState, oldState: TaskState? ->
         storage.putState(
             getTaskStateKey(taskId),
             newState.toByteBuffer()
         )
     }
 
-    override val deleteState: DeleteTaskState = { taskId: TaskId ->
+    override val deleteStateFn: DeleteTaskState = { taskId: TaskId ->
         storage.deleteState(getTaskStateKey(taskId))
     }
 

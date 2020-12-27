@@ -43,7 +43,7 @@ class InMemoryWorkflowEngineOutput(
     taskCommandsChannel: Channel<TaskEngineMessageToProcess>,
     workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : WorkflowEngineOutput {
-    override val sendToWorkflowEngine: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: Float ->
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: Float ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             // TODO inMemory resilience implies to find a way to persist delayed messages
@@ -52,7 +52,7 @@ class InMemoryWorkflowEngineOutput(
         }
     }
 
-    override val sendToTaskEngine: SendToTaskEngine = { msg: TaskEngineMessage, after: Float ->
+    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: Float ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             // TODO inMemory resilience implies to find a way to persist delayed messages

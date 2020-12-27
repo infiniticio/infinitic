@@ -35,7 +35,7 @@ dependencies {
     implementation(Libs.Hoplite.core)
     implementation(Libs.Hoplite.yaml)
 
-    // do not change the order od these 2 depencies
+    // do not change the order of those 2 dependencies
     // to keep avro shaded and avoid https://github.com/apache/pulsar/issues/9045
     api(Libs.Pulsar.client)
     api(Libs.Pulsar.clientAdmin)

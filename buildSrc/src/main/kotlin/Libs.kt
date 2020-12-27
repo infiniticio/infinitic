@@ -80,10 +80,6 @@ object Libs {
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }
 
-    object Slf4j {
-        const val api = "org.slf4j:slf4j-api:1.7.30"
-    }
-
     object Pulsar {
         private const val version = "2.7.0"
         const val client = "org.apache.pulsar:pulsar-client:$version"
@@ -104,5 +100,9 @@ object Libs {
 
     object EasyRandom {
         const val core = "org.jeasy:easy-random-core:4.2.0"
+    }
+
+    object Slf4j {
+        const val api = "org.slf4j:slf4j-api:1.7.30"
     }
 }

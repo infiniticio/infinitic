@@ -29,11 +29,17 @@ import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.messages.TaskCreated
 import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class MonitoringGlobalEngine(
     val storage: MonitoringGlobalStateStorage
 ) {
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
     suspend fun handle(message: MonitoringGlobalMessage) {
+        logger.debug("receiving {}", message)
 
         // get associated state
         val oldState = storage.getState()

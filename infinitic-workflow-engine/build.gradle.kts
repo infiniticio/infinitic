@@ -24,7 +24,6 @@
  */
 
 dependencies {
-    implementation(Libs.Slf4j.api)
     implementation(Libs.Coroutines.core)
 
     implementation(project(":infinitic-common"))

@@ -25,8 +25,19 @@
 
 package io.infinitic.workflows.engine.storage.events
 
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.storage.InsertWorkflowEvent
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 interface WorkflowEventStorage {
-    val insertWorkflowEvent: InsertWorkflowEvent
+    val insertWorkflowEventFn: InsertWorkflowEvent
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun insertWorkflowEvent(workflowEngineMessage: WorkflowEngineMessage) {
+        insertWorkflowEventFn(workflowEngineMessage)
+        logger.debug("workflowId {} - insertWorkflowEvent {}", workflowEngineMessage.workflowId, workflowEngineMessage)
+    }
 }

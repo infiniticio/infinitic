@@ -28,5 +28,5 @@ package io.infinitic.workflows.engine.storage.events
 import io.infinitic.common.workflows.engine.storage.InsertWorkflowEvent
 
 class NoWorkflowEventStorage : WorkflowEventStorage {
-    override val insertWorkflowEvent: InsertWorkflowEvent = { }
+    override val insertWorkflowEventFn: InsertWorkflowEvent = { }
 }

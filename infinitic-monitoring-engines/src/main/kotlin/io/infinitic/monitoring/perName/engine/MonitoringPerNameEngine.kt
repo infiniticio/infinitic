@@ -32,12 +32,18 @@ import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class MonitoringPerNameEngine(
     private val storage: MonitoringPerNameStateStorage,
     private val monitoringPerNameOutput: MonitoringPerNameOutput
 ) {
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
     suspend fun handle(message: MonitoringPerNameEngineMessage) {
+        logger.debug("name {} - receiving {}", message.taskName, message)
 
         // get associated state
         val oldState = storage.getState(message.taskName)
@@ -56,7 +62,7 @@ class MonitoringPerNameEngine(
         if (oldState == null) {
             val tsc = TaskCreated(taskName = message.taskName)
 
-            monitoringPerNameOutput.sendToMonitoringGlobal(tsc)
+            monitoringPerNameOutput.sendToMonitoringGlobal(message.taskName, tsc)
         }
     }
 

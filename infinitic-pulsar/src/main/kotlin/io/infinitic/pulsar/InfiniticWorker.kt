@@ -49,13 +49,18 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
+import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
 
+@Suppress("MemberVisibilityCanBePrivate", "unused")
 class InfiniticWorker(
     val config: Config,
     val pulsarClient: PulsarClient
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     companion object {
+        @JvmStatic
         fun fromConfigFile(configPath: String): InfiniticWorker {
             // loaf Config instance
             val config: Config = ConfigLoader().loadConfigOrThrow(configPath)
@@ -80,15 +85,15 @@ class InfiniticWorker(
                 val failed = if (messageToProcess.exception == null) "" else "(failed) "
                 when (val message = messageToProcess.message) {
                     is MonitoringGlobalMessage ->
-                        println("Monitoring Global  : $failed$message")
+                        logger.info("Monitoring Global  : $failed$message")
                     is MonitoringPerNameEngineMessage ->
-                        println("Monitoring Per Name: $failed$message")
+                        logger.info("Monitoring Per Name: $failed$message")
                     is TaskExecutorMessage ->
-                        println("Task Executor      : $failed$message")
+                        logger.info("Task Executor      : $failed$message")
                     is TaskEngineMessage ->
-                        println("Task engine        : $failed$message")
+                        logger.info("Task engine        : $failed$message")
                     is WorkflowEngineMessage ->
-                        println("Workflow engine    : $failed$message")
+                        logger.info("Workflow engine    : $failed$message")
                     else -> throw RuntimeException("Unknown messageToProcess type: $messageToProcess")
                 }
             }

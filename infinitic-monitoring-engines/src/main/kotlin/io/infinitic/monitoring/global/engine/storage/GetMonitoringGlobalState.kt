@@ -23,21 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.engine.storage.events
+package io.infinitic.monitoring.global.engine.storage
 
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 
-interface TaskEventStorage {
-    val insertTaskEventFn: InsertTaskEvent
-
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
-
-    suspend fun insertTaskEvent(taskEngineMessage: TaskEngineMessage) {
-        insertTaskEventFn(taskEngineMessage)
-        logger.debug("taskId {} - insertTaskEvent {}", taskEngineMessage.taskId, taskEngineMessage)
-    }
-}
+typealias GetMonitoringGlobalState = suspend () -> MonitoringGlobalState?

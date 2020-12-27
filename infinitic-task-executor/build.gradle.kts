@@ -29,7 +29,6 @@ plugins {
 
 dependencies {
     implementation(kotlin("reflect"))
-    implementation(Libs.Slf4j.api)
     implementation(Libs.Coroutines.core)
 
     implementation(project(":infinitic-common"))

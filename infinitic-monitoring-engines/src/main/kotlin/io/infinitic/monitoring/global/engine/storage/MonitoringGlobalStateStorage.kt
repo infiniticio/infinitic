@@ -26,6 +26,8 @@
 package io.infinitic.monitoring.global.engine.storage
 
 import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
@@ -34,7 +36,27 @@ import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
  * transformed before being stored. These details are left to the different implementations.
  */
 interface MonitoringGlobalStateStorage {
-    suspend fun getState(): MonitoringGlobalState?
-    suspend fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?)
-    suspend fun deleteState()
+    val getStateFn: GetMonitoringGlobalState
+    val updateStateFn: UpdateMonitoringGlobalState
+    val deleteStateFn: DeleteMonitoringGlobalState
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun getState(): MonitoringGlobalState? {
+        val taskState = getStateFn()
+        logger.debug("getState {}", taskState)
+
+        return taskState
+    }
+
+    suspend fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
+        updateStateFn(newState, oldState)
+        logger.debug("updateState {}", newState)
+    }
+
+    suspend fun deleteState() {
+        deleteStateFn()
+        logger.debug("deleteState")
+    }
 }

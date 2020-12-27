@@ -25,6 +25,11 @@
 
 package io.infinitic.tasks.engine.storage.states
 
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.engine.state.TaskState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
  *
@@ -32,7 +37,27 @@ package io.infinitic.tasks.engine.storage.states
  * transformed before being stored. These details are left to the different implementations.
  */
 interface TaskStateStorage {
-    val getState: GetTaskState
-    val updateState: UpdateTaskState
-    val deleteState: DeleteTaskState
+    val getStateFn: GetTaskState
+    val updateStateFn: UpdateTaskState
+    val deleteStateFn: DeleteTaskState
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun getState(taskId: TaskId): TaskState? {
+        val taskState = getStateFn(taskId)
+        logger.debug("taskId {} - getState {}", taskId, taskState)
+
+        return taskState
+    }
+
+    suspend fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?) {
+        updateStateFn(taskId, newState, oldState)
+        logger.debug("taskId {} - updateState {}", taskId, newState)
+    }
+
+    suspend fun deleteState(taskId: TaskId) {
+        deleteStateFn(taskId)
+        logger.debug("taskId {} - deleteState", taskId)
+    }
 }

@@ -67,10 +67,10 @@ import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
 
 class MockTaskExecutorOutput(slots: MutableList<TaskEngineMessage>) : TaskExecutorOutput {
-    override val sendToTaskEngine = mockk<SendToTaskEngine>()
+    override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
 
     init {
-        coEvery { sendToTaskEngine(capture(slots), any()) } just Runs
+        coEvery { sendToTaskEngineFn(capture(slots), any()) } just Runs
     }
 }
 

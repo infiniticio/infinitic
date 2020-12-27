@@ -28,5 +28,5 @@ package io.infinitic.tasks.engine.storage.events
 import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
 
 class NoTaskEventStorage : TaskEventStorage {
-    override val insertTaskEvent: InsertTaskEvent = { }
+    override val insertTaskEventFn: InsertTaskEvent = { }
 }

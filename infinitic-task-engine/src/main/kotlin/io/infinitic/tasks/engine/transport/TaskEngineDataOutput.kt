@@ -31,8 +31,8 @@ import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
 data class TaskEngineDataOutput(
-    override val sendToWorkflowEngine: SendToWorkflowEngine,
-    override val sendToTaskEngine: SendToTaskEngine,
-    override val sendToTaskExecutors: SendToTaskExecutors,
-    override val sendToMonitoringPerName: SendToMonitoringPerName
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine,
+    override val sendToTaskEngineFn: SendToTaskEngine,
+    override val sendToTaskExecutorsFn: SendToTaskExecutors,
+    override val sendToMonitoringPerNameFn: SendToMonitoringPerName
 ) : TaskEngineOutput

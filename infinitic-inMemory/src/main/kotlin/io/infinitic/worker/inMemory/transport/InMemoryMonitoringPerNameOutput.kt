@@ -36,7 +36,7 @@ class InMemoryMonitoringPerNameOutput(
     monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>
 ) : MonitoringPerNameOutput {
 
-    override val sendToMonitoringGlobal: SendToMonitoringGlobal = {
+    override val sendToMonitoringGlobalFn: SendToMonitoringGlobal = {
         monitoringGlobalChannel.send(InMemoryMessageToProcess(it))
     }
 }

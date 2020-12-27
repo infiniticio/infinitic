@@ -38,27 +38,27 @@ open class WorkflowStateKeyValueStorage(
     private val storage: KeyValueStorage
 ) : WorkflowStateStorage {
 
-    override val createState: CreateWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
+    override val createStateFn: CreateWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
         storage.putState(
             getWorkflowStateKey(workflowId),
             state.toByteBuffer()
         )
     }
 
-    override val getState: GetWorkflowState = { workflowId: WorkflowId ->
+    override val getStateFn: GetWorkflowState = { workflowId: WorkflowId ->
         storage
             .getState(getWorkflowStateKey(workflowId))
             ?.let { WorkflowState.fromByteBuffer(it) }
     }
 
-    override val updateState: UpdateWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
+    override val updateStateFn: UpdateWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
         storage.putState(
             getWorkflowStateKey(workflowId),
             state.toByteBuffer()
         )
     }
 
-    override val deleteState: DeleteWorkflowState = { workflowId: WorkflowId ->
+    override val deleteStateFn: DeleteWorkflowState = { workflowId: WorkflowId ->
         storage.deleteState(getWorkflowStateKey(workflowId))
     }
 

@@ -25,8 +25,19 @@
 
 package io.infinitic.tasks.executor.transport
 
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 interface TaskExecutorOutput {
-    val sendToTaskEngine: SendToTaskEngine
+    val sendToTaskEngineFn: SendToTaskEngine
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage, after: Float) {
+        sendToTaskEngineFn(taskEngineMessage, after)
+        logger.debug("taskId {} - sendToTaskEngine {}", taskEngineMessage.taskId, taskEngineMessage)
+    }
 }

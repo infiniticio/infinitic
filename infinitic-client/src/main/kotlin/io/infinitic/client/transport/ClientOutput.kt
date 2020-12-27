@@ -25,10 +25,27 @@
 
 package io.infinitic.client.transport
 
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 interface ClientOutput {
-    val sendToWorkflowEngine: SendToWorkflowEngine
-    val sendToTaskEngine: SendToTaskEngine
+    val sendToWorkflowEngineFn: SendToWorkflowEngine
+    val sendToTaskEngineFn: SendToTaskEngine
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage, after: Float) {
+        sendToWorkflowEngineFn(workflowEngineMessage, after)
+        logger.debug("workflowId {} - sendToMonitoringGlobal {}", workflowEngineMessage.workflowId, workflowEngineMessage)
+    }
+
+    suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage, after: Float) {
+        sendToTaskEngineFn(taskEngineMessage, after)
+        logger.debug("taskId {} - sendToMonitoringGlobal {}", taskEngineMessage.taskId, taskEngineMessage)
+    }
 }

@@ -49,7 +49,7 @@ class InMemoryTaskEngineOutput(
     monitoringPerNameChannel: SendChannel<MonitoringPerNameMessageToProcess>,
     workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : TaskEngineOutput {
-    override val sendToWorkflowEngine: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: Float ->
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: Float ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             // TODO inMemory resilience implies to find a way to persist delayed messages
@@ -58,7 +58,7 @@ class InMemoryTaskEngineOutput(
         }
     }
 
-    override val sendToTaskEngine: SendToTaskEngine = { msg: TaskEngineMessage, after: Float ->
+    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: Float ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             // TODO inMemory resilience implies to find a way to persist delayed messages
@@ -67,11 +67,11 @@ class InMemoryTaskEngineOutput(
         }
     }
 
-    override val sendToTaskExecutors: SendToTaskExecutors = {
+    override val sendToTaskExecutorsFn: SendToTaskExecutors = {
         executorChannel.send(InMemoryMessageToProcess(it))
     }
 
-    override val sendToMonitoringPerName: SendToMonitoringPerName = {
+    override val sendToMonitoringPerNameFn: SendToMonitoringPerName = {
         monitoringPerNameChannel.send(InMemoryMessageToProcess(it))
     }
 }

@@ -358,45 +358,45 @@ class WorkflowIntegrationTests : StringSpec({
 })
 
 class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : WorkflowEngineOutput {
-    override val sendToWorkflowEngine: SendToWorkflowEngine =
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
         { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
 
-    override val sendToTaskEngine: SendToTaskEngine =
+    override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 }
 
 class InMemoryTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
-    override val sendToWorkflowEngine: SendToWorkflowEngine =
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
         { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
 
-    override val sendToTaskEngine: SendToTaskEngine =
+    override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 
-    override val sendToTaskExecutors: SendToTaskExecutors =
+    override val sendToTaskExecutorsFn: SendToTaskExecutors =
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
 
-    override val sendToMonitoringPerName: SendToMonitoringPerName =
+    override val sendToMonitoringPerNameFn: SendToMonitoringPerName =
         { msg: MonitoringPerNameEngineMessage -> scope.sendToMonitoringPerName(msg) }
 }
 
 class InMemoryMonitoringPerNameOutput(private val scope: CoroutineScope) : MonitoringPerNameOutput {
 
-    override val sendToMonitoringGlobal: SendToMonitoringGlobal =
+    override val sendToMonitoringGlobalFn: SendToMonitoringGlobal =
         { msg: MonitoringGlobalMessage -> scope.sendToMonitoringGlobal(msg) }
 }
 
 class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
 
-    override val sendToTaskEngine: SendToTaskEngine =
+    override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 }
 
 class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
 
-    override val sendToTaskEngine: SendToTaskEngine =
+    override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 
-    override val sendToWorkflowEngine: SendToWorkflowEngine =
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
         { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
 }
 

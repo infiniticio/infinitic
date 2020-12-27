@@ -25,14 +25,58 @@
 
 package io.infinitic.tasks.engine.transport
 
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 interface TaskEngineOutput {
-    val sendToWorkflowEngine: SendToWorkflowEngine
-    val sendToTaskEngine: SendToTaskEngine
-    val sendToTaskExecutors: SendToTaskExecutors
-    val sendToMonitoringPerName: SendToMonitoringPerName
+    val sendToWorkflowEngineFn: SendToWorkflowEngine
+    val sendToTaskEngineFn: SendToTaskEngine
+    val sendToTaskExecutorsFn: SendToTaskExecutors
+    val sendToMonitoringPerNameFn: SendToMonitoringPerName
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun sendToWorkflowEngine(
+        taskId: TaskId,
+        workflowEngineMessage: WorkflowEngineMessage,
+        after: Float
+    ) {
+        sendToWorkflowEngineFn(workflowEngineMessage, after)
+        logger.debug("taskId {} - after {} sendToWorkflowEngine {}", taskId, after, workflowEngineMessage)
+    }
+
+    suspend fun sendToTaskEngine(
+        taskId: TaskId,
+        taskEngineMessage: TaskEngineMessage,
+        after: Float
+    ) {
+        sendToTaskEngineFn(taskEngineMessage, after)
+        logger.debug("taskId {} - after {} sendToTaskEngine {}", taskId, after, taskEngineMessage)
+    }
+
+    suspend fun sendToTaskExecutors(
+        taskId: TaskId,
+        taskExecutorMessage: TaskExecutorMessage
+    ) {
+        sendToTaskExecutorsFn(taskExecutorMessage)
+        logger.debug("taskId {} - after {} sendToTaskEngine {}", taskId, taskExecutorMessage)
+    }
+
+    suspend fun sendToMonitoringPerName(
+        taskId: TaskId,
+        monitoringPerNameEngineMessage: MonitoringPerNameEngineMessage
+    ) {
+        sendToMonitoringPerNameFn(monitoringPerNameEngineMessage)
+        logger.debug("taskId {} - after {} sendToMonitoringPerName {}", taskId, monitoringPerNameEngineMessage)
+    }
 }

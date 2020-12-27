@@ -28,5 +28,5 @@ package io.infinitic.tasks.executor.transport
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 
 data class TaskExecutorDataOutput(
-    override val sendToTaskEngine: SendToTaskEngine
+    override val sendToTaskEngineFn: SendToTaskEngine
 ) : TaskExecutorOutput
