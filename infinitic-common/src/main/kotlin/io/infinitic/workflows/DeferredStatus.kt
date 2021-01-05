@@ -23,26 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows
+package io.infinitic.workflows
 
-import java.lang.reflect.Method
-
-interface WorkflowTaskContext {
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
-
-    fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S>
-
-    fun <S> async(branch: () -> S): Deferred<S>
-
-    fun <S> inline(task: () -> S): S
-
-    fun <T> await(deferred: Deferred<T>): Deferred<T>
-
-    fun <T> result(deferred: Deferred<T>): T
-
-    fun <T> status(deferred: Deferred<T>): DeferredStatus
-
-    fun <T> dispatchTask(method: Method, args: Array<out Any>): Deferred<T>
-
-    fun <T> dispatchWorkflow(method: Method, args: Array<out Any>): Deferred<T>
+enum class DeferredStatus {
+    ONGOING,
+    COMPLETED,
+    CANCELED,
 }

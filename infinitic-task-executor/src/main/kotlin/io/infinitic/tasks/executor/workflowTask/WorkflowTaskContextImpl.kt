@@ -26,10 +26,6 @@
 package io.infinitic.tasks.executor.workflowTask
 
 import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.workflows.Deferred
-import io.infinitic.common.workflows.DeferredStatus
-import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -56,6 +52,10 @@ import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowDefinitionUpdatedWhileOngoing
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.DeferredStatus
+import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Method
 
 class WorkflowTaskContextImpl(

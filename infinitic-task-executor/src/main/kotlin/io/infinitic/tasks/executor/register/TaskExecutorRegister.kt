@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.executor.register
 
-import io.infinitic.common.workflows.Workflow
+import io.infinitic.workflows.Workflow
 
 typealias InstanceFactory = () -> Any
 

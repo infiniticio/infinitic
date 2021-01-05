@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows
+package io.infinitic.workflows
 
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.data.steps.Step.And

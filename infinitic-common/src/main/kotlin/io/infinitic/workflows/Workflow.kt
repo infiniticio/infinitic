@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows
+package io.infinitic.workflows
 
 import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
 import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler
@@ -32,12 +32,12 @@ interface Workflow {
     var context: WorkflowTaskContext
 
     /*
-     *  Proxy task
+     *  Proxy task (Java syntax)
      */
     @JvmDefault fun <T : Any> task(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
 
     /*
-    *  Proxy workflow
+    *  Proxy workflow (Java syntax)
     */
     @JvmDefault fun <T : Workflow> workflow(klass: Class<out T>) = WorkflowProxyHandler(klass) { context }.instance()
 

@@ -25,14 +25,14 @@
 
 package io.infinitic.workflows.tests.workflows
 
-import io.infinitic.common.workflows.Deferred
-import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
-import io.infinitic.common.workflows.and
-import io.infinitic.common.workflows.or
-import io.infinitic.common.workflows.task
-import io.infinitic.common.workflows.workflow
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowTaskContext
+import io.infinitic.workflows.and
+import io.infinitic.workflows.or
+import io.infinitic.workflows.task
 import io.infinitic.workflows.tests.tasks.TaskA
+import io.infinitic.workflows.workflow
 import java.time.LocalDateTime
 
 interface WorkflowA : Workflow {
