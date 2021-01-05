@@ -24,6 +24,8 @@
  */
 
 dependencies {
+    implementation(Libs.Coroutines.jdk8)
+
     api(project(":infinitic-common"))
 }
 

@@ -27,42 +27,47 @@ package io.infinitic.common.workflows
 
 import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
 import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler
-import kotlin.reflect.KClass
 
 interface Workflow {
     var context: WorkflowTaskContext
+
+    /*
+     *  Proxy task
+     */
+    @JvmDefault fun <T : Any> task(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
+
+    /*
+    *  Proxy workflow
+    */
+    @JvmDefault fun <T : Workflow> workflow(klass: Class<out T>) = WorkflowProxyHandler(klass) { context }.instance()
+
+    /*
+     *  Dispatch a task asynchronously
+     */
+    @JvmDefault fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
+
+    /*
+     * Dispatch a workflow asynchronously
+     */
+    @JvmDefault fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
+
+    /*
+     * Create an async branch
+     */
+    @JvmDefault fun <S> async(branch: () -> S) = context.async(branch)
+
+    /*
+     * Create an inline task
+     */
+    @JvmDefault fun <S> inline(task: () -> S): S = context.inline(task)
 }
 
 /*
- * Proxy a task
+ * Proxy task (Kotlin syntax)
  */
-inline fun <reified T : Any> Workflow.task() = TaskProxyHandler(T::class.java) { context }.instance()
-fun <T : Any> Workflow.proxy(klass: Class<out T>) = TaskProxyHandler(klass) { context }.instance()
-fun <T : Any> Workflow.proxy(klass: KClass<out T>) = TaskProxyHandler(klass.java) { context }.instance()
+inline fun <reified T : Any> Workflow.task() = this.task(T::class.java)
 
 /*
- * Proxy a child workflow
+ * Proxy workflow (Kotlin syntax)
  */
-inline fun <reified T : Workflow> Workflow.workflow() = WorkflowProxyHandler(T::class.java) { context }.instance()
-fun <T : Workflow> Workflow.proxy(klass: Class<out T>) = WorkflowProxyHandler(klass) { context }.instance()
-fun <T : Workflow> Workflow.proxy(klass: KClass<out T>) = WorkflowProxyHandler(klass.java) { context }.instance()
-
-/*
- * Dispatch
- */
-fun <T : Any, S> Workflow.async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
-
-/*
- * Dispatch a workflow
- */
-fun <T : Workflow, S> Workflow.async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
-
-/*
- * Create an async branch
- */
-fun <S> Workflow.async(branch: () -> S) = context.async(branch)
-
-/*
- * Create an inline task
- */
-fun <S> Workflow.task(inline: () -> S): S = context.task(inline)
+inline fun <reified T : Workflow> Workflow.workflow() = this.workflow(T::class.java)

@@ -25,7 +25,6 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -92,7 +91,7 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
             val message: Message<WorkflowEngineEnvelope> = workflowEngineConsumer.receiveAsync().await()
 
             try {
-                val envelope = readBinary(message.data, WorkflowEngineEnvelope.serializer())
+                val envelope = WorkflowEngineEnvelope.fromByteArray(message.data)
                 workflowCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
             } catch (e: Exception) {
                 workflowEngineConsumer.negativeAcknowledge(message.messageId)

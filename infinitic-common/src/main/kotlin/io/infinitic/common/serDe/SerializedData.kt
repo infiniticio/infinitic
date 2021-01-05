@@ -27,7 +27,7 @@ package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.common.serDe.kotlin.getKSerializerOrNull
+import io.infinitic.common.serDe.kserializer.getKSerializerOrNull
 import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringDeserialization
 import io.infinitic.common.tasks.exceptions.ExceptionDuringJsonDeserialization
 import io.infinitic.common.tasks.exceptions.ExceptionDuringKotlinDeserialization
@@ -95,7 +95,7 @@ data class SerializedData(
             JsonKotlin.encodeToString(serializer, value).toByteArray(charset = Charsets.UTF_8)
 
         private fun toAvroJavaByteArray(value: SpecificRecordBase): ByteArray =
-            AvroSerDe.serializeToByteArray(value)
+            AvroSerDe.writeBinary(value)
     }
 
     /**
@@ -167,6 +167,6 @@ data class SerializedData(
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> fromAvroJava(klass: Class<out T>): SpecificRecordBase {
-        return AvroSerDe.deserializeFromByteArray(bytes, klass as Class<out SpecificRecordBase>)
+        return AvroSerDe.readBinary(bytes, klass as Class<out SpecificRecordBase>)
     }
 }

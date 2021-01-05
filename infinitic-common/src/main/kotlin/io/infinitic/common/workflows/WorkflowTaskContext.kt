@@ -34,7 +34,7 @@ interface WorkflowTaskContext {
 
     fun <S> async(branch: () -> S): Deferred<S>
 
-    fun <S> task(inline: () -> S): S
+    fun <S> inline(task: () -> S): S
 
     fun <T> await(deferred: Deferred<T>): Deferred<T>
 

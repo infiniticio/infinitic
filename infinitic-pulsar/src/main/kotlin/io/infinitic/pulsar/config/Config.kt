@@ -33,57 +33,57 @@ data class Config(
     /*
     Worker name - used to identify multiple workers
      */
-    val name: String,
+    @JvmField val name: String,
 
     /*
     Default running mode
      */
-    var mode: Mode,
+    @JvmField var mode: Mode,
 
     /*
     Default state storage
      */
-    var stateStorage: StateStorage,
+    @JvmField var stateStorage: StateStorage,
 
     /*
     Pulsar configuration
      */
-    val pulsar: Pulsar,
+    @JvmField val pulsar: Pulsar,
 
     /*
     Infinitic workflow engine configuration
      */
-    val workflowEngine: WorkflowEngine = WorkflowEngine(mode, 1, stateStorage),
+    @JvmField val workflowEngine: WorkflowEngine = WorkflowEngine(mode, 1, stateStorage),
 
     /*
     Infinitic task engine configuration
      */
-    val taskEngine: TaskEngine = TaskEngine(mode, 1, stateStorage),
+    @JvmField val taskEngine: TaskEngine = TaskEngine(mode, 1, stateStorage),
 
     /*
     Infinitic monitoring configuration
      */
-    val monitoring: Monitoring = Monitoring(mode, 1, stateStorage),
+    @JvmField val monitoring: Monitoring = Monitoring(mode, 1, stateStorage),
 
     /*
     Tasks configuration
      */
-    val tasks: List<Task> = listOf(),
+    @JvmField val tasks: List<Task> = listOf(),
 
     /*
     Workflows configuration
      */
-    val workflows: List<Workflow> = listOf(),
+    @JvmField val workflows: List<Workflow> = listOf(),
 
     /*
     Redis configuration
      */
-    val redis: Redis? = null,
+    @JvmField val redis: Redis? = null,
 
     /*
     Kodein configuration
      */
-    val kodein: Kodein? = null
+    @JvmField val kodein: Kodein? = null
 ) {
     init {
         // apply default mode, if not set

@@ -29,6 +29,7 @@ import io.infinitic.client.InfiniticClient
 import io.infinitic.pulsar.transport.PulsarOutputs
 import org.apache.pulsar.client.api.PulsarClient
 
+@Suppress("unused")
 fun InfiniticClient.Companion.fromPulsar(
     pulsarClient: PulsarClient,
     pulsarTenant: String,

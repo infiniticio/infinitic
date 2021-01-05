@@ -55,12 +55,12 @@ import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
-import io.infinitic.workflows.tests.samples.TaskA
-import io.infinitic.workflows.tests.samples.TaskAImpl
-import io.infinitic.workflows.tests.samples.WorkflowA
-import io.infinitic.workflows.tests.samples.WorkflowAImpl
-import io.infinitic.workflows.tests.samples.WorkflowB
-import io.infinitic.workflows.tests.samples.WorkflowBImpl
+import io.infinitic.workflows.tests.tasks.TaskA
+import io.infinitic.workflows.tests.tasks.TaskAImpl
+import io.infinitic.workflows.tests.workflows.WorkflowA
+import io.infinitic.workflows.tests.workflows.WorkflowAImpl
+import io.infinitic.workflows.tests.workflows.WorkflowB
+import io.infinitic.workflows.tests.workflows.WorkflowBImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -222,7 +222,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { inline() })
+            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { inline1() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null

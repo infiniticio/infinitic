@@ -51,6 +51,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import kotlin.reflect.full.memberProperties
@@ -61,6 +63,9 @@ open class TaskExecutor(
     open val taskExecutorOutput: TaskExecutorOutput,
     val taskExecutorRegister: TaskExecutorRegister = TaskExecutorRegisterImpl()
 ) : TaskExecutorRegister by taskExecutorRegister {
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
 
     /**
      * Register a factory to use for a given name
@@ -216,6 +221,8 @@ open class TaskExecutor(
     }
 
     private suspend fun sendTaskFailed(msg: TaskExecutorMessage, error: Throwable?, delay: Float? = null) {
+        logger.debug("taskId {} - error {}", msg.taskId, error)
+
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = msg.taskId,
             taskAttemptId = msg.taskAttemptId,

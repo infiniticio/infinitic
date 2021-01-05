@@ -26,12 +26,12 @@
 package io.infinitic.pulsar.config
 
 data class Task(
-    val name: String,
-    val `class`: String,
-    var mode: Mode? = null,
-    val consumers: Int = 1,
-    val concurrency: Int = 1,
-    val shared: Boolean = true
+    @JvmField val name: String,
+    @JvmField val `class`: String,
+    @JvmField var mode: Mode? = null,
+    @JvmField val consumers: Int = 1,
+    @JvmField val concurrency: Int = 1,
+    @JvmField val shared: Boolean = true
 ) {
     init {
         require(consumers >= 0) { "consumers MUST be positive" }

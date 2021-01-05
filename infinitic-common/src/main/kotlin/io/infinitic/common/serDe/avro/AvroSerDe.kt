@@ -25,19 +25,26 @@
 
 package io.infinitic.common.avro
 
+import com.github.avrokotlin.avro4k.Avro
+import com.github.avrokotlin.avro4k.io.AvroEncodeFormat
+import io.infinitic.common.serDe.kserializer.kserializer
+import kotlinx.serialization.KSerializer
+import org.apache.avro.file.SeekableByteArrayInput
+import org.apache.avro.generic.GenericDatumReader
+import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.avro.specific.SpecificRecord
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
+import kotlin.reflect.KClass
 
 /**
  * This object provides methods to serialize/deserialize an Avro-generated class
  */
 object AvroSerDe {
-    fun serializeToByteArray(data: SpecificRecord): ByteArray {
+    fun writeBinary(data: SpecificRecord): ByteArray {
         val out = ByteArrayOutputStream()
         val encoder = EncoderFactory.get().binaryEncoder(out, null)
         val writer = SpecificDatumWriter<SpecificRecord>(data.schema)
@@ -47,26 +54,28 @@ object AvroSerDe {
         return out.toByteArray()
     }
 
-    fun <T : SpecificRecord> deserializeFromByteArray(bytes: ByteArray, klass: Class<out T>): T {
+    fun <T : SpecificRecord> readBinary(bytes: ByteArray, klass: Class<out T>): T {
         val reader = SpecificDatumReader(klass)
         val binaryDecoder = DecoderFactory.get().binaryDecoder(bytes, null)
         return reader.read(null, binaryDecoder)
     }
 
-    inline fun <reified T : SpecificRecord> deserializeFromByteArray(bytes: ByteArray): T = deserializeFromByteArray(bytes, T::class.javaObjectType)
+    fun <T : Any> schema(klass: KClass<T>) = Avro.default.schema(kserializer(klass))
 
-    fun serialize(data: SpecificRecord): ByteBuffer {
-        return ByteBuffer.wrap(serializeToByteArray(data))
+    fun <T : Any> writeBinary(t: T, serializer: KSerializer<T>): ByteArray {
+        val out = ByteArrayOutputStream()
+        Avro.default.openOutputStream(serializer) {
+            encodeFormat = AvroEncodeFormat.Binary
+            schema = Avro.default.schema(serializer)
+        }.to(out).write(t).close()
+
+        return out.toByteArray()
     }
 
-    fun <T : SpecificRecord> deserialize(data: ByteBuffer, klass: Class<out T>): T {
-        // transform ByteBuffer to bytes[]
-        data.rewind()
-        val bytes = ByteArray(data.remaining())
-        data.get(bytes, 0, bytes.size)
-        // read data
-        return deserializeFromByteArray(bytes, klass)
-    }
+    fun <T> readBinary(bytes: ByteArray, serializer: KSerializer<T>): T {
+        val datumReader = GenericDatumReader<GenericRecord>(Avro.default.schema(serializer))
+        val decoder = DecoderFactory.get().binaryDecoder(SeekableByteArrayInput(bytes), null)
 
-    inline fun <reified T : SpecificRecord> deserialize(data: ByteBuffer): T = deserialize(data, T::class.javaObjectType)
+        return Avro.default.fromRecord(serializer, datumReader.read(null, decoder))
+    }
 }

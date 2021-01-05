@@ -64,5 +64,5 @@ services:
 volumes:
   pulsardata:
   pulsarconf:
-  # Uncomment the following volume if you want to use a Redis storage for persistance of states
+  # Uncomment the following volume if you want to use a Redis storage for persistence of states
   redisdata:

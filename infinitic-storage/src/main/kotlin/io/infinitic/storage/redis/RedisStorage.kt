@@ -31,7 +31,7 @@ import redis.clients.jedis.JedisPoolConfig
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-class RedisStorage(private val config: Redis) : KeyValueStorage {
+class RedisStorage(config: Redis) : KeyValueStorage {
     private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
 
     init {

@@ -69,7 +69,7 @@ interface TaskEngineOutput {
         taskExecutorMessage: TaskExecutorMessage
     ) {
         sendToTaskExecutorsFn(taskExecutorMessage)
-        logger.debug("taskId {} - after {} sendToTaskEngine {}", taskId, taskExecutorMessage)
+        logger.debug("taskId {} - sendToTaskEngine {}", taskId, taskExecutorMessage)
     }
 
     suspend fun sendToMonitoringPerName(
@@ -77,6 +77,6 @@ interface TaskEngineOutput {
         monitoringPerNameEngineMessage: MonitoringPerNameEngineMessage
     ) {
         sendToMonitoringPerNameFn(monitoringPerNameEngineMessage)
-        logger.debug("taskId {} - after {} sendToMonitoringPerName {}", taskId, monitoringPerNameEngineMessage)
+        logger.debug("taskId {} - sendToMonitoringPerName {}", taskId, monitoringPerNameEngineMessage)
     }
 }

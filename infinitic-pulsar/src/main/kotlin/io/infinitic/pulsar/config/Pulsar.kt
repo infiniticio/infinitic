@@ -26,10 +26,10 @@
 package io.infinitic.pulsar.config
 
 data class Pulsar(
-    val serviceUrl: String = "pulsar://localhost:6650/",
-    val serviceHttpUrl: String = "http://localhost:8080",
-    val tenant: String,
-    val namespace: String
+    @JvmField val serviceUrl: String = "pulsar://localhost:6650/",
+    @JvmField val serviceHttpUrl: String = "http://localhost:8080",
+    @JvmField val tenant: String,
+    @JvmField val namespace: String
 ) {
     init {
         require(serviceUrl.startsWith("pulsar://")) { "serviceUrl MUST start with pulsar://" }

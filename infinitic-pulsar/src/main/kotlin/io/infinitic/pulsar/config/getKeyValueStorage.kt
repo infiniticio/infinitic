@@ -39,7 +39,7 @@ fun StateStorage.getKeyValueStorage(config: Config, type: String): KeyValueStora
 }
 
 private fun getKodeinKeyValueStorage(config: Config, type: String): KodeinStorage {
-    val path = "${config.kodein!!.path.trimEnd('/')}/${config.name}/$type/"
+    val path = "${config.kodein!!.path.trimEnd('/')}/$type/"
     val dir = File(path)
     if (!dir.exists()) dir.mkdirs()
 

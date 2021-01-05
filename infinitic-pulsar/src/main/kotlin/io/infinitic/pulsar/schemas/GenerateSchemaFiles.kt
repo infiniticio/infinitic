@@ -25,11 +25,10 @@
 
 package io.infinitic.pulsar.schemas
 
-import com.github.avrokotlin.avro4k.Avro
+import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.json.Json
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.serDe.kotlin.kserializer
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -65,6 +64,6 @@ fun main() {
 
 fun <T : Any> getPostSchemaPayload(klass: KClass<T>) = PostSchemaPayload(
     "AVRO",
-    Avro.default.schema(kserializer(klass)).toString(),
+    AvroSerDe.schema(klass).toString(),
     mapOf()
 )

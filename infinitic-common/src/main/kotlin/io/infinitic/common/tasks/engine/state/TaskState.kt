@@ -25,11 +25,10 @@
 
 package io.infinitic.common.tasks.engine.state
 
+import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.serDe.kotlin.readBinary
-import io.infinitic.common.serDe.kotlin.writeBinary
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -62,11 +61,11 @@ data class TaskState(
     val taskMeta: TaskMeta
 ) {
     companion object {
-        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
         fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
-    fun toByteArray() = writeBinary(this, serializer())
+    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
     fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
     fun deepCopy() = fromByteArray(toByteArray())
 }

@@ -25,8 +25,7 @@
 
 package io.infinitic.common.tasks.engine.messages
 
-import io.infinitic.common.serDe.kotlin.readBinary
-import io.infinitic.common.serDe.kotlin.writeBinary
+import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
 import kotlinx.serialization.Serializable
 
@@ -118,7 +117,7 @@ data class TaskEngineEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
     fun message(): TaskEngineMessage = when (type) {
@@ -134,5 +133,5 @@ data class TaskEngineEnvelope(
         TaskEngineMessageType.TASK_ATTEMPT_STARTED -> taskAttemptStarted!!
     }
 
-    fun toByteArray() = writeBinary(this, serializer())
+    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
 }

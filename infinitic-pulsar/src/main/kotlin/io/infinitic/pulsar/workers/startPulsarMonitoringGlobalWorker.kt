@@ -27,7 +27,6 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
@@ -85,7 +84,7 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
             val message: Message<MonitoringGlobalEnvelope> = monitoringGlobalConsumer.receiveAsync().await()
 
             try {
-                val envelope = readBinary(message.data, MonitoringGlobalEnvelope.serializer())
+                val envelope = MonitoringGlobalEnvelope.fromByteArray(message.data)
                 monitoringGlobalChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
             } catch (e: Exception) {
                 monitoringGlobalConsumer.negativeAcknowledge(message.messageId)

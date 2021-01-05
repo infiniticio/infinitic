@@ -31,7 +31,6 @@ import io.infinitic.pulsar.schemas.schemaDefinition
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.client.impl.schema.util.SchemaUtil
 import org.apache.pulsar.common.schema.SchemaType
-import org.apache.pulsar.shade.org.apache.avro.reflect.ReflectData
 
 // val test: (Int) -> Int = { a:Int -> 2*a }
 // pow = lambda  a: a*a
@@ -44,7 +43,7 @@ fun main() {
     val s = schemaDefinition<WorkflowEngineEnvelope>()
     val sc = SchemaUtil.parseSchemaInfo(s, SchemaType.AVRO)
 
-    AvroSchema.addLogicalTypeConversions(ReflectData(), true)
+//    AvroSchema.addLogicalTypeConversions(ReflectData(), true)
 
     val d = AvroSchema.of(TaskA::class.java)
 

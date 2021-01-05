@@ -79,9 +79,10 @@ class WorkflowEngine(
             if (message is DispatchWorkflow) {
                 state = dispatchWorkflow(workflowEngineOutput, message)
                 workflowStateStorage.createState(message.workflowId, state)
+            } else {
+                // discard all other message types as this workflow is already terminated
+                logger.info("workflowId {} - discarding {}", message.workflowId, message)
             }
-            // discard all other message types as this workflow is already terminated
-            logger.info("workflowId {} - discarding {}", message.workflowId, message)
 
             return
         }

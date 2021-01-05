@@ -193,7 +193,7 @@ class WorkflowTaskContextImpl(
     /*
      * Inlined task
      */
-    override fun <S> task(inline: () -> S): S {
+    override fun <S> inline(task: () -> S): S {
         // increment position
         positionNext()
 
@@ -212,7 +212,7 @@ class WorkflowTaskContextImpl(
             // go down (in case this inline task asynchronously dispatches some tasks)
             positionDown()
             // run inline task
-            val commandOutput = try { CommandOutput.from(inline()) } catch (e: Exception) {
+            val commandOutput = try { CommandOutput.from(task()) } catch (e: Exception) {
                 when (e) {
                     is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskInput.getFullMethodName())
                     is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskInput.getFullMethodName())

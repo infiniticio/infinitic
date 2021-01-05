@@ -26,5 +26,5 @@
 package io.infinitic.storage.kodein
 
 data class Kodein(
-    val path: String
+    @JvmField val path: String
 )

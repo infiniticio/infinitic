@@ -26,12 +26,7 @@
 package io.infinitic.pulsar
 
 import com.sksamuel.hoplite.ConfigLoader
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.config.Config
 import io.infinitic.pulsar.config.Mode
 import io.infinitic.pulsar.config.getKeyValueStorage
@@ -50,18 +45,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 import org.slf4j.LoggerFactory
-import java.lang.RuntimeException
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class InfiniticWorker(
-    val config: Config,
-    val pulsarClient: PulsarClient
+    @JvmField val config: Config,
+    @JvmField val pulsarClient: PulsarClient
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     companion object {
-        @JvmStatic
-        fun fromConfigFile(configPath: String): InfiniticWorker {
+        @JvmStatic fun fromConfigFile(configPath: String): InfiniticWorker {
             // loaf Config instance
             val config: Config = ConfigLoader().loadConfigOrThrow(configPath)
             // build Pulsar client from config
@@ -71,7 +64,7 @@ class InfiniticWorker(
         }
     }
 
-    fun start() = runBlocking {
+    @JvmOverloads fun start(logFn: ((MessageToProcess<Any>) -> Unit) = { }) = runBlocking {
         val tenant = config.pulsar.tenant
         val namespace = config.pulsar.namespace
 
@@ -80,22 +73,11 @@ class InfiniticWorker(
 
         val logChannel = Channel<MessageToProcess<Any>>()
 
+        // log function is applied for each Pulsar message manage by this worker
+        // after processing and (neg)acknowledgment
         launch(CoroutineName("logger")) {
             for (messageToProcess in logChannel) {
-                val failed = if (messageToProcess.exception == null) "" else "(failed) "
-                when (val message = messageToProcess.message) {
-                    is MonitoringGlobalMessage ->
-                        logger.info("Monitoring Global  : $failed$message")
-                    is MonitoringPerNameEngineMessage ->
-                        logger.info("Monitoring Per Name: $failed$message")
-                    is TaskExecutorMessage ->
-                        logger.info("Task Executor      : $failed$message")
-                    is TaskEngineMessage ->
-                        logger.info("Task engine        : $failed$message")
-                    is WorkflowEngineMessage ->
-                        logger.info("Workflow engine    : $failed$message")
-                    else -> throw RuntimeException("Unknown messageToProcess type: $messageToProcess")
-                }
+                logFn(messageToProcess)
             }
         }
 

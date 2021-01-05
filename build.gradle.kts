@@ -72,8 +72,18 @@ subprojects {
             useJUnitPlatform()
         }
 
+        // For kotlin sources
         tasks.withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+            kotlinOptions {
+                freeCompilerArgs += "-Xjvm-default=enable"
+                jvmTarget = JavaVersion.VERSION_1_8.toString()
+            }
         }
+    }
+
+    // For java sources
+    tasks.withType<JavaCompile> {
+        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
+        targetCompatibility = JavaVersion.VERSION_1_8.toString()
     }
 }

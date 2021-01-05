@@ -29,7 +29,6 @@ import io.infinitic.common.workflows.Deferred
 import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.and
-import io.infinitic.common.workflows.async
 import io.infinitic.common.workflows.or
 import io.infinitic.common.workflows.task
 import io.infinitic.common.workflows.workflow
@@ -165,12 +164,12 @@ class WorkflowAImpl : WorkflowA {
     }
 
     override fun inline(): String {
-        val date = task { LocalDateTime.now() }
+        val date = inline { LocalDateTime.now() }
         return taskA.concat("Current Date and Time is: ", "$date") // should not throw
     }
 
     override fun inline2(): String {
-        val date = task {
+        val date = inline {
             async(taskA) { reverse("ab") }
             LocalDateTime.now()
         }
@@ -179,7 +178,7 @@ class WorkflowAImpl : WorkflowA {
     }
 
     override fun inline3(): String {
-        val date = task {
+        val date = inline {
             taskA.concat("1", "2")
             LocalDateTime.now()
         }

@@ -28,9 +28,9 @@ package io.infinitic.pulsar.config
 import io.infinitic.storage.StateStorage
 
 data class WorkflowEngine(
-    var mode: Mode? = null,
-    val consumers: Int = 1,
-    var stateStorage: StateStorage? = null
+    @JvmField var mode: Mode? = null,
+    @JvmField val consumers: Int = 1,
+    @JvmField var stateStorage: StateStorage? = null
 ) {
     init {
         require(consumers >= 0) { "concurrency MUST be positive" }
