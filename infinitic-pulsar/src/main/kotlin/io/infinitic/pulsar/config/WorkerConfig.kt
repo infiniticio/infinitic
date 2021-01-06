@@ -29,7 +29,7 @@ import io.infinitic.storage.StateStorage
 import io.infinitic.storage.kodein.Kodein
 import io.infinitic.storage.redis.Redis
 
-data class Config(
+data class WorkerConfig(
     /*
     Worker name - used to identify multiple workers
      */
@@ -53,17 +53,17 @@ data class Config(
     /*
     Infinitic workflow engine configuration
      */
-    @JvmField val workflowEngine: WorkflowEngine = WorkflowEngine(mode, 1, stateStorage),
+    @JvmField val workflowEngine: WorkflowEngine?,
 
     /*
     Infinitic task engine configuration
      */
-    @JvmField val taskEngine: TaskEngine = TaskEngine(mode, 1, stateStorage),
+    @JvmField val taskEngine: TaskEngine?,
 
     /*
     Infinitic monitoring configuration
      */
-    @JvmField val monitoring: Monitoring = Monitoring(mode, 1, stateStorage),
+    @JvmField val monitoring: Monitoring?,
 
     /*
     Tasks configuration
@@ -86,22 +86,30 @@ data class Config(
     @JvmField val kodein: Kodein? = null
 ) {
     init {
+        workflowEngine?.let {
+            // apply default mode and stateStorage, if not set
+            it.mode = it.mode ?: mode
+            it.stateStorage = it.stateStorage ?: stateStorage
+            checkStateStorage(it.stateStorage, it.mode!!, "workflowEngine.stateStorage")
+        }
+
+        taskEngine?.let {
+            // apply default mode and stateStorage, if not set
+            it.mode = it.mode ?: mode
+            it.stateStorage = it.stateStorage ?: stateStorage
+            checkStateStorage(it.stateStorage, it.mode!!, "taskEngine.stateStorage")
+        }
+
+        monitoring?.let {
+            // apply default mode and stateStorage, if not set
+            it.mode = it.mode ?: mode
+            it.stateStorage = it.stateStorage ?: stateStorage
+            checkStateStorage(it.stateStorage, it.mode!!, "monitoring.stateStorage")
+        }
+
         // apply default mode, if not set
-        workflowEngine.mode = workflowEngine.mode ?: mode
-        taskEngine.mode = taskEngine.mode ?: mode
-        monitoring.mode = monitoring.mode ?: mode
         tasks.map { it.mode = it.mode ?: mode }
         workflows.map { it.mode = it.mode ?: mode }
-
-        // apply default stateStorage, if not set
-        workflowEngine.stateStorage = workflowEngine.stateStorage ?: stateStorage
-        taskEngine.stateStorage = taskEngine.stateStorage ?: stateStorage
-        monitoring.stateStorage = monitoring.stateStorage ?: stateStorage
-
-        // consistency check
-        checkStateStorage(workflowEngine.stateStorage, workflowEngine.mode!!, "workflowEngine.stateStorage")
-        checkStateStorage(taskEngine.stateStorage, taskEngine.mode!!, "taskEngine.stateStorage")
-        checkStateStorage(monitoring.stateStorage, monitoring.mode!!, "monitoring.stateStorage")
     }
 
     private fun checkStateStorage(stateStorage: StateStorage?, mode: Mode, name: String) {

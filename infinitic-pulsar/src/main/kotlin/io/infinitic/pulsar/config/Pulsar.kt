@@ -29,7 +29,8 @@ data class Pulsar(
     @JvmField val serviceUrl: String = "pulsar://localhost:6650/",
     @JvmField val serviceHttpUrl: String = "http://localhost:8080",
     @JvmField val tenant: String,
-    @JvmField val namespace: String
+    @JvmField val namespace: String,
+    @JvmField val allowedClusters: Set<String>? = null
 ) {
     init {
         require(serviceUrl.startsWith("pulsar://")) { "serviceUrl MUST start with pulsar://" }

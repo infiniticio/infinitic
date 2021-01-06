@@ -55,12 +55,13 @@ import io.infinitic.common.workflows.exceptions.WorkflowDefinitionUpdatedWhileOn
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowBase
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Method
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
-    private val workflow: Workflow
+    private val workflow: WorkflowBase
 ) : WorkflowTaskContext {
     // position in the current method processing
     private var methodRunIndex = MethodRunIndex()

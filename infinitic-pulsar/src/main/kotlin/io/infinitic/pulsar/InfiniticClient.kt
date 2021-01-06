@@ -23,17 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.client
+package io.infinitic.pulsar
 
-import io.infinitic.client.InfiniticClient
+import com.sksamuel.hoplite.ConfigLoader
+import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.pulsar.transport.PulsarOutputs
 import org.apache.pulsar.client.api.PulsarClient
+import io.infinitic.client.InfiniticClient as Client
 
-@Suppress("unused")
-fun InfiniticClient.Companion.fromPulsar(
-    pulsarClient: PulsarClient,
-    pulsarTenant: String,
-    pulsarNamespace: String
-) = InfiniticClient(
-    PulsarOutputs.from(pulsarClient, pulsarTenant, pulsarNamespace).clientOutput
-)
+@Suppress("MemberVisibilityCanBePrivate", "unused")
+class InfiniticClient(
+    @JvmField val pulsarClient: PulsarClient,
+    @JvmField val tenant: String,
+    @JvmField val namespace: String
+) : Client(PulsarOutputs.from(pulsarClient, tenant, namespace).clientOutput) {
+    companion object {
+        @JvmStatic
+        fun fromConfigFile(configPath: String): InfiniticClient {
+            // loaf Config instance
+            val config: ClientConfig = ConfigLoader().loadConfigOrThrow(configPath)
+            // build Pulsar client from config
+            val pulsarClient: PulsarClient = PulsarClient.builder().serviceUrl(config.pulsar.serviceUrl).build()
+
+            return InfiniticClient(pulsarClient, config.pulsar.tenant, config.pulsar.namespace)
+        }
+    }
+
+    fun close() = pulsarClient.close()
+}

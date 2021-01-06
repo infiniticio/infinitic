@@ -49,13 +49,9 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
 
-class InfiniticClient(
-    val clientOutput: ClientOutput
+open class InfiniticClient(
+    val clientOutput: ClientOutput,
 ) {
-    companion object {
-        // Container for static extensions
-    }
-
     /*
     Use this method to dispatch a workflow from Java
     */

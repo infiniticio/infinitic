@@ -1,3 +1,4 @@
+
 /**
  * "Commons Clause" License Condition v1.0
  *
@@ -46,9 +47,12 @@ import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicType
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
-suspend fun PulsarAdmin.initInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>? = null) {
+private val logger = LoggerFactory.getLogger("io.infinitic.pulsar.admin.PulsarAdmin.initInfinitic")
+
+suspend fun PulsarAdmin.initInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>?) {
     createTenant(this, tenant, getAllowedClusters(this, allowedClusters))
 
     createNamespace(this, tenant, namespace)
@@ -93,8 +97,10 @@ private suspend fun createTenant(admin: PulsarAdmin, tenant: String, allowedClus
 
     // create or update infinitic tenant
     if (!tenants.contains(tenant)) {
+        logger.info("Creating tenant {} with info {}", tenant, tenantInfo)
         admin.tenants().createTenantAsync(tenant, tenantInfo).await()
     } else {
+        logger.info("Updating tenant {} with info {}", tenant, tenantInfo)
         admin.tenants().updateTenantAsync(tenant, tenantInfo).await()
     }
 }
@@ -128,6 +134,7 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
             // Changes allowed: add optional fields, delete fields
             schema_compatibility_strategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE
         }
+        logger.info("Creating namespace {} with policies {}", fullNamespace, policies)
         admin.namespaces().createNamespaceAsync(fullNamespace, policies).await()
     }
 }
@@ -137,17 +144,19 @@ private suspend fun createPartitionedTopic(admin: PulsarAdmin, tenant: String, n
     val topicFullName = getPersistentTopicFullName(tenant, namespace, topic)
 
     try {
+        logger.info("Creating partitioned topic {}", topicFullName)
         admin.topics().createPartitionedTopicAsync(topicFullName, 1).await()
     } catch (e: PulsarAdminException.ConflictException) {
+        logger.info("Topic {} already exist", topicFullName)
         // the topic already exists
     }
 }
 
 private suspend fun <T : Any> setSchema(admin: PulsarAdmin, tenant: String, namespace: String, topic: String, klass: KClass<T>) {
-    admin.schemas().createSchemaAsync(
-        getPersistentTopicFullName(tenant, namespace, topic),
-        getPostSchemaPayload(klass)
-    ).await()
+    val fullNameTopic = getPersistentTopicFullName(tenant, namespace, topic)
+    val schema = getPostSchemaPayload(klass)
+    logger.info("Uploading topic {} with schema {}", fullNameTopic, schema)
+    admin.schemas().createSchemaAsync(fullNameTopic, schema).await()
 }
 
 private fun getFullNamespace(tenantName: String, namespace: String) =

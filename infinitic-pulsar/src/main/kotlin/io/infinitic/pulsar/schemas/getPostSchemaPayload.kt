@@ -26,41 +26,8 @@
 package io.infinitic.pulsar.schemas
 
 import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.common.json.Json
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import org.apache.pulsar.common.protocol.schema.PostSchemaPayload
-import java.io.File
 import kotlin.reflect.KClass
-
-/**
- * Creates pulsar schema files in /build/schemas
- */
-fun main() {
-    println(getPostSchemaPayload(WorkflowEngineEnvelope::class))
-
-    // make sure target directory exists
-    val path = System.getProperty("user.dir") + "/build/schemas"
-    File(path).mkdir()
-
-    File("$path/WorkflowEngine.schema")
-        .writeText(Json.stringify(getPostSchemaPayload(WorkflowEngineEnvelope::class)))
-
-    File("$path/TaskEngine.schema")
-        .writeText(Json.stringify(getPostSchemaPayload(TaskEngineEnvelope::class)))
-
-    File("$path/MonitoringPerName.schema")
-        .writeText(Json.stringify(getPostSchemaPayload(MonitoringPerNameEnvelope::class)))
-
-    File("$path/MonitoringGlobal.schema")
-        .writeText(Json.stringify(getPostSchemaPayload(MonitoringGlobalEnvelope::class)))
-
-    File("$path/TaskExecutor.schema")
-        .writeText(Json.stringify(getPostSchemaPayload(TaskExecutorMessage::class)))
-}
 
 fun <T : Any> getPostSchemaPayload(klass: KClass<T>) = PostSchemaPayload(
     "AVRO",

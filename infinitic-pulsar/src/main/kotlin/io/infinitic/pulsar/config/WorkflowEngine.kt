@@ -29,10 +29,10 @@ import io.infinitic.storage.StateStorage
 
 data class WorkflowEngine(
     @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
+    @JvmField val consumers: Int = 0,
     @JvmField var stateStorage: StateStorage? = null
 ) {
     init {
-        require(consumers >= 0) { "concurrency MUST be positive" }
+        require(consumers >= 0) { "consumers MUST be positive" }
     }
 }

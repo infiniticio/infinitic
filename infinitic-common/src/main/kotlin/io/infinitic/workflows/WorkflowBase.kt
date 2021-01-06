@@ -25,44 +25,39 @@
 
 package io.infinitic.workflows
 
-interface Workflow {
+import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
+import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler
+
+abstract class WorkflowBase : Workflow {
+    lateinit var context: WorkflowTaskContext
+
     /*
      *  Proxy task (Java syntax)
      */
-    fun <T : Any> task(klass: Class<out T>): T
+    override fun <T : Any> task(klass: Class<out T>): T = TaskProxyHandler(klass) { context }.instance()
 
     /*
-    *  Proxy workflow (Java syntax)
-    */
-    fun <T : Workflow> workflow(klass: Class<out T>): T
+     *  Proxy workflow (Java syntax)
+     */
+    override fun <T : Workflow> workflow(klass: Class<out T>): T = WorkflowProxyHandler(klass) { context }.instance()
 
     /*
      *  Dispatch a task asynchronously
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
+    override fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
 
     /*
      * Dispatch a workflow asynchronously
      */
-    fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S>
+    override fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
 
     /*
      * Create an async branch
      */
-    fun <S> async(branch: () -> S): Deferred<S>
+    override fun <S> async(branch: () -> S): Deferred<S> = context.async(branch)
 
     /*
      * Create an inline task
      */
-    fun <S> inline(task: () -> S): S
+    override fun <S> inline(task: () -> S): S = context.inline(task)
 }
-
-/*
- * Proxy task (preferred Kotlin syntax)
- */
-inline fun <reified T : Any> Workflow.task() = this.task(T::class.java)
-
-/*
- * Proxy workflow (preferred Kotlin syntax)
- */
-inline fun <reified T : Workflow> Workflow.workflow() = this.workflow(T::class.java)

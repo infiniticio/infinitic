@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.executor.register
 
-import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowBase
 
 typealias InstanceFactory = () -> Any
 
@@ -49,7 +49,7 @@ interface TaskExecutorRegister {
     /**
      * Get workflow instance per name
      */
-    fun getWorkflowInstance(name: String): Workflow
+    fun getWorkflowInstance(name: String): WorkflowBase
 
     /**
      * Get list of all registered tasks

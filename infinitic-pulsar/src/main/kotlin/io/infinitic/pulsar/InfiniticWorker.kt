@@ -27,8 +27,8 @@ package io.infinitic.pulsar
 
 import com.sksamuel.hoplite.ConfigLoader
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.pulsar.config.Config
 import io.infinitic.pulsar.config.Mode
+import io.infinitic.pulsar.config.WorkerConfig
 import io.infinitic.pulsar.config.getKeyValueStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
@@ -48,23 +48,25 @@ import org.slf4j.LoggerFactory
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class InfiniticWorker(
-    @JvmField val config: Config,
-    @JvmField val pulsarClient: PulsarClient
+    @JvmField val pulsarClient: PulsarClient,
+    @JvmField val config: WorkerConfig
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     companion object {
         @JvmStatic fun fromConfigFile(configPath: String): InfiniticWorker {
             // loaf Config instance
-            val config: Config = ConfigLoader().loadConfigOrThrow(configPath)
+            val workerConfig: WorkerConfig = ConfigLoader().loadConfigOrThrow(configPath)
             // build Pulsar client from config
-            val pulsarClient: PulsarClient = PulsarClient.builder().serviceUrl(config.pulsar.serviceUrl).build()
+            val pulsarClient: PulsarClient = PulsarClient.builder().serviceUrl(workerConfig.pulsar.serviceUrl).build()
 
-            return InfiniticWorker(config, pulsarClient)
+            return InfiniticWorker(pulsarClient, workerConfig)
         }
     }
 
-    @JvmOverloads fun start(logFn: ((MessageToProcess<Any>) -> Unit) = { }) = runBlocking {
+    @JvmOverloads fun start(logFn: ((MessageToProcess<Any>) -> Unit) = {}) = runBlocking {
+        logger.info("InfiniticWorker - starting with config {}", config)
+
         val tenant = config.pulsar.tenant
         val namespace = config.pulsar.namespace
 
@@ -81,49 +83,59 @@ class InfiniticWorker(
             }
         }
 
-        if (config.workflowEngine.mode == Mode.worker) {
-            val keyValueStorage = config.workflowEngine.stateStorage!!.getKeyValueStorage(config, "workflowStates")
-            repeat(config.workflowEngine.consumers) {
-                startPulsarWorkflowEngineWorker(
-                    it,
-                    pulsarConsumerFactory.newWorkflowEngineConsumer(config.name, it),
-                    pulsarOutputs.workflowEngineOutput,
-                    keyValueStorage,
-                    logChannel,
-                )
+        config.workflowEngine?.let {
+            if (it.mode == Mode.worker) {
+                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "workflowStates")
+                repeat(it.consumers) { counter ->
+                    logger.info("InfiniticWorker - starting workflow engine {}", counter)
+                    startPulsarWorkflowEngineWorker(
+                        counter,
+                        pulsarConsumerFactory.newWorkflowEngineConsumer(config.name, counter),
+                        pulsarOutputs.workflowEngineOutput,
+                        keyValueStorage,
+                        logChannel,
+                    )
+                }
             }
         }
 
-        if (config.taskEngine.mode == Mode.worker) {
-            val keyValueStorage = config.workflowEngine.stateStorage!!.getKeyValueStorage(config, "taskStates")
-            repeat(config.taskEngine.consumers) {
-                startPulsarTaskEngineWorker(
-                    it,
-                    pulsarConsumerFactory.newTaskEngineConsumer(config.name, it),
-                    pulsarOutputs.taskEngineOutput,
-                    keyValueStorage,
+        config.taskEngine?.let {
+            if (it.mode == Mode.worker) {
+                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "taskStates")
+                repeat(it.consumers) { counter ->
+                    logger.info("InfiniticWorker - starting task engine {}", counter)
+                    startPulsarTaskEngineWorker(
+                        counter,
+                        pulsarConsumerFactory.newTaskEngineConsumer(config.name, counter),
+                        pulsarOutputs.taskEngineOutput,
+                        keyValueStorage,
+                        logChannel
+                    )
+                }
+            }
+        }
+
+        config.monitoring?.let {
+            if (it.mode == Mode.worker) {
+                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "monitoringStates")
+                repeat(it.consumers) { counter ->
+                    logger.info("InfiniticWorker - starting monitoring per name {}", counter)
+                    startPulsarMonitoringPerNameWorker(
+                        counter,
+                        pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(config.name, counter),
+                        pulsarOutputs.monitoringPerNameOutput,
+                        keyValueStorage,
+                        logChannel,
+                    )
+                }
+
+                logger.info("InfiniticWorker - starting monitoring global")
+                startPulsarMonitoringGlobalWorker(
+                    pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(config.name),
+                    InMemoryStorage(),
                     logChannel
                 )
             }
-        }
-
-        if (config.monitoring.mode == Mode.worker) {
-            val keyValueStorage = config.workflowEngine.stateStorage!!.getKeyValueStorage(config, "monitoringStates")
-            repeat(config.monitoring.consumers) {
-                startPulsarMonitoringPerNameWorker(
-                    it,
-                    pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(config.name, it),
-                    pulsarOutputs.monitoringPerNameOutput,
-                    keyValueStorage,
-                    logChannel,
-                )
-            }
-
-            startPulsarMonitoringGlobalWorker(
-                pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(config.name),
-                InMemoryStorage(),
-                logChannel
-            )
         }
 
         val taskExecutorRegister = TaskExecutorRegisterImpl()
@@ -133,6 +145,7 @@ class InfiniticWorker(
                 taskExecutorRegister.register(workflow.name) { workflow.getInstance() }
 
                 repeat(workflow.consumers) {
+                    logger.info("InfiniticWorker - starting workflow executor for {}", workflow.name)
                     startPulsarTaskExecutorWorker(
                         workflow.name,
                         it,
@@ -156,6 +169,7 @@ class InfiniticWorker(
                 }
 
                 repeat(task.consumers) {
+                    logger.info("InfiniticWorker - starting task executor for {}", task.name)
                     startPulsarTaskExecutorWorker(
                         task.name,
                         it,

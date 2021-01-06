@@ -27,7 +27,7 @@ package io.infinitic.pulsar.samples
 
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
-import io.infinitic.workflows.WorkflowTaskContext
+import io.infinitic.workflows.WorkflowBase
 import io.infinitic.workflows.and
 import io.infinitic.workflows.or
 import io.infinitic.workflows.task
@@ -59,8 +59,7 @@ interface WorkflowA : Workflow {
     fun prop6(): String
 }
 
-class WorkflowAImpl : WorkflowA {
-    override lateinit var context: WorkflowTaskContext
+class WorkflowAImpl : WorkflowBase(), WorkflowA {
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
     private var p1 = ""

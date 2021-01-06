@@ -25,14 +25,9 @@
 
 package io.infinitic.pulsar.config
 
-import io.infinitic.storage.StateStorage
-
-data class TaskEngine(
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 0,
-    @JvmField var stateStorage: StateStorage? = null
-) {
-    init {
-        require(consumers >= 0) { "consumers MUST be positive" }
-    }
-}
+data class ClientConfig(
+    /*
+    Pulsar configuration
+     */
+    @JvmField val pulsar: Pulsar
+)

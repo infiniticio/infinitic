@@ -26,7 +26,7 @@
 package io.infinitic.workflows.tests.workflows
 
 import io.infinitic.workflows.Workflow
-import io.infinitic.workflows.WorkflowTaskContext
+import io.infinitic.workflows.WorkflowBase
 import io.infinitic.workflows.task
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.workflow
@@ -36,9 +36,7 @@ interface WorkflowB : Workflow {
     fun factorial(n: Long): Long
 }
 
-class WorkflowBImpl() : WorkflowB {
-    override lateinit var context: WorkflowTaskContext
-
+class WorkflowBImpl() : WorkflowBase(), WorkflowB {
     private val task = task<TaskA>()
     private val workflow = workflow<WorkflowB>()
 
