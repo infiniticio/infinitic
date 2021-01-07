@@ -34,6 +34,17 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+private val logger: Logger
+    get() = LoggerFactory.getLogger(TaskExecutor::class.java)
+
+private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Exception) = logger.error(
+    "exception on message {}:${System.getProperty("line.separator")}{}",
+    messageToProcess.message,
+    e
+)
 
 fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     coroutineName: String,
@@ -51,6 +62,7 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
             message.output = taskExecutor.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
+            logError(message, e)
         } finally {
             out.send(message)
         }

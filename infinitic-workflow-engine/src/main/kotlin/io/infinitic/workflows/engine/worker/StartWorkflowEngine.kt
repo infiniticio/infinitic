@@ -35,6 +35,18 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+private val logger: Logger
+    get() = LoggerFactory.getLogger(WorkflowEngine::class.java)
+
+private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Exception) = logger.error(
+    "workflowId {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    messageToProcess.message.workflowId,
+    messageToProcess.message,
+    e
+)
 
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     coroutineName: String,
@@ -59,18 +71,20 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
             events.onReceive {
                 try {
                     it.output = workflowEngine.handle(it.message)
-                    out.send(it)
                 } catch (e: Exception) {
                     it.exception = e
+                    logError(it, e)
+                } finally {
                     out.send(it)
                 }
             }
             commands.onReceive {
                 try {
                     it.output = workflowEngine.handle(it.message)
-                    out.send(it)
                 } catch (e: Exception) {
                     it.exception = e
+                    logError(it, e)
+                } finally {
                     out.send(it)
                 }
             }

@@ -35,17 +35,26 @@ import io.infinitic.client.InfiniticClient as Client
 class InfiniticClient(
     @JvmField val pulsarClient: PulsarClient,
     @JvmField val tenant: String,
-    @JvmField val namespace: String
-) : Client(PulsarOutputs.from(pulsarClient, tenant, namespace).clientOutput) {
+    @JvmField val namespace: String,
+    producerName: String
+) : Client(PulsarOutputs.from(pulsarClient, tenant, namespace, producerName).clientOutput) {
     companion object {
         @JvmStatic
-        fun fromConfigFile(configPath: String): InfiniticClient {
+        fun loadConfig(configPath: String): InfiniticClient {
             // loaf Config instance
             val config: ClientConfig = ConfigLoader().loadConfigOrThrow(configPath)
             // build Pulsar client from config
-            val pulsarClient: PulsarClient = PulsarClient.builder().serviceUrl(config.pulsar.serviceUrl).build()
+            val pulsarClient: PulsarClient = PulsarClient
+                .builder()
+                .serviceUrl(config.pulsar.serviceUrl)
+                .build()
 
-            return InfiniticClient(pulsarClient, config.pulsar.tenant, config.pulsar.namespace)
+            return InfiniticClient(
+                pulsarClient,
+                config.pulsar.tenant,
+                config.pulsar.namespace,
+                "client: ${config.name}"
+            )
         }
     }
 

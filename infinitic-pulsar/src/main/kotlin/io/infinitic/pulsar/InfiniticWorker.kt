@@ -54,11 +54,14 @@ class InfiniticWorker(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     companion object {
-        @JvmStatic fun fromConfigFile(configPath: String): InfiniticWorker {
+        @JvmStatic fun loadConfig(configPath: String): InfiniticWorker {
             // loaf Config instance
             val workerConfig: WorkerConfig = ConfigLoader().loadConfigOrThrow(configPath)
             // build Pulsar client from config
-            val pulsarClient: PulsarClient = PulsarClient.builder().serviceUrl(workerConfig.pulsar.serviceUrl).build()
+            val pulsarClient: PulsarClient = PulsarClient
+                .builder()
+                .serviceUrl(workerConfig.pulsar.serviceUrl)
+                .build()
 
             return InfiniticWorker(pulsarClient, workerConfig)
         }
@@ -69,9 +72,10 @@ class InfiniticWorker(
 
         val tenant = config.pulsar.tenant
         val namespace = config.pulsar.namespace
+        val name = "worker: ${config.name}"
 
         val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
-        val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace)
+        val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, producerName = name)
 
         val logChannel = Channel<MessageToProcess<Any>>()
 
@@ -90,7 +94,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
                     startPulsarWorkflowEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newWorkflowEngineConsumer(config.name, counter),
+                        pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName = name, counter),
                         pulsarOutputs.workflowEngineOutput,
                         keyValueStorage,
                         logChannel,
@@ -106,7 +110,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting task engine {}", counter)
                     startPulsarTaskEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTaskEngineConsumer(config.name, counter),
+                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName = name, counter),
                         pulsarOutputs.taskEngineOutput,
                         keyValueStorage,
                         logChannel
@@ -122,7 +126,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
                         counter,
-                        pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(config.name, counter),
+                        pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName = name, counter),
                         pulsarOutputs.monitoringPerNameOutput,
                         keyValueStorage,
                         logChannel,
@@ -131,7 +135,7 @@ class InfiniticWorker(
 
                 logger.info("InfiniticWorker - starting monitoring global")
                 startPulsarMonitoringGlobalWorker(
-                    pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(config.name),
+                    pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName = name),
                     InMemoryStorage(),
                     logChannel
                 )
@@ -149,7 +153,7 @@ class InfiniticWorker(
                     startPulsarTaskExecutorWorker(
                         workflow.name,
                         it,
-                        pulsarConsumerFactory.newWorkflowExecutorConsumer(config.name, it, workflow.name),
+                        pulsarConsumerFactory.newWorkflowExecutorConsumer(consumerName = name, it, workflow.name),
                         pulsarOutputs.taskExecutorOutput,
                         taskExecutorRegister,
                         logChannel,
@@ -173,7 +177,7 @@ class InfiniticWorker(
                     startPulsarTaskExecutorWorker(
                         task.name,
                         it,
-                        pulsarConsumerFactory.newTaskExecutorConsumer(config.name, it, task.name),
+                        pulsarConsumerFactory.newTaskExecutorConsumer(consumerName = name, it, task.name),
                         pulsarOutputs.taskExecutorOutput,
                         taskExecutorRegister,
                         logChannel,

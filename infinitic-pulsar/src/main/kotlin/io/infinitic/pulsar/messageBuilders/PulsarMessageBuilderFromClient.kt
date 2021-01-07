@@ -31,15 +31,19 @@ import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.TypedMessageBuilder
 import java.util.concurrent.ConcurrentHashMap
 
-class PulsarMessageBuilderFromClient(private val client: PulsarClient) : PulsarMessageBuilder {
+class PulsarMessageBuilderFromClient(
+    private val pulsarClient: PulsarClient,
+    private val producerName: String
+) : PulsarMessageBuilder {
     private val producers = ConcurrentHashMap<String, Producer<*>>()
 
     @Suppress("UNCHECKED_CAST")
     override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> {
         val producer = producers.computeIfAbsent(topicName) {
-            client
+            pulsarClient
                 .newProducer(schema)
                 .topic(topicName)
+                .producerName(producerName)
                 .create()
         } as Producer<O>
 

@@ -58,7 +58,6 @@ interface WorkflowStateStorage {
 
     suspend fun deleteState(workflowId: WorkflowId) {
         deleteStateFn(workflowId)
-
         logger.debug("workflowId {} - deleteState", workflowId)
     }
 }

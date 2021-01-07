@@ -27,6 +27,11 @@ package io.infinitic.pulsar.config
 
 data class ClientConfig(
     /*
+   Client name
+    */
+    @JvmField val name: String,
+
+    /*
     Pulsar configuration
      */
     @JvmField val pulsar: Pulsar

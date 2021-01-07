@@ -71,8 +71,8 @@ class PulsarOutputs(
         /*
         Create a new PulsarTransport from a Pulsar Client
          */
-        fun from(pulsarClient: PulsarClient, pulsarTenant: String, pulsarNamespace: String) =
-            PulsarOutputs(PulsarMessageBuilderFromClient(pulsarClient), pulsarTenant, pulsarNamespace)
+        fun from(pulsarClient: PulsarClient, pulsarTenant: String, pulsarNamespace: String, producerName: String) =
+            PulsarOutputs(PulsarMessageBuilderFromClient(pulsarClient, producerName), pulsarTenant, pulsarNamespace)
 
         /*
         Create a new PulsarTransport from a Pulsar Function Context

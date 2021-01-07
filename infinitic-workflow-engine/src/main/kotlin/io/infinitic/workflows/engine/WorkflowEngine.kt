@@ -74,17 +74,22 @@ class WorkflowEngine(
         // get associated state
         var state = workflowStateStorage.getState(message.workflowId)
 
-        // if no state (can happen for a newly created workflow or a terminated workflow)
+        // if no state (newly created workflow or terminated workflow)
         if (state == null) {
             if (message is DispatchWorkflow) {
                 state = dispatchWorkflow(workflowEngineOutput, message)
                 workflowStateStorage.createState(message.workflowId, state)
             } else {
-                // discard all other message types as this workflow is already terminated
-                logger.info("workflowId {} - discarding {}", message.workflowId, message)
+                // discard all other messages if workflow is already terminated
+                discardMessage(message)
             }
 
             return
+        } else {
+            // discard DispatchWorkflow if workflow already exists
+            if (message is DispatchWorkflow) {
+                return discardMessage(message)
+            }
         }
 
         // if a workflow task is ongoing then buffer this message (except for WorkflowTaskCompleted)
@@ -107,6 +112,7 @@ class WorkflowEngine(
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
             val bufferedMsg = state.bufferedMessages.removeAt(0)
+            logger.debug("workflowId {} - handling buffered {}", bufferedMsg.workflowId, bufferedMsg)
             processMessage(state, bufferedMsg)
         }
 
@@ -116,6 +122,10 @@ class WorkflowEngine(
         } else {
             workflowStateStorage.updateState(message.workflowId, state)
         }
+    }
+
+    private fun discardMessage(message: WorkflowEngineMessage) {
+        logger.info("workflowId {} - discarding {}", message.workflowId, message)
     }
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
