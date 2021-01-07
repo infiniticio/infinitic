@@ -41,11 +41,11 @@ interface ClientOutput {
 
     suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage, after: Float) {
         sendToWorkflowEngineFn(workflowEngineMessage, after)
-        logger.debug("workflowId {} - sendToMonitoringGlobal {}", workflowEngineMessage.workflowId, workflowEngineMessage)
+        logger.debug("workflowId {} - sendToWorkflowEngine {}", workflowEngineMessage.workflowId, workflowEngineMessage)
     }
 
     suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage, after: Float) {
         sendToTaskEngineFn(taskEngineMessage, after)
-        logger.debug("taskId {} - sendToMonitoringGlobal {}", taskEngineMessage.taskId, taskEngineMessage)
+        logger.debug("taskId {} - sendToTaskEngine {}", taskEngineMessage.taskId, taskEngineMessage)
     }
 }

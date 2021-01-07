@@ -25,11 +25,11 @@
 
 package io.infinitic.pulsar.schemas
 
-import io.infinitic.common.serDe.kotlin.kserializer
-import io.infinitic.common.serDe.kotlin.writeBinary
+import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.serDe.kserializer.kserializer
 import org.apache.pulsar.client.api.schema.SchemaWriter
 import kotlin.reflect.KClass
 
 class KSchemaWriter<T : Any> (private val klass: KClass<T>) : SchemaWriter<T> {
-    override fun write(message: T) = writeBinary(message, kserializer(klass))
+    override fun write(message: T) = AvroSerDe.writeBinary(message, kserializer(klass))
 }

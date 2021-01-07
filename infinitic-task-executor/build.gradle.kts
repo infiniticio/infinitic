@@ -23,10 +23,6 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
-}
-
 dependencies {
     implementation(kotlin("reflect"))
     implementation(Libs.Coroutines.core)

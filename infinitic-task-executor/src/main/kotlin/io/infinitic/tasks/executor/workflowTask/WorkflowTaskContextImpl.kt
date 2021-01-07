@@ -26,10 +26,6 @@
 package io.infinitic.tasks.executor.workflowTask
 
 import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.workflows.Deferred
-import io.infinitic.common.workflows.DeferredStatus
-import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -56,11 +52,16 @@ import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowDefinitionUpdatedWhileOngoing
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.DeferredStatus
+import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowBase
+import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Method
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
-    private val workflow: Workflow
+    private val workflow: WorkflowBase
 ) : WorkflowTaskContext {
     // position in the current method processing
     private var methodRunIndex = MethodRunIndex()
@@ -193,7 +194,7 @@ class WorkflowTaskContextImpl(
     /*
      * Inlined task
      */
-    override fun <S> task(inline: () -> S): S {
+    override fun <S> inline(task: () -> S): S {
         // increment position
         positionNext()
 
@@ -212,7 +213,7 @@ class WorkflowTaskContextImpl(
             // go down (in case this inline task asynchronously dispatches some tasks)
             positionDown()
             // run inline task
-            val commandOutput = try { CommandOutput.from(inline()) } catch (e: Exception) {
+            val commandOutput = try { CommandOutput.from(task()) } catch (e: Exception) {
                 when (e) {
                     is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskInput.getFullMethodName())
                     is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskInput.getFullMethodName())

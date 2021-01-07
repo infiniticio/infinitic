@@ -31,17 +31,17 @@ import io.infinitic.storage.kodein.KodeinStorage
 import io.infinitic.storage.redis.RedisStorage
 import java.io.File
 
-fun StateStorage.getKeyValueStorage(config: Config, type: String): KeyValueStorage = when (this) {
+fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig, type: String): KeyValueStorage = when (this) {
     StateStorage.inMemory -> InMemoryStorage()
-    StateStorage.kodein -> getKodeinKeyValueStorage(config, type)
-    StateStorage.redis -> RedisStorage(config.redis!!)
+    StateStorage.kodein -> getKodeinKeyValueStorage(workerConfig, type)
+    StateStorage.redis -> RedisStorage(workerConfig.redis!!)
     StateStorage.pulsarState -> InMemoryStorage()
 }
 
-private fun getKodeinKeyValueStorage(config: Config, type: String): KodeinStorage {
-    val path = "${config.kodein!!.path.trimEnd('/')}/${config.name}/$type/"
+private fun getKodeinKeyValueStorage(workerConfig: WorkerConfig, type: String): KodeinStorage {
+    val path = "${workerConfig.kodein!!.path.trimEnd('/')}/$type/"
     val dir = File(path)
     if (!dir.exists()) dir.mkdirs()
 
-    return KodeinStorage(config.kodein.copy(path = path))
+    return KodeinStorage(workerConfig.kodein.copy(path = path))
 }

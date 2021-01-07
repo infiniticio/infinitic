@@ -29,7 +29,7 @@ enum class SerializedDataType {
     NULL,
     BYTES,
     JSON_JACKSON,
-    AVRO_JAVA,
     JSON_KOTLIN,
+    AVRO_JAVA,
     CUSTOM
 }

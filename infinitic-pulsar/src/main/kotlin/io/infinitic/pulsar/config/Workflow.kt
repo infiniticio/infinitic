@@ -26,11 +26,11 @@
 package io.infinitic.pulsar.config
 
 data class Workflow(
-    val name: String,
-    val `class`: String,
-    var mode: Mode? = null,
-    val consumers: Int = 1,
-    val concurrency: Int = 1
+    @JvmField val name: String,
+    @JvmField val `class`: String,
+    @JvmField var mode: Mode? = null,
+    @JvmField val consumers: Int = 1,
+    @JvmField val concurrency: Int = 1
 ) {
     init {
         require(consumers >= 0) { "consumers MUST be positive" }

@@ -25,8 +25,7 @@
 
 package io.infinitic.common.monitoring.perName.state
 
-import io.infinitic.common.serDe.kotlin.readBinary
-import io.infinitic.common.serDe.kotlin.writeBinary
+import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer
@@ -41,11 +40,11 @@ data class MonitoringPerNameState(
     var terminatedCanceledCount: Long = 0
 ) {
     companion object {
-        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
         fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
-    fun toByteArray() = writeBinary(this, serializer())
+    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
     fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
     fun deepCopy() = fromByteArray(toByteArray())
 }

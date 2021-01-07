@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar.schemas
 
-import io.infinitic.common.serDe.kotlin.kserializer
-import io.infinitic.common.serDe.kotlin.readBinary
+import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.serDe.kserializer.kserializer
 import org.apache.pulsar.client.api.schema.SchemaReader
 import java.io.InputStream
 import kotlin.reflect.KClass
@@ -36,5 +36,5 @@ class KSchemaReader<T : Any>(private val klass: KClass<T>) : SchemaReader<T> {
         read(bytes.inputStream(offset, length))
 
     override fun read(inputStream: InputStream) =
-        readBinary(inputStream.readBytes(), kserializer(klass))
+        AvroSerDe.readBinary(inputStream.readBytes(), kserializer(klass))
 }

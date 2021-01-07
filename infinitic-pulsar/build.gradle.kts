@@ -31,18 +31,15 @@ dependencies {
     implementation(Libs.Coroutines.core)
     implementation(Libs.Coroutines.jdk8)
     implementation(Libs.Pulsar.functions)
-    implementation(Libs.Avro4k.core)
     implementation(Libs.Hoplite.core)
     implementation(Libs.Hoplite.yaml)
 
-    // do not change the order of those 2 dependencies
-    // to keep avro shaded and avoid https://github.com/apache/pulsar/issues/9045
     api(Libs.Pulsar.client)
     api(Libs.Pulsar.clientAdmin)
     api(project(":infinitic-storage"))
+    api(project(":infinitic-client"))
 
     implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-client"))
     implementation(project(":infinitic-monitoring-engines"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-task-executor"))

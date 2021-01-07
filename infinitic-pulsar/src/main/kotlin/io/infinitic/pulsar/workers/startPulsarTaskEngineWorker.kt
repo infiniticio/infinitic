@@ -25,7 +25,6 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -92,7 +91,7 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
             val message: Message<TaskEngineEnvelope> = taskEngineConsumer.receiveAsync().await()
 
             try {
-                val envelope = readBinary(message.data, TaskEngineEnvelope.serializer())
+                val envelope = TaskEngineEnvelope.fromByteArray(message.data)
                 taskCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
             } catch (e: Exception) {
                 taskEngineConsumer.negativeAcknowledge(message.messageId)

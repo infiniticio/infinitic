@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks.executors.messages
 
+import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -52,4 +53,10 @@ data class TaskExecutorMessage(
     val methodInput: MethodInput,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
-) : TaskAttemptMessage
+) : TaskAttemptMessage {
+    companion object {
+        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+    }
+
+    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
+}

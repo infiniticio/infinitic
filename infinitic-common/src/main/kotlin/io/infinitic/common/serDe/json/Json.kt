@@ -55,6 +55,4 @@ object Json {
     }
 
     fun <T : Any> parse(json: String, klass: Class<out T>): T = mapper.readValue(json, klass)
-
-    inline fun <reified M : Any> parse(json: String) = parse(json, M::class.java)
 }

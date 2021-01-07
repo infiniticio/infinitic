@@ -28,10 +28,10 @@ package io.infinitic.storage.redis
 import redis.clients.jedis.Protocol
 
 data class Redis(
-    val host: String = Protocol.DEFAULT_HOST,
-    var port: Int = Protocol.DEFAULT_PORT,
-    var timeout: Int = Protocol.DEFAULT_TIMEOUT,
-    var user: String,
-    var password: String,
-    var database: Int = Protocol.DEFAULT_DATABASE
+    @JvmField val host: String = Protocol.DEFAULT_HOST,
+    @JvmField var port: Int = Protocol.DEFAULT_PORT,
+    @JvmField var timeout: Int = Protocol.DEFAULT_TIMEOUT,
+    @JvmField var user: String,
+    @JvmField var password: String,
+    @JvmField var database: Int = Protocol.DEFAULT_DATABASE
 )

@@ -25,7 +25,6 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
@@ -91,7 +90,7 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
             val message: Message<TaskExecutorMessage> = taskExecutorConsumer.receiveAsync().await()
 
             try {
-                val taskExecutorMessage = readBinary(message.data, TaskExecutorMessage.serializer())
+                val taskExecutorMessage = TaskExecutorMessage.fromByteArray(message.data)
                 taskExecutorChannel.send(PulsarMessageToProcess(taskExecutorMessage, message.messageId))
             } catch (e: Exception) {
                 taskExecutorConsumer.negativeAcknowledge(message.messageId)

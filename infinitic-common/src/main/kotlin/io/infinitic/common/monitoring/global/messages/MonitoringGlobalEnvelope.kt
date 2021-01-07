@@ -25,8 +25,7 @@
 
 package io.infinitic.common.monitoring.global.messages
 
-import io.infinitic.common.serDe.kotlin.readBinary
-import io.infinitic.common.serDe.kotlin.writeBinary
+import io.infinitic.common.avro.AvroSerDe
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -51,12 +50,12 @@ data class MonitoringGlobalEnvelope(
             )
         }
 
-        fun fromByteArray(bytes: ByteArray) = readBinary(bytes, serializer())
+        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
     fun message(): MonitoringGlobalMessage = when (type) {
         MonitoringGlobalMessageType.TASK_CREATED -> taskCreated!!
     }
 
-    fun toByteArray() = writeBinary(this, serializer())
+    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
 }

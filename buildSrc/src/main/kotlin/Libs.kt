@@ -24,6 +24,7 @@
  */
 
 object Libs {
+    // Plugins version
     const val kotlinVersion = "1.4.21"
     const val serializationVersion = "1.4.10"
     const val ktlintVersion = "9.4.1"

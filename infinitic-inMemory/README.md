@@ -159,7 +159,7 @@ package my.infinitic.project
 
 import io.infinitic.messaging.api.dispatcher.AvroDispatcher
 import io.infinitic.messaging.pulsar.PulsarTransport
-import io.infinitic.worker.main.worker
+import io.infinitic.inMemory.main.worker
 import kotlinx.coroutines.runBlocking
 import my.infinitic.project.tasks.Add
 import my.infinitic.project.tasks.AddImpl

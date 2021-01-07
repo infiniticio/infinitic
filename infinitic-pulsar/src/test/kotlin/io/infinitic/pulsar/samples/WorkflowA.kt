@@ -25,14 +25,13 @@
 
 package io.infinitic.pulsar.samples
 
-import io.infinitic.common.workflows.Deferred
-import io.infinitic.common.workflows.Workflow
-import io.infinitic.common.workflows.WorkflowTaskContext
-import io.infinitic.common.workflows.and
-import io.infinitic.common.workflows.async
-import io.infinitic.common.workflows.or
-import io.infinitic.common.workflows.task
-import io.infinitic.common.workflows.workflow
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.WorkflowBase
+import io.infinitic.workflows.and
+import io.infinitic.workflows.or
+import io.infinitic.workflows.task
+import io.infinitic.workflows.workflow
 import java.time.LocalDateTime
 
 interface WorkflowA : Workflow {
@@ -60,8 +59,7 @@ interface WorkflowA : Workflow {
     fun prop6(): String
 }
 
-class WorkflowAImpl : WorkflowA {
-    override lateinit var context: WorkflowTaskContext
+class WorkflowAImpl : WorkflowBase(), WorkflowA {
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
     private var p1 = ""
@@ -165,12 +163,12 @@ class WorkflowAImpl : WorkflowA {
     }
 
     override fun inline(): String {
-        val date = task { LocalDateTime.now() }
+        val date = inline { LocalDateTime.now() }
         return taskA.concat("Current Date and Time is: ", "$date") // should not throw
     }
 
     override fun inline2(): String {
-        val date = task {
+        val date = inline {
             async(taskA) { reverse("ab") }
             LocalDateTime.now()
         }
@@ -179,7 +177,7 @@ class WorkflowAImpl : WorkflowA {
     }
 
     override fun inline3(): String {
-        val date = task {
+        val date = inline {
             taskA.concat("1", "2")
             LocalDateTime.now()
         }

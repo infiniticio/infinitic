@@ -25,14 +25,13 @@
 
 package io.infinitic.pulsar.schemas
 
-import com.github.avrokotlin.avro4k.Avro
-import io.infinitic.common.serDe.kotlin.kserializer
+import io.infinitic.common.avro.AvroSerDe
 import org.apache.pulsar.client.api.schema.SchemaDefinition
 import kotlin.reflect.KClass
 
 fun <T : Any> schemaDefinition(klass: KClass<T>): SchemaDefinition<T> =
     SchemaDefinition.builder<T>()
-        .withJsonDef(Avro.default.schema(kserializer(klass)).toString())
+        .withJsonDef(AvroSerDe.schema(klass).toString())
         .withSchemaReader(KSchemaReader(klass))
         .withSchemaWriter(KSchemaWriter(klass))
         .withSupportSchemaVersioning(true)

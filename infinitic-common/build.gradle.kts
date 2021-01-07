@@ -28,7 +28,7 @@ plugins {
 }
 
 dependencies {
-    implementation(Libs.Serialization.json)
+    api(Libs.Serialization.json)
     implementation(Libs.Jackson.databind)
     implementation(Libs.Jackson.module)
     implementation(Libs.Jackson.jsr310)

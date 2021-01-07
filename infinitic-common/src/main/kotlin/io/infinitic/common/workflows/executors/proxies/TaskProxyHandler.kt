@@ -25,14 +25,14 @@
 
 package io.infinitic.common.workflows.executors.proxies
 
-import io.infinitic.common.workflows.WorkflowTaskContext
+import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 class TaskProxyHandler<T : Any>(
     private val klass: Class<T>,
-    private val workflowTaskContextFun: () -> WorkflowTaskContext
+    private val workflowTaskContextFn: () -> WorkflowTaskContext
 ) : InvocationHandler {
 
     /*
@@ -41,7 +41,7 @@ class TaskProxyHandler<T : Any>(
     override fun invoke(proxy: Any?, method: Method, args: Array<out Any>?): Any? {
         if (method.name == "toString") return klass.name
 
-        return workflowTaskContextFun()
+        return workflowTaskContextFn()
             .dispatchTask<T>(method, args ?: arrayOf())
             .result()
     }

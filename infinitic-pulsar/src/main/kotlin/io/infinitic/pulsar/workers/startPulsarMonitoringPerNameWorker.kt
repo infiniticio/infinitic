@@ -27,7 +27,6 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.serDe.kotlin.readBinary
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
@@ -89,7 +88,7 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
             val message: Message<MonitoringPerNameEnvelope> = monitoringPerNameConsumer.receiveAsync().await()
 
             try {
-                val envelope = readBinary(message.data, MonitoringPerNameEnvelope.serializer())
+                val envelope = MonitoringPerNameEnvelope.fromByteArray(message.data)
                 monitoringPerNameChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
             } catch (e: Exception) {
                 monitoringPerNameConsumer.negativeAcknowledge(message.messageId)

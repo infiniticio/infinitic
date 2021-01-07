@@ -39,38 +39,53 @@ import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
-import io.infinitic.common.workflows.Workflow
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.workflows.Workflow
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.future.future
+import java.util.concurrent.CompletableFuture
 
+@Suppress("MemberVisibilityCanBePrivate", "unused")
 open class InfiniticClient(
-    val clientOutput: ClientOutput
+    val clientOutput: ClientOutput,
 ) {
-    companion object {
-        // Container for static extensions
+    /*
+     * Start a workflow (Java)
+     * Note: java implementation can not be reified (and inlined)
+     */
+    @JvmOverloads fun <T : Workflow> startWorkflowAsync(
+        klass: Class<T>,
+        apply: T.() -> Any?,
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta()
+    ): CompletableFuture<String> = GlobalScope.future {
+        startWorkflow(klass, options, meta, apply)
     }
 
     /*
-    Use this method to dispatch a workflow
-    */
-    suspend inline fun <reified T : Workflow> startWorkflow(
+     * Start a workflow (Kotlin)
+     */
+    suspend fun <T : Workflow> startWorkflow(
+        klass: Class<T>,
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta(),
-        noinline apply: T.() -> Any?
+        apply: T.() -> Any?
     ): String {
         // get a proxy for T
-        val handler = MethodProxyHandler(T::class.java)
+        val handler = MethodProxyHandler(klass)
 
-        val klass = handler.instance()
+        val instance = handler.instance()
 
         // method call will actually be done through the proxy by handler
-        klass.apply()
+        instance.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchWorkflow")
+        val method = handler.method ?: throw NoMethodCallAtDispatch(klass.name, "dispatchWorkflow")
 
         val msg = DispatchWorkflow(
             workflowId = WorkflowId(),
@@ -87,24 +102,47 @@ open class InfiniticClient(
     }
 
     /*
-    Use this method to dispatch a task
-    */
-    suspend inline fun <reified T : Any> startTask(
+     * Start a workflow (Kotlin)
+     */
+    suspend inline fun <reified T : Workflow> startWorkflow(
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta(),
+        noinline apply: T.() -> Any?
+    ) = startWorkflow(T::class.java, options, meta, apply)
+
+    /*
+     * Start a task (Java)
+     * Note: java implementation can not be reified (and inlined)
+     */
+    @JvmOverloads fun <T : Any> startTaskAsync(
+        klass: Class<T>,
+        apply: T.() -> Any?,
+        options: TaskOptions = TaskOptions(),
+        meta: TaskMeta = TaskMeta()
+    ): CompletableFuture<String> = GlobalScope.future {
+        startTask(klass, options, meta, apply)
+    }
+
+    /*
+     * Start a task (Kotlin)
+     */
+    suspend fun <T : Any> startTask(
+        klass: Class<T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta(),
-        noinline apply: T.() -> Any?
+        apply: T.() -> Any?
     ): String {
         // get a proxy for T
-        val handler = MethodProxyHandler(T::class.java)
+        val handler = MethodProxyHandler(klass)
 
         // get a proxy instance
-        val klass = handler.instance()
+        val instance = handler.instance()
 
         // method call will actually be done through the proxy by handler
-        klass.apply()
+        instance.apply()
 
         // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(T::class.java.name, "dispatchTask")
+        val method = handler.method ?: throw NoMethodCallAtDispatch(klass.name, "dispatchTask")
 
         val msg = DispatchTask(
             taskId = TaskId(),
@@ -123,7 +161,32 @@ open class InfiniticClient(
     }
 
     /*
-     * Use this method to manually retry a task
+     * Start a task (Kotlin)
+     */
+    suspend inline fun <reified T : Any> startTask(
+        options: TaskOptions = TaskOptions(),
+        meta: TaskMeta = TaskMeta(),
+        noinline apply: T.() -> Any?
+    ) = startTask(T::class.java, options, meta, apply)
+
+    /*
+     * Retry a task (Java)
+     * when a non-null parameter is provided, it will supersede current one
+     */
+    @JvmOverloads suspend fun retryTaskAsync(
+        id: String,
+        name: TaskName? = null,
+        methodName: MethodName? = null,
+        methodParameterTypes: MethodParameterTypes? = null,
+        methodInput: MethodInput? = null,
+        taskOptions: TaskOptions? = null,
+        taskMeta: TaskMeta? = null
+    ): CompletableFuture<Unit> = GlobalScope.future {
+        retryTask(id, name, methodName, methodParameterTypes, methodInput, taskOptions, taskMeta)
+    }
+
+    /*
+     * Retry a task (Kotlin)
      * when a non-null parameter is provided, it will supersede current one
      */
     suspend fun retryTask(
@@ -148,7 +211,17 @@ open class InfiniticClient(
     }
 
     /*
-     * Use this method to manually cancel a task
+     * Cancel a task (Java)
+     */
+    @JvmOverloads suspend fun cancelTaskAsync(
+        id: String,
+        output: Any? = null
+    ): CompletableFuture<Unit> = GlobalScope.future {
+        cancelTask(id, output)
+    }
+
+    /*
+     * Cancel a task (Kotlin)
      */
     suspend fun cancelTask(
         id: String,
@@ -159,5 +232,29 @@ open class InfiniticClient(
             taskOutput = MethodOutput.from(output)
         )
         clientOutput.sendToTaskEngine(msg, 0F)
+    }
+
+    /*
+     * Cancel a workflow (Java)
+     */
+    @JvmOverloads suspend fun cancelWorkflowAsync(
+        id: String,
+        output: Any? = null
+    ): CompletableFuture<Unit> = GlobalScope.future {
+        cancelWorkflow(id, output)
+    }
+
+    /*
+     * Cancel a workflow (Kotlin)
+     */
+    suspend fun cancelWorkflow(
+        id: String,
+        output: Any? = null
+    ) {
+        val msg = CancelWorkflow(
+            workflowId = WorkflowId(id),
+            workflowOutput = MethodOutput.from(output)
+        )
+        clientOutput.sendToWorkflowEngineFn(msg, 0F)
     }
 }
