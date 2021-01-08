@@ -28,6 +28,7 @@ package io.infinitic.pulsar.workers
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
@@ -56,6 +57,7 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
     consumerCounter: Int,
     taskEngineConsumer: Consumer<TaskEngineEnvelope>,
     taskEngineOutput: TaskEngineOutput,
+    sendToTaskEngineDeadLetters: SendToTaskEngine,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<TaskEngineMessageToProcess>?,
 ) = launch(Dispatchers.IO) {
@@ -76,11 +78,11 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$TASK_ENGINE_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
         for (messageToProcess in taskResultsChannel) {
-            if (messageToProcess.exception == null) {
-                taskEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
-            } else {
-                taskEngineConsumer.negativeAcknowledge(messageToProcess.messageId)
+            if (messageToProcess.exception != null) {
+                // in case of errors, manually send this message to dead letters
+                sendToTaskEngineDeadLetters(messageToProcess.message, 0F)
             }
+            taskEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
             logChannel?.send(messageToProcess)
         }
     }

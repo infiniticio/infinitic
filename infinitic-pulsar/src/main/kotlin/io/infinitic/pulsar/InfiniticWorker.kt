@@ -96,6 +96,7 @@ class InfiniticWorker(
                         counter,
                         pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName = name, counter),
                         pulsarOutputs.workflowEngineOutput,
+                        pulsarOutputs.sendToWorkflowEngineDeadLetters,
                         keyValueStorage,
                         logChannel,
                     )
@@ -112,6 +113,7 @@ class InfiniticWorker(
                         counter,
                         pulsarConsumerFactory.newTaskEngineConsumer(consumerName = name, counter),
                         pulsarOutputs.taskEngineOutput,
+                        pulsarOutputs.sendToTaskEngineDeadLetters,
                         keyValueStorage,
                         logChannel
                     )
@@ -128,6 +130,7 @@ class InfiniticWorker(
                         counter,
                         pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName = name, counter),
                         pulsarOutputs.monitoringPerNameOutput,
+                        pulsarOutputs.sendToMonitoringPerNameDeadLetters,
                         keyValueStorage,
                         logChannel,
                     )
@@ -136,6 +139,7 @@ class InfiniticWorker(
                 logger.info("InfiniticWorker - starting monitoring global")
                 startPulsarMonitoringGlobalWorker(
                     pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName = name),
+                    pulsarOutputs.sendToMonitoringGlobalDeadLetters,
                     InMemoryStorage(),
                     logChannel
                 )

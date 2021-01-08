@@ -34,6 +34,7 @@ import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameTopic
 import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
+import io.infinitic.pulsar.topics.TaskEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.TaskEngineEventsTopic
 import io.infinitic.pulsar.topics.TaskExecutorTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
@@ -41,6 +42,7 @@ import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
 import org.apache.pulsar.client.api.Consumer
+import org.apache.pulsar.client.api.DeadLetterPolicy
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType

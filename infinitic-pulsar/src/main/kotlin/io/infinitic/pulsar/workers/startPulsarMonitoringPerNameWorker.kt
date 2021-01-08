@@ -27,6 +27,7 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
@@ -55,6 +56,7 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     consumerCounter: Int,
     monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope>,
     monitoringPerNameOutput: MonitoringPerNameOutput,
+    sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<MonitoringPerNameMessageToProcess>?,
 ) = launch(Dispatchers.IO) {
@@ -73,11 +75,11 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$MONITORING_PER_NAME_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
         for (messageToProcess in monitoringPerNameResultsChannel) {
-            if (messageToProcess.exception == null) {
-                monitoringPerNameConsumer.acknowledgeAsync(messageToProcess.messageId).await()
-            } else {
-                monitoringPerNameConsumer.negativeAcknowledge(messageToProcess.messageId)
+            if (messageToProcess.exception != null) {
+                // in case of errors, send this message to dead letters
+                sendToMonitoringPerNameDeadLetters(messageToProcess.message)
             }
+            monitoringPerNameConsumer.acknowledgeAsync(messageToProcess.messageId).await()
             logChannel?.send(messageToProcess)
         }
     }

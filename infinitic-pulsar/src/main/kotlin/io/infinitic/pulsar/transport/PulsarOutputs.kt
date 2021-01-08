@@ -46,12 +46,16 @@ import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
+import io.infinitic.pulsar.topics.MonitoringGlobalDeadLettersTopic
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
+import io.infinitic.pulsar.topics.MonitoringPerNameDeadLettersTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameTopic
 import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
+import io.infinitic.pulsar.topics.TaskEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.TaskEngineEventsTopic
 import io.infinitic.pulsar.topics.TaskExecutorTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
+import io.infinitic.pulsar.topics.WorkflowEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
@@ -60,12 +64,16 @@ import io.infinitic.tasks.executor.transport.TaskExecutorDataOutput
 import io.infinitic.workflows.engine.transport.WorkflowEngineDataOutput
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class PulsarOutputs(
     private val pulsarMessageBuilder: PulsarMessageBuilder,
     private val pulsarTenant: String,
     private val pulsarNamespace: String
 ) {
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
 
     companion object {
         /*
@@ -175,4 +183,44 @@ class PulsarOutputs(
     val taskExecutorOutput = TaskExecutorDataOutput(
         sendToTaskEngineEvents
     )
+
+    val sendToWorkflowEngineDeadLetters: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineDeadLettersTopic.name),
+            WorkflowEngineEnvelope.from(message),
+            "${message.workflowId}",
+            after
+        )
+        logger.debug("workflowId {} - sendToWorkflowEngineDeadLetters {}", message.workflowId, message)
+    }
+
+    val sendToTaskEngineDeadLetters: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineDeadLettersTopic.name),
+            TaskEngineEnvelope.from(message),
+            "${message.taskId}",
+            after
+        )
+        logger.debug("taskId {} - sendToTaskEngineDeadLetters {}", message.taskId, message)
+    }
+
+    val sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName = { message: MonitoringPerNameEngineMessage ->
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameDeadLettersTopic.name),
+            MonitoringPerNameEnvelope.from(message),
+            "${message.taskName}",
+            0F
+        )
+        logger.debug("taskName {} - sendToMonitoringPerNameDeadLetters {}", message.taskName, message)
+    }
+
+    val sendToMonitoringGlobalDeadLetters: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalDeadLettersTopic.name),
+            MonitoringGlobalEnvelope.from(message),
+            null,
+            0F
+        )
+        logger.debug("sendToMonitoringGlobalDeadLetters {}", message)
+    }
 }

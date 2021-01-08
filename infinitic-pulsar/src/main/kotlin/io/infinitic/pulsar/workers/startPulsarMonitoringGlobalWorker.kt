@@ -27,6 +27,7 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
@@ -52,6 +53,7 @@ const val MONITORING_GLOBAL_PULLING_COROUTINE_NAME = "monitoring-global-pulling"
 
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope>,
+    sendToMonitoringGlobalDeadLetters: SendToMonitoringGlobal,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<MonitoringGlobalMessageToProcess>?
 ) = launch(Dispatchers.IO) {
@@ -69,11 +71,11 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName(MONITORING_GLOBAL_ACKNOWLEDGING_COROUTINE_NAME)) {
         for (messageToProcess in monitoringGlobalResultsChannel) {
-            if (messageToProcess.exception == null) {
-                monitoringGlobalConsumer.acknowledgeAsync(messageToProcess.messageId).await()
-            } else {
-                monitoringGlobalConsumer.negativeAcknowledge(messageToProcess.messageId)
+            if (messageToProcess.exception != null) {
+                // in case of errors, send this message to dead letters
+                sendToMonitoringGlobalDeadLetters(messageToProcess.message)
             }
+            monitoringGlobalConsumer.acknowledgeAsync(messageToProcess.messageId).await()
             logChannel?.send(messageToProcess)
         }
     }
