@@ -44,6 +44,8 @@ class PulsarMessageBuilderFromClient(
                 .newProducer(schema)
                 .topic(topicName)
                 .producerName(producerName)
+                // disable batching is important as it breaks keyShared guarantees
+                .enableBatching(false)
                 .create()
         } as Producer<O>
 
