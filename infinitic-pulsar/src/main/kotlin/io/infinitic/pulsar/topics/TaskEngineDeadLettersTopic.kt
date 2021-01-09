@@ -23,16 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.pulsar.topics
 
-data class ClientConfig(
-    /*
-   Client name
-    */
-    @JvmField val name: String,
-
-    /*
-    Pulsar configuration
-     */
-    @JvmField val pulsar: Pulsar
-)
+object TaskEngineDeadLettersTopic {
+    const val name = "system: task-engine-dead-letters"
+}

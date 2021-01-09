@@ -60,7 +60,7 @@ class PulsarConsumerFactory(
         const val MONITORING_GLOBAL_SUBSCRIPTION = "monitoring-global"
     }
 
-    fun newWorkflowEngineConsumer(workerName: String, consumerCounter: Int): Consumer<WorkflowEngineEnvelope> =
+    fun newWorkflowEngineConsumer(consumerName: String, consumerCounter: Int): Consumer<WorkflowEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
             .topics(
                 listOf(
@@ -68,12 +68,12 @@ class PulsarConsumerFactory(
                     getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name)
                 )
             )
-            .consumerName("$workerName-$consumerCounter")
+            .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(WORKFLOW_ENGINE_SUBSCRIPTION_NAME)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscribe()
 
-    fun newTaskEngineConsumer(workerName: String, consumerCounter: Int): Consumer<TaskEngineEnvelope> =
+    fun newTaskEngineConsumer(consumerName: String, consumerCounter: Int): Consumer<TaskEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
             .topics(
                 listOf(
@@ -81,39 +81,39 @@ class PulsarConsumerFactory(
                     getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name)
                 )
             )
-            .consumerName("$workerName-$consumerCounter")
+            .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(TASK_ENGINE_SUBSCRIPTION_NAME)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscribe()
 
-    fun newTaskExecutorConsumer(workerName: String, consumerCounter: Int, taskName: String): Consumer<TaskExecutorMessage> =
+    fun newTaskExecutorConsumer(consumerName: String, consumerCounter: Int, taskName: String): Consumer<TaskExecutorMessage> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorMessage>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskExecutorTopic.name(taskName)))
-            .consumerName("$workerName-$consumerCounter")
+            .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(TASK_EXECUTOR_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Shared)
             .subscribe()
 
-    fun newWorkflowExecutorConsumer(workerName: String, consumerCounter: Int, workflowName: String): Consumer<TaskExecutorMessage> =
+    fun newWorkflowExecutorConsumer(consumerName: String, consumerCounter: Int, workflowName: String): Consumer<TaskExecutorMessage> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorMessage>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowExecutorTopic.name(workflowName)))
-            .consumerName("$workerName-$consumerCounter")
+            .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(WORKFLOW_EXECUTOR_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Shared)
             .subscribe()
 
-    fun newMonitoringPerNameEngineConsumer(workerName: String, consumerCounter: Int): Consumer<MonitoringPerNameEnvelope> =
+    fun newMonitoringPerNameEngineConsumer(consumerName: String, consumerCounter: Int): Consumer<MonitoringPerNameEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringPerNameEnvelope>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name))
-            .consumerName("$workerName-$consumerCounter")
+            .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(MONITORING_PER_NAME_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscribe()
 
-    fun newMonitoringGlobalEngineConsumer(workerName: String): Consumer<MonitoringGlobalEnvelope> =
+    fun newMonitoringGlobalEngineConsumer(consumerName: String): Consumer<MonitoringGlobalEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringGlobalEnvelope>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name))
-            .consumerName("$workerName")
+            .consumerName(consumerName)
             .subscriptionName(MONITORING_GLOBAL_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Failover)
             .subscribe()

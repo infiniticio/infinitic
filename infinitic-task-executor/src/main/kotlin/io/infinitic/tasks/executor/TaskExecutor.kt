@@ -156,10 +156,10 @@ open class TaskExecutor(
         task::class.memberProperties.find {
             it.returnType.javaType.typeName == TaskAttemptContext::class.java.name
         }?.javaField?.apply {
-            val accessible = isAccessible
             isAccessible = true
             set(task, context)
-            isAccessible = accessible
+            // IMPORTANT: visibility must NOT be set back to initial value
+            // visibility being static it would lead to race conditions
         }
     }
 

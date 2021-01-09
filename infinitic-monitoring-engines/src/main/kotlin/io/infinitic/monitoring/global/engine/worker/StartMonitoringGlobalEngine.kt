@@ -32,6 +32,17 @@ import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageTo
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+private val logger: Logger
+    get() = LoggerFactory.getLogger(MonitoringGlobalEngine::class.java)
+
+private fun logError(messageToProcess: MonitoringGlobalMessageToProcess, e: Exception) = logger.error(
+    "exception on message {}:${System.getProperty("line.separator")}{}",
+    messageToProcess.message,
+    e
+)
 
 fun <T : MonitoringGlobalMessageToProcess> CoroutineScope.startMonitoringGlobalEngine(
     coroutineName: String,
@@ -50,6 +61,7 @@ fun <T : MonitoringGlobalMessageToProcess> CoroutineScope.startMonitoringGlobalE
             message.output = monitoringGlobalEngine.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
+            logError(message, e)
         } finally {
             out.send(message)
         }

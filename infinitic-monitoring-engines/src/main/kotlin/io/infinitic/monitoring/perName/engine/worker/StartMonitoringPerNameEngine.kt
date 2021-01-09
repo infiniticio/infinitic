@@ -33,6 +33,18 @@ import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+private val logger: Logger
+    get() = LoggerFactory.getLogger(MonitoringPerNameEngine::class.java)
+
+private fun logError(messageToProcess: MonitoringPerNameMessageToProcess, e: Exception) = logger.error(
+    "taskName {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    messageToProcess.message.taskName,
+    messageToProcess.message,
+    e
+)
 
 fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNameEngine(
     coroutineName: String,
@@ -53,6 +65,7 @@ fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNam
             message.output = monitoringPerNameEngine.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
+            logError(message, e)
         } finally {
             out.send(message)
         }

@@ -40,7 +40,7 @@ class InfiniticAdmin(
 ) {
     companion object {
         @JvmStatic
-        fun fromConfigFile(configPath: String): InfiniticAdmin {
+        fun loadConfig(configPath: String): InfiniticAdmin {
             // loaf Config instance
             val config: ClientConfig = ConfigLoader().loadConfigOrThrow(configPath)
             // build PulsarAdmin from config
@@ -50,7 +50,12 @@ class InfiniticAdmin(
                 .allowTlsInsecureConnection(true)
                 .build()
 
-            return InfiniticAdmin(pulsarAdmin, config.pulsar.tenant, config.pulsar.namespace, config.pulsar.allowedClusters)
+            return InfiniticAdmin(
+                pulsarAdmin,
+                config.pulsar.tenant,
+                config.pulsar.namespace,
+                config.pulsar.allowedClusters
+            )
         }
     }
 

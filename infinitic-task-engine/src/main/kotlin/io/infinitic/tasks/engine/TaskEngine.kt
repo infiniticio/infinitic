@@ -84,22 +84,23 @@ class TaskEngine(
         val oldState = taskStateStorage.getState(message.taskId)
 
         if (oldState != null) {
-            // discard message (except TaskAttemptCompleted) if state has already evolved
+            // discard dispatchTask if state already exist
+            // (for example if a WorkflowTask containing a new command is processed twice)
+            if (message is DispatchTask) {
+                return discardMessage(message)
+            }
+            // discard TaskAttemptMessage other than TaskAttemptCompleted, if state has already evolved
             if (message is TaskAttemptMessage && message !is TaskAttemptCompleted) {
                 if ((oldState.taskAttemptId != message.taskAttemptId) ||
                     (oldState.taskAttemptRetry != message.taskAttemptRetry)
                 ) {
-                    logger.info("taskId {} - discarding {}", message.taskId, message)
-
-                    return
+                    return discardMessage(message)
                 }
             }
         } else {
-            // discard message if task is already terminated
+            // discard message other than DispatchTask if task does not already exist
             if (message !is DispatchTask) {
-                logger.info("taskId {} - discarding {}", message.taskId, message)
-
-                return
+                return discardMessage(message)
             }
         }
 
@@ -132,6 +133,10 @@ class TaskEngine(
 
             taskEngineOutput.sendToMonitoringPerName(message.taskId, tsc)
         }
+    }
+
+    private fun discardMessage(message: TaskEngineMessage) {
+        logger.info("taskId {} - discarding {}", message.taskId, message)
     }
 
     private suspend fun cancelTask(oldState: TaskState, msg: CancelTask): TaskState {
@@ -271,10 +276,9 @@ class TaskEngine(
         return state
     }
 
-    private suspend fun taskAttemptStarted(oldState: TaskState, msg: TaskAttemptStarted): TaskState {
-        val state = oldState.copy()
+    private fun taskAttemptStarted(oldState: TaskState, msg: TaskAttemptStarted): TaskState {
 
-        return state
+        return oldState.copy()
     }
 
     private suspend fun taskAttemptCompleted(oldState: TaskState, msg: TaskAttemptCompleted): TaskState {

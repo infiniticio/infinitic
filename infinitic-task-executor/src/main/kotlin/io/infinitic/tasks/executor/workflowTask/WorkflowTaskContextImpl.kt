@@ -151,7 +151,7 @@ class WorkflowTaskContextImpl(
             newCommands.add(newCommand)
 
             // returns a Deferred with an ongoing step
-            return Deferred<S>(Step.Id.from(newCommand), this)
+            return Deferred(Step.Id.from(newCommand), this)
         }
 
         // async branch is processed only if on path of targetPosition
@@ -188,7 +188,7 @@ class WorkflowTaskContextImpl(
         }
 
         // returns a Deferred linked to pastCommand
-        return Deferred<S>(Step.Id.from(pastCommand), this)
+        return Deferred(Step.Id.from(pastCommand), this)
     }
 
     /*

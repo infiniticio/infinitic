@@ -28,6 +28,7 @@ package io.infinitic.pulsar.workers
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
@@ -56,6 +57,7 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
     consumerCounter: Int,
     workflowEngineConsumer: Consumer<WorkflowEngineEnvelope>,
     workflowEngineOutput: WorkflowEngineOutput,
+    sendToWorkflowEngineDeadLetters: SendToWorkflowEngine,
     keyValueStorage: KeyValueStorage,
     logChannel: SendChannel<WorkflowEngineMessageToProcess>?,
 ) = launch(Dispatchers.IO) {
@@ -76,11 +78,11 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$WORKFLOW_ENGINE_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
         for (messageToProcess in workflowResultsChannel) {
-            if (messageToProcess.exception == null) {
-                workflowEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
-            } else {
-                workflowEngineConsumer.negativeAcknowledge(messageToProcess.messageId)
+            if (messageToProcess.exception != null) {
+                // in case of errors, manually send this message to dead letters
+                sendToWorkflowEngineDeadLetters(messageToProcess.message, 0F)
             }
+            workflowEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
             logChannel?.send(messageToProcess)
         }
     }
@@ -92,6 +94,7 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
 
             try {
                 val envelope = WorkflowEngineEnvelope.fromByteArray(message.data)
+
                 workflowCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
             } catch (e: Exception) {
                 workflowEngineConsumer.negativeAcknowledge(message.messageId)
