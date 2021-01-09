@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar.messageBuilders
 
+import org.apache.pulsar.client.api.BatcherBuilder
 import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
@@ -44,8 +45,9 @@ class PulsarMessageBuilderFromClient(
                 .newProducer(schema)
                 .topic(topicName)
                 .producerName(producerName)
-                // disable batching is important as it breaks keyShared guarantees
-                .enableBatching(false)
+                // adding this below is important - without it keyShared guarantees are broken
+                // https://pulsar.apache.org/docs/en/client-libraries-java/#key_shared
+                .batcherBuilder(BatcherBuilder.KEY_BASED)
                 .create()
         } as Producer<O>
 

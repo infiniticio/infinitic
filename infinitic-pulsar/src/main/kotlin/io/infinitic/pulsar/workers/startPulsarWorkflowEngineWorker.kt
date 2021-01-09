@@ -94,6 +94,7 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
 
             try {
                 val envelope = WorkflowEngineEnvelope.fromByteArray(message.data)
+
                 workflowCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
             } catch (e: Exception) {
                 workflowEngineConsumer.negativeAcknowledge(message.messageId)
