@@ -42,20 +42,23 @@ class MonitoringPerNameEngine(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun handle(message: MonitoringPerNameEngineMessage) {
-        logger.debug("name {} - receiving {}", message.taskName, message)
+    suspend fun handle(message: MonitoringPerNameEngineMessage, messageId: String?) {
+        logger.debug("name {} - messageId {} - receiving {}", message.taskName, messageId, message)
 
-        // get associated state
+        // get state
         val oldState = storage.getState(message.taskName)
-        val newState = oldState?.deepCopy() ?: MonitoringPerNameState(message.taskName)
+
+        // checks if this message has already just been handled
+        if (oldState != null && messageId != null && oldState.messageId == messageId) {
+            return logDiscardingMessage(message, messageId, "as state already contains this messageId")
+        }
+
+        val newState = oldState
+            ?.copy(messageId = messageId)
+            ?: MonitoringPerNameState(messageId, message.taskName)
 
         when (message) {
             is TaskStatusUpdated -> handleTaskStatusUpdated(message, newState)
-        }
-
-        // Update stored state if needed and existing
-        if (newState != oldState) {
-            storage.updateState(message.taskName, newState, oldState)
         }
 
         // It's a new task type
@@ -64,6 +67,15 @@ class MonitoringPerNameEngine(
 
             monitoringPerNameOutput.sendToMonitoringGlobal(message.taskName, tsc)
         }
+
+        // Update stored state if needed and existing
+        if (newState != oldState) {
+            storage.updateState(message.taskName, newState, oldState)
+        }
+    }
+
+    private fun logDiscardingMessage(message: MonitoringPerNameEngineMessage, messageId: String?, reason: String) {
+        logger.info("name {} - messageId {} - discarding {}: {}", message.taskName, messageId, reason, message)
     }
 
     private fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MonitoringPerNameState) {

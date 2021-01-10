@@ -72,6 +72,7 @@ open class MonitoringPerNameStateKeyValueStorage(
 
         // save state retrieved from counters
         val state = MonitoringPerNameState(
+            messageId = newState.messageId,
             taskName = taskName,
             runningOkCount = storage.getCounter(counterOkKey),
             runningWarningCount = storage.getCounter(counterWarningKey),

@@ -65,12 +65,12 @@ class MonitoringPerNamePulsarFunctionTests : ShouldSpec({
             val monitoringPerName = mockk<MonitoringPerNameEngine>()
             val monitoringPerNamePulsarFunction = spyk<MonitoringPerNamePulsarFunction>()
             every { monitoringPerNamePulsarFunction.getMonitoringPerNameEngine(context) } returns monitoringPerName
-            coEvery { monitoringPerName.handle(msg) } just Runs
+            coEvery { monitoringPerName.handle(msg, any()) } just Runs
 
             // when
             monitoringPerNamePulsarFunction.process(envelope, context)
             // then
-            coVerify(exactly = 1) { monitoringPerName.handle(msg) }
+            coVerify(exactly = 1) { monitoringPerName.handle(msg, null) }
             unmockkAll()
         }
     }

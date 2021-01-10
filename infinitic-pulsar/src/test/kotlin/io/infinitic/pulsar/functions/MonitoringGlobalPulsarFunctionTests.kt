@@ -65,12 +65,12 @@ class MonitoringGlobalPulsarFunctionTests : ShouldSpec({
             val monitoringGlobal = mockk<MonitoringGlobalEngine>()
             val monitoringGlobalPulsarFunction = spyk<MonitoringGlobalPulsarFunction>()
             every { monitoringGlobalPulsarFunction.getMonitoringGlobalEngine(context) } returns monitoringGlobal
-            coEvery { monitoringGlobal.handle(msg) } just Runs
+            coEvery { monitoringGlobal.handle(msg, any()) } just Runs
 
             // when
             monitoringGlobalPulsarFunction.process(envelope, context)
             // then
-            coVerify(exactly = 1) { monitoringGlobal.handle(msg) }
+            coVerify(exactly = 1) { monitoringGlobal.handle(msg, null) }
             unmockkAll()
         }
     }

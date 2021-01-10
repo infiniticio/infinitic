@@ -231,7 +231,7 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
 
 fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) {
     launch {
-        monitoringPerNameEngine.handle(msg)
+        monitoringPerNameEngine.handle(msg, null)
 
         // catch status update
         if (msg is TaskStatusUpdated) {
@@ -242,7 +242,7 @@ fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) 
 
 fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
     launch {
-        monitoringGlobalEngine.handle(msg)
+        monitoringGlobalEngine.handle(msg, null)
     }
 }
 

@@ -32,6 +32,7 @@ import java.nio.ByteBuffer
 
 @Serializable
 data class MonitoringGlobalState(
+    val messageId: String?,
     val taskNames: MutableSet<TaskName> = mutableSetOf()
 ) {
     companion object {

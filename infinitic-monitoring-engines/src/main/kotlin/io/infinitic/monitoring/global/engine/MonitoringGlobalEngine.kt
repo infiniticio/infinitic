@@ -38,12 +38,20 @@ class MonitoringGlobalEngine(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun handle(message: MonitoringGlobalMessage) {
-        logger.debug("receiving {}", message)
+    suspend fun handle(message: MonitoringGlobalMessage, messageId: String?) {
+        logger.debug("messageId {} - receiving {}", messageId, message)
 
-        // get associated state
+        // get state
         val oldState = storage.getState()
-        val newState = oldState?.deepCopy() ?: MonitoringGlobalState()
+
+        // checks if this message has already just been handled
+        if (oldState != null && messageId != null && oldState.messageId == messageId) {
+            return logDiscardingMessage(message, messageId, "as state already contains this messageId")
+        }
+
+        val newState = oldState
+            ?.copy(messageId = messageId)
+            ?: MonitoringGlobalState(messageId)
 
         when (message) {
             is TaskCreated -> handleTaskTypeCreated(message, newState)
@@ -53,6 +61,10 @@ class MonitoringGlobalEngine(
         if (newState != oldState) {
             storage.updateState(newState, oldState)
         }
+    }
+
+    private fun logDiscardingMessage(message: MonitoringGlobalMessage, messageId: String?, reason: String) {
+        logger.info("messageId {} - discarding {}: {}", messageId, reason, message)
     }
 
     private fun handleTaskTypeCreated(message: TaskCreated, state: MonitoringGlobalState) {

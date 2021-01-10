@@ -60,14 +60,14 @@ fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNam
 
     val out = monitoringPerNameInputChannels.monitoringPerNameResultsChannel
 
-    for (message in monitoringPerNameInputChannels.monitoringPerNameChannel) {
+    for (messageToProcess in monitoringPerNameInputChannels.monitoringPerNameChannel) {
         try {
-            message.output = monitoringPerNameEngine.handle(message.message)
+            messageToProcess.output = monitoringPerNameEngine.handle(messageToProcess.message, messageToProcess.messageId)
         } catch (e: Exception) {
-            message.exception = e
-            logError(message, e)
+            messageToProcess.exception = e
+            logError(messageToProcess, e)
         } finally {
-            out.send(message)
+            out.send(messageToProcess)
         }
     }
 }

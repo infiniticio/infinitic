@@ -32,6 +32,7 @@ import java.nio.ByteBuffer
 
 @Serializable
 data class MonitoringPerNameState(
+    val messageId: String?,
     val taskName: TaskName,
     var runningOkCount: Long = 0,
     var runningWarningCount: Long = 0,

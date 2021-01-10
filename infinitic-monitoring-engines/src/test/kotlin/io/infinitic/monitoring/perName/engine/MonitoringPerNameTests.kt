@@ -63,7 +63,7 @@ class MonitoringPerNameTests : ShouldSpec({
                 MockMonitoringPerNameOutput()
             )
 
-            monitoringPerName.handle(msg)
+            monitoringPerName.handle(msg, null)
 
             val stateOut = stateOutSlot.captured
             coVerifyAll {
@@ -90,7 +90,7 @@ class MonitoringPerNameTests : ShouldSpec({
             val monitoringPerName = MonitoringPerNameEngine(storage, monitoringPerNameOutput)
 
             // when
-            monitoringPerName.handle(msg)
+            monitoringPerName.handle(msg, null)
             // then
             val stateOut = stateOutSlot.captured
             coVerifyAll {
