@@ -70,7 +70,7 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
         select<Unit> {
             events.onReceive {
                 try {
-                    it.output = taskEngine.handle(it.message)
+                    it.output = taskEngine.handle(it.message, it.messageId)
                 } catch (e: Exception) {
                     it.exception = e
                     logError(it, e)
@@ -80,7 +80,7 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
             }
             commands.onReceive {
                 try {
-                    it.output = taskEngine.handle(it.message)
+                    it.output = taskEngine.handle(it.message, it.messageId)
                 } catch (e: Exception) {
                     it.exception = e
                     logError(it, e)

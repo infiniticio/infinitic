@@ -60,4 +60,6 @@ class InfiniticAdmin(
     }
 
     fun init() = runBlocking { pulsarAdmin.initInfinitic(tenant, namespace, allowedClusters) }
+
+    fun close() = pulsarAdmin.close()
 }

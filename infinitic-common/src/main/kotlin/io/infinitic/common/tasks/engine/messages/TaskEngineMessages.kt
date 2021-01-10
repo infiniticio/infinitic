@@ -62,6 +62,17 @@ data class DispatchTask(
 ) : TaskEngineMessage()
 
 @Serializable
+data class RetryTask(
+    override val taskId: TaskId,
+    val taskName: TaskName?,
+    val methodName: MethodName?,
+    val methodParameterTypes: MethodParameterTypes?,
+    val methodInput: MethodInput?,
+    val taskMeta: TaskMeta?,
+    val taskOptions: TaskOptions?
+) : TaskEngineMessage()
+
+@Serializable
 data class CancelTask(
     override val taskId: TaskId,
     val taskOutput: MethodOutput
@@ -83,7 +94,23 @@ data class TaskCompleted(
 ) : TaskEngineMessage()
 
 @Serializable
+data class RetryTaskAttempt(
+    override val taskId: TaskId,
+    override val taskAttemptId: TaskAttemptId,
+    override val taskAttemptRetry: TaskAttemptRetry,
+    override val taskRetry: TaskRetry
+) : TaskEngineMessage(), TaskAttemptMessage
+
+@Serializable
 data class TaskAttemptDispatched(
+    override val taskId: TaskId,
+    override val taskAttemptId: TaskAttemptId,
+    override val taskAttemptRetry: TaskAttemptRetry,
+    override val taskRetry: TaskRetry
+) : TaskEngineMessage(), TaskAttemptMessage
+
+@Serializable
+data class TaskAttemptStarted(
     override val taskId: TaskId,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
@@ -108,30 +135,3 @@ data class TaskAttemptFailed(
     override val taskAttemptDelayBeforeRetry: Float?,
     val taskAttemptError: TaskAttemptError
 ) : TaskEngineMessage(), FailingTaskAttemptMessage
-
-@Serializable
-data class TaskAttemptStarted(
-    override val taskId: TaskId,
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptRetry: TaskAttemptRetry,
-    override val taskRetry: TaskRetry
-) : TaskEngineMessage(), TaskAttemptMessage
-
-@Serializable
-data class RetryTask(
-    override val taskId: TaskId,
-    val taskName: TaskName?,
-    val methodName: MethodName?,
-    val methodParameterTypes: MethodParameterTypes?,
-    val methodInput: MethodInput?,
-    val taskMeta: TaskMeta?,
-    val taskOptions: TaskOptions?
-) : TaskEngineMessage()
-
-@Serializable
-data class RetryTaskAttempt(
-    override val taskId: TaskId,
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptRetry: TaskAttemptRetry,
-    override val taskRetry: TaskRetry
-) : TaskEngineMessage(), TaskAttemptMessage

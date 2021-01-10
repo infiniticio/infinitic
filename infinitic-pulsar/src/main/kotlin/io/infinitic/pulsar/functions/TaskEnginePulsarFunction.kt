@@ -41,7 +41,7 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
-            getTaskEngine(ctx).handle(envelope.message())
+            getTaskEngine(ctx).handle(envelope.message(), null)
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, envelope)
             throw e

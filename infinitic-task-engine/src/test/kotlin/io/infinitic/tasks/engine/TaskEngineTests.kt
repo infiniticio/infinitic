@@ -148,7 +148,7 @@ class TestEngine(stateIn: TaskState?, private val msgIn: TaskEngineMessage) {
     suspend fun handle() {
         val engine = TaskEngine(taskStateStorage, taskEventStorage, taskEngineOutput)
 
-        engine.handle(msgIn)
+        engine.handle(msgIn, null)
     }
 }
 

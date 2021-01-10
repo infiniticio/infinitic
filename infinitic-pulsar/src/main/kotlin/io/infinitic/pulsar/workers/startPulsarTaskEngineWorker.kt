@@ -29,6 +29,7 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
@@ -46,12 +47,23 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMessage>
 
 const val TASK_ENGINE_PROCESSING_COROUTINE_NAME = "task-engine-processing"
 const val TASK_ENGINE_ACKNOWLEDGING_COROUTINE_NAME = "task-engine-acknowledging"
 const val TASK_ENGINE_PULLING_COROUTINE_NAME = "task-engine-pulling"
+
+private val logger: Logger
+    get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
+
+private fun logError(message: Message<TaskEngineEnvelope>, e: Exception) = logger.error(
+    "exception on message {}:${System.getProperty("line.separator")}{}",
+    message,
+    e
+)
 
 fun CoroutineScope.startPulsarTaskEngineWorker(
     consumerCounter: Int,
@@ -82,7 +94,8 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
                 // in case of errors, manually send this message to dead letters
                 sendToTaskEngineDeadLetters(messageToProcess.message, 0F)
             }
-            taskEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
+            taskEngineConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
+
             logChannel?.send(messageToProcess)
         }
     }
@@ -94,10 +107,16 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
 
             try {
                 val envelope = TaskEngineEnvelope.fromByteArray(message.data)
-                taskCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
+
+                taskCommandsChannel.send(
+                    PulsarMessageToProcess(
+                        message = envelope.message(),
+                        pulsarId = message.messageId
+                    )
+                )
             } catch (e: Exception) {
+                logError(message, e)
                 taskEngineConsumer.negativeAcknowledge(message.messageId)
-                throw e
             }
         }
     }

@@ -26,6 +26,7 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
@@ -42,12 +43,23 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 typealias PulsarTaskExecutorMessageToProcess = PulsarMessageToProcess<TaskExecutorMessage>
 
 const val TASK_EXECUTOR_PROCESSING_COROUTINE_NAME = "task-executor-processing"
 const val TASK_EXECUTOR_ACKNOWLEDGING_COROUTINE_NAME = "task-executor-acknowledging"
 const val TASK_EXECUTOR_PULLING_COROUTINE_NAME = "task-executor-pulling"
+
+private val logger: Logger
+    get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
+
+private fun logError(message: Message<TaskExecutorMessage>, e: Exception) = logger.error(
+    "exception on message {}:${System.getProperty("line.separator")}{}",
+    message,
+    e
+)
 
 fun CoroutineScope.startPulsarTaskExecutorWorker(
     taskName: String,
@@ -76,9 +88,9 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
     launch(CoroutineName("$TASK_EXECUTOR_ACKNOWLEDGING_COROUTINE_NAME-$taskName-$consumerCounter")) {
         for (messageToProcess in taskExecutorResultsChannel) {
             if (messageToProcess.exception == null) {
-                taskExecutorConsumer.acknowledgeAsync(messageToProcess.messageId).await()
+                taskExecutorConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
             } else {
-                taskExecutorConsumer.negativeAcknowledge(messageToProcess.messageId)
+                taskExecutorConsumer.negativeAcknowledge(messageToProcess.pulsarId)
             }
             logChannel?.send(messageToProcess)
         }
@@ -91,10 +103,15 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
 
             try {
                 val taskExecutorMessage = TaskExecutorMessage.fromByteArray(message.data)
-                taskExecutorChannel.send(PulsarMessageToProcess(taskExecutorMessage, message.messageId))
+                taskExecutorChannel.send(
+                    PulsarMessageToProcess(
+                        message = taskExecutorMessage,
+                        pulsarId = message.messageId
+                    )
+                )
             } catch (e: Exception) {
+                logError(message, e)
                 taskExecutorConsumer.negativeAcknowledge(message.messageId)
-                throw e
             }
         }
     }

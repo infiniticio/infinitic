@@ -45,6 +45,7 @@ import java.nio.ByteBuffer
 
 @Serializable
 data class TaskState(
+    val messageId: String?,
     val taskId: TaskId,
     val taskName: TaskName,
     val methodName: MethodName,

@@ -28,4 +28,8 @@ package io.infinitic.tasks.engine.storage.states
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
 
+typealias GetTaskState = suspend (TaskId) -> TaskState?
+
+typealias DeleteTaskState = suspend (TaskId) -> Unit
+
 typealias UpdateTaskState = suspend (TaskId, TaskState, TaskState?) -> Unit
