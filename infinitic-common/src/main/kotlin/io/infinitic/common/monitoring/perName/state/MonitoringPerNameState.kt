@@ -47,5 +47,4 @@ data class MonitoringPerNameState(
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
     fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
-    fun deepCopy() = fromByteArray(toByteArray())
 }

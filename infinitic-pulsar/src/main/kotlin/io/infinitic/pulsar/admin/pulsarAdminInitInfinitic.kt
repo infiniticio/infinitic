@@ -114,19 +114,21 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
 
     if (!existingNamespaces.contains(fullNamespace)) {
         val policies = Policies().apply {
+            // enable message deduplication
+            deduplicationEnabled = true
             // all new topics (especially tasks and workflows) are partitioned
             autoTopicCreationOverride = AutoTopicCreationOverride(
                 true,
                 TopicType.PARTITIONED.toString(),
                 1
             )
-            // default retention : 7j && 1Gb
+            // default retention : 14j || 1Gb
             retention_policies = RetentionPolicies(
-                60 * 24 * 7,
+                60 * 24 * 14,
                 1024
             )
-            // default ttl : 30j
-            message_ttl_in_seconds = 3600 * 24 * 30
+            // default ttl : 14j
+            message_ttl_in_seconds = 3600 * 24 * 14
             // schema are mandatory for producers/consumers
             schema_validation_enforced = true
             // this allow topic auto creation for task / workflows

@@ -44,6 +44,11 @@ import java.nio.ByteBuffer
 @Serializable
 data class WorkflowState(
     /*
+    Id of last received message (used to ensure idempotency)
+     */
+    var messageId: String?,
+
+    /*
     Id of this workflow instance
      */
     val workflowId: WorkflowId,

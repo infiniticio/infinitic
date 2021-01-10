@@ -64,7 +64,6 @@ class MonitoringPerNameEngine(
         // It's a new task type
         if (oldState == null) {
             val tsc = TaskCreated(taskName = message.taskName)
-
             monitoringPerNameOutput.sendToMonitoringGlobal(message.taskName, tsc)
         }
 

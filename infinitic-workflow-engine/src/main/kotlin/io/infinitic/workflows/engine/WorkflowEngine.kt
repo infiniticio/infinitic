@@ -56,8 +56,8 @@ class WorkflowEngine(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    suspend fun handle(message: WorkflowEngineMessage) {
-        logger.debug("workflowId {} - receiving {}", message.workflowId, message)
+    suspend fun handle(message: WorkflowEngineMessage, messageId: String?) {
+        logger.debug("workflowId {} - messageId {} - receiving {}", message.workflowId, messageId, message)
 
         // store event
         workflowEventStorage.insertWorkflowEvent(message)
@@ -77,20 +77,21 @@ class WorkflowEngine(
         // if no state (newly created workflow or terminated workflow)
         if (state == null) {
             if (message is DispatchWorkflow) {
-                state = dispatchWorkflow(workflowEngineOutput, message)
+                state = dispatchWorkflow(workflowEngineOutput, message, messageId)
                 workflowStateStorage.createState(message.workflowId, state)
-            } else {
-                // discard all other messages if workflow is already terminated
-                discardMessage(message)
+                return
             }
-
-            return
-        } else {
-            // discard DispatchWorkflow if workflow already exists
-            if (message is DispatchWorkflow) {
-                return discardMessage(message)
-            }
+            // discard all other messages if workflow is already terminated
+            return logDiscardingMessage(message, messageId, "for having null state")
         }
+
+        // check if this message has already been handled
+        if (messageId != null && state.messageId == messageId) {
+            return logDiscardingMessage(message, messageId, "as state already contains this messageId")
+        }
+
+        // set current messageId
+        state.messageId = messageId
 
         // if a workflow task is ongoing then buffer this message (except for WorkflowTaskCompleted)
         if (state.runningWorkflowTaskId != null && message !is WorkflowTaskCompleted) {
@@ -124,8 +125,8 @@ class WorkflowEngine(
         }
     }
 
-    private fun discardMessage(message: WorkflowEngineMessage) {
-        logger.info("workflowId {} - discarding {}", message.workflowId, message)
+    private fun logDiscardingMessage(message: WorkflowEngineMessage, messageId: String?, reason: String) {
+        logger.info("workflowId {} - messageId {} - discarding {}: {}", message.workflowId, messageId, reason, message)
     }
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {

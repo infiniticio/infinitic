@@ -64,12 +64,12 @@ class WorkflowEnginePulsarFunctionTests : StringSpec({
         val workflowEngine = mockk<WorkflowEngine>()
         val workflowEnginePulsarFunction = spyk<WorkflowEnginePulsarFunction>()
         every { workflowEnginePulsarFunction.getWorkflowEngine(context) } returns workflowEngine
-        coEvery { workflowEngine.handle(msg) } just Runs
+        coEvery { workflowEngine.handle(msg, any()) } just Runs
 
         // when
         workflowEnginePulsarFunction.process(envelope, context)
         // then
-        coVerify(exactly = 1) { workflowEngine.handle(msg) }
+        coVerify(exactly = 1) { workflowEngine.handle(msg, null) }
 
         unmockkAll()
     }

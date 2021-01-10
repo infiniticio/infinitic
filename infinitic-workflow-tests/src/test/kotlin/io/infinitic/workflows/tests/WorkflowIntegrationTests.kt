@@ -405,7 +405,7 @@ fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float
         if (after > 0F) {
             delay((1000 * after).toLong())
         }
-        workflowEngine.handle(msg)
+        workflowEngine.handle(msg, null)
 
         // defines output if reached
         if (msg is WorkflowCompleted) {
