@@ -43,6 +43,7 @@ import io.infinitic.pulsar.topics.getPersistentTopicFullName
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 
 class PulsarConsumerFactory(
@@ -71,6 +72,7 @@ class PulsarConsumerFactory(
             .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(WORKFLOW_ENGINE_SUBSCRIPTION_NAME)
             .subscriptionType(SubscriptionType.Key_Shared)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
     fun newTaskEngineConsumer(consumerName: String, consumerCounter: Int): Consumer<TaskEngineEnvelope> =
@@ -84,6 +86,7 @@ class PulsarConsumerFactory(
             .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(TASK_ENGINE_SUBSCRIPTION_NAME)
             .subscriptionType(SubscriptionType.Key_Shared)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
     fun newTaskExecutorConsumer(consumerName: String, consumerCounter: Int, taskName: String): Consumer<TaskExecutorMessage> =
@@ -92,6 +95,7 @@ class PulsarConsumerFactory(
             .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(TASK_EXECUTOR_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Shared)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
     fun newWorkflowExecutorConsumer(consumerName: String, consumerCounter: Int, workflowName: String): Consumer<TaskExecutorMessage> =
@@ -100,6 +104,7 @@ class PulsarConsumerFactory(
             .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(WORKFLOW_EXECUTOR_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Shared)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
     fun newMonitoringPerNameEngineConsumer(consumerName: String, consumerCounter: Int): Consumer<MonitoringPerNameEnvelope> =
@@ -108,6 +113,7 @@ class PulsarConsumerFactory(
             .consumerName("$consumerName-$consumerCounter")
             .subscriptionName(MONITORING_PER_NAME_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Key_Shared)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
     fun newMonitoringGlobalEngineConsumer(consumerName: String): Consumer<MonitoringGlobalEnvelope> =
@@ -116,5 +122,6 @@ class PulsarConsumerFactory(
             .consumerName(consumerName)
             .subscriptionName(MONITORING_GLOBAL_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Failover)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 }
