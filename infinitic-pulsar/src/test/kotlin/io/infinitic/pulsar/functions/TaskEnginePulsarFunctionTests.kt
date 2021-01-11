@@ -64,12 +64,12 @@ class TaskEnginePulsarFunctionTests : StringSpec({
         val taskEngine = mockk<TaskEngine>()
         val taskEnginePulsarFunction = spyk<TaskEnginePulsarFunction>()
         every { taskEnginePulsarFunction.getTaskEngine(context) } returns taskEngine
-        coEvery { taskEngine.handle(msg, any()) } just Runs
+        coEvery { taskEngine.handle(msg) } just Runs
 
         // when
         taskEnginePulsarFunction.process(envelope, context)
         // then
-        coVerify(exactly = 1) { taskEngine.handle(msg, null) }
+        coVerify(exactly = 1) { taskEngine.handle(msg) }
 
         unmockkAll()
     }

@@ -41,7 +41,7 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
-            getWorkflowEngine(ctx).handle(envelope.message(), null)
+            getWorkflowEngine(ctx).handle(envelope.message())
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, envelope)
             throw e

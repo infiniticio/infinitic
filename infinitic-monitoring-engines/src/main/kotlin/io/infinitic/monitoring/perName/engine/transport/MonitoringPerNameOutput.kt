@@ -27,7 +27,7 @@ package io.infinitic.monitoring.perName.engine.transport
 
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -37,8 +37,14 @@ interface MonitoringPerNameOutput {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun sendToMonitoringGlobal(taskName: TaskName, monitoringGlobalMessage: MonitoringGlobalMessage) {
+    suspend fun sendToMonitoringGlobal(state: MonitoringPerNameState, monitoringGlobalMessage: MonitoringGlobalMessage) {
+        logger.debug(
+            "from messageId {}: taskName {} - sendToMonitoringGlobal {} (messageId {})",
+            state.lastMessageId,
+            state.taskName,
+            monitoringGlobalMessage,
+            monitoringGlobalMessage.messageId
+        )
         sendToMonitoringGlobalFn(monitoringGlobalMessage)
-        logger.debug("taskName {} - sendToMonitoringGlobal {}", taskName, monitoringGlobalMessage)
     }
 }

@@ -33,8 +33,7 @@ import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
 suspend fun dispatchWorkflow(
     workflowEngineOutput: WorkflowEngineOutput,
-    message: DispatchWorkflow,
-    messageId: String?
+    message: DispatchWorkflow
 ): WorkflowState {
     val methodRun = MethodRun(
         isMain = true,
@@ -47,7 +46,7 @@ suspend fun dispatchWorkflow(
     )
 
     val state = WorkflowState(
-        messageId = messageId,
+        lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,
         workflowOptions = message.workflowOptions,

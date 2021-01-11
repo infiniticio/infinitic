@@ -38,20 +38,20 @@ class MonitoringGlobalEngine(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun handle(message: MonitoringGlobalMessage, messageId: String?) {
-        logger.debug("messageId {} - receiving {}", messageId, message)
+    suspend fun handle(message: MonitoringGlobalMessage) {
+        logger.debug("receiving {} (messageId {})", message, message.messageId)
 
         // get state
         val oldState = storage.getState()
 
         // checks if this message has already just been handled
-        if (oldState != null && messageId != null && oldState.messageId == messageId) {
-            return logDiscardingMessage(message, messageId, "as state already contains this messageId")
+        if (oldState != null && oldState.lastMessageId == message.messageId) {
+            return logDiscardingMessage(message, "as state already contains this messageId")
         }
 
         val newState = oldState
-            ?.copy(messageId = messageId)
-            ?: MonitoringGlobalState(messageId)
+            ?.copy(lastMessageId = message.messageId)
+            ?: MonitoringGlobalState(lastMessageId = message.messageId)
 
         when (message) {
             is TaskCreated -> handleTaskTypeCreated(message, newState)
@@ -63,8 +63,8 @@ class MonitoringGlobalEngine(
         }
     }
 
-    private fun logDiscardingMessage(message: MonitoringGlobalMessage, messageId: String?, reason: String) {
-        logger.info("messageId {} - discarding {}: {}", messageId, reason, message)
+    private fun logDiscardingMessage(message: MonitoringGlobalMessage, reason: String) {
+        logger.info("discarding {}: {} (messageId {})", reason, message, message.messageId)
     }
 
     private fun handleTaskTypeCreated(message: TaskCreated, state: MonitoringGlobalState) {

@@ -62,7 +62,7 @@ fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNam
 
     for (messageToProcess in monitoringPerNameInputChannels.monitoringPerNameChannel) {
         try {
-            messageToProcess.output = monitoringPerNameEngine.handle(messageToProcess.message, messageToProcess.messageId)
+            messageToProcess.output = monitoringPerNameEngine.handle(messageToProcess.message)
         } catch (e: Exception) {
             messageToProcess.exception = e
             logError(messageToProcess, e)

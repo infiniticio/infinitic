@@ -70,7 +70,7 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
         select<Unit> {
             events.onReceive {
                 try {
-                    it.output = workflowEngine.handle(it.message, it.messageId)
+                    it.output = workflowEngine.handle(it.message)
                 } catch (e: Exception) {
                     it.exception = e
                     logError(it, e)
@@ -80,7 +80,7 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
             }
             commands.onReceive {
                 try {
-                    it.output = workflowEngine.handle(it.message, it.messageId)
+                    it.output = workflowEngine.handle(it.message)
                 } catch (e: Exception) {
                     it.exception = e
                     logError(it, e)

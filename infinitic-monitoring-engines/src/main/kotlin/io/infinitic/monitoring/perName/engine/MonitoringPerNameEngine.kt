@@ -42,20 +42,20 @@ class MonitoringPerNameEngine(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun handle(message: MonitoringPerNameEngineMessage, messageId: String?) {
-        logger.debug("name {} - messageId {} - receiving {}", message.taskName, messageId, message)
+    suspend fun handle(message: MonitoringPerNameEngineMessage) {
+        logger.debug("name {} - receiving {} (messageId {})", message.taskName, message, message.messageId)
 
         // get state
         val oldState = storage.getState(message.taskName)
 
         // checks if this message has already just been handled
-        if (oldState != null && messageId != null && oldState.messageId == messageId) {
-            return logDiscardingMessage(message, messageId, "as state already contains this messageId")
+        if (oldState != null && oldState.lastMessageId == message.messageId) {
+            return logDiscardingMessage(message, "as state already contains this messageId")
         }
 
         val newState = oldState
-            ?.copy(messageId = messageId)
-            ?: MonitoringPerNameState(messageId, message.taskName)
+            ?.copy(lastMessageId = message.messageId)
+            ?: MonitoringPerNameState(message.messageId, message.taskName)
 
         when (message) {
             is TaskStatusUpdated -> handleTaskStatusUpdated(message, newState)
@@ -64,7 +64,7 @@ class MonitoringPerNameEngine(
         // It's a new task type
         if (oldState == null) {
             val tsc = TaskCreated(taskName = message.taskName)
-            monitoringPerNameOutput.sendToMonitoringGlobal(message.taskName, tsc)
+            monitoringPerNameOutput.sendToMonitoringGlobal(newState, tsc)
         }
 
         // Update stored state if needed and existing
@@ -73,8 +73,8 @@ class MonitoringPerNameEngine(
         }
     }
 
-    private fun logDiscardingMessage(message: MonitoringPerNameEngineMessage, messageId: String?, reason: String) {
-        logger.info("name {} - messageId {} - discarding {}: {}", message.taskName, messageId, reason, message)
+    private fun logDiscardingMessage(message: MonitoringPerNameEngineMessage, reason: String) {
+        logger.info("name {} - discarding {}: {} (messageId {})", message.taskName, reason, message, message.messageId)
     }
 
     private fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MonitoringPerNameState) {

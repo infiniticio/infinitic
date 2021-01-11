@@ -62,7 +62,7 @@ private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>) = kPr
         } catch (e: Exception) {
             throw RuntimeException("$errorMsg ($e)")
         }
-        if (!accessible) it.isAccessible = false
+        // do NOT set `it.isAccessible = accessible`, being a static property, it triggers errors by race conditions
 
         value
     }
@@ -86,6 +86,6 @@ private fun <T : Any> setProperty(obj: T, kProperty: KProperty1<out T, *>, value
         } catch (e: Exception) {
             throw RuntimeException("$errorMsg ($e)")
         }
-        if (!accessible) isAccessible = false
+        // do NOT set `it.isAccessible = accessible`, being a static property, it triggers errors by race conditions
     }
 }

@@ -23,27 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.transport
+package io.infinitic.common.data
 
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import java.util.UUID
 
-interface TaskExecutorOutput {
-    val sendToTaskEngineFn: SendToTaskEngine
+@Serializable(with = MessageIdSerializer::class)
+data class MessageId(override val id: String = UUID.randomUUID().toString()) : Id(id)
 
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
-
-    suspend fun sendToTaskEngine(messageId: MessageId, taskEngineMessage: TaskEngineMessage, after: Float) {
-        logger.debug(
-            "from messageId {}: sendToTaskEngine {} (messageId: {})",
-            messageId,
-            taskEngineMessage,
-            taskEngineMessage.messageId
-        )
-        sendToTaskEngineFn(taskEngineMessage, after)
-    }
+object MessageIdSerializer : KSerializer<MessageId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MessageId", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MessageId) { encoder.encodeString(value.id) }
+    override fun deserialize(decoder: Decoder) = MessageId(decoder.decodeString())
 }

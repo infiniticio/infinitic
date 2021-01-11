@@ -26,13 +26,14 @@
 package io.infinitic.common.monitoring.global.state
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer
 
 @Serializable
 data class MonitoringGlobalState(
-    val messageId: String?,
+    val lastMessageId: MessageId,
     val taskNames: MutableSet<TaskName> = mutableSetOf()
 ) {
     companion object {

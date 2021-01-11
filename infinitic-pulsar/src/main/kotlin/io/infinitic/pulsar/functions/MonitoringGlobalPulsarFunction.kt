@@ -39,7 +39,7 @@ class MonitoringGlobalPulsarFunction : Function<MonitoringGlobalEnvelope, Void> 
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
-            getMonitoringGlobalEngine(ctx).handle(envelope.message(), null)
+            getMonitoringGlobalEngine(ctx).handle(envelope.message())
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, envelope)
             throw e

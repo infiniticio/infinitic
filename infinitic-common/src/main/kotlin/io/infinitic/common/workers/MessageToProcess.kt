@@ -27,7 +27,6 @@ package io.infinitic.common.workers
 
 interface MessageToProcess<out T> {
     val message: T
-    val messageId: String?
     var exception: Exception?
     var output: Any?
 }

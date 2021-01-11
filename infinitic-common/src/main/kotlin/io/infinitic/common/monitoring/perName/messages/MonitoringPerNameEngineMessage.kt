@@ -25,6 +25,7 @@
 
 package io.infinitic.common.monitoring.perName.messages
 
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
@@ -32,6 +33,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class MonitoringPerNameEngineMessage {
+    val messageId = MessageId()
     abstract val taskName: TaskName
 }
 

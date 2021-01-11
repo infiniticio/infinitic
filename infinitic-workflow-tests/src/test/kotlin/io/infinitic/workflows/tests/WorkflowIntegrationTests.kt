@@ -405,7 +405,7 @@ fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float
         if (after > 0F) {
             delay((1000 * after).toLong())
         }
-        workflowEngine.handle(msg, null)
+        workflowEngine.handle(msg)
 
         // defines output if reached
         if (msg is WorkflowCompleted) {
@@ -419,19 +419,19 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
         if (after > 0F) {
             delay((1000 * after).toLong())
         }
-        taskEngine.handle(msg, null)
+        taskEngine.handle(msg)
     }
 }
 
 fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) {
     launch {
-        monitoringPerNameEngine.handle(msg, null)
+        monitoringPerNameEngine.handle(msg)
     }
 }
 
 fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
     launch {
-        monitoringGlobalEngine.handle(msg, null)
+        monitoringGlobalEngine.handle(msg)
     }
 }
 

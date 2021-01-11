@@ -81,32 +81,34 @@ open class TaskExecutor(
         taskExecutorRegister.unregister(T::class.java.name)
     }
 
-    suspend fun handle(msg: TaskExecutorMessage) {
+    suspend fun handle(message: TaskExecutorMessage) {
+        logger.debug("receiving {} (messageId {})", message, message.messageId)
+
         val worker = this
 
         withContext(Dispatchers.Default) {
             // let engine know that we are processing the message
-            sendTaskStarted(msg)
+            sendTaskStarted(message)
 
             // trying to instantiate the task
             val (task, method, parameters, options) = try {
-                parse(msg)
+                parse(message)
             } catch (e: Exception) {
                 // returning the exception (no retry)
-                sendTaskFailed(msg, e, null)
+                sendTaskFailed(message, e, null)
                 // stop here
                 return@withContext
             }
 
             val taskAttemptContext = TaskAttemptContext(
                 taskExecutor = worker,
-                taskId = "${msg.taskId}",
-                taskAttemptId = "${msg.taskAttemptId}",
-                taskRetry = msg.taskRetry.int,
-                taskAttemptRetry = msg.taskAttemptRetry.int,
-                lastTaskAttemptError = msg.lastTaskAttemptError?.get(),
-                taskMeta = msg.taskMeta.get(),
-                taskOptions = msg.taskOptions
+                taskId = "${message.taskId}",
+                taskAttemptId = "${message.taskAttemptId}",
+                taskRetry = message.taskRetry.int,
+                taskAttemptRetry = message.taskAttemptRetry.int,
+                lastTaskAttemptError = message.lastTaskAttemptError?.get(),
+                taskMeta = message.taskMeta.get(),
+                taskOptions = message.taskOptions
             )
 
             // set taskAttemptContext into task (if a property with right type is present)
@@ -114,7 +116,7 @@ open class TaskExecutor(
                 setTaskContext(task, taskAttemptContext)
             } catch (e: Exception) {
                 // returning the exception (no retry)
-                sendTaskFailed(msg, e, null)
+                sendTaskFailed(message, e, null)
                 // stop here
                 return@withContext
             }
@@ -127,21 +129,21 @@ open class TaskExecutor(
                 } else {
                     executeTask(method, task, parameters)
                 }
-                sendTaskCompleted(msg, output)
+                sendTaskCompleted(message, output)
             } catch (e: InvocationTargetException) {
 //                println(e.cause?.cause?.stackTraceToString())
                 // update context with the cause (to be potentially used in getRetryDelay method)
                 taskAttemptContext.currentTaskAttemptError = e.cause
                 // retrieve delay before retry
-                getRetryDelayAndFailTask(task, msg, taskAttemptContext)
+                getRetryDelayAndFailTask(task, message, taskAttemptContext)
             } catch (e: TimeoutCancellationException) {
                 // update context with the cause (to be potentially used in getRetryDelay method)
                 taskAttemptContext.currentTaskAttemptError = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
                 // returning a timeout
-                getRetryDelayAndFailTask(task, msg, taskAttemptContext)
+                getRetryDelayAndFailTask(task, message, taskAttemptContext)
             } catch (e: Exception) {
                 // returning the exception (no retry)
-                sendTaskFailed(msg, e, null)
+                sendTaskFailed(message, e, null)
             }
         }
     }
@@ -209,41 +211,41 @@ open class TaskExecutor(
         }
     }
 
-    private suspend fun sendTaskStarted(msg: TaskExecutorMessage) {
+    private suspend fun sendTaskStarted(message: TaskExecutorMessage) {
         val taskAttemptStarted = TaskAttemptStarted(
-            taskId = msg.taskId,
-            taskAttemptId = msg.taskAttemptId,
-            taskAttemptRetry = msg.taskAttemptRetry,
-            taskRetry = msg.taskRetry
+            taskId = message.taskId,
+            taskAttemptId = message.taskAttemptId,
+            taskAttemptRetry = message.taskAttemptRetry,
+            taskRetry = message.taskRetry
         )
 
-        taskExecutorOutput.sendToTaskEngine(taskAttemptStarted, 0F)
+        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptStarted, 0F)
     }
 
-    private suspend fun sendTaskFailed(msg: TaskExecutorMessage, error: Throwable?, delay: Float? = null) {
-        logger.debug("taskId {} - error {}", msg.taskId, error)
+    private suspend fun sendTaskFailed(message: TaskExecutorMessage, error: Throwable?, delay: Float? = null) {
+        logger.debug("taskId {} - error {}", message.taskId, error)
 
         val taskAttemptFailed = TaskAttemptFailed(
-            taskId = msg.taskId,
-            taskAttemptId = msg.taskAttemptId,
-            taskAttemptRetry = msg.taskAttemptRetry,
-            taskRetry = msg.taskRetry,
+            taskId = message.taskId,
+            taskAttemptId = message.taskAttemptId,
+            taskAttemptRetry = message.taskAttemptRetry,
+            taskRetry = message.taskRetry,
             taskAttemptDelayBeforeRetry = delay,
             taskAttemptError = TaskAttemptError.from(error)
         )
 
-        taskExecutorOutput.sendToTaskEngine(taskAttemptFailed, 0F)
+        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptFailed, 0F)
     }
 
-    private suspend fun sendTaskCompleted(msg: TaskExecutorMessage, output: Any?) {
+    private suspend fun sendTaskCompleted(message: TaskExecutorMessage, output: Any?) {
         val taskAttemptCompleted = TaskAttemptCompleted(
-            taskId = msg.taskId,
-            taskAttemptId = msg.taskAttemptId,
-            taskAttemptRetry = msg.taskAttemptRetry,
-            taskRetry = msg.taskRetry,
+            taskId = message.taskId,
+            taskAttemptId = message.taskAttemptId,
+            taskAttemptRetry = message.taskAttemptRetry,
+            taskRetry = message.taskRetry,
             taskOutput = MethodOutput.from(output)
         )
 
-        taskExecutorOutput.sendToTaskEngine(taskAttemptCompleted, 0F)
+        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptCompleted, 0F)
     }
 }

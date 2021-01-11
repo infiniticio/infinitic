@@ -32,7 +32,6 @@ data class PulsarMessageToProcess<T> (
     override val message: T,
     val pulsarId: MessageId
 ) : MessageToProcess<T> {
-    override val messageId = pulsarId.toString()
     override var exception: Exception? = null
     override var output: Any? = null
 }

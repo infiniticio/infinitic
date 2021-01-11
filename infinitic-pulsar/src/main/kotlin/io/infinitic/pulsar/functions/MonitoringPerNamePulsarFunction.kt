@@ -40,7 +40,7 @@ class MonitoringPerNamePulsarFunction : Function<MonitoringPerNameEnvelope, Void
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
-            getMonitoringPerNameEngine(ctx).handle(envelope.message(), null)
+            getMonitoringPerNameEngine(ctx).handle(envelope.message())
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, envelope)
             throw e
