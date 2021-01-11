@@ -28,7 +28,6 @@ package io.infinitic.monitoring.global.engine.storage
 import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import java.nio.ByteBuffer
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
@@ -41,14 +40,14 @@ open class MonitoringGlobalStateKeyValueStorage(
     override val getStateFn: GetMonitoringGlobalState = {
         storage
             .getState(getMonitoringGlobalStateKey())
-            ?.let { MonitoringGlobalState.fromByteArray(it.array()) }
+            ?.let { MonitoringGlobalState.fromByteBuffer(it) }
     }
 
     override val updateStateFn: UpdateMonitoringGlobalState = {
         newState: MonitoringGlobalState,
         oldState: MonitoringGlobalState?
         ->
-        storage.putState(getMonitoringGlobalStateKey(), ByteBuffer.wrap(newState.toByteArray()))
+        storage.putState(getMonitoringGlobalStateKey(), newState.toByteBuffer())
     }
 
     override val deleteStateFn: DeleteMonitoringGlobalState = {

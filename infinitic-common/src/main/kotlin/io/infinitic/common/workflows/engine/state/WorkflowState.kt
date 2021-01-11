@@ -26,6 +26,7 @@
 package io.infinitic.common.workflows.engine.state
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -43,6 +44,11 @@ import java.nio.ByteBuffer
 
 @Serializable
 data class WorkflowState(
+    /*
+    Id of last received message (used to ensure idempotency)
+     */
+    var lastMessageId: MessageId,
+
     /*
     Id of this workflow instance
      */

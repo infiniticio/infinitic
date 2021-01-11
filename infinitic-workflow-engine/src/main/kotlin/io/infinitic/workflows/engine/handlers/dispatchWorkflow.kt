@@ -33,23 +33,24 @@ import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
 suspend fun dispatchWorkflow(
     workflowEngineOutput: WorkflowEngineOutput,
-    msg: DispatchWorkflow
+    message: DispatchWorkflow
 ): WorkflowState {
     val methodRun = MethodRun(
         isMain = true,
-        parentWorkflowId = msg.parentWorkflowId,
-        parentMethodRunId = msg.parentMethodRunId,
-        methodName = msg.methodName,
-        methodParameterTypes = msg.methodParameterTypes,
-        methodInput = msg.methodInput,
+        parentWorkflowId = message.parentWorkflowId,
+        parentMethodRunId = message.parentMethodRunId,
+        methodName = message.methodName,
+        methodParameterTypes = message.methodParameterTypes,
+        methodInput = message.methodInput,
         propertiesNameHashAtStart = mapOf()
     )
 
     val state = WorkflowState(
-        workflowId = msg.workflowId,
-        workflowName = msg.workflowName,
-        workflowOptions = msg.workflowOptions,
-        workflowMeta = msg.workflowMeta,
+        lastMessageId = message.messageId,
+        workflowId = message.workflowId,
+        workflowName = message.workflowName,
+        workflowOptions = message.workflowOptions,
+        workflowMeta = message.workflowMeta,
         methodRuns = mutableListOf(methodRun)
     )
 

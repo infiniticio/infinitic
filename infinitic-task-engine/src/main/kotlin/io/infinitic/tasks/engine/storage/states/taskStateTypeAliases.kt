@@ -23,8 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine.storage
+package io.infinitic.tasks.engine.storage.states
 
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.engine.state.TaskState
 
-typealias DeleteMonitoringPerNameState = suspend (TaskName) -> Unit
+typealias GetTaskState = suspend (TaskId) -> TaskState?
+
+typealias DeleteTaskState = suspend (TaskId) -> Unit
+
+typealias UpdateTaskState = suspend (TaskId, TaskState, TaskState?) -> Unit

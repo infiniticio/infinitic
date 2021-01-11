@@ -29,6 +29,7 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
@@ -46,12 +47,23 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<WorkflowEngineMessage>
 
 const val WORKFLOW_ENGINE_PROCESSING_COROUTINE_NAME = "workflow-engine-processing"
 const val WORKFLOW_ENGINE_ACKNOWLEDGING_COROUTINE_NAME = "workflow-engine-acknowledging"
 const val WORKFLOW_ENGINE_PULLING_COROUTINE_NAME = "workflow-engine-pulling"
+
+private val logger: Logger
+    get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
+
+private fun logError(message: Message<WorkflowEngineEnvelope>, e: Exception) = logger.error(
+    "exception on message {}:${System.getProperty("line.separator")}{}",
+    message,
+    e
+)
 
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
     consumerCounter: Int,
@@ -82,7 +94,7 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
                 // in case of errors, manually send this message to dead letters
                 sendToWorkflowEngineDeadLetters(messageToProcess.message, 0F)
             }
-            workflowEngineConsumer.acknowledgeAsync(messageToProcess.messageId).await()
+            workflowEngineConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
             logChannel?.send(messageToProcess)
         }
     }
@@ -95,10 +107,15 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
             try {
                 val envelope = WorkflowEngineEnvelope.fromByteArray(message.data)
 
-                workflowCommandsChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
+                workflowCommandsChannel.send(
+                    PulsarMessageToProcess(
+                        message = envelope.message(),
+                        pulsarId = message.messageId
+                    )
+                )
             } catch (e: Exception) {
+                logError(message, e)
                 workflowEngineConsumer.negativeAcknowledge(message.messageId)
-                throw e
             }
         }
     }

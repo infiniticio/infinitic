@@ -25,11 +25,14 @@
 
 package io.infinitic.common.monitoring.global.messages
 
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class MonitoringGlobalMessage
+sealed class MonitoringGlobalMessage {
+    val messageId = MessageId()
+}
 
 @Serializable
 data class TaskCreated(

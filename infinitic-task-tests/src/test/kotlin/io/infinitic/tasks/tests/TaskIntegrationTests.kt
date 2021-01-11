@@ -74,7 +74,7 @@ private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
 private lateinit var taskExecutor: TaskExecutor
-private lateinit var infiniticClient: InfiniticClient
+private lateinit var client: InfiniticClient
 
 class TaskIntegrationTests : StringSpec({
     var taskId: TaskId
@@ -85,7 +85,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
+            taskId = TaskId(client.startTask<TaskTest> { log() })
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -101,7 +101,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
+            taskId = TaskId(client.startTask<TaskTest> { log() })
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -117,7 +117,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
+            taskId = TaskId(client.startTask<TaskTest> { log() })
         }
         // check that task is not terminated
         taskStateStorage.getState(taskId) shouldNotBe null
@@ -133,7 +133,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
+            taskId = TaskId(client.startTask<TaskTest> { log() })
         }
         // check that task is not terminated
         taskStateStorage.getState(taskId) shouldNotBe null
@@ -155,11 +155,11 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
+            taskId = TaskId(client.startTask<TaskTest> { log() })
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
-            infiniticClient.retryTask(id = "$taskId")
+            client.retryTask(id = "$taskId")
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -176,9 +176,9 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(infiniticClient.startTask<TaskTest> { log() })
+            taskId = TaskId(client.startTask<TaskTest> { log() })
             delay(100)
-            infiniticClient.cancelTask(id = "$taskId")
+            client.cancelTask(id = "$taskId")
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -258,7 +258,7 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     taskStatus = null
 
-    infiniticClient = InfiniticClient(TestClientOutput(this))
+    client = InfiniticClient(TestClientOutput(this))
 
     taskEngine = TaskEngine(
         taskStateStorage,

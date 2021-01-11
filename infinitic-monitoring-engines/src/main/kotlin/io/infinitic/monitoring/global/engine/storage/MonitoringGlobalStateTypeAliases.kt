@@ -28,3 +28,7 @@ package io.infinitic.monitoring.global.engine.storage
 import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 
 typealias GetMonitoringGlobalState = suspend () -> MonitoringGlobalState?
+
+typealias UpdateMonitoringGlobalState = suspend (MonitoringGlobalState, MonitoringGlobalState?) -> Unit
+
+typealias DeleteMonitoringGlobalState = suspend () -> Unit

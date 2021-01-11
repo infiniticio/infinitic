@@ -114,7 +114,7 @@ suspend fun workflowTaskCompleted(
         // if this is the main method, it means the workflow is completed
         if (methodRun.isMain) {
             workflowEngineOutput.sendToWorkflowEngine(
-                state.workflowId,
+                state,
                 WorkflowCompleted(
                     workflowId = state.workflowId,
                     workflowOutput = methodRun.methodOutput!!
@@ -126,7 +126,7 @@ suspend fun workflowTaskCompleted(
         // tell parent workflow if any
         methodRun.parentWorkflowId?.let {
             workflowEngineOutput.sendToWorkflowEngine(
-                state.workflowId,
+                state,
                 ChildWorkflowCompleted(
                     workflowId = it,
                     methodRunId = methodRun.parentMethodRunId!!,
@@ -253,7 +253,7 @@ private suspend fun dispatchTask(
         methodRunId = methodRun.methodRunId,
         taskMeta = command.taskMeta
     )
-    workflowEngineOutput.sendToTaskEngine(state.workflowId, msg, 0F)
+    workflowEngineOutput.sendToTaskEngine(state, msg, 0F)
 
     addPastCommand(methodRun, newCommand)
 }
@@ -277,7 +277,7 @@ private suspend fun dispatchChildWorkflow(
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )
-    workflowEngineOutput.sendToWorkflowEngine(state.workflowId, msg, 0F)
+    workflowEngineOutput.sendToWorkflowEngine(state, msg, 0F)
 
     addPastCommand(methodRun, newCommand)
 }

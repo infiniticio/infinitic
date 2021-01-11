@@ -57,7 +57,7 @@ class WorkflowEngine(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: WorkflowEngineMessage) {
-        logger.debug("workflowId {} - receiving {}", message.workflowId, message)
+        logger.debug("workflowId {} - receiving {} (messageId {})", message.workflowId, message, message.messageId)
 
         // store event
         workflowEventStorage.insertWorkflowEvent(message)
@@ -79,18 +79,31 @@ class WorkflowEngine(
             if (message is DispatchWorkflow) {
                 state = dispatchWorkflow(workflowEngineOutput, message)
                 workflowStateStorage.createState(message.workflowId, state)
-            } else {
-                // discard all other messages if workflow is already terminated
-                discardMessage(message)
+                return
             }
-
-            return
-        } else {
-            // discard DispatchWorkflow if workflow already exists
-            if (message is DispatchWorkflow) {
-                return discardMessage(message)
-            }
+            // discard all other messages if workflow is already terminated
+            return logDiscardingMessage(message, "for having null state")
         }
+
+        // check if this message has already been handled
+        if (state.lastMessageId == message.messageId) {
+            return warnDiscardingMessage(message, "as state already contains this messageId")
+        }
+
+        // check is this workflow has already been launched
+        // (a DispatchWorkflow (child) can be dispatched twice if the engine is shutdown while processing a workflowTask)
+        if (message is DispatchWorkflow) {
+            return warnDiscardingMessage(message, "as workflow has already been launched")
+        }
+
+        // check is this workflowTask is the current one
+        // (a workflowTask can be dispatched twice if the engine is shutdown while processing a workflowTask)
+        if (message is WorkflowTaskCompleted && message.workflowTaskId != state.runningWorkflowTaskId) {
+            return warnDiscardingMessage(message, "as workflowTask is not the current one")
+        }
+
+        // set current messageId
+        state.lastMessageId = message.messageId
 
         // if a workflow task is ongoing then buffer this message (except for WorkflowTaskCompleted)
         if (state.runningWorkflowTaskId != null && message !is WorkflowTaskCompleted) {
@@ -124,8 +137,12 @@ class WorkflowEngine(
         }
     }
 
-    private fun discardMessage(message: WorkflowEngineMessage) {
-        logger.info("workflowId {} - discarding {}", message.workflowId, message)
+    private fun logDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
+        logger.info("workflowId {} - discarding {}: {} (messageId {})", message.workflowId, reason, message, message.messageId)
+    }
+
+    private fun warnDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
+        logger.warn("workflowId {} - discarding {}: {} (messageId {})", message.workflowId, reason, message, message.messageId)
     }
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {

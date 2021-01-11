@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.engine.messages
 
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
@@ -45,6 +46,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class WorkflowEngineMessage() {
+    val messageId: MessageId = MessageId()
     abstract val workflowId: WorkflowId
 }
 

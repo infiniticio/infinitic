@@ -43,27 +43,38 @@ class MonitoringPerNameEngine(
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: MonitoringPerNameEngineMessage) {
-        logger.debug("name {} - receiving {}", message.taskName, message)
+        logger.debug("name {} - receiving {} (messageId {})", message.taskName, message, message.messageId)
 
-        // get associated state
+        // get state
         val oldState = storage.getState(message.taskName)
-        val newState = oldState?.deepCopy() ?: MonitoringPerNameState(message.taskName)
+
+        // checks if this message has already just been handled
+        if (oldState != null && oldState.lastMessageId == message.messageId) {
+            return logDiscardingMessage(message, "as state already contains this messageId")
+        }
+
+        val newState = oldState
+            ?.copy(lastMessageId = message.messageId)
+            ?: MonitoringPerNameState(message.messageId, message.taskName)
 
         when (message) {
             is TaskStatusUpdated -> handleTaskStatusUpdated(message, newState)
+        }
+
+        // It's a new task type
+        if (oldState == null) {
+            val tsc = TaskCreated(taskName = message.taskName)
+            monitoringPerNameOutput.sendToMonitoringGlobal(newState, tsc)
         }
 
         // Update stored state if needed and existing
         if (newState != oldState) {
             storage.updateState(message.taskName, newState, oldState)
         }
+    }
 
-        // It's a new task type
-        if (oldState == null) {
-            val tsc = TaskCreated(taskName = message.taskName)
-
-            monitoringPerNameOutput.sendToMonitoringGlobal(message.taskName, tsc)
-        }
+    private fun logDiscardingMessage(message: MonitoringPerNameEngineMessage, reason: String) {
+        logger.info("name {} - discarding {}: {} (messageId {})", message.taskName, reason, message, message.messageId)
     }
 
     private fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MonitoringPerNameState) {

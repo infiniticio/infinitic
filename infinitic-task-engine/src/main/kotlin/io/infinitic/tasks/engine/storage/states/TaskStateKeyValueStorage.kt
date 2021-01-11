@@ -34,8 +34,8 @@ import io.infinitic.common.tasks.engine.state.TaskState
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-open class TaskStateKeyValueStorage(
-    protected val storage: KeyValueStorage
+class TaskStateKeyValueStorage(
+    private val storage: KeyValueStorage
 ) : TaskStateStorage {
 
     override val getStateFn: GetTaskState = { taskId: TaskId ->
@@ -44,7 +44,7 @@ open class TaskStateKeyValueStorage(
             ?.let { TaskState.fromByteBuffer(it) }
     }
 
-    override val updateStateFn: UpdateTaskState = { taskId: TaskId, newState: TaskState, oldState: TaskState? ->
+    override val updateStateFn: UpdateTaskState = { taskId: TaskId, newState: TaskState, _: TaskState? ->
         storage.putState(
             getTaskStateKey(taskId),
             newState.toByteBuffer()

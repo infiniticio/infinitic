@@ -166,9 +166,9 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.cancelTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToTaskEngine(msgIn.taskId, taskCanceled, 0F)
+            taskEngineOutput.sendToTaskEngine(stateIn, taskCanceled, 0F)
             taskStateStorage.deleteState(msgIn.taskId)
-            taskEngineOutput.sendToMonitoringPerName(msgIn.taskId, taskStatusUpdated)
+            taskEngineOutput.sendToMonitoringPerName(stateIn, taskStatusUpdated)
         }
         taskCanceled.taskId shouldBe msgIn.taskId
         taskCanceled.taskMeta shouldBe stateIn.taskMeta
@@ -190,10 +190,10 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.dispatchTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToTaskExecutors(msgIn.taskId, runTask)
-            taskEngineOutput.sendToTaskEngine(msgIn.taskId, taskAttemptDispatched, 0F)
+            taskEngineOutput.sendToTaskExecutors(state, runTask)
+            taskEngineOutput.sendToTaskEngine(state, taskAttemptDispatched, 0F)
             taskStateStorage.updateState(msgIn.taskId, state, null)
-            taskEngineOutput.sendToMonitoringPerName(msgIn.taskId, taskStatusUpdated)
+            taskEngineOutput.sendToMonitoringPerName(state, taskStatusUpdated)
         }
         runTask.shouldBeInstanceOf<TaskExecutorMessage>()
         runTask.taskId shouldBe msgIn.taskId
@@ -242,10 +242,10 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.retryTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToTaskExecutors(msgIn.taskId, runTask)
-            taskEngineOutput.sendToTaskEngine(msgIn.taskId, taskAttemptDispatched, 0F)
+            taskEngineOutput.sendToTaskExecutors(state, runTask)
+            taskEngineOutput.sendToTaskEngine(state, taskAttemptDispatched, 0F)
             taskStateStorage.updateState(msgIn.taskId, state, stateIn)
-            taskEngineOutput.sendToMonitoringPerName(msgIn.taskId, taskStatusUpdated)
+            taskEngineOutput.sendToMonitoringPerName(state, taskStatusUpdated)
         }
         runTask.shouldBeInstanceOf<TaskExecutorMessage>()
         runTask.taskId shouldBe stateIn.taskId
@@ -293,9 +293,9 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.taskAttemptCompletedSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToTaskEngine(msgIn.taskId, taskCompleted, 0F)
+            taskEngineOutput.sendToTaskEngine(stateIn, taskCompleted, 0F)
             taskStateStorage.deleteState(msgIn.taskId)
-            taskEngineOutput.sendToMonitoringPerName(msgIn.taskId, taskStatusUpdated)
+            taskEngineOutput.sendToMonitoringPerName(stateIn, taskStatusUpdated)
         }
         taskStatusUpdated.oldStatus shouldBe stateIn.taskStatus
         taskStatusUpdated.newStatus shouldBe TaskStatus.TERMINATED_COMPLETED
@@ -329,7 +329,7 @@ internal class TaskEngineTests : StringSpec({
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.taskAttemptFailedSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
             taskStateStorage.updateState(msgIn.taskId, state, stateIn)
-            taskEngineOutput.sendToMonitoringPerName(msgIn.taskId, taskStatusUpdated)
+            taskEngineOutput.sendToMonitoringPerName(state, taskStatusUpdated)
         }
         taskStatusUpdated.taskId shouldBe stateIn.taskId
         taskStatusUpdated.taskName shouldBe TaskName("${stateIn.taskName}::${stateIn.methodName}")
@@ -365,9 +365,9 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.taskAttemptFailedSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToTaskEngine(msgIn.taskId, retryTaskAttempt, retryTaskAttemptDelay)
+            taskEngineOutput.sendToTaskEngine(state, retryTaskAttempt, retryTaskAttemptDelay)
             taskStateStorage.updateState(msgIn.taskId, state, stateIn)
-            taskEngineOutput.sendToMonitoringPerName(msgIn.taskId, taskStatusUpdated)
+            taskEngineOutput.sendToMonitoringPerName(state, taskStatusUpdated)
         }
         retryTaskAttempt.taskId shouldBe stateIn.taskId
         retryTaskAttempt.taskAttemptId shouldBe stateIn.taskAttemptId
@@ -473,10 +473,10 @@ private fun checkShouldRetryTaskAttempt(
 
     coVerifyOrder {
         taskStateStorage.getState(msgIn.taskId)
-        taskEngineOutput.sendToTaskExecutors(msgIn.taskId, runTask)
-        taskEngineOutput.sendToTaskEngine(msgIn.taskId, taskAttemptDispatched, 0F)
+        taskEngineOutput.sendToTaskExecutors(stateIn, runTask)
+        taskEngineOutput.sendToTaskEngine(stateIn, taskAttemptDispatched, 0F)
         taskStateStorage.updateState(msgIn.taskId, state, stateIn)
-        taskEngineOutput.sendToMonitoringPerName(msgIn.taskId, taskStatusUpdated)
+        taskEngineOutput.sendToMonitoringPerName(stateIn, taskStatusUpdated)
     }
     runTask.shouldBeInstanceOf<TaskExecutorMessage>()
     runTask.taskId shouldBe stateIn.taskId

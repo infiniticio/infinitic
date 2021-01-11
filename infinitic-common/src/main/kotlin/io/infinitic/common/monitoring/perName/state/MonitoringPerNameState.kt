@@ -26,12 +26,14 @@
 package io.infinitic.common.monitoring.perName.state
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer
 
 @Serializable
 data class MonitoringPerNameState(
+    val lastMessageId: MessageId,
     val taskName: TaskName,
     var runningOkCount: Long = 0,
     var runningWarningCount: Long = 0,
@@ -46,5 +48,4 @@ data class MonitoringPerNameState(
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
     fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
-    fun deepCopy() = fromByteArray(toByteArray())
 }

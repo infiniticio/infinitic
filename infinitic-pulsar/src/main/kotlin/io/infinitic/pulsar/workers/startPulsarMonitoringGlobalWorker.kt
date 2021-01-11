@@ -33,6 +33,7 @@ import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyVal
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
+import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -44,12 +45,23 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<MonitoringGlobalMessage>
 
 const val MONITORING_GLOBAL_PROCESSING_COROUTINE_NAME = "monitoring-global-processing"
 const val MONITORING_GLOBAL_ACKNOWLEDGING_COROUTINE_NAME = "monitoring-global-acknowledging"
 const val MONITORING_GLOBAL_PULLING_COROUTINE_NAME = "monitoring-global-pulling"
+
+private val logger: Logger
+    get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
+
+private fun logError(message: Message<MonitoringGlobalEnvelope>, e: Exception) = logger.error(
+    "exception on message {}:${System.getProperty("line.separator")}{}",
+    message,
+    e
+)
 
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope>,
@@ -75,7 +87,7 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
                 // in case of errors, send this message to dead letters
                 sendToMonitoringGlobalDeadLetters(messageToProcess.message)
             }
-            monitoringGlobalConsumer.acknowledgeAsync(messageToProcess.messageId).await()
+            monitoringGlobalConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
             logChannel?.send(messageToProcess)
         }
     }
@@ -89,8 +101,8 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
                 val envelope = MonitoringGlobalEnvelope.fromByteArray(message.data)
                 monitoringGlobalChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
             } catch (e: Exception) {
+                logError(message, e)
                 monitoringGlobalConsumer.negativeAcknowledge(message.messageId)
-                throw e
             }
         }
     }

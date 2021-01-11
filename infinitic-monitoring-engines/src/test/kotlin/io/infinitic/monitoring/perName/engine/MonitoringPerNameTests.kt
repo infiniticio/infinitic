@@ -96,7 +96,7 @@ class MonitoringPerNameTests : ShouldSpec({
             coVerifyAll {
                 storage.getState(msg.taskName)
                 storage.updateState(msg.taskName, stateOut, null)
-                monitoringPerNameOutput.sendToMonitoringGlobal(msg.taskName, ofType<TaskCreated>())
+                monitoringPerNameOutput.sendToMonitoringGlobal(stateOut, ofType<TaskCreated>())
             }
         }
     }
