@@ -173,7 +173,7 @@ open class InfiniticClient(
      * Retry a task (Java)
      * when a non-null parameter is provided, it will supersede current one
      */
-    @JvmOverloads suspend fun retryTaskAsync(
+    @JvmOverloads fun retryTaskAsync(
         id: String,
         name: TaskName? = null,
         methodName: MethodName? = null,
@@ -213,7 +213,7 @@ open class InfiniticClient(
     /*
      * Cancel a task (Java)
      */
-    @JvmOverloads suspend fun cancelTaskAsync(
+    @JvmOverloads fun cancelTaskAsync(
         id: String,
         output: Any? = null
     ): CompletableFuture<Unit> = GlobalScope.future {
@@ -237,7 +237,7 @@ open class InfiniticClient(
     /*
      * Cancel a workflow (Java)
      */
-    @JvmOverloads suspend fun cancelWorkflowAsync(
+    @JvmOverloads fun cancelWorkflowAsync(
         id: String,
         output: Any? = null
     ): CompletableFuture<Unit> = GlobalScope.future {

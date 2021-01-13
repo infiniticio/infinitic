@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
@@ -43,6 +44,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.apache.pulsar.client.api.PulsarClientException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -66,6 +68,7 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
     consumerCounter: Int,
     taskExecutorConsumer: Consumer<TaskExecutorMessage>,
     taskExecutorOutput: TaskExecutorOutput,
+    sendToTaskExecutorDeadLetters: SendToTaskExecutors,
     taskExecutorRegister: TaskExecutorRegister,
     logChannel: SendChannel<TaskExecutorMessageToProcess>?,
     instancesNumber: Int = 1
@@ -87,10 +90,16 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$TASK_EXECUTOR_ACKNOWLEDGING_COROUTINE_NAME-$taskName-$consumerCounter")) {
         for (messageToProcess in taskExecutorResultsChannel) {
-            if (messageToProcess.exception == null) {
-                taskExecutorConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
-            } else {
+            if (messageToProcess.exception is PulsarClientException) {
+                // if an error is due to Pulsar itself, we negativeAcknowledge the message
                 taskExecutorConsumer.negativeAcknowledge(messageToProcess.pulsarId)
+            } else {
+                if (messageToProcess.exception != null) {
+                    // for all other errors (probably serialization issues at this stage), send this message to dead letters
+                    sendToTaskExecutorDeadLetters(messageToProcess.message)
+                }
+                // acknowledge this message
+                taskExecutorConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
             }
             logChannel?.send(messageToProcess)
         }

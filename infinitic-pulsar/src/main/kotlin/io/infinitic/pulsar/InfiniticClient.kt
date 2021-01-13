@@ -25,8 +25,9 @@
 
 package io.infinitic.pulsar
 
-import com.sksamuel.hoplite.ConfigLoader
 import io.infinitic.pulsar.config.ClientConfig
+import io.infinitic.pulsar.config.loadConfigFromFile
+import io.infinitic.pulsar.config.loadConfigFromResource
 import io.infinitic.pulsar.transport.PulsarOutputs
 import org.apache.pulsar.client.api.PulsarClient
 import io.infinitic.client.InfiniticClient as Client
@@ -36,14 +37,14 @@ class InfiniticClient(
     @JvmField val pulsarClient: PulsarClient,
     @JvmField val tenant: String,
     @JvmField val namespace: String,
-    producerName: String
+    producerName: String? = null
 ) : Client(PulsarOutputs.from(pulsarClient, tenant, namespace, producerName).clientOutput) {
     companion object {
+        /*
+        Create InfiniticClient from a ClientConfig
+        */
         @JvmStatic
-        fun loadConfig(configPath: String): InfiniticClient {
-            // loaf Config instance
-            val config: ClientConfig = ConfigLoader().loadConfigOrThrow(configPath)
-            // build Pulsar client from config
+        fun fromConfig(config: ClientConfig): InfiniticClient {
             val pulsarClient: PulsarClient = PulsarClient
                 .builder()
                 .serviceUrl(config.pulsar.serviceUrl)
@@ -56,6 +57,20 @@ class InfiniticClient(
                 "client: ${config.name}"
             )
         }
+
+        /*
+       Create InfiniticClient from a ClientConfig loaded from a resource
+        */
+        @JvmStatic
+        fun fromResource(vararg resources: String) =
+            fromConfig(loadConfigFromResource(resources.toList()))
+
+        /*
+       Create InfiniticClient from a ClientConfig loaded from a file
+        */
+        @JvmStatic
+        fun fromFile(vararg files: String) =
+            fromConfig(loadConfigFromFile(files.toList()))
     }
 
     fun close() = pulsarClient.close()

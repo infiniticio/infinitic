@@ -52,7 +52,7 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     taskExecutorInput: TaskExecutorInput<T>,
     taskExecutorOutput: TaskExecutorOutput,
     coroutineNamePostfix: String = ""
-) = launch(Dispatchers.Default + CoroutineName(coroutineName)) {
+) = launch(Dispatchers.IO + CoroutineName(coroutineName)) {
 
     val taskExecutor = TaskExecutor(taskExecutorOutput, taskExecutorRegister)
     val out = taskExecutorInput.taskExecutorResultsChannel

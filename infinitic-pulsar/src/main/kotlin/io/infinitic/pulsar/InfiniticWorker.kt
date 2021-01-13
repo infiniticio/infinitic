@@ -25,11 +25,12 @@
 
 package io.infinitic.pulsar
 
-import com.sksamuel.hoplite.ConfigLoader
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.pulsar.config.Mode
 import io.infinitic.pulsar.config.WorkerConfig
 import io.infinitic.pulsar.config.getKeyValueStorage
+import io.infinitic.pulsar.config.loadConfigFromFile
+import io.infinitic.pulsar.config.loadConfigFromResource
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startPulsarMonitoringGlobalWorker
@@ -40,6 +41,7 @@ import io.infinitic.pulsar.workers.startPulsarWorkflowEngineWorker
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -54,39 +56,80 @@ class InfiniticWorker(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     companion object {
-        @JvmStatic fun loadConfig(configPath: String): InfiniticWorker {
-            // loaf Config instance
-            val workerConfig: WorkerConfig = ConfigLoader().loadConfigOrThrow(configPath)
+        /*
+        Create InfiniticWorker from a WorkerConfig
+        */
+        @JvmStatic fun fromConfig(config: WorkerConfig): InfiniticWorker {
             // build Pulsar client from config
             val pulsarClient: PulsarClient = PulsarClient
                 .builder()
-                .serviceUrl(workerConfig.pulsar.serviceUrl)
+                .serviceUrl(config.pulsar.serviceUrl)
                 .build()
 
-            return InfiniticWorker(pulsarClient, workerConfig)
+            return InfiniticWorker(pulsarClient, config)
+        }
+
+        /*
+        Create InfiniticWorker from a WorkerConfig loaded from a resource
+        */
+        @JvmStatic
+        fun fromResource(vararg resources: String) =
+            fromConfig(loadConfigFromResource(resources.toList()))
+
+        /*
+        Create InfiniticWorker from a WorkerConfig loaded from a file
+        */
+        @JvmStatic
+        fun fromFile(vararg files: String) =
+            fromConfig(loadConfigFromFile(files.toList()))
+    }
+
+    /*
+    Close workers
+    */
+    fun close() = pulsarClient.close()
+
+    /*
+    Start workers
+    */
+    @JvmOverloads fun start(logFn: ((MessageToProcess<Any>) -> Unit) = {}) {
+
+        runBlocking {
+            logger.info("InfiniticWorker - starting with config {}", config)
+
+            val logChannel = Channel<MessageToProcess<Any>>()
+
+            // log function is applied for each Pulsar message manage by this worker
+            // after processing and (neg)acknowledgment
+            launch(CoroutineName("logger")) {
+                for (messageToProcess in logChannel) {
+                    logFn(messageToProcess)
+                }
+            }
+
+            val tenant = config.pulsar.tenant
+            val namespace = config.pulsar.namespace
+            val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
+            val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, producerName = getWorkerName(config))
+
+            startWorkflowEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
+
+            startTaskEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
+
+            startMonitoringWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
+
+            startTaskExecutorWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
         }
     }
 
-    @JvmOverloads fun start(logFn: ((MessageToProcess<Any>) -> Unit) = {}) = runBlocking {
-        logger.info("InfiniticWorker - starting with config {}", config)
+    private fun getWorkerName(config: WorkerConfig) = "worker: ${config.name}"
 
-        val tenant = config.pulsar.tenant
-        val namespace = config.pulsar.namespace
-        val name = "worker: ${config.name}"
-
-        val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
-        val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, producerName = name)
-
-        val logChannel = Channel<MessageToProcess<Any>>()
-
-        // log function is applied for each Pulsar message manage by this worker
-        // after processing and (neg)acknowledgment
-        launch(CoroutineName("logger")) {
-            for (messageToProcess in logChannel) {
-                logFn(messageToProcess)
-            }
-        }
-
+    private fun CoroutineScope.startWorkflowEngineWorkers(
+        config: WorkerConfig,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutputs: PulsarOutputs,
+        logChannel: Channel<MessageToProcess<Any>>
+    ) {
         config.workflowEngine?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "workflowStates")
@@ -94,7 +137,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
                     startPulsarWorkflowEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName = name, counter),
+                        pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName = getWorkerName(config), counter),
                         pulsarOutputs.workflowEngineOutput,
                         pulsarOutputs.sendToWorkflowEngineDeadLetters,
                         keyValueStorage,
@@ -103,7 +146,14 @@ class InfiniticWorker(
                 }
             }
         }
+    }
 
+    private fun CoroutineScope.startTaskEngineWorkers(
+        config: WorkerConfig,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutputs: PulsarOutputs,
+        logChannel: Channel<MessageToProcess<Any>>
+    ) {
         config.taskEngine?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "taskStates")
@@ -111,7 +161,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting task engine {}", counter)
                     startPulsarTaskEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName = name, counter),
+                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName = getWorkerName(config), counter),
                         pulsarOutputs.taskEngineOutput,
                         pulsarOutputs.sendToTaskEngineDeadLetters,
                         keyValueStorage,
@@ -120,7 +170,14 @@ class InfiniticWorker(
                 }
             }
         }
+    }
 
+    private fun CoroutineScope.startMonitoringWorkers(
+        config: WorkerConfig,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutputs: PulsarOutputs,
+        logChannel: Channel<MessageToProcess<Any>>
+    ) {
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "monitoringStates")
@@ -128,7 +185,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
                         counter,
-                        pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName = name, counter),
+                        pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName = getWorkerName(config), counter),
                         pulsarOutputs.monitoringPerNameOutput,
                         pulsarOutputs.sendToMonitoringPerNameDeadLetters,
                         keyValueStorage,
@@ -138,14 +195,21 @@ class InfiniticWorker(
 
                 logger.info("InfiniticWorker - starting monitoring global")
                 startPulsarMonitoringGlobalWorker(
-                    pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName = name),
+                    pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName = getWorkerName(config)),
                     pulsarOutputs.sendToMonitoringGlobalDeadLetters,
                     InMemoryStorage(),
                     logChannel
                 )
             }
         }
+    }
 
+    private fun CoroutineScope.startTaskExecutorWorkers(
+        config: WorkerConfig,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutputs: PulsarOutputs,
+        logChannel: Channel<MessageToProcess<Any>>
+    ) {
         val taskExecutorRegister = TaskExecutorRegisterImpl()
 
         for (workflow in config.workflows) {
@@ -157,8 +221,9 @@ class InfiniticWorker(
                     startPulsarTaskExecutorWorker(
                         workflow.name,
                         it,
-                        pulsarConsumerFactory.newWorkflowExecutorConsumer(consumerName = name, it, workflow.name),
+                        pulsarConsumerFactory.newWorkflowExecutorConsumer(consumerName = getWorkerName(config), it, workflow.name),
                         pulsarOutputs.taskExecutorOutput,
+                        pulsarOutputs.sendToTaskExecutorDeadLetters,
                         taskExecutorRegister,
                         logChannel,
                         workflow.concurrency
@@ -181,8 +246,9 @@ class InfiniticWorker(
                     startPulsarTaskExecutorWorker(
                         task.name,
                         it,
-                        pulsarConsumerFactory.newTaskExecutorConsumer(consumerName = name, it, task.name),
+                        pulsarConsumerFactory.newTaskExecutorConsumer(consumerName = getWorkerName(config), it, task.name),
                         pulsarOutputs.taskExecutorOutput,
+                        pulsarOutputs.sendToTaskExecutorDeadLetters,
                         taskExecutorRegister,
                         logChannel,
                         task.concurrency

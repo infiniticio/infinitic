@@ -47,6 +47,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.apache.pulsar.client.api.PulsarClientException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -90,12 +91,17 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$TASK_ENGINE_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
         for (messageToProcess in taskResultsChannel) {
-            if (messageToProcess.exception != null) {
-                // in case of errors, manually send this message to dead letters
-                sendToTaskEngineDeadLetters(messageToProcess.message, 0F)
+            if (messageToProcess.exception is PulsarClientException) {
+                // if we did not manage to send new messages or create producers, we negativeAcknowledge the message
+                taskEngineConsumer.negativeAcknowledge(messageToProcess.pulsarId)
+            } else {
+                if (messageToProcess.exception != null) {
+                    // for all other errors (probably serialization issues at this stage), send this message to dead letters
+                    sendToTaskEngineDeadLetters(messageToProcess.message, 0F)
+                }
+                // acknowledge this message
+                taskEngineConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
             }
-            taskEngineConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
-
             logChannel?.send(messageToProcess)
         }
     }
