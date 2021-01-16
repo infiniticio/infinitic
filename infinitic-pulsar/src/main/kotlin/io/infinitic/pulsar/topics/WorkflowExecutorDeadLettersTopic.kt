@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object WorkflowExecutorDeadLettersTopic {
-    fun name(name: String) = "workflow: (dead-letters) $name"
+    fun name(name: String) = "workflow-executor-dead-letters: $name"
 }

@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object MonitoringPerNameTopic {
-    const val name = "system: monitoring-per-name"
+    const val name = "monitoring-per-name"
 }

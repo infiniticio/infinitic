@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object TaskEngineDeadLettersTopic {
-    const val name = "system: task-engine-dead-letters"
+    const val name = "task-engine-dead-letters"
 }

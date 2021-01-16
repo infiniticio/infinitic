@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar.samples
 
+import io.infinitic.workflows.AbstractWorkflow
 import io.infinitic.workflows.Workflow
-import io.infinitic.workflows.WorkflowBase
 import io.infinitic.workflows.task
 import io.infinitic.workflows.workflow
 
@@ -35,7 +35,7 @@ interface WorkflowB : Workflow {
     fun factorial(n: Long): Long
 }
 
-class WorkflowBImpl() : WorkflowBase(), WorkflowB {
+class WorkflowBImpl() : AbstractWorkflow(), WorkflowB {
     private val task = task<TaskA>()
     private val workflow = workflow<WorkflowB>()
 

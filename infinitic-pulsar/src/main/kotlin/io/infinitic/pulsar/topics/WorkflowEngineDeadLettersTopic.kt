@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object WorkflowEngineDeadLettersTopic {
-    const val name = "system: workflow-engine-dead-letters"
+    const val name = "workflow-engine-dead-letters"
 }

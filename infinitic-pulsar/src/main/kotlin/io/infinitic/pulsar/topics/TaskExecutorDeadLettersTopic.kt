@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object TaskExecutorDeadLettersTopic {
-    fun name(name: String) = "task: (dead-letters) $name"
+    fun name(name: String) = "task-executor-dead-letters: $name"
 }

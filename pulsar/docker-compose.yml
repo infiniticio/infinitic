@@ -22,6 +22,7 @@
 # Licensor: infinitic.io
 
 services:
+  # Pulsar settings
   pulsar:
     image: apachepulsar/pulsar-all:2.7.0
     environment:
@@ -39,6 +40,7 @@ services:
       - "8081:8081"
     restart: unless-stopped
 
+  # Pulsar Manager
   dashboard:
     image: apachepulsar/pulsar-manager:v0.2.0
     ports:
@@ -53,7 +55,7 @@ services:
     environment:
       SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties
 
-  # Uncomment the following block if you want to use a Redis storage for persistence of states. There is also a volume to uncomment at the bottom of the file.
+  # Redis storage for state persistence
   redis:
     image: redis:6.0-alpine
     ports:
@@ -64,5 +66,4 @@ services:
 volumes:
   pulsardata:
   pulsarconf:
-  # Uncomment the following volume if you want to use a Redis storage for persistence of states
   redisdata:

@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object WorkflowEngineEventsTopic {
-    const val name = "system: workflow-engine-events"
+    const val name = "workflow-engine-events"
 }

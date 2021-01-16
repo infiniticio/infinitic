@@ -52,16 +52,16 @@ import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowDefinitionUpdatedWhileOngoing
+import io.infinitic.workflows.AbstractWorkflow
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.Workflow
-import io.infinitic.workflows.WorkflowBase
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Method
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
-    private val workflow: WorkflowBase
+    private val workflow: AbstractWorkflow
 ) : WorkflowTaskContext {
     // position in the current method processing
     private var methodRunIndex = MethodRunIndex()
