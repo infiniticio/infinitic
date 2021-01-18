@@ -54,7 +54,10 @@ class InfiniticClient(
                 pulsarClient,
                 config.pulsar.tenant,
                 config.pulsar.namespace,
-                "client: ${config.name}"
+                when (config.name) {
+                    null -> null
+                    else -> "client: ${config.name}"
+                }
             )
         }
 

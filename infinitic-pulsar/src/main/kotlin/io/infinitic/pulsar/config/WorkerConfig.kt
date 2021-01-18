@@ -33,7 +33,7 @@ data class WorkerConfig(
     /*
     Worker name - used to identify multiple workers
      */
-    @JvmField val name: String,
+    @JvmField val name: String? = null,
 
     /*
     Default running mode

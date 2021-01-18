@@ -29,7 +29,7 @@ data class ClientConfig(
     /*
    Client name
     */
-    @JvmField val name: String,
+    @JvmField val name: String? = null,
 
     /*
     Pulsar configuration

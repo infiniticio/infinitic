@@ -30,6 +30,7 @@ import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskAttemptError
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
@@ -166,7 +167,7 @@ open class TaskExecutor(
     }
 
     private suspend fun getRetryDelayAndFailTask(task: Any, msg: TaskExecutorMessage, context: TaskAttemptContext) {
-        when (val delay = getDelayBeforeRetry(task)) {
+        when (val delay = getDelayBeforeRetry(task, msg.taskId)) {
             is RetryDelayRetrieved -> {
                 // returning the original cause
                 sendTaskFailed(msg, context.currentTaskAttemptError, delay.value)
@@ -191,23 +192,28 @@ open class TaskExecutor(
         return TaskCommand(task, method, msg.methodInput.get(), msg.taskOptions)
     }
 
-    private fun getDelayBeforeRetry(task: Any): RetryDelay {
+    private fun getDelayBeforeRetry(task: Any, taskId: TaskId): RetryDelay {
         val method = try {
             task::class.java.getMethod(Constants.DELAY_BEFORE_RETRY_METHOD)
         } catch (e: NoSuchMethodException) {
+            logger.info("taskId {} - no ${Constants.DELAY_BEFORE_RETRY_METHOD} method", taskId)
             return RetryDelayRetrieved(null)
         }
 
-        val actualType = method.genericReturnType.typeName
-        val expectedType = Float::class.javaObjectType.name
-        if (actualType != expectedType) return RetryDelayFailed(
-            RetryDelayHasWrongReturnType(task::class.java.name, actualType, expectedType)
-        )
+        val value = try {
+            method.invoke(task)
+        } catch (e: InvocationTargetException) {
+            logger.error("taskId {} - error when executing ${Constants.DELAY_BEFORE_RETRY_METHOD} method", taskId, e.cause)
+            return RetryDelayFailed(e.cause)
+        }
 
         return try {
-            RetryDelayRetrieved(method.invoke(task) as Float?)
-        } catch (e: InvocationTargetException) {
-            RetryDelayFailed(e.cause)
+            RetryDelayRetrieved(value as Float?)
+        } catch (e: Exception) {
+            logger.error("taskId {} - wrong return type ({}) of ${Constants.DELAY_BEFORE_RETRY_METHOD} method", taskId, method.genericReturnType.typeName)
+            return RetryDelayFailed(
+                RetryDelayHasWrongReturnType(task::class.java.name, method.genericReturnType.typeName, Float::class.javaObjectType.name)
+            )
         }
     }
 

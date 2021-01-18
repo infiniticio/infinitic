@@ -59,7 +59,8 @@ class InfiniticWorker(
         /*
         Create InfiniticWorker from a WorkerConfig
         */
-        @JvmStatic fun fromConfig(config: WorkerConfig): InfiniticWorker {
+        @JvmStatic
+        fun fromConfig(config: WorkerConfig): InfiniticWorker {
             // build Pulsar client from config
             val pulsarClient: PulsarClient = PulsarClient
                 .builder()
@@ -122,7 +123,10 @@ class InfiniticWorker(
         }
     }
 
-    private fun getWorkerName(config: WorkerConfig) = "worker: ${config.name}"
+    private fun getWorkerName(config: WorkerConfig) = when (config.name) {
+        null -> null
+        else -> "worker: ${config.name}"
+    }
 
     private fun CoroutineScope.startWorkflowEngineWorkers(
         config: WorkerConfig,
