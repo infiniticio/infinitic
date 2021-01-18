@@ -39,11 +39,10 @@ interface MonitoringPerNameOutput {
 
     suspend fun sendToMonitoringGlobal(state: MonitoringPerNameState, monitoringGlobalMessage: MonitoringGlobalMessage) {
         logger.debug(
-            "from messageId {}: taskName {} - sendToMonitoringGlobal {} (messageId {})",
+            "from messageId {}: taskName {} - sendToMonitoringGlobal {}",
             state.lastMessageId,
             state.taskName,
-            monitoringGlobalMessage,
-            monitoringGlobalMessage.messageId
+            monitoringGlobalMessage
         )
         sendToMonitoringGlobalFn(monitoringGlobalMessage)
     }

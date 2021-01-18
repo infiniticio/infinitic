@@ -60,8 +60,8 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaType
 
-open class TaskExecutor(
-    open val taskExecutorOutput: TaskExecutorOutput,
+class TaskExecutor(
+    val taskExecutorOutput: TaskExecutorOutput,
     val taskExecutorRegister: TaskExecutorRegister = TaskExecutorRegisterImpl()
 ) : TaskExecutorRegister by taskExecutorRegister {
 
@@ -85,7 +85,16 @@ open class TaskExecutor(
     suspend fun handle(message: TaskExecutorMessage) {
         logger.debug("receiving {} (messageId {})", message, message.messageId)
 
-        val worker = this
+        val taskAttemptContext = TaskAttemptContext(
+            taskExecutor = this,
+            taskId = "${message.taskId}",
+            taskAttemptId = "${message.taskAttemptId}",
+            taskRetry = message.taskRetry.int,
+            taskAttemptRetry = message.taskAttemptRetry.int,
+            lastTaskAttemptError = message.lastTaskAttemptError?.get(),
+            taskMeta = message.taskMeta.get(),
+            taskOptions = message.taskOptions
+        )
 
         withContext(Dispatchers.Default) {
             // let engine know that we are processing the message
@@ -100,17 +109,6 @@ open class TaskExecutor(
                 // stop here
                 return@withContext
             }
-
-            val taskAttemptContext = TaskAttemptContext(
-                taskExecutor = worker,
-                taskId = "${message.taskId}",
-                taskAttemptId = "${message.taskAttemptId}",
-                taskRetry = message.taskRetry.int,
-                taskAttemptRetry = message.taskAttemptRetry.int,
-                lastTaskAttemptError = message.lastTaskAttemptError?.get(),
-                taskMeta = message.taskMeta.get(),
-                taskOptions = message.taskOptions
-            )
 
             // set taskAttemptContext into task (if a property with right type is present)
             try {
@@ -132,7 +130,6 @@ open class TaskExecutor(
                 }
                 sendTaskCompleted(message, output)
             } catch (e: InvocationTargetException) {
-//                println(e.cause?.cause?.stackTraceToString())
                 // update context with the cause (to be potentially used in getRetryDelay method)
                 taskAttemptContext.currentTaskAttemptError = e.cause
                 // retrieve delay before retry
@@ -220,9 +217,9 @@ open class TaskExecutor(
     private suspend fun sendTaskStarted(message: TaskExecutorMessage) {
         val taskAttemptStarted = TaskAttemptStarted(
             taskId = message.taskId,
+            taskRetry = message.taskRetry,
             taskAttemptId = message.taskAttemptId,
-            taskAttemptRetry = message.taskAttemptRetry,
-            taskRetry = message.taskRetry
+            taskAttemptRetry = message.taskAttemptRetry
         )
 
         taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptStarted, 0F)

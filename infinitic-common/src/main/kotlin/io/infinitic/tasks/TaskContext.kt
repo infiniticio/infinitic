@@ -23,26 +23,17 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.transport
+package io.infinitic.tasks
 
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import io.infinitic.common.tasks.data.TaskOptions
 
-interface TaskExecutorOutput {
-    val sendToTaskEngineFn: SendToTaskEngine
-
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
-
-    suspend fun sendToTaskEngine(messageId: MessageId, taskEngineMessage: TaskEngineMessage, after: Float) {
-        logger.debug(
-            "from messageId {}: sendToTaskEngine {}",
-            messageId,
-            taskEngineMessage
-        )
-        sendToTaskEngineFn(taskEngineMessage, after)
-    }
+interface TaskContext {
+    val taskId: String
+    val taskRetry: Int
+    val taskAttemptId: String
+    val taskAttemptRetry: Int
+    val lastTaskAttemptError: Any?
+    var currentTaskAttemptError: Throwable?
+    val taskMeta: Map<String, Any?>
+    val taskOptions: TaskOptions
 }
