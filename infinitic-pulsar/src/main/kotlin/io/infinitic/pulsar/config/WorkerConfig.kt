@@ -26,7 +26,6 @@
 package io.infinitic.pulsar.config
 
 import io.infinitic.storage.StateStorage
-import io.infinitic.storage.kodein.Kodein
 import io.infinitic.storage.redis.Redis
 
 data class WorkerConfig(
@@ -80,10 +79,6 @@ data class WorkerConfig(
      */
     @JvmField val redis: Redis? = null,
 
-    /*
-    Kodein configuration
-     */
-    @JvmField val kodein: Kodein? = null
 ) {
     init {
         workflowEngine?.let {
@@ -115,10 +110,6 @@ data class WorkerConfig(
     private fun checkStateStorage(stateStorage: StateStorage?, mode: Mode, name: String) {
         if (stateStorage == StateStorage.redis) {
             require(redis != null) { "`${StateStorage.redis}` is used for $name but not configured" }
-        }
-
-        if (stateStorage == StateStorage.kodein) {
-            require(kodein != null) { "`${StateStorage.kodein}` is used for $name but not configured" }
         }
 
         if (stateStorage == StateStorage.pulsarState) {

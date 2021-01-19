@@ -29,6 +29,5 @@ package io.infinitic.storage
 enum class StateStorage {
     inMemory,
     pulsarState,
-    redis,
-    kodein
+    redis
 }

@@ -92,13 +92,6 @@ object Libs {
         const val clients = "redis.clients:jedis:3.3.0"
     }
 
-    object Kodein {
-        private const val version = "0.4.0-beta"
-        const val jvm = "org.kodein.db:kodein-db-jvm:$version"
-        const val jni = "org.kodein.db:kodein-leveldb-jni-jvm:$version"
-        const val kryo = "org.kodein.db:kodein-db-serializer-kryo-jvm:$version"
-    }
-
     object EasyRandom {
         const val core = "org.jeasy:easy-random-core:4.2.0"
     }

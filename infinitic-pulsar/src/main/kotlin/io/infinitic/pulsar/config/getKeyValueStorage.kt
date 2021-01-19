@@ -27,21 +27,10 @@ package io.infinitic.pulsar.config
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.storage.kodein.KodeinStorage
 import io.infinitic.storage.redis.RedisStorage
-import java.io.File
 
 fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig, type: String): KeyValueStorage = when (this) {
     StateStorage.inMemory -> InMemoryStorage()
-    StateStorage.kodein -> getKodeinKeyValueStorage(workerConfig, type)
     StateStorage.redis -> RedisStorage(workerConfig.redis!!)
     StateStorage.pulsarState -> InMemoryStorage()
-}
-
-private fun getKodeinKeyValueStorage(workerConfig: WorkerConfig, type: String): KodeinStorage {
-    val path = "${workerConfig.kodein!!.path.trimEnd('/')}/$type/"
-    val dir = File(path)
-    if (!dir.exists()) dir.mkdirs()
-
-    return KodeinStorage(workerConfig.kodein.copy(path = path))
 }
