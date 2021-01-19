@@ -46,6 +46,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -84,14 +85,19 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
         monitoringPerNameOutput
     )
 
+    fun negativeAcknowledge(pulsarId: MessageId) =
+        monitoringPerNameConsumer.negativeAcknowledge(pulsarId)
+
+    suspend fun acknowledge(pulsarId: MessageId) =
+        monitoringPerNameConsumer.acknowledgeAsync(pulsarId).await()
+
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$MONITORING_PER_NAME_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
         for (messageToProcess in monitoringPerNameResultsChannel) {
-            if (messageToProcess.exception != null) {
-                // in case of errors, send this message to dead letters
-                sendToMonitoringPerNameDeadLetters(messageToProcess.message)
+            when (messageToProcess.exception) {
+                null -> acknowledge(messageToProcess.pulsarId)
+                else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
-            monitoringPerNameConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
             logChannel?.send(messageToProcess)
         }
     }
@@ -106,12 +112,13 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
                 monitoringPerNameChannel.send(
                     PulsarMessageToProcess(
                         message = envelope.message(),
-                        pulsarId = message.messageId
+                        pulsarId = message.messageId,
+                        redeliveryCount = message.redeliveryCount
                     )
                 )
             } catch (e: Exception) {
                 logError(message, e)
-                monitoringPerNameConsumer.negativeAcknowledge(message.messageId)
+                negativeAcknowledge(message.messageId)
             }
         }
     }

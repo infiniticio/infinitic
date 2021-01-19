@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
@@ -43,6 +44,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -66,6 +68,7 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
     consumerCounter: Int,
     taskExecutorConsumer: Consumer<TaskExecutorMessage>,
     taskExecutorOutput: TaskExecutorOutput,
+    sendToTaskExecutorDeadLetters: SendToTaskExecutors,
     taskExecutorRegister: TaskExecutorRegister,
     logChannel: SendChannel<TaskExecutorMessageToProcess>?,
     instancesNumber: Int = 1
@@ -84,13 +87,18 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
         )
     }
 
+    fun negativeAcknowledge(pulsarId: MessageId) =
+        taskExecutorConsumer.negativeAcknowledge(pulsarId)
+
+    suspend fun acknowledge(pulsarId: MessageId) =
+        taskExecutorConsumer.acknowledgeAsync(pulsarId).await()
+
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$TASK_EXECUTOR_ACKNOWLEDGING_COROUTINE_NAME-$taskName-$consumerCounter")) {
         for (messageToProcess in taskExecutorResultsChannel) {
-            if (messageToProcess.exception == null) {
-                taskExecutorConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
-            } else {
-                taskExecutorConsumer.negativeAcknowledge(messageToProcess.pulsarId)
+            when (messageToProcess.exception) {
+                null -> acknowledge(messageToProcess.pulsarId)
+                else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
             logChannel?.send(messageToProcess)
         }
@@ -106,12 +114,13 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
                 taskExecutorChannel.send(
                     PulsarMessageToProcess(
                         message = taskExecutorMessage,
-                        pulsarId = message.messageId
+                        pulsarId = message.messageId,
+                        redeliveryCount = message.redeliveryCount
                     )
                 )
             } catch (e: Exception) {
                 logError(message, e)
-                taskExecutorConsumer.negativeAcknowledge(message.messageId)
+                negativeAcknowledge(message.messageId)
             }
         }
     }

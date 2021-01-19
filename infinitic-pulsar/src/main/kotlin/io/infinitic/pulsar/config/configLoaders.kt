@@ -22,9 +22,28 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.pulsar.config
 
-package io.infinitic.pulsar.topics
+import com.sksamuel.hoplite.ConfigLoader
+import com.sksamuel.hoplite.PropertySource
+import java.io.File
 
-object WorkflowEngineCommandsTopic {
-    const val name = "workflow-engine-commands"
-}
+inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T = ConfigLoader
+    .Builder()
+    .also { builder ->
+        resources.toList().map {
+            builder.addSource(PropertySource.resource(it, false))
+        }
+    }
+    .build()
+    .loadConfigOrThrow()
+
+inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = ConfigLoader
+    .Builder()
+    .also { builder ->
+        files.toList().map {
+            builder.addSource(PropertySource.file(File(it), false))
+        }
+    }
+    .build()
+    .loadConfigOrThrow()

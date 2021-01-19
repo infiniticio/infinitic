@@ -90,7 +90,7 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/system: workflow-engine-commands",
+                "persistent://tenant/namespace/workflow-engine-commands",
                 slotSchema.captured
             )
         }
@@ -121,7 +121,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/system: task-engine-commands",
+                "persistent://tenant/namespace/task-engine-commands",
                 slotSchema.captured
             )
         }
@@ -152,7 +152,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/system: monitoring-per-name",
+                "persistent://tenant/namespace/monitoring-per-name",
                 slotSchema.captured
             )
         }
@@ -183,7 +183,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         PulsarOutputs.from(context).monitoringPerNameOutput.sendToMonitoringGlobal(TestFactory.random(), msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe "persistent://tenant/namespace/system: monitoring-global"
+        slotTopic.captured shouldBe "persistent://tenant/namespace/monitoring-global"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MonitoringGlobalEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(MonitoringGlobalEnvelope.from(msg)) }
         verify(exactly = 1) { builder.sendAsync() }
@@ -207,7 +207,7 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         PulsarOutputs.from(context).taskEngineOutput.sendToTaskExecutors(TestFactory.random(), msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe "persistent://tenant/namespace/task: ${msg.taskName}"
+        slotTopic.captured shouldBe "persistent://tenant/namespace/task-executor: ${msg.taskName}"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorMessage>()).avroSchema
         verify(exactly = 1) { builder.value(msg) }
         verify(exactly = 1) { builder.key("${msg.taskName}") }

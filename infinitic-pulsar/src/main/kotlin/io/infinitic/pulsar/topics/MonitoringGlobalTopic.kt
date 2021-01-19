@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object MonitoringGlobalTopic {
-    const val name = "system: monitoring-global"
+    const val name = "monitoring-global"
 }

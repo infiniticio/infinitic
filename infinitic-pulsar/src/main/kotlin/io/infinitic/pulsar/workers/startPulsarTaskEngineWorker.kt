@@ -47,6 +47,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
+import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -87,15 +88,19 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
         taskEngineOutput
     )
 
+    fun negativeAcknowledge(pulsarId: MessageId) =
+        taskEngineConsumer.negativeAcknowledge(pulsarId)
+
+    suspend fun acknowledge(pulsarId: MessageId) =
+        taskEngineConsumer.acknowledgeAsync(pulsarId).await()
+
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$TASK_ENGINE_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
         for (messageToProcess in taskResultsChannel) {
-            if (messageToProcess.exception != null) {
-                // in case of errors, manually send this message to dead letters
-                sendToTaskEngineDeadLetters(messageToProcess.message, 0F)
+            when (messageToProcess.exception) {
+                null -> acknowledge(messageToProcess.pulsarId)
+                else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
-            taskEngineConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
-
             logChannel?.send(messageToProcess)
         }
     }
@@ -111,12 +116,13 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
                 taskCommandsChannel.send(
                     PulsarMessageToProcess(
                         message = envelope.message(),
-                        pulsarId = message.messageId
+                        pulsarId = message.messageId,
+                        redeliveryCount = message.redeliveryCount
                     )
                 )
             } catch (e: Exception) {
                 logError(message, e)
-                taskEngineConsumer.negativeAcknowledge(message.messageId)
+                negativeAcknowledge(message.messageId)
             }
         }
     }

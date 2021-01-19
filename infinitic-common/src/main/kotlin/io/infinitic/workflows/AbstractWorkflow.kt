@@ -28,7 +28,7 @@ package io.infinitic.workflows
 import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
 import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler
 
-abstract class WorkflowBase : Workflow {
+abstract class AbstractWorkflow : Workflow {
     lateinit var context: WorkflowTaskContext
 
     /*

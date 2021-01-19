@@ -23,14 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.task
+package io.infinitic.tasks
 
-interface Retryable {
-    /**
-     * Function that returns the delay in seconds to wait before attempting the failed task again.
-     * >0: delay in seconds
-     * <=0: no delay
-     * null: no retry
+import java.time.Duration
+
+interface Task {
+    /*
+     *  Proxy task (Java syntax)
      */
-    fun getRetryDelay(): Float?
+    fun getRetryDelay(context: TaskContext): Duration
 }

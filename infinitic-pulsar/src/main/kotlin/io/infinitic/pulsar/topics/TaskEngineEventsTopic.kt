@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object TaskEngineEventsTopic {
-    const val name = "system: task-engine-events"
+    const val name = "task-engine-events"
 }

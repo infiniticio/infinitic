@@ -46,12 +46,11 @@ interface WorkflowEngineOutput {
         after: Float
     ) {
         logger.debug(
-            "from messageId {}: workflowId {} - after {} sendToWorkflowEngine {} (messageId {})",
+            "from messageId {}: workflowId {} - after {} sendToWorkflowEngine {}",
             state.lastMessageId,
             state.workflowId,
             after,
-            workflowEngineMessage,
-            workflowEngineMessage.messageId
+            workflowEngineMessage
         )
         sendToWorkflowEngineFn(workflowEngineMessage, after)
     }
@@ -62,12 +61,11 @@ interface WorkflowEngineOutput {
         after: Float
     ) {
         logger.debug(
-            "from messageId {}: workflowId {} - after {} sendToTaskEngine {} (messageId {})",
+            "from messageId {}: workflowId {} - after {} sendToTaskEngine {}",
             state.lastMessageId,
             state.workflowId,
             after,
-            taskEngineMessage,
-            taskEngineMessage.messageId
+            taskEngineMessage
         )
         sendToTaskEngineFn(taskEngineMessage, after)
     }

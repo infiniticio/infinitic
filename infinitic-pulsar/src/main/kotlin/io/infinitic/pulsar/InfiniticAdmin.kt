@@ -25,9 +25,10 @@
 
 package io.infinitic.pulsar
 
-import com.sksamuel.hoplite.ConfigLoader
 import io.infinitic.pulsar.admin.initInfinitic
-import io.infinitic.pulsar.config.ClientConfig
+import io.infinitic.pulsar.config.AdminConfig
+import io.infinitic.pulsar.config.loadConfigFromFile
+import io.infinitic.pulsar.config.loadConfigFromResource
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.admin.PulsarAdmin
 
@@ -36,13 +37,14 @@ class InfiniticAdmin(
     @JvmField val pulsarAdmin: PulsarAdmin,
     @JvmField val tenant: String,
     @JvmField val namespace: String,
-    @JvmField val allowedClusters: Set<String>?
+    @JvmField val allowedClusters: Set<String>? = null
 ) {
     companion object {
+        /*
+        Create InfiniticAdmin from an AdminConfig
+         */
         @JvmStatic
-        fun loadConfig(configPath: String): InfiniticAdmin {
-            // loaf Config instance
-            val config: ClientConfig = ConfigLoader().loadConfigOrThrow(configPath)
+        fun fromConfig(config: AdminConfig): InfiniticAdmin {
             // build PulsarAdmin from config
             val pulsarAdmin = PulsarAdmin
                 .builder()
@@ -57,6 +59,20 @@ class InfiniticAdmin(
                 config.pulsar.allowedClusters
             )
         }
+
+        /*
+        Create InfiniticAdmin from an AdminConfig loaded from a resource
+         */
+        @JvmStatic
+        fun fromResource(vararg resources: String) =
+            fromConfig(loadConfigFromResource(resources.toList()))
+
+        /*
+       Create InfiniticAdmin from an AdminConfig loaded from a file
+        */
+        @JvmStatic
+        fun fromFile(vararg files: String) =
+            fromConfig(loadConfigFromFile(files.toList()))
     }
 
     fun init() = runBlocking { pulsarAdmin.initInfinitic(tenant, namespace, allowedClusters) }

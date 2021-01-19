@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object WorkflowExecutorTopic {
-    fun name(name: String) = "workflow: $name"
+    fun name(name: String) = "workflow-executor: $name"
 }

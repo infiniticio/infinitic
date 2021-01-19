@@ -34,23 +34,26 @@ import java.util.concurrent.ConcurrentHashMap
 
 class PulsarMessageBuilderFromClient(
     private val pulsarClient: PulsarClient,
-    private val producerName: String
+    private val producerName: String?
 ) : PulsarMessageBuilder {
     private val producers = ConcurrentHashMap<String, Producer<*>>()
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> {
-        val producer = producers.computeIfAbsent(topicName) {
-            pulsarClient
-                .newProducer(schema)
-                .topic(topicName)
-                .producerName(producerName)
-                // adding this below is important - without it keyShared guarantees are broken
-                // https://pulsar.apache.org/docs/en/client-libraries-java/#key_shared
-                .batcherBuilder(BatcherBuilder.KEY_BASED)
-                .create()
-        } as Producer<O>
+    override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> =
+        getOrCreateProducer(topicName, schema).newMessage()
 
-        return producer.newMessage()
-    }
+    @Suppress("UNCHECKED_CAST")
+    fun <O> getOrCreateProducer(topicName: String, schema: Schema<O>) = producers.computeIfAbsent(topicName) {
+        pulsarClient
+            .newProducer(schema)
+            .topic(topicName)
+            .also {
+                if (producerName != null) {
+                    it.producerName(producerName)
+                }
+            }
+            // adding this below is important - without it keyShared guarantees are broken
+            // https://pulsar.apache.org/docs/en/client-libraries-java/#key_shared
+            .batcherBuilder(BatcherBuilder.KEY_BASED)
+            .create()
+    } as Producer<O>
 }

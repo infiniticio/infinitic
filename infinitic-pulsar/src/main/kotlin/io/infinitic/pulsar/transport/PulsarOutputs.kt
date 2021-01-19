@@ -53,10 +53,12 @@ import io.infinitic.pulsar.topics.MonitoringPerNameTopic
 import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
 import io.infinitic.pulsar.topics.TaskEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.TaskEngineEventsTopic
+import io.infinitic.pulsar.topics.TaskExecutorDeadLettersTopic
 import io.infinitic.pulsar.topics.TaskExecutorTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
+import io.infinitic.pulsar.topics.WorkflowExecutorDeadLettersTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
 import io.infinitic.tasks.engine.transport.TaskEngineDataOutput
@@ -79,7 +81,7 @@ class PulsarOutputs(
         /*
         Create a new PulsarTransport from a Pulsar Client
          */
-        fun from(pulsarClient: PulsarClient, pulsarTenant: String, pulsarNamespace: String, producerName: String) =
+        fun from(pulsarClient: PulsarClient, pulsarTenant: String, pulsarNamespace: String, producerName: String?) =
             PulsarOutputs(PulsarMessageBuilderFromClient(pulsarClient, producerName), pulsarTenant, pulsarNamespace)
 
         /*
@@ -222,5 +224,22 @@ class PulsarOutputs(
             0F
         )
         logger.debug("sendToMonitoringGlobalDeadLetters {}", message)
+    }
+
+    val sendToTaskExecutorDeadLetters: SendToTaskExecutors = { message: TaskExecutorMessage ->
+        val taskName = "${message.taskName}"
+        val topicName = if (taskName == WorkflowTask::class.java.name) {
+            WorkflowExecutorDeadLettersTopic.name(message.taskMeta.get(WorkflowTask.META_WORKFLOW_NAME) as String)
+        } else {
+            TaskExecutorDeadLettersTopic.name(taskName)
+        }
+
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topicName),
+            message,
+            null,
+            0F
+        )
+        logger.debug("taskName {} - sendToTaskExecutorDeadLetters {}", message.taskName, message)
     }
 }

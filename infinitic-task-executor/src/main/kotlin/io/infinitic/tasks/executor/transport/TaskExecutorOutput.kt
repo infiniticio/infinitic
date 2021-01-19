@@ -39,10 +39,9 @@ interface TaskExecutorOutput {
 
     suspend fun sendToTaskEngine(messageId: MessageId, taskEngineMessage: TaskEngineMessage, after: Float) {
         logger.debug(
-            "from messageId {}: sendToTaskEngine {} (messageId: {})",
+            "from messageId {}: sendToTaskEngine {}",
             messageId,
-            taskEngineMessage,
-            taskEngineMessage.messageId
+            taskEngineMessage
         )
         sendToTaskEngineFn(taskEngineMessage, after)
     }

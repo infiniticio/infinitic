@@ -23,8 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.config
 
-object WorkflowEngineCommandsTopic {
-    const val name = "workflow-engine-commands"
-}
+data class AdminConfig(
+    /*
+    Pulsar configuration
+     */
+    @JvmField val pulsar: Pulsar
+)

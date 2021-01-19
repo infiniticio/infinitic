@@ -52,12 +52,11 @@ interface TaskEngineOutput {
         after: Float
     ) {
         logger.debug(
-            "from messageId {}: taskId {} - after {} sendToWorkflowEngine {} (messageId {})",
+            "from messageId {}: taskId {} - after {} sendToWorkflowEngine {}",
             state.lastMessageId,
             state.taskId,
             after,
-            workflowEngineMessage,
-            workflowEngineMessage.messageId
+            workflowEngineMessage
         )
         sendToWorkflowEngineFn(workflowEngineMessage, after)
     }
@@ -68,12 +67,11 @@ interface TaskEngineOutput {
         after: Float
     ) {
         logger.debug(
-            "from messageId {}: taskId {} - after {} sendToTaskEngine {} (messageId {})",
+            "from messageId {}: taskId {} - after {} sendToTaskEngine {}",
             state.lastMessageId,
             state.taskId,
             after,
-            taskEngineMessage,
-            taskEngineMessage.messageId
+            taskEngineMessage
         )
         sendToTaskEngineFn(taskEngineMessage, after)
     }
@@ -96,11 +94,10 @@ interface TaskEngineOutput {
         monitoringPerNameEngineMessage: MonitoringPerNameEngineMessage
     ) {
         logger.debug(
-            "from messageId {}: taskId {} - sendToMonitoringPerName {} (messageId {})",
+            "from messageId {}: taskId {} - sendToMonitoringPerName {}",
             state.lastMessageId,
             state.taskId,
-            monitoringPerNameEngineMessage,
-            monitoringPerNameEngineMessage.messageId
+            monitoringPerNameEngineMessage
         )
         sendToMonitoringPerNameFn(monitoringPerNameEngineMessage)
     }

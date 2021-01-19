@@ -23,8 +23,17 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.tasks
 
-object WorkflowEngineCommandsTopic {
-    const val name = "workflow-engine-commands"
+import io.infinitic.common.tasks.data.TaskOptions
+
+interface TaskContext {
+    val taskId: String
+    val taskRetry: Int
+    val taskAttemptId: String
+    val taskAttemptRetry: Int
+    val lastTaskAttemptError: Any?
+    var currentTaskAttemptError: Throwable?
+    val taskMeta: Map<String, Any?>
+    val taskOptions: TaskOptions
 }

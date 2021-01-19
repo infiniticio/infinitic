@@ -25,6 +25,6 @@
 
 package io.infinitic.pulsar.topics
 
-object WorkflowEngineCommandsTopic {
-    const val name = "workflow-engine-commands"
+object TaskExecutorDeadLettersTopic {
+    fun name(name: String) = "task-executor-dead-letters: $name"
 }
