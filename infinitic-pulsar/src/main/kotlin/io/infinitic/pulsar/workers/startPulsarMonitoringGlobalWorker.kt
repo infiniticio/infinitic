@@ -45,7 +45,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.PulsarClientException
+import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -81,19 +81,18 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
         MonitoringGlobalInputChannels(monitoringGlobalChannel, monitoringGlobalResultsChannel)
     )
 
+    fun negativeAcknowledge(pulsarId: MessageId) =
+        monitoringGlobalConsumer.negativeAcknowledge(pulsarId)
+
+    suspend fun acknowledge(pulsarId: MessageId) =
+        monitoringGlobalConsumer.acknowledgeAsync(pulsarId).await()
+
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName(MONITORING_GLOBAL_ACKNOWLEDGING_COROUTINE_NAME)) {
         for (messageToProcess in monitoringGlobalResultsChannel) {
-            if (messageToProcess.exception is PulsarClientException) {
-                // if we did not manage to send new messages or create producers, we negativeAcknowledge the message
-                monitoringGlobalConsumer.negativeAcknowledge(messageToProcess.pulsarId)
-            } else {
-                if (messageToProcess.exception != null) {
-                    // for all other errors (probably serialization issues at this stage), send this message to dead letters
-                    sendToMonitoringGlobalDeadLetters(messageToProcess.message)
-                }
-                // acknowledge this message
-                monitoringGlobalConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
+            when (messageToProcess.exception) {
+                null -> acknowledge(messageToProcess.pulsarId)
+                else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
             logChannel?.send(messageToProcess)
         }
@@ -106,10 +105,16 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
 
             try {
                 val envelope = MonitoringGlobalEnvelope.fromByteArray(message.data)
-                monitoringGlobalChannel.send(PulsarMessageToProcess(envelope.message(), message.messageId))
+                monitoringGlobalChannel.send(
+                    PulsarMessageToProcess(
+                        message = envelope.message(),
+                        pulsarId = message.messageId,
+                        redeliveryCount = message.redeliveryCount
+                    )
+                )
             } catch (e: Exception) {
                 logError(message, e)
-                monitoringGlobalConsumer.negativeAcknowledge(message.messageId)
+                negativeAcknowledge(message.messageId)
             }
         }
     }

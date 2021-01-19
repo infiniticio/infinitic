@@ -45,6 +45,7 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
+import java.util.concurrent.TimeUnit
 
 class PulsarConsumerFactory(
     private val pulsarClient: PulsarClient,
@@ -74,6 +75,7 @@ class PulsarConsumerFactory(
                     it.consumerName("$consumerName-$consumerCounter")
                 }
             }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
             .subscriptionName(WORKFLOW_ENGINE_SUBSCRIPTION_NAME)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
@@ -92,6 +94,7 @@ class PulsarConsumerFactory(
                     it.consumerName("$consumerName-$consumerCounter")
                 }
             }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
             .subscriptionName(TASK_ENGINE_SUBSCRIPTION_NAME)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
@@ -105,6 +108,7 @@ class PulsarConsumerFactory(
                     it.consumerName("$consumerName-$consumerCounter")
                 }
             }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
             .subscriptionName(TASK_EXECUTOR_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Shared)
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
@@ -118,6 +122,7 @@ class PulsarConsumerFactory(
                     it.consumerName("$consumerName-$consumerCounter")
                 }
             }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
             .subscriptionName(WORKFLOW_EXECUTOR_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Shared)
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
@@ -131,6 +136,7 @@ class PulsarConsumerFactory(
                     it.consumerName("$consumerName-$consumerCounter")
                 }
             }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
             .subscriptionName(MONITORING_PER_NAME_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
@@ -144,6 +150,7 @@ class PulsarConsumerFactory(
                     it.consumerName(consumerName)
                 }
             }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
             .subscriptionName(MONITORING_GLOBAL_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Failover)
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)

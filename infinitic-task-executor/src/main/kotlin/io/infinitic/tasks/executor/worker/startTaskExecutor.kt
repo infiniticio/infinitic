@@ -50,8 +50,7 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     coroutineName: String,
     taskExecutorRegister: TaskExecutorRegister,
     taskExecutorInput: TaskExecutorInput<T>,
-    taskExecutorOutput: TaskExecutorOutput,
-    coroutineNamePostfix: String = ""
+    taskExecutorOutput: TaskExecutorOutput
 ) = launch(Dispatchers.IO + CoroutineName(coroutineName)) {
 
     val taskExecutor = TaskExecutor(taskExecutorOutput, taskExecutorRegister)

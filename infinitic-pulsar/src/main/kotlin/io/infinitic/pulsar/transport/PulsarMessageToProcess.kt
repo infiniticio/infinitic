@@ -30,7 +30,8 @@ import org.apache.pulsar.client.api.MessageId
 
 data class PulsarMessageToProcess<T> (
     override val message: T,
-    val pulsarId: MessageId
+    val pulsarId: MessageId,
+    val redeliveryCount: Int
 ) : MessageToProcess<T> {
     override var exception: Exception? = null
     override var output: Any? = null

@@ -46,7 +46,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.PulsarClientException
+import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -85,19 +85,18 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
         monitoringPerNameOutput
     )
 
+    fun negativeAcknowledge(pulsarId: MessageId) =
+        monitoringPerNameConsumer.negativeAcknowledge(pulsarId)
+
+    suspend fun acknowledge(pulsarId: MessageId) =
+        monitoringPerNameConsumer.acknowledgeAsync(pulsarId).await()
+
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$MONITORING_PER_NAME_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
         for (messageToProcess in monitoringPerNameResultsChannel) {
-            if (messageToProcess.exception is PulsarClientException) {
-                // if we did not manage to send new messages or create producers, we negativeAcknowledge the message
-                monitoringPerNameConsumer.negativeAcknowledge(messageToProcess.pulsarId)
-            } else {
-                if (messageToProcess.exception != null) {
-                    // for all other errors (probably serialization issues at this stage), send this message to dead letters
-                    sendToMonitoringPerNameDeadLetters(messageToProcess.message)
-                }
-                // acknowledge this message
-                monitoringPerNameConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
+            when (messageToProcess.exception) {
+                null -> acknowledge(messageToProcess.pulsarId)
+                else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
             logChannel?.send(messageToProcess)
         }
@@ -113,12 +112,13 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
                 monitoringPerNameChannel.send(
                     PulsarMessageToProcess(
                         message = envelope.message(),
-                        pulsarId = message.messageId
+                        pulsarId = message.messageId,
+                        redeliveryCount = message.redeliveryCount
                     )
                 )
             } catch (e: Exception) {
                 logError(message, e)
-                monitoringPerNameConsumer.negativeAcknowledge(message.messageId)
+                negativeAcknowledge(message.messageId)
             }
         }
     }

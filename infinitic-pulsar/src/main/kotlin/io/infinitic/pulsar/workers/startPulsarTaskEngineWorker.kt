@@ -47,7 +47,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.PulsarClientException
+import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -88,19 +88,18 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
         taskEngineOutput
     )
 
+    fun negativeAcknowledge(pulsarId: MessageId) =
+        taskEngineConsumer.negativeAcknowledge(pulsarId)
+
+    suspend fun acknowledge(pulsarId: MessageId) =
+        taskEngineConsumer.acknowledgeAsync(pulsarId).await()
+
     // coroutine dedicated to pulsar message acknowledging
     launch(CoroutineName("$TASK_ENGINE_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
         for (messageToProcess in taskResultsChannel) {
-            if (messageToProcess.exception is PulsarClientException) {
-                // if we did not manage to send new messages or create producers, we negativeAcknowledge the message
-                taskEngineConsumer.negativeAcknowledge(messageToProcess.pulsarId)
-            } else {
-                if (messageToProcess.exception != null) {
-                    // for all other errors (probably serialization issues at this stage), send this message to dead letters
-                    sendToTaskEngineDeadLetters(messageToProcess.message, 0F)
-                }
-                // acknowledge this message
-                taskEngineConsumer.acknowledgeAsync(messageToProcess.pulsarId).await()
+            when (messageToProcess.exception) {
+                null -> acknowledge(messageToProcess.pulsarId)
+                else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
             logChannel?.send(messageToProcess)
         }
@@ -117,12 +116,13 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
                 taskCommandsChannel.send(
                     PulsarMessageToProcess(
                         message = envelope.message(),
-                        pulsarId = message.messageId
+                        pulsarId = message.messageId,
+                        redeliveryCount = message.redeliveryCount
                     )
                 )
             } catch (e: Exception) {
                 logError(message, e)
-                taskEngineConsumer.negativeAcknowledge(message.messageId)
+                negativeAcknowledge(message.messageId)
             }
         }
     }

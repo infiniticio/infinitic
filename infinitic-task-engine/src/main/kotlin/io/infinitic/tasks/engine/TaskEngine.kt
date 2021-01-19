@@ -67,7 +67,7 @@ class TaskEngine(
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskEngineMessage) {
-        logger.debug("taskId {} - receiving {} (messageId {})", message.taskId, message, message.messageId)
+        logger.debug("taskId {} - receiving {}", message.taskId, message)
 
         // store event
         taskEventStorage.insertTaskEvent(message)
