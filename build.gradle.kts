@@ -44,7 +44,6 @@ subprojects {
     repositories {
         mavenCentral()
         jcenter()
-        maven(url = "https://dl.bintray.com/kodein-framework/Kodein-DB")
     }
 
     apply(plugin = "org.jetbrains.kotlin.jvm")
