@@ -226,7 +226,7 @@ class TaskExecutor(
     }
 
     private suspend fun sendTaskFailed(message: TaskExecutorMessage, error: Throwable?, delay: Float? = null) {
-        logger.debug("taskId {} - error {}", message.taskId, error)
+        logger.error("taskId {} - error {}", message.taskId, error)
 
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = message.taskId,
