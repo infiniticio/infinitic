@@ -102,7 +102,7 @@ publishing {
                     developer {
                         id.set("geomagilles")
                         name.set("Gilles Barbier")
-                        email.set("geomagilles@gmail.com")
+                        email.set("gilles@infinitic.io")
                     }
                 }
             }
