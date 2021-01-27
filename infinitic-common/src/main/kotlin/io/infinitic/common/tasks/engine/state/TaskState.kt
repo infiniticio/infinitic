@@ -58,7 +58,7 @@ data class TaskState(
     var taskRetry: TaskRetry = TaskRetry(0),
     var taskAttemptId: TaskAttemptId,
     var taskAttemptRetry: TaskAttemptRetry = TaskAttemptRetry(0),
-    var lastTaskAttemptError: TaskAttemptError? = null,
+    var previousTaskAttemptError: TaskAttemptError? = null,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
 ) {

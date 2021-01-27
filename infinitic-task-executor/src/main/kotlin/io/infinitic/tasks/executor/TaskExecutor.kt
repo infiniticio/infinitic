@@ -91,7 +91,7 @@ class TaskExecutor(
             taskAttemptId = "${message.taskAttemptId}",
             taskRetry = message.taskRetry.int,
             taskAttemptRetry = message.taskAttemptRetry.int,
-            lastTaskAttemptError = message.lastTaskAttemptError?.get(),
+            previousTaskAttemptError = message.previousTaskAttemptError?.get(),
             taskMeta = message.taskMeta.get(),
             taskOptions = message.taskOptions
         )

@@ -193,7 +193,7 @@ class TaskEngine(
             methodName = newState.methodName,
             methodInput = newState.methodInput,
             methodParameterTypes = newState.methodParameterTypes,
-            lastTaskAttemptError = null,
+            previousTaskAttemptError = null,
             taskOptions = newState.taskOptions,
             taskMeta = newState.taskMeta
         )
@@ -236,7 +236,7 @@ class TaskEngine(
             methodName = newState.methodName,
             methodInput = newState.methodInput,
             methodParameterTypes = newState.methodParameterTypes,
-            lastTaskAttemptError = newState.lastTaskAttemptError,
+            previousTaskAttemptError = newState.previousTaskAttemptError,
             taskOptions = newState.taskOptions,
             taskMeta = newState.taskMeta
         )
@@ -271,7 +271,7 @@ class TaskEngine(
             methodName = state.methodName,
             methodParameterTypes = state.methodParameterTypes,
             methodInput = state.methodInput,
-            lastTaskAttemptError = state.lastTaskAttemptError,
+            previousTaskAttemptError = state.previousTaskAttemptError,
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
         )
@@ -356,15 +356,15 @@ class TaskEngine(
         if (delay == null) return oldState.copy(
             lastMessageId = messageId,
             taskStatus = TaskStatus.RUNNING_ERROR,
-            lastTaskAttemptError = error
+            previousTaskAttemptError = error
         )
         // immediate retry
-        if (delay <= 0f) return retryTaskAttempt(oldState.copy(lastTaskAttemptError = error), messageId)
+        if (delay <= 0f) return retryTaskAttempt(oldState.copy(previousTaskAttemptError = error), messageId)
         // delayed retry
         val newState = oldState.copy(
             lastMessageId = messageId,
             taskStatus = TaskStatus.RUNNING_WARNING,
-            lastTaskAttemptError = error
+            previousTaskAttemptError = error
         )
 
         // schedule next attempt

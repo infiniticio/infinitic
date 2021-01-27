@@ -43,7 +43,7 @@ class TaskTestImpl : TaskTest {
     override fun log() {
         val status = behavior(context.taskRetry, context.taskAttemptRetry)
 
-        log = context.lastTaskAttemptError?.let { (it as TaskException).log } ?: ""
+        log = context.previousTaskAttemptError?.let { (it as TaskException).log } ?: ""
         log += when (status) {
             Status.SUCCESS -> "1"
             else -> "0"

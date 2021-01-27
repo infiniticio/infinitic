@@ -314,7 +314,7 @@ private fun getTaskExecutorMessage(name: String, method: String, input: Array<ou
     methodName = MethodName(method),
     methodParameterTypes = types?.let { MethodParameterTypes(it) },
     methodInput = MethodInput.from(*input),
-    lastTaskAttemptError = null,
+    previousTaskAttemptError = null,
     taskOptions = TaskOptions(runningTimeout = .2F),
     taskMeta = TaskMeta()
 )

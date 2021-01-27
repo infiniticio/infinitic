@@ -28,7 +28,6 @@ object Libs {
     const val kotlinVersion = "1.4.21"
     const val serializationVersion = "1.4.10"
     const val ktlintVersion = "9.4.1"
-    const val dokkaVersion = "1.4.20"
     const val shadowVersion = "6.1.0"
 
     const val org = "io.infinitic"

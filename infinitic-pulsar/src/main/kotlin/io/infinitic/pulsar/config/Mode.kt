@@ -27,6 +27,5 @@ package io.infinitic.pulsar.config
 
 @Suppress("EnumEntryName")
 enum class Mode {
-    function,
     worker
 }

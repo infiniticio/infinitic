@@ -48,7 +48,7 @@ data class TaskExecutorMessage(
     override val taskRetry: TaskRetry,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
-    val lastTaskAttemptError: TaskAttemptError?,
+    val previousTaskAttemptError: TaskAttemptError?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,

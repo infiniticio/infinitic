@@ -37,12 +37,12 @@ data class WorkerConfig(
     /*
     Default running mode
      */
-    @JvmField var mode: Mode,
+    @JvmField var mode: Mode = Mode.worker,
 
     /*
     Default state storage
      */
-    @JvmField var stateStorage: StateStorage,
+    @JvmField var stateStorage: StateStorage? = null,
 
     /*
     Pulsar configuration
@@ -52,17 +52,17 @@ data class WorkerConfig(
     /*
     Infinitic workflow engine configuration
      */
-    @JvmField val workflowEngine: WorkflowEngine?,
+    @JvmField val workflowEngine: WorkflowEngine? = null,
 
     /*
     Infinitic task engine configuration
      */
-    @JvmField val taskEngine: TaskEngine?,
+    @JvmField val taskEngine: TaskEngine? = null,
 
     /*
     Infinitic monitoring configuration
      */
-    @JvmField val monitoring: Monitoring?,
+    @JvmField val monitoring: Monitoring? = null,
 
     /*
     Tasks configuration
@@ -85,21 +85,21 @@ data class WorkerConfig(
             // apply default mode and stateStorage, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, it.mode!!, "workflowEngine.stateStorage")
+            checkStateStorage(it.stateStorage, "workflowEngine.stateStorage")
         }
 
         taskEngine?.let {
             // apply default mode and stateStorage, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, it.mode!!, "taskEngine.stateStorage")
+            checkStateStorage(it.stateStorage, "taskEngine.stateStorage")
         }
 
         monitoring?.let {
             // apply default mode and stateStorage, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, it.mode!!, "monitoring.stateStorage")
+            checkStateStorage(it.stateStorage, "monitoring.stateStorage")
         }
 
         // apply default mode, if not set
@@ -107,15 +107,11 @@ data class WorkerConfig(
         workflows.map { it.mode = it.mode ?: mode }
     }
 
-    private fun checkStateStorage(stateStorage: StateStorage?, mode: Mode, name: String) {
+    private fun checkStateStorage(stateStorage: StateStorage?, name: String) {
+        require(stateStorage != null) { "`stateStorage` can not be null for $name" }
+
         if (stateStorage == StateStorage.redis) {
             require(redis != null) { "`${StateStorage.redis}` is used for $name but not configured" }
-        }
-
-        if (stateStorage == StateStorage.pulsarState) {
-            require(mode == Mode.function) {
-                "stateStorage `${StateStorage.pulsarState}` - set for $name - can only be used with mode `${Mode.function}`"
-            }
         }
     }
 }
