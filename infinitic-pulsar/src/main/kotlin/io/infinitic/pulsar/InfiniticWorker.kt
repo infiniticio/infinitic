@@ -40,10 +40,8 @@ import io.infinitic.pulsar.workers.startPulsarTaskExecutorWorker
 import io.infinitic.pulsar.workers.startPulsarWorkflowEngineWorker
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 import org.slf4j.LoggerFactory
@@ -93,34 +91,23 @@ class InfiniticWorker(
     /*
     Start workers
     */
-    @JvmOverloads fun start(logFn: ((MessageToProcess<Any>) -> Unit) = {}) {
+    fun start() = runBlocking {
+        logger.info("InfiniticWorker - starting with config {}", config)
 
-        runBlocking {
-            logger.info("InfiniticWorker - starting with config {}", config)
+        val logChannel = Channel<MessageToProcess<Any>>()
 
-            val logChannel = Channel<MessageToProcess<Any>>()
+        val tenant = config.pulsar.tenant
+        val namespace = config.pulsar.namespace
+        val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
+        val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, producerName = getWorkerName(config))
 
-            // log function is applied for each Pulsar message manage by this worker
-            // after processing and (neg)acknowledgment
-            launch(CoroutineName("logger")) {
-                for (messageToProcess in logChannel) {
-                    logFn(messageToProcess)
-                }
-            }
+        startWorkflowEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
 
-            val tenant = config.pulsar.tenant
-            val namespace = config.pulsar.namespace
-            val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
-            val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, producerName = getWorkerName(config))
+        startTaskEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
 
-            startWorkflowEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
+        startMonitoringWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
 
-            startTaskEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
-
-            startMonitoringWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
-
-            startTaskExecutorWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
-        }
+        startTaskExecutorWorkers(config, pulsarConsumerFactory, pulsarOutputs, logChannel)
     }
 
     private fun getWorkerName(config: WorkerConfig) = when (config.name) {
