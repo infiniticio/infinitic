@@ -25,19 +25,16 @@
 
 package io.infinitic.tasks.executor.worker
 
+import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(TaskExecutor::class.java)
@@ -53,10 +50,7 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     taskExecutorRegister: TaskExecutorRegister,
     taskExecutorInput: TaskExecutorInput<T>,
     taskExecutorOutput: TaskExecutorOutput
-) = launch(
-    Executors.newSingleThreadExecutor(SimpleThreadFactory(coroutineName)).asCoroutineDispatcher() +
-        CoroutineName(coroutineName)
-) {
+) = launch(singleThreadedContext(coroutineName)) {
 
     val taskExecutor = TaskExecutor(taskExecutorOutput, taskExecutorRegister)
     val out = taskExecutorInput.taskExecutorResultsChannel
@@ -70,13 +64,5 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
         } finally {
             out.send(message)
         }
-    }
-}
-
-internal class SimpleThreadFactory(val name: String) : ThreadFactory {
-    override fun newThread(r: Runnable): Thread {
-        val t = Thread(r)
-        t.name = name
-        return t
     }
 }

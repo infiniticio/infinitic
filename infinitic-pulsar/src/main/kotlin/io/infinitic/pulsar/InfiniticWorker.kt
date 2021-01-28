@@ -39,7 +39,6 @@ import io.infinitic.pulsar.workers.startPulsarTaskExecutorWorker
 import io.infinitic.pulsar.workers.startPulsarWorkflowEngineWorker
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
@@ -99,15 +98,16 @@ class InfiniticWorker(
         val namespace = config.pulsar.namespace
         val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
         val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, producerName = getWorkerName(config))
-        val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
 
-        startWorkflowEngineWorkers(dispatcher, config, pulsarConsumerFactory, pulsarOutputs)
+        startWorkflowEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs)
 
-        startTaskEngineWorkers(dispatcher, config, pulsarConsumerFactory, pulsarOutputs)
+        startTaskEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs)
 
-        startMonitoringWorkers(dispatcher, config, pulsarConsumerFactory, pulsarOutputs)
+        startMonitoringWorkers(config, pulsarConsumerFactory, pulsarOutputs)
 
-        startTaskExecutorWorkers(dispatcher, config, pulsarConsumerFactory, pulsarOutputs)
+        startTaskExecutorWorkers(config, pulsarConsumerFactory, pulsarOutputs)
+
+        println("Ready")
     }
 
     private fun getWorkerName(config: WorkerConfig) = when (config.name) {
@@ -116,7 +116,6 @@ class InfiniticWorker(
     }
 
     private fun CoroutineScope.startWorkflowEngineWorkers(
-        dispatcher: CoroutineDispatcher,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
@@ -124,10 +123,10 @@ class InfiniticWorker(
         config.workflowEngine?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "workflowStates")
+                print("Workflow engine".padEnd(25) + ": starting ${it.consumers} instances...")
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
                     startPulsarWorkflowEngineWorker(
-                        dispatcher,
                         counter,
                         pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName = getWorkerName(config), counter),
                         pulsarOutputs.workflowEngineOutput,
@@ -135,12 +134,12 @@ class InfiniticWorker(
                         keyValueStorage
                     )
                 }
+                println(" done")
             }
         }
     }
 
     private fun CoroutineScope.startTaskEngineWorkers(
-        dispatcher: CoroutineDispatcher,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
@@ -148,10 +147,10 @@ class InfiniticWorker(
         config.taskEngine?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "taskStates")
+                print("Task engine".padEnd(25) + ": starting ${it.consumers} instances...")
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting task engine {}", counter)
                     startPulsarTaskEngineWorker(
-                        dispatcher,
                         counter,
                         pulsarConsumerFactory.newTaskEngineConsumer(consumerName = getWorkerName(config), counter),
                         pulsarOutputs.taskEngineOutput,
@@ -159,12 +158,12 @@ class InfiniticWorker(
                         keyValueStorage
                     )
                 }
+                println(" done")
             }
         }
     }
 
     private fun CoroutineScope.startMonitoringWorkers(
-        dispatcher: CoroutineDispatcher,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
@@ -175,7 +174,6 @@ class InfiniticWorker(
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
-                        dispatcher,
                         counter,
                         pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName = getWorkerName(config), counter),
                         pulsarOutputs.monitoringPerNameOutput,
@@ -186,7 +184,6 @@ class InfiniticWorker(
 
                 logger.info("InfiniticWorker - starting monitoring global")
                 startPulsarMonitoringGlobalWorker(
-                    dispatcher,
                     pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName = getWorkerName(config)),
                     pulsarOutputs.sendToMonitoringGlobalDeadLetters,
                     InMemoryStorage()
@@ -196,11 +193,11 @@ class InfiniticWorker(
     }
 
     private fun CoroutineScope.startTaskExecutorWorkers(
-        dispatcher: CoroutineDispatcher,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
+        val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
         val taskExecutorRegister = TaskExecutorRegisterImpl()
 
         for (workflow in config.workflows) {
@@ -208,6 +205,7 @@ class InfiniticWorker(
                 taskExecutorRegister.register(workflow.name) { workflow.getInstance() }
 
                 repeat(workflow.consumers) {
+                    print("Workflow executor".padEnd(25) + ": starting ${workflow.concurrency} instances for ${workflow.name}...")
                     logger.info("InfiniticWorker - starting workflow executor for {}", workflow.name)
                     startPulsarTaskExecutorWorker(
                         dispatcher,
@@ -219,6 +217,7 @@ class InfiniticWorker(
                         taskExecutorRegister,
                         workflow.concurrency
                     )
+                    println(" done")
                 }
             }
         }
@@ -233,6 +232,7 @@ class InfiniticWorker(
                 }
 
                 repeat(task.consumers) {
+                    print("Task executor".padEnd(25) + ": starting ${task.concurrency} instances for ${task.name}...")
                     logger.info("InfiniticWorker - starting task executor for {}", task.name)
                     startPulsarTaskExecutorWorker(
                         dispatcher,
@@ -244,6 +244,7 @@ class InfiniticWorker(
                         taskExecutorRegister,
                         task.concurrency
                     )
+                    println(" done")
                 }
             }
         }

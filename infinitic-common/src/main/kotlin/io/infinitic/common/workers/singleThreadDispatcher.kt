@@ -23,20 +23,23 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    id("java-test-fixtures")
+package io.infinitic.common.workers
+
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.asCoroutineDispatcher
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
+import kotlin.coroutines.CoroutineContext
+
+fun singleThreadedContext(name: String): CoroutineContext = CoroutineName(name) +
+    Executors
+        .newSingleThreadExecutor(SimpleThreadFactory(name))
+        .asCoroutineDispatcher()
+
+private class SimpleThreadFactory(val name: String) : ThreadFactory {
+    override fun newThread(r: Runnable): Thread {
+        val t = Thread(r)
+        t.name = name
+        return t
+    }
 }
-
-dependencies {
-    api(Libs.Serialization.json)
-    implementation(Libs.Jackson.databind)
-    implementation(Libs.Jackson.module)
-    implementation(Libs.Jackson.jsr310)
-    implementation(Libs.Avro4k.core)
-    implementation(Libs.Coroutines.core)
-
-    testFixturesImplementation(Libs.Kotlin.reflect)
-    testFixturesImplementation(Libs.EasyRandom.core)
-}
-
-apply("../publish.gradle.kts")

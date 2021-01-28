@@ -26,20 +26,17 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
-import io.infinitic.workflows.engine.worker.startWorkflowEngine
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -51,38 +48,35 @@ import org.slf4j.LoggerFactory
 
 typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<WorkflowEngineMessage>
 
-const val WORKFLOW_ENGINE_PROCESSING_COROUTINE_NAME = "workflow-engine-processing"
-const val WORKFLOW_ENGINE_ACKNOWLEDGING_COROUTINE_NAME = "workflow-engine-acknowledging"
-const val WORKFLOW_ENGINE_PULLING_COROUTINE_NAME = "workflow-engine-pulling"
+const val WORKFLOW_ENGINE_THREAD_NAME = "workflow-engine"
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
 
 private fun logError(message: Message<WorkflowEngineEnvelope>, e: Exception) = logger.error(
-    "exception on message {}:${System.getProperty("line.separator")}{}",
+    "exception on Pulsar Message {}:${System.getProperty("line.separator")}{}",
+    message,
+    e
+)
+
+private fun logError(message: WorkflowEngineMessage, e: Exception) = logger.error(
+    "workflowId {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    message.workflowId,
     message,
     e
 )
 
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
-    dispatcher: CoroutineDispatcher,
     consumerCounter: Int,
     workflowEngineConsumer: Consumer<WorkflowEngineEnvelope>,
     workflowEngineOutput: WorkflowEngineOutput,
     sendToWorkflowEngineDeadLetters: SendToWorkflowEngine,
     keyValueStorage: KeyValueStorage
-) = launch(dispatcher) {
+) = launch(singleThreadedContext("$WORKFLOW_ENGINE_THREAD_NAME-$consumerCounter")) {
 
-    val workflowCommandsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
-    val workflowEventsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
-    val workflowResultsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
-
-    // Starting Workflow Engine
-    startWorkflowEngine(
-        "$WORKFLOW_ENGINE_PROCESSING_COROUTINE_NAME-$consumerCounter",
+    val workflowEngine = WorkflowEngine(
         WorkflowStateKeyValueStorage(keyValueStorage),
         NoWorkflowEventStorage(),
-        WorkflowEngineInputChannels(workflowCommandsChannel, workflowEventsChannel, workflowResultsChannel),
         workflowEngineOutput
     )
 
@@ -92,34 +86,26 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
     suspend fun acknowledge(pulsarId: MessageId) =
         workflowEngineConsumer.acknowledgeAsync(pulsarId).await()
 
-    // coroutine dedicated to pulsar message acknowledging
-    launch(CoroutineName("$WORKFLOW_ENGINE_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
-        for (messageToProcess in workflowResultsChannel) {
-            when (messageToProcess.exception) {
-                null -> acknowledge(messageToProcess.pulsarId)
-                else -> negativeAcknowledge(messageToProcess.pulsarId)
-            }
+    while (isActive) {
+        val pulsarMessage = workflowEngineConsumer.receiveAsync().await()
+
+        val message = try {
+            WorkflowEngineEnvelope.fromByteArray(pulsarMessage.data).message()
+        } catch (e: Exception) {
+            logError(pulsarMessage, e)
+            negativeAcknowledge(pulsarMessage.messageId)
+
+            null
         }
-    }
 
-    // coroutine dedicated to pulsar message pulling
-    launch(CoroutineName("$WORKFLOW_ENGINE_PULLING_COROUTINE_NAME-$consumerCounter")) {
-        while (isActive) {
-            val message: Message<WorkflowEngineEnvelope> = workflowEngineConsumer.receiveAsync().await()
-
+        message?.let {
             try {
-                val envelope = WorkflowEngineEnvelope.fromByteArray(message.data)
+                workflowEngine.handle(it)
 
-                workflowCommandsChannel.send(
-                    PulsarMessageToProcess(
-                        message = envelope.message(),
-                        pulsarId = message.messageId,
-                        redeliveryCount = message.redeliveryCount
-                    )
-                )
+                acknowledge(pulsarMessage.messageId)
             } catch (e: Exception) {
                 logError(message, e)
-                negativeAcknowledge(message.messageId)
+                negativeAcknowledge(pulsarMessage.messageId)
             }
         }
     }
