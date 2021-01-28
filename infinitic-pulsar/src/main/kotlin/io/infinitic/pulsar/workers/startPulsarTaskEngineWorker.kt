@@ -34,14 +34,12 @@ import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
 import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.infinitic.tasks.engine.worker.startTaskEngine
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -67,13 +65,13 @@ private fun logError(message: Message<TaskEngineEnvelope>, e: Exception) = logge
 )
 
 fun CoroutineScope.startPulsarTaskEngineWorker(
+    dispatcher: CoroutineDispatcher,
     consumerCounter: Int,
     taskEngineConsumer: Consumer<TaskEngineEnvelope>,
     taskEngineOutput: TaskEngineOutput,
     sendToTaskEngineDeadLetters: SendToTaskEngine,
-    keyValueStorage: KeyValueStorage,
-    logChannel: SendChannel<TaskEngineMessageToProcess>?,
-) = launch(Dispatchers.IO) {
+    keyValueStorage: KeyValueStorage
+) = launch(dispatcher) {
 
     val taskCommandsChannel = Channel<PulsarTaskEngineMessageToProcess>()
     val taskEventsChannel = Channel<PulsarTaskEngineMessageToProcess>()
@@ -101,14 +99,13 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
                 null -> acknowledge(messageToProcess.pulsarId)
                 else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
-            logChannel?.send(messageToProcess)
         }
     }
 
     // coroutine dedicated to pulsar message pulling
     launch(CoroutineName("$TASK_ENGINE_PULLING_COROUTINE_NAME-$consumerCounter")) {
         while (isActive) {
-            val message: Message<TaskEngineEnvelope> = taskEngineConsumer.receiveAsync().await()
+            val message = taskEngineConsumer.receiveAsync().await()
 
             try {
                 val envelope = TaskEngineEnvelope.fromByteArray(message.data)

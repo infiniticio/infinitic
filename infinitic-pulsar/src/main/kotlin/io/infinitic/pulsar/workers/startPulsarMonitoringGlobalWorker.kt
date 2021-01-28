@@ -31,15 +31,13 @@ import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
-import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -65,11 +63,11 @@ private fun logError(message: Message<MonitoringGlobalEnvelope>, e: Exception) =
 )
 
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
+    dispatcher: CoroutineDispatcher,
     monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope>,
     sendToMonitoringGlobalDeadLetters: SendToMonitoringGlobal,
-    keyValueStorage: KeyValueStorage,
-    logChannel: SendChannel<MonitoringGlobalMessageToProcess>?
-) = launch(Dispatchers.IO) {
+    keyValueStorage: KeyValueStorage
+) = launch(dispatcher) {
 
     val monitoringGlobalChannel = Channel<PulsarMonitoringGlobalMessageToProcess>()
     val monitoringGlobalResultsChannel = Channel<PulsarMonitoringGlobalMessageToProcess>()
@@ -94,7 +92,6 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
                 null -> acknowledge(messageToProcess.pulsarId)
                 else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
-            logChannel?.send(messageToProcess)
         }
     }
 

@@ -46,11 +46,9 @@ import io.infinitic.tasks.executor.task.RetryDelayRetrieved
 import io.infinitic.tasks.executor.task.TaskAttemptContext
 import io.infinitic.tasks.executor.task.TaskCommand
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -96,53 +94,51 @@ class TaskExecutor(
             taskOptions = message.taskOptions
         )
 
-        withContext(Dispatchers.Default) {
-            // let engine know that we are processing the message
-            sendTaskStarted(message)
+        // let engine know that we are processing the message
+        sendTaskStarted(message)
 
-            // trying to instantiate the task
-            val (task, method, parameters, options) = try {
-                parse(message)
-            } catch (e: Exception) {
-                // returning the exception (no retry)
-                sendTaskFailed(message, e, null)
-                // stop here
-                return@withContext
-            }
+        // trying to instantiate the task
+        val (task, method, parameters, options) = try {
+            parse(message)
+        } catch (e: Exception) {
+            // returning the exception (no retry)
+            sendTaskFailed(message, e, null)
+            // stop here
+            return
+        }
 
-            // set taskAttemptContext into task (if a property with right type is present)
-            try {
-                setTaskContext(task, taskAttemptContext)
-            } catch (e: Exception) {
-                // returning the exception (no retry)
-                sendTaskFailed(message, e, null)
-                // stop here
-                return@withContext
-            }
+        // set taskAttemptContext into task (if a property with right type is present)
+        try {
+            setTaskContext(task, taskAttemptContext)
+        } catch (e: Exception) {
+            // returning the exception (no retry)
+            sendTaskFailed(message, e, null)
+            // stop here
+            return
+        }
 
-            try {
-                val output = if (options.runningTimeout != null && options.runningTimeout!! > 0F) {
-                    withTimeout((1000 * options.runningTimeout!!).toLong()) {
-                        executeTask(method, task, parameters)
-                    }
-                } else {
+        try {
+            val output = if (options.runningTimeout != null && options.runningTimeout!! > 0F) {
+                withTimeout((1000 * options.runningTimeout!!).toLong()) {
                     executeTask(method, task, parameters)
                 }
-                sendTaskCompleted(message, output)
-            } catch (e: InvocationTargetException) {
-                // update context with the cause (to be potentially used in getRetryDelay method)
-                taskAttemptContext.currentTaskAttemptError = e.cause
-                // retrieve delay before retry
-                getRetryDelayAndFailTask(task, message, taskAttemptContext)
-            } catch (e: TimeoutCancellationException) {
-                // update context with the cause (to be potentially used in getRetryDelay method)
-                taskAttemptContext.currentTaskAttemptError = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
-                // returning a timeout
-                getRetryDelayAndFailTask(task, message, taskAttemptContext)
-            } catch (e: Exception) {
-                // returning the exception (no retry)
-                sendTaskFailed(message, e, null)
+            } else {
+                executeTask(method, task, parameters)
             }
+            sendTaskCompleted(message, output)
+        } catch (e: InvocationTargetException) {
+            // update context with the cause (to be potentially used in getRetryDelay method)
+            taskAttemptContext.currentTaskAttemptError = e.cause
+            // retrieve delay before retry
+            getRetryDelayAndFailTask(task, message, taskAttemptContext)
+        } catch (e: TimeoutCancellationException) {
+            // update context with the cause (to be potentially used in getRetryDelay method)
+            taskAttemptContext.currentTaskAttemptError = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
+            // returning a timeout
+            getRetryDelayAndFailTask(task, message, taskAttemptContext)
+        } catch (e: Exception) {
+            // returning the exception (no retry)
+            sendTaskFailed(message, e, null)
         }
     }
 

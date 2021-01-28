@@ -31,14 +31,12 @@ import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
-import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.executor.worker.startTaskExecutor
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -64,15 +62,15 @@ private fun logError(message: Message<TaskExecutorMessage>, e: Exception) = logg
 )
 
 fun CoroutineScope.startPulsarTaskExecutorWorker(
+    dispatcher: CoroutineDispatcher,
     taskName: String,
     consumerCounter: Int,
     taskExecutorConsumer: Consumer<TaskExecutorMessage>,
     taskExecutorOutput: TaskExecutorOutput,
     sendToTaskExecutorDeadLetters: SendToTaskExecutors,
     taskExecutorRegister: TaskExecutorRegister,
-    logChannel: SendChannel<TaskExecutorMessageToProcess>?,
     instancesNumber: Int = 1
-) = launch(Dispatchers.IO) {
+) = launch(dispatcher) {
 
     val taskExecutorChannel = Channel<PulsarTaskExecutorMessageToProcess>()
     val taskExecutorResultsChannel = Channel<PulsarTaskExecutorMessageToProcess>()
@@ -100,7 +98,6 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
                 null -> acknowledge(messageToProcess.pulsarId)
                 else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
-            logChannel?.send(messageToProcess)
         }
     }
 

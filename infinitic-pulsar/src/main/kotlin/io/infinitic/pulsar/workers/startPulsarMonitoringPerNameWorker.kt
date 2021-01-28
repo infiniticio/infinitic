@@ -31,16 +31,14 @@ import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -66,13 +64,13 @@ private fun logError(message: Message<MonitoringPerNameEnvelope>, e: Exception) 
 )
 
 fun CoroutineScope.startPulsarMonitoringPerNameWorker(
+    dispatcher: CoroutineDispatcher,
     consumerCounter: Int,
     monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope>,
     monitoringPerNameOutput: MonitoringPerNameOutput,
     sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName,
-    keyValueStorage: KeyValueStorage,
-    logChannel: SendChannel<MonitoringPerNameMessageToProcess>?,
-) = launch(Dispatchers.IO) {
+    keyValueStorage: KeyValueStorage
+) = launch(dispatcher) {
 
     val monitoringPerNameChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
     val monitoringPerNameResultsChannel = Channel<PulsarMonitoringPerNameMessageToProcess>()
@@ -98,7 +96,6 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
                 null -> acknowledge(messageToProcess.pulsarId)
                 else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
-            logChannel?.send(messageToProcess)
         }
     }
 

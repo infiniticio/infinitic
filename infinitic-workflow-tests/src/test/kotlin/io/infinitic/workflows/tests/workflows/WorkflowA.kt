@@ -242,7 +242,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         p1 = "a"
 
         async {
-            taskA.await(150)
+            taskA.await(200)
             p1 += "b"
         }
         p1 += "c"

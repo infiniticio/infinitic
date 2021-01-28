@@ -34,14 +34,12 @@ import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -67,13 +65,13 @@ private fun logError(message: Message<WorkflowEngineEnvelope>, e: Exception) = l
 )
 
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
+    dispatcher: CoroutineDispatcher,
     consumerCounter: Int,
     workflowEngineConsumer: Consumer<WorkflowEngineEnvelope>,
     workflowEngineOutput: WorkflowEngineOutput,
     sendToWorkflowEngineDeadLetters: SendToWorkflowEngine,
-    keyValueStorage: KeyValueStorage,
-    logChannel: SendChannel<WorkflowEngineMessageToProcess>?,
-) = launch(Dispatchers.IO) {
+    keyValueStorage: KeyValueStorage
+) = launch(dispatcher) {
 
     val workflowCommandsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
     val workflowEventsChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
@@ -101,7 +99,6 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
                 null -> acknowledge(messageToProcess.pulsarId)
                 else -> negativeAcknowledge(messageToProcess.pulsarId)
             }
-            logChannel?.send(messageToProcess)
         }
     }
 
