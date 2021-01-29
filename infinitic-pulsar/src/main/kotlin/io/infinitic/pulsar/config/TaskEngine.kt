@@ -29,7 +29,7 @@ import io.infinitic.storage.StateStorage
 
 data class TaskEngine(
     @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 0,
+    @JvmField val consumers: Int = 1,
     @JvmField var stateStorage: StateStorage? = null
 ) {
     init {

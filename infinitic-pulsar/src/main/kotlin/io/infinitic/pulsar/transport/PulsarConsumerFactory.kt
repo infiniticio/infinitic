@@ -66,8 +66,8 @@ class PulsarConsumerFactory(
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
             .topics(
                 listOf(
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name),
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name)
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name),
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name)
                 )
             )
             .also {
@@ -85,8 +85,8 @@ class PulsarConsumerFactory(
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
             .topics(
                 listOf(
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name)
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name),
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name)
                 )
             )
             .also {

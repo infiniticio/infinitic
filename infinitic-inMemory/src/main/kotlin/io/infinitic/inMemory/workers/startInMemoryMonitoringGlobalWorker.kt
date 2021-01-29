@@ -35,8 +35,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
-private const val N_WORKERS = 10
-
 fun CoroutineScope.startInMemoryMonitoringGlobalWorker(
     keyValueStorage: KeyValueStorage,
     monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>,

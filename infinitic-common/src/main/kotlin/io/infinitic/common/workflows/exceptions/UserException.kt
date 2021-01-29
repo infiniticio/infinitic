@@ -31,22 +31,6 @@ import kotlinx.serialization.Serializable
 sealed class UserException : RuntimeException()
 
 @Serializable
-sealed class UserExceptionInCommon(
-    val msg: String,
-    val help: String
-) : UserException() {
-    override val message = "$msg.\n$help"
-}
-
-@Serializable
-sealed class UserExceptionInClient(
-    val msg: String,
-    val help: String
-) : UserException() {
-    override val message = "$msg.\n$help"
-}
-
-@Serializable
 sealed class UserExceptionInWorker(
     val msg: String,
     val help: String
@@ -67,7 +51,7 @@ sealed class UserExceptionInWorker(
  ***********************/
 
 @Serializable
-data class WorkflowDefinitionUpdatedWhileOngoing(
+data class WorkflowUpdatedWhileRunning(
     val workflowName: String,
     val workflowMethodName: String,
     val position: String

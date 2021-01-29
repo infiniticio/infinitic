@@ -320,17 +320,17 @@ class WorkflowIntegrationTests : StringSpec({
         workflowOutput shouldBe "acbd"
     }
 
-    "Check prop4" {
-        // run system
-        coroutineScope {
-            init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { prop4() })
-        }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
-        // checks number of task processing
-        workflowOutput shouldBe "acd"
-    }
+//    "Check prop4" {
+//        // run system
+//        coroutineScope {
+//            init()
+//            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { prop4() })
+//        }
+//        // check that the w is terminated
+//        workflowStateStorage.getState(workflowId) shouldBe null
+//        // checks number of task processing
+//        workflowOutput shouldBe "acd"
+//    }
 
     "Check prop5" {
         // run system

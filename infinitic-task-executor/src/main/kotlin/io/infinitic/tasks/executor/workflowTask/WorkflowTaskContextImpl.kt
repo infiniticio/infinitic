@@ -51,7 +51,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
-import io.infinitic.common.workflows.exceptions.WorkflowDefinitionUpdatedWhileOngoing
+import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflows.AbstractWorkflow
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
@@ -374,7 +374,7 @@ class WorkflowTaskContextImpl(
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskInput.workflowOptions.workflowChangeCheckMode)) {
-            throw WorkflowDefinitionUpdatedWhileOngoing(
+            throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
                 "${methodRunIndex.methodPosition}"
@@ -391,7 +391,7 @@ class WorkflowTaskContextImpl(
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
-            throw WorkflowDefinitionUpdatedWhileOngoing(
+            throw WorkflowUpdatedWhileRunning(
                 workflowTaskInput.workflowName.name,
                 "${workflowTaskInput.methodRun.methodName}",
                 "${methodRunIndex.methodPosition}"

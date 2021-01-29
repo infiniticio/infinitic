@@ -29,19 +29,13 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.pulsar.InfiniticWorker
-import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
-import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
-import io.infinitic.tasks.engine.worker.startTaskEngine
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -51,17 +45,20 @@ import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMessage>
-
-const val TASK_ENGINE_PROCESSING_COROUTINE_NAME = "task-engine-processing"
-const val TASK_ENGINE_ACKNOWLEDGING_COROUTINE_NAME = "task-engine-acknowledging"
-const val TASK_ENGINE_PULLING_COROUTINE_NAME = "task-engine-pulling"
+const val TASK_ENGINE_THREAD_NAME = "task-engine-processing"
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
 
 private fun logError(message: Message<TaskEngineEnvelope>, e: Exception) = logger.error(
-    "exception on message {}:${System.getProperty("line.separator")}{}",
+    "exception on Pulsar message {}:${System.getProperty("line.separator")}{}",
+    message,
+    e
+)
+
+private fun logError(message: TaskEngineMessage, e: Exception) = logger.error(
+    "taskId {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    message.taskId,
     message,
     e
 )
@@ -71,20 +68,12 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
     taskEngineConsumer: Consumer<TaskEngineEnvelope>,
     taskEngineOutput: TaskEngineOutput,
     sendToTaskEngineDeadLetters: SendToTaskEngine,
-    keyValueStorage: KeyValueStorage,
-    logChannel: SendChannel<TaskEngineMessageToProcess>?,
-) = launch(Dispatchers.IO) {
+    keyValueStorage: KeyValueStorage
+) = launch(singleThreadedContext("$TASK_ENGINE_THREAD_NAME-$consumerCounter")) {
 
-    val taskCommandsChannel = Channel<PulsarTaskEngineMessageToProcess>()
-    val taskEventsChannel = Channel<PulsarTaskEngineMessageToProcess>()
-    val taskResultsChannel = Channel<PulsarTaskEngineMessageToProcess>()
-
-    // Starting Task Engine
-    startTaskEngine(
-        "$TASK_ENGINE_PROCESSING_COROUTINE_NAME-$consumerCounter",
+    val taskEngine = TaskEngine(
         TaskStateKeyValueStorage(keyValueStorage),
         NoTaskEventStorage(),
-        TaskEngineInputChannels(taskCommandsChannel, taskEventsChannel, taskResultsChannel),
         taskEngineOutput
     )
 
@@ -94,35 +83,26 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
     suspend fun acknowledge(pulsarId: MessageId) =
         taskEngineConsumer.acknowledgeAsync(pulsarId).await()
 
-    // coroutine dedicated to pulsar message acknowledging
-    launch(CoroutineName("$TASK_ENGINE_ACKNOWLEDGING_COROUTINE_NAME-$consumerCounter")) {
-        for (messageToProcess in taskResultsChannel) {
-            when (messageToProcess.exception) {
-                null -> acknowledge(messageToProcess.pulsarId)
-                else -> negativeAcknowledge(messageToProcess.pulsarId)
-            }
-            logChannel?.send(messageToProcess)
+    while (isActive) {
+        val pulsarMessage = taskEngineConsumer.receiveAsync().await()
+
+        val message = try {
+            TaskEngineEnvelope.fromByteArray(pulsarMessage.data).message()
+        } catch (e: Exception) {
+            logError(pulsarMessage, e)
+            negativeAcknowledge(pulsarMessage.messageId)
+
+            null
         }
-    }
 
-    // coroutine dedicated to pulsar message pulling
-    launch(CoroutineName("$TASK_ENGINE_PULLING_COROUTINE_NAME-$consumerCounter")) {
-        while (isActive) {
-            val message: Message<TaskEngineEnvelope> = taskEngineConsumer.receiveAsync().await()
-
+        message?.let {
             try {
-                val envelope = TaskEngineEnvelope.fromByteArray(message.data)
+                taskEngine.handle(it)
 
-                taskCommandsChannel.send(
-                    PulsarMessageToProcess(
-                        message = envelope.message(),
-                        pulsarId = message.messageId,
-                        redeliveryCount = message.redeliveryCount
-                    )
-                )
+                acknowledge(pulsarMessage.messageId)
             } catch (e: Exception) {
                 logError(message, e)
-                negativeAcknowledge(message.messageId)
+                negativeAcknowledge(pulsarMessage.messageId)
             }
         }
     }

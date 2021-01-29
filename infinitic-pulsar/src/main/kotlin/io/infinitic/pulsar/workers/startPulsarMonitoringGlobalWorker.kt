@@ -29,17 +29,12 @@ import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.workers.singleThreadedContext
+import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
-import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
-import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
-import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -51,9 +46,7 @@ import org.slf4j.LoggerFactory
 
 typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<MonitoringGlobalMessage>
 
-const val MONITORING_GLOBAL_PROCESSING_COROUTINE_NAME = "monitoring-global-processing"
-const val MONITORING_GLOBAL_ACKNOWLEDGING_COROUTINE_NAME = "monitoring-global-acknowledging"
-const val MONITORING_GLOBAL_PULLING_COROUTINE_NAME = "monitoring-global-pulling"
+const val MONITORING_GLOBAL_THREAD_NAME = "monitoring-global"
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
@@ -64,21 +57,20 @@ private fun logError(message: Message<MonitoringGlobalEnvelope>, e: Exception) =
     e
 )
 
+private fun logError(message: MonitoringGlobalMessage, e: Exception) = logger.error(
+    "exception on message {}:${System.getProperty("line.separator")}{}",
+    message,
+    e
+)
+
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope>,
     sendToMonitoringGlobalDeadLetters: SendToMonitoringGlobal,
-    keyValueStorage: KeyValueStorage,
-    logChannel: SendChannel<MonitoringGlobalMessageToProcess>?
-) = launch(Dispatchers.IO) {
+    keyValueStorage: KeyValueStorage
+) = launch(singleThreadedContext(MONITORING_GLOBAL_THREAD_NAME)) {
 
-    val monitoringGlobalChannel = Channel<PulsarMonitoringGlobalMessageToProcess>()
-    val monitoringGlobalResultsChannel = Channel<PulsarMonitoringGlobalMessageToProcess>()
-
-    // starting monitoring global engine
-    startMonitoringGlobalEngine(
-        MONITORING_GLOBAL_PROCESSING_COROUTINE_NAME,
-        MonitoringGlobalStateKeyValueStorage(keyValueStorage),
-        MonitoringGlobalInputChannels(monitoringGlobalChannel, monitoringGlobalResultsChannel)
+    val monitoringGlobalEngine = MonitoringGlobalEngine(
+        MonitoringGlobalStateKeyValueStorage(keyValueStorage)
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =
@@ -87,34 +79,26 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     suspend fun acknowledge(pulsarId: MessageId) =
         monitoringGlobalConsumer.acknowledgeAsync(pulsarId).await()
 
-    // coroutine dedicated to pulsar message acknowledging
-    launch(CoroutineName(MONITORING_GLOBAL_ACKNOWLEDGING_COROUTINE_NAME)) {
-        for (messageToProcess in monitoringGlobalResultsChannel) {
-            when (messageToProcess.exception) {
-                null -> acknowledge(messageToProcess.pulsarId)
-                else -> negativeAcknowledge(messageToProcess.pulsarId)
-            }
-            logChannel?.send(messageToProcess)
+    while (isActive) {
+        val pulsarMessage = monitoringGlobalConsumer.receiveAsync().await()
+
+        val message = try {
+            MonitoringGlobalEnvelope.fromByteArray(pulsarMessage.data).message()
+        } catch (e: Exception) {
+            logError(pulsarMessage, e)
+            negativeAcknowledge(pulsarMessage.messageId)
+
+            null
         }
-    }
 
-    // coroutine dedicated to pulsar message pulling
-    launch(CoroutineName(MONITORING_GLOBAL_PULLING_COROUTINE_NAME)) {
-        while (isActive) {
-            val message: Message<MonitoringGlobalEnvelope> = monitoringGlobalConsumer.receiveAsync().await()
-
+        message?.let {
             try {
-                val envelope = MonitoringGlobalEnvelope.fromByteArray(message.data)
-                monitoringGlobalChannel.send(
-                    PulsarMessageToProcess(
-                        message = envelope.message(),
-                        pulsarId = message.messageId,
-                        redeliveryCount = message.redeliveryCount
-                    )
-                )
+                monitoringGlobalEngine.handle(it)
+
+                acknowledge(pulsarMessage.messageId)
             } catch (e: Exception) {
                 logError(message, e)
-                negativeAcknowledge(message.messageId)
+                negativeAcknowledge(pulsarMessage.messageId)
             }
         }
     }

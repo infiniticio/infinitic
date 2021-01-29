@@ -33,6 +33,7 @@ dependencies {
     implementation(Libs.Jackson.module)
     implementation(Libs.Jackson.jsr310)
     implementation(Libs.Avro4k.core)
+    implementation(Libs.Coroutines.core)
 
     testFixturesImplementation(Libs.Kotlin.reflect)
     testFixturesImplementation(Libs.EasyRandom.core)

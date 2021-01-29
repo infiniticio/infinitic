@@ -34,7 +34,7 @@ data class TaskAttemptContext(
     val taskRetry: Int,
     val taskAttemptId: String,
     val taskAttemptRetry: Int,
-    val lastTaskAttemptError: Any?,
+    val previousTaskAttemptError: Any?,
     var currentTaskAttemptError: Throwable? = null,
     val taskMeta: Map<String, Any?>,
     val taskOptions: TaskOptions

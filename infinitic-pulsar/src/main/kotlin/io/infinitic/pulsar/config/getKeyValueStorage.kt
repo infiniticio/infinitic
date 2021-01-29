@@ -32,5 +32,4 @@ import io.infinitic.storage.redis.RedisStorage
 fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig, type: String): KeyValueStorage = when (this) {
     StateStorage.inMemory -> InMemoryStorage()
     StateStorage.redis -> RedisStorage(workerConfig.redis!!)
-    StateStorage.pulsarState -> InMemoryStorage()
 }

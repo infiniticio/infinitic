@@ -28,6 +28,5 @@ package io.infinitic.storage
 @Suppress("EnumEntryName")
 enum class StateStorage {
     inMemory,
-    pulsarState,
     redis
 }

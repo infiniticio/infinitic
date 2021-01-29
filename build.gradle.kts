@@ -37,7 +37,6 @@ plugins {
     kotlin("jvm").version(Libs.kotlinVersion) apply false
     kotlin("plugin.serialization").version(Libs.serializationVersion) apply false
     id("org.jlleitschuh.gradle.ktlint").version(Libs.ktlintVersion) apply false
-    id("org.jetbrains.dokka").version(Libs.dokkaVersion) apply false
 }
 
 subprojects {

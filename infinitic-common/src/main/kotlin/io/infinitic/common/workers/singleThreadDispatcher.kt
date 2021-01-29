@@ -23,8 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.executors.messages
+package io.infinitic.common.workers
 
-enum class WorkflowExecutorMessageType {
-    RUN_WORKFLOW
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.asCoroutineDispatcher
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
+import kotlin.coroutines.CoroutineContext
+
+fun singleThreadedContext(name: String): CoroutineContext = CoroutineName(name) +
+    Executors
+        .newSingleThreadExecutor(SimpleThreadFactory(name))
+        .asCoroutineDispatcher()
+
+private class SimpleThreadFactory(val name: String) : ThreadFactory {
+    override fun newThread(r: Runnable): Thread {
+        val t = Thread(r)
+        t.name = name
+        return t
+    }
 }
