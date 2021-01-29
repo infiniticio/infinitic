@@ -177,16 +177,6 @@ data class InconsistentJsonSerializationOfParameter(
  ***********************/
 
 @Serializable
-data class ErrorDuringInstantiation(
-    val name: String
-) : UserExceptionInWorker(
-    msg = "Impossible to instantiate class \"$name\" using newInstance()",
-    help = "Consider those options:\n" +
-        "- adding an empty constructor to \"$name\"\n" +
-        "- using \"register\" method to provide an instance that will be used associated to \"$name\""
-)
-
-@Serializable
 data class ClassNotFoundDuringInstantiation(
     val name: String
 ) : UserExceptionInWorker(
@@ -241,23 +231,4 @@ data class ProcessingTimeout(
 ) : UserExceptionInWorker(
     msg = "The processing of task \"$klass\" took more than $delay seconds",
     help = "You can increase (or remove entirely) this constraint in the options ${TaskOptions::javaClass.name}"
-)
-
-@Serializable
-data class ExceptionDuringParametersDeserialization(
-    val taskName: String,
-    val methodName: String,
-    val input: List<SerializedData>,
-    val parameterTypes: List<String>
-) : UserExceptionInWorker(
-    msg = "Impossible to deserialize input \"$input\" with types \"$parameterTypes\" for method \"$taskName::$methodName\"",
-    help = ""
-)
-
-@Serializable
-data class CanNotUseJavaReservedKeywordInMeta(
-    val reserved: String
-) : UserExceptionInWorker(
-    msg = "\"$reserved\" is as reserved keyword, you can not use it in your meta data",
-    help = ""
 )
