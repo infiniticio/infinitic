@@ -44,7 +44,6 @@ import kotlinx.coroutines.runBlocking
 fun main() {
     val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
     val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
-
     runBlocking {
         val client = InfiniticClient(
             InMemoryClientOutput(this, taskEngineCommandsChannel, workflowEngineCommandsChannel)
@@ -58,9 +57,12 @@ fun main() {
 
         startInMemory(taskExecutorRegister, InMemoryStorage(), taskEngineCommandsChannel, workflowEngineCommandsChannel)
 
+        val taskA = client.task(TaskA::class.java)
+        val workflowA = client.workflow(WorkflowA::class.java)
+
         repeat(1) {
-            client.startTask<TaskA> { await(2000) }
-            client.startWorkflow<WorkflowA> { seq1() }
+            client.async(taskA) { await(2000) }
+            client.async(workflowA) { seq1() }
         }
     }
 }

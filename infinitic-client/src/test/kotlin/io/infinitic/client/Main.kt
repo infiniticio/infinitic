@@ -1,5 +1,9 @@
 package io.infinitic.client
 
+import io.infinitic.client.samples.FakeTask
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.mockk.slot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -11,15 +15,23 @@ import kotlinx.coroutines.withTimeout
 import kotlin.random.Random
 
 fun main() = runBlocking {
-    val h = ResponseHandler(this)
-    launch {
-        try {
-            val result = h.sync("1")
-            println("result: $result")
-        } catch (e: Exception) {
-            println(e)
-        }
-    }
+    val taskSlot = slot<TaskEngineMessage>()
+    val workflowSlot = slot<WorkflowEngineMessage>()
+    val client = InfiniticClient(MockClientOutput(taskSlot, workflowSlot))
+
+    val fake = client.task(FakeTask::class.java)
+
+    println(client.async(fake) { m1() })
+
+//    val h = ResponseHandler(this)
+//    launch {
+//        try {
+//            val result = h.sync("1")
+//            println("result: $result")
+//        } catch (e: Exception) {
+//            println(e)
+//        }
+//    }
 
     Unit
 }

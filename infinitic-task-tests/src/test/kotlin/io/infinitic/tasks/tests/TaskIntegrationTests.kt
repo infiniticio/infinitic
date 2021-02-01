@@ -75,6 +75,7 @@ private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
 private lateinit var taskExecutor: TaskExecutor
 private lateinit var client: InfiniticClient
+private lateinit var taskTestStub: TaskTest
 
 class TaskIntegrationTests : StringSpec({
     var taskId: TaskId
@@ -85,7 +86,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.startTask<TaskTest> { log() })
+            taskId = TaskId(client.async(taskTestStub) { log() })
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -101,7 +102,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.startTask<TaskTest> { log() })
+            taskId = TaskId(client.async(taskTestStub) { log() })
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -117,7 +118,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.startTask<TaskTest> { log() })
+            taskId = TaskId(client.async(taskTestStub) { log() })
         }
         // check that task is not terminated
         taskStateStorage.getState(taskId) shouldNotBe null
@@ -133,7 +134,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.startTask<TaskTest> { log() })
+            taskId = TaskId(client.async(taskTestStub) { log() })
         }
         // check that task is not terminated
         taskStateStorage.getState(taskId) shouldNotBe null
@@ -155,7 +156,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.startTask<TaskTest> { log() })
+            taskId = TaskId(client.async(taskTestStub) { log() })
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
@@ -176,7 +177,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.startTask<TaskTest> { log() })
+            taskId = TaskId(client.async(taskTestStub) { log() })
             delay(100)
             client.cancelTask(id = "$taskId")
         }
@@ -259,6 +260,8 @@ fun CoroutineScope.init() {
     taskStatus = null
 
     client = InfiniticClient(TestClientOutput(this))
+
+    taskTestStub = client.task(TaskTest::class.java)
 
     taskEngine = TaskEngine(
         taskStateStorage,

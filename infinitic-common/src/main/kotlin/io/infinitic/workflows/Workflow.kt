@@ -25,44 +25,46 @@
 
 package io.infinitic.workflows
 
-interface Workflow {
-    /*
-     *  Proxy task (Java syntax)
-     */
-    fun <T : Any> task(klass: Class<out T>): T
+import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
+import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler
+
+abstract class Workflow {
+    lateinit var context: WorkflowTaskContext
 
     /*
-    *  Proxy workflow (Java syntax)
-    */
-    fun <T : Workflow> workflow(klass: Class<out T>): T
+     *  Stub task
+     */
+    fun <T : Any> task(klass: Class<out T>): T = TaskProxyHandler(klass) { context }.instance()
 
     /*
-     *  Dispatch a task asynchronously
+     * Stub task
+     * (Kotlin way)
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
+    inline fun <reified T : Any> task(): T = TaskProxyHandler(T::class.java) { context }.instance()
 
     /*
-     * Dispatch a workflow asynchronously
+     *  Stub workflow
      */
-    fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S>
+    fun <T : Any> workflow(klass: Class<out T>): T = WorkflowProxyHandler(klass) { context }.instance()
+
+    /*
+     *  Stub workflow
+     * (Kotlin way)
+     */
+    inline fun <reified T : Any> workflow(): T = WorkflowProxyHandler(T::class.java) { context }.instance()
+
+    /*
+     *  Dispatch a task or a workflow asynchronously
+     */
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
 
     /*
      * Create an async branch
      */
-    fun <S> async(branch: () -> S): Deferred<S>
+    fun <S> async(branch: () -> S): Deferred<S> = context.async(branch)
 
     /*
      * Create an inline task
      */
-    fun <S> inline(task: () -> S): S
+    fun <S> inline(task: () -> S): S = context.inline(task)
 }
-
-/*
- * Proxy task (preferred Kotlin syntax)
- */
-inline fun <reified T : Any> Workflow.task() = this.task(T::class.java)
-
-/*
- * Proxy workflow (preferred Kotlin syntax)
- */
-inline fun <reified T : Workflow> Workflow.workflow() = this.workflow(T::class.java)

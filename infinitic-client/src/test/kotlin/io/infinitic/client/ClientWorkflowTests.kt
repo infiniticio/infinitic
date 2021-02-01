@@ -46,6 +46,7 @@ class ClientWorkflowTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
     val client = InfiniticClient(MockClientOutput(taskSlot, workflowSlot))
+    val fakeWorkflow = client.workflow(FakeWorkflow::class.java)
 
     beforeTest {
         taskSlot.clear()
@@ -54,7 +55,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow without parameter" {
         // when
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1() })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -71,7 +72,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with a primitive as parameter" {
         // when
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1(0) })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(0) })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -88,7 +89,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple method definition" {
         // when
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1("a") })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1("a") })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -105,7 +106,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple parameters" {
         // when
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1(0, "a") })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(0, "a") })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -123,7 +124,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val klass = FakeClass()
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1(klass) })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(klass) })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured

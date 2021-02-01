@@ -25,17 +25,14 @@
 
 package io.infinitic.workflows.tests.workflows
 
-import io.infinitic.workflows.AbstractWorkflow
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
 import io.infinitic.workflows.or
-import io.infinitic.workflows.task
 import io.infinitic.workflows.tests.tasks.TaskA
-import io.infinitic.workflows.workflow
 import java.time.LocalDateTime
 
-interface WorkflowA : Workflow {
+interface WorkflowA {
     fun empty(): String
     fun seq1(): String
     fun seq2(): String
@@ -60,7 +57,7 @@ interface WorkflowA : Workflow {
     fun prop6(): String
 }
 
-class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
+class WorkflowAImpl : Workflow(), WorkflowA {
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
     private var p1 = ""

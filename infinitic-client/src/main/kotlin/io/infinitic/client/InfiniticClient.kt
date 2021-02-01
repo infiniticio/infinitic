@@ -25,149 +25,83 @@
 
 package io.infinitic.client
 
+import io.infinitic.client.proxies.TaskProxyHandler
+import io.infinitic.client.proxies.WorkflowProxyHandler
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.exceptions.NoMethodCallAtDispatch
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.workflows.Workflow
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
+import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-open class InfiniticClient(
-    val clientOutput: ClientOutput,
-) {
+open class InfiniticClient(val clientOutput: ClientOutput) {
     /*
-     * Start a workflow (Java)
-     * Note: java implementation can not be reified (and inlined)
+     * Create stub for a new task
      */
-    @JvmOverloads fun <T : Workflow> startWorkflowAsync(
-        klass: Class<T>,
-        apply: T.() -> Any?,
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: WorkflowMeta = WorkflowMeta()
-    ): CompletableFuture<String> = GlobalScope.future {
-        startWorkflow(klass, options, meta, apply)
-    }
-
-    /*
-     * Start a workflow (Kotlin)
-     */
-    suspend fun <T : Workflow> startWorkflow(
-        klass: Class<T>,
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: WorkflowMeta = WorkflowMeta(),
-        apply: T.() -> Any?
-    ): String {
-        // get a proxy for T
-        val handler = MethodProxyHandler(klass)
-
-        val instance = handler.instance()
-
-        // method call will actually be done through the proxy by handler
-        instance.apply()
-
-        // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(klass.name, "dispatchWorkflow")
-
-        val msg = DispatchWorkflow(
-            workflowId = WorkflowId(),
-            workflowName = WorkflowName.from(method),
-            methodName = MethodName.from(method),
-            methodParameterTypes = MethodParameterTypes.from(method),
-            methodInput = MethodInput.from(method, handler.args),
-            workflowMeta = meta,
-            workflowOptions = options
-        )
-        clientOutput.sendToWorkflowEngine(msg, 0F)
-
-        return "${msg.workflowId}"
-    }
-
-    /*
-     * Start a workflow (Kotlin)
-     */
-    suspend inline fun <reified T : Workflow> startWorkflow(
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: WorkflowMeta = WorkflowMeta(),
-        noinline apply: T.() -> Any?
-    ) = startWorkflow(T::class.java, options, meta, apply)
-
-    /*
-     * Start a task (Java)
-     * Note: java implementation can not be reified (and inlined)
-     */
-    @JvmOverloads fun <T : Any> startTaskAsync(
-        klass: Class<T>,
-        apply: T.() -> Any?,
+    @JvmOverloads fun <T : Any> task(
+        klass: Class<out T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta()
-    ): CompletableFuture<String> = GlobalScope.future {
-        startTask(klass, options, meta, apply)
-    }
+    ): T = TaskProxyHandler(klass, options, meta, clientOutput).instance()
 
     /*
-     * Start a task (Kotlin)
+     * Create stub for a new task
+     * (Kotlin way)
      */
-    suspend fun <T : Any> startTask(
-        klass: Class<T>,
+    inline fun <reified T : Any> task(
         options: TaskOptions = TaskOptions(),
-        meta: TaskMeta = TaskMeta(),
-        apply: T.() -> Any?
-    ): String {
-        // get a proxy for T
-        val handler = MethodProxyHandler(klass)
-
-        // get a proxy instance
-        val instance = handler.instance()
-
-        // method call will actually be done through the proxy by handler
-        instance.apply()
-
-        // dispatch the workflow
-        val method = handler.method ?: throw NoMethodCallAtDispatch(klass.name, "dispatchTask")
-
-        val msg = DispatchTask(
-            taskId = TaskId(),
-            taskName = TaskName.from(method),
-            methodName = MethodName.from(method),
-            methodParameterTypes = MethodParameterTypes.from(method),
-            methodInput = MethodInput.from(method, handler.args),
-            workflowId = null,
-            methodRunId = null,
-            taskOptions = options,
-            taskMeta = meta
-        )
-        clientOutput.sendToTaskEngine(msg, 0F)
-
-        return "${msg.taskId}"
-    }
+        meta: TaskMeta = TaskMeta()
+    ): T = task(T::class.java, options, meta)
 
     /*
-     * Start a task (Kotlin)
+     * Create stub for a new workflow
      */
-    suspend inline fun <reified T : Any> startTask(
-        options: TaskOptions = TaskOptions(),
-        meta: TaskMeta = TaskMeta(),
-        noinline apply: T.() -> Any?
-    ) = startTask(T::class.java, options, meta, apply)
+    @JvmOverloads fun <T : Any> workflow(
+        klass: Class<out T>,
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta()
+    ): T = WorkflowProxyHandler(klass, options, meta, clientOutput).instance()
+
+    /*
+     * Create stub for a new workflow
+     * (kotlin way)
+     */
+    inline fun <reified T : Any> workflow(
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta()
+    ): T = workflow(T::class.java, options, meta)
+
+    /*
+     *  Asynchronous processing of a task or a workflow
+     */
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): String {
+        if (proxy !is Proxy) throw RuntimeException("not a proxy")
+
+        val handler = Proxy.getInvocationHandler(proxy)
+
+        // collect method and args
+        proxy.method()
+
+        return when (handler) {
+            is TaskProxyHandler<*> -> handler.startTaskAsync()
+            is WorkflowProxyHandler<*> -> handler.startWorkflowAsync()
+            else -> throw RuntimeException("Unknown handler")
+        }
+    }
 
     /*
      * Retry a task (Java)

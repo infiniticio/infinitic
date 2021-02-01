@@ -115,7 +115,7 @@ data class ExceptionDuringJsonDeserialization(
  * Exceptions in client
  ***********************/
 
-data class NoMethodCallAtDispatch(
+data class NoMethodCall(
     val name: String,
     val dispatch: String
 ) : UserExceptionInClient(
@@ -123,7 +123,7 @@ data class NoMethodCallAtDispatch(
     help = "Make sure to call one method of \"$name\" within the curly braces - example: client.$dispatch<Foo> { bar(*args) }"
 )
 
-data class MultipleMethodCallsAtDispatch(
+data class MultipleMethodCalls(
     val name: String,
     val method1: String,
     val method2: String

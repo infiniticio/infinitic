@@ -25,7 +25,6 @@
 
 package io.infinitic.tasks.executor.workflowTask
 
-import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -52,16 +51,18 @@ import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
-import io.infinitic.workflows.AbstractWorkflow
+import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
+import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Method
+import java.lang.reflect.Proxy
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
-    private val workflow: AbstractWorkflow
+    private val workflow: Workflow
 ) : WorkflowTaskContext {
     // position in the current method processing
     private var methodRunIndex = MethodRunIndex()
@@ -86,48 +87,30 @@ class WorkflowTaskContextImpl(
     override fun <T : Any, S> async(
         proxy: T,
         method: T.() -> S
-    ): Deferred<S> {
-        val command = Class.forName(proxy.toString())
-
-        // get a proxy for T
-        val handler = MethodProxyHandler(command)
-
-        // get a proxy instance
-        @Suppress("UNCHECKED_CAST")
-        val klass = handler.instance() as T
-
-        // this call will capture method and arguments
-        klass.method()
-
-        return dispatchTask<S>(
-            handler.method ?: throw NoMethodCallAtAsync(command::class.java.name),
-            handler.args
-        )
-    }
-
-    /*
-     * Async Workflow dispatching
-     */
-    override fun <T : Workflow, S> async(
-        proxy: T,
-        method: T.() -> S
-    ): Deferred<S> {
-        val command = Class.forName(proxy.toString())
-
-        // get a proxy for T
-        val handler = MethodProxyHandler(command)
-
-        // get a proxy instance
-        @Suppress("UNCHECKED_CAST")
-        val klass = handler.instance() as T
-
-        // this call will capture method and arguments
-        klass.method()
-
-        return dispatchWorkflow<S>(
-            handler.method ?: throw NoMethodCallAtAsync(command::class.java.name),
-            handler.args
-        )
+    ): Deferred<S> = when (val handler = Proxy.getInvocationHandler(proxy)) {
+        is TaskProxyHandler<*> -> {
+            handler.isSync = false
+            proxy.method()
+            val deferred = dispatchTask<S>(
+                handler.method ?: throw NoMethodCallAtAsync(handler.klass.name),
+                handler.args
+            )
+            // allow stub reuse
+            handler.reset()
+            deferred
+        }
+        is WorkflowProxyHandler<*> -> {
+            handler.isSync = false
+            proxy.method()
+            val deferred = dispatchWorkflow<S>(
+                handler.method ?: throw NoMethodCallAtAsync(handler.klass.name),
+                handler.args
+            )
+            // allow stub reuse
+            handler.reset()
+            deferred
+        }
+        else -> throw RuntimeException("Unknown handler")
     }
 
     /*

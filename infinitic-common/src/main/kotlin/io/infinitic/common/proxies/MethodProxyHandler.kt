@@ -25,14 +25,17 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.tasks.exceptions.MultipleMethodCallsAtDispatch
+import io.infinitic.common.tasks.exceptions.MultipleMethodCalls
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
-class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
+open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
     var method: Method? = null
-    lateinit var args: Array<out Any>
+    var args: Array<out Any> = arrayOf()
+
+    // let handler know if the task synchronous or asynchronous
+    var isSync = true
 
     /*
      * invoke method is called when a method is applied to the proxy instance
@@ -42,7 +45,7 @@ class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
         if (method.name == "toString") return klass.name
 
         // invoke should called only once per ProxyHandler instance
-        if (this.method != null) throw MultipleMethodCallsAtDispatch(method.declaringClass.name, this.method!!.name, method.name)
+        if (this.method != null) throw MultipleMethodCalls(method.declaringClass.name, this.method!!.name, method.name)
 
         // methods and args are stored for later use
         this.method = method
@@ -71,4 +74,10 @@ class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
         kotlin.arrayOf(klass),
         this
     ) as T
+
+    fun reset() {
+        method = null
+        args = arrayOf()
+        isSync = true
+    }
 }

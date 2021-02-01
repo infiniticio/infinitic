@@ -82,6 +82,8 @@ private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
 private lateinit var executor: TaskExecutor
 private lateinit var infiniticClient: InfiniticClient
+private lateinit var workflowA: WorkflowA
+private lateinit var workflowB: WorkflowB
 
 class WorkflowIntegrationTests : StringSpec({
     var workflowId: WorkflowId
@@ -90,7 +92,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { empty() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { empty() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -102,7 +104,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { seq1() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { seq1() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -114,7 +116,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { seq2() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { seq2() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -126,7 +128,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { seq3() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { seq3() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -138,7 +140,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { seq4() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { seq4() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -150,7 +152,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { or1() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { or1() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -162,7 +164,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { or2() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { or2() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -174,7 +176,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { or3() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { or3() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -186,7 +188,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { and1() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { and1() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -198,7 +200,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { and2() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { and2() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -210,7 +212,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { and3() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { and3() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -222,7 +224,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { inline1() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { inline1() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -232,7 +234,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { inline2() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { inline2() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -242,7 +244,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { inline3() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { inline3() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldNotBe null
@@ -252,7 +254,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { child1() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { child1() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -264,7 +266,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { child2() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { child2() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -276,7 +278,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowB> { factorial(14) })
+            workflowId = WorkflowId(infiniticClient.async(workflowB) { factorial(14) })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -288,7 +290,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { prop1() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { prop1() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -300,7 +302,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { prop2() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { prop2() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -312,7 +314,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { prop3() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { prop3() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -324,7 +326,7 @@ class WorkflowIntegrationTests : StringSpec({
 //        // run system
 //        coroutineScope {
 //            init()
-//            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { prop4() })
+//            workflowId = WorkflowId(infiniticClient.async(workflowA { prop4() })
 //        }
 //        // check that the w is terminated
 //        workflowStateStorage.getState(workflowId) shouldBe null
@@ -336,7 +338,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { prop5() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { prop5() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -348,7 +350,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(infiniticClient.startWorkflow<WorkflowA> { prop6() })
+            workflowId = WorkflowId(infiniticClient.async(workflowA) { prop6() })
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -449,6 +451,9 @@ fun CoroutineScope.init() {
     workflowOutput = null
 
     infiniticClient = InfiniticClient(TestClientOutput(this))
+
+    workflowA = infiniticClient.workflow(WorkflowA::class.java)
+    workflowB = infiniticClient.workflow(WorkflowB::class.java)
 
     workflowEngine = WorkflowEngine(
         workflowStateStorage,

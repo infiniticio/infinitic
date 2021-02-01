@@ -30,8 +30,6 @@ import java.lang.reflect.Method
 interface WorkflowTaskContext {
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
 
-    fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S>
-
     fun <S> async(branch: () -> S): Deferred<S>
 
     fun <S> inline(task: () -> S): S

@@ -30,7 +30,6 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
 import io.infinitic.common.workflows.exceptions.WorkflowUsedAsTask
 import io.infinitic.tasks.executor.workflowTask.WorkflowTaskImpl
-import io.infinitic.workflows.AbstractWorkflow
 import io.infinitic.workflows.Workflow
 
 class TaskExecutorRegisterImpl : TaskExecutorRegister {
@@ -56,9 +55,9 @@ class TaskExecutorRegisterImpl : TaskExecutorRegister {
         else return instance
     }
 
-    override fun getWorkflowInstance(name: String): AbstractWorkflow {
+    override fun getWorkflowInstance(name: String): Workflow {
         val instance = getInstance(name)
-        if (instance !is AbstractWorkflow) throw TaskUsedAsWorkflow(name, instance::class.qualifiedName!!)
+        if (instance !is Workflow) throw TaskUsedAsWorkflow(name, instance::class.qualifiedName!!)
         else return instance
     }
 

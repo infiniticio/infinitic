@@ -46,6 +46,8 @@ class ClientTaskTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
     val client = InfiniticClient(MockClientOutput(taskSlot, workflowSlot))
+    // task stub
+    val fakeTask = client.task(FakeTask::class.java)
 
     beforeTest {
         taskSlot.clear()
@@ -54,7 +56,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch method without parameter" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1() })
+        val taskId = TaskId(client.async(fakeTask) { m1() })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
@@ -73,7 +75,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as parameter" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1(0) })
+        val taskId = TaskId(client.async(fakeTask) { m1(0) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
@@ -92,7 +94,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with null as parameter" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1(null) })
+        val taskId = TaskId(client.async(fakeTask) { m1(null) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
@@ -111,7 +113,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with multiple definition" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1("a") })
+        val taskId = TaskId(client.async(fakeTask) { m1("a") })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
@@ -130,7 +132,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with multiple parameters" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1(0, "a") })
+        val taskId = TaskId(client.async(fakeTask) { m1(0, "a") })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
@@ -150,7 +152,7 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with an interface as parameter" {
         // when
         val fake = FakeClass()
-        val taskId = TaskId(client.startTask<FakeTask> { m1(fake) })
+        val taskId = TaskId(client.async(fakeTask) { m1(fake) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
@@ -170,7 +172,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as return value" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m2() })
+        val taskId = TaskId(client.async(fakeTask) { m2() })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
