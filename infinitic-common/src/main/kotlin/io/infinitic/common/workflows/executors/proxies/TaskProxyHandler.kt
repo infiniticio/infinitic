@@ -43,7 +43,7 @@ class TaskProxyHandler<T : Any>(
 
         return workflowTaskContextFn()
             .dispatchTask<T>(method, args ?: arrayOf())
-            .result()
+            .await()
     }
 
     /*

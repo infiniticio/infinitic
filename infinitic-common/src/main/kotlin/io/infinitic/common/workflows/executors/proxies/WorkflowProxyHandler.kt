@@ -44,7 +44,7 @@ class WorkflowProxyHandler<T : Workflow>(
 
         return workflowTaskContextFun()
             .dispatchWorkflow<T>(method, args ?: arrayOf())
-            .result()
+            .await()
     }
 
     /*

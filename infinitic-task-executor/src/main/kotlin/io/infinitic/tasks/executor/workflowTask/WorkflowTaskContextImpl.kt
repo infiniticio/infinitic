@@ -245,7 +245,7 @@ class WorkflowTaskContextImpl(
     /*
      * Deferred await()
      */
-    override fun <T> await(deferred: Deferred<T>): Deferred<T> {
+    override fun <T> await(deferred: Deferred<T>): T {
         // increment position
         positionNext()
 
@@ -267,7 +267,7 @@ class WorkflowTaskContextImpl(
                 throw NewStepException()
             }
             // if this deferred is already terminated, we continue
-            return deferred
+            return result(deferred)
         }
 
         // set status
@@ -288,17 +288,7 @@ class WorkflowTaskContextImpl(
         )
 
         // continue
-        return deferred
-    }
-
-    /*
-     * Deferred result()
-     */
-    @Suppress("UNCHECKED_CAST")
-    override fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
-        is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
-        is StepStatusCompleted -> status.completionResult.get() as T
-        is StepStatusCanceled -> status.cancellationResult.get() as T
+        return result(deferred)
     }
 
     /*
@@ -321,6 +311,16 @@ class WorkflowTaskContextImpl(
      */
     override fun <S> dispatchWorkflow(method: Method, args: Array<out Any>) =
         dispatch<S>(DispatchChildWorkflow.from(method, args), CommandSimpleName.fromMethod(method))
+
+    /*
+     * Get return value from Deferred
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> result(deferred: Deferred<T>): T = when (val status = deferred.stepStatus) {
+        is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
+        is StepStatusCompleted -> status.completionResult.get() as T
+        is StepStatusCanceled -> status.cancellationResult.get() as T
+    }
 
     /*
      * Go to next position within the same branch

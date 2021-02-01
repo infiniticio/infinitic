@@ -37,15 +37,9 @@ data class Deferred<T> (
     lateinit var stepStatus: StepStatus
 
     /*
-     * Use this method to wait the completion or cancellation of a deferred
+     * Use this method to wait the completion or cancellation of a deferred and get its result
      */
     fun await() = workflowTaskContext.await(this)
-
-    /*
-     * Use this method to wait the completion or cancellation of a deferred
-     * and get its result
-     */
-    fun result() = workflowTaskContext.result(this)
 
     /*
      * Use this method to get the status of a deferred
