@@ -25,27 +25,19 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.proxies.TaskProxyHandler
-import io.infinitic.client.proxies.WorkflowProxyHandler
+import io.infinitic.client.proxies.ExistingTaskProxyHandler
+import io.infinitic.client.proxies.ExistingWorkflowProxyHandler
+import io.infinitic.client.proxies.NewTaskProxyHandler
+import io.infinitic.client.proxies.NewWorkflowProxyHandler
 import io.infinitic.client.transport.ClientOutput
-import io.infinitic.common.data.methods.MethodInput
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodOutput
-import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.tasks.exceptions.IncorrectExistingStub
+import io.infinitic.common.tasks.exceptions.IncorrectNewStub
+import io.infinitic.common.tasks.exceptions.NotAStub
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.future.future
 import java.lang.reflect.Proxy
-import java.util.concurrent.CompletableFuture
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 open class InfiniticClient(val clientOutput: ClientOutput) {
@@ -56,7 +48,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         klass: Class<out T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta()
-    ): T = TaskProxyHandler(klass, options, meta, clientOutput).instance()
+    ): T = NewTaskProxyHandler(klass, options, meta, clientOutput).instance()
 
     /*
      * Create stub for a new task
@@ -74,11 +66,11 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         klass: Class<out T>,
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta()
-    ): T = WorkflowProxyHandler(klass, options, meta, clientOutput).instance()
+    ): T = NewWorkflowProxyHandler(klass, options, meta, clientOutput).instance()
 
     /*
      * Create stub for a new workflow
-     * (kotlin way)
+     * (Kotlin way)
      */
     inline fun <reified T : Any> workflow(
         options: WorkflowOptions = WorkflowOptions(),
@@ -86,109 +78,91 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
     ): T = workflow(T::class.java, options, meta)
 
     /*
-     *  Asynchronous processing of a task or a workflow
+     * Create stub for an existing task
+     */
+    @JvmOverloads fun <T : Any> task(
+        klass: Class<out T>,
+        id: String,
+        options: TaskOptions? = null,
+        meta: TaskMeta? = null
+    ): T = ExistingTaskProxyHandler(klass, id, options, meta, clientOutput).instance()
+
+    /*
+     * Create stub for an existing task
+     * (Kotlin way)
+     */
+    inline fun <reified T : Any> task(
+        id: String,
+        options: TaskOptions? = null,
+        meta: TaskMeta? = null
+    ): T = task(T::class.java, id, options, meta)
+
+    /*
+     * Create stub for an existing workflow
+     */
+    @JvmOverloads fun <T : Any> workflow(
+        klass: Class<out T>,
+        id: String,
+        options: WorkflowOptions? = null,
+        meta: WorkflowMeta? = null
+    ): T = ExistingWorkflowProxyHandler(klass, id, options, meta, clientOutput).instance()
+
+    /*
+     * Create stub for an existing workflow
+     * (kotlin way)
+     */
+    inline fun <reified T : Any> workflow(
+        id: String,
+        options: WorkflowOptions? = null,
+        meta: WorkflowMeta? = null
+    ): T = workflow(T::class.java, id, options, meta)
+
+    /*
+     *  Process (asynchronously) a task or a workflow
      */
     fun <T : Any, S> async(proxy: T, method: T.() -> S): String {
-        if (proxy !is Proxy) throw RuntimeException("not a proxy")
-
-        val handler = Proxy.getInvocationHandler(proxy)
+        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "async")
 
         // collect method and args
         proxy.method()
 
-        return when (handler) {
-            is TaskProxyHandler<*> -> handler.startTaskAsync()
-            is WorkflowProxyHandler<*> -> handler.startWorkflowAsync()
+        return when (val handler = Proxy.getInvocationHandler(proxy)) {
+            is NewTaskProxyHandler<*> -> handler.startTask()
+            is NewWorkflowProxyHandler<*> -> handler.startWorkflow()
+            is ExistingTaskProxyHandler<*> -> throw IncorrectExistingStub(proxy::class.java.name, "async", "task")
+            is ExistingWorkflowProxyHandler<*> -> throw IncorrectExistingStub(proxy::class.java.name, "async", "workflow")
             else -> throw RuntimeException("Unknown handler")
         }
     }
 
     /*
-     * Retry a task (Java)
+     *  Cancel a task or a workflow
+     */
+    fun <T : Any> cancel(proxy: T, output: Any? = null) {
+        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "cancel")
+
+        when (val handler = Proxy.getInvocationHandler(proxy)) {
+            is NewTaskProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "task")
+            is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "workflow")
+            is ExistingTaskProxyHandler<*> -> handler.cancelTask(output)
+            is ExistingWorkflowProxyHandler<*> -> handler.cancelWorkflowAsync(output)
+            else -> throw RuntimeException("Unknown handler")
+        }
+    }
+
+    /*
+     * Retry a task or a workflowTask
      * when a non-null parameter is provided, it will supersede current one
      */
-    @JvmOverloads fun retryTaskAsync(
-        id: String,
-        name: TaskName? = null,
-        methodName: MethodName? = null,
-        methodParameterTypes: MethodParameterTypes? = null,
-        methodInput: MethodInput? = null,
-        taskOptions: TaskOptions? = null,
-        taskMeta: TaskMeta? = null
-    ): CompletableFuture<Unit> = GlobalScope.future {
-        retryTask(id, name, methodName, methodParameterTypes, methodInput, taskOptions, taskMeta)
-    }
+    fun <T : Any> retry(proxy: T) {
+        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "retry")
 
-    /*
-     * Retry a task (Kotlin)
-     * when a non-null parameter is provided, it will supersede current one
-     */
-    suspend fun retryTask(
-        id: String,
-        name: TaskName? = null,
-        methodName: MethodName? = null,
-        methodParameterTypes: MethodParameterTypes? = null,
-        methodInput: MethodInput? = null,
-        taskOptions: TaskOptions? = null,
-        taskMeta: TaskMeta? = null
-    ) {
-        val msg = RetryTask(
-            taskId = TaskId(id),
-            taskName = name,
-            methodName = methodName,
-            methodParameterTypes = methodParameterTypes,
-            methodInput = methodInput,
-            taskOptions = taskOptions,
-            taskMeta = taskMeta
-        )
-        clientOutput.sendToTaskEngine(msg, 0F)
-    }
-
-    /*
-     * Cancel a task (Java)
-     */
-    @JvmOverloads fun cancelTaskAsync(
-        id: String,
-        output: Any? = null
-    ): CompletableFuture<Unit> = GlobalScope.future {
-        cancelTask(id, output)
-    }
-
-    /*
-     * Cancel a task (Kotlin)
-     */
-    suspend fun cancelTask(
-        id: String,
-        output: Any? = null
-    ) {
-        val msg = CancelTask(
-            taskId = TaskId(id),
-            taskOutput = MethodOutput.from(output)
-        )
-        clientOutput.sendToTaskEngine(msg, 0F)
-    }
-
-    /*
-     * Cancel a workflow (Java)
-     */
-    @JvmOverloads fun cancelWorkflowAsync(
-        id: String,
-        output: Any? = null
-    ): CompletableFuture<Unit> = GlobalScope.future {
-        cancelWorkflow(id, output)
-    }
-
-    /*
-     * Cancel a workflow (Kotlin)
-     */
-    suspend fun cancelWorkflow(
-        id: String,
-        output: Any? = null
-    ) {
-        val msg = CancelWorkflow(
-            workflowId = WorkflowId(id),
-            workflowOutput = MethodOutput.from(output)
-        )
-        clientOutput.sendToWorkflowEngineFn(msg, 0F)
+        return when (val handler = Proxy.getInvocationHandler(proxy)) {
+            is NewTaskProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "task")
+            is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "workflow")
+            is ExistingTaskProxyHandler<*> -> handler.retryTask()
+            is ExistingWorkflowProxyHandler<*> -> handler.retryWorkflowTask()
+            else -> throw RuntimeException("Unknown handler")
+        }
     }
 }

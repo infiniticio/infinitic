@@ -26,43 +26,52 @@
 package io.infinitic.client.proxies
 
 import io.infinitic.client.transport.ClientOutput
-import io.infinitic.common.data.methods.MethodInput
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
 
-internal class WorkflowProxyHandler<T : Any>(
+internal class ExistingWorkflowProxyHandler<T : Any>(
     private val klass: Class<T>,
-    private val workflowOptions: WorkflowOptions,
-    private val workflowMeta: WorkflowMeta,
+    private val id: String,
+    private val workflowOptions: WorkflowOptions?,
+    private val workflowMeta: WorkflowMeta?,
     private val clientOutput: ClientOutput
 ) : MethodProxyHandler<T>(klass) {
 
     /*
-     * Start a workflow
+     * Cancel a workflow
      */
-    fun startWorkflowAsync(): String {
-        val msg = DispatchWorkflow(
-            workflowId = WorkflowId(),
-            workflowName = WorkflowName.from(method!!),
-            methodName = MethodName.from(method!!),
-            methodParameterTypes = MethodParameterTypes.from(method!!),
-            methodInput = MethodInput.from(method!!, args),
-            workflowMeta = workflowMeta,
-            workflowOptions = workflowOptions
+    fun cancelWorkflowAsync(output: Any?) {
+        val msg = CancelWorkflow(
+            workflowId = WorkflowId(id),
+            workflowOutput = MethodOutput.from(output)
         )
         GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, 0F) }.join()
 
         // allow stub reuse
         reset()
+    }
 
-        return "${msg.workflowId}"
+    /*
+     * Retry a task
+     */
+    fun retryWorkflowTask() {
+        if (method != null) { throw RuntimeException("Do not provide a method when retrying a workflowTask") }
+        TODO()
+//        val msg = RetryWorkflowTask(
+//            workflowId = Workflow(id),
+//            workflowName = TaskName(klass.name),
+//            workflowOptions = workflowOptions,
+//            workflowMeta = workflowMeta
+//        )
+//        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, 0F) }.join()
+
+        // reset method to allow reuse of the stub
+        reset()
     }
 }

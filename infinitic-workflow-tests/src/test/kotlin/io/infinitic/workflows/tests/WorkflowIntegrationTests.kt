@@ -326,7 +326,7 @@ class WorkflowIntegrationTests : StringSpec({
 //        // run system
 //        coroutineScope {
 //            init()
-//            workflowId = WorkflowId(infiniticClient.async(workflowA { prop4() })
+//            workflowId = WorkflowId(infiniticClient.async(workflowA) { prop4() })
 //        }
 //        // check that the w is terminated
 //        workflowStateStorage.getState(workflowId) shouldBe null

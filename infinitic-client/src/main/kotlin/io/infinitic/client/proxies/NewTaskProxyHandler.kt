@@ -39,7 +39,7 @@ import io.infinitic.common.tasks.exceptions.NoMethodCall
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
 
-internal class TaskProxyHandler<T : Any>(
+internal class NewTaskProxyHandler<T : Any>(
     private val klass: Class<T>,
     private val taskOptions: TaskOptions,
     private val taskMeta: TaskMeta,
@@ -49,7 +49,7 @@ internal class TaskProxyHandler<T : Any>(
     /*
      * Start a task
      */
-    fun startTaskAsync(): String {
+    fun startTask(): String {
         // throw error if no method called
         if (method == null) throw NoMethodCall(klass.name, "async")
 

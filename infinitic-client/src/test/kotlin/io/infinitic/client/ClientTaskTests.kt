@@ -30,12 +30,16 @@ import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
@@ -47,7 +51,9 @@ class ClientTaskTests : StringSpec({
     val workflowSlot = slot<WorkflowEngineMessage>()
     val client = InfiniticClient(MockClientOutput(taskSlot, workflowSlot))
     // task stub
+    val id = TestFactory.random<String>()
     val fakeTask = client.task(FakeTask::class.java)
+    val fakeTaskId = client.task(FakeTask::class.java, id)
 
     beforeTest {
         taskSlot.clear()
@@ -190,9 +196,53 @@ class ClientTaskTests : StringSpec({
         )
     }
 
-    // TODO: add tests for cancel method
+    "Should be able to cancel a task" {
+        // when
+        client.cancel(fakeTaskId)
+        val taskId = TaskId(id)
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
 
-    // TODO: add tests for retry method
+        msg shouldBe CancelTask(
+            taskId = taskId,
+            taskOutput = MethodOutput.from(null)
+        )
+    }
+
+    "Should be able to cancel a task with output" {
+        val output = TestFactory.random<String>()
+        // when
+        client.cancel(fakeTaskId, output)
+        val taskId = TaskId(id)
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+
+        msg shouldBe CancelTask(
+            taskId = taskId,
+            taskOutput = MethodOutput.from(output)
+        )
+    }
+
+    "Should be able to retry a task" {
+        // when
+        client.retry(fakeTaskId)
+        val taskId = TaskId(id)
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+
+        msg shouldBe RetryTask(
+            taskId = taskId,
+            taskName = TaskName(FakeTask::class.java.name),
+            methodName = null,
+            methodParameterTypes = null,
+            methodInput = null,
+            taskOptions = null,
+            taskMeta = null
+        )
+    }
 
     // TODO: add tests for options
 

@@ -156,11 +156,13 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskTestStub) { log() })
+            val id = client.async(taskTestStub) { log() }
+            taskId = TaskId(id)
+            val taskTestStubId = client.task(TaskTest::class.java, id)
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
-            client.retryTask(id = "$taskId")
+            client.retry(taskTestStubId)
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -177,9 +179,11 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskTestStub) { log() })
+            val id = client.async(taskTestStub) { log() }
+            taskId = TaskId(id)
+            val taskTestStubId = client.task(TaskTest::class.java, id)
             delay(100)
-            client.cancelTask(id = "$taskId")
+            client.cancel(taskTestStubId)
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
