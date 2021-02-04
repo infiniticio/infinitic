@@ -25,48 +25,26 @@
 
 package io.infinitic.client.proxies
 
-import io.infinitic.client.transport.ClientOutput
-import io.infinitic.common.data.methods.MethodInput
-import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.client.InfiniticClient
 import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.tasks.exceptions.NoMethodCall
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.future.future
+import java.lang.reflect.Method
 
 internal class NewWorkflowProxyHandler<T : Any>(
-    private val klass: Class<T>,
-    private val workflowOptions: WorkflowOptions,
-    private val workflowMeta: WorkflowMeta,
-    private val clientOutput: ClientOutput
+    val klass: Class<T>,
+    val workflowOptions: WorkflowOptions,
+    val workflowMeta: WorkflowMeta,
+    private val client: InfiniticClient
 ) : MethodProxyHandler<T>(klass) {
 
     /*
-     * Start a workflow
+     * invoke method is called when a method is applied to the proxy instance
      */
-    fun startWorkflow(): String {
-        // throw error if no method called
-        if (method == null) throw NoMethodCall(klass.name, "async")
-
-        val msg = DispatchWorkflow(
-            workflowId = WorkflowId(),
-            workflowName = WorkflowName.from(method!!),
-            methodName = MethodName.from(method!!),
-            methodParameterTypes = MethodParameterTypes.from(method!!),
-            methodInput = MethodInput.from(method!!, args),
-            workflowMeta = workflowMeta,
-            workflowOptions = workflowOptions
-        )
-        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, 0F) }.join()
-
-        // allow stub reuse
-        reset()
-
-        return "${msg.workflowId}"
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        val out = super.invoke(proxy, method, args)
+        if (isSync) {
+        }
+        return out
     }
 }

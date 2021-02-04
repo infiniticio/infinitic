@@ -31,38 +31,24 @@ import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
+    var isSync = true
     var method: Method? = null
     var args: Array<out Any> = arrayOf()
-
-    // let handler know if the task synchronous or asynchronous
-    var isSync = true
 
     /*
      * invoke method is called when a method is applied to the proxy instance
      */
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        // toString method is used to retrieve initial class
         if (method.name == "toString") return klass.name
 
         // invoke should called only once per ProxyHandler instance
-        if (this.method != null) throw MultipleMethodCalls(method.declaringClass.name, this.method!!.name, method.name)
+        if (this.method != null) throw MultipleMethodCalls(method.declaringClass.name, this.method?.name, method.name)
 
-        // methods and args are stored for later use
+        // method
         this.method = method
         this.args = args ?: arrayOf()
 
-        // explicit cast needed for all primitive types
-        return when (method.returnType.name) {
-            "long" -> 0L
-            "int" -> 0.toInt()
-            "short" -> 0.toShort()
-            "byte" -> 0.toByte()
-            "double" -> 0.toDouble()
-            "float" -> 0.toFloat()
-            "char" -> 0.toChar()
-            "boolean" -> false
-            else -> null
-        }
+        return getAsyncReturnValue(method)
     }
 
     /*
@@ -75,9 +61,24 @@ open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandle
         this
     ) as T
 
-    fun reset() {
+    /*
+     * Prepare Handler for reuse
+     */
+    open fun reset() {
+        isSync = true
         method = null
         args = arrayOf()
-        isSync = true
+    }
+
+    private fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {
+        "long" -> 0L
+        "int" -> 0.toInt()
+        "short" -> 0.toShort()
+        "byte" -> 0.toByte()
+        "double" -> 0.toDouble()
+        "float" -> 0.toFloat()
+        "char" -> 0.toChar()
+        "boolean" -> false
+        else -> null
     }
 }

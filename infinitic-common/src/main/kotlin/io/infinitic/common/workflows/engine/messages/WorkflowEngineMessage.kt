@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.engine.messages
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
@@ -51,8 +52,23 @@ sealed class WorkflowEngineMessage() {
 }
 
 @Serializable
+data class DispatchWorkflow(
+    override val workflowId: WorkflowId,
+    val clientName: ClientName?,
+    var parentWorkflowId: WorkflowId?,
+    var parentMethodRunId: MethodRunId?,
+    val workflowName: WorkflowName,
+    val methodName: MethodName,
+    val methodParameterTypes: MethodParameterTypes?,
+    val methodInput: MethodInput,
+    val workflowMeta: WorkflowMeta,
+    val workflowOptions: WorkflowOptions
+) : WorkflowEngineMessage()
+
+@Serializable
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
+    val clientName: ClientName?,
     val workflowOutput: MethodOutput
 ) : WorkflowEngineMessage()
 
@@ -90,19 +106,6 @@ data class WorkflowTaskDispatched(
 data class TimerCompleted(
     override val workflowId: WorkflowId,
     val delayId: DelayId
-) : WorkflowEngineMessage()
-
-@Serializable
-data class DispatchWorkflow(
-    override val workflowId: WorkflowId,
-    var parentWorkflowId: WorkflowId? = null,
-    var parentMethodRunId: MethodRunId? = null,
-    val workflowName: WorkflowName,
-    val methodName: MethodName,
-    val methodParameterTypes: MethodParameterTypes?,
-    val methodInput: MethodInput,
-    val workflowMeta: WorkflowMeta,
-    val workflowOptions: WorkflowOptions
 ) : WorkflowEngineMessage()
 
 @Serializable

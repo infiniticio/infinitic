@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks.engine.messages
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
@@ -53,6 +54,7 @@ sealed class TaskEngineMessage() {
 @Serializable
 data class DispatchTask(
     override val taskId: TaskId,
+    val clientName: ClientName?,
     val taskName: TaskName,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,

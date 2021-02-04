@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
-import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler
+import io.infinitic.common.workflows.executors.proxies.NewTaskProxyHandler
+import io.infinitic.common.workflows.executors.proxies.NewWorkflowProxyHandler
 
 abstract class Workflow {
     lateinit var context: WorkflowTaskContext
@@ -34,24 +34,24 @@ abstract class Workflow {
     /*
      *  Stub task
      */
-    fun <T : Any> task(klass: Class<out T>): T = TaskProxyHandler(klass) { context }.instance()
+    fun <T : Any> task(klass: Class<out T>): T = NewTaskProxyHandler(klass) { context }.instance()
 
     /*
      * Stub task
      * (Kotlin way)
      */
-    inline fun <reified T : Any> task(): T = TaskProxyHandler(T::class.java) { context }.instance()
+    inline fun <reified T : Any> task(): T = NewTaskProxyHandler(T::class.java) { context }.instance()
 
     /*
      *  Stub workflow
      */
-    fun <T : Any> workflow(klass: Class<out T>): T = WorkflowProxyHandler(klass) { context }.instance()
+    fun <T : Any> workflow(klass: Class<out T>): T = NewWorkflowProxyHandler(klass) { context }.instance()
 
     /*
      *  Stub workflow
      * (Kotlin way)
      */
-    inline fun <reified T : Any> workflow(): T = WorkflowProxyHandler(T::class.java) { context }.instance()
+    inline fun <reified T : Any> workflow(): T = NewWorkflowProxyHandler(T::class.java) { context }.instance()
 
     /*
      *  Dispatch a task or a workflow asynchronously

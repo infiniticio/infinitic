@@ -30,13 +30,30 @@ import io.infinitic.client.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.client.proxies.NewTaskProxyHandler
 import io.infinitic.client.proxies.NewWorkflowProxyHandler
 import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.data.methods.MethodInput
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.engine.messages.CancelTask
+import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.exceptions.IncorrectExistingStub
 import io.infinitic.common.tasks.exceptions.IncorrectNewStub
+import io.infinitic.common.tasks.exceptions.NoMethodCall
 import io.infinitic.common.tasks.exceptions.NotAStub
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.future.future
 import java.lang.reflect.Proxy
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -48,7 +65,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         klass: Class<out T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta()
-    ): T = NewTaskProxyHandler(klass, options, meta, clientOutput).instance()
+    ): T = NewTaskProxyHandler(klass, options, meta, this).instance()
 
     /*
      * Create stub for a new task
@@ -66,7 +83,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         klass: Class<out T>,
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta()
-    ): T = NewWorkflowProxyHandler(klass, options, meta, clientOutput).instance()
+    ): T = NewWorkflowProxyHandler(klass, options, meta, this).instance()
 
     /*
      * Create stub for a new workflow
@@ -85,7 +102,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         id: String,
         options: TaskOptions? = null,
         meta: TaskMeta? = null
-    ): T = ExistingTaskProxyHandler(klass, id, options, meta, clientOutput).instance()
+    ): T = ExistingTaskProxyHandler(klass, id, options, meta, this).instance()
 
     /*
      * Create stub for an existing task
@@ -105,7 +122,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         id: String,
         options: WorkflowOptions? = null,
         meta: WorkflowMeta? = null
-    ): T = ExistingWorkflowProxyHandler(klass, id, options, meta, clientOutput).instance()
+    ): T = ExistingWorkflowProxyHandler(klass, id, options, meta, this).instance()
 
     /*
      * Create stub for an existing workflow
@@ -123,14 +140,23 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
     fun <T : Any, S> async(proxy: T, method: T.() -> S): String {
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "async")
 
-        // collect method and args
-        proxy.method()
-
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is NewTaskProxyHandler<*> -> handler.startTask()
-            is NewWorkflowProxyHandler<*> -> handler.startWorkflow()
-            is ExistingTaskProxyHandler<*> -> throw IncorrectExistingStub(proxy::class.java.name, "async", "task")
-            is ExistingWorkflowProxyHandler<*> -> throw IncorrectExistingStub(proxy::class.java.name, "async", "workflow")
+            is NewTaskProxyHandler<*>, -> {
+                handler.isSync = false
+                proxy.method()
+                startTaskAsync(handler)
+            }
+            is NewWorkflowProxyHandler<*> -> {
+                handler.isSync = false
+                proxy.method()
+                startWorkflowAsync(handler)
+            }
+            is ExistingTaskProxyHandler<*> -> {
+                throw IncorrectExistingStub(proxy::class.java.name, "async", "task")
+            }
+            is ExistingWorkflowProxyHandler<*> -> {
+                throw IncorrectExistingStub(proxy::class.java.name, "async", "workflow")
+            }
             else -> throw RuntimeException("Unknown handler")
         }
     }
@@ -144,8 +170,8 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         when (val handler = Proxy.getInvocationHandler(proxy)) {
             is NewTaskProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "task")
             is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "workflow")
-            is ExistingTaskProxyHandler<*> -> handler.cancelTask(output)
-            is ExistingWorkflowProxyHandler<*> -> handler.cancelWorkflowAsync(output)
+            is ExistingTaskProxyHandler<*> -> cancelTask(handler, output)
+            is ExistingWorkflowProxyHandler<*> -> cancelWorkflow(handler, output)
             else -> throw RuntimeException("Unknown handler")
         }
     }
@@ -160,9 +186,93 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
             is NewTaskProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "task")
             is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "workflow")
-            is ExistingTaskProxyHandler<*> -> handler.retryTask()
-            is ExistingWorkflowProxyHandler<*> -> handler.retryWorkflowTask()
+            is ExistingTaskProxyHandler<*> -> retryTask(handler)
+            is ExistingWorkflowProxyHandler<*> -> retryWorkflowTask(handler)
             else -> throw RuntimeException("Unknown handler")
         }
+    }
+
+    suspend fun handle(message: ClientResponseMessage) {
+        println("Client.handle: $message")
+    }
+
+    private fun <T : Any> startTaskAsync(handler: NewTaskProxyHandler<T>): String {
+        if (handler.method == null) throw NoMethodCall(handler.klass.name, "async")
+
+        val msg = DispatchTask(
+            taskId = TaskId(),
+            clientName = null,
+            taskName = TaskName.from(handler.method!!),
+            methodName = MethodName.from(handler.method!!),
+            methodParameterTypes = MethodParameterTypes.from(handler.method!!),
+            methodInput = MethodInput.from(handler.method!!, handler.args),
+            workflowId = null,
+            methodRunId = null,
+            taskOptions = handler.taskOptions,
+            taskMeta = handler.taskMeta
+        )
+        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
+
+        // reset handler for reuse
+        handler.reset()
+
+        return "${msg.taskId}"
+    }
+
+    private fun <T : Any> startWorkflowAsync(handler: NewWorkflowProxyHandler<T>): String {
+        if (handler.method == null) throw NoMethodCall(handler.klass.name, "async")
+
+        val msg = DispatchWorkflow(
+            workflowId = WorkflowId(),
+            clientName = null,
+            workflowName = WorkflowName.from(handler.method!!),
+            methodName = MethodName.from(handler.method!!),
+            methodParameterTypes = MethodParameterTypes.from(handler.method!!),
+            methodInput = MethodInput.from(handler.method!!, handler.args),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
+            workflowMeta = handler.workflowMeta,
+            workflowOptions = handler.workflowOptions
+        )
+        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, 0F) }.join()
+
+        // reset handler for reuse
+        handler.reset()
+
+        return "${msg.workflowId}"
+    }
+
+    private fun <T : Any> cancelTask(handle: ExistingTaskProxyHandler<T>, output: Any?) {
+        val msg = CancelTask(
+            taskId = TaskId(handle.taskId),
+            taskOutput = MethodOutput.from(output)
+        )
+        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
+    }
+
+    private fun <T : Any> cancelWorkflow(handler: ExistingWorkflowProxyHandler<T>, output: Any?) {
+        val msg = CancelWorkflow(
+            workflowId = WorkflowId(handler.workflowId),
+            clientName = null,
+            workflowOutput = MethodOutput.from(output)
+        )
+        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, 0F) }.join()
+    }
+
+    private fun <T : Any> retryTask(handler: ExistingTaskProxyHandler<T>) {
+        val msg = RetryTask(
+            taskId = TaskId(handler.taskId),
+            taskName = TaskName(handler.klass.name),
+            methodName = handler.method?.let { MethodName.from(it) },
+            methodParameterTypes = handler.method?.let { MethodParameterTypes.from(it) },
+            methodInput = handler.method?.let { MethodInput.from(it, handler.args) },
+            taskOptions = handler.taskOptions,
+            taskMeta = handler.taskMeta
+        )
+        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
+    }
+
+    private fun <T : Any> retryWorkflowTask(handler: ExistingWorkflowProxyHandler<T>) {
+        TODO("Not yet implemented")
     }
 }

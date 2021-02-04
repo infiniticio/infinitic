@@ -55,6 +55,7 @@ import io.infinitic.workflows.engine.helpers.getMethodRun
 import io.infinitic.workflows.engine.helpers.getPastCommand
 import io.infinitic.workflows.engine.helpers.jobCompleted
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowCompletedInClient
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
 suspend fun workflowTaskCompleted(
@@ -121,6 +122,18 @@ suspend fun workflowTaskCompleted(
                 ),
                 0F
             )
+
+            // send back to client if needed
+            state.clientName?.let {
+                workflowEngineOutput.sendToClientResponse(
+                    state,
+                    WorkflowCompletedInClient(
+                        clientName = state.clientName!!,
+                        workflowId = state.workflowId,
+                        workflowOutput = methodRun.methodOutput!!
+                    )
+                )
+            }
         }
 
         // tell parent workflow if any
@@ -244,6 +257,7 @@ private suspend fun dispatchTask(
     val command = newCommand.command as DispatchTaskInWorkflow
     // send task to task engine
     val msg = DispatchTask(
+        clientName = null,
         taskId = TaskId("${newCommand.commandId}"),
         taskName = command.taskName,
         methodName = command.methodName,
@@ -267,6 +281,7 @@ private suspend fun dispatchChildWorkflow(
     val command = newCommand.command as DispatchChildWorkflow
     // send task to task engine
     val msg = DispatchWorkflow(
+        clientName = null,
         workflowId = WorkflowId("${newCommand.commandId}"),
         parentWorkflowId = state.workflowId,
         parentMethodRunId = methodRun.methodRunId,

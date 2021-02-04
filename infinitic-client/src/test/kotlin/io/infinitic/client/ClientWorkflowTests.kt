@@ -60,11 +60,14 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
+            clientName = null,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodInput = MethodInput(),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -77,11 +80,14 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
+            clientName = null,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
             methodInput = MethodInput.from(0),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -94,11 +100,14 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
+            clientName = null,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodInput = MethodInput.from("a"),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -111,11 +120,14 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
+            clientName = null,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodInput = MethodInput.from(0, "a"),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -130,11 +142,14 @@ class ClientWorkflowTests : StringSpec({
         val msg = workflowSlot.captured
 
         msg shouldBe DispatchWorkflow(
+            clientName = null,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             methodInput = MethodInput.from(klass),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )

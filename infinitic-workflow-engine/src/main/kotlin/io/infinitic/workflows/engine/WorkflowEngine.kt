@@ -125,7 +125,7 @@ class WorkflowEngine(
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
             val bufferedMsg = state.bufferedMessages.removeAt(0)
-            logger.debug("workflowId {} - handling buffered {}", bufferedMsg.workflowId, bufferedMsg)
+            logger.debug("workflowId {} - processing buffered message {}", bufferedMsg.workflowId, bufferedMsg)
             processMessage(state, bufferedMsg)
         }
 

@@ -25,6 +25,7 @@
 
 package io.infinitic.inMemory.workers
 
+import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.inMemory.transport.InMemoryWorkflowEngineOutput
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
@@ -40,6 +41,7 @@ import kotlinx.coroutines.launch
 
 fun CoroutineScope.startInMemoryWorkflowEngineWorker(
     keyValueStorage: KeyValueStorage,
+    clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
     workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>,
     workflowEngineEventsChannel: Channel<WorkflowEngineMessageToProcess>,
     logChannel: SendChannel<WorkflowEngineMessageToProcess>,
@@ -57,6 +59,7 @@ fun CoroutineScope.startInMemoryWorkflowEngineWorker(
         ),
         InMemoryWorkflowEngineOutput(
             this,
+            clientResponsesChannel,
             taskEngineCommandsChannel,
             workflowEngineEventsChannel
         )

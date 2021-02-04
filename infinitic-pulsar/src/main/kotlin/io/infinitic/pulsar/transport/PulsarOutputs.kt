@@ -26,6 +26,9 @@
 package io.infinitic.pulsar.transport
 
 import io.infinitic.client.transport.ClientDataOutput
+import io.infinitic.common.clients.messages.ClientResponseEnvelope
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
@@ -46,6 +49,7 @@ import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
+import io.infinitic.pulsar.topics.ClientResponseTopic
 import io.infinitic.pulsar.topics.MonitoringGlobalDeadLettersTopic
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameDeadLettersTopic
@@ -81,14 +85,35 @@ class PulsarOutputs(
         /*
         Create a new PulsarTransport from a Pulsar Client
          */
-        fun from(pulsarClient: PulsarClient, pulsarTenant: String, pulsarNamespace: String, producerName: String?) =
-            PulsarOutputs(PulsarMessageBuilderFromClient(pulsarClient, producerName), pulsarTenant, pulsarNamespace)
+        fun from(
+            pulsarClient: PulsarClient,
+            pulsarTenant: String,
+            pulsarNamespace: String,
+            producerName: String?
+        ) = PulsarOutputs(
+            PulsarMessageBuilderFromClient(pulsarClient, producerName),
+            pulsarTenant,
+            pulsarNamespace
+        )
 
         /*
         Create a new PulsarTransport from a Pulsar Function Context
          */
-        fun from(context: Context) =
-            PulsarOutputs(PulsarMessageBuilderFromFunction(context), context.tenant, context.namespace)
+        fun from(context: Context) = PulsarOutputs(
+            PulsarMessageBuilderFromFunction(context),
+            context.tenant,
+            context.namespace
+        )
+    }
+
+    private val sendToClientResponse: SendToClientResponse = { message: ClientResponseMessage ->
+        val clientName = "${message.clientName}"
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, ClientResponseTopic.name(clientName)),
+            ClientResponseEnvelope.from(message),
+            null,
+            0F
+        )
     }
 
     private val sendToWorkflowEngineCommands: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
@@ -167,11 +192,13 @@ class PulsarOutputs(
     )
 
     val workflowEngineOutput = WorkflowEngineDataOutput(
+        sendToClientResponse,
         sendToWorkflowEngineEvents,
         sendToTaskEngineCommands
     )
 
     val taskEngineOutput = TaskEngineDataOutput(
+        sendToClientResponse,
         sendToWorkflowEngineEvents,
         sendToTaskEngineEvents,
         sendToTaskExecutors,

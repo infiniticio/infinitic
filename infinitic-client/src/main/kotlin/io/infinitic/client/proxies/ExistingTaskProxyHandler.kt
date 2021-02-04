@@ -25,57 +25,15 @@
 
 package io.infinitic.client.proxies
 
-import io.infinitic.client.transport.ClientOutput
-import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.client.InfiniticClient
 import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.RetryTask
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.future.future
 
 internal class ExistingTaskProxyHandler<T : Any>(
-    private val klass: Class<T>,
-    private val id: String,
-    private val taskOptions: TaskOptions?,
-    private val taskMeta: TaskMeta?,
-    private val clientOutput: ClientOutput
-) : MethodProxyHandler<T>(klass) {
-
-    /*
-     * Cancel a task
-     */
-    fun cancelTask(output: Any?) {
-
-        val msg = CancelTask(
-            taskId = TaskId(id),
-            taskOutput = MethodOutput.from(output)
-        )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
-
-        // reset method to allow reuse of the stub
-        reset()
-    }
-
-    /*
-     * Retry a task
-     */
-    fun retryTask() {
-        val msg = RetryTask(
-            taskId = TaskId(id),
-            taskName = TaskName(klass.name),
-            methodName = null,
-            methodParameterTypes = null,
-            methodInput = null,
-            taskOptions = taskOptions,
-            taskMeta = taskMeta
-        )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
-
-        // reset method to allow reuse of the stub
-        reset()
-    }
-}
+    val klass: Class<T>,
+    val taskId: String,
+    val taskOptions: TaskOptions?,
+    val taskMeta: TaskMeta?,
+    private val client: InfiniticClient
+) : MethodProxyHandler<T>(klass)

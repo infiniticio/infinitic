@@ -23,25 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.proxies
+package io.infinitic.common.clients.data
 
-import io.infinitic.client.InfiniticClient
-import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.data.Name
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
-internal class NewTaskProxyHandler<T : Any>(
-    val klass: Class<T>,
-    val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta,
-    private val client: InfiniticClient
-) : MethodProxyHandler<T>(klass) {
-
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        val out = super.invoke(proxy, method, args)
-        if (isSync) {
-        }
-        return out
+@Serializable(with = ClientNameSerializer::class)
+data class ClientName(override val name: String) : Name(name) {
+    companion object {
+        fun from(method: Method) = ClientName(method.declaringClass.name)
     }
+}
+
+object ClientNameSerializer : KSerializer<ClientName> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ClientName", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ClientName) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = ClientName(decoder.decodeString())
 }

@@ -27,6 +27,8 @@ package io.infinitic.tasks.tests
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -158,7 +160,7 @@ class TaskIntegrationTests : StringSpec({
             init()
             val id = client.async(taskTestStub) { log() }
             taskId = TaskId(id)
-            val taskTestStubId = client.task(TaskTest::class.java, id)
+            val taskTestStubId = client.task<TaskTest>(id)
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
@@ -193,6 +195,9 @@ class TaskIntegrationTests : StringSpec({
 })
 
 class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
+    override val sendToClientResponseFn: SendToClientResponse =
+        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
+
     override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
 
     override val sendToTaskEngineFn: SendToTaskEngine =
@@ -223,6 +228,12 @@ class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
 
     override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
+}
+
+fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
+    launch {
+        client.handle(msg)
+    }
 }
 
 fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {

@@ -23,17 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.proxies
+package io.infinitic.common.clients.transport
 
-import io.infinitic.client.InfiniticClient
-import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.clients.messages.ClientResponseMessage
 
-internal class ExistingWorkflowProxyHandler<T : Any>(
-    private val klass: Class<T>,
-    val workflowId: String,
-    private val workflowOptions: WorkflowOptions?,
-    private val workflowMeta: WorkflowMeta?,
-    private val client: InfiniticClient
-) : MethodProxyHandler<T>(klass)
+typealias SendToClientResponse = suspend (ClientResponseMessage) -> Unit

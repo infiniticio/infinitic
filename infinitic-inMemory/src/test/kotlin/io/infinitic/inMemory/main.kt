@@ -26,6 +26,7 @@
 package io.infinitic.inMemory
 
 import io.infinitic.client.InfiniticClient
+import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.inMemory.tasks.TaskA
 import io.infinitic.inMemory.tasks.TaskAImpl
 import io.infinitic.inMemory.transport.InMemoryClientOutput
@@ -42,6 +43,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 
 fun main() {
+    val clientResponsesChannel = Channel<ClientResponseMessageToProcess>()
     val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
     val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
     runBlocking {
@@ -55,14 +57,20 @@ fun main() {
             register(WorkflowB::class.java.name) { WorkflowBImpl() }
         }
 
-        startInMemory(taskExecutorRegister, InMemoryStorage(), taskEngineCommandsChannel, workflowEngineCommandsChannel)
+        startInMemory(
+            taskExecutorRegister,
+            InMemoryStorage(),
+            clientResponsesChannel,
+            taskEngineCommandsChannel,
+            workflowEngineCommandsChannel
+        )
 
         val taskA = client.task(TaskA::class.java)
         val workflowA = client.workflow(WorkflowA::class.java)
 
         repeat(1) {
             client.async(taskA) { await(2000) }
-            client.async(workflowA) { seq1() }
+//            client.async(workflowA) { seq1() }
         }
     }
 }

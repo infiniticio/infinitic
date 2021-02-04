@@ -27,6 +27,8 @@ package io.infinitic.workflows.tests
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -360,6 +362,9 @@ class WorkflowIntegrationTests : StringSpec({
 })
 
 class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : WorkflowEngineOutput {
+    override val sendToClientResponseFn: SendToClientResponse =
+        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
+
     override val sendToWorkflowEngineFn: SendToWorkflowEngine =
         { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
 
@@ -368,6 +373,9 @@ class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : Workflow
 }
 
 class InMemoryTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
+    override val sendToClientResponseFn: SendToClientResponse =
+        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
+
     override val sendToWorkflowEngineFn: SendToWorkflowEngine =
         { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
 
@@ -402,11 +410,15 @@ class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
         { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
 }
 
+fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
+    launch {
+        infiniticClient.handle(msg)
+    }
+}
+
 fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
     launch {
-        if (after > 0F) {
-            delay((1000 * after).toLong())
-        }
+        if (after > 0F) { delay((1000 * after).toLong()) }
         workflowEngine.handle(msg)
 
         // defines output if reached
@@ -418,9 +430,7 @@ fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float
 
 fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
     launch {
-        if (after > 0F) {
-            delay((1000 * after).toLong())
-        }
+        if (after > 0F) { delay((1000 * after).toLong()) }
         taskEngine.handle(msg)
     }
 }

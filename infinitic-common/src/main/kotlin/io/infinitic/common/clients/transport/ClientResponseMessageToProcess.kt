@@ -23,31 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.executors.proxies
+package io.infinitic.common.clients.transport
 
-import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.workflows.WorkflowTaskContext
-import java.lang.reflect.Method
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.workers.MessageToProcess
 
-class WorkflowProxyHandler<T : Any>(
-    val klass: Class<T>,
-    private val workflowTaskContextFun: () -> WorkflowTaskContext
-) : MethodProxyHandler<T>(klass) {
-    /*
-     * Processing of a child workflow
-     */
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        if (method.name == "toString") return klass.name
-
-        val out = super.invoke(proxy, method, args)
-
-        return when (isSync) {
-            true -> {
-                val deferred = workflowTaskContextFun().dispatchWorkflow<T>(method, args ?: arrayOf())
-                this.reset()
-                deferred.await()
-            }
-            false -> out
-        }
-    }
-}
+typealias ClientResponseMessageToProcess = MessageToProcess<ClientResponseMessage>

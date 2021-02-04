@@ -51,13 +51,12 @@ import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
-import io.infinitic.common.workflows.executors.proxies.TaskProxyHandler
-import io.infinitic.common.workflows.executors.proxies.WorkflowProxyHandler
+import io.infinitic.common.workflows.executors.proxies.NewTaskProxyHandler
+import io.infinitic.common.workflows.executors.proxies.NewWorkflowProxyHandler
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowTaskContext
-import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 class WorkflowTaskContextImpl(
@@ -88,27 +87,15 @@ class WorkflowTaskContextImpl(
         proxy: T,
         method: T.() -> S
     ): Deferred<S> = when (val handler = Proxy.getInvocationHandler(proxy)) {
-        is TaskProxyHandler<*> -> {
+        is NewTaskProxyHandler<*> -> {
             handler.isSync = false
             proxy.method()
-            val deferred = dispatchTask<S>(
-                handler.method ?: throw NoMethodCallAtAsync(handler.klass.name),
-                handler.args
-            )
-            // allow stub reuse
-            handler.reset()
-            deferred
+            dispatchTask(handler)
         }
-        is WorkflowProxyHandler<*> -> {
+        is NewWorkflowProxyHandler<*> -> {
             handler.isSync = false
             proxy.method()
-            val deferred = dispatchWorkflow<S>(
-                handler.method ?: throw NoMethodCallAtAsync(handler.klass.name),
-                handler.args
-            )
-            // allow stub reuse
-            handler.reset()
-            deferred
+            dispatchWorkflow(handler)
         }
         else -> throw RuntimeException("Unknown handler")
     }
@@ -286,14 +273,28 @@ class WorkflowTaskContextImpl(
     /*
      * Task dispatching
      */
-    override fun <S> dispatchTask(method: Method, args: Array<out Any>) =
-        dispatch<S>(DispatchTask.from(method, args), CommandSimpleName.fromMethod(method))
+    override fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S> {
+        val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
+        val deferred = dispatch<S>(
+            DispatchTask.from(method, handler.args),
+            CommandSimpleName.fromMethod(method)
+        )
+        handler.reset()
+        return deferred
+    }
 
     /*
      * Workflow dispatching
      */
-    override fun <S> dispatchWorkflow(method: Method, args: Array<out Any>) =
-        dispatch<S>(DispatchChildWorkflow.from(method, args), CommandSimpleName.fromMethod(method))
+    override fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S> {
+        val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
+        val deferred = dispatch<S>(
+            DispatchChildWorkflow.from(method, handler.args),
+            CommandSimpleName.fromMethod(method)
+        )
+        handler.reset()
+        return deferred
+    }
 
     /*
      * Get return value from Deferred
@@ -343,10 +344,10 @@ class WorkflowTaskContextImpl(
             // if this is a new command, we add it to the newCommands list
             newCommands.add(newCommand)
             // and returns a Deferred with an ongoing step
-            return Deferred<S>(Step.Id.from(newCommand), this)
+            return Deferred(Step.Id.from(newCommand), this)
         } else {
             // else ew return a Deferred linked to pastCommand
-            return Deferred<S>(Step.Id.from(pastCommand), this)
+            return Deferred(Step.Id.from(pastCommand), this)
         }
     }
 

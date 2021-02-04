@@ -23,17 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.proxies
+package io.infinitic.common.clients.messages
 
-import io.infinitic.client.InfiniticClient
-import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import kotlinx.serialization.Serializable
 
-internal class ExistingWorkflowProxyHandler<T : Any>(
-    private val klass: Class<T>,
-    val workflowId: String,
-    private val workflowOptions: WorkflowOptions?,
-    private val workflowMeta: WorkflowMeta?,
-    private val client: InfiniticClient
-) : MethodProxyHandler<T>(klass)
+@Serializable
+sealed class ClientResponseMessage() {
+    val messageId: MessageId = MessageId()
+    abstract val clientName: ClientName
+}
+
+@Serializable
+data class TaskCompleted(
+    override val clientName: ClientName,
+    val taskId: TaskId,
+    val taskOutput: MethodOutput,
+) : ClientResponseMessage()
+
+@Serializable
+data class WorkflowCompleted(
+    override val clientName: ClientName,
+    val workflowId: WorkflowId,
+    val workflowOutput: MethodOutput
+) : ClientResponseMessage()

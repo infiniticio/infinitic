@@ -151,7 +151,7 @@ data class NoMethodCall(
 
 data class MultipleMethodCalls(
     val name: String,
-    val method1: String,
+    val method1: String?,
     val method2: String
 ) : UserExceptionInClient(
     msg = "Only one method of \"$name\" can be dispatched at a time. You can not call \"$method2\" method as you have already called \"$method1\"",

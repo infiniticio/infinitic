@@ -67,6 +67,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = null,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -86,6 +87,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = null,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -105,6 +107,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = null,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -124,6 +127,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = null,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -143,6 +147,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = null,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -164,6 +169,7 @@ class ClientTaskTests : StringSpec({
         val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
+            clientName = null,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -184,6 +190,7 @@ class ClientTaskTests : StringSpec({
         val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
+            clientName = null,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m2"),

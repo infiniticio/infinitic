@@ -25,12 +25,14 @@
 
 package io.infinitic.tasks.engine.transport
 
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
 data class TaskEngineDataOutput(
+    override val sendToClientResponseFn: SendToClientResponse,
     override val sendToWorkflowEngineFn: SendToWorkflowEngine,
     override val sendToTaskEngineFn: SendToTaskEngine,
     override val sendToTaskExecutorsFn: SendToTaskExecutors,

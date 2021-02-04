@@ -25,6 +25,8 @@
 
 package io.infinitic.inMemory.transport
 
+import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -44,15 +46,23 @@ import kotlinx.coroutines.launch
 
 class InMemoryTaskEngineOutput(
     scope: CoroutineScope,
+    clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
     taskEventsChannel: Channel<TaskEngineMessageToProcess>,
     executorChannel: SendChannel<TaskExecutorMessageToProcess>,
     monitoringPerNameChannel: SendChannel<MonitoringPerNameMessageToProcess>,
     workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : TaskEngineOutput {
+
+    override val sendToClientResponseFn: SendToClientResponse = {
+        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+        scope.launch {
+            clientResponsesChannel.send(InMemoryMessageToProcess(it))
+        }
+    }
+
     override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: Float ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            // TODO inMemory resilience implies to find a way to persist delayed messages
             delay((1000 * after).toLong())
             workflowEventsChannel.send(InMemoryMessageToProcess(msg))
         }
@@ -61,7 +71,6 @@ class InMemoryTaskEngineOutput(
     override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: Float ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            // TODO inMemory resilience implies to find a way to persist delayed messages
             delay((1000 * after).toLong())
             taskEventsChannel.send(InMemoryMessageToProcess(msg))
         }

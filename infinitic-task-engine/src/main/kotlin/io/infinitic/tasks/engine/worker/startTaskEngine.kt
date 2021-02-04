@@ -62,7 +62,7 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
         taskEngineOutput
     )
 
-    val out = taskEngineInputChannels.taskResultsChannel
+    val out = taskEngineInputChannels.logChannel
     val events = taskEngineInputChannels.taskEventsChannel
     val commands = taskEngineInputChannels.taskCommandsChannel
 

@@ -25,6 +25,8 @@
 
 package io.infinitic.tasks.engine.transport
 
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -38,6 +40,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 interface TaskEngineOutput {
+    val sendToClientResponseFn: SendToClientResponse
     val sendToWorkflowEngineFn: SendToWorkflowEngine
     val sendToTaskEngineFn: SendToTaskEngine
     val sendToTaskExecutorsFn: SendToTaskExecutors
@@ -45,6 +48,19 @@ interface TaskEngineOutput {
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun sendToClientResponse(
+        state: TaskState,
+        clientResponseMessage: ClientResponseMessage
+    ) {
+        logger.debug(
+            "from messageId {}: taskId {} - sendToClientResponse {}",
+            state.lastMessageId,
+            state.taskId,
+            clientResponseMessage
+        )
+        sendToClientResponseFn(clientResponseMessage)
+    }
 
     suspend fun sendToWorkflowEngine(
         state: TaskState,

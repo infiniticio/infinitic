@@ -29,25 +29,16 @@ import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Method
 
-class TaskProxyHandler<T : Any>(
+class NewWorkflowProxyHandler<T : Any>(
     val klass: Class<T>,
     private val workflowTaskContextFn: () -> WorkflowTaskContext
 ) : MethodProxyHandler<T>(klass) {
-    /*
-     * Processing of a task
-     */
+
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        if (method.name == "toString") return klass.name
-
         val out = super.invoke(proxy, method, args)
-
-        return when (isSync) {
-            true -> {
-                val deferred = workflowTaskContextFn().dispatchTask<T>(method, args ?: arrayOf())
-                this.reset()
-                deferred.await()
-            }
-            false -> out
+        if (isSync) {
+            return workflowTaskContextFn().dispatchWorkflow<T>(this).await()
         }
+        return out
     }
 }
