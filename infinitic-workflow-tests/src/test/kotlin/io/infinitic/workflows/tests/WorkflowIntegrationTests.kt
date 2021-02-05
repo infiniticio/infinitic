@@ -426,6 +426,7 @@ class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecut
 }
 
 class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
+    override val clientName = ClientName("client: testing")
 
     override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
@@ -484,7 +485,7 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     workflowOutput = null
 
-    infiniticClient = InfiniticClient(ClientName("test"), TestClientOutput(this))
+    infiniticClient = InfiniticClient(TestClientOutput(this))
 
     workflowA = infiniticClient.workflow(WorkflowA::class.java)
     workflowB = infiniticClient.workflow(WorkflowB::class.java)

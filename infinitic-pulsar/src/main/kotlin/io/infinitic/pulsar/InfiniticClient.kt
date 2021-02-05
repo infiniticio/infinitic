@@ -25,42 +25,64 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.common.clients.data.ClientName
+import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.pulsar.config.loadConfigFromFile
 import io.infinitic.pulsar.config.loadConfigFromResource
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
+import io.infinitic.pulsar.workers.startClientResponseWorker
+import kotlinx.coroutines.runBlocking
+import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
+import kotlin.concurrent.thread
 import io.infinitic.client.InfiniticClient as Client
 
-@Suppress("MemberVisibilityCanBePrivate", "unused")
-class InfiniticClient(
-    @JvmField val name: String,
-    @JvmField val pulsarClient: PulsarClient,
-    @JvmField val tenant: String,
-    @JvmField val namespace: String,
-    producerName: String? = null
-) : Client(ClientName(name), PulsarOutputs.from(pulsarClient, tenant, namespace, producerName).clientOutput) {
+@Suppress("unused")
+class InfiniticClient private constructor(
+    clientResponseConsumer: Consumer<ClientResponseEnvelope>,
+    clientOutput: ClientOutput,
+    private val closeFn: () -> Unit
+) : Client(clientOutput) {
+
     companion object {
         /*
-        Create InfiniticClient from a ClientConfig
+        Create InfiniticClient
+        */
+        @JvmStatic
+        fun from(
+            name: String?,
+            pulsarClient: PulsarClient,
+            tenant: String,
+            namespace: String
+        ): InfiniticClient {
+            // checks unicity if not null, provides a unique name if null
+            val clientName = getPulsarName(pulsarClient, name)
+
+            val clientOutput = PulsarOutputs.from(pulsarClient, tenant, namespace, clientName).clientOutput
+
+            val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, tenant, namespace)
+                .newClientResponseConsumer(clientName)
+
+            return InfiniticClient(clientResponseConsumer, clientOutput) { pulsarClient.close() }
+        }
+
+        /*
+        Create InfiniticClient from a ClientConfig instance
         */
         @JvmStatic
         fun fromConfig(config: ClientConfig): InfiniticClient {
-            val pulsarClient: PulsarClient = PulsarClient
+            val pulsarClient = PulsarClient
                 .builder()
                 .serviceUrl(config.pulsar.serviceUrl)
                 .build()
 
-            return InfiniticClient(
-                config.name!!,
+            return from(
+                config.name,
                 pulsarClient,
                 config.pulsar.tenant,
-                config.pulsar.namespace,
-                when (config.name) {
-                    null -> null
-                    else -> "client: ${config.name}"
-                }
+                config.pulsar.namespace
             )
         }
 
@@ -68,16 +90,25 @@ class InfiniticClient(
        Create InfiniticClient from a ClientConfig loaded from a resource
         */
         @JvmStatic
-        fun fromResource(vararg resources: String) =
+        fun fromConfigResource(vararg resources: String) =
             fromConfig(loadConfigFromResource(resources.toList()))
 
         /*
        Create InfiniticClient from a ClientConfig loaded from a file
         */
         @JvmStatic
-        fun fromFile(vararg files: String) =
+        fun fromConfigFile(vararg files: String) =
             fromConfig(loadConfigFromFile(files.toList()))
     }
 
-    fun close() = pulsarClient.close()
+    init {
+        val client = this
+        thread {
+            runBlocking {
+                startClientResponseWorker(client, clientResponseConsumer)
+            }
+        }
+    }
+
+    fun close() = closeFn()
 }

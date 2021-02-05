@@ -26,6 +26,7 @@
 package io.infinitic.pulsar.transport
 
 import io.infinitic.client.transport.ClientDataOutput
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
@@ -76,7 +77,8 @@ import org.slf4j.LoggerFactory
 class PulsarOutputs(
     private val pulsarMessageBuilder: PulsarMessageBuilder,
     private val pulsarTenant: String,
-    private val pulsarNamespace: String
+    private val pulsarNamespace: String,
+    private val clientName: ClientName
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -89,11 +91,12 @@ class PulsarOutputs(
             pulsarClient: PulsarClient,
             pulsarTenant: String,
             pulsarNamespace: String,
-            producerName: String?
+            name: String
         ) = PulsarOutputs(
-            PulsarMessageBuilderFromClient(pulsarClient, producerName),
+            PulsarMessageBuilderFromClient(pulsarClient, name),
             pulsarTenant,
-            pulsarNamespace
+            pulsarNamespace,
+            ClientName(name)
         )
 
         /*
@@ -102,7 +105,8 @@ class PulsarOutputs(
         fun from(context: Context) = PulsarOutputs(
             PulsarMessageBuilderFromFunction(context),
             context.tenant,
-            context.namespace
+            context.namespace,
+            ClientName("client: unused")
         )
     }
 
@@ -187,6 +191,7 @@ class PulsarOutputs(
     }
 
     val clientOutput = ClientDataOutput(
+        clientName,
         sendToWorkflowEngineCommands(),
         sendToTaskEngineCommands()
     )

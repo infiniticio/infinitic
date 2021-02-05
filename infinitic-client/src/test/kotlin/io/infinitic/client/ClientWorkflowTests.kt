@@ -28,7 +28,6 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -48,7 +47,7 @@ class ClientWorkflowTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
     val clientOutput = MockClientOutput(taskSlot, workflowSlot)
-    val client = InfiniticClient(ClientName("test"), clientOutput)
+    val client = InfiniticClient(clientOutput)
     clientOutput.client = client
     val fakeWorkflow = client.workflow(FakeWorkflow::class.java)
 
@@ -64,7 +63,7 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -85,7 +84,7 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -106,7 +105,7 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -127,7 +126,7 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -150,7 +149,7 @@ class ClientWorkflowTests : StringSpec({
         val msg = workflowSlot.captured
 
         msg shouldBe DispatchWorkflow(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -175,7 +174,7 @@ class ClientWorkflowTests : StringSpec({
 
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = true,
             workflowId = msg.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),

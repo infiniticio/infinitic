@@ -30,7 +30,6 @@ import io.infinitic.client.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.client.proxies.NewTaskProxyHandler
 import io.infinitic.client.proxies.NewWorkflowProxyHandler
 import io.infinitic.client.transport.ClientOutput
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
@@ -56,17 +55,14 @@ import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import java.lang.reflect.Proxy
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-open class InfiniticClient(val clientName: ClientName, val clientOutput: ClientOutput) {
+open class InfiniticClient(val clientOutput: ClientOutput) {
 
     // should be replay = 0
     // but replay = 1 make tests much easier, as we can emit a message before listening
@@ -155,7 +151,7 @@ open class InfiniticClient(val clientName: ClientName, val clientOutput: ClientO
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "async")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is NewTaskProxyHandler<*>, -> {
+            is NewTaskProxyHandler<*> -> {
                 handler.isSync = false
                 proxy.method()
                 startTaskAsync(handler)
@@ -171,7 +167,7 @@ open class InfiniticClient(val clientName: ClientName, val clientOutput: ClientO
             is ExistingWorkflowProxyHandler<*> -> {
                 throw IncorrectExistingStub(proxy::class.java.name, "async", "workflow")
             }
-            else -> throw RuntimeException("Unknown handler")
+            else -> throw RuntimeException()
         }
     }
 
@@ -186,7 +182,7 @@ open class InfiniticClient(val clientName: ClientName, val clientOutput: ClientO
             is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "workflow")
             is ExistingTaskProxyHandler<*> -> cancelTask(handler, output)
             is ExistingWorkflowProxyHandler<*> -> cancelWorkflow(handler, output)
-            else -> throw RuntimeException("Unknown handler")
+            else -> throw RuntimeException()
         }
     }
 
@@ -202,36 +198,25 @@ open class InfiniticClient(val clientName: ClientName, val clientOutput: ClientO
             is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "workflow")
             is ExistingTaskProxyHandler<*> -> retryTask(handler)
             is ExistingWorkflowProxyHandler<*> -> retryWorkflowTask(handler)
-            else -> throw RuntimeException("Unknown handler")
+            else -> throw RuntimeException()
         }
     }
 
-    suspend fun handle(message: ClientResponseMessage) {
-        println("Client.handle: $message")
-        responseFlow.emit(message)
-    }
+    suspend fun handle(message: ClientResponseMessage) = responseFlow.emit(message)
 
     internal fun startTask(handler: NewTaskProxyHandler<*>): Any? {
         // dispatch
         val id = startTaskAsync(handler, true)
 
         // wait for result
-        var output: Any? = null
-        runBlocking {
-            launch {
-                withTimeout(5000L) {
-                    // listen all responses, up to right one
-                    responseFlow.collect {
-                        if (it is TaskCompleted && "${it.taskId}" == id) {
-                            output = it.taskOutput.get()
-                            this.cancel()
-                        }
-                    }
-                }
-            }.join()
-        }
+        val taskCompleted = runBlocking {
+            // listen all responses, up to right one
+            responseFlow.first {
+                it is TaskCompleted && "${it.taskId}" == id
+            }
+        } as TaskCompleted
 
-        return output ?: throw RuntimeException("Timeout")
+        return taskCompleted.taskOutput.get()
     }
 
     internal fun startWorkflow(handler: NewWorkflowProxyHandler<*>): Any? {
@@ -239,22 +224,14 @@ open class InfiniticClient(val clientName: ClientName, val clientOutput: ClientO
         val id = startWorkflowAsync(handler, true)
 
         // wait for result
-        var output: Any? = null
-        runBlocking {
-            launch {
-                withTimeout(5000L) {
-                    // listen all responses, up to right one
-                    responseFlow.collect {
-                        if (it is WorkflowCompleted && "${it.workflowId}" == id) {
-                            output = it.workflowOutput.get()
-                            this.cancel()
-                        }
-                    }
-                }
-            }.join()
-        }
+        val workflowCompleted = runBlocking {
+            // listen all responses, up to right one
+            responseFlow.first {
+                it is WorkflowCompleted && "${it.workflowId}" == id
+            }
+        } as WorkflowCompleted
 
-        return output ?: throw RuntimeException("Timeout")
+        return workflowCompleted.workflowOutput.get()
     }
 
     private fun startTaskAsync(handler: NewTaskProxyHandler<*>, isSync: Boolean = false): String {
@@ -262,7 +239,7 @@ open class InfiniticClient(val clientName: ClientName, val clientOutput: ClientO
 
         val msg = DispatchTask(
             taskId = TaskId(),
-            clientName = clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = isSync,
             taskName = TaskName.from(handler.method!!),
             methodName = MethodName.from(handler.method!!),
@@ -286,7 +263,7 @@ open class InfiniticClient(val clientName: ClientName, val clientOutput: ClientO
 
         val msg = DispatchWorkflow(
             workflowId = WorkflowId(),
-            clientName = clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = isSync,
             workflowName = WorkflowName.from(handler.method!!),
             methodName = MethodName.from(handler.method!!),

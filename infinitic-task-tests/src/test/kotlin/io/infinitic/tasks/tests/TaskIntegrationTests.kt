@@ -238,6 +238,7 @@ class TestTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOu
 }
 
 class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
+    override val clientName = ClientName("client: InMemory")
 
     override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
@@ -289,7 +290,7 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     taskStatus = null
 
-    client = InfiniticClient(ClientName("test"), TestClientOutput(this))
+    client = InfiniticClient(TestClientOutput(this))
 
     taskTestStub = client.task(TaskTest::class.java)
 

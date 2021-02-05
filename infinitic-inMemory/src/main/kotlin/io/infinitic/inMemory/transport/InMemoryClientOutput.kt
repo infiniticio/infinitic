@@ -26,6 +26,7 @@
 package io.infinitic.inMemory.transport
 
 import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -42,6 +43,8 @@ class InMemoryClientOutput(
     taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
     workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : ClientOutput {
+    override val clientName = ClientName("client: inMemory")
+
     override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: Float ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {

@@ -26,6 +26,7 @@
 package io.infinitic.client
 
 import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.methods.MethodOutput
@@ -43,6 +44,7 @@ internal class MockClientOutput(
     taskSlot: CapturingSlot<TaskEngineMessage>,
     workflowSlot: CapturingSlot<WorkflowEngineMessage>
 ) : ClientOutput {
+    override val clientName = ClientName("clientTest")
     override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
     override val sendToWorkflowEngineFn = mockk<SendToWorkflowEngine>()
     lateinit var client: InfiniticClient
@@ -53,7 +55,7 @@ internal class MockClientOutput(
             if (msg is DispatchTask && msg.clientWaiting) {
                 client.handle(
                     TaskCompleted(
-                        clientName = client.clientName,
+                        clientName = clientName,
                         taskId = msg.taskId,
                         taskOutput = MethodOutput.from("success")
                     )
@@ -66,7 +68,7 @@ internal class MockClientOutput(
             if (msg is DispatchWorkflow && msg.clientWaiting) {
                 client.handle(
                     WorkflowCompleted(
-                        clientName = client.clientName,
+                        clientName = clientName,
                         workflowId = msg.workflowId,
                         workflowOutput = MethodOutput.from("success")
                     )

@@ -28,7 +28,6 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
@@ -52,7 +51,7 @@ class ClientTaskTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
     val clientOutput = MockClientOutput(taskSlot, workflowSlot)
-    val client = InfiniticClient(ClientName("test"), clientOutput)
+    val client = InfiniticClient(clientOutput)
     clientOutput.client = client
     // task stub
     val id = TestFactory.random<String>()
@@ -71,7 +70,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -92,7 +91,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -113,7 +112,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -134,7 +133,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -155,7 +154,7 @@ class ClientTaskTests : StringSpec({
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -178,7 +177,7 @@ class ClientTaskTests : StringSpec({
         val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -200,7 +199,7 @@ class ClientTaskTests : StringSpec({
         val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -216,7 +215,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method synchronously" {
         // when
-        var result = ""
+        var result: String
         coroutineScope {
             result = fakeTask.m1(0, "a")
         }
@@ -224,7 +223,7 @@ class ClientTaskTests : StringSpec({
         result shouldBe "success"
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            clientName = client.clientName,
+            clientName = clientOutput.clientName,
             clientWaiting = true,
             taskId = msg.taskId,
             taskName = TaskName(FakeTask::class.java.name),

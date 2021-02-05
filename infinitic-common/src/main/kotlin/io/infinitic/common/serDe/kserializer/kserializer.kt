@@ -25,6 +25,7 @@
 
 package io.infinitic.common.serDe.kserializer
 
+import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
@@ -61,10 +62,11 @@ fun getKSerializerOrNull(klass: Class<*>): KSerializer<*>? {
 
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
+    ClientResponseEnvelope::class -> ClientResponseEnvelope.serializer()
+    WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
+    TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
+    TaskExecutorMessage::class -> TaskExecutorMessage.serializer()
     MonitoringGlobalEnvelope::class -> MonitoringGlobalEnvelope.serializer()
     MonitoringPerNameEnvelope::class -> MonitoringPerNameEnvelope.serializer()
-    TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
-    WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
-    TaskExecutorMessage::class -> TaskExecutorMessage.serializer()
     else -> throw RuntimeException("This should not happen: applying kserializer with ${klass.qualifiedName}")
 } as KSerializer <T>

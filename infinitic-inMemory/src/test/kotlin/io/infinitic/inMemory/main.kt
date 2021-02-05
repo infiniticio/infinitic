@@ -26,7 +26,6 @@
 package io.infinitic.inMemory
 
 import io.infinitic.client.InfiniticClient
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.inMemory.tasks.TaskA
 import io.infinitic.inMemory.tasks.TaskAImpl
@@ -49,7 +48,6 @@ fun main() {
     val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
     runBlocking {
         val client = InfiniticClient(
-            ClientName("test"),
             InMemoryClientOutput(this, taskEngineCommandsChannel, workflowEngineCommandsChannel)
         )
 

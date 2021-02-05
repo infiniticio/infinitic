@@ -23,14 +23,30 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.transport
+package io.infinitic.pulsar
 
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import org.apache.pulsar.client.api.PulsarClient
+import org.apache.pulsar.client.api.PulsarClientException
+import kotlin.system.exitProcess
 
-data class ClientDataOutput(
-    override val clientName: ClientName,
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine,
-    override val sendToTaskEngineFn: SendToTaskEngine
-) : ClientOutput
+/*
+Utility useful to check the unicity of a connected producer's name or to provide a unique name
+ */
+internal fun getPulsarName(pulsarClient: PulsarClient, name: String?): String {
+    val producer = try {
+        pulsarClient.newProducer()
+            .topic("producers")
+            .also {
+                if (name != null) {
+                    it.producerName(name)
+                }
+            }
+            .create()
+    } catch (e: PulsarClientException.ProducerBusyException) {
+        pulsarClient.close()
+        System.err.print("Another worker with name \"$name\" is already connected. Please make sure to use a unique name. Closing.")
+        exitProcess(1)
+    }
+
+    return producer.producerName
+}
