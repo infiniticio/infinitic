@@ -26,11 +26,15 @@
 package io.infinitic.common.workflows.executors.proxies
 
 import io.infinitic.common.proxies.MethodProxyHandler
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Method
 
 class NewTaskProxyHandler<T : Any>(
     val klass: Class<T>,
+    val taskOptions: TaskOptions,
+    val taskMeta: TaskMeta,
     private val workflowTaskContextFn: () -> WorkflowTaskContext
 ) : MethodProxyHandler<T>(klass) {
 

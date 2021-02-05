@@ -25,6 +25,10 @@
 
 package io.infinitic.workflows
 
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.executors.proxies.NewTaskProxyHandler
 import io.infinitic.common.workflows.executors.proxies.NewWorkflowProxyHandler
 
@@ -34,24 +38,38 @@ abstract class Workflow {
     /*
      *  Stub task
      */
-    fun <T : Any> task(klass: Class<out T>): T = NewTaskProxyHandler(klass) { context }.instance()
+    @JvmOverloads fun <T : Any> task(
+        klass: Class<out T>,
+        options: TaskOptions = TaskOptions(),
+        meta: TaskMeta = TaskMeta()
+    ): T = NewTaskProxyHandler(klass, options, meta) { context }.stub()
 
     /*
      * Stub task
      * (Kotlin way)
      */
-    inline fun <reified T : Any> task(): T = NewTaskProxyHandler(T::class.java) { context }.instance()
+    inline fun <reified T : Any> task(
+        options: TaskOptions = TaskOptions(),
+        meta: TaskMeta = TaskMeta()
+    ): T = NewTaskProxyHandler(T::class.java, options, meta) { context }.stub()
 
     /*
      *  Stub workflow
      */
-    fun <T : Any> workflow(klass: Class<out T>): T = NewWorkflowProxyHandler(klass) { context }.instance()
+    @JvmOverloads fun <T : Any> workflow(
+        klass: Class<out T>,
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta()
+    ): T = NewWorkflowProxyHandler(klass, options, meta) { context }.stub()
 
     /*
      *  Stub workflow
      * (Kotlin way)
      */
-    inline fun <reified T : Any> workflow(): T = NewWorkflowProxyHandler(T::class.java) { context }.instance()
+    inline fun <reified T : Any> workflow(
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta()
+    ): T = NewWorkflowProxyHandler(T::class.java, options, meta) { context }.stub()
 
     /*
      *  Dispatch a task or a workflow asynchronously

@@ -276,7 +276,7 @@ class WorkflowTaskContextImpl(
     override fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S> {
         val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
         val deferred = dispatch<S>(
-            DispatchTask.from(method, handler.args),
+            DispatchTask.from(method, handler.args, handler.taskMeta, handler.taskOptions),
             CommandSimpleName.fromMethod(method)
         )
         handler.reset()
@@ -289,7 +289,7 @@ class WorkflowTaskContextImpl(
     override fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S> {
         val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
         val deferred = dispatch<S>(
-            DispatchChildWorkflow.from(method, handler.args),
+            DispatchChildWorkflow.from(method, handler.args, handler.workflowMeta, handler.workflowOptions),
             CommandSimpleName.fromMethod(method)
         )
         handler.reset()

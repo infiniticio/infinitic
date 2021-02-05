@@ -27,6 +27,7 @@ package io.infinitic.tasks.tests
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
@@ -192,6 +193,20 @@ class TaskIntegrationTests : StringSpec({
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
     }
+
+    "Synchronous Task succeeds at first try" {
+        // task will succeed
+        taskTest.behavior = { _, _ -> Status.SUCCESS }
+
+        var r: String
+        // run system
+        coroutineScope {
+            init()
+            r = taskTestStub.log()
+        }
+        // checks number of task processing
+        r shouldBe "1"
+    }
 })
 
 class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
@@ -274,7 +289,7 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     taskStatus = null
 
-    client = InfiniticClient(TestClientOutput(this))
+    client = InfiniticClient(ClientName("test"), TestClientOutput(this))
 
     taskTestStub = client.task(TaskTest::class.java)
 

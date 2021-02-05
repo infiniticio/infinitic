@@ -204,6 +204,7 @@ class TaskEngine(
         // init a state
         val newState = TaskState(
             clientName = message.clientName,
+            clientWaiting = message.clientWaiting,
             lastMessageId = message.messageId,
             taskId = message.taskId,
             taskName = message.taskName,
@@ -357,12 +358,12 @@ class TaskEngine(
             )
         }
 
-        // if this task comes from a client, send completion back to it
-        newState.clientName?.let {
+        // if client is waiting, send output back to it
+        if (newState.clientWaiting) {
             taskEngineOutput.sendToClientResponse(
                 newState,
                 TaskCompletedInClient(
-                    newState.clientName!!,
+                    newState.clientName,
                     newState.taskId,
                     message.taskOutput
                 )

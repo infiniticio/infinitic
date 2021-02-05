@@ -106,7 +106,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToClientResponse: SendToClientResponse = { message: ClientResponseMessage ->
+    private fun sendToClientResponse(): SendToClientResponse = { message: ClientResponseMessage ->
         val clientName = "${message.clientName}"
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, ClientResponseTopic.name(clientName)),
@@ -116,7 +116,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToWorkflowEngineCommands: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
+    private fun sendToWorkflowEngineCommands(): SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name),
             WorkflowEngineEnvelope.from(message),
@@ -125,7 +125,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToWorkflowEngineEvents: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
+    private fun sendToWorkflowEngineEvents(): SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name),
             WorkflowEngineEnvelope.from(message),
@@ -134,7 +134,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToTaskEngineCommands: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+    private fun sendToTaskEngineCommands(): SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
             TaskEngineEnvelope.from(message),
@@ -143,7 +143,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToTaskEngineEvents: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+    private fun sendToTaskEngineEvents(): SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name),
             TaskEngineEnvelope.from(message),
@@ -152,7 +152,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToTaskExecutors: SendToTaskExecutors = { message: TaskExecutorMessage ->
+    private fun sendToTaskExecutors(): SendToTaskExecutors = { message: TaskExecutorMessage ->
         val taskName = "${message.taskName}"
         val topicName = if (taskName == WorkflowTask::class.java.name) {
             WorkflowExecutorTopic.name(message.taskMeta.get(WorkflowTask.META_WORKFLOW_NAME) as String)
@@ -168,7 +168,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToMonitoringPerName: SendToMonitoringPerName = { message: MonitoringPerNameEngineMessage ->
+    private fun sendToMonitoringPerName(): SendToMonitoringPerName = { message: MonitoringPerNameEngineMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name),
             MonitoringPerNameEnvelope.from(message),
@@ -177,7 +177,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToMonitoringGlobal: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+    private fun sendToMonitoringGlobal(): SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name),
             MonitoringGlobalEnvelope.from(message),
@@ -187,30 +187,30 @@ class PulsarOutputs(
     }
 
     val clientOutput = ClientDataOutput(
-        sendToWorkflowEngineCommands,
-        sendToTaskEngineCommands
+        sendToWorkflowEngineCommands(),
+        sendToTaskEngineCommands()
     )
 
     val workflowEngineOutput = WorkflowEngineDataOutput(
-        sendToClientResponse,
-        sendToWorkflowEngineEvents,
-        sendToTaskEngineCommands
+        sendToClientResponse(),
+        sendToWorkflowEngineEvents(),
+        sendToTaskEngineCommands()
     )
 
     val taskEngineOutput = TaskEngineDataOutput(
-        sendToClientResponse,
-        sendToWorkflowEngineEvents,
-        sendToTaskEngineEvents,
-        sendToTaskExecutors,
-        sendToMonitoringPerName
+        sendToClientResponse(),
+        sendToWorkflowEngineEvents(),
+        sendToTaskEngineEvents(),
+        sendToTaskExecutors(),
+        sendToMonitoringPerName()
     )
 
     val monitoringPerNameOutput = MonitoringPerNameDataOutput(
-        sendToMonitoringGlobal
+        sendToMonitoringGlobal()
     )
 
     val taskExecutorOutput = TaskExecutorDataOutput(
-        sendToTaskEngineEvents
+        sendToTaskEngineEvents()
     )
 
     val sendToWorkflowEngineDeadLetters: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->

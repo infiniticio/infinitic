@@ -54,7 +54,8 @@ sealed class WorkflowEngineMessage() {
 @Serializable
 data class DispatchWorkflow(
     override val workflowId: WorkflowId,
-    val clientName: ClientName?,
+    val clientName: ClientName,
+    val clientWaiting: Boolean,
     var parentWorkflowId: WorkflowId?,
     var parentMethodRunId: MethodRunId?,
     val workflowName: WorkflowName,

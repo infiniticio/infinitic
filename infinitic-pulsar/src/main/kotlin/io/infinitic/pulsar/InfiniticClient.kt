@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.pulsar.config.loadConfigFromFile
 import io.infinitic.pulsar.config.loadConfigFromResource
@@ -34,11 +35,12 @@ import io.infinitic.client.InfiniticClient as Client
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class InfiniticClient(
+    @JvmField val name: String,
     @JvmField val pulsarClient: PulsarClient,
     @JvmField val tenant: String,
     @JvmField val namespace: String,
     producerName: String? = null
-) : Client(PulsarOutputs.from(pulsarClient, tenant, namespace, producerName).clientOutput) {
+) : Client(ClientName(name), PulsarOutputs.from(pulsarClient, tenant, namespace, producerName).clientOutput) {
     companion object {
         /*
         Create InfiniticClient from a ClientConfig
@@ -51,6 +53,7 @@ class InfiniticClient(
                 .build()
 
             return InfiniticClient(
+                config.name!!,
                 pulsarClient,
                 config.pulsar.tenant,
                 config.pulsar.namespace,

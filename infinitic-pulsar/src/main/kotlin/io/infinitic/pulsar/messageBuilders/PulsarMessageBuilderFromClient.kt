@@ -36,7 +36,13 @@ class PulsarMessageBuilderFromClient(
     private val pulsarClient: PulsarClient,
     private val producerName: String?
 ) : PulsarMessageBuilder {
-    private val producers = ConcurrentHashMap<String, Producer<*>>()
+
+    /*
+    Store of exiting producers Map(topic name -> Pulsar producer)
+     */
+    companion object {
+        private val producers = ConcurrentHashMap<String, Producer<*>>()
+    }
 
     override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> =
         getOrCreateProducer(topicName, schema).newMessage()

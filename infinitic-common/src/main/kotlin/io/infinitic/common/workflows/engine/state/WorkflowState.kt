@@ -48,7 +48,12 @@ data class WorkflowState(
     /*
     Name of client that dispatched this workflow
      */
-    val clientName: ClientName?,
+    val clientName: ClientName,
+
+    /*
+    Does the client synchronously waits for the output?
+     */
+    val clientWaiting: Boolean,
 
     /*
     Id of last received message (used to ensure idempotency)

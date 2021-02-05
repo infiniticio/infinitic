@@ -54,7 +54,8 @@ sealed class TaskEngineMessage() {
 @Serializable
 data class DispatchTask(
     override val taskId: TaskId,
-    val clientName: ClientName?,
+    val clientName: ClientName,
+    val clientWaiting: Boolean,
     val taskName: TaskName,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,

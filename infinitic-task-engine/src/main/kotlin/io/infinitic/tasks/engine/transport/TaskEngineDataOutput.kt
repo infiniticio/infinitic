@@ -37,4 +37,7 @@ data class TaskEngineDataOutput(
     override val sendToTaskEngineFn: SendToTaskEngine,
     override val sendToTaskExecutorsFn: SendToTaskExecutors,
     override val sendToMonitoringPerNameFn: SendToMonitoringPerName
-) : TaskEngineOutput
+) : TaskEngineOutput {
+    init {
+    }
+}

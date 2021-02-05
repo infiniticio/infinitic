@@ -38,13 +38,11 @@ internal class NewWorkflowProxyHandler<T : Any>(
     private val client: InfiniticClient
 ) : MethodProxyHandler<T>(klass) {
 
-    /*
-     * invoke method is called when a method is applied to the proxy instance
-     */
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val out = super.invoke(proxy, method, args)
-        if (isSync) {
-        }
+
+        if (isSync) return client.startWorkflow(this)
+
         return out
     }
 }

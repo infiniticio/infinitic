@@ -27,6 +27,7 @@ package io.infinitic.workflows.tests
 
 import io.infinitic.client.InfiniticClient
 import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
@@ -359,6 +360,29 @@ class WorkflowIntegrationTests : StringSpec({
         // checks number of task processing
         workflowOutput shouldBe "abab"
     }
+
+    "Check prop6 sync" {
+        // run system
+        var result: String
+        coroutineScope {
+            init()
+            result = workflowA.prop6()
+        }
+        result shouldBe "abab"
+    }
+
+    "Check multiple sync" {
+        // run system
+        var result1: String
+        var result2: String
+        coroutineScope {
+            init()
+            result1 = workflowA.seq1()
+            result2 = workflowA.prop1()
+        }
+        result1 shouldBe "123"
+        result2 shouldBe "ac"
+    }
 })
 
 class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : WorkflowEngineOutput {
@@ -460,7 +484,7 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     workflowOutput = null
 
-    infiniticClient = InfiniticClient(TestClientOutput(this))
+    infiniticClient = InfiniticClient(ClientName("test"), TestClientOutput(this))
 
     workflowA = infiniticClient.workflow(WorkflowA::class.java)
     workflowB = infiniticClient.workflow(WorkflowB::class.java)

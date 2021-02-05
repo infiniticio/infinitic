@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.interfaces.plus
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.DispatchTask
@@ -123,12 +124,12 @@ suspend fun workflowTaskCompleted(
                 0F
             )
 
-            // send back to client if needed
-            state.clientName?.let {
+            // if client is waiting, send output back to it
+            if (state.clientWaiting) {
                 workflowEngineOutput.sendToClientResponse(
                     state,
                     WorkflowCompletedInClient(
-                        clientName = state.clientName!!,
+                        clientName = state.clientName,
                         workflowId = state.workflowId,
                         workflowOutput = methodRun.methodOutput!!
                     )
@@ -257,7 +258,8 @@ private suspend fun dispatchTask(
     val command = newCommand.command as DispatchTaskInWorkflow
     // send task to task engine
     val msg = DispatchTask(
-        clientName = null,
+        clientName = ClientName("workflow engine"),
+        clientWaiting = false,
         taskId = TaskId("${newCommand.commandId}"),
         taskName = command.taskName,
         methodName = command.methodName,
@@ -281,7 +283,8 @@ private suspend fun dispatchChildWorkflow(
     val command = newCommand.command as DispatchChildWorkflow
     // send task to task engine
     val msg = DispatchWorkflow(
-        clientName = null,
+        clientName = ClientName("workflow engine"),
+        clientWaiting = false,
         workflowId = WorkflowId("${newCommand.commandId}"),
         parentWorkflowId = state.workflowId,
         parentMethodRunId = methodRun.methodRunId,

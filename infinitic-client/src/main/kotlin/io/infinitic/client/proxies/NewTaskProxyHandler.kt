@@ -40,8 +40,9 @@ internal class NewTaskProxyHandler<T : Any>(
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val out = super.invoke(proxy, method, args)
-        if (isSync) {
-        }
+
+        if (isSync) return client.startTask(this)
+
         return out
     }
 }

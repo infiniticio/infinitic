@@ -47,7 +47,8 @@ import java.nio.ByteBuffer
 
 @Serializable
 data class TaskState(
-    val clientName: ClientName?,
+    val clientName: ClientName,
+    val clientWaiting: Boolean,
     val lastMessageId: MessageId,
     val taskId: TaskId,
     val taskName: TaskName,

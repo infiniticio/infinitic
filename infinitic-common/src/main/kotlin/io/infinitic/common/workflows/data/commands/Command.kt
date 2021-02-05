@@ -32,7 +32,10 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 import java.lang.reflect.Method
 
@@ -51,15 +54,22 @@ data class DispatchTask(
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes,
     val methodInput: MethodInput,
-    val taskMeta: TaskMeta
+    val taskMeta: TaskMeta,
+    val taskOptions: TaskOptions
 ) : Command() {
     companion object {
-        fun from(method: Method, args: Array<out Any>) = DispatchTask(
+        fun from(
+            method: Method,
+            args: Array<out Any>,
+            taskMeta: TaskMeta,
+            taskOptions: TaskOptions
+        ) = DispatchTask(
             taskName = TaskName.from(method),
             methodInput = MethodInput.from(method, args),
             methodParameterTypes = MethodParameterTypes.from(method),
             methodName = MethodName.from(method),
-            taskMeta = TaskMeta()
+            taskMeta = taskMeta,
+            taskOptions = taskOptions
         )
     }
 }
@@ -69,14 +79,23 @@ data class DispatchChildWorkflow(
     val childWorkflowName: WorkflowName,
     val childMethodName: MethodName,
     val childMethodParameterTypes: MethodParameterTypes,
-    val childMethodInput: MethodInput
+    val childMethodInput: MethodInput,
+    val workflowMeta: WorkflowMeta,
+    val workflowOptions: WorkflowOptions
 ) : Command() {
     companion object {
-        fun from(method: Method, args: Array<out Any>) = DispatchChildWorkflow(
+        fun from(
+            method: Method,
+            args: Array<out Any>,
+            workflowMeta: WorkflowMeta,
+            workflowOptions: WorkflowOptions
+        ) = DispatchChildWorkflow(
             childWorkflowName = WorkflowName.from(method),
             childMethodName = MethodName.from(method),
             childMethodParameterTypes = MethodParameterTypes.from(method),
-            childMethodInput = MethodInput.from(method, args)
+            childMethodInput = MethodInput.from(method, args),
+            workflowMeta = workflowMeta,
+            workflowOptions = workflowOptions
         )
     }
 }

@@ -52,10 +52,10 @@ open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandle
     }
 
     /*
-     * provides a proxy instance of type T
+     * provides a stub of type T
      */
     @Suppress("UNCHECKED_CAST")
-    fun instance() = Proxy.newProxyInstance(
+    fun stub() = Proxy.newProxyInstance(
         klass.classLoader,
         kotlin.arrayOf(klass),
         this
@@ -72,7 +72,7 @@ open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandle
 
     private fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {
         "long" -> 0L
-        "int" -> 0.toInt()
+        "int" -> 0
         "short" -> 0.toShort()
         "byte" -> 0.toByte()
         "double" -> 0.toDouble()
