@@ -57,7 +57,7 @@ open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandle
     @Suppress("UNCHECKED_CAST")
     fun stub() = Proxy.newProxyInstance(
         klass.classLoader,
-        kotlin.arrayOf(klass),
+        arrayOf(klass),
         this
     ) as T
 

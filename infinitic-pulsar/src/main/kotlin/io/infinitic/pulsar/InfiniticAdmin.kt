@@ -64,14 +64,14 @@ class InfiniticAdmin(
         Create InfiniticAdmin from an AdminConfig loaded from a resource
          */
         @JvmStatic
-        fun fromResource(vararg resources: String) =
+        fun fromConfigResource(vararg resources: String) =
             fromConfig(loadConfigFromResource(resources.toList()))
 
         /*
        Create InfiniticAdmin from an AdminConfig loaded from a file
         */
         @JvmStatic
-        fun fromFile(vararg files: String) =
+        fun fromConfigFile(vararg files: String) =
             fromConfig(loadConfigFromFile(files.toList()))
     }
 
