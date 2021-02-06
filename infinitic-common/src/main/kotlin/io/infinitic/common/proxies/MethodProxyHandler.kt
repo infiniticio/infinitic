@@ -26,14 +26,29 @@
 package io.infinitic.common.proxies
 
 import io.infinitic.common.tasks.exceptions.MultipleMethodCalls
+import java.lang.Thread.currentThread
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.util.concurrent.ConcurrentHashMap
 
 open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
-    var isSync = true
-    var method: Method? = null
-    var args: Array<out Any> = arrayOf()
+    // multiple threads can use a same MethodProxyHandler instance without mixing values
+    private val _dataMethodHash = ConcurrentHashMap<Thread, DataMethod>()
+    private val dataMethod: DataMethod
+        get() = _dataMethodHash.getOrPut(currentThread(), { DataMethod() })
+
+    var isSync: Boolean
+        get() = dataMethod.isSync
+        set(value) { dataMethod.isSync = value }
+
+    var method: Method?
+        get() = dataMethod.method
+        set(value) { dataMethod.method = value }
+
+    var args: Array<out Any>
+        get() = dataMethod.args
+        set(value) { dataMethod.args = value }
 
     /*
      * invoke method is called when a method is applied to the proxy instance
@@ -62,12 +77,10 @@ open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandle
     ) as T
 
     /*
-     * Prepare Handler for reuse
+     * Prepare for reuse
      */
-    open fun reset() {
-        isSync = true
-        method = null
-        args = arrayOf()
+    fun reset() {
+        _dataMethodHash.remove(currentThread())
     }
 
     private fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {
