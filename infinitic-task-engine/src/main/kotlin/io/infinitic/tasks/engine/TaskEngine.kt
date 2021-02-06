@@ -175,11 +175,11 @@ class TaskEngine(
         }
 
         // if this task comes from a client, send TaskCompleted output back to it
-        newState.clientName?.let {
+        if (newState.clientWaiting) {
             taskEngineOutput.sendToClientResponse(
                 newState,
                 TaskCompletedInClient(
-                    newState.clientName!!,
+                    newState.clientName,
                     newState.taskId,
                     message.taskOutput
                 )
