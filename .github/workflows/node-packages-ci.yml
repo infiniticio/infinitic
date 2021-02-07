@@ -100,6 +100,6 @@ jobs:
         run: npx --no-install lerna run lint
         working-directory: ./node
 
-      - name: Test
-        run: npx --no-install lerna run test -- --passWithNoTests --coverage
-        working-directory: ./node
+#      - name: Test
+#        run: npx --no-install lerna run test -- --passWithNoTests --coverage
+#        working-directory: ./node
