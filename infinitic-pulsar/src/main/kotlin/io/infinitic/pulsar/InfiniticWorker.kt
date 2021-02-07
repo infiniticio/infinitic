@@ -108,7 +108,7 @@ class InfiniticWorker(
 
         startTaskExecutorWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        println("$workerName ready")
+        println("worker \"$workerName\" ready")
     }
 
     private fun CoroutineScope.startWorkflowEngineWorkers(

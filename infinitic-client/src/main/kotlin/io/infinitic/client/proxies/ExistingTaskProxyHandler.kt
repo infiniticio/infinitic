@@ -25,7 +25,7 @@
 
 package io.infinitic.client.proxies
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
@@ -35,5 +35,5 @@ internal class ExistingTaskProxyHandler<T : Any>(
     val taskId: String,
     val taskOptions: TaskOptions?,
     val taskMeta: TaskMeta?,
-    private val client: InfiniticClient
+    private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass)

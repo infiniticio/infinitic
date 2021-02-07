@@ -23,26 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.executors.proxies
+package io.infinitic.common.proxies
 
-import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.workflows.WorkflowTaskContext
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import java.lang.reflect.Method
 
-class NewTaskProxyHandler<T : Any>(
+class NewWorkflowProxyHandler<T : Any>(
     val klass: Class<T>,
-    val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta,
-    private val workflowTaskContextFn: () -> WorkflowTaskContext
+    val workflowOptions: WorkflowOptions,
+    val workflowMeta: WorkflowMeta,
+    private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        val out = super.invoke(proxy, method, args)
-        if (isSync) {
-            return workflowTaskContextFn().dispatchTask<T>(this).await()
+        val any = super.invoke(proxy, method, args)
+
+        return when (isSync) {
+            true -> dispatcherFn().dispatchWorkflowAndWaitResult(this)
+            false -> any
         }
-        return out
     }
 }

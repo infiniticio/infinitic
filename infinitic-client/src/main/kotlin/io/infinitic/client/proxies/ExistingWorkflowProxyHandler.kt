@@ -25,7 +25,7 @@
 
 package io.infinitic.client.proxies
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
@@ -35,5 +35,5 @@ internal class ExistingWorkflowProxyHandler<T : Any>(
     val workflowId: String,
     private val workflowOptions: WorkflowOptions?,
     private val workflowMeta: WorkflowMeta?,
-    private val client: InfiniticClient
+    private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass)

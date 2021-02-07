@@ -27,46 +27,35 @@ package io.infinitic.client
 
 import io.infinitic.client.proxies.ExistingTaskProxyHandler
 import io.infinitic.client.proxies.ExistingWorkflowProxyHandler
-import io.infinitic.client.proxies.NewTaskProxyHandler
-import io.infinitic.client.proxies.NewWorkflowProxyHandler
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
-import io.infinitic.common.clients.messages.TaskCompleted
-import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.exceptions.IncorrectExistingStub
 import io.infinitic.common.tasks.exceptions.IncorrectNewStub
-import io.infinitic.common.tasks.exceptions.NoMethodCall
 import io.infinitic.common.tasks.exceptions.NotAStub
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.runBlocking
 import java.lang.reflect.Proxy
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 open class InfiniticClient(val clientOutput: ClientOutput) {
 
-    // should be replay = 0
-    // but replay = 1 make tests much easier, as we can emit a message before listening
-    private val responseFlow = MutableSharedFlow<ClientResponseMessage>(replay = 1)
+    private val dispatcher = ClientDispatcher(clientOutput)
 
     /*
      * Create stub for a new task
@@ -75,7 +64,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         klass: Class<out T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta()
-    ): T = NewTaskProxyHandler(klass, options, meta, this).stub()
+    ): T = NewTaskProxyHandler(klass, options, meta) { dispatcher }.stub()
 
     /*
      * Create stub for a new task
@@ -93,7 +82,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         klass: Class<out T>,
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta()
-    ): T = NewWorkflowProxyHandler(klass, options, meta, this).stub()
+    ): T = NewWorkflowProxyHandler(klass, options, meta) { dispatcher }.stub()
 
     /*
      * Create stub for a new workflow
@@ -112,7 +101,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         id: String,
         options: TaskOptions? = null,
         meta: TaskMeta? = null
-    ): T = ExistingTaskProxyHandler(klass, id, options, meta, this).stub()
+    ): T = ExistingTaskProxyHandler(klass, id, options, meta) { dispatcher }.stub()
 
     /*
      * Create stub for an existing task
@@ -132,7 +121,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         id: String,
         options: WorkflowOptions? = null,
         meta: WorkflowMeta? = null
-    ): T = ExistingWorkflowProxyHandler(klass, id, options, meta, this).stub()
+    ): T = ExistingWorkflowProxyHandler(klass, id, options, meta) { dispatcher }.stub()
 
     /*
      * Create stub for an existing workflow
@@ -154,12 +143,12 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
             is NewTaskProxyHandler<*> -> {
                 handler.isSync = false
                 proxy.method()
-                startTaskAsync(handler)
+                dispatcher.dispatchTask(handler)
             }
             is NewWorkflowProxyHandler<*> -> {
                 handler.isSync = false
                 proxy.method()
-                startWorkflowAsync(handler)
+                dispatcher.dispatchWorkflow(handler)
             }
             is ExistingTaskProxyHandler<*> -> {
                 throw IncorrectExistingStub(proxy::class.java.name, "async", "task")
@@ -202,85 +191,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         }
     }
 
-    suspend fun handle(message: ClientResponseMessage) = responseFlow.emit(message)
-
-    internal fun startTask(handler: NewTaskProxyHandler<*>): Any? {
-        // dispatch
-        val id = startTaskAsync(handler, true)
-
-        // wait for result
-        val taskCompleted = runBlocking {
-            // listen all responses, up to right one
-            responseFlow.first {
-                it is TaskCompleted && "${it.taskId}" == id
-            }
-        } as TaskCompleted
-
-        return taskCompleted.taskOutput.get()
-    }
-
-    internal fun startWorkflow(handler: NewWorkflowProxyHandler<*>): Any? {
-        // dispatch
-        val id = startWorkflowAsync(handler, true)
-
-        // wait for result
-        val workflowCompleted = runBlocking {
-            // listen all responses, up to right one
-            responseFlow.first {
-                it is WorkflowCompleted && "${it.workflowId}" == id
-            }
-        } as WorkflowCompleted
-
-        return workflowCompleted.workflowOutput.get()
-    }
-
-    private fun startTaskAsync(handler: NewTaskProxyHandler<*>, isSync: Boolean = false): String {
-        if (handler.method == null) throw NoMethodCall(handler.klass.name, "async")
-
-        val msg = DispatchTask(
-            taskId = TaskId(),
-            clientName = clientOutput.clientName,
-            clientWaiting = isSync,
-            taskName = TaskName.from(handler.method!!),
-            methodName = MethodName.from(handler.method!!),
-            methodParameterTypes = MethodParameterTypes.from(handler.method!!),
-            methodInput = MethodInput.from(handler.method!!, handler.args),
-            workflowId = null,
-            methodRunId = null,
-            taskOptions = handler.taskOptions,
-            taskMeta = handler.taskMeta
-        )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
-
-        // reset handler for reuse
-        handler.reset()
-
-        return "${msg.taskId}"
-    }
-
-    private fun <T : Any> startWorkflowAsync(handler: NewWorkflowProxyHandler<T>, isSync: Boolean = false): String {
-        if (handler.method == null) throw NoMethodCall(handler.klass.name, "async")
-
-        val msg = DispatchWorkflow(
-            workflowId = WorkflowId(),
-            clientName = clientOutput.clientName,
-            clientWaiting = isSync,
-            workflowName = WorkflowName.from(handler.method!!),
-            methodName = MethodName.from(handler.method!!),
-            methodParameterTypes = MethodParameterTypes.from(handler.method!!),
-            methodInput = MethodInput.from(handler.method!!, handler.args),
-            parentWorkflowId = null,
-            parentMethodRunId = null,
-            workflowMeta = handler.workflowMeta,
-            workflowOptions = handler.workflowOptions
-        )
-        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, 0F) }.join()
-
-        // reset handler for reuse
-        handler.reset()
-
-        return "${msg.workflowId}"
-    }
+    suspend fun handle(message: ClientResponseMessage) = dispatcher.handle(message)
 
     private fun <T : Any> cancelTask(handle: ExistingTaskProxyHandler<T>, output: Any?) {
         val msg = CancelTask(

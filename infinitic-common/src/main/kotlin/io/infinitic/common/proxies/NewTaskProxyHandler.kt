@@ -23,26 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.proxies
+package io.infinitic.common.proxies
 
-import io.infinitic.client.InfiniticClient
-import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import java.lang.reflect.Method
 
-internal class NewTaskProxyHandler<T : Any>(
+class NewTaskProxyHandler<T : Any>(
     val klass: Class<T>,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta,
-    private val client: InfiniticClient
+    private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        val out = super.invoke(proxy, method, args)
+        val any = super.invoke(proxy, method, args)
 
-        if (isSync) return client.startTask(this)
-
-        return out
+        return when (isSync) {
+            true -> dispatcherFn().dispatchTaskAndWaitResult(this)
+            false -> any
+        }
     }
 }

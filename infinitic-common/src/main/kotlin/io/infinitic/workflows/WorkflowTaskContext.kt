@@ -25,10 +25,11 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.common.workflows.executors.proxies.NewTaskProxyHandler
-import io.infinitic.common.workflows.executors.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.Dispatcher
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
 
-interface WorkflowTaskContext {
+interface WorkflowTaskContext : Dispatcher {
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
 
     fun <S> async(branch: () -> S): Deferred<S>

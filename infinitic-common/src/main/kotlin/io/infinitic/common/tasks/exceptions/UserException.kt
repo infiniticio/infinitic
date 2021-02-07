@@ -141,6 +141,14 @@ data class IncorrectNewStub(
     help = "Make sure to provide the stub returned by client.$type($name), without id."
 )
 
+data class SuspendMethodNotSupported(
+    val name: String,
+    val method: String
+) : UserExceptionInClient(
+    msg = "method \"$method\" in class \"$name\" is a suspend function",
+    help = "Suspend functions are not supported"
+)
+
 data class NoMethodCall(
     val name: String,
     val async: String

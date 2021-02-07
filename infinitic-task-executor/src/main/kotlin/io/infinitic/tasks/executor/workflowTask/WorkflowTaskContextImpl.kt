@@ -25,6 +25,9 @@
 
 package io.infinitic.tasks.executor.workflowTask
 
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.tasks.exceptions.SuspendMethodNotSupported
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -51,13 +54,12 @@ import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
-import io.infinitic.common.workflows.executors.proxies.NewTaskProxyHandler
-import io.infinitic.common.workflows.executors.proxies.NewWorkflowProxyHandler
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Proxy
+import kotlin.reflect.jvm.kotlinFunction
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
@@ -275,6 +277,8 @@ class WorkflowTaskContextImpl(
      */
     override fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S> {
         val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
+        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(handler.klass.name, method.name)
+
         val deferred = dispatch<S>(
             DispatchTask.from(method, handler.args, handler.taskMeta, handler.taskOptions),
             CommandSimpleName.fromMethod(method)
@@ -283,11 +287,16 @@ class WorkflowTaskContextImpl(
         return deferred
     }
 
+    override fun <S> dispatchTaskAndWaitResult(handler: NewTaskProxyHandler<*>): S =
+        dispatchTask<S>(handler).await()
+
     /*
      * Workflow dispatching
      */
     override fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S> {
         val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
+        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(handler.klass.name, method.name)
+
         val deferred = dispatch<S>(
             DispatchChildWorkflow.from(method, handler.args, handler.workflowMeta, handler.workflowOptions),
             CommandSimpleName.fromMethod(method)
@@ -295,6 +304,9 @@ class WorkflowTaskContextImpl(
         handler.reset()
         return deferred
     }
+
+    override fun <S> dispatchWorkflowAndWaitResult(handler: NewWorkflowProxyHandler<*>): S =
+        dispatchWorkflow<S>(handler).await()
 
     /*
      * Get return value from Deferred
