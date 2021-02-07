@@ -26,7 +26,7 @@ name: Node Packages CI
 on:
   pull_request:
     branches:
-      - master
+      - main
     paths:
       - ".github/workflows/node-packages-ci.yml"
       - "node/**"

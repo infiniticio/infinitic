@@ -25,7 +25,7 @@ name: WebUI CI
 on:
   pull_request:
     branches:
-      - master
+      - main
     paths:
       - ".github/workflows/webui-ci.yml"
       - "webui/**"

@@ -25,7 +25,7 @@ name: Repository management
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   lint:
