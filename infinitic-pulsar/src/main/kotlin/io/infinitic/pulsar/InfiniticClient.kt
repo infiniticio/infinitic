@@ -50,19 +50,19 @@ class InfiniticClient private constructor(
         /*
         Create InfiniticClient
         */
-        @JvmStatic
+        @JvmStatic @JvmOverloads
         fun from(
-            name: String?,
             pulsarClient: PulsarClient,
-            tenant: String,
-            namespace: String
+            pulsarTenant: String,
+            pulsarNamespace: String,
+            clientName: String? = null
         ): InfiniticClient {
-            // checks unicity if not null, provides a unique name if null
-            val clientName = getPulsarName(pulsarClient, name)
+            // checks uniqueness if not null, provides a unique name if null
+            val clientName = getPulsarName(pulsarClient, clientName)
 
-            val clientOutput = PulsarOutputs.from(pulsarClient, tenant, namespace, clientName).clientOutput
+            val clientOutput = PulsarOutputs.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName).clientOutput
 
-            val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, tenant, namespace)
+            val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
                 .newClientResponseConsumer(clientName)
 
             return InfiniticClient(clientResponseConsumer, clientOutput) { pulsarClient.close() }
@@ -79,10 +79,10 @@ class InfiniticClient private constructor(
                 .build()
 
             return from(
-                config.name,
                 pulsarClient,
                 config.pulsar.tenant,
-                config.pulsar.namespace
+                config.pulsar.namespace,
+                config.name
             )
         }
 

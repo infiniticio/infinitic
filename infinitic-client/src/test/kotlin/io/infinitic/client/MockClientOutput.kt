@@ -64,7 +64,6 @@ internal class MockClientOutput(
         }
         coEvery { sendToWorkflowEngineFn(capture(workflowSlot), 0F) } coAnswers {
             val msg = workflowSlot.captured
-            println(msg)
             if (msg is DispatchWorkflow && msg.clientWaiting) {
                 client.handle(
                     WorkflowCompleted(

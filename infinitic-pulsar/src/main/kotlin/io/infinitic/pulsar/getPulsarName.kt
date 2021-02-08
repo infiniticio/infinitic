@@ -30,7 +30,7 @@ import org.apache.pulsar.client.api.PulsarClientException
 import kotlin.system.exitProcess
 
 /*
-Utility useful to check the unicity of a connected producer's name or to provide a unique name
+Utility useful to check the uniqueness of a connected producer's name or to provide a unique name
  */
 internal fun getPulsarName(pulsarClient: PulsarClient, name: String?): String {
     val producer = try {
