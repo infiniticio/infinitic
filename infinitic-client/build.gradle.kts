@@ -25,6 +25,7 @@
 
 dependencies {
     implementation(Libs.Coroutines.jdk8)
+    implementation(Libs.Kotlin.reflect)
 
     api(project(":infinitic-common"))
 }

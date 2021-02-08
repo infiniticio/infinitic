@@ -25,24 +25,22 @@
 
 package io.infinitic.workflows
 
-import java.lang.reflect.Method
+import io.infinitic.common.proxies.Dispatcher
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
 
-interface WorkflowTaskContext {
+interface WorkflowTaskContext : Dispatcher {
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
-
-    fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S>
 
     fun <S> async(branch: () -> S): Deferred<S>
 
     fun <S> inline(task: () -> S): S
 
-    fun <T> await(deferred: Deferred<T>): Deferred<T>
+    fun <S> await(deferred: Deferred<S>): S
 
-    fun <T> result(deferred: Deferred<T>): T
+    fun <S> status(deferred: Deferred<S>): DeferredStatus
 
-    fun <T> status(deferred: Deferred<T>): DeferredStatus
+    fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S>
 
-    fun <T> dispatchTask(method: Method, args: Array<out Any>): Deferred<T>
-
-    fun <T> dispatchWorkflow(method: Method, args: Array<out Any>): Deferred<T>
+    fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S>
 }

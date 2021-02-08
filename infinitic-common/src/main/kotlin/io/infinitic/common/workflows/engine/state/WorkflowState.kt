@@ -26,6 +26,7 @@
 package io.infinitic.common.workflows.engine.state
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
@@ -44,6 +45,16 @@ import java.nio.ByteBuffer
 
 @Serializable
 data class WorkflowState(
+    /*
+    Name of client that dispatched this workflow
+     */
+    val clientName: ClientName,
+
+    /*
+    Does the client synchronously waits for the output?
+     */
+    val clientWaiting: Boolean,
+
     /*
     Id of last received message (used to ensure idempotency)
      */

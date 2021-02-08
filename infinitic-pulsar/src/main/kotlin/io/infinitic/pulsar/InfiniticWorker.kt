@@ -72,14 +72,14 @@ class InfiniticWorker(
         Create InfiniticWorker from a WorkerConfig loaded from a resource
         */
         @JvmStatic
-        fun fromResource(vararg resources: String) =
+        fun fromConfigResource(vararg resources: String) =
             fromConfig(loadConfigFromResource(resources.toList()))
 
         /*
         Create InfiniticWorker from a WorkerConfig loaded from a file
         */
         @JvmStatic
-        fun fromFile(vararg files: String) =
+        fun fromConfigFile(vararg files: String) =
             fromConfig(loadConfigFromFile(files.toList()))
     }
 
@@ -94,28 +94,25 @@ class InfiniticWorker(
     fun start() = runBlocking {
         logger.info("InfiniticWorker - starting with config {}", config)
 
+        val workerName = getPulsarName(pulsarClient, config.name)
         val tenant = config.pulsar.tenant
         val namespace = config.pulsar.namespace
         val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
-        val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, producerName = getWorkerName(config))
+        val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, workerName)
 
-        startWorkflowEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs)
+        startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        startTaskEngineWorkers(config, pulsarConsumerFactory, pulsarOutputs)
+        startTaskEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        startMonitoringWorkers(config, pulsarConsumerFactory, pulsarOutputs)
+        startMonitoringWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        startTaskExecutorWorkers(config, pulsarConsumerFactory, pulsarOutputs)
+        startTaskExecutorWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        println("Ready")
-    }
-
-    private fun getWorkerName(config: WorkerConfig) = when (config.name) {
-        null -> null
-        else -> "worker: ${config.name}"
+        println("worker \"$workerName\" ready")
     }
 
     private fun CoroutineScope.startWorkflowEngineWorkers(
+        consumerName: String,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
@@ -128,7 +125,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
                     startPulsarWorkflowEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName = getWorkerName(config), counter),
+                        pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName, counter),
                         pulsarOutputs.workflowEngineOutput,
                         pulsarOutputs.sendToWorkflowEngineDeadLetters,
                         keyValueStorage
@@ -140,6 +137,7 @@ class InfiniticWorker(
     }
 
     private fun CoroutineScope.startTaskEngineWorkers(
+        consumerName: String,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
@@ -152,7 +150,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting task engine {}", counter)
                     startPulsarTaskEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName = getWorkerName(config), counter),
+                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
                         pulsarOutputs.taskEngineOutput,
                         pulsarOutputs.sendToTaskEngineDeadLetters,
                         keyValueStorage
@@ -164,6 +162,7 @@ class InfiniticWorker(
     }
 
     private fun CoroutineScope.startMonitoringWorkers(
+        consumerName: String,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
@@ -175,7 +174,7 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
                         counter,
-                        pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName = getWorkerName(config), counter),
+                        pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName, counter),
                         pulsarOutputs.monitoringPerNameOutput,
                         pulsarOutputs.sendToMonitoringPerNameDeadLetters,
                         keyValueStorage
@@ -184,7 +183,7 @@ class InfiniticWorker(
 
                 logger.info("InfiniticWorker - starting monitoring global")
                 startPulsarMonitoringGlobalWorker(
-                    pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName = getWorkerName(config)),
+                    pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName),
                     pulsarOutputs.sendToMonitoringGlobalDeadLetters,
                     InMemoryStorage()
                 )
@@ -193,6 +192,7 @@ class InfiniticWorker(
     }
 
     private fun CoroutineScope.startTaskExecutorWorkers(
+        consumerName: String,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
@@ -211,7 +211,7 @@ class InfiniticWorker(
                         dispatcher,
                         workflow.name,
                         it,
-                        pulsarConsumerFactory.newWorkflowExecutorConsumer(consumerName = getWorkerName(config), it, workflow.name),
+                        pulsarConsumerFactory.newWorkflowExecutorConsumer(consumerName, it, workflow.name),
                         pulsarOutputs.taskExecutorOutput,
                         pulsarOutputs.sendToTaskExecutorDeadLetters,
                         taskExecutorRegister,
@@ -238,7 +238,7 @@ class InfiniticWorker(
                         dispatcher,
                         task.name,
                         it,
-                        pulsarConsumerFactory.newTaskExecutorConsumer(consumerName = getWorkerName(config), it, task.name),
+                        pulsarConsumerFactory.newTaskExecutorConsumer(consumerName, it, task.name),
                         pulsarOutputs.taskExecutorOutput,
                         pulsarOutputs.sendToTaskExecutorDeadLetters,
                         taskExecutorRegister,

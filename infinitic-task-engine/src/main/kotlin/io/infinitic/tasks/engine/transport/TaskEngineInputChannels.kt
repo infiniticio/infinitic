@@ -36,5 +36,5 @@ typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 data class TaskEngineInputChannels<T : MessageToProcess<*>>(
     val taskCommandsChannel: ReceiveChannel<T>,
     val taskEventsChannel: Channel<T>,
-    val taskResultsChannel: SendChannel<T>
+    val logChannel: SendChannel<T>
 )

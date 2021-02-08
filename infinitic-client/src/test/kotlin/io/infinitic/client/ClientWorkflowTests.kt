@@ -41,11 +41,15 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
+import kotlinx.coroutines.coroutineScope
 
 class ClientWorkflowTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
-    val client = InfiniticClient(MockClientOutput(taskSlot, workflowSlot))
+    val clientOutput = MockClientOutput(taskSlot, workflowSlot)
+    val client = InfiniticClient(clientOutput)
+    clientOutput.client = client
+    val fakeWorkflow = client.workflow(FakeWorkflow::class.java)
 
     beforeTest {
         taskSlot.clear()
@@ -54,16 +58,20 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow without parameter" {
         // when
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1() })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodInput = MethodInput(),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -71,16 +79,20 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with a primitive as parameter" {
         // when
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1(0) })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(0) })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
             methodInput = MethodInput.from(0),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -88,16 +100,20 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple method definition" {
         // when
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1("a") })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1("a") })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodInput = MethodInput.from("a"),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -105,16 +121,20 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple parameters" {
         // when
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1(0, "a") })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(0, "a") })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodInput = MethodInput.from(0, "a"),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -123,17 +143,46 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val klass = FakeClass()
-        val workflowId = WorkflowId(client.startWorkflow<FakeWorkflow> { m1(klass) })
+        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(klass) })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
 
         msg shouldBe DispatchWorkflow(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             methodInput = MethodInput.from(klass),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
+            workflowOptions = WorkflowOptions(),
+            workflowMeta = WorkflowMeta()
+        )
+    }
+
+    "Should be able to dispatch a workflow synchronously" {
+        var result = ""
+        // when
+        coroutineScope {
+            result = fakeWorkflow.m1(0, "a")
+        }
+        // then
+        result shouldBe "success"
+
+        val msg = workflowSlot.captured
+        msg shouldBe DispatchWorkflow(
+            clientName = clientOutput.clientName,
+            clientWaiting = true,
+            workflowId = msg.workflowId,
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+            methodInput = MethodInput.from(0, "a"),
+            parentWorkflowId = null,
+            parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )

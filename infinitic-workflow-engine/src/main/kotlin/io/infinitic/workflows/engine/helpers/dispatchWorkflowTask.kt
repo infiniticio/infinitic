@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.engine.helpers
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.interfaces.inc
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
@@ -66,6 +67,8 @@ suspend fun dispatchWorkflowTask(
     val workflowTaskId = WorkflowTaskId()
 
     val workflowTask = DispatchTask(
+        clientName = ClientName("workflow engine"),
+        clientWaiting = false,
         taskId = TaskId("$workflowTaskId"),
         taskName = TaskName(WorkflowTask::class.java.name),
         methodName = MethodName(WorkflowTask.DEFAULT_METHOD),

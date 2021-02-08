@@ -25,16 +25,13 @@
 
 package io.infinitic.pulsar.samples
 
-import io.infinitic.workflows.AbstractWorkflow
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
 import io.infinitic.workflows.or
-import io.infinitic.workflows.task
-import io.infinitic.workflows.workflow
 import java.time.LocalDateTime
 
-interface WorkflowA : Workflow {
+interface WorkflowA {
     fun empty(): String
     fun seq1(): String
     fun seq2(): String
@@ -59,7 +56,7 @@ interface WorkflowA : Workflow {
     fun prop6(): String
 }
 
-class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
+class WorkflowAImpl : Workflow(), WorkflowA {
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
     private var p1 = ""
@@ -84,7 +81,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         str = taskA.concat(str, "2")
         str = taskA.concat(str, "3")
 
-        return str + d.result() // should be "23ba"
+        return str + d.await() // should be "23ba"
     }
 
     override fun seq3(): String {
@@ -94,7 +91,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         str = taskA.concat(str, "2")
         str = taskA.concat(str, "3")
 
-        return str + d.result() // should be "23ba"
+        return str + d.await() // should be "23ba"
     }
 
     override fun seq4(): String {
@@ -107,7 +104,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         str = taskA.concat(str, "2")
         str = taskA.concat(str, "3")
 
-        return str + d.result() // should be "23bac"
+        return str + d.await() // should be "23bac"
     }
 
     override fun or1(): String {
@@ -115,7 +112,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         val d2 = async(taskA) { reverse("cd") }
         val d3 = async(taskA) { reverse("ef") }
 
-        return (d1 or d2 or d3).result() // should be "ba" or "dc" or "fe"
+        return (d1 or d2 or d3).await() // should be "ba" or "dc" or "fe"
     }
 
     override fun or2(): Any {
@@ -123,7 +120,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         val d2 = async(taskA) { reverse("cd") }
         val d3 = async(taskA) { reverse("ef") }
 
-        return ((d1 and d2) or d3).result() // should be listOf("ba","dc") or "fe"
+        return ((d1 and d2) or d3).await() // should be listOf("ba","dc") or "fe"
     }
 
     override fun or3(): String {
@@ -132,7 +129,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         list.add(async(taskA) { reverse("cd") })
         list.add(async(taskA) { reverse("ef") })
 
-        return list.or().result() // should be "ba" or "dc" or "fe"
+        return list.or().await() // should be "ba" or "dc" or "fe"
     }
 
     override fun and1(): List<String> {
@@ -140,7 +137,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         val d2 = async(taskA) { reverse("cd") }
         val d3 = async(taskA) { reverse("ef") }
 
-        return (d1 and d2 and d3).result() // should be listOf("ba","dc","fe")
+        return (d1 and d2 and d3).await() // should be listOf("ba","dc","fe")
     }
 
     override fun and2(): List<String> {
@@ -150,7 +147,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         list.add(async(taskA) { reverse("cd") })
         list.add(async(taskA) { reverse("ef") })
 
-        return list.and().result() // should be listOf("ba","dc","fe")
+        return list.and().await() // should be listOf("ba","dc","fe")
     }
 
     override fun and3(): List<String> {
@@ -159,7 +156,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         for (i in 1..1_00) {
             list.add(async(taskA) { reverse("ab") })
         }
-        return list.and().result() // should be listOf("ba","dc","fe")
+        return list.and().await() // should be listOf("ba","dc","fe")
     }
 
     override fun inline(): String {
@@ -196,7 +193,7 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         val str = taskA.reverse("12")
         val d = async(workflowB) { concat(str) }
 
-        return taskA.concat(d.result(), str) // should be "21abc21"
+        return taskA.concat(d.await(), str) // should be "21abc21"
     }
 
     override fun prop1(): String {
@@ -277,9 +274,9 @@ class WorkflowAImpl : AbstractWorkflow(), WorkflowA {
         }
         d1.await()
         p1 += "a"
-        p1 = d2.result() + p1
-        // unfortunately p1 = p1 + d2.result() would fail the test
-        // because d2.result() updates p1 value too lately in the expression
+        p1 = d2.await() + p1
+        // unfortunately p1 = p1 + d2.await() would fail the test
+        // because d2.await() updates p1 value too lately in the expression
         // not sure, how to avoid that
 
         return p1 // should be "abab"

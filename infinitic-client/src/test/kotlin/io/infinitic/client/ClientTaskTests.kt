@@ -30,22 +30,33 @@ import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
+import kotlinx.coroutines.coroutineScope
 
 class ClientTaskTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
-    val client = InfiniticClient(MockClientOutput(taskSlot, workflowSlot))
+    val clientOutput = MockClientOutput(taskSlot, workflowSlot)
+    val client = InfiniticClient(clientOutput)
+    clientOutput.client = client
+    // task stub
+    val id = TestFactory.random<String>()
+    val fakeTask = client.task(FakeTask::class.java)
+    val fakeTaskId = client.task(FakeTask::class.java, id)
 
     beforeTest {
         taskSlot.clear()
@@ -54,11 +65,13 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch method without parameter" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1() })
+        val taskId = TaskId(client.async(fakeTask) { m1() })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -73,11 +86,13 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as parameter" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1(0) })
+        val taskId = TaskId(client.async(fakeTask) { m1(0) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -92,11 +107,13 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with null as parameter" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1(null) })
+        val taskId = TaskId(client.async(fakeTask) { m1(null) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -111,11 +128,13 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with multiple definition" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1("a") })
+        val taskId = TaskId(client.async(fakeTask) { m1("a") })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -130,11 +149,13 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with multiple parameters" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m1(0, "a") })
+        val taskId = TaskId(client.async(fakeTask) { m1(0, "a") })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -150,12 +171,14 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with an interface as parameter" {
         // when
         val fake = FakeClass()
-        val taskId = TaskId(client.startTask<FakeTask> { m1(fake) })
+        val taskId = TaskId(client.async(fakeTask) { m1(fake) })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
@@ -170,12 +193,14 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch a method with a primitive as return value" {
         // when
-        val taskId = TaskId(client.startTask<FakeTask> { m2() })
+        val taskId = TaskId(client.async(fakeTask) { m2() })
         // then
         taskSlot.isCaptured shouldBe true
         val msg = taskSlot.captured
 
         msg shouldBe DispatchTask(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m2"),
@@ -188,9 +213,77 @@ class ClientTaskTests : StringSpec({
         )
     }
 
-    // TODO: add tests for cancel method
+    "Should be able to dispatch a method synchronously" {
+        // when
+        var result: String
+        coroutineScope {
+            result = fakeTask.m1(0, "a")
+        }
+        // then
+        result shouldBe "success"
+        val msg = taskSlot.captured
+        msg shouldBe DispatchTask(
+            clientName = clientOutput.clientName,
+            clientWaiting = true,
+            taskId = msg.taskId,
+            taskName = TaskName(FakeTask::class.java.name),
+            methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+            methodInput = MethodInput.from(0, "a"),
+            workflowId = null,
+            methodRunId = null,
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta()
+        )
+    }
 
-    // TODO: add tests for retry method
+    "Should be able to cancel a task" {
+        // when
+        client.cancel(fakeTaskId)
+        val taskId = TaskId(id)
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+
+        msg shouldBe CancelTask(
+            taskId = taskId,
+            taskOutput = MethodOutput.from(null)
+        )
+    }
+
+    "Should be able to cancel a task with output" {
+        val output = TestFactory.random<String>()
+        // when
+        client.cancel(fakeTaskId, output)
+        val taskId = TaskId(id)
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+
+        msg shouldBe CancelTask(
+            taskId = taskId,
+            taskOutput = MethodOutput.from(output)
+        )
+    }
+
+    "Should be able to retry a task" {
+        // when
+        client.retry(fakeTaskId)
+        val taskId = TaskId(id)
+        // then
+        taskSlot.isCaptured shouldBe true
+        val msg = taskSlot.captured
+
+        msg shouldBe RetryTask(
+            taskId = taskId,
+            taskName = TaskName(FakeTask::class.java.name),
+            methodName = null,
+            methodParameterTypes = null,
+            methodInput = null,
+            taskOptions = null,
+            taskMeta = null
+        )
+    }
 
     // TODO: add tests for options
 

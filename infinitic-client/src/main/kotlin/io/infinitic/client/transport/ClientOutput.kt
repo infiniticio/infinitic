@@ -25,6 +25,7 @@
 
 package io.infinitic.client.transport
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -33,6 +34,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 interface ClientOutput {
+    val clientName: ClientName
     val sendToWorkflowEngineFn: SendToWorkflowEngine
     val sendToTaskEngineFn: SendToTaskEngine
 

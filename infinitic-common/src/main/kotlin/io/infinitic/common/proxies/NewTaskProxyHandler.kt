@@ -23,37 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.executors.proxies
+package io.infinitic.common.proxies
 
-import io.infinitic.workflows.Workflow
-import io.infinitic.workflows.WorkflowTaskContext
-import java.lang.reflect.InvocationHandler
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskOptions
 import java.lang.reflect.Method
-import java.lang.reflect.Proxy
 
-class WorkflowProxyHandler<T : Workflow>(
-    private val klass: Class<T>,
-    private val workflowTaskContextFun: () -> WorkflowTaskContext
-) : InvocationHandler {
+class NewTaskProxyHandler<T : Any>(
+    val klass: Class<T>,
+    val taskOptions: TaskOptions,
+    val taskMeta: TaskMeta,
+    private val dispatcherFn: () -> Dispatcher
+) : MethodProxyHandler<T>(klass) {
 
-    /*
-     * implements the synchronous processing of a task or child workflow
-     */
-    override fun invoke(proxy: Any?, method: Method, args: Array<out Any>?): Any? {
-        if (method.name == "toString") return klass.name
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        val any = super.invoke(proxy, method, args)
 
-        return workflowTaskContextFun()
-            .dispatchWorkflow<T>(method, args ?: arrayOf())
-            .result()
+        return when (isSync) {
+            true -> dispatcherFn().dispatchTaskAndWaitResult(this)
+            false -> any
+        }
     }
-
-    /*
-     * provides a proxy instance of type T
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun instance(): T = Proxy.newProxyInstance(
-        klass.classLoader,
-        arrayOf(klass),
-        this
-    ) as T
 }

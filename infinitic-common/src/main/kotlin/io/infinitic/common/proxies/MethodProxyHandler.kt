@@ -25,50 +25,73 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.tasks.exceptions.MultipleMethodCallsAtDispatch
+import io.infinitic.common.tasks.exceptions.MultipleMethodCalls
+import java.lang.Thread.currentThread
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.util.concurrent.ConcurrentHashMap
 
-class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
-    var method: Method? = null
-    lateinit var args: Array<out Any>
+open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
+    // multiple threads can use a same MethodProxyHandler instance without mixing values
+    private val _dataMethodHash = ConcurrentHashMap<Thread, DataMethod>()
+    private val dataMethod: DataMethod
+        get() = _dataMethodHash.getOrPut(currentThread(), { DataMethod() })
+
+    var isSync: Boolean
+        get() = dataMethod.isSync
+        set(value) { dataMethod.isSync = value }
+
+    var method: Method?
+        get() = dataMethod.method
+        set(value) { dataMethod.method = value }
+
+    var args: Array<out Any>
+        get() = dataMethod.args
+        set(value) { dataMethod.args = value }
 
     /*
      * invoke method is called when a method is applied to the proxy instance
      */
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        // toString method is used to retrieve initial class
         if (method.name == "toString") return klass.name
 
         // invoke should called only once per ProxyHandler instance
-        if (this.method != null) throw MultipleMethodCallsAtDispatch(method.declaringClass.name, this.method!!.name, method.name)
+        if (this.method != null) throw MultipleMethodCalls(method.declaringClass.name, this.method?.name, method.name)
 
-        // methods and args are stored for later use
+        // method
         this.method = method
         this.args = args ?: arrayOf()
 
-        // explicit cast needed for all primitive types
-        return when (method.returnType.name) {
-            "long" -> 0L
-            "int" -> 0.toInt()
-            "short" -> 0.toShort()
-            "byte" -> 0.toByte()
-            "double" -> 0.toDouble()
-            "float" -> 0.toFloat()
-            "char" -> 0.toChar()
-            "boolean" -> false
-            else -> null
-        }
+        return getAsyncReturnValue(method)
     }
 
     /*
-     * provides a proxy instance of type T
+     * provides a stub of type T
      */
     @Suppress("UNCHECKED_CAST")
-    fun instance() = Proxy.newProxyInstance(
+    fun stub() = Proxy.newProxyInstance(
         klass.classLoader,
-        kotlin.arrayOf(klass),
+        arrayOf(klass),
         this
     ) as T
+
+    /*
+     * Prepare for reuse
+     */
+    fun reset() {
+        _dataMethodHash.remove(currentThread())
+    }
+
+    private fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {
+        "long" -> 0L
+        "int" -> 0
+        "short" -> 0.toShort()
+        "byte" -> 0.toByte()
+        "double" -> 0.toDouble()
+        "float" -> 0.toFloat()
+        "char" -> 0.toChar()
+        "boolean" -> false
+        else -> null
+    }
 }

@@ -25,6 +25,8 @@
 
 package io.infinitic.workflows.engine.transport
 
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -34,11 +36,25 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 interface WorkflowEngineOutput {
+    val sendToClientResponseFn: SendToClientResponse
     val sendToWorkflowEngineFn: SendToWorkflowEngine
     val sendToTaskEngineFn: SendToTaskEngine
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun sendToClientResponse(
+        state: WorkflowState,
+        sendToClientResponse: ClientResponseMessage
+    ) {
+        logger.debug(
+            "from messageId {}: workflowId {} - sendToClientResponse {}",
+            state.lastMessageId,
+            state.workflowId,
+            sendToClientResponse
+        )
+        sendToClientResponseFn(sendToClientResponse)
+    }
 
     suspend fun sendToWorkflowEngine(
         state: WorkflowState,

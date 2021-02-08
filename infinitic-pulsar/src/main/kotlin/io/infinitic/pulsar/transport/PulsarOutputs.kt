@@ -26,6 +26,10 @@
 package io.infinitic.pulsar.transport
 
 import io.infinitic.client.transport.ClientDataOutput
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.clients.messages.ClientResponseEnvelope
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
@@ -46,6 +50,7 @@ import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
+import io.infinitic.pulsar.topics.ClientResponseTopic
 import io.infinitic.pulsar.topics.MonitoringGlobalDeadLettersTopic
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameDeadLettersTopic
@@ -72,7 +77,8 @@ import org.slf4j.LoggerFactory
 class PulsarOutputs(
     private val pulsarMessageBuilder: PulsarMessageBuilder,
     private val pulsarTenant: String,
-    private val pulsarNamespace: String
+    private val pulsarNamespace: String,
+    private val clientName: ClientName
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -81,17 +87,40 @@ class PulsarOutputs(
         /*
         Create a new PulsarTransport from a Pulsar Client
          */
-        fun from(pulsarClient: PulsarClient, pulsarTenant: String, pulsarNamespace: String, producerName: String?) =
-            PulsarOutputs(PulsarMessageBuilderFromClient(pulsarClient, producerName), pulsarTenant, pulsarNamespace)
+        fun from(
+            pulsarClient: PulsarClient,
+            pulsarTenant: String,
+            pulsarNamespace: String,
+            name: String
+        ) = PulsarOutputs(
+            PulsarMessageBuilderFromClient(pulsarClient, name),
+            pulsarTenant,
+            pulsarNamespace,
+            ClientName(name)
+        )
 
         /*
         Create a new PulsarTransport from a Pulsar Function Context
          */
-        fun from(context: Context) =
-            PulsarOutputs(PulsarMessageBuilderFromFunction(context), context.tenant, context.namespace)
+        fun from(context: Context) = PulsarOutputs(
+            PulsarMessageBuilderFromFunction(context),
+            context.tenant,
+            context.namespace,
+            ClientName("client: unused")
+        )
     }
 
-    private val sendToWorkflowEngineCommands: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
+    private fun sendToClientResponse(): SendToClientResponse = { message: ClientResponseMessage ->
+        val clientName = "${message.clientName}"
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, ClientResponseTopic.name(clientName)),
+            ClientResponseEnvelope.from(message),
+            null,
+            0F
+        )
+    }
+
+    private fun sendToWorkflowEngineCommands(): SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name),
             WorkflowEngineEnvelope.from(message),
@@ -100,7 +129,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToWorkflowEngineEvents: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
+    private fun sendToWorkflowEngineEvents(): SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name),
             WorkflowEngineEnvelope.from(message),
@@ -109,7 +138,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToTaskEngineCommands: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+    private fun sendToTaskEngineCommands(): SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
             TaskEngineEnvelope.from(message),
@@ -118,7 +147,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToTaskEngineEvents: SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+    private fun sendToTaskEngineEvents(): SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name),
             TaskEngineEnvelope.from(message),
@@ -127,7 +156,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToTaskExecutors: SendToTaskExecutors = { message: TaskExecutorMessage ->
+    private fun sendToTaskExecutors(): SendToTaskExecutors = { message: TaskExecutorMessage ->
         val taskName = "${message.taskName}"
         val topicName = if (taskName == WorkflowTask::class.java.name) {
             WorkflowExecutorTopic.name(message.taskMeta.get(WorkflowTask.META_WORKFLOW_NAME) as String)
@@ -143,7 +172,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToMonitoringPerName: SendToMonitoringPerName = { message: MonitoringPerNameEngineMessage ->
+    private fun sendToMonitoringPerName(): SendToMonitoringPerName = { message: MonitoringPerNameEngineMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name),
             MonitoringPerNameEnvelope.from(message),
@@ -152,7 +181,7 @@ class PulsarOutputs(
         )
     }
 
-    private val sendToMonitoringGlobal: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+    private fun sendToMonitoringGlobal(): SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name),
             MonitoringGlobalEnvelope.from(message),
@@ -162,28 +191,31 @@ class PulsarOutputs(
     }
 
     val clientOutput = ClientDataOutput(
-        sendToWorkflowEngineCommands,
-        sendToTaskEngineCommands
+        clientName,
+        sendToWorkflowEngineCommands(),
+        sendToTaskEngineCommands()
     )
 
     val workflowEngineOutput = WorkflowEngineDataOutput(
-        sendToWorkflowEngineEvents,
-        sendToTaskEngineCommands
+        sendToClientResponse(),
+        sendToWorkflowEngineEvents(),
+        sendToTaskEngineCommands()
     )
 
     val taskEngineOutput = TaskEngineDataOutput(
-        sendToWorkflowEngineEvents,
-        sendToTaskEngineEvents,
-        sendToTaskExecutors,
-        sendToMonitoringPerName
+        sendToClientResponse(),
+        sendToWorkflowEngineEvents(),
+        sendToTaskEngineEvents(),
+        sendToTaskExecutors(),
+        sendToMonitoringPerName()
     )
 
     val monitoringPerNameOutput = MonitoringPerNameDataOutput(
-        sendToMonitoringGlobal
+        sendToMonitoringGlobal()
     )
 
     val taskExecutorOutput = TaskExecutorDataOutput(
-        sendToTaskEngineEvents
+        sendToTaskEngineEvents()
     )
 
     val sendToWorkflowEngineDeadLetters: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: Float ->

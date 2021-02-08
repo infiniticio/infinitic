@@ -30,7 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
 interface TaskTest {
-    fun log()
+    fun log(): String
 }
 
 class TaskException(val log: String) : Exception()
@@ -40,7 +40,7 @@ class TaskTestImpl : TaskTest {
     lateinit var behavior: (index: Int, retry: Int) -> Status
     lateinit var log: String
 
-    override fun log() {
+    override fun log(): String {
         val status = behavior(context.taskRetry, context.taskAttemptRetry)
 
         log = context.previousTaskAttemptError?.let { (it as TaskException).log } ?: ""
@@ -54,6 +54,8 @@ class TaskTestImpl : TaskTest {
             Status.FAILED_WITH_RETRY, Status.FAILED_WITHOUT_RETRY -> throw TaskException(log)
             else -> Unit
         }
+
+        return log
     }
 
     fun getRetryDelay(): Float? {

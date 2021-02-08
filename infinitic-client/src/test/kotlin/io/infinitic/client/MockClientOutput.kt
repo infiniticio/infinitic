@@ -26,25 +26,53 @@
 package io.infinitic.client
 
 import io.infinitic.client.transport.ClientOutput
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.clients.messages.TaskCompleted
+import io.infinitic.common.clients.messages.WorkflowCompleted
+import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.mockk.CapturingSlot
-import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.just
 import io.mockk.mockk
 
 internal class MockClientOutput(
     taskSlot: CapturingSlot<TaskEngineMessage>,
     workflowSlot: CapturingSlot<WorkflowEngineMessage>
 ) : ClientOutput {
+    override val clientName = ClientName("clientTest")
     override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
     override val sendToWorkflowEngineFn = mockk<SendToWorkflowEngine>()
+    lateinit var client: InfiniticClient
 
     init {
-        coEvery { sendToTaskEngineFn(capture(taskSlot), 0F) } just Runs
-        coEvery { sendToWorkflowEngineFn(capture(workflowSlot), 0F) } just Runs
+        coEvery { sendToTaskEngineFn(capture(taskSlot), 0F) } coAnswers {
+            val msg = taskSlot.captured
+            if (msg is DispatchTask && msg.clientWaiting) {
+                client.handle(
+                    TaskCompleted(
+                        clientName = clientName,
+                        taskId = msg.taskId,
+                        taskOutput = MethodOutput.from("success")
+                    )
+                )
+            }
+        }
+        coEvery { sendToWorkflowEngineFn(capture(workflowSlot), 0F) } coAnswers {
+            val msg = workflowSlot.captured
+            if (msg is DispatchWorkflow && msg.clientWaiting) {
+                client.handle(
+                    WorkflowCompleted(
+                        clientName = clientName,
+                        workflowId = msg.workflowId,
+                        workflowOutput = MethodOutput.from("success")
+                    )
+                )
+            }
+        }
     }
 }

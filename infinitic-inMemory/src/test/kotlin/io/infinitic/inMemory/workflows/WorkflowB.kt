@@ -26,17 +26,14 @@
 package io.infinitic.inMemory.workflows
 
 import io.infinitic.inMemory.tasks.TaskA
-import io.infinitic.workflows.AbstractWorkflow
 import io.infinitic.workflows.Workflow
-import io.infinitic.workflows.task
-import io.infinitic.workflows.workflow
 
-interface WorkflowB : Workflow {
+interface WorkflowB {
     fun concat(input: String): String
     fun factorial(n: Long): Long
 }
 
-class WorkflowBImpl() : AbstractWorkflow(), WorkflowB {
+class WorkflowBImpl() : Workflow(), WorkflowB {
     private val task = task<TaskA>()
     private val workflow = workflow<WorkflowB>()
 

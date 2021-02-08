@@ -25,44 +25,64 @@
 
 package io.infinitic.workflows
 
-interface Workflow {
-    /*
-     *  Proxy task (Java syntax)
-     */
-    fun <T : Any> task(klass: Class<out T>): T
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+
+abstract class Workflow {
+    lateinit var context: WorkflowTaskContext
 
     /*
-    *  Proxy workflow (Java syntax)
-    */
-    fun <T : Workflow> workflow(klass: Class<out T>): T
+     *  Stub task
+     */
+    @JvmOverloads fun <T : Any> task(
+        klass: Class<out T>,
+        options: TaskOptions = TaskOptions(),
+        meta: TaskMeta = TaskMeta()
+    ): T = NewTaskProxyHandler(klass, options, meta) { context }.stub()
 
     /*
-     *  Dispatch a task asynchronously
+     * Stub task
+     * (Kotlin way)
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
+    inline fun <reified T : Any> task(
+        options: TaskOptions = TaskOptions(),
+        meta: TaskMeta = TaskMeta()
+    ): T = NewTaskProxyHandler(T::class.java, options, meta) { context }.stub()
 
     /*
-     * Dispatch a workflow asynchronously
+     *  Stub workflow
      */
-    fun <T : Workflow, S> async(proxy: T, method: T.() -> S): Deferred<S>
+    @JvmOverloads fun <T : Any> workflow(
+        klass: Class<out T>,
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta()
+    ): T = NewWorkflowProxyHandler(klass, options, meta) { context }.stub()
+
+    /*
+     *  Stub workflow
+     * (Kotlin way)
+     */
+    inline fun <reified T : Any> workflow(
+        options: WorkflowOptions = WorkflowOptions(),
+        meta: WorkflowMeta = WorkflowMeta()
+    ): T = NewWorkflowProxyHandler(T::class.java, options, meta) { context }.stub()
+
+    /*
+     *  Dispatch a task or a workflow asynchronously
+     */
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
 
     /*
      * Create an async branch
      */
-    fun <S> async(branch: () -> S): Deferred<S>
+    fun <S> async(branch: () -> S): Deferred<S> = context.async(branch)
 
     /*
      * Create an inline task
      */
-    fun <S> inline(task: () -> S): S
+    fun <S> inline(task: () -> S): S = context.inline(task)
 }
-
-/*
- * Proxy task (preferred Kotlin syntax)
- */
-inline fun <reified T : Any> Workflow.task() = this.task(T::class.java)
-
-/*
- * Proxy workflow (preferred Kotlin syntax)
- */
-inline fun <reified T : Workflow> Workflow.workflow() = this.workflow(T::class.java)

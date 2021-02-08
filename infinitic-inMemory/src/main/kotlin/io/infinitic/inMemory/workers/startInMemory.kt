@@ -25,6 +25,7 @@
 
 package io.infinitic.inMemory.workers
 
+import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
@@ -50,6 +51,7 @@ private const val N_WORKERS = 10
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     keyValueStorage: KeyValueStorage,
+    clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
     workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>
 ) = launch(Dispatchers.IO) {
@@ -103,6 +105,7 @@ fun CoroutineScope.startInMemory(
 
     startInMemoryTaskEngineWorker(
         keyValueStorage,
+        clientResponsesChannel,
         taskEngineCommandsChannel,
         taskEngineEventsChannel,
         logChannel,
@@ -113,6 +116,7 @@ fun CoroutineScope.startInMemory(
 
     startInMemoryWorkflowEngineWorker(
         keyValueStorage,
+        clientResponsesChannel,
         workflowEngineCommandsChannel,
         workflowEngineEventsChannel,
         logChannel,

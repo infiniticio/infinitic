@@ -25,7 +25,9 @@
 
 package io.infinitic.tasks.executor.workflowTask
 
-import io.infinitic.common.proxies.MethodProxyHandler
+import io.infinitic.common.proxies.NewTaskProxyHandler
+import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.tasks.exceptions.SuspendMethodNotSupported
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -52,16 +54,16 @@ import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
-import io.infinitic.workflows.AbstractWorkflow
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowTaskContext
-import java.lang.reflect.Method
+import java.lang.reflect.Proxy
+import kotlin.reflect.jvm.kotlinFunction
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
-    private val workflow: AbstractWorkflow
+    private val workflow: Workflow
 ) : WorkflowTaskContext {
     // position in the current method processing
     private var methodRunIndex = MethodRunIndex()
@@ -86,48 +88,18 @@ class WorkflowTaskContextImpl(
     override fun <T : Any, S> async(
         proxy: T,
         method: T.() -> S
-    ): Deferred<S> {
-        val command = Class.forName(proxy.toString())
-
-        // get a proxy for T
-        val handler = MethodProxyHandler(command)
-
-        // get a proxy instance
-        @Suppress("UNCHECKED_CAST")
-        val klass = handler.instance() as T
-
-        // this call will capture method and arguments
-        klass.method()
-
-        return dispatchTask<S>(
-            handler.method ?: throw NoMethodCallAtAsync(command::class.java.name),
-            handler.args
-        )
-    }
-
-    /*
-     * Async Workflow dispatching
-     */
-    override fun <T : Workflow, S> async(
-        proxy: T,
-        method: T.() -> S
-    ): Deferred<S> {
-        val command = Class.forName(proxy.toString())
-
-        // get a proxy for T
-        val handler = MethodProxyHandler(command)
-
-        // get a proxy instance
-        @Suppress("UNCHECKED_CAST")
-        val klass = handler.instance() as T
-
-        // this call will capture method and arguments
-        klass.method()
-
-        return dispatchWorkflow<S>(
-            handler.method ?: throw NoMethodCallAtAsync(command::class.java.name),
-            handler.args
-        )
+    ): Deferred<S> = when (val handler = Proxy.getInvocationHandler(proxy)) {
+        is NewTaskProxyHandler<*> -> {
+            handler.isSync = false
+            proxy.method()
+            dispatchTask(handler)
+        }
+        is NewWorkflowProxyHandler<*> -> {
+            handler.isSync = false
+            proxy.method()
+            dispatchWorkflow(handler)
+        }
+        else -> throw RuntimeException("Unknown handler")
     }
 
     /*
@@ -245,7 +217,7 @@ class WorkflowTaskContextImpl(
     /*
      * Deferred await()
      */
-    override fun <T> await(deferred: Deferred<T>): Deferred<T> {
+    override fun <T> await(deferred: Deferred<T>): T {
         // increment position
         positionNext()
 
@@ -267,7 +239,7 @@ class WorkflowTaskContextImpl(
                 throw NewStepException()
             }
             // if this deferred is already terminated, we continue
-            return deferred
+            return result(deferred)
         }
 
         // set status
@@ -288,17 +260,7 @@ class WorkflowTaskContextImpl(
         )
 
         // continue
-        return deferred
-    }
-
-    /*
-     * Deferred result()
-     */
-    @Suppress("UNCHECKED_CAST")
-    override fun <T> result(deferred: Deferred<T>): T = when (val status = await(deferred).stepStatus) {
-        is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
-        is StepStatusCompleted -> status.completionResult.get() as T
-        is StepStatusCanceled -> status.cancellationResult.get() as T
+        return result(deferred)
     }
 
     /*
@@ -313,14 +275,48 @@ class WorkflowTaskContextImpl(
     /*
      * Task dispatching
      */
-    override fun <S> dispatchTask(method: Method, args: Array<out Any>) =
-        dispatch<S>(DispatchTask.from(method, args), CommandSimpleName.fromMethod(method))
+    override fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S> {
+        val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
+        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(handler.klass.name, method.name)
+
+        val deferred = dispatch<S>(
+            DispatchTask.from(method, handler.args, handler.taskMeta, handler.taskOptions),
+            CommandSimpleName.fromMethod(method)
+        )
+        handler.reset()
+        return deferred
+    }
+
+    override fun <S> dispatchTaskAndWaitResult(handler: NewTaskProxyHandler<*>): S =
+        dispatchTask<S>(handler).await()
 
     /*
      * Workflow dispatching
      */
-    override fun <S> dispatchWorkflow(method: Method, args: Array<out Any>) =
-        dispatch<S>(DispatchChildWorkflow.from(method, args), CommandSimpleName.fromMethod(method))
+    override fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S> {
+        val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
+        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(handler.klass.name, method.name)
+
+        val deferred = dispatch<S>(
+            DispatchChildWorkflow.from(method, handler.args, handler.workflowMeta, handler.workflowOptions),
+            CommandSimpleName.fromMethod(method)
+        )
+        handler.reset()
+        return deferred
+    }
+
+    override fun <S> dispatchWorkflowAndWaitResult(handler: NewWorkflowProxyHandler<*>): S =
+        dispatchWorkflow<S>(handler).await()
+
+    /*
+     * Get return value from Deferred
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> result(deferred: Deferred<T>): T = when (val status = deferred.stepStatus) {
+        is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
+        is StepStatusCompleted -> status.completionResult.get() as T
+        is StepStatusCanceled -> status.cancellationResult.get() as T
+    }
 
     /*
      * Go to next position within the same branch
@@ -360,10 +356,10 @@ class WorkflowTaskContextImpl(
             // if this is a new command, we add it to the newCommands list
             newCommands.add(newCommand)
             // and returns a Deferred with an ongoing step
-            return Deferred<S>(Step.Id.from(newCommand), this)
+            return Deferred(Step.Id.from(newCommand), this)
         } else {
             // else ew return a Deferred linked to pastCommand
-            return Deferred<S>(Step.Id.from(pastCommand), this)
+            return Deferred(Step.Id.from(pastCommand), this)
         }
     }
 

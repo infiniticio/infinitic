@@ -115,21 +115,55 @@ data class ExceptionDuringJsonDeserialization(
  * Exceptions in client
  ***********************/
 
-data class NoMethodCallAtDispatch(
+data class NotAStub(
     val name: String,
-    val dispatch: String
+    val async: String
 ) : UserExceptionInClient(
-    msg = "You must use a method of \"$name\" when using \"$dispatch\" method",
-    help = "Make sure to call one method of \"$name\" within the curly braces - example: client.$dispatch<Foo> { bar(*args) }"
+    msg = "The first parameter of the client.$async(.) function should be a stub",
+    help = "Make sure to provide the stub provided by a client.task($name) or client.workflow($name) function."
 )
 
-data class MultipleMethodCallsAtDispatch(
+data class IncorrectExistingStub(
     val name: String,
-    val method1: String,
+    val async: String,
+    val type: String
+) : UserExceptionInClient(
+    msg = "The first parameter of the client.$async(.) function should be the stub of an existing $type",
+    help = "Make sure to provide the stub returned by client.$type($name, id) function, with an id."
+)
+
+data class IncorrectNewStub(
+    val name: String,
+    val async: String,
+    val type: String
+) : UserExceptionInClient(
+    msg = "The first parameter of the client.$async(.) function should be the stub of a new $type",
+    help = "Make sure to provide the stub returned by client.$type($name), without id."
+)
+
+data class SuspendMethodNotSupported(
+    val name: String,
+    val method: String
+) : UserExceptionInClient(
+    msg = "method \"$method\" in class \"$name\" is a suspend function",
+    help = "Suspend functions are not supported"
+)
+
+data class NoMethodCall(
+    val name: String,
+    val async: String
+) : UserExceptionInClient(
+    msg = "The method to call for your task or workflow is missing",
+    help = "Make sure to call a method of \"$name\" in the second parameter of client.$async()"
+)
+
+data class MultipleMethodCalls(
+    val name: String,
+    val method1: String?,
     val method2: String
 ) : UserExceptionInClient(
     msg = "Only one method of \"$name\" can be dispatched at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
-    help = "Make sure you call only one method of the provided interface within curly braces - multiple calls such as client.dispatch<FooInterface> { barMethod(*args); bazMethod(*args) } is forbidden"
+    help = "Make sure you call only one method of \"$name\" - multiple calls in the provided lambda is forbidden"
 )
 
 data class ErrorDuringJsonSerializationOfParameter(

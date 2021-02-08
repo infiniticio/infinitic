@@ -26,6 +26,7 @@
 package io.infinitic.common.tasks.engine.state
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
@@ -46,6 +47,8 @@ import java.nio.ByteBuffer
 
 @Serializable
 data class TaskState(
+    val clientName: ClientName,
+    val clientWaiting: Boolean,
     val lastMessageId: MessageId,
     val taskId: TaskId,
     val taskName: TaskName,

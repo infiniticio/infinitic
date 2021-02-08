@@ -25,12 +25,14 @@
 
 package io.infinitic.pulsar.transport
 
+import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.schemas.schemaDefinition
+import io.infinitic.pulsar.topics.ClientResponseTopic
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameTopic
 import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
@@ -54,6 +56,7 @@ class PulsarConsumerFactory(
 ) {
 
     companion object {
+        const val CLIENT_RESPONSE_SUBSCRIPTION_NAME = "client-response"
         const val WORKFLOW_ENGINE_SUBSCRIPTION_NAME = "workflow-engine"
         const val TASK_ENGINE_SUBSCRIPTION_NAME = "task-engine"
         const val TASK_EXECUTOR_SUBSCRIPTION = "task-executor"
@@ -61,6 +64,17 @@ class PulsarConsumerFactory(
         const val MONITORING_PER_NAME_SUBSCRIPTION = "monitoring-per-name"
         const val MONITORING_GLOBAL_SUBSCRIPTION = "monitoring-global"
     }
+
+    fun newClientResponseConsumer(clientName: String): Consumer<ClientResponseEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<ClientResponseEnvelope>()))
+            .topic(
+                getPersistentTopicFullName(pulsarTenant, pulsarNamespace, ClientResponseTopic.name(clientName)),
+            )
+            .consumerName(clientName)
+            .negativeAckRedeliveryDelay(5, TimeUnit.SECONDS)
+            .subscriptionName(CLIENT_RESPONSE_SUBSCRIPTION_NAME)
+            .subscriptionType(SubscriptionType.Exclusive)
+            .subscribe()
 
     fun newWorkflowEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<WorkflowEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))

@@ -25,6 +25,9 @@
 
 package io.infinitic.inMemory.transport
 
+import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
+import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -40,9 +43,18 @@ import kotlinx.coroutines.launch
 
 class InMemoryWorkflowEngineOutput(
     scope: CoroutineScope,
+    clientResponseChannel: Channel<ClientResponseMessageToProcess>,
     taskCommandsChannel: Channel<TaskEngineMessageToProcess>,
     workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : WorkflowEngineOutput {
+
+    override val sendToClientResponseFn: SendToClientResponse = { msg: ClientResponseMessage ->
+        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+        scope.launch {
+            clientResponseChannel.send(InMemoryMessageToProcess(msg))
+        }
+    }
+
     override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: Float ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {

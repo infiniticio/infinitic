@@ -34,9 +34,15 @@ import java.util.concurrent.ConcurrentHashMap
 
 class PulsarMessageBuilderFromClient(
     private val pulsarClient: PulsarClient,
-    private val producerName: String?
+    private val producerName: String
 ) : PulsarMessageBuilder {
-    private val producers = ConcurrentHashMap<String, Producer<*>>()
+
+    /*
+    Store of exiting producers Map(topic name -> Pulsar producer)
+     */
+    companion object {
+        private val producers = ConcurrentHashMap<String, Producer<*>>()
+    }
 
     override fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O> =
         getOrCreateProducer(topicName, schema).newMessage()
@@ -46,12 +52,8 @@ class PulsarMessageBuilderFromClient(
         pulsarClient
             .newProducer(schema)
             .topic(topicName)
-            .also {
-                if (producerName != null) {
-                    it.producerName(producerName)
-                }
-            }
-            // adding this below is important - without it keyShared guarantees are broken
+            .producerName(producerName)
+            // important for keyShared guarantees
             // https://pulsar.apache.org/docs/en/client-libraries-java/#key_shared
             .batcherBuilder(BatcherBuilder.KEY_BASED)
             .create()

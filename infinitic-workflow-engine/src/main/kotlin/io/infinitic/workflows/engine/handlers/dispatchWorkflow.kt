@@ -46,6 +46,8 @@ suspend fun dispatchWorkflow(
     )
 
     val state = WorkflowState(
+        clientName = message.clientName,
+        clientWaiting = message.clientWaiting,
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,

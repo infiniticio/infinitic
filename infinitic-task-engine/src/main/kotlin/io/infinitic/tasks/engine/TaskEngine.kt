@@ -56,6 +56,7 @@ import io.infinitic.tasks.engine.storage.states.TaskStateStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClient
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine(
@@ -152,6 +153,39 @@ class TaskEngine(
             taskStatus = TaskStatus.TERMINATED_CANCELED
         )
 
+        // if this task belongs to a workflow, send back the TaskCompleted message
+        newState.workflowId?.let {
+            taskEngineOutput.sendToWorkflowEngine(
+                newState,
+                when ("${newState.taskName}") {
+                    WorkflowTask::class.java.name -> WorkflowTaskCompleted(
+                        workflowId = it,
+                        workflowTaskId = WorkflowTaskId("${newState.taskId}"),
+                        workflowTaskOutput = message.taskOutput.get() as WorkflowTaskOutput
+                    )
+                    else -> TaskCompletedInWorkflow(
+                        workflowId = it,
+                        methodRunId = newState.methodRunId!!,
+                        taskId = newState.taskId,
+                        taskOutput = message.taskOutput
+                    )
+                },
+                0F
+            )
+        }
+
+        // if this task comes from a client, send TaskCompleted output back to it
+        if (newState.clientWaiting) {
+            taskEngineOutput.sendToClientResponse(
+                newState,
+                TaskCompletedInClient(
+                    newState.clientName,
+                    newState.taskId,
+                    message.taskOutput
+                )
+            )
+        }
+
         // log event
         val tad = TaskCanceled(
             taskId = newState.taskId,
@@ -169,6 +203,8 @@ class TaskEngine(
     private suspend fun dispatchTask(message: DispatchTask): TaskState {
         // init a state
         val newState = TaskState(
+            clientName = message.clientName,
+            clientWaiting = message.clientWaiting,
             lastMessageId = message.messageId,
             taskId = message.taskId,
             taskName = message.taskName,
@@ -319,6 +355,18 @@ class TaskEngine(
                     )
                 },
                 0F
+            )
+        }
+
+        // if client is waiting, send output back to it
+        if (newState.clientWaiting) {
+            taskEngineOutput.sendToClientResponse(
+                newState,
+                TaskCompletedInClient(
+                    newState.clientName,
+                    newState.taskId,
+                    message.taskOutput
+                )
             )
         }
 
