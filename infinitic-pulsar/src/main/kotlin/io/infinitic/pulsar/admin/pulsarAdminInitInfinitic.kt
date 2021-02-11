@@ -52,7 +52,7 @@ import kotlin.reflect.KClass
 
 private val logger = LoggerFactory.getLogger("io.infinitic.pulsar.admin.PulsarAdmin.initInfinitic")
 
-suspend fun PulsarAdmin.initInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>?) {
+suspend fun PulsarAdmin.setupInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>?) {
     createTenant(this, tenant, getAllowedClusters(this, allowedClusters))
 
     createNamespace(this, tenant, namespace)

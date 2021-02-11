@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.pulsar.admin.initInfinitic
+import io.infinitic.pulsar.admin.setupInfinitic
 import io.infinitic.pulsar.config.AdminConfig
 import io.infinitic.pulsar.config.loadConfigFromFile
 import io.infinitic.pulsar.config.loadConfigFromResource
@@ -75,7 +75,7 @@ class InfiniticAdmin(
             fromConfig(loadConfigFromFile(files.toList()))
     }
 
-    fun init() = runBlocking { pulsarAdmin.initInfinitic(tenant, namespace, allowedClusters) }
+    fun setupPulsar() = runBlocking { pulsarAdmin.setupInfinitic(tenant, namespace, allowedClusters) }
 
     fun close() = pulsarAdmin.close()
 }
