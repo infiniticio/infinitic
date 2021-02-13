@@ -31,4 +31,5 @@ dependencies {
     testImplementation(project(":infinitic-workflow-engine"))
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-storage"))
+    testImplementation(project(":infinitic-cache"))
 }

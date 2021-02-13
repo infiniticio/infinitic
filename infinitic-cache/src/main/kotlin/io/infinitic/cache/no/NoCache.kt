@@ -23,18 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.cache.no
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyValue.KeyValueCache
 
-    /*
-     * Retry
-     */
-    fun retry(after: Double) = context.retry(after)
+class NoCache<T>() : KeyValueCache<T>, Flushable {
+    override fun delete(key: String) {
+        // nothing
+    }
 
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+    override fun set(key: String, value: T) {
+        // nothing
+    }
+
+    override fun get(key: String): T? = null
+
+    override fun flush() {
+        // nothing
+    }
 }

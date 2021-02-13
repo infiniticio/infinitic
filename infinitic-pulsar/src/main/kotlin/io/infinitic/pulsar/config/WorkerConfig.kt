@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.config
 
+import io.infinitic.cache.StateCache
+import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.redis.Redis
 
@@ -43,6 +45,11 @@ data class WorkerConfig(
     Default state storage
      */
     @JvmField var stateStorage: StateStorage? = null,
+
+    /*
+    Default state cache
+     */
+    @JvmField var stateCache: StateCache? = null,
 
     /*
     Pulsar configuration
@@ -79,27 +86,38 @@ data class WorkerConfig(
      */
     @JvmField val redis: Redis? = null,
 
+    /*
+    Caffeine configuration
+     */
+    @JvmField val caffeine: Caffeine? = null,
+
 ) {
     init {
         workflowEngine?.let {
-            // apply default mode and stateStorage, if not set
+            // apply default mode on stateStorage, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "workflowEngine.stateStorage")
+            // apply default mode on stateCache
+            it.stateCache = it.stateCache ?: stateCache ?: StateCache.caffeine
         }
 
         taskEngine?.let {
-            // apply default mode and stateStorage, if not set
+            // apply default mode on stateStorage, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "taskEngine.stateStorage")
+            // apply default mode on stateCache
+            it.stateCache = it.stateCache ?: stateCache ?: StateCache.caffeine
         }
 
         monitoring?.let {
-            // apply default mode and stateStorage, if not set
+            // apply default mode on stateStorage, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "monitoring.stateStorage")
+            // apply default mode on stateCache
+            it.stateCache = it.stateCache ?: stateCache ?: StateCache.caffeine
         }
 
         // apply default mode, if not set

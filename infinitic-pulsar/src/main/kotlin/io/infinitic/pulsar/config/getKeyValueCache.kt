@@ -22,19 +22,15 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.pulsar.config
 
-package io.infinitic.tasks
+import io.infinitic.cache.StateCache
+import io.infinitic.cache.caffeine.Caffeine
+import io.infinitic.cache.caffeine.CaffeineCache
+import io.infinitic.cache.no.NoCache
+import io.infinitic.common.storage.keyValue.KeyValueCache
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
-
-    /*
-     * Retry
-     */
-    fun retry(after: Double) = context.retry(after)
-
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+fun <T> StateCache.getKeyValueCache(workerConfig: WorkerConfig): KeyValueCache<T> = when (this) {
+    StateCache.none -> NoCache()
+    StateCache.caffeine -> CaffeineCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
 }

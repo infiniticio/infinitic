@@ -23,18 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.cache.caffeine
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
-
-    /*
-     * Retry
-     */
-    fun retry(after: Double) = context.retry(after)
-
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+data class Caffeine(
+    @JvmField val maximumSize: Int? = null,
+    @JvmField val expireAfterAccess: Int? = null,
+    @JvmField val expireAfterWrite: Int? = null
+) {
+    init {
+        maximumSize?. let { require(it > 0) { "maximumSize MUST be >0" } }
+        expireAfterAccess?. let { require(it > 0) { "expireAfterAccess MUST be >0" } }
+        expireAfterWrite?. let { require(it > 0) { "expireAfterWrite MUST be >0" } }
+    }
 }

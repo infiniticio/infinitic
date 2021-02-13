@@ -25,6 +25,7 @@
 
 package io.infinitic.inMemory.workers
 
+import io.infinitic.cache.no.NoCache
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
@@ -56,7 +57,7 @@ fun CoroutineScope.startInMemoryTaskEngineWorker(
 
     startTaskEngine(
         "task-engine",
-        TaskStateKeyValueStorage(keyValueStorage),
+        TaskStateKeyValueStorage(keyValueStorage, NoCache()),
         NoTaskEventStorage(),
         TaskEngineInputChannels(
             taskEngineCommandsChannel,

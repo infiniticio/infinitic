@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.engine.storage
 
+import io.infinitic.cache.no.NoCache
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
@@ -47,7 +48,7 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getState(any()) } returns null
             // given
-            val stateStorage = TaskStateKeyValueStorage(storage)
+            val stateStorage = TaskStateKeyValueStorage(storage, NoCache())
             // when
             val state = stateStorage.getState(taskId)
             // then
@@ -62,7 +63,7 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
             val stateIn = TestFactory.random<TaskState>()
             coEvery { storage.getState(any()) } returns stateIn.toByteBuffer()
             // given
-            val stateStorage = TaskStateKeyValueStorage(storage)
+            val stateStorage = TaskStateKeyValueStorage(storage, NoCache())
             // when
             val stateOut = stateStorage.getState(stateIn.taskId)
             // then
@@ -81,7 +82,7 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
 
             coEvery { storage.putState("task.state.${stateIn.taskId}", capture(binSlot)) } returns Unit
             // given
-            val stateStorage = TaskStateKeyValueStorage(storage)
+            val stateStorage = TaskStateKeyValueStorage(storage, NoCache())
             // when
             stateStorage.updateState(stateIn.taskId, stateIn, null)
             // then
@@ -97,7 +98,7 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
             val stateIn = TestFactory.random<TaskState>()
             coEvery { context.deleteState(any()) } returns Unit
             // given
-            val stageStorage = TaskStateKeyValueStorage(context)
+            val stageStorage = TaskStateKeyValueStorage(context, NoCache())
             // when
             stageStorage.deleteState(stateIn.taskId)
             // then

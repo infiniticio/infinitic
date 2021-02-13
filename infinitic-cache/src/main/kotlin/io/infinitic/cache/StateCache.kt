@@ -23,18 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.cache
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
-
-    /*
-     * Retry
-     */
-    fun retry(after: Double) = context.retry(after)
-
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+@Suppress("EnumEntryName")
+enum class StateCache {
+    none,
+    caffeine
 }

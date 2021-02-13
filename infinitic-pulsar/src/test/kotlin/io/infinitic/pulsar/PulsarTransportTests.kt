@@ -32,6 +32,7 @@ import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMe
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -69,7 +70,7 @@ class PulsarTransportTests : StringSpec({
     }
 
     TaskExecutorMessage::class.sealedSubclasses.forEach {
-        include(shouldBeAbleToSendMessageToWorkerTopic(TestFactory.random(it)))
+        include(shouldBeAbleToSendMessageToTaskExecutorTopic(TestFactory.random(it)))
     }
 })
 
@@ -191,11 +192,11 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
     }
 }
 
-private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to Worker topic" {
         val context = context()
-        val builder = mockk<TypedMessageBuilder<TaskExecutorMessage>>()
-        val slotSchema = slot<AvroSchema<TaskExecutorMessage>>()
+        val builder = mockk<TypedMessageBuilder<TaskExecutorEnvelope>>()
+        val slotSchema = slot<AvroSchema<TaskExecutorEnvelope>>()
         val slotTopic = slot<String>()
         every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
         every { context.tenant } returns "tenant"
@@ -208,8 +209,8 @@ private fun shouldBeAbleToSendMessageToWorkerTopic(msg: TaskExecutorMessage) = s
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/task-executor: ${msg.taskName}"
-        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorMessage>()).avroSchema
-        verify(exactly = 1) { builder.value(msg) }
+        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorEnvelope>()).avroSchema
+        verify(exactly = 1) { builder.value(TaskExecutorEnvelope.from(msg)) }
         verify(exactly = 1) { builder.key("${msg.taskName}") }
         verify(exactly = 1) { builder.sendAsync() }
         confirmVerified(builder)

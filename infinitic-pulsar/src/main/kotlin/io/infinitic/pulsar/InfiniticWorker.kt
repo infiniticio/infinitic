@@ -25,8 +25,11 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.cache.StateCache
+import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.pulsar.config.Mode
 import io.infinitic.pulsar.config.WorkerConfig
+import io.infinitic.pulsar.config.getKeyValueCache
 import io.infinitic.pulsar.config.getKeyValueStorage
 import io.infinitic.pulsar.config.loadConfigFromFile
 import io.infinitic.pulsar.config.loadConfigFromResource
@@ -119,7 +122,7 @@ class InfiniticWorker(
     ) {
         config.workflowEngine?.let {
             if (it.mode == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "workflowStates")
+                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
                 print("Workflow engine".padEnd(25) + ": starting ${it.consumers} instances...")
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
@@ -144,7 +147,8 @@ class InfiniticWorker(
     ) {
         config.taskEngine?.let {
             if (it.mode == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "taskStates")
+                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
+                val keyValueCache = (it.stateCache ?: StateCache.caffeine).getKeyValueCache<TaskState>(config)
                 print("Task engine".padEnd(25) + ": starting ${it.consumers} instances...")
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting task engine {}", counter)
@@ -153,7 +157,8 @@ class InfiniticWorker(
                         pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
                         pulsarOutputs.taskEngineOutput,
                         pulsarOutputs.sendToTaskEngineDeadLetters,
-                        keyValueStorage
+                        keyValueStorage,
+                        keyValueCache
                     )
                 }
                 println(" done")
@@ -169,7 +174,7 @@ class InfiniticWorker(
     ) {
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config, "monitoringStates")
+                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(

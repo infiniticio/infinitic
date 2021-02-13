@@ -25,10 +25,10 @@
 
 package io.infinitic.common.tasks.executors.messages
 
-import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -38,28 +38,34 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetry
-import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TaskExecutorMessage(
-    val taskName: TaskName,
-    override val taskId: TaskId,
-    override val taskRetry: TaskRetry,
-    override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptRetry: TaskAttemptRetry,
+sealed class TaskExecutorMessage() {
+    val messageId = MessageId()
+    abstract val taskName: TaskName
+    abstract val taskMeta: TaskMeta
+}
+
+@Serializable
+data class ExecuteTaskAttempt(
+    override val taskName: TaskName,
+    val taskId: TaskId,
+    val taskRetry: TaskRetry,
+    val taskAttemptId: TaskAttemptId,
+    val taskAttemptRetry: TaskAttemptRetry,
     val previousTaskAttemptError: TaskAttemptError?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
     val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta
-) : TaskAttemptMessage {
-    val messageId = MessageId()
+    override val taskMeta: TaskMeta
+) : TaskExecutorMessage()
 
-    companion object {
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
-    }
-
-    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
-}
+@Serializable
+data class CancelTaskAttempt(
+    override val taskName: TaskName,
+    val taskId: TaskId,
+    val taskOutput: MethodOutput,
+    override val taskMeta: TaskMeta
+) : TaskExecutorMessage()

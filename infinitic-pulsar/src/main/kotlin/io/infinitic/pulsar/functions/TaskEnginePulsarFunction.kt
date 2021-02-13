@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.functions
 
+import io.infinitic.cache.caffeine.Caffeine
+import io.infinitic.cache.caffeine.CaffeineCache
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutputs
@@ -51,7 +53,7 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
     }
 
     internal fun getTaskEngine(context: Context) = TaskEngine(
-        TaskStateKeyValueStorage(context.keyValueStorage()),
+        TaskStateKeyValueStorage(context.keyValueStorage(), CaffeineCache(Caffeine(expireAfterAccess = 3600))),
         NoTaskEventStorage(),
         PulsarOutputs.from(context).taskEngineOutput
     )

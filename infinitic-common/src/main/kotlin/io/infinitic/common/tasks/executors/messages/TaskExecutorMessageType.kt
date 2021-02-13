@@ -23,18 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.common.tasks.executors.messages
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
-
-    /*
-     * Retry
-     */
-    fun retry(after: Double) = context.retry(after)
-
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+enum class TaskExecutorMessageType {
+    EXECUTE_TASK_ATTEMPT,
+    CANCEL_TASK_ATTEMPT
 }

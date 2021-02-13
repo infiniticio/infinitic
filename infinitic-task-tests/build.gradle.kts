@@ -30,4 +30,5 @@ dependencies {
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-task-executor"))
     testImplementation(project(":infinitic-storage"))
+    testImplementation(project(":infinitic-cache"))
 }

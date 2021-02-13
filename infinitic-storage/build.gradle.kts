@@ -24,7 +24,7 @@
  */
 
 dependencies {
-    implementation(Libs.Redis.clients)
+    implementation("redis.clients:jedis:3.3.0")
 
     implementation(project(":infinitic-common"))
 }

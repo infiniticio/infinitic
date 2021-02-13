@@ -22,19 +22,10 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.pulsar.config
 
-package io.infinitic.tasks
+import io.infinitic.storage.StateStorage
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
-
-    /*
-     * Retry
-     */
-    fun retry(after: Double) = context.retry(after)
-
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+interface Storable {
+    var stateStorage: StateStorage?
 }

@@ -26,6 +26,7 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
@@ -55,7 +56,7 @@ const val TASK_EXECUTOR_PULLING_COROUTINE_NAME = "task-executor-pulling"
 private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
 
-private fun logError(message: Message<TaskExecutorMessage>, e: Exception) = logger.error(
+private fun logError(message: Message<TaskExecutorEnvelope>, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     message,
     e
@@ -65,7 +66,7 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
     dispatcher: CoroutineDispatcher,
     taskName: String,
     consumerCounter: Int,
-    taskExecutorConsumer: Consumer<TaskExecutorMessage>,
+    taskExecutorConsumer: Consumer<TaskExecutorEnvelope>,
     taskExecutorOutput: TaskExecutorOutput,
     sendToTaskExecutorDeadLetters: SendToTaskExecutors,
     taskExecutorRegister: TaskExecutorRegister,
@@ -104,10 +105,10 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
     // coroutine dedicated to pulsar message pulling
     launch(CoroutineName("$TASK_EXECUTOR_PULLING_COROUTINE_NAME-$taskName-$consumerCounter")) {
         while (isActive) {
-            val message: Message<TaskExecutorMessage> = taskExecutorConsumer.receiveAsync().await()
+            val message: Message<TaskExecutorEnvelope> = taskExecutorConsumer.receiveAsync().await()
 
             try {
-                val taskExecutorMessage = TaskExecutorMessage.fromByteArray(message.data)
+                val taskExecutorMessage = TaskExecutorEnvelope.fromByteArray(message.data).message()
                 taskExecutorChannel.send(
                     PulsarMessageToProcess(
                         message = taskExecutorMessage,

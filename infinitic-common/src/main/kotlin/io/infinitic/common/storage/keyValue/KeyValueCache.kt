@@ -23,17 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.common.storage.keyValue
 
-import io.infinitic.common.tasks.data.TaskOptions
+interface KeyValueCache<T> {
+    fun delete(key: String)
 
-interface TaskContext {
-    val taskId: String
-    val taskRetry: Int
-    val taskAttemptId: String
-    val taskAttemptRetry: Int
-    val lastTaskAttemptError: Any?
-    var currentTaskAttemptError: Throwable?
-    val taskMeta: Map<String, Any?>
-    val taskOptions: TaskOptions
+    fun set(key: String, value: T)
+
+    fun get(key: String): T?
 }

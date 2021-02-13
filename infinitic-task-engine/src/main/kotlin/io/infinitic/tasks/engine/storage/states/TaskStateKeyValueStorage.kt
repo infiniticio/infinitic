@@ -26,6 +26,7 @@
 package io.infinitic.tasks.engine.storage.states
 
 import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
@@ -35,34 +36,43 @@ import io.infinitic.common.tasks.engine.state.TaskState
  * them in a persistent key value storage.
  */
 class TaskStateKeyValueStorage(
-    private val storage: KeyValueStorage
+    private val storage: KeyValueStorage,
+    private val cache: KeyValueCache<TaskState>
 ) : TaskStateStorage {
 
     override val getStateFn: GetTaskState = { taskId: TaskId ->
-        storage
-            .getState(getTaskStateKey(taskId))
-            ?.let { TaskState.fromByteBuffer(it) }
+        val key = getTaskStateKey(taskId)
+        cache.get(key) ?: run {
+            logger.debug("taskId {} - getStateFn - absent from cache, get from storage", taskId)
+            storage.getState(key)?.let { TaskState.fromByteBuffer(it) }
+        }
     }
 
     override val updateStateFn: UpdateTaskState = { taskId: TaskId, newState: TaskState, _: TaskState? ->
-        storage.putState(
-            getTaskStateKey(taskId),
-            newState.toByteBuffer()
-        )
+        val key = getTaskStateKey(taskId)
+        cache.set(key, newState)
+        storage.putState(key, newState.toByteBuffer())
     }
 
     override val deleteStateFn: DeleteTaskState = { taskId: TaskId ->
-        storage.deleteState(getTaskStateKey(taskId))
+        val key = getTaskStateKey(taskId)
+        cache.delete(key)
+        storage.deleteState(key)
     }
 
     /*
-    Use for tests
+    Used for tests
      */
     fun flush() {
         if (storage is Flushable) {
             storage.flush()
         } else {
             throw Exception("Storage non flushable")
+        }
+        if (cache is Flushable) {
+            cache.flush()
+        } else {
+            throw Exception("Cache non flushable")
         }
     }
 

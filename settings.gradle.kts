@@ -26,6 +26,7 @@
 include("infinitic-common")
 include("infinitic-rest-api")
 include("infinitic-storage")
+include("infinitic-cache")
 include("infinitic-client")
 include("infinitic-monitoring-engines")
 include("infinitic-task-engine")

@@ -36,10 +36,10 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.exceptions.ProcessingTimeout
 import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
+import io.infinitic.common.tasks.executors.messages.CancelTaskAttempt
+import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.tasks.executor.register.InstanceFactory
 import io.infinitic.tasks.executor.register.TaskExecutorRegister
-import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.task.RetryDelay
 import io.infinitic.tasks.executor.task.RetryDelayFailed
 import io.infinitic.tasks.executor.task.RetryDelayRetrieved
@@ -60,29 +60,25 @@ import kotlin.reflect.jvm.javaType
 
 class TaskExecutor(
     val taskExecutorOutput: TaskExecutorOutput,
-    val taskExecutorRegister: TaskExecutorRegister = TaskExecutorRegisterImpl()
+    val taskExecutorRegister: TaskExecutorRegister
 ) : TaskExecutorRegister by taskExecutorRegister {
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * Register a factory to use for a given name
-     */
-    inline fun <reified T> register(noinline factory: InstanceFactory) {
-        taskExecutorRegister.register(T::class.java.name, factory)
-    }
-
-    /**
-     * Unregister a given name (mostly used in tests)
-     */
-    inline fun <reified T> unregister() {
-        taskExecutorRegister.unregister(T::class.java.name)
-    }
-
     suspend fun handle(message: TaskExecutorMessage) {
         logger.debug("receiving {} (messageId {})", message, message.messageId)
 
+        when (message) {
+            is ExecuteTaskAttempt -> executeTaskAttempt(message)
+            is CancelTaskAttempt -> cancelTaskAttempt(message)
+        }
+    }
+    private fun cancelTaskAttempt(message: CancelTaskAttempt) {
+        TODO()
+    }
+
+    private suspend fun executeTaskAttempt(message: ExecuteTaskAttempt) {
         val taskAttemptContext = TaskAttemptContext(
             taskExecutor = this,
             taskId = "${message.taskId}",
@@ -102,7 +98,7 @@ class TaskExecutor(
             parse(message)
         } catch (e: Exception) {
             // returning the exception (no retry)
-            sendTaskFailed(message, e, null)
+            sendTaskAttemptFailed(message, e, null)
             // stop here
             return
         }
@@ -112,7 +108,7 @@ class TaskExecutor(
             setTaskContext(task, taskAttemptContext)
         } catch (e: Exception) {
             // returning the exception (no retry)
-            sendTaskFailed(message, e, null)
+            sendTaskAttemptFailed(message, e, null)
             // stop here
             return
         }
@@ -120,10 +116,10 @@ class TaskExecutor(
         try {
             val output = if (options.runningTimeout != null && options.runningTimeout!! > 0F) {
                 withTimeout((1000 * options.runningTimeout!!).toLong()) {
-                    executeTask(method, task, parameters)
+                    runTask(method, task, parameters)
                 }
             } else {
-                executeTask(method, task, parameters)
+                runTask(method, task, parameters)
             }
             sendTaskCompleted(message, output)
         } catch (e: InvocationTargetException) {
@@ -138,11 +134,11 @@ class TaskExecutor(
             getRetryDelayAndFailTask(task, message, taskAttemptContext)
         } catch (e: Exception) {
             // returning the exception (no retry)
-            sendTaskFailed(message, e, null)
+            sendTaskAttemptFailed(message, e, null)
         }
     }
 
-    private suspend fun executeTask(method: Method, task: Any, parameters: List<Any?>) = coroutineScope {
+    private suspend fun runTask(method: Method, task: Any, parameters: List<Any?>) = coroutineScope {
         val output = method.invoke(task, *parameters.toTypedArray())
         ensureActive()
         output
@@ -159,20 +155,20 @@ class TaskExecutor(
         }
     }
 
-    private suspend fun getRetryDelayAndFailTask(task: Any, msg: TaskExecutorMessage, context: TaskAttemptContext) {
+    private suspend fun getRetryDelayAndFailTask(task: Any, msg: ExecuteTaskAttempt, context: TaskAttemptContext) {
         when (val delay = getDelayBeforeRetry(task, msg.taskId)) {
             is RetryDelayRetrieved -> {
                 // returning the original cause
-                sendTaskFailed(msg, context.currentTaskAttemptError, delay.value)
+                sendTaskAttemptFailed(msg, context.currentTaskAttemptError, delay.value)
             }
             is RetryDelayFailed -> {
                 // returning the error in getRetryDelay, without retry
-                sendTaskFailed(msg, delay.e, null)
+                sendTaskAttemptFailed(msg, delay.e, null)
             }
         }
     }
 
-    private fun parse(msg: TaskExecutorMessage): TaskCommand {
+    private fun parse(msg: ExecuteTaskAttempt): TaskCommand {
         val task = getTaskInstance("${msg.taskName}")
 
         val parameterTypes = msg.methodParameterTypes
@@ -210,7 +206,7 @@ class TaskExecutor(
         }
     }
 
-    private suspend fun sendTaskStarted(message: TaskExecutorMessage) {
+    private suspend fun sendTaskStarted(message: ExecuteTaskAttempt) {
         val taskAttemptStarted = TaskAttemptStarted(
             taskId = message.taskId,
             taskRetry = message.taskRetry,
@@ -221,7 +217,7 @@ class TaskExecutor(
         taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptStarted, 0F)
     }
 
-    private suspend fun sendTaskFailed(message: TaskExecutorMessage, error: Throwable?, delay: Float? = null) {
+    private suspend fun sendTaskAttemptFailed(message: ExecuteTaskAttempt, error: Throwable?, delay: Float? = null) {
         logger.error("taskId {} - error {}", message.taskId, error)
 
         val taskAttemptFailed = TaskAttemptFailed(
@@ -236,7 +232,7 @@ class TaskExecutor(
         taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptFailed, 0F)
     }
 
-    private suspend fun sendTaskCompleted(message: TaskExecutorMessage, output: Any?) {
+    private suspend fun sendTaskCompleted(message: ExecuteTaskAttempt, output: Any?) {
         val taskAttemptCompleted = TaskAttemptCompleted(
             taskId = message.taskId,
             taskAttemptId = message.taskAttemptId,

@@ -29,7 +29,7 @@ import io.infinitic.storage.StateStorage
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.storage.redis.RedisStorage
 
-fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig, type: String): KeyValueStorage = when (this) {
+fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig): KeyValueStorage = when (this) {
     StateStorage.inMemory -> InMemoryStorage()
     StateStorage.redis -> RedisStorage(workerConfig.redis!!)
 }

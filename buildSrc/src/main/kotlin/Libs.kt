@@ -87,10 +87,6 @@ object Libs {
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
     }
 
-    object Redis {
-        const val clients = "redis.clients:jedis:3.3.0"
-    }
-
     object EasyRandom {
         const val core = "org.jeasy:easy-random-core:4.2.0"
     }

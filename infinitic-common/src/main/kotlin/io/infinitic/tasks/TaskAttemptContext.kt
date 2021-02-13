@@ -25,16 +25,21 @@
 
 package io.infinitic.tasks
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
+import io.infinitic.common.tasks.data.TaskOptions
+
+interface TaskAttemptContext {
+    val taskId: String
+    val methodName: String
+    val taskRetry: Int
+    val taskAttemptId: String
+    val taskAttemptRetry: Int
+    val lastTaskAttemptError: Exception?
+    var currentTaskAttemptError: Exception?
+    val taskMeta: Map<String, Any?>
+    val taskOptions: TaskOptions
 
     /*
      * Retry
      */
-    fun retry(after: Double) = context.retry(after)
-
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+    fun retry(after: Double)
 }

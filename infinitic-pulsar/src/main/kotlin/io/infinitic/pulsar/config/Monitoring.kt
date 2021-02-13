@@ -25,13 +25,15 @@
 
 package io.infinitic.pulsar.config
 
+import io.infinitic.cache.StateCache
 import io.infinitic.storage.StateStorage
 
 data class Monitoring(
     @JvmField var mode: Mode? = null,
     @JvmField val consumers: Int = 1,
-    @JvmField var stateStorage: StateStorage? = null
-) {
+    @JvmField override var stateStorage: StateStorage? = null,
+    @JvmField var stateCache: StateCache? = null
+) : Storable {
     init {
         require(consumers >= 0) { "concurrency MUST be positive" }
     }

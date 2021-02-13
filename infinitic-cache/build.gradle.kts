@@ -23,18 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+dependencies {
+    implementation("com.github.ben-manes.caffeine:caffeine:2.8.8")
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
-
-    /*
-     * Retry
-     */
-    fun retry(after: Double) = context.retry(after)
-
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+    implementation(project(":infinitic-common"))
 }
+
+apply("../publish.gradle.kts")
