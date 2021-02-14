@@ -80,7 +80,7 @@ private var workflowOutput: Any? = null
 private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage(), NoCache())
 private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage(), NoCache())
 private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
+private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage(), NoCache())
 
 private lateinit var workflowEngine: WorkflowEngine
 private lateinit var taskEngine: TaskEngine

@@ -26,7 +26,6 @@
 package io.infinitic.pulsar
 
 import io.infinitic.cache.StateCache
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.pulsar.config.Mode
@@ -42,7 +41,6 @@ import io.infinitic.pulsar.workers.startPulsarMonitoringPerNameWorker
 import io.infinitic.pulsar.workers.startPulsarTaskEngineWorker
 import io.infinitic.pulsar.workers.startPulsarTaskExecutorWorker
 import io.infinitic.pulsar.workers.startPulsarWorkflowEngineWorker
-import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -179,7 +177,7 @@ class InfiniticWorker(
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val keyValueCache = (it.stateCache ?: StateCache.caffeine).getKeyValueCache<MonitoringPerNameState>(config)
+                val stateCache = (it.stateCache ?: StateCache.caffeine)
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
@@ -188,7 +186,7 @@ class InfiniticWorker(
                         pulsarOutputs.monitoringPerNameOutput,
                         pulsarOutputs.sendToMonitoringPerNameDeadLetters,
                         keyValueStorage,
-                        keyValueCache
+                        stateCache.getKeyValueCache(config)
                     )
                 }
 
@@ -196,7 +194,8 @@ class InfiniticWorker(
                 startPulsarMonitoringGlobalWorker(
                     pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName),
                     pulsarOutputs.sendToMonitoringGlobalDeadLetters,
-                    InMemoryStorage()
+                    keyValueStorage,
+                    stateCache.getKeyValueCache(config)
                 )
             }
         }

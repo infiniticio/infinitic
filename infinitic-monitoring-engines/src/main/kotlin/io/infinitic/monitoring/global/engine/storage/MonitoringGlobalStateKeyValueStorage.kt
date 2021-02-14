@@ -27,6 +27,7 @@ package io.infinitic.monitoring.global.engine.storage
 
 import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 
 /**
@@ -34,24 +35,31 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
  * them in a persistent key value storage.
  */
 open class MonitoringGlobalStateKeyValueStorage(
-    protected val storage: KeyValueStorage
+    protected val storage: KeyValueStorage,
+    private val cache: KeyValueCache<MonitoringGlobalState>
 ) : MonitoringGlobalStateStorage {
 
     override val getStateFn: GetMonitoringGlobalState = {
-        storage
-            .getState(getMonitoringGlobalStateKey())
-            ?.let { MonitoringGlobalState.fromByteBuffer(it) }
+        val key = getMonitoringGlobalStateKey()
+        cache.get(key) ?: run {
+            logger.debug("taskName {} - getStateFn - absent from cache, get from storage")
+            storage.getState(key)?.let { MonitoringGlobalState.fromByteBuffer(it) }
+        }
     }
 
     override val updateStateFn: UpdateMonitoringGlobalState = {
         newState: MonitoringGlobalState,
-        oldState: MonitoringGlobalState?
+        _: MonitoringGlobalState?
         ->
-        storage.putState(getMonitoringGlobalStateKey(), newState.toByteBuffer())
+        val key = getMonitoringGlobalStateKey()
+        cache.set(key, newState)
+        storage.putState(key, newState.toByteBuffer())
     }
 
     override val deleteStateFn: DeleteMonitoringGlobalState = {
-        storage.deleteState(getMonitoringGlobalStateKey())
+        val key = getMonitoringGlobalStateKey()
+        cache.delete(key)
+        storage.deleteState(key)
     }
 
     private fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
@@ -64,6 +72,11 @@ open class MonitoringGlobalStateKeyValueStorage(
             storage.flush()
         } else {
             throw RuntimeException("Storage non flushable")
+        }
+        if (cache is Flushable) {
+            cache.flush()
+        } else {
+            throw Exception("Cache non flushable")
         }
     }
 }

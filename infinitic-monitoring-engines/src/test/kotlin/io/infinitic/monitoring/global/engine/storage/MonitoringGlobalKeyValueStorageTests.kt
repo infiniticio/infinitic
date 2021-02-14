@@ -25,6 +25,7 @@
 
 package io.infinitic.monitoring.global.engine.storage
 
+import io.infinitic.cache.no.NoCache
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.common.storage.keyValue.KeyValueStorage
@@ -44,7 +45,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getState(any()) } returns null
             // given
-            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage)
+            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
             val state = stateStorage.getState()
             // then
@@ -59,7 +60,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
             coEvery { storage.getState(any()) } returns ByteBuffer.wrap(stateIn.toByteArray())
             // given
-            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage)
+            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
             val stateOut = stateStorage.getState()
             // then
@@ -78,7 +79,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
 
             coEvery { storage.putState("monitoringGlobal.state", capture(binSlot)) } returns Unit
             // given
-            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage)
+            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
             stateStorage.updateState(stateIn, null)
             // then
@@ -93,7 +94,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.deleteState(any()) } returns Unit
             // given
-            val stageStorage = MonitoringGlobalStateKeyValueStorage(storage)
+            val stageStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
             stageStorage.deleteState()
             // then

@@ -84,6 +84,7 @@ fun CoroutineScope.startInMemory(
 
     startInMemoryMonitoringGlobalWorker(
         keyValueStorage,
+        NoCache(),
         monitoringGlobalChannel,
         logChannel
     )

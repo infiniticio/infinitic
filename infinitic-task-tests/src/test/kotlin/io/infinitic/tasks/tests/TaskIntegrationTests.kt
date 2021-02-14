@@ -73,7 +73,7 @@ private val taskTest = TaskTestImpl()
 
 private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage(), NoCache())
 private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
+private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage(), NoCache())
 
 private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
