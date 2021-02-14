@@ -36,7 +36,7 @@ interface WorkflowStateStorage {
     val updateStateFn: UpdateWorkflowState
     val deleteStateFn: DeleteWorkflowState
 
-    private val logger: Logger
+    val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun createState(workflowId: WorkflowId, workflowState: WorkflowState) {

@@ -26,6 +26,7 @@
 package io.infinitic.workflows.engine.storage.states
 
 import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -35,31 +36,34 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
  * them in a persistent key value storage.
  */
 open class WorkflowStateKeyValueStorage(
-    private val storage: KeyValueStorage
+    private val storage: KeyValueStorage,
+    private val cache: KeyValueCache<WorkflowState>
 ) : WorkflowStateStorage {
 
     override val createStateFn: CreateWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
-        storage.putState(
-            getWorkflowStateKey(workflowId),
-            state.toByteBuffer()
-        )
+        val key = getWorkflowStateKey(workflowId)
+        cache.set(key, state)
+        storage.putState(key, state.toByteBuffer())
     }
 
     override val getStateFn: GetWorkflowState = { workflowId: WorkflowId ->
-        storage
-            .getState(getWorkflowStateKey(workflowId))
-            ?.let { WorkflowState.fromByteBuffer(it) }
+        val key = getWorkflowStateKey(workflowId)
+        cache.get(key) ?: run {
+            logger.debug("workflowId {} - getStateFn - absent from cache, get from storage", workflowId)
+            storage.getState(key)?.let { WorkflowState.fromByteBuffer(it) }
+        }
     }
 
     override val updateStateFn: UpdateWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
-        storage.putState(
-            getWorkflowStateKey(workflowId),
-            state.toByteBuffer()
-        )
+        val key = getWorkflowStateKey(workflowId)
+        cache.set(key, state)
+        storage.putState(key, state.toByteBuffer())
     }
 
     override val deleteStateFn: DeleteWorkflowState = { workflowId: WorkflowId ->
-        storage.deleteState(getWorkflowStateKey(workflowId))
+        val key = getWorkflowStateKey(workflowId)
+        cache.delete(key)
+        storage.deleteState(key)
     }
 
     /*
@@ -70,6 +74,11 @@ open class WorkflowStateKeyValueStorage(
             storage.flush()
         } else {
             throw Exception("Storage non flushable")
+        }
+        if (cache is Flushable) {
+            cache.flush()
+        } else {
+            throw Exception("Cache non flushable")
         }
     }
 

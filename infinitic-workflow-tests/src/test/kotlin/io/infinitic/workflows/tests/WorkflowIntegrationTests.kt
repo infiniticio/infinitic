@@ -77,9 +77,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private var workflowOutput: Any? = null
-private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage())
+private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage(), NoCache())
 private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
+private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage(), NoCache())
 private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
 
 private lateinit var workflowEngine: WorkflowEngine

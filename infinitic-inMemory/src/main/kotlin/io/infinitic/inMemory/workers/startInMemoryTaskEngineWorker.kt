@@ -25,9 +25,10 @@
 
 package io.infinitic.inMemory.workers
 
-import io.infinitic.cache.no.NoCache
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
+import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
@@ -44,6 +45,7 @@ import kotlinx.coroutines.launch
 
 fun CoroutineScope.startInMemoryTaskEngineWorker(
     keyValueStorage: KeyValueStorage,
+    keyValueCache: KeyValueCache<TaskState>,
     clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
     taskEngineEventsChannel: Channel<TaskEngineMessageToProcess>,
@@ -57,7 +59,7 @@ fun CoroutineScope.startInMemoryTaskEngineWorker(
 
     startTaskEngine(
         "task-engine",
-        TaskStateKeyValueStorage(keyValueStorage, NoCache()),
+        TaskStateKeyValueStorage(keyValueStorage, keyValueCache),
         NoTaskEventStorage(),
         TaskEngineInputChannels(
             taskEngineCommandsChannel,

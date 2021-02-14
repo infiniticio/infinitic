@@ -41,7 +41,7 @@ interface MonitoringPerNameStateStorage {
     val updateStateFn: UpdateMonitoringPerNameState
     val deleteStateFn: DeleteMonitoringPerNameState
 
-    private val logger: Logger
+    val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun getState(taskName: TaskName): MonitoringPerNameState? {

@@ -26,7 +26,9 @@
 package io.infinitic.pulsar
 
 import io.infinitic.cache.StateCache
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.engine.state.TaskState
+import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.pulsar.config.Mode
 import io.infinitic.pulsar.config.WorkerConfig
 import io.infinitic.pulsar.config.getKeyValueCache
@@ -123,6 +125,7 @@ class InfiniticWorker(
         config.workflowEngine?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
+                val keyValueCache = (it.stateCache ?: StateCache.caffeine).getKeyValueCache<WorkflowState>(config)
                 print("Workflow engine".padEnd(25) + ": starting ${it.consumers} instances...")
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
@@ -131,7 +134,8 @@ class InfiniticWorker(
                         pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName, counter),
                         pulsarOutputs.workflowEngineOutput,
                         pulsarOutputs.sendToWorkflowEngineDeadLetters,
-                        keyValueStorage
+                        keyValueStorage,
+                        keyValueCache
                     )
                 }
                 println(" done")
@@ -175,6 +179,7 @@ class InfiniticWorker(
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
+                val keyValueCache = (it.stateCache ?: StateCache.caffeine).getKeyValueCache<MonitoringPerNameState>(config)
                 repeat(it.consumers) { counter ->
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
@@ -182,7 +187,8 @@ class InfiniticWorker(
                         pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName, counter),
                         pulsarOutputs.monitoringPerNameOutput,
                         pulsarOutputs.sendToMonitoringPerNameDeadLetters,
-                        keyValueStorage
+                        keyValueStorage,
+                        keyValueCache
                     )
                 }
 
