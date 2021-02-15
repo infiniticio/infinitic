@@ -95,12 +95,12 @@ class PulsarConsumerFactory(
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newTaskEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<TaskEngineEnvelope> =
+    fun newTaskEngineConsumer(consumerName: String?, consumerCounter: Int, taskName: String): Consumer<TaskEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
             .topics(
                 listOf(
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name),
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name)
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name(taskName)),
+                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name(taskName))
                 )
             )
             .also {

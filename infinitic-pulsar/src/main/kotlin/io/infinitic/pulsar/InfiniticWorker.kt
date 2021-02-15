@@ -25,15 +25,15 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.cache.StateCache
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.pulsar.config.Mode
 import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.pulsar.config.getKeyValueCache
-import io.infinitic.pulsar.config.getKeyValueStorage
-import io.infinitic.pulsar.config.loadConfigFromFile
-import io.infinitic.pulsar.config.loadConfigFromResource
+import io.infinitic.pulsar.config.cache.getKeyValueCache
+import io.infinitic.pulsar.config.data.Mode
+import io.infinitic.pulsar.config.data.TaskEngine
+import io.infinitic.pulsar.config.loaders.loadConfigFromFile
+import io.infinitic.pulsar.config.loaders.loadConfigFromResource
+import io.infinitic.pulsar.config.storage.getKeyValueStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startPulsarMonitoringGlobalWorker
@@ -123,9 +123,9 @@ class InfiniticWorker(
         config.workflowEngine?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val keyValueCache = (it.stateCache ?: StateCache.caffeine).getKeyValueCache<WorkflowState>(config)
+                val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<WorkflowState>(config)
                 print("Workflow engine".padEnd(25) + ": starting ${it.consumers} instances...")
-                repeat(it.consumers) { counter ->
+                repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
                     startPulsarWorkflowEngineWorker(
                         counter,
@@ -147,16 +147,16 @@ class InfiniticWorker(
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
-        config.taskEngine?.let {
-            if (it.mode == Mode.worker) {
+        fun start(it: TaskEngine, name: String) {
+            if (it.modeOrDefault == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val keyValueCache = (it.stateCache ?: StateCache.caffeine).getKeyValueCache<TaskState>(config)
-                print("Task engine".padEnd(25) + ": starting ${it.consumers} instances...")
-                repeat(it.consumers) { counter ->
+                val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<TaskState>(config)
+                print("Task engine".padEnd(25) + ": starting ${it.consumersOrDefault} instances for $name ...")
+                repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting task engine {}", counter)
                     startPulsarTaskEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
+                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter, name),
                         pulsarOutputs.taskEngineOutput,
                         pulsarOutputs.sendToTaskEngineDeadLetters,
                         keyValueStorage,
@@ -165,6 +165,13 @@ class InfiniticWorker(
                 }
                 println(" done")
             }
+        }
+
+        for (task in config.tasks) {
+            task.taskEngine?.let { start(it, task.name) }
+        }
+        for (workflow in config.workflows) {
+            workflow.taskEngine?.let { start(it, workflow.name) }
         }
     }
 
@@ -177,8 +184,7 @@ class InfiniticWorker(
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val stateCache = (it.stateCache ?: StateCache.caffeine)
-                repeat(it.consumers) { counter ->
+                repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
                         counter,
@@ -186,7 +192,7 @@ class InfiniticWorker(
                         pulsarOutputs.monitoringPerNameOutput,
                         pulsarOutputs.sendToMonitoringPerNameDeadLetters,
                         keyValueStorage,
-                        stateCache.getKeyValueCache(config)
+                        it.stateCacheOrDefault.getKeyValueCache(config)
                     )
                 }
 
@@ -195,7 +201,7 @@ class InfiniticWorker(
                     pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName),
                     pulsarOutputs.sendToMonitoringGlobalDeadLetters,
                     keyValueStorage,
-                    stateCache.getKeyValueCache(config)
+                    it.stateCacheOrDefault.getKeyValueCache(config)
                 )
             }
         }
@@ -211,8 +217,8 @@ class InfiniticWorker(
         val taskExecutorRegister = TaskExecutorRegisterImpl()
 
         for (workflow in config.workflows) {
-            if (workflow.mode == Mode.worker) {
-                taskExecutorRegister.register(workflow.name) { workflow.getInstance() }
+            if (workflow.modeOrDefault == Mode.worker) {
+                taskExecutorRegister.register(workflow.name) { workflow.instance }
 
                 repeat(workflow.consumers) {
                     print("Workflow executor".padEnd(25) + ": starting ${workflow.concurrency} instances for ${workflow.name}...")
@@ -233,13 +239,8 @@ class InfiniticWorker(
         }
 
         for (task in config.tasks) {
-            if (task.mode == Mode.worker) {
-                if (task.shared) {
-                    val instance = task.getInstance()
-                    taskExecutorRegister.register(task.name) { instance }
-                } else {
-                    taskExecutorRegister.register(task.name) { task.getInstance() }
-                }
+            if (task.modeOrDefault == Mode.worker) {
+                taskExecutorRegister.register(task.name) { task.instance }
 
                 repeat(task.consumers) {
                     print("Task executor".padEnd(25) + ": starting ${task.concurrency} instances for ${task.name}...")

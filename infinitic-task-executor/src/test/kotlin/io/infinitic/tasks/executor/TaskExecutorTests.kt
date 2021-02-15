@@ -98,6 +98,7 @@ class TaskExecutorTests : StringSpec({
         slots[0] shouldBe getTaskAttemptStarted(msg)
         slots[1] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
+            taskName = msg.taskName,
             taskAttemptId = msg.taskAttemptId,
             taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
@@ -117,6 +118,7 @@ class TaskExecutorTests : StringSpec({
         slots[0] shouldBe getTaskAttemptStarted(msg)
         slots[1] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
+            taskName = msg.taskName,
             taskAttemptId = msg.taskAttemptId,
             taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
@@ -278,6 +280,7 @@ class TaskExecutorTests : StringSpec({
         slots[0] shouldBe getTaskAttemptStarted(msg)
         slots[1] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
+            taskName = msg.taskName,
             taskAttemptId = msg.taskAttemptId,
             taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
@@ -323,6 +326,7 @@ private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out
 
 private fun getTaskAttemptStarted(msg: ExecuteTaskAttempt) = TaskAttemptStarted(
     taskId = msg.taskId,
+    taskName = msg.taskName,
     taskAttemptId = msg.taskAttemptId,
     taskRetry = msg.taskRetry,
     taskAttemptRetry = msg.taskAttemptRetry

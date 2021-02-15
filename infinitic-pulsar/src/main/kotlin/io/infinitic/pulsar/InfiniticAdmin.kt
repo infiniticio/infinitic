@@ -27,8 +27,8 @@ package io.infinitic.pulsar
 
 import io.infinitic.pulsar.admin.setupInfinitic
 import io.infinitic.pulsar.config.AdminConfig
-import io.infinitic.pulsar.config.loadConfigFromFile
-import io.infinitic.pulsar.config.loadConfigFromResource
+import io.infinitic.pulsar.config.loaders.loadConfigFromFile
+import io.infinitic.pulsar.config.loaders.loadConfigFromResource
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.admin.PulsarAdmin
 

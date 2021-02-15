@@ -247,6 +247,7 @@ class ClientTaskTests : StringSpec({
 
         msg shouldBe CancelTask(
             taskId = taskId,
+            taskName = TaskName(FakeTask::class.java.name),
             taskOutput = MethodOutput.from(null)
         )
     }
@@ -262,6 +263,7 @@ class ClientTaskTests : StringSpec({
 
         msg shouldBe CancelTask(
             taskId = taskId,
+            taskName = TaskName(FakeTask::class.java.name),
             taskOutput = MethodOutput.from(output)
         )
     }

@@ -22,14 +22,31 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
+package io.infinitic.pulsar.config.data
+
+import io.infinitic.cache.StateCache
+import io.infinitic.pulsar.config.merge.Mergeable
 import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.storage.redis.RedisStorage
 
-fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryStorage()
-    StateStorage.redis -> RedisStorage(workerConfig.redis!!)
+data class WorkflowEngine(
+    @JvmField var mode: Mode? = null,
+    @JvmField val consumers: Int? = null,
+    @JvmField var stateStorage: StateStorage? = null,
+    @JvmField var stateCache: StateCache? = null
+) : Mergeable {
+    val modeOrDefault: Mode
+        get() = mode ?: Mode.worker
+
+    val consumersOrDefault: Int
+        get() = consumers ?: 1
+
+    val stateCacheOrDefault: StateCache
+        get() = stateCache ?: StateCache.caffeine
+
+    init {
+        consumers?.let {
+            require(it >= 1) { "consumers MUST be positive" }
+        }
+    }
 }

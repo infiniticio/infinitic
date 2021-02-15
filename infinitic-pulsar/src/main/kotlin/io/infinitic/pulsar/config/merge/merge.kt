@@ -22,29 +22,20 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.pulsar.config.merge
 
-package io.infinitic.pulsar.config
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.primaryConstructor
 
-data class Workflow(
-    @JvmField val name: String,
-    @JvmField val `class`: String,
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
-    @JvmField val concurrency: Int = 1
-) {
-    init {
-        require(consumers >= 0) { "consumers MUST be positive" }
-        require(concurrency >= 1) { "concurrency MUST be positive" }
-        require(name.isNotEmpty()) { "name can NOT be empty" }
-        require(`class`.isNotEmpty()) { "class can NOT be empty" }
-        require(try { Class.forName(`class`); true } catch (e: ClassNotFoundException) { false }) {
-            "class $`class` unknown"
-        }
+inline infix fun <reified T : Mergeable> T.merge(other: T?): T {
+    if (other == null) return this
+    val propertiesByName = T::class.declaredMemberProperties.associateBy { it.name }
+    val primaryConstructor = T::class.primaryConstructor
+        ?: throw IllegalArgumentException("merge type must have a primary constructor")
+    val args = primaryConstructor.parameters.associateWith { parameter ->
+        val property = propertiesByName[parameter.name]
+            ?: throw IllegalStateException("no declared member property found with name '${parameter.name}'")
+        (property.get(this) ?: property.get(other))
     }
-
-    fun getInstance(): Any = try {
-        Class.forName(`class`).newInstance()
-    } catch (e: Exception) {
-        throw IllegalArgumentException("class $`class` instantiation throws: $e")
-    }
+    return primaryConstructor.callBy(args)
 }

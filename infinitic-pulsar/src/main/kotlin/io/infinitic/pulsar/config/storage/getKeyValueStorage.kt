@@ -22,19 +22,15 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.pulsar.config.storage
 
-package io.infinitic.pulsar.config
-
-import io.infinitic.cache.StateCache
+import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.pulsar.config.WorkerConfig
 import io.infinitic.storage.StateStorage
+import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.storage.redis.RedisStorage
 
-data class Monitoring(
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
-    @JvmField override var stateStorage: StateStorage? = null,
-    @JvmField var stateCache: StateCache? = null
-) : Storable {
-    init {
-        require(consumers >= 0) { "concurrency MUST be positive" }
-    }
+fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig): KeyValueStorage = when (this) {
+    StateStorage.inMemory -> InMemoryStorage()
+    StateStorage.redis -> RedisStorage(workerConfig.redis!!)
 }

@@ -208,6 +208,7 @@ class TaskExecutor(
 
     private suspend fun sendTaskStarted(message: ExecuteTaskAttempt) {
         val taskAttemptStarted = TaskAttemptStarted(
+            taskName = message.taskName,
             taskId = message.taskId,
             taskRetry = message.taskRetry,
             taskAttemptId = message.taskAttemptId,
@@ -222,6 +223,7 @@ class TaskExecutor(
 
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = message.taskId,
+            taskName = message.taskName,
             taskAttemptId = message.taskAttemptId,
             taskAttemptRetry = message.taskAttemptRetry,
             taskRetry = message.taskRetry,
@@ -234,6 +236,7 @@ class TaskExecutor(
 
     private suspend fun sendTaskCompleted(message: ExecuteTaskAttempt, output: Any?) {
         val taskAttemptCompleted = TaskAttemptCompleted(
+            taskName = message.taskName,
             taskId = message.taskId,
             taskAttemptId = message.taskAttemptId,
             taskAttemptRetry = message.taskAttemptRetry,

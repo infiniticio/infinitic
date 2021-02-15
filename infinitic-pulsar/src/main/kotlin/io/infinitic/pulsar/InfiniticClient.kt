@@ -28,8 +28,8 @@ package io.infinitic.pulsar
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.pulsar.config.ClientConfig
-import io.infinitic.pulsar.config.loadConfigFromFile
-import io.infinitic.pulsar.config.loadConfigFromResource
+import io.infinitic.pulsar.config.loaders.loadConfigFromFile
+import io.infinitic.pulsar.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startClientResponseWorker

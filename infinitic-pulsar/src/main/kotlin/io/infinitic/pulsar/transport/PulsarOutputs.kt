@@ -141,7 +141,7 @@ class PulsarOutputs(
 
     private fun sendToTaskEngineCommands(): SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name("${message.taskName}")),
             TaskEngineEnvelope.from(message),
             "${message.taskId}",
             after
@@ -149,8 +149,17 @@ class PulsarOutputs(
     }
 
     private fun sendToTaskEngineEvents(): SendToTaskEngine = { message: TaskEngineMessage, after: Float ->
+        val taskName = "${message.taskName}"
+        val isWorkflowTask = (taskName == WorkflowTask::class.java.name)
+        val (key, topicName) = if (isWorkflowTask) {
+            val workflowName = message.taskMeta.get(WorkflowTask.META_WORKFLOW_NAME) as String
+            listOf(workflowName, TaskEngineEventsTopic.name(workflowName))
+        } else {
+            listOf(taskName, TaskEngineEventsTopic.name(taskName))
+        }
+
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name("${message.taskName}")),
             TaskEngineEnvelope.from(message),
             "${message.taskId}",
             after

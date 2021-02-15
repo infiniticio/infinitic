@@ -196,6 +196,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
     private fun <T : Any> cancelTask(handle: ExistingTaskProxyHandler<T>, output: Any?) {
         val msg = CancelTask(
             taskId = TaskId(handle.taskId),
+            taskName = TaskName.from(handle.klass),
             taskOutput = MethodOutput.from(output)
         )
         GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()

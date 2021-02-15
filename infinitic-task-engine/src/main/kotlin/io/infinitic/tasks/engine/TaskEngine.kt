@@ -189,6 +189,7 @@ class TaskEngine(
         // log event
         val tad = TaskCanceled(
             taskId = newState.taskId,
+            taskName = newState.taskName,
             taskOutput = message.taskOutput,
             taskMeta = newState.taskMeta
         )
@@ -238,6 +239,7 @@ class TaskEngine(
         // log events
         val tad = TaskAttemptDispatched(
             taskId = newState.taskId,
+            taskName = newState.taskName,
             taskAttemptId = newState.taskAttemptId,
             taskAttemptRetry = newState.taskAttemptRetry,
             taskRetry = newState.taskRetry
@@ -281,6 +283,7 @@ class TaskEngine(
         // log event
         val tad = TaskAttemptDispatched(
             taskId = newState.taskId,
+            taskName = newState.taskName,
             taskAttemptId = newState.taskAttemptId,
             taskAttemptRetry = newState.taskAttemptRetry,
             taskRetry = newState.taskRetry
@@ -316,6 +319,7 @@ class TaskEngine(
         // log event
         val tar = TaskAttemptDispatched(
             taskId = state.taskId,
+            taskName = state.taskName,
             taskAttemptId = state.taskAttemptId,
             taskRetry = state.taskRetry,
             taskAttemptRetry = state.taskAttemptRetry
@@ -418,6 +422,7 @@ class TaskEngine(
         // schedule next attempt
         val tar = RetryTaskAttempt(
             taskId = newState.taskId,
+            taskName = newState.taskName,
             taskRetry = newState.taskRetry,
             taskAttemptId = newState.taskAttemptId,
             taskAttemptRetry = newState.taskAttemptRetry

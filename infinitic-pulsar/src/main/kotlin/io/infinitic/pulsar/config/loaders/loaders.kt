@@ -22,19 +22,30 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.pulsar.config.loaders
 
-package io.infinitic.pulsar.config
+import com.sksamuel.hoplite.ConfigLoader
+import com.sksamuel.hoplite.PropertySource
+import java.io.File
 
-import io.infinitic.cache.StateCache
-import io.infinitic.storage.StateStorage
-
-data class WorkflowEngine(
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
-    @JvmField override var stateStorage: StateStorage? = null,
-    @JvmField var stateCache: StateCache? = null
-) : Storable {
-    init {
-        require(consumers >= 0) { "consumers MUST be positive" }
+inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T = ConfigLoader
+    .Builder()
+    .also { builder ->
+        resources.toList().map {
+            builder.addSource(PropertySource.resource(it, false))
+        }
     }
-}
+    .strict()
+    .build()
+    .loadConfigOrThrow()
+
+inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = ConfigLoader
+    .Builder()
+    .also { builder ->
+        files.toList().map {
+            builder.addSource(PropertySource.file(File(it), false))
+        }
+    }
+    .strict()
+    .build()
+    .loadConfigOrThrow()

@@ -22,10 +22,22 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config
 
-import io.infinitic.storage.StateStorage
+package io.infinitic.pulsar.config.data
 
-interface Storable {
-    var stateStorage: StateStorage?
+data class Pulsar(
+    @JvmField val serviceUrl: String = "pulsar://localhost:6650/",
+    @JvmField val serviceHttpUrl: String = "http://localhost:8080",
+    @JvmField val tenant: String,
+    @JvmField val namespace: String,
+    @JvmField val allowedClusters: Set<String>? = null
+) {
+    init {
+        require(serviceUrl.startsWith("pulsar://")) { "serviceUrl MUST start with pulsar://" }
+        require(
+            serviceHttpUrl.startsWith("http://") || serviceHttpUrl.startsWith("https://")
+        ) { "serviceUrl MUST start with http:// or https://" }
+        require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
+        require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
+    }
 }

@@ -75,7 +75,7 @@ object Libs {
     }
 
     object Hoplite {
-        private const val version = "1.3.11"
+        private const val version = "1.4.0"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }
