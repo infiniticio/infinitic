@@ -31,7 +31,7 @@ data class Task(
     @JvmField var mode: Mode? = null,
     @JvmField val consumers: Int = 1,
     @JvmField val concurrency: Int = 1,
-    @JvmField val shared: Boolean = true,
+    @JvmField val shared: Boolean = false,
     @JvmField var taskEngine: TaskEngine? = null
 ) {
     private lateinit var _instance: Any

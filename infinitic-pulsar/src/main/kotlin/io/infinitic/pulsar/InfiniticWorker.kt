@@ -123,7 +123,10 @@ class InfiniticWorker(
             if (it.modeOrDefault == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
                 val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<WorkflowState>(config)
-                print("Workflow engine".padEnd(25) + ": starting ${it.consumers} instances...")
+                print(
+                    "Workflow engine".padEnd(25) + ": starting ${it.consumers} instances... " +
+                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+                )
                 repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
                     startPulsarWorkflowEngineWorker(
@@ -150,7 +153,10 @@ class InfiniticWorker(
             if (it.modeOrDefault == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
                 val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<TaskState>(config)
-                print("Task engine".padEnd(25) + ": starting ${it.consumers} instances...")
+                print(
+                    "Task engine".padEnd(25) + ": starting ${it.consumers} instances... " +
+                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+                )
                 repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting task engine {}", counter)
                     startPulsarTaskEngineWorker(
