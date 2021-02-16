@@ -23,16 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.pulsar.config.data
 
-import io.infinitic.storage.StateStorage
-
-data class WorkflowEngine(
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
-    @JvmField var stateStorage: StateStorage? = null
+data class Pulsar(
+    @JvmField val serviceUrl: String = "pulsar://localhost:6650/",
+    @JvmField val serviceHttpUrl: String = "http://localhost:8080",
+    @JvmField val tenant: String,
+    @JvmField val namespace: String,
+    @JvmField val allowedClusters: Set<String>? = null
 ) {
     init {
-        require(consumers >= 0) { "consumers MUST be positive" }
+        require(serviceUrl.startsWith("pulsar://")) { "serviceUrl MUST start with pulsar://" }
+        require(
+            serviceHttpUrl.startsWith("http://") || serviceHttpUrl.startsWith("https://")
+        ) { "serviceUrl MUST start with http:// or https://" }
+        require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
+        require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
     }
 }

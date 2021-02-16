@@ -23,17 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.pulsar.config.data
 
-import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.cache.StateCache
+import io.infinitic.storage.StateStorage
 
-interface TaskContext {
-    val taskId: String
-    val taskRetry: Int
-    val taskAttemptId: String
-    val taskAttemptRetry: Int
-    val lastTaskAttemptError: Any?
-    var currentTaskAttemptError: Throwable?
-    val taskMeta: Map<String, Any?>
-    val taskOptions: TaskOptions
+data class Monitoring(
+    @JvmField var mode: Mode? = null,
+    @JvmField val consumers: Int? = null,
+    @JvmField var stateStorage: StateStorage? = null,
+    @JvmField var stateCache: StateCache? = null
+) {
+    val modeOrDefault: Mode
+        get() = mode ?: Mode.worker
+
+    val consumersOrDefault: Int
+        get() = consumers ?: 1
+
+    val stateCacheOrDefault: StateCache
+        get() = stateCache ?: StateCache.caffeine
+
+    init {
+        consumers?.let {
+            require(it >= 1) { "consumers MUST be positive" }
+        }
+    }
 }

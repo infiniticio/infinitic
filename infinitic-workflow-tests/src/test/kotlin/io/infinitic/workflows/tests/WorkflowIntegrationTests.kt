@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.tests
 
+import io.infinitic.cache.no.NoCache
 import io.infinitic.client.InfiniticClient
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
@@ -53,6 +54,8 @@ import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.infinitic.tasks.executor.TaskExecutor
+import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
+import io.infinitic.tasks.executor.register.register
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
@@ -74,10 +77,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private var workflowOutput: Any? = null
-private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage())
-private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage())
-private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
-private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
+private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage(), NoCache())
+private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage(), NoCache())
+private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage(), NoCache())
+private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage(), NoCache())
 
 private lateinit var workflowEngine: WorkflowEngine
 private lateinit var taskEngine: TaskEngine
@@ -509,7 +512,7 @@ fun CoroutineScope.init() {
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    executor = TaskExecutor(InMemoryTaskExecutorOutput(this))
+    executor = TaskExecutor(InMemoryTaskExecutorOutput(this), TaskExecutorRegisterImpl())
     executor.register<TaskA> { TaskAImpl() }
     executor.register<WorkflowA> { WorkflowAImpl() }
     executor.register<WorkflowB> { WorkflowBImpl() }

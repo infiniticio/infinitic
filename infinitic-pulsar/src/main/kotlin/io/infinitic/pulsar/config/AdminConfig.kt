@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.config
 
+import io.infinitic.pulsar.config.data.Pulsar
+
 data class AdminConfig(
     /*
     Pulsar configuration

@@ -29,7 +29,7 @@ import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import kotlinx.serialization.KSerializer
 import java.lang.reflect.Modifier.isStatic
@@ -65,7 +65,7 @@ fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     ClientResponseEnvelope::class -> ClientResponseEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
     TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
-    TaskExecutorMessage::class -> TaskExecutorMessage.serializer()
+    TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
     MonitoringGlobalEnvelope::class -> MonitoringGlobalEnvelope.serializer()
     MonitoringPerNameEnvelope::class -> MonitoringPerNameEnvelope.serializer()
     else -> throw RuntimeException("This should not happen: applying kserializer with ${klass.qualifiedName}")

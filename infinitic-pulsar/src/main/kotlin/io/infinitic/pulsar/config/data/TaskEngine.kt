@@ -23,21 +23,30 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.pulsar.config.data
 
-data class Pulsar(
-    @JvmField val serviceUrl: String = "pulsar://localhost:6650/",
-    @JvmField val serviceHttpUrl: String = "http://localhost:8080",
-    @JvmField val tenant: String,
-    @JvmField val namespace: String,
-    @JvmField val allowedClusters: Set<String>? = null
-) {
+import io.infinitic.cache.StateCache
+import io.infinitic.pulsar.config.merge.Mergeable
+import io.infinitic.storage.StateStorage
+
+data class TaskEngine(
+    @JvmField var mode: Mode? = null,
+    @JvmField val consumers: Int? = null,
+    @JvmField var stateStorage: StateStorage? = null,
+    @JvmField var stateCache: StateCache? = null
+) : Mergeable {
+    val modeOrDefault: Mode
+        get() = mode ?: Mode.worker
+
+    val consumersOrDefault: Int
+        get() = consumers ?: 1
+
+    val stateCacheOrDefault: StateCache
+        get() = stateCache ?: StateCache.caffeine
+
     init {
-        require(serviceUrl.startsWith("pulsar://")) { "serviceUrl MUST start with pulsar://" }
-        require(
-            serviceHttpUrl.startsWith("http://") || serviceHttpUrl.startsWith("https://")
-        ) { "serviceUrl MUST start with http:// or https://" }
-        require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
-        require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
+        consumers?.let {
+            require(it >= 1) { "consumers MUST be positive" }
+        }
     }
 }

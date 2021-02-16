@@ -23,16 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.cache
 
-import io.infinitic.storage.StateStorage
-
-data class TaskEngine(
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
-    @JvmField var stateStorage: StateStorage? = null
-) {
-    init {
-        require(consumers >= 0) { "consumers MUST be positive" }
-    }
+@Suppress("EnumEntryName")
+enum class StateCache {
+    none,
+    caffeine
 }

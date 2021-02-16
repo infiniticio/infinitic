@@ -40,7 +40,7 @@ interface MonitoringGlobalStateStorage {
     val updateStateFn: UpdateMonitoringGlobalState
     val deleteStateFn: DeleteMonitoringGlobalState
 
-    private val logger: Logger
+    val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun getState(): MonitoringGlobalState? {

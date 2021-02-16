@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.functions
 
+import io.infinitic.cache.caffeine.Caffeine
+import io.infinitic.cache.caffeine.CaffeineCache
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutputs
@@ -51,7 +53,7 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
     }
 
     internal fun getWorkflowEngine(context: Context) = WorkflowEngine(
-        WorkflowStateKeyValueStorage(context.keyValueStorage()),
+        WorkflowStateKeyValueStorage(context.keyValueStorage(), CaffeineCache(Caffeine(expireAfterAccess = 3600))),
         NoWorkflowEventStorage(),
         PulsarOutputs.from(context).workflowEngineOutput
     )

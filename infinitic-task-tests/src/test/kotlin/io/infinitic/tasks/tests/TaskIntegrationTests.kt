@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.tests
 
+import io.infinitic.cache.no.NoCache
 import io.infinitic.client.InfiniticClient
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
@@ -54,6 +55,7 @@ import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.infinitic.tasks.executor.TaskExecutor
+import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.tests.samples.Status
 import io.infinitic.tasks.tests.samples.TaskTest
@@ -69,9 +71,9 @@ import kotlinx.coroutines.launch
 private var taskStatus: TaskStatus? = null
 private val taskTest = TaskTestImpl()
 
-private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage())
-private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage())
-private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage())
+private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage(), NoCache())
+private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage(), NoCache())
+private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage(), NoCache())
 
 private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
@@ -307,6 +309,6 @@ fun CoroutineScope.init() {
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    taskExecutor = TaskExecutor(TestTaskExecutorOutput(this))
+    taskExecutor = TaskExecutor(TestTaskExecutorOutput(this), TaskExecutorRegisterImpl())
     taskExecutor.register(TaskTest::class.java.name) { taskTest }
 }

@@ -25,6 +25,16 @@
 
 package io.infinitic.pulsar.config
 
+import io.infinitic.cache.StateCache
+import io.infinitic.cache.caffeine.Caffeine
+import io.infinitic.pulsar.config.data.Mode
+import io.infinitic.pulsar.config.data.Monitoring
+import io.infinitic.pulsar.config.data.Pulsar
+import io.infinitic.pulsar.config.data.Task
+import io.infinitic.pulsar.config.data.TaskEngine
+import io.infinitic.pulsar.config.data.Workflow
+import io.infinitic.pulsar.config.data.WorkflowEngine
+import io.infinitic.pulsar.config.merge.merge
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.redis.Redis
 
@@ -43,6 +53,11 @@ data class WorkerConfig(
     Default state storage
      */
     @JvmField var stateStorage: StateStorage? = null,
+
+    /*
+    Default state cache
+     */
+    @JvmField var stateCache: StateCache? = null,
 
     /*
     Pulsar configuration
@@ -79,32 +94,61 @@ data class WorkerConfig(
      */
     @JvmField val redis: Redis? = null,
 
+    /*
+    Caffeine configuration
+     */
+    @JvmField val caffeine: Caffeine? = null,
+
 ) {
     init {
         workflowEngine?.let {
-            // apply default mode and stateStorage, if not set
+            // apply default, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "workflowEngine.stateStorage")
+            it.stateCache = it.stateCache ?: stateCache
+
+            require(workflows.isNotEmpty()) { "You have defined workflowEngine, but no workflow" }
         }
 
         taskEngine?.let {
-            // apply default mode and stateStorage, if not set
+            // apply default, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "taskEngine.stateStorage")
+            it.stateCache = it.stateCache ?: stateCache
+
+            require(tasks.isNotEmpty()) { "You have defined taskEngine, but no task" }
         }
 
         monitoring?.let {
-            // apply default mode and stateStorage, if not set
+            // apply default, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "monitoring.stateStorage")
+            it.stateCache = it.stateCache ?: stateCache
         }
 
-        // apply default mode, if not set
-        tasks.map { it.mode = it.mode ?: mode }
-        workflows.map { it.mode = it.mode ?: mode }
+        // apply default, if not set
+        tasks.map {
+            it.mode = it.mode ?: mode
+            it.taskEngine = when (it.taskEngine) {
+                null -> taskEngine
+                else -> it.taskEngine!! merge taskEngine
+            }
+        }
+
+        workflows.map {
+            it.mode = it.mode ?: mode
+            it.taskEngine = when (it.taskEngine) {
+                null -> taskEngine
+                else -> it.taskEngine!! merge taskEngine
+            }
+            it.workflowEngine = when (it.workflowEngine) {
+                null -> workflowEngine
+                else -> it.workflowEngine!! merge workflowEngine
+            }
+        }
     }
 
     private fun checkStateStorage(stateStorage: StateStorage?, name: String) {

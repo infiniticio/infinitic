@@ -46,7 +46,7 @@ import io.infinitic.common.tasks.engine.messages.TaskCompleted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
@@ -189,6 +189,7 @@ class TaskEngine(
         // log event
         val tad = TaskCanceled(
             taskId = newState.taskId,
+            taskName = newState.taskName,
             taskOutput = message.taskOutput,
             taskMeta = newState.taskMeta
         )
@@ -220,7 +221,7 @@ class TaskEngine(
         )
 
         // send task to workers
-        val rt = TaskExecutorMessage(
+        val rt = ExecuteTaskAttempt(
             taskId = newState.taskId,
             taskRetry = newState.taskRetry,
             taskAttemptId = newState.taskAttemptId,
@@ -238,6 +239,7 @@ class TaskEngine(
         // log events
         val tad = TaskAttemptDispatched(
             taskId = newState.taskId,
+            taskName = newState.taskName,
             taskAttemptId = newState.taskAttemptId,
             taskAttemptRetry = newState.taskAttemptRetry,
             taskRetry = newState.taskRetry
@@ -263,7 +265,7 @@ class TaskEngine(
         )
 
         // send task to workers
-        val rt = TaskExecutorMessage(
+        val rt = ExecuteTaskAttempt(
             taskId = newState.taskId,
             taskAttemptId = newState.taskAttemptId,
             taskAttemptRetry = newState.taskAttemptRetry,
@@ -281,6 +283,7 @@ class TaskEngine(
         // log event
         val tad = TaskAttemptDispatched(
             taskId = newState.taskId,
+            taskName = newState.taskName,
             taskAttemptId = newState.taskAttemptId,
             taskAttemptRetry = newState.taskAttemptRetry,
             taskRetry = newState.taskRetry
@@ -298,7 +301,7 @@ class TaskEngine(
         )
 
         // send task to workers
-        val rt = TaskExecutorMessage(
+        val rt = ExecuteTaskAttempt(
             taskId = state.taskId,
             taskAttemptId = state.taskAttemptId,
             taskAttemptRetry = state.taskAttemptRetry,
@@ -316,6 +319,7 @@ class TaskEngine(
         // log event
         val tar = TaskAttemptDispatched(
             taskId = state.taskId,
+            taskName = state.taskName,
             taskAttemptId = state.taskAttemptId,
             taskRetry = state.taskRetry,
             taskAttemptRetry = state.taskAttemptRetry
@@ -418,6 +422,7 @@ class TaskEngine(
         // schedule next attempt
         val tar = RetryTaskAttempt(
             taskId = newState.taskId,
+            taskName = newState.taskName,
             taskRetry = newState.taskRetry,
             taskAttemptId = newState.taskAttemptId,
             taskAttemptRetry = newState.taskAttemptRetry

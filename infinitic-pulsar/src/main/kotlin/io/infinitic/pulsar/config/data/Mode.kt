@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.pulsar.config.data
 
 @Suppress("EnumEntryName")
 enum class Mode {

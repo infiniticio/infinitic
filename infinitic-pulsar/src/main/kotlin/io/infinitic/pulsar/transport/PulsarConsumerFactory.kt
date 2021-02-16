@@ -29,7 +29,7 @@ import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
-import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.ClientResponseTopic
@@ -114,8 +114,8 @@ class PulsarConsumerFactory(
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newTaskExecutorConsumer(consumerName: String?, consumerCounter: Int, taskName: String): Consumer<TaskExecutorMessage> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorMessage>()))
+    fun newTaskExecutorConsumer(consumerName: String?, consumerCounter: Int, taskName: String): Consumer<TaskExecutorEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorEnvelope>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskExecutorTopic.name(taskName)))
             .also {
                 if (consumerName != null) {
@@ -128,8 +128,8 @@ class PulsarConsumerFactory(
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newWorkflowExecutorConsumer(consumerName: String?, consumerCounter: Int, workflowName: String): Consumer<TaskExecutorMessage> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorMessage>()))
+    fun newWorkflowExecutorConsumer(consumerName: String?, consumerCounter: Int, workflowName: String): Consumer<TaskExecutorEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskExecutorEnvelope>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowExecutorTopic.name(workflowName)))
             .also {
                 if (consumerName != null) {

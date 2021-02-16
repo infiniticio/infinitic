@@ -25,6 +25,8 @@
 
 package io.infinitic.inMemory.workers
 
+import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
+import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
@@ -37,13 +39,14 @@ import kotlinx.coroutines.launch
 
 fun CoroutineScope.startInMemoryMonitoringGlobalWorker(
     keyValueStorage: KeyValueStorage,
+    keyValueCache: KeyValueCache<MonitoringGlobalState>,
     monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>,
     logChannel: SendChannel<MonitoringGlobalMessageToProcess>
 ) = launch {
 
     startMonitoringGlobalEngine(
         "monitoring-global-engine",
-        MonitoringGlobalStateKeyValueStorage(keyValueStorage),
+        MonitoringGlobalStateKeyValueStorage(keyValueStorage, keyValueCache),
         MonitoringGlobalInputChannels(
             monitoringGlobalChannel,
             logChannel

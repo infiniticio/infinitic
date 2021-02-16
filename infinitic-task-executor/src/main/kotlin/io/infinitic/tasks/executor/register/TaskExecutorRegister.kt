@@ -56,3 +56,5 @@ interface TaskExecutorRegister {
      */
     fun getTasks(): List<String>
 }
+
+inline fun <reified T> TaskExecutorRegister.register(noinline factory: InstanceFactory) = this.register(T::class.java.name, factory)

@@ -32,6 +32,7 @@ dependencies {
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))
     api(project(":infinitic-storage"))
+    api(project(":infinitic-cache"))
     api(project(":infinitic-task-engine"))
     api(project(":infinitic-workflow-engine"))
     api(project(":infinitic-monitoring-engines"))

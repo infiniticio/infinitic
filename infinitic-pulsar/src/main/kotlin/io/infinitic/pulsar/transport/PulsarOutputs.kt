@@ -40,6 +40,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
+import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -158,16 +159,18 @@ class PulsarOutputs(
 
     private fun sendToTaskExecutors(): SendToTaskExecutors = { message: TaskExecutorMessage ->
         val taskName = "${message.taskName}"
-        val topicName = if (taskName == WorkflowTask::class.java.name) {
-            WorkflowExecutorTopic.name(message.taskMeta.get(WorkflowTask.META_WORKFLOW_NAME) as String)
+        val isWorkflowTask = (taskName == WorkflowTask::class.java.name)
+        val (key, topicName) = if (isWorkflowTask) {
+            val workflowName = message.taskMeta.get(WorkflowTask.META_WORKFLOW_NAME) as String
+            listOf(workflowName, WorkflowExecutorTopic.name(workflowName))
         } else {
-            TaskExecutorTopic.name(taskName)
+            listOf(taskName, TaskExecutorTopic.name(taskName))
         }
 
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topicName),
-            message,
-            null,
+            TaskExecutorEnvelope.from(message),
+            key,
             0F
         )
     }

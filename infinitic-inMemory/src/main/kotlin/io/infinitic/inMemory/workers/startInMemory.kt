@@ -25,6 +25,7 @@
 
 package io.infinitic.inMemory.workers
 
+import io.infinitic.cache.no.NoCache
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -83,12 +84,14 @@ fun CoroutineScope.startInMemory(
 
     startInMemoryMonitoringGlobalWorker(
         keyValueStorage,
+        NoCache(),
         monitoringGlobalChannel,
         logChannel
     )
 
     startInMemoryMonitoringPerNameWorker(
         keyValueStorage,
+        NoCache(),
         monitoringPerNameChannel,
         logChannel,
         monitoringGlobalChannel,
@@ -105,6 +108,7 @@ fun CoroutineScope.startInMemory(
 
     startInMemoryTaskEngineWorker(
         keyValueStorage,
+        NoCache(),
         clientResponsesChannel,
         taskEngineCommandsChannel,
         taskEngineEventsChannel,
@@ -116,6 +120,7 @@ fun CoroutineScope.startInMemory(
 
     startInMemoryWorkflowEngineWorker(
         keyValueStorage,
+        NoCache(),
         clientResponsesChannel,
         workflowEngineCommandsChannel,
         workflowEngineEventsChannel,

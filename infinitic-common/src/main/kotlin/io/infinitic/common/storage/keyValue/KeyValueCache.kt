@@ -23,29 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.common.storage.keyValue
 
-data class Task(
-    @JvmField val name: String,
-    @JvmField val `class`: String,
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
-    @JvmField val concurrency: Int = 1,
-    @JvmField val shared: Boolean = true
-) {
-    init {
-        require(consumers >= 0) { "consumers MUST be positive" }
-        require(concurrency >= 1) { "concurrency MUST be positive" }
-        require(name.isNotEmpty()) { "name can NOT be empty" }
-        require(`class`.isNotEmpty()) { "class can NOT be empty" }
-        require(try { Class.forName(`class`); true } catch (e: ClassNotFoundException) { false }) {
-            "class $`class` unknown"
-        }
-    }
+interface KeyValueCache<T> {
+    fun delete(key: String)
 
-    fun getInstance(): Any = try {
-        Class.forName(`class`).newInstance()
-    } catch (e: Exception) {
-        throw IllegalArgumentException("class $`class` instantiation throws $e")
-    }
+    fun set(key: String, value: T)
+
+    fun get(key: String): T?
 }

@@ -41,7 +41,7 @@ interface TaskStateStorage {
     val updateStateFn: UpdateTaskState
     val deleteStateFn: DeleteTaskState
 
-    private val logger: Logger
+    val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun getState(taskId: TaskId): TaskState? {

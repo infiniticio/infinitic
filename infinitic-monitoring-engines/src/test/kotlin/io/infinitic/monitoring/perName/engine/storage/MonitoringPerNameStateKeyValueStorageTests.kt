@@ -25,6 +25,7 @@
 
 package io.infinitic.monitoring.perName.engine.storage
 
+import io.infinitic.cache.no.NoCache
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.storage.keyValue.KeyValueStorage
@@ -51,7 +52,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             val context = mockk<KeyValueStorage>()
             coEvery { context.getState(any()) } returns null
             // when
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(context)
+            val stateStorage = MonitoringPerNameStateKeyValueStorage(context, NoCache())
             val state = stateStorage.getState(taskName)
             // then
             coVerify(exactly = 1) { context.getState("monitoringPerName.state.$taskName") }
@@ -65,7 +66,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             val context = mockk<KeyValueStorage>()
             coEvery { context.getState(any()) } returns ByteBuffer.wrap(stateIn.toByteArray())
             // when
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(context)
+            val stateStorage = MonitoringPerNameStateKeyValueStorage(context, NoCache())
             val stateOut = stateStorage.getState(stateIn.taskName)
             // then
             coVerify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName}") }
@@ -93,7 +94,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             coEvery { storage.getCounter(any()) } returnsMany listOf(14L, 2L, 1L, 30L, 100L)
             coEvery { storage.putState(any(), any()) } just runs
 
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(storage)
+            val stateStorage = MonitoringPerNameStateKeyValueStorage(storage, NoCache())
             stateStorage.updateState(newState.taskName, newState, null)
 
             coVerifyAll {
@@ -136,7 +137,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             coEvery { storage.getCounter(any()) } returnsMany listOf(14L, 2L, 1L, 30L, 100L)
             coEvery { storage.putState(any(), any()) } just runs
 
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(storage)
+            val stateStorage = MonitoringPerNameStateKeyValueStorage(storage, NoCache())
             stateStorage.updateState(newState.taskName, newState, oldState)
 
             coVerifyAll {
@@ -161,7 +162,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.deleteState(any()) } just runs
             // when
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(storage)
+            val stateStorage = MonitoringPerNameStateKeyValueStorage(storage, NoCache())
             stateStorage.deleteState(stateIn.taskName)
             // then
             coVerify(exactly = 1) { storage.deleteState(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }

@@ -23,16 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.common.tasks.executors.messages
 
-import io.infinitic.storage.StateStorage
-
-data class Monitoring(
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
-    @JvmField var stateStorage: StateStorage? = null
-) {
-    init {
-        require(consumers >= 0) { "concurrency MUST be positive" }
-    }
+enum class TaskExecutorMessageType {
+    EXECUTE_TASK_ATTEMPT,
+    CANCEL_TASK_ATTEMPT
 }

@@ -22,14 +22,28 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config
+package io.infinitic.pulsar.config.loaders
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.storage.redis.RedisStorage
+import com.sksamuel.hoplite.ConfigLoader
+import com.sksamuel.hoplite.PropertySource
+import java.io.File
 
-fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig, type: String): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryStorage()
-    StateStorage.redis -> RedisStorage(workerConfig.redis!!)
-}
+inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T = ConfigLoader
+    .Builder()
+    .also { builder ->
+        resources.toList().map {
+            builder.addSource(PropertySource.resource(it, false))
+        }
+    }
+    .build()
+    .loadConfigOrThrow()
+
+inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = ConfigLoader
+    .Builder()
+    .also { builder ->
+        files.toList().map {
+            builder.addSource(PropertySource.file(File(it), false))
+        }
+    }
+    .build()
+    .loadConfigOrThrow()

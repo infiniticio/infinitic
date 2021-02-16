@@ -75,7 +75,7 @@ object Libs {
     }
 
     object Hoplite {
-        private const val version = "1.3.11"
+        private const val version = "1.4.0"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }
@@ -85,10 +85,6 @@ object Libs {
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
-    }
-
-    object Redis {
-        const val clients = "redis.clients:jedis:3.3.0"
     }
 
     object EasyRandom {

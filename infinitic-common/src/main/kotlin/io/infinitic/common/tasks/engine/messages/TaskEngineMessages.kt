@@ -49,14 +49,15 @@ import kotlinx.serialization.Serializable
 sealed class TaskEngineMessage() {
     val messageId = MessageId()
     abstract val taskId: TaskId
+    abstract val taskName: TaskName
 }
 
 @Serializable
 data class DispatchTask(
     override val taskId: TaskId,
+    override val taskName: TaskName,
     val clientName: ClientName,
     val clientWaiting: Boolean,
-    val taskName: TaskName,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput,
@@ -69,7 +70,7 @@ data class DispatchTask(
 @Serializable
 data class RetryTask(
     override val taskId: TaskId,
-    val taskName: TaskName?,
+    override val taskName: TaskName,
     val methodName: MethodName?,
     val methodParameterTypes: MethodParameterTypes?,
     val methodInput: MethodInput?,
@@ -80,12 +81,14 @@ data class RetryTask(
 @Serializable
 data class CancelTask(
     override val taskId: TaskId,
+    override val taskName: TaskName,
     val taskOutput: MethodOutput
 ) : TaskEngineMessage()
 
 @Serializable
 data class TaskCanceled(
     override val taskId: TaskId,
+    override val taskName: TaskName,
     val taskOutput: MethodOutput,
     val taskMeta: TaskMeta
 ) : TaskEngineMessage()
@@ -93,7 +96,7 @@ data class TaskCanceled(
 @Serializable
 data class TaskCompleted(
     override val taskId: TaskId,
-    val taskName: TaskName,
+    override val taskName: TaskName,
     val taskOutput: MethodOutput,
     val taskMeta: TaskMeta
 ) : TaskEngineMessage()
@@ -101,6 +104,7 @@ data class TaskCompleted(
 @Serializable
 data class RetryTaskAttempt(
     override val taskId: TaskId,
+    override val taskName: TaskName,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskRetry: TaskRetry
@@ -109,6 +113,7 @@ data class RetryTaskAttempt(
 @Serializable
 data class TaskAttemptDispatched(
     override val taskId: TaskId,
+    override val taskName: TaskName,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskRetry: TaskRetry
@@ -117,6 +122,7 @@ data class TaskAttemptDispatched(
 @Serializable
 data class TaskAttemptStarted(
     override val taskId: TaskId,
+    override val taskName: TaskName,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskRetry: TaskRetry
@@ -125,6 +131,7 @@ data class TaskAttemptStarted(
 @Serializable
 data class TaskAttemptCompleted(
     override val taskId: TaskId,
+    override val taskName: TaskName,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskRetry: TaskRetry,
@@ -134,6 +141,7 @@ data class TaskAttemptCompleted(
 @Serializable
 data class TaskAttemptFailed(
     override val taskId: TaskId,
+    override val taskName: TaskName,
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskRetry: TaskRetry,

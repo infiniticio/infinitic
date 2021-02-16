@@ -25,9 +25,11 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.pulsar.InfiniticWorker
@@ -68,11 +70,12 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
     taskEngineConsumer: Consumer<TaskEngineEnvelope>,
     taskEngineOutput: TaskEngineOutput,
     sendToTaskEngineDeadLetters: SendToTaskEngine,
-    keyValueStorage: KeyValueStorage
+    keyValueStorage: KeyValueStorage,
+    keyValueCache: KeyValueCache<TaskState>
 ) = launch(singleThreadedContext("$TASK_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val taskEngine = TaskEngine(
-        TaskStateKeyValueStorage(keyValueStorage),
+        TaskStateKeyValueStorage(keyValueStorage, keyValueCache),
         NoTaskEventStorage(),
         taskEngineOutput
     )

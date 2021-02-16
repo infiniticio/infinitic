@@ -22,28 +22,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config
 
-import com.sksamuel.hoplite.ConfigLoader
-import com.sksamuel.hoplite.PropertySource
-import java.io.File
+package io.infinitic.pulsar.config.merge
 
-inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T = ConfigLoader
-    .Builder()
-    .also { builder ->
-        resources.toList().map {
-            builder.addSource(PropertySource.resource(it, false))
-        }
-    }
-    .build()
-    .loadConfigOrThrow()
-
-inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = ConfigLoader
-    .Builder()
-    .also { builder ->
-        files.toList().map {
-            builder.addSource(PropertySource.file(File(it), false))
-        }
-    }
-    .build()
-    .loadConfigOrThrow()
+interface Mergeable

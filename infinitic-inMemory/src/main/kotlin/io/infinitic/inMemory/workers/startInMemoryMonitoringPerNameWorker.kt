@@ -25,6 +25,8 @@
 
 package io.infinitic.inMemory.workers
 
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryMonitoringPerNameOutput
@@ -40,6 +42,7 @@ import kotlinx.coroutines.launch
 
 fun CoroutineScope.startInMemoryMonitoringPerNameWorker(
     keyValueStorage: KeyValueStorage,
+    keyValueCache: KeyValueCache<MonitoringPerNameState>,
     monitoringPerNameChannel: Channel<MonitoringPerNameMessageToProcess>,
     monitoringPerNameResultsChannel: SendChannel<MonitoringPerNameMessageToProcess>,
     monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>,
@@ -55,7 +58,7 @@ fun CoroutineScope.startInMemoryMonitoringPerNameWorker(
 
     startMonitoringPerNameEngine(
         "monitoring-per-name-engine",
-        MonitoringPerNameStateKeyValueStorage(keyValueStorage),
+        MonitoringPerNameStateKeyValueStorage(keyValueStorage, keyValueCache),
         MonitoringPerNameInputChannels(
             monitoringPerNameChannel,
             monitoringPerNameResultsChannel

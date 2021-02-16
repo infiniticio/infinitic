@@ -27,6 +27,7 @@ dependencies {
     api(Libs.Coroutines.core)
 
     api(project(":infinitic-common"))
+    api(project(":infinitic-cache"))
     api(project(":infinitic-task-engine"))
 }
 

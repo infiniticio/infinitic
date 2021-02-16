@@ -27,7 +27,9 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -67,11 +69,12 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope>,
     monitoringPerNameOutput: MonitoringPerNameOutput,
     sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName,
-    keyValueStorage: KeyValueStorage
+    keyValueStorage: KeyValueStorage,
+    keyValueCache: KeyValueCache<MonitoringPerNameState>
 ) = launch(singleThreadedContext("$MONITORING_PER_NAME_THREAD_NAME-$consumerCounter")) {
 
     val monitoringPerNameEngine = MonitoringPerNameEngine(
-        MonitoringPerNameStateKeyValueStorage(keyValueStorage),
+        MonitoringPerNameStateKeyValueStorage(keyValueStorage, keyValueCache),
         monitoringPerNameOutput
     )
 

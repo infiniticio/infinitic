@@ -25,11 +25,16 @@
 
 package io.infinitic.tasks
 
-import java.time.Duration
+abstract class Task {
+    lateinit var context: TaskAttemptContext
 
-interface Task {
     /*
-     *  Proxy task (Java syntax)
+     * Retry
      */
-    fun getRetryDelay(context: TaskContext): Duration
+    fun retry(after: Double) = context.retry(after)
+
+    /*
+     * Cancel
+     */
+    open fun cancel() {}
 }
