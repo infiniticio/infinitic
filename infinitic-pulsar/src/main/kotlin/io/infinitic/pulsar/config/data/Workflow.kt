@@ -56,7 +56,7 @@ data class Workflow(
             }
             require(try { instance; true } catch (e: Exception) { false }) {
                 "class \"$it\" can not be instantiated using newInstance(). " +
-                    "Checks it's public and has an empty constructor (workflow $name)"
+                    "This class must be public and have an empty constructor"
             }
             require(instance is Workflow) {
                 "class \"$it\" is not a workflow as it does not extend ${Workflow::class.java.name}"

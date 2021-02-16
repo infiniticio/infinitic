@@ -31,7 +31,7 @@ data class Task(
     @JvmField var mode: Mode? = null,
     @JvmField val consumers: Int = 1,
     @JvmField val concurrency: Int = 1,
-    @JvmField val shared: Boolean = false,
+    @JvmField val shared: Boolean = true,
     @JvmField var taskEngine: TaskEngine? = null
 ) {
     private lateinit var _instance: Any
@@ -60,7 +60,7 @@ data class Task(
             }
             require(try { instance; true } catch (e: Exception) { false }) {
                 "class \"$it\" can not be instantiated using newInstance(). " +
-                    "Checks it's public and has an empty constructor (task $name)"
+                    "This class must be public and have an empty constructor"
             }
             require(consumers >= 1) { "consumers MUST be strictly positive (task $name)" }
             require(concurrency >= 1) { "concurrency MUST strictly be positive (task $name)" }
