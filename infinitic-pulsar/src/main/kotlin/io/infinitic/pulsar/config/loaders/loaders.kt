@@ -35,7 +35,6 @@ inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T 
             builder.addSource(PropertySource.resource(it, false))
         }
     }
-    .strict()
     .build()
     .loadConfigOrThrow()
 
@@ -46,6 +45,5 @@ inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = Config
             builder.addSource(PropertySource.file(File(it), false))
         }
     }
-    .strict()
     .build()
     .loadConfigOrThrow()

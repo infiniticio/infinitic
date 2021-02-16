@@ -39,9 +39,9 @@ data class Workflow(
     private lateinit var _instance: Any
 
     val instance: Any
-        get() = {
-            if (! this::_instance.isInitialized) _instance = Class.forName(`class`).newInstance()
-            _instance
+        get() {
+            if (!this::_instance.isInitialized) _instance = Class.forName(`class`).newInstance()
+            return _instance
         }
 
     val modeOrDefault: Mode
@@ -64,14 +64,10 @@ data class Workflow(
                     "Checks it's public and has an empty constructor (workflow $name)"
             }
             require(instance is Workflow) {
-                "class \"$it\" is not a workflow as it does not extend ${Workflow::class.java.name} (workflow $name)"
+                "class \"$it\" is not a workflow as it does not extend ${Workflow::class.java.name}"
             }
-            consumers?. let {
-                require(consumers >= 1) { "consumers MUST be positive (workflow $name)" }
-            }
-            concurrency?.let {
-                require(concurrency >= 1) { "concurrency MUST be positive (workflow $name)" }
-            }
+            require(consumers >= 1) { "consumers MUST be strictly positive (workflow $name)" }
+            require(concurrency >= 1) { "concurrency MUST be strictly positive (workflow $name)" }
         }
     }
 }

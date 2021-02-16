@@ -30,7 +30,6 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.pulsar.config.WorkerConfig
 import io.infinitic.pulsar.config.cache.getKeyValueCache
 import io.infinitic.pulsar.config.data.Mode
-import io.infinitic.pulsar.config.data.TaskEngine
 import io.infinitic.pulsar.config.loaders.loadConfigFromFile
 import io.infinitic.pulsar.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.config.storage.getKeyValueStorage
@@ -121,7 +120,7 @@ class InfiniticWorker(
         pulsarOutputs: PulsarOutputs
     ) {
         config.workflowEngine?.let {
-            if (it.mode == Mode.worker) {
+            if (it.modeOrDefault == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
                 val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<WorkflowState>(config)
                 print("Workflow engine".padEnd(25) + ": starting ${it.consumers} instances...")
@@ -147,16 +146,16 @@ class InfiniticWorker(
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
-        fun start(it: TaskEngine, name: String) {
+        config.taskEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
                 val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<TaskState>(config)
-                print("Task engine".padEnd(25) + ": starting ${it.consumersOrDefault} instances for $name ...")
+                print("Task engine".padEnd(25) + ": starting ${it.consumers} instances...")
                 repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting task engine {}", counter)
                     startPulsarTaskEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter, name),
+                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
                         pulsarOutputs.taskEngineOutput,
                         pulsarOutputs.sendToTaskEngineDeadLetters,
                         keyValueStorage,
@@ -165,13 +164,6 @@ class InfiniticWorker(
                 }
                 println(" done")
             }
-        }
-
-        for (task in config.tasks) {
-            task.taskEngine?.let { start(it, task.name) }
-        }
-        for (workflow in config.workflows) {
-            workflow.taskEngine?.let { start(it, workflow.name) }
         }
     }
 

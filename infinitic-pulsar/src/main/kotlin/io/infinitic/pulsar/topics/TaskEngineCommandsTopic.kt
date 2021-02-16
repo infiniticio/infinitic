@@ -26,5 +26,5 @@
 package io.infinitic.pulsar.topics
 
 object TaskEngineCommandsTopic {
-    fun name(name: String) = "task-engine-commands: $name"
+    const val name = "task-engine-commands"
 }

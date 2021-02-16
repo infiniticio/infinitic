@@ -37,13 +37,10 @@ data class Task(
     private lateinit var _instance: Any
 
     val instance: Any
-        get() = {
-            if (! shared) {
-                Class.forName(`class`).newInstance()
-            } else {
-                if (! this::_instance.isInitialized) _instance = Class.forName(`class`).newInstance()
-                _instance
-            }
+        get() {
+            if (! shared) return Class.forName(`class`).newInstance()
+            if (! this::_instance.isInitialized) _instance = Class.forName(`class`).newInstance()
+            return _instance
         }
 
     val modeOrDefault: Mode
