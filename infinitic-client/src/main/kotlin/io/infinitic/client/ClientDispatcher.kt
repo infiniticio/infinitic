@@ -29,6 +29,7 @@ import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -74,7 +75,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             taskOptions = handler.taskOptions,
             taskMeta = handler.taskMeta
         )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
+        GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
 
         // reset for reuse
         handler.reset()
@@ -114,7 +115,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             workflowMeta = handler.workflowMeta,
             workflowOptions = handler.workflowOptions
         )
-        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, 0F) }.join()
+        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()
 
         // reset for reuse
         handler.reset()

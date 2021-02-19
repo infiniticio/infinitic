@@ -23,22 +23,26 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.common.data
 
-import io.infinitic.common.data.IntInterface
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlin.reflect.full.createInstance
 
-@Serializable(with = TaskRetrySerializer::class)
-data class TaskRetry(override var int: kotlin.Int = 0) : IntInterface
+interface MillisInstantInterface : LongInterface
 
-object TaskRetrySerializer : KSerializer<TaskRetry> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetry) { encoder.encodeInt(value.int) }
-    override fun deserialize(decoder: Decoder) = TaskRetry(decoder.decodeInt())
+operator fun <T : MillisInstantInterface, S : MillisDurationInterface> T.plus(duration: S): T {
+    val o = this::class.createInstance()
+    o.long = this.long + duration.long
+    return o
+}
+
+operator fun <T : MillisInstantInterface, S : MillisDurationInterface> T.minus(duration: S): T {
+    val o = this::class.createInstance()
+    o.long = this.long - duration.long
+    return o
+}
+
+inline operator fun <T : MillisInstantInterface, reified S : MillisDurationInterface> T.minus(other: MillisInstantInterface): S {
+    val o = S::class.createInstance()
+    o.long = this.long - other.long
+    return o
 }

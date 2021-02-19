@@ -69,8 +69,9 @@ fun main() {
         val workflowA = client.workflow(WorkflowA::class.java)
 
         repeat(1) {
-            client.async(taskA) { await(2000) }
+//            client.async(taskA) { await(2000) }
 //            client.async(workflowA) { seq1() }
+            println(workflowA.wait1())
         }
     }
 }

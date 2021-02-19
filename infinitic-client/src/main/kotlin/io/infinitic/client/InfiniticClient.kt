@@ -29,6 +29,7 @@ import io.infinitic.client.proxies.ExistingTaskProxyHandler
 import io.infinitic.client.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
@@ -199,7 +200,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
             taskName = TaskName.from(handle.klass),
             taskOutput = MethodOutput.from(output)
         )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
+        GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
     }
 
     private fun <T : Any> cancelWorkflow(handler: ExistingWorkflowProxyHandler<T>, output: Any?) {
@@ -208,7 +209,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
             clientName = null,
             workflowOutput = MethodOutput.from(output)
         )
-        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, 0F) }.join()
+        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()
     }
 
     private fun <T : Any> retryTask(handler: ExistingTaskProxyHandler<T>) {
@@ -221,7 +222,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
             taskOptions = handler.taskOptions,
             taskMeta = handler.taskMeta
         )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, 0F) }.join()
+        GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
     }
 
     private fun <T : Any> retryWorkflowTask(handler: ExistingWorkflowProxyHandler<T>) {

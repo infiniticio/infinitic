@@ -25,6 +25,8 @@
 
 package io.infinitic.common.tasks.engine.messages.interfaces
 
+import io.infinitic.common.data.MillisDuration
+
 interface FailingTaskAttemptMessage : TaskAttemptMessage {
-    val taskAttemptDelayBeforeRetry: Float?
+    val taskAttemptDelayBeforeRetry: MillisDuration?
 }

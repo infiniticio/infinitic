@@ -31,6 +31,8 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import java.time.Duration
+import java.time.Instant
 
 abstract class Workflow {
     lateinit var context: WorkflowTaskContext
@@ -85,4 +87,14 @@ abstract class Workflow {
      * Create an inline task
      */
     fun <S> inline(task: () -> S): S = context.inline(task)
+
+    /*
+     * Create a timer from a duration
+     */
+    fun timer(duration: Duration): Deferred<Instant> = context.timer(duration)
+
+    /*
+     * Create a timer from an instant
+     */
+    fun timer(instant: Instant): Deferred<Instant> = context.timer(instant)
 }

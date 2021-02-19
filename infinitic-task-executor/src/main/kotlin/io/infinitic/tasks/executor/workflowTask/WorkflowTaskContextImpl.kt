@@ -25,6 +25,8 @@
 
 package io.infinitic.tasks.executor.workflowTask
 
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.tasks.exceptions.SuspendMethodNotSupported
@@ -36,6 +38,8 @@ import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
+import io.infinitic.common.workflows.data.commands.DispatchDurationTimer
+import io.infinitic.common.workflows.data.commands.DispatchInstantTimer
 import io.infinitic.common.workflows.data.commands.DispatchTask
 import io.infinitic.common.workflows.data.commands.EndAsync
 import io.infinitic.common.workflows.data.commands.EndInlineTask
@@ -60,6 +64,8 @@ import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Proxy
 import kotlin.reflect.jvm.kotlinFunction
+import java.time.Duration as JavaDuration
+import java.time.Instant as JavaInstant
 
 class WorkflowTaskContextImpl(
     private val workflowTaskInput: WorkflowTaskInput,
@@ -307,6 +313,22 @@ class WorkflowTaskContextImpl(
 
     override fun <S> dispatchWorkflowAndWaitResult(handler: NewWorkflowProxyHandler<*>): S =
         dispatchWorkflow<S>(handler).await()
+
+    /*
+     * Duration Timer dispatching
+     */
+    override fun timer(duration: JavaDuration): Deferred<JavaInstant> = dispatch(
+        DispatchDurationTimer(MillisDuration(duration.toMillis())),
+        CommandSimpleName("${CommandType.DISPATCH_DURATION_TIMER}")
+    )
+
+    /*
+     * Instant Timer dispatching
+     */
+    override fun timer(instant: JavaInstant): Deferred<JavaInstant> = dispatch(
+        DispatchInstantTimer(MillisInstant(instant.toEpochMilli())),
+        CommandSimpleName("${CommandType.DISPATCH_INSTANT_TIMER}")
+    )
 
     /*
      * Get return value from Deferred

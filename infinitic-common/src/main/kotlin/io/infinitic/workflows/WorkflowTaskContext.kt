@@ -28,6 +28,8 @@ package io.infinitic.workflows
 import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import java.time.Duration
+import java.time.Instant
 
 interface WorkflowTaskContext : Dispatcher {
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
@@ -43,4 +45,8 @@ interface WorkflowTaskContext : Dispatcher {
     fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S>
 
     fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S>
+
+    fun timer(duration: Duration): Deferred<Instant>
+
+    fun timer(instant: Instant): Deferred<Instant>
 }

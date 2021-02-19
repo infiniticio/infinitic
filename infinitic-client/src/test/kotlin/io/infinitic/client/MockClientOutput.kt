@@ -29,6 +29,7 @@ import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -50,7 +51,7 @@ internal class MockClientOutput(
     lateinit var client: InfiniticClient
 
     init {
-        coEvery { sendToTaskEngineFn(capture(taskSlot), 0F) } coAnswers {
+        coEvery { sendToTaskEngineFn(capture(taskSlot), MillisDuration(0)) } coAnswers {
             val msg = taskSlot.captured
             if (msg is DispatchTask && msg.clientWaiting) {
                 client.handle(
@@ -62,7 +63,7 @@ internal class MockClientOutput(
                 )
             }
         }
-        coEvery { sendToWorkflowEngineFn(capture(workflowSlot), 0F) } coAnswers {
+        coEvery { sendToWorkflowEngineFn(capture(workflowSlot), MillisDuration(0)) } coAnswers {
             val msg = workflowSlot.captured
             if (msg is DispatchWorkflow && msg.clientWaiting) {
                 client.handle(

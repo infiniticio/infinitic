@@ -23,22 +23,34 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.common.data
 
-import io.infinitic.common.data.IntInterface
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlin.reflect.full.createInstance
 
-@Serializable(with = TaskRetrySerializer::class)
-data class TaskRetry(override var int: kotlin.Int = 0) : IntInterface
+interface LongInterface : Comparable<LongInterface> {
+    var long: Long
 
-object TaskRetrySerializer : KSerializer<TaskRetry> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetry) { encoder.encodeInt(value.int) }
-    override fun deserialize(decoder: Decoder) = TaskRetry(decoder.decodeInt())
+    override operator fun compareTo(other: LongInterface): Int = this.long.compareTo(other.long)
+}
+
+operator fun <T : LongInterface> T.plus(increment: Int): T {
+    val o = this::class.createInstance()
+    o.long = this.long + increment
+    return o
+}
+
+operator fun <T : LongInterface> T.minus(increment: Int): T {
+    val o = this::class.createInstance()
+    o.long = this.long - increment
+    return o
+}
+
+operator fun <T : LongInterface> T.inc(): T {
+    this.long++
+    return this
+}
+
+operator fun <T : LongInterface> T.dec(): T {
+    this.long--
+    return this
 }

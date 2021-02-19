@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
-import io.infinitic.common.data.interfaces.IntInterface
+import io.infinitic.common.data.IntInterface
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -40,7 +40,7 @@ data class WorkflowTaskIndex(override var int: Int = 0) : IntInterface {
 }
 
 object WorkflowTaskIndexSerializer : KSerializer<WorkflowTaskIndex> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("WorkflowTaskIndex", PrimitiveKind.INT)
     override fun serialize(encoder: Encoder, value: WorkflowTaskIndex) { encoder.encodeInt(value.int) }
     override fun deserialize(decoder: Decoder) = WorkflowTaskIndex(decoder.decodeInt())
 }

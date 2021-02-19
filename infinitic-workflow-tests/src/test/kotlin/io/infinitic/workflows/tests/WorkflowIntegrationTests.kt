@@ -31,6 +31,7 @@ import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -393,10 +394,10 @@ class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : Workflow
         { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
 
     override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
+        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
 
     override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 }
 
 class InMemoryTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
@@ -404,10 +405,10 @@ class InMemoryTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOu
         { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
 
     override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
+        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
 
     override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 
     override val sendToTaskExecutorsFn: SendToTaskExecutors =
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
@@ -425,17 +426,17 @@ class InMemoryMonitoringPerNameOutput(private val scope: CoroutineScope) : Monit
 class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
 
     override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 }
 
 class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
     override val clientName = ClientName("client: testing")
 
     override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 
     override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: Float -> scope.sendToWorkflowEngine(msg, after) }
+        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
 }
 
 fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
@@ -444,9 +445,9 @@ fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
     }
 }
 
-fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float) {
+fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: MillisDuration) {
     launch {
-        if (after > 0F) { delay((1000 * after).toLong()) }
+        if (after.long > 0) { delay(after.long) }
         workflowEngine.handle(msg)
 
         // defines output if reached
@@ -456,9 +457,9 @@ fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Float
     }
 }
 
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) {
     launch {
-        if (after > 0F) { delay((1000 * after).toLong()) }
+        if (after.long > 0) { delay(after.long) }
         taskEngine.handle(msg)
     }
 }

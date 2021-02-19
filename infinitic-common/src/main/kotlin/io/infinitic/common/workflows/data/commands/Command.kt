@@ -26,6 +26,8 @@
 package io.infinitic.common.workflows.data.commands
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -41,7 +43,7 @@ import java.lang.reflect.Method
 
 @Serializable
 sealed class Command {
-    fun hash() = CommandHash(SerializedData.from(this).hash())
+    open fun hash() = CommandHash(SerializedData.from(this).hash())
 }
 
 /**
@@ -125,11 +127,11 @@ data class EndInlineTask(
 ) : Command()
 
 @Serializable
-data class DispatchTimer(
-    val duration: Int
+data class DispatchDurationTimer(
+    val duration: MillisDuration
 ) : Command()
 
 @Serializable
-data class DispatchReceiver(
-    val klass: String
+data class DispatchInstantTimer(
+    val instant: MillisInstant
 ) : Command()

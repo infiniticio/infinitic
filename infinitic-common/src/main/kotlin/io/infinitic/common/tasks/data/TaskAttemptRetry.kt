@@ -25,7 +25,7 @@
 
 package io.infinitic.common.tasks.data
 
-import io.infinitic.common.data.interfaces.IntInterface
+import io.infinitic.common.data.IntInterface
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind

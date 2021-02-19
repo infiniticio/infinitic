@@ -23,9 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.common.workflows.data.timers
 
-import io.infinitic.common.data.IntInterface
+import io.infinitic.common.data.Id
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -33,12 +33,13 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.util.UUID
 
-@Serializable(with = TaskRetrySerializer::class)
-data class TaskRetry(override var int: kotlin.Int = 0) : IntInterface
+@Serializable(with = TimerIdSerializer::class)
+data class TimerId(override val id: String = UUID.randomUUID().toString()) : Id(id)
 
-object TaskRetrySerializer : KSerializer<TaskRetry> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetry) { encoder.encodeInt(value.int) }
-    override fun deserialize(decoder: Decoder) = TaskRetry(decoder.decodeInt())
+object TimerIdSerializer : KSerializer<TimerId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TimerId", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TimerId) { encoder.encodeString(value.id) }
+    override fun deserialize(decoder: Decoder) = TimerId(decoder.decodeString())
 }

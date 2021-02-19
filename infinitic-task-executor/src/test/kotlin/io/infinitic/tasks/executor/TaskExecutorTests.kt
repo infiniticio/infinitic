@@ -27,6 +27,7 @@
 
 package io.infinitic.tasks.executor
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
@@ -224,7 +225,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskAttemptId shouldBe msg.taskAttemptId
         fail.taskRetry shouldBe msg.taskRetry
         fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
-        fail.taskAttemptDelayBeforeRetry shouldBe 3F
+        fail.taskAttemptDelayBeforeRetry shouldBe MillisDuration(3000)
         fail.taskAttemptError.get()!!::class.java.name shouldBe IllegalStateException::class.java.name
     }
 
