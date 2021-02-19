@@ -30,6 +30,7 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
 import io.infinitic.workflows.or
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 
@@ -286,14 +287,10 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun wait1(): Instant {
-        val instant: Instant = inline {
-            val now = Instant.now()
-            println(now)
-            val i = now.plusSeconds(10)
-            println(i)
-            i
-        }
+        val timer = timer(Duration.ofSeconds(6))
 
-        return timer(instant).await()
+        taskA.await(3000)
+
+        return timer.await()
     }
 }
