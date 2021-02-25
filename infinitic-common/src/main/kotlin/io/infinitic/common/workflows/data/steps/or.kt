@@ -25,30 +25,22 @@
 
 package io.infinitic.common.workflows.data.steps
 
-internal fun or(step1: Step.Id, step2: Step.Id) = Step.Or(listOf(step1, step2))
-internal fun or(step1: Step.Id, step2: Step.And) = Step.Or(listOf(step1, step2))
-internal fun or(step1: Step.Id, step2: Step.Or) = Step.Or(listOf(step1) + step2)
-internal fun or(step1: Step.And, step2: Step.Id) = Step.Or(listOf(step1, step2))
-internal fun or(step1: Step.And, step2: Step.And) = Step.Or(listOf(step1, step2))
-internal fun or(step1: Step.And, step2: Step.Or) = Step.Or(listOf(step1, step2))
-internal fun or(step1: Step.Or, step2: Step.Id) = Step.Or(step1.steps + step2)
-internal fun or(step1: Step.Or, step2: Step.And) = Step.Or(listOf(step1, step2))
-internal fun or(step1: Step.Or, step2: Step.Or) = Step.Or(step1.steps + step2.steps)
-
-internal fun or(step1: Step, step2: Step) = when (step1) {
-    is Step.And -> when (step2) {
-        is Step.And -> or(step1, step2)
-        is Step.Id -> or(step1, step2)
-        is Step.Or -> or(step1, step2)
+internal fun or(step1: Step, step2: Step) = Step.Or(
+    when (step1) {
+        is Step.And -> when (step2) {
+            is Step.And -> listOf(step1, step2)
+            is Step.Id -> listOf(step1, step2)
+            is Step.Or -> listOf(step1, step2)
+        }
+        is Step.Id -> when (step2) {
+            is Step.And -> listOf(step1, step2)
+            is Step.Id -> listOf(step1, step2)
+            is Step.Or -> listOf(step1) + step2
+        }
+        is Step.Or -> when (step2) {
+            is Step.And -> listOf(step1, step2)
+            is Step.Id -> step1.steps + step2
+            is Step.Or -> step1.steps + step2.steps
+        }
     }
-    is Step.Id -> when (step2) {
-        is Step.And -> or(step1, step2)
-        is Step.Id -> or(step1, step2)
-        is Step.Or -> or(step1, step2)
-    }
-    is Step.Or -> when (step2) {
-        is Step.And -> or(step1, step2)
-        is Step.Id -> or(step1, step2)
-        is Step.Or -> or(step1, step2)
-    }
-}
+)

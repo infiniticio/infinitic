@@ -26,8 +26,6 @@
 package io.infinitic.workflows
 
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.common.workflows.data.steps.Step.And
-import io.infinitic.common.workflows.data.steps.Step.Or
 import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.data.steps.and as stepAnd
 import io.infinitic.common.workflows.data.steps.or as stepOr
@@ -54,6 +52,10 @@ data class Deferred<T> (
      */
     fun status(): DeferredStatus = workflowTaskContext.status(this)
 }
+
+fun or(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc or deferred }
+
+fun and(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc and deferred }
 
 @JvmName("orT0")
 infix fun <T> Deferred<out T>.or(other: Deferred<out T>) =
@@ -87,10 +89,10 @@ infix fun <T> Deferred<List<T>>.and(other: Deferred<List<T>>) =
 infix fun <T> Deferred<out T>.and(other: Deferred<List<T>>) =
     Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowTaskContext)
 
-// extension function to apply OR to a List<Deferred<T>>
-fun <T> List<Deferred<out T>>.or() =
-    Deferred<T>(Or(this.map { it.step }), this.first().workflowTaskContext)
-
 // extension function to apply AND to a List<Deferred<T>>
-fun <T> List<Deferred<out T>>.and() =
-    Deferred<List<T>>(And(this.map { it.step }), this.first().workflowTaskContext)
+fun <T> List<Deferred<T>>.and() =
+    Deferred<List<T>>(Step.And(this.map { it.step }), this.first().workflowTaskContext)
+
+// extension function to apply OR to a List<Deferred<T>>
+fun <T> List<Deferred<T>>.or() =
+    Deferred<T>(Step.Or(this.map { it.step }), this.first().workflowTaskContext)
