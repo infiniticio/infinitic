@@ -25,10 +25,9 @@
 
 object Libs {
     // Plugins version
-    const val kotlinVersion = "1.4.21"
+    const val kotlinVersion = "1.4.31"
     const val serializationVersion = "1.4.10"
-    const val ktlintVersion = "9.4.1"
-    const val shadowVersion = "6.1.0"
+    const val ktlintVersion = "10.0.0"
 
     const val org = "io.infinitic"
 
@@ -44,11 +43,11 @@ object Libs {
     }
 
     object Serialization {
-        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1"
+        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0"
     }
 
     object Jackson {
-        private const val version = "2.12.0"
+        private const val version = "2.12.1"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
         const val module = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -63,15 +62,11 @@ object Libs {
     }
 
     object Mockk {
-        const val mockk = "io.mockk:mockk:1.10.2"
-    }
-
-    object Ktlint {
-        private const val version = "1.0.1"
+        const val mockk = "io.mockk:mockk:1.10.6"
     }
 
     object Avro4k {
-        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.0.0"
+        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.1.0"
     }
 
     object Hoplite {
