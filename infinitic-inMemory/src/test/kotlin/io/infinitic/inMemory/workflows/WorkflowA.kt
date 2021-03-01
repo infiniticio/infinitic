@@ -30,6 +30,8 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
 import io.infinitic.workflows.or
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
 
 interface WorkflowA {
@@ -55,6 +57,7 @@ interface WorkflowA {
     fun prop4(): String
     fun prop5(): String
     fun prop6(): String
+    fun wait1(): Instant
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -281,5 +284,13 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         // not sure, how to avoid that
 
         return p1 // should be "abab"
+    }
+
+    override fun wait1(): Instant {
+        val timer = timer(Duration.ofSeconds(6))
+
+        taskA.await(3000)
+
+        return timer.await()
     }
 }

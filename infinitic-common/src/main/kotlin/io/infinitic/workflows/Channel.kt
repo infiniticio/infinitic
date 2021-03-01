@@ -23,22 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.workflows
 
-import io.infinitic.common.data.IntInterface
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-
-@Serializable(with = TaskRetrySerializer::class)
-data class TaskRetry(override var int: kotlin.Int = 0) : IntInterface
-
-object TaskRetrySerializer : KSerializer<TaskRetry> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetry) { encoder.encodeInt(value.int) }
-    override fun deserialize(decoder: Decoder) = TaskRetry(decoder.decodeInt())
+interface Channel<T> {
+    fun emit(signal: Any)
+    fun receive(): Deferred<T>
 }

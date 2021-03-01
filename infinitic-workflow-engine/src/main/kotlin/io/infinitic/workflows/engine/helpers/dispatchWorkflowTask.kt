@@ -26,7 +26,9 @@
 package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.data.interfaces.inc
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.inc
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -84,7 +86,7 @@ suspend fun dispatchWorkflowTask(
     workflowEngineOutput.sendToTaskEngine(
         state,
         workflowTask,
-        0F
+        MillisDuration(0)
     )
 
     // log event
@@ -96,8 +98,9 @@ suspend fun dispatchWorkflowTask(
             workflowName = state.workflowName,
             workflowTaskInput = workflowTaskInput
         ),
-        0F
+        MillisDuration(0)
     )
 
     state.runningWorkflowTaskId = workflowTaskId
+    state.runningWorkflowTaskInstant = MillisInstant.now()
 }

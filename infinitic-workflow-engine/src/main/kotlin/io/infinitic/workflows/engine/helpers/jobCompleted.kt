@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.data.interfaces.plus
+import io.infinitic.common.data.plus
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted

@@ -32,10 +32,10 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.DelayId
 import io.infinitic.common.workflows.data.events.EventData
 import io.infinitic.common.workflows.data.events.EventName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
@@ -106,7 +106,8 @@ data class WorkflowTaskDispatched(
 @Serializable
 data class TimerCompleted(
     override val workflowId: WorkflowId,
-    val delayId: DelayId
+    val methodRunId: MethodRunId,
+    val timerId: TimerId
 ) : WorkflowEngineMessage()
 
 @Serializable

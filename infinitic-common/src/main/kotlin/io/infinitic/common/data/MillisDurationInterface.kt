@@ -23,25 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data
+package io.infinitic.common.data
 
-import io.infinitic.common.data.Id
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import java.util.UUID
+import kotlin.reflect.full.createInstance
 
-@Serializable(with = DelayIdSerializer::class)
-data class DelayId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+interface MillisDurationInterface : LongInterface
 
-data class TaskAttemptId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+operator fun <T : MillisDurationInterface> T.plus(other: MillisDurationInterface): T {
+    val o = this::class.createInstance()
+    o.long = this.long + other.long
+    return o
+}
 
-object DelayIdSerializer : KSerializer<DelayId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("DelayId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: DelayId) { encoder.encodeString(value.id) }
-    override fun deserialize(decoder: Decoder) = DelayId(decoder.decodeString())
+operator fun <T : MillisDurationInterface> T.minus(other: MillisDurationInterface): T {
+    val o = this::class.createInstance()
+    o.long = this.long - other.long
+    return o
 }

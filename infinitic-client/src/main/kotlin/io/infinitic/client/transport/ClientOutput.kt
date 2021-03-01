@@ -26,6 +26,7 @@
 package io.infinitic.client.transport
 
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -41,12 +42,12 @@ interface ClientOutput {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage, after: Float) {
+    suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage, after: MillisDuration) {
         sendToWorkflowEngineFn(workflowEngineMessage, after)
         logger.debug("workflowId {} - sendToWorkflowEngine {}", workflowEngineMessage.workflowId, workflowEngineMessage)
     }
 
-    suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage, after: Float) {
+    suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage, after: MillisDuration) {
         sendToTaskEngineFn(taskEngineMessage, after)
         logger.debug("taskId {} - sendToTaskEngine {}", taskEngineMessage.taskId, taskEngineMessage)
     }

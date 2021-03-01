@@ -23,9 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.common.data
 
-import io.infinitic.common.data.IntInterface
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -33,12 +32,17 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.time.Instant as JavaInstant
 
-@Serializable(with = TaskRetrySerializer::class)
-data class TaskRetry(override var int: kotlin.Int = 0) : IntInterface
+@Serializable(with = InstantSerializer::class)
+data class MillisInstant(override var long: Long = 0) : MillisInstantInterface {
+    companion object {
+        fun now() = MillisInstant(JavaInstant.now().toEpochMilli())
+    }
+}
 
-object TaskRetrySerializer : KSerializer<TaskRetry> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetry) { encoder.encodeInt(value.int) }
-    override fun deserialize(decoder: Decoder) = TaskRetry(decoder.decodeInt())
+object InstantSerializer : KSerializer<MillisInstant> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.LONG)
+    override fun serialize(encoder: Encoder, value: MillisInstant) { encoder.encodeLong(value.long) }
+    override fun deserialize(decoder: Decoder) = MillisInstant(decoder.decodeLong())
 }

@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.executor
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
@@ -159,7 +160,13 @@ class TaskExecutor(
         when (val delay = getDelayBeforeRetry(task, msg.taskId)) {
             is RetryDelayRetrieved -> {
                 // returning the original cause
-                sendTaskAttemptFailed(msg, context.currentTaskAttemptError, delay.value)
+                sendTaskAttemptFailed(
+                    msg,
+                    context.currentTaskAttemptError,
+                    delay.value?.let {
+                        MillisDuration((1000F * it).toLong())
+                    }
+                )
             }
             is RetryDelayFailed -> {
                 // returning the error in getRetryDelay, without retry
@@ -215,10 +222,10 @@ class TaskExecutor(
             taskAttemptRetry = message.taskAttemptRetry
         )
 
-        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptStarted, 0F)
+        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptStarted, MillisDuration(0))
     }
 
-    private suspend fun sendTaskAttemptFailed(message: ExecuteTaskAttempt, error: Throwable?, delay: Float? = null) {
+    private suspend fun sendTaskAttemptFailed(message: ExecuteTaskAttempt, error: Throwable?, delay: MillisDuration? = null) {
         logger.error("taskId {} - error {}", message.taskId, error)
 
         val taskAttemptFailed = TaskAttemptFailed(
@@ -231,7 +238,7 @@ class TaskExecutor(
             taskAttemptError = TaskAttemptError.from(error)
         )
 
-        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptFailed, 0F)
+        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptFailed, MillisDuration(0))
     }
 
     private suspend fun sendTaskCompleted(message: ExecuteTaskAttempt, output: Any?) {
@@ -244,6 +251,6 @@ class TaskExecutor(
             taskOutput = MethodOutput.from(output)
         )
 
-        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptCompleted, 0F)
+        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptCompleted, MillisDuration(0))
     }
 }

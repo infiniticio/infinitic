@@ -23,22 +23,24 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.common.workflows.data.steps
 
-import io.infinitic.common.data.IntInterface
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-
-@Serializable(with = TaskRetrySerializer::class)
-data class TaskRetry(override var int: kotlin.Int = 0) : IntInterface
-
-object TaskRetrySerializer : KSerializer<TaskRetry> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetry) { encoder.encodeInt(value.int) }
-    override fun deserialize(decoder: Decoder) = TaskRetry(decoder.decodeInt())
-}
+internal fun or(step1: Step, step2: Step) = Step.Or(
+    when (step1) {
+        is Step.And -> when (step2) {
+            is Step.And -> listOf(step1, step2)
+            is Step.Id -> listOf(step1, step2)
+            is Step.Or -> listOf(step1, step2)
+        }
+        is Step.Id -> when (step2) {
+            is Step.And -> listOf(step1, step2)
+            is Step.Id -> listOf(step1, step2)
+            is Step.Or -> listOf(step1) + step2
+        }
+        is Step.Or -> when (step2) {
+            is Step.And -> listOf(step1, step2)
+            is Step.Id -> step1.steps + step2
+            is Step.Or -> step1.steps + step2.steps
+        }
+    }
+)

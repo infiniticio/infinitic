@@ -28,6 +28,7 @@ package io.infinitic.common.workflows.engine.state
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -89,6 +90,11 @@ data class WorkflowState(
     Id of WorkflowTask currently running (max one at a time)
      */
     var runningWorkflowTaskId: WorkflowTaskId? = null,
+
+    /*
+    Id of WorkflowTask currently running (max one at a time)
+     */
+    var runningWorkflowTaskInstant: MillisInstant? = null,
 
     /*
     Incremental index counting WorkflowTasks (used as an index for instance's state)

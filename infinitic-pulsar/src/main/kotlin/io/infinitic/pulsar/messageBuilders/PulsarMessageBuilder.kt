@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar.messageBuilders
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Schema
@@ -40,7 +41,7 @@ suspend inline fun <reified T : Any> PulsarMessageBuilder.sendPulsarMessage(
     topic: String,
     msg: T,
     key: String?,
-    after: Float
+    after: MillisDuration
 ) {
     this
         .newMessage(topic, AvroSchema.of(schemaDefinition<T>()))
@@ -49,8 +50,8 @@ suspend inline fun <reified T : Any> PulsarMessageBuilder.sendPulsarMessage(
             if (key != null) {
                 it.key(key)
             }
-            if (after > 0F) {
-                it.deliverAfter((after * 1000).toLong(), TimeUnit.MILLISECONDS)
+            if (after.long > 0) {
+                it.deliverAfter(after.long, TimeUnit.MILLISECONDS)
             }
         }
         .sendAsync().await()

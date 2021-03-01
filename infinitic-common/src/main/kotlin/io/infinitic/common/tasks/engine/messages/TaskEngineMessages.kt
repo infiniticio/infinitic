@@ -27,6 +27,7 @@ package io.infinitic.common.tasks.engine.messages
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodOutput
@@ -145,6 +146,6 @@ data class TaskAttemptFailed(
     override val taskAttemptId: TaskAttemptId,
     override val taskAttemptRetry: TaskAttemptRetry,
     override val taskRetry: TaskRetry,
-    override val taskAttemptDelayBeforeRetry: Float?,
+    override val taskAttemptDelayBeforeRetry: MillisDuration?,
     val taskAttemptError: TaskAttemptError
 ) : TaskEngineMessage(), FailingTaskAttemptMessage

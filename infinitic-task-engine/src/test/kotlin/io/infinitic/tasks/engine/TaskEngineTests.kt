@@ -26,7 +26,8 @@
 package io.infinitic.tasks.engine
 
 import io.infinitic.common.clients.transport.SendToClientResponse
-import io.infinitic.common.data.interfaces.plus
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.plus
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
@@ -126,7 +127,7 @@ class MockTaskEngineOutput : TaskEngineOutput {
     val taskCompletedInClient = slot<TaskCompletedInClient>()
     val workerMessageSlot = slot<TaskExecutorMessage>()
     val retryTaskAttemptSlot = slot<RetryTaskAttempt>()
-    val retryTaskAttemptDelaySlot = slot<Float>()
+    val retryTaskAttemptDelaySlot = slot< MillisDuration >()
     val taskStatusUpdatedSlot = slot<TaskStatusUpdated>()
     val workflowMessageSlot = slot<WorkflowEngineMessage>()
     val taskCanceledSlot = slot<TaskCanceled>()
@@ -137,9 +138,9 @@ class MockTaskEngineOutput : TaskEngineOutput {
         coEvery { sendToTaskExecutorsFn(capture(workerMessageSlot)) } just Runs
         coEvery { sendToMonitoringPerNameFn(capture(taskStatusUpdatedSlot)) } just Runs
         coEvery { sendToTaskEngineFn(capture(retryTaskAttemptSlot), capture(retryTaskAttemptDelaySlot)) } just Runs
-        coEvery { sendToTaskEngineFn(capture(taskCanceledSlot), 0F) } just Runs
-        coEvery { sendToTaskEngineFn(capture(taskAttemptDispatchedSlot), 0F) } just Runs
-        coEvery { sendToTaskEngineFn(capture(taskCompletedSlot), 0F) } just Runs
+        coEvery { sendToTaskEngineFn(capture(taskCanceledSlot), MillisDuration(0)) } just Runs
+        coEvery { sendToTaskEngineFn(capture(taskAttemptDispatchedSlot), MillisDuration(0)) } just Runs
+        coEvery { sendToTaskEngineFn(capture(taskCompletedSlot), MillisDuration(0)) } just Runs
         coEvery { sendToWorkflowEngineFn(capture(workflowMessageSlot), any()) } just Runs
     }
 }
@@ -176,7 +177,7 @@ internal class TaskEngineTests : StringSpec({
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.cancelTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
             taskEngineOutput.sendToClientResponse(stateIn, taskCompletedInClient)
-            taskEngineOutput.sendToTaskEngine(stateIn, taskCanceled, 0F)
+            taskEngineOutput.sendToTaskEngine(stateIn, taskCanceled, MillisDuration(0))
             taskStateStorage.deleteState(msgIn.taskId)
             taskEngineOutput.sendToMonitoringPerName(stateIn, taskStatusUpdated)
         }
@@ -203,7 +204,7 @@ internal class TaskEngineTests : StringSpec({
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.dispatchTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
             taskEngineOutput.sendToTaskExecutors(state, runTask)
-            taskEngineOutput.sendToTaskEngine(state, taskAttemptDispatched, 0F)
+            taskEngineOutput.sendToTaskEngine(state, taskAttemptDispatched, MillisDuration(0))
             taskStateStorage.updateState(msgIn.taskId, state, null)
             taskEngineOutput.sendToMonitoringPerName(state, taskStatusUpdated)
         }
@@ -255,7 +256,7 @@ internal class TaskEngineTests : StringSpec({
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.retryTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
             taskEngineOutput.sendToTaskExecutors(state, runTask)
-            taskEngineOutput.sendToTaskEngine(state, taskAttemptDispatched, 0F)
+            taskEngineOutput.sendToTaskEngine(state, taskAttemptDispatched, MillisDuration(0))
             taskStateStorage.updateState(msgIn.taskId, state, stateIn)
             taskEngineOutput.sendToMonitoringPerName(state, taskStatusUpdated)
         }
@@ -306,7 +307,7 @@ internal class TaskEngineTests : StringSpec({
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.taskAttemptCompletedSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
             taskEngineOutput.sendToClientResponse(stateIn, taskCompletedInClient)
-            taskEngineOutput.sendToTaskEngine(stateIn, taskCompleted, 0F)
+            taskEngineOutput.sendToTaskEngine(stateIn, taskCompleted, MillisDuration(0))
             taskStateStorage.deleteState(msgIn.taskId)
             taskEngineOutput.sendToMonitoringPerName(stateIn, taskStatusUpdated)
         }
@@ -365,7 +366,7 @@ internal class TaskEngineTests : StringSpec({
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
                 "taskAttemptRetry" to stateIn.taskAttemptRetry,
-                "taskAttemptDelayBeforeRetry" to 42F
+                "taskAttemptDelayBeforeRetry" to MillisDuration(42000)
             )
         )
         val test = TestEngine(stateIn, msgIn)
@@ -407,7 +408,7 @@ internal class TaskEngineTests : StringSpec({
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
                 "taskAttemptRetry" to stateIn.taskAttemptRetry,
-                "taskAttemptDelayBeforeRetry" to 0F
+                "taskAttemptDelayBeforeRetry" to MillisDuration(0)
             )
         )
         val test = TestEngine(stateIn, msgIn)
@@ -433,7 +434,7 @@ internal class TaskEngineTests : StringSpec({
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
                 "taskAttemptRetry" to stateIn.taskAttemptRetry,
-                "taskAttemptDelayBeforeRetry" to -42F
+                "taskAttemptDelayBeforeRetry" to MillisDuration(-42000)
             )
         )
         val test = TestEngine(stateIn, msgIn)
@@ -491,7 +492,7 @@ private fun checkShouldRetryTaskAttempt(
     coVerifyOrder {
         taskStateStorage.getState(msgIn.taskId)
         taskEngineOutput.sendToTaskExecutors(stateIn, runTask)
-        taskEngineOutput.sendToTaskEngine(stateIn, taskAttemptDispatched, 0F)
+        taskEngineOutput.sendToTaskEngine(stateIn, taskAttemptDispatched, MillisDuration(0))
         taskStateStorage.updateState(msgIn.taskId, state, stateIn)
         taskEngineOutput.sendToMonitoringPerName(stateIn, taskStatusUpdated)
     }

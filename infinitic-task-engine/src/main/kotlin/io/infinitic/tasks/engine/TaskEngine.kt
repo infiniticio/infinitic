@@ -26,7 +26,8 @@
 package io.infinitic.tasks.engine
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.interfaces.plus
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.plus
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -170,7 +171,7 @@ class TaskEngine(
                         taskOutput = message.taskOutput
                     )
                 },
-                0F
+                MillisDuration(0)
             )
         }
 
@@ -193,7 +194,7 @@ class TaskEngine(
             taskOutput = message.taskOutput,
             taskMeta = newState.taskMeta
         )
-        taskEngineOutput.sendToTaskEngine(newState, tad, 0F)
+        taskEngineOutput.sendToTaskEngine(newState, tad, MillisDuration(0))
 
         // Delete stored state
         taskStateStorage.deleteState(newState.taskId)
@@ -244,7 +245,7 @@ class TaskEngine(
             taskAttemptRetry = newState.taskAttemptRetry,
             taskRetry = newState.taskRetry
         )
-        taskEngineOutput.sendToTaskEngine(newState, tad, 0F)
+        taskEngineOutput.sendToTaskEngine(newState, tad, MillisDuration(0))
 
         return newState
     }
@@ -288,7 +289,7 @@ class TaskEngine(
             taskAttemptRetry = newState.taskAttemptRetry,
             taskRetry = newState.taskRetry
         )
-        taskEngineOutput.sendToTaskEngine(newState, tad, 0F)
+        taskEngineOutput.sendToTaskEngine(newState, tad, MillisDuration(0))
 
         return newState
     }
@@ -324,7 +325,7 @@ class TaskEngine(
             taskRetry = state.taskRetry,
             taskAttemptRetry = state.taskAttemptRetry
         )
-        taskEngineOutput.sendToTaskEngine(state, tar, 0F)
+        taskEngineOutput.sendToTaskEngine(state, tar, MillisDuration(0))
 
         return state
     }
@@ -358,7 +359,7 @@ class TaskEngine(
                         taskOutput = message.taskOutput
                     )
                 },
-                0F
+                MillisDuration(0)
             )
         }
 
@@ -381,7 +382,7 @@ class TaskEngine(
             taskOutput = message.taskOutput,
             taskMeta = newState.taskMeta
         )
-        taskEngineOutput.sendToTaskEngine(newState, tc, 0F)
+        taskEngineOutput.sendToTaskEngine(newState, tc, MillisDuration(0))
 
         // delete stored state
         taskStateStorage.deleteState(newState.taskId)
@@ -400,7 +401,7 @@ class TaskEngine(
 
     private suspend fun delayRetryTaskAttempt(
         oldState: TaskState,
-        delay: Float?,
+        delay: MillisDuration?,
         error: TaskAttemptError,
         messageId: MessageId
     ): TaskState {
@@ -411,7 +412,7 @@ class TaskEngine(
             previousTaskAttemptError = error
         )
         // immediate retry
-        if (delay <= 0f) return retryTaskAttempt(oldState.copy(previousTaskAttemptError = error), messageId)
+        if (delay.long <= 0) return retryTaskAttempt(oldState.copy(previousTaskAttemptError = error), messageId)
         // delayed retry
         val newState = oldState.copy(
             lastMessageId = messageId,

@@ -27,8 +27,8 @@ package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.data.Id
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.DelayId
 import io.infinitic.common.workflows.data.events.EventId
+import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -42,7 +42,7 @@ import java.util.UUID
 @Serializable(with = CommandIdSerializer::class)
 data class CommandId(override val id: String = UUID.randomUUID().toString()) : Id(id) {
     constructor(taskId: TaskId) : this(taskId.id)
-    constructor(delayId: DelayId) : this(delayId.id)
+    constructor(timerId: TimerId) : this(timerId.id)
     constructor(workflowId: WorkflowId) : this(workflowId.id)
     constructor(eventId: EventId) : this(eventId.id)
 }

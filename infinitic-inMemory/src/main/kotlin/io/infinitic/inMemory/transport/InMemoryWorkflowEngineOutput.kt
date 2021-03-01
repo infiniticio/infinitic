@@ -28,6 +28,7 @@ package io.infinitic.inMemory.transport
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.clients.transport.SendToClientResponse
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -55,20 +56,20 @@ class InMemoryWorkflowEngineOutput(
         }
     }
 
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: Float ->
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: MillisDuration ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             // TODO inMemory resilience implies to find a way to persist delayed messages
-            delay((1000 * after).toLong())
+            delay(after.long)
             workflowEventsChannel.send(InMemoryMessageToProcess(msg))
         }
     }
 
-    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: Float ->
+    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             // TODO inMemory resilience implies to find a way to persist delayed messages
-            delay((1000 * after).toLong())
+            delay(after.long)
             taskCommandsChannel.send(InMemoryMessageToProcess(msg))
         }
     }

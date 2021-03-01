@@ -43,6 +43,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.taskCompleted
+import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.storage.events.WorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
@@ -151,7 +152,7 @@ class WorkflowEngine(
             is ChildWorkflowCanceled -> childWorkflowCanceled(state, message)
             is ChildWorkflowCompleted -> childWorkflowCompleted(workflowEngineOutput, state, message)
             is WorkflowTaskCompleted -> workflowTaskCompleted(workflowEngineOutput, state, message)
-            is TimerCompleted -> timerCompleted(state, message)
+            is TimerCompleted -> timerCompleted(workflowEngineOutput, state, message)
             is ObjectReceived -> objectReceived(state, message)
             is TaskCanceled -> taskCanceled(state, message)
             is TaskCompleted -> taskCompleted(workflowEngineOutput, state, message)
@@ -164,10 +165,6 @@ class WorkflowEngine(
     }
 
     private suspend fun childWorkflowCanceled(state: WorkflowState, msg: ChildWorkflowCanceled) {
-        TODO()
-    }
-
-    private suspend fun timerCompleted(state: WorkflowState, msg: TimerCompleted) {
         TODO()
     }
 

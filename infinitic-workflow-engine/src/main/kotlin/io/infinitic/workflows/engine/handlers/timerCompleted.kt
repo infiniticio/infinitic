@@ -23,22 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.data.IntInterface
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.engine.messages.TimerCompleted
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.helpers.jobCompleted
+import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import java.time.Instant
 
-@Serializable(with = TaskRetrySerializer::class)
-data class TaskRetry(override var int: kotlin.Int = 0) : IntInterface
-
-object TaskRetrySerializer : KSerializer<TaskRetry> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetry", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskRetry) { encoder.encodeInt(value.int) }
-    override fun deserialize(decoder: Decoder) = TaskRetry(decoder.decodeInt())
+suspend fun timerCompleted(
+    workflowEngineOutput: WorkflowEngineOutput,
+    state: WorkflowState,
+    msg: TimerCompleted
+) {
+    jobCompleted(
+        workflowEngineOutput,
+        state,
+        msg.methodRunId,
+        CommandId(msg.timerId),
+        CommandOutput(SerializedData.from(Instant.now()))
+    )
 }

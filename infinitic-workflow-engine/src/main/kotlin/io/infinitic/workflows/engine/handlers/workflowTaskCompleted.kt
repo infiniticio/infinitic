@@ -26,15 +26,18 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.data.interfaces.plus
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.minus
+import io.infinitic.common.data.plus
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
-import io.infinitic.common.workflows.data.commands.DispatchReceiver
-import io.infinitic.common.workflows.data.commands.DispatchTimer
+import io.infinitic.common.workflows.data.commands.DispatchDurationTimer
+import io.infinitic.common.workflows.data.commands.DispatchInstantTimer
 import io.infinitic.common.workflows.data.commands.EndAsync
 import io.infinitic.common.workflows.data.commands.EndInlineTask
 import io.infinitic.common.workflows.data.commands.NewCommand
@@ -44,9 +47,11 @@ import io.infinitic.common.workflows.data.commands.StartInlineTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
+import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -91,8 +96,8 @@ suspend fun workflowTaskCompleted(
             is EndAsync -> endAsync(workflowEngineOutput, methodRun, it, state)
             is StartInlineTask -> startInlineTask(methodRun, it)
             is EndInlineTask -> endInlineTask(methodRun, it, state)
-            is DispatchTimer -> TODO()
-            is DispatchReceiver -> TODO()
+            is DispatchDurationTimer -> dispatchDurationTimer(workflowEngineOutput, methodRun, it, state)
+            is DispatchInstantTimer -> dispatchInstantTimer(workflowEngineOutput, methodRun, it, state)
         }
     }
 
@@ -121,7 +126,7 @@ suspend fun workflowTaskCompleted(
                     workflowId = state.workflowId,
                     workflowOutput = methodRun.methodOutput!!
                 ),
-                0F
+                MillisDuration(0)
             )
 
             // if client is waiting, send output back to it
@@ -147,7 +152,7 @@ suspend fun workflowTaskCompleted(
                     childWorkflowId = state.workflowId,
                     childWorkflowOutput = workflowTaskOutput.methodOutput!!
                 ),
-                0F
+                MillisDuration(0)
             )
         }
     }
@@ -174,8 +179,8 @@ suspend fun workflowTaskCompleted(
             }
             CommandType.DISPATCH_CHILD_WORKFLOW,
             CommandType.DISPATCH_TASK,
-            CommandType.DISPATCH_RECEIVER,
-            CommandType.DISPATCH_TIMER,
+            CommandType.DISPATCH_DURATION_TIMER,
+            CommandType.DISPATCH_INSTANT_TIMER,
             CommandType.END_ASYNC -> {
                 // note: pastSteps is naturally ordered by time
                 // => the first branch completed is the earliest step
@@ -249,6 +254,46 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
     )
 }
 
+private suspend fun dispatchDurationTimer(
+    workflowEngineOutput: WorkflowEngineOutput,
+    methodRun: MethodRun,
+    newCommand: NewCommand,
+    state: WorkflowState
+) {
+    val command = newCommand.command as DispatchDurationTimer
+
+    val msg = TimerCompleted(
+        workflowId = state.workflowId,
+        methodRunId = methodRun.methodRunId,
+        timerId = TimerId("${newCommand.commandId}")
+    )
+
+    val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
+
+    workflowEngineOutput.sendToWorkflowEngine(state, msg, command.duration - diff)
+
+    addPastCommand(methodRun, newCommand)
+}
+
+private suspend fun dispatchInstantTimer(
+    workflowEngineOutput: WorkflowEngineOutput,
+    methodRun: MethodRun,
+    newCommand: NewCommand,
+    state: WorkflowState
+) {
+    val command = newCommand.command as DispatchInstantTimer
+
+    val msg = TimerCompleted(
+        workflowId = state.workflowId,
+        methodRunId = methodRun.methodRunId,
+        timerId = TimerId("${newCommand.commandId}")
+    )
+
+    workflowEngineOutput.sendToWorkflowEngine(state, msg, command.instant - MillisInstant.now())
+
+    addPastCommand(methodRun, newCommand)
+}
+
 private suspend fun dispatchTask(
     workflowEngineOutput: WorkflowEngineOutput,
     methodRun: MethodRun,
@@ -269,7 +314,7 @@ private suspend fun dispatchTask(
         methodRunId = methodRun.methodRunId,
         taskMeta = command.taskMeta
     )
-    workflowEngineOutput.sendToTaskEngine(state, msg, 0F)
+    workflowEngineOutput.sendToTaskEngine(state, msg, MillisDuration(0))
 
     addPastCommand(methodRun, newCommand)
 }
@@ -295,7 +340,7 @@ private suspend fun dispatchChildWorkflow(
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )
-    workflowEngineOutput.sendToWorkflowEngine(state, msg, 0F)
+    workflowEngineOutput.sendToWorkflowEngine(state, msg, MillisDuration(0))
 
     addPastCommand(methodRun, newCommand)
 }

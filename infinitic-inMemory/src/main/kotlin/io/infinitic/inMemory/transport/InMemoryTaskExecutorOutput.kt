@@ -25,6 +25,7 @@
 
 package io.infinitic.inMemory.transport
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
@@ -38,11 +39,11 @@ class InMemoryTaskExecutorOutput(
     scope: CoroutineScope,
     taskEventChannel: Channel<TaskEngineMessageToProcess>
 ) : TaskExecutorOutput {
-    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: Float ->
+    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             // TODO inMemory resilience implies to find a way to persist delayed messages
-            delay((1000 * after).toLong())
+            delay(after.long)
             taskEventChannel.send(InMemoryMessageToProcess(msg))
         }
     }

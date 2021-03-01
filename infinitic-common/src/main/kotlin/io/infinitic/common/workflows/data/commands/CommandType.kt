@@ -31,8 +31,8 @@ import kotlinx.serialization.Serializable
 enum class CommandType {
     DISPATCH_TASK,
     DISPATCH_CHILD_WORKFLOW,
-    DISPATCH_TIMER,
-    DISPATCH_RECEIVER,
+    DISPATCH_DURATION_TIMER,
+    DISPATCH_INSTANT_TIMER,
     START_ASYNC,
     END_ASYNC,
     START_INLINE_TASK,

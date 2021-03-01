@@ -31,6 +31,7 @@ import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -215,10 +216,10 @@ class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput
     override val sendToClientResponseFn: SendToClientResponse =
         { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
 
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: MillisDuration -> }
 
     override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 
     override val sendToTaskExecutorsFn: SendToTaskExecutors =
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
@@ -236,16 +237,16 @@ class TestMonitoringPerNameOutput(private val scope: CoroutineScope) : Monitorin
 class TestTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
 
     override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 }
 
 class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
     override val clientName = ClientName("client: InMemory")
 
     override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: Float -> scope.sendToTaskEngine(msg, after) }
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: Float -> }
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: MillisDuration -> }
 }
 
 fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
@@ -254,10 +255,10 @@ fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
     }
 }
 
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: Float) {
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) {
     launch {
-        if (after > 0F) {
-            delay((1000 * after).toLong())
+        if (after.long > 0) {
+            delay(after.long)
         }
         taskEngine.handle(msg)
     }

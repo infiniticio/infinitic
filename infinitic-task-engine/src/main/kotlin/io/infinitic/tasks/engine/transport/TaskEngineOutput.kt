@@ -27,6 +27,7 @@ package io.infinitic.tasks.engine.transport
 
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -65,7 +66,7 @@ interface TaskEngineOutput {
     suspend fun sendToWorkflowEngine(
         state: TaskState,
         workflowEngineMessage: WorkflowEngineMessage,
-        after: Float
+        after: MillisDuration
     ) {
         logger.debug(
             "from messageId {}: taskId {} - after {} sendToWorkflowEngine {}",
@@ -80,7 +81,7 @@ interface TaskEngineOutput {
     suspend fun sendToTaskEngine(
         state: TaskState,
         taskEngineMessage: TaskEngineMessage,
-        after: Float
+        after: MillisDuration
     ) {
         logger.debug(
             "from messageId {}: taskId {} - after {} sendToTaskEngine {}",

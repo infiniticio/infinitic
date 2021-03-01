@@ -28,6 +28,7 @@ dependencies {
     api(Libs.Coroutines.jdk8)
     api(Libs.Hoplite.core)
     api(Libs.Hoplite.yaml)
+    implementation("org.slf4j:slf4j-simple:1.7.+")
 
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))
