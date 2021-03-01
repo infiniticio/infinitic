@@ -54,7 +54,7 @@ import kotlinx.coroutines.future.future
 import java.lang.reflect.Proxy
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-open class InfiniticClient(val clientOutput: ClientOutput) {
+open class Client(val clientOutput: ClientOutput) {
 
     private val dispatcher = ClientDispatcher(clientOutput)
 

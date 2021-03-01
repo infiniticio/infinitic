@@ -47,7 +47,7 @@ class ClientWorkflowTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
     val clientOutput = MockClientOutput(taskSlot, workflowSlot)
-    val client = InfiniticClient(clientOutput)
+    val client = Client(clientOutput)
     clientOutput.client = client
     val fakeWorkflow = client.workflow(FakeWorkflow::class.java)
 
@@ -187,11 +187,11 @@ class ClientWorkflowTests : StringSpec({
             workflowMeta = WorkflowMeta()
         )
     }
-
+//
 //    "Should be able to emit to a channel" {
 //        // when
 //        coroutineScope {
-//            fakeWorkflow.ch.emit("a")
+//            fakeWorkflow.ch.send("a")
 //        }
 //        // then
 //        val msg = workflowSlot.captured

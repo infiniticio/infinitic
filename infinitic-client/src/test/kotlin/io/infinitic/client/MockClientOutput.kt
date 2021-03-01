@@ -48,7 +48,7 @@ internal class MockClientOutput(
     override val clientName = ClientName("clientTest")
     override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
     override val sendToWorkflowEngineFn = mockk<SendToWorkflowEngine>()
-    lateinit var client: InfiniticClient
+    lateinit var client: Client
 
     init {
         coEvery { sendToTaskEngineFn(capture(taskSlot), MillisDuration(0)) } coAnswers {

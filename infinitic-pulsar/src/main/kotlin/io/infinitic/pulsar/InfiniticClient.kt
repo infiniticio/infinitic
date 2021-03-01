@@ -37,7 +37,7 @@ import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import kotlin.concurrent.thread
-import io.infinitic.client.InfiniticClient as Client
+import io.infinitic.client.Client as Client
 
 @Suppress("unused")
 class InfiniticClient private constructor(

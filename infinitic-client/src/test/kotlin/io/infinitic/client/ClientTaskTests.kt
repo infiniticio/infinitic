@@ -51,7 +51,7 @@ class ClientTaskTests : StringSpec({
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
     val clientOutput = MockClientOutput(taskSlot, workflowSlot)
-    val client = InfiniticClient(clientOutput)
+    val client = Client(clientOutput)
     clientOutput.client = client
     // task stub
     val id = TestFactory.random<String>()

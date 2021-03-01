@@ -25,7 +25,4 @@
 
 package io.infinitic.workflows
 
-interface Channel<T> {
-    fun emit(signal: Any)
-    fun receive(): Deferred<T>
-}
+interface Channel<T> : SendChannel<T>, ReceiveChannel<T>
