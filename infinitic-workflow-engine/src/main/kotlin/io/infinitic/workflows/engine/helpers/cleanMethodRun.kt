@@ -31,7 +31,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 
 fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
     // if everything is completed in methodRun then filter state
-    if (methodRun.methodOutput != null &&
+    if (methodRun.methodReturnValue != null &&
         methodRun.pastCommands.all { it.isTerminated() } &&
         methodRun.pastSteps.all { it.isTerminated() }
     ) {

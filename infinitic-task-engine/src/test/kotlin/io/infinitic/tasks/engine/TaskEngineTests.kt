@@ -186,7 +186,7 @@ internal class TaskEngineTests : StringSpec({
         taskStatusUpdated.oldStatus shouldBe stateIn.taskStatus
         taskStatusUpdated.newStatus shouldBe TaskStatus.TERMINATED_CANCELED
         taskCompletedInClient.taskId shouldBe stateIn.taskId
-        taskCompletedInClient.taskOutput shouldBe msgIn.taskOutput
+        taskCompletedInClient.taskReturnValue shouldBe msgIn.taskReturnValue
     }
 
     "DispatchTask" {
@@ -211,13 +211,13 @@ internal class TaskEngineTests : StringSpec({
         runTask.shouldBeInstanceOf<ExecuteTaskAttempt>()
         runTask.taskId shouldBe msgIn.taskId
         runTask.taskName shouldBe msgIn.taskName
-        runTask.methodInput shouldBe msgIn.methodInput
+        runTask.methodParameters shouldBe msgIn.methodParameters
         runTask.taskAttemptRetry.int shouldBe 0
         runTask.taskAttemptId shouldBe taskAttemptDispatched.taskAttemptId
         runTask.taskAttemptRetry shouldBe taskAttemptDispatched.taskAttemptRetry
         state.taskId shouldBe msgIn.taskId
         state.taskName shouldBe msgIn.taskName
-        state.methodInput shouldBe msgIn.methodInput
+        state.methodParameters shouldBe msgIn.methodParameters
         state.taskAttemptId shouldBe runTask.taskAttemptId
         state.taskAttemptRetry.int shouldBe 0
         state.taskMeta shouldBe msgIn.taskMeta
@@ -235,10 +235,10 @@ internal class TaskEngineTests : StringSpec({
         val msgIn = retryTask(
             mapOf(
                 "taskId" to stateIn.taskId,
-                "taskName" to null,
+                "taskName" to stateIn.taskName,
                 "methodName" to null,
                 "methodParameterTypes" to null,
-                "methodInput" to null,
+                "methodParameters" to null,
                 "taskMeta" to null,
                 "taskOptions" to null
             )
@@ -248,32 +248,32 @@ internal class TaskEngineTests : StringSpec({
         val taskEventStorage = test.taskEventStorage
         val taskEngineOutput = test.taskEngineOutput
         test.handle()
-        val runTask = captured(taskEngineOutput.workerMessageSlot)!!
+        val executeTaskAttempt = captured(taskEngineOutput.workerMessageSlot)!!
         val taskAttemptDispatched = captured(taskEngineOutput.taskAttemptDispatchedSlot)!!
         val state = captured(taskStateStorage.stateSlot)!!
         val taskStatusUpdated = captured(taskEngineOutput.taskStatusUpdatedSlot)!!
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.retryTaskSlot)!!)
             taskStateStorage.getState(msgIn.taskId)
-            taskEngineOutput.sendToTaskExecutors(state, runTask)
+            taskEngineOutput.sendToTaskExecutors(state, executeTaskAttempt)
             taskEngineOutput.sendToTaskEngine(state, taskAttemptDispatched, MillisDuration(0))
             taskStateStorage.updateState(msgIn.taskId, state, stateIn)
             taskEngineOutput.sendToMonitoringPerName(state, taskStatusUpdated)
         }
-        runTask.shouldBeInstanceOf<ExecuteTaskAttempt>()
-        runTask.taskId shouldBe stateIn.taskId
-        runTask.taskAttemptId shouldNotBe stateIn.taskAttemptId
-        runTask.taskAttemptRetry.int shouldBe 0
-        runTask.taskName shouldBe stateIn.taskName
-        runTask.methodInput shouldBe stateIn.methodInput
+        executeTaskAttempt.shouldBeInstanceOf<ExecuteTaskAttempt>()
+        executeTaskAttempt.taskId shouldBe stateIn.taskId
+        executeTaskAttempt.taskAttemptId shouldNotBe stateIn.taskAttemptId
+        executeTaskAttempt.taskAttemptRetry.int shouldBe 0
+        executeTaskAttempt.taskName shouldBe stateIn.taskName
+        executeTaskAttempt.methodParameters shouldBe stateIn.methodParameters
         taskAttemptDispatched.taskId shouldBe stateIn.taskId
-        taskAttemptDispatched.taskAttemptId shouldBe runTask.taskAttemptId
+        taskAttemptDispatched.taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
         taskAttemptDispatched.taskAttemptRetry.int shouldBe 0
         state.taskId shouldBe stateIn.taskId
         state.taskName shouldBe stateIn.taskName
-        state.methodInput shouldBe stateIn.methodInput
-        state.taskAttemptId shouldBe runTask.taskAttemptId
-        state.taskAttemptRetry shouldBe runTask.taskAttemptRetry
+        state.methodParameters shouldBe stateIn.methodParameters
+        state.taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
+        state.taskAttemptRetry shouldBe executeTaskAttempt.taskAttemptRetry
         state.taskStatus shouldBe TaskStatus.RUNNING_WARNING
         taskStatusUpdated.oldStatus shouldBe stateIn.taskStatus
         taskStatusUpdated.newStatus shouldBe TaskStatus.RUNNING_WARNING
@@ -313,12 +313,12 @@ internal class TaskEngineTests : StringSpec({
         }
         taskStatusUpdated.oldStatus shouldBe stateIn.taskStatus
         taskStatusUpdated.newStatus shouldBe TaskStatus.TERMINATED_COMPLETED
-        taskCompleted.taskOutput shouldBe msgIn.taskOutput
+        taskCompleted.taskReturnValue shouldBe msgIn.taskReturnValue
         taskCompleted.taskMeta shouldBe stateIn.taskMeta
         taskCompleted.taskId shouldBe stateIn.taskId
-        taskCompleted.taskOutput shouldBe msgIn.taskOutput
+        taskCompleted.taskReturnValue shouldBe msgIn.taskReturnValue
         taskCompletedInClient.taskId shouldBe stateIn.taskId
-        taskCompletedInClient.taskOutput shouldBe msgIn.taskOutput
+        taskCompletedInClient.taskReturnValue shouldBe msgIn.taskReturnValue
     }
 
     "TaskAttemptFailed without retry" {
@@ -501,13 +501,13 @@ private fun checkShouldRetryTaskAttempt(
     runTask.taskAttemptId shouldBe stateIn.taskAttemptId
     runTask.taskAttemptRetry shouldBe stateIn.taskAttemptRetry + 1
     runTask.taskName shouldBe stateIn.taskName
-    runTask.methodInput shouldBe stateIn.methodInput
+    runTask.methodParameters shouldBe stateIn.methodParameters
     taskAttemptDispatched.taskId shouldBe stateIn.taskId
     taskAttemptDispatched.taskAttemptId shouldBe runTask.taskAttemptId
     taskAttemptDispatched.taskAttemptRetry shouldBe runTask.taskAttemptRetry
     state.taskId shouldBe stateIn.taskId
     state.taskName shouldBe stateIn.taskName
-    state.methodInput shouldBe stateIn.methodInput
+    state.methodParameters shouldBe stateIn.methodParameters
     state.taskAttemptId shouldBe runTask.taskAttemptId
     state.taskAttemptRetry shouldBe runTask.taskAttemptRetry
     state.taskStatus shouldBe TaskStatus.RUNNING_WARNING

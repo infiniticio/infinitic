@@ -28,9 +28,9 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -69,7 +69,7 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            methodInput = MethodInput(),
+            methodParameters = MethodParameters(),
             parentWorkflowId = null,
             parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
@@ -90,7 +90,7 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
-            methodInput = MethodInput.from(0),
+            methodParameters = MethodParameters.from(0),
             parentWorkflowId = null,
             parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
@@ -111,7 +111,7 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
-            methodInput = MethodInput.from("a"),
+            methodParameters = MethodParameters.from("a"),
             parentWorkflowId = null,
             parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
@@ -132,7 +132,7 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
-            methodInput = MethodInput.from(0, "a"),
+            methodParameters = MethodParameters.from(0, "a"),
             parentWorkflowId = null,
             parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
@@ -155,7 +155,7 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
-            methodInput = MethodInput.from(klass),
+            methodParameters = MethodParameters.from(klass),
             parentWorkflowId = null,
             parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
@@ -180,13 +180,30 @@ class ClientWorkflowTests : StringSpec({
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
-            methodInput = MethodInput.from(0, "a"),
+            methodParameters = MethodParameters.from(0, "a"),
             parentWorkflowId = null,
             parentMethodRunId = null,
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
     }
+
+//    "Should be able to emit to a channel" {
+//        // when
+//        coroutineScope {
+//            fakeWorkflow.ch.emit("a")
+//        }
+//        // then
+//        val msg = workflowSlot.captured
+//        msg shouldBe EmitToChannel(
+//            clientName = clientOutput.clientName,
+//            workflowId = msg.workflowId,
+//            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+//            channelName = ChannelName("ch"),
+//            channelParameterType = ChannelParameterType(String::class.java.name),
+//            channelParameter = ChannelParameter.from("a")
+//        )
+//    }
 
     // TODO: add tests for options
 

@@ -30,9 +30,9 @@ import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -69,7 +69,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             taskName = TaskName.from(method),
             methodName = MethodName.from(method),
             methodParameterTypes = MethodParameterTypes.from(method),
-            methodInput = MethodInput.from(method, handler.args),
+            methodParameters = MethodParameters.from(method, handler.args),
             workflowId = null,
             methodRunId = null,
             taskOptions = handler.taskOptions,
@@ -95,7 +95,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         } as TaskCompleted
 
         @Suppress("UNCHECKED_CAST")
-        return taskCompleted.taskOutput.get() as S
+        return taskCompleted.taskReturnValue.get() as S
     }
 
     fun dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): String {
@@ -109,7 +109,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             workflowName = WorkflowName.from(method),
             methodName = MethodName.from(method),
             methodParameterTypes = MethodParameterTypes.from(method),
-            methodInput = MethodInput.from(method, handler.args),
+            methodParameters = MethodParameters.from(method, handler.args),
             parentWorkflowId = null,
             parentMethodRunId = null,
             workflowMeta = handler.workflowMeta,
@@ -135,6 +135,6 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         } as WorkflowCompleted
 
         @Suppress("UNCHECKED_CAST")
-        return workflowCompleted.workflowOutput.get() as S
+        return workflowCompleted.workflowReturnValue.get() as S
     }
 }

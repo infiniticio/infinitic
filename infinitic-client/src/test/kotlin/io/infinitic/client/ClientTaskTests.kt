@@ -28,10 +28,10 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -76,7 +76,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            methodInput = MethodInput(),
+            methodParameters = MethodParameters(),
             workflowId = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
@@ -97,7 +97,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name)),
-            methodInput = MethodInput.from(0),
+            methodParameters = MethodParameters.from(0),
             workflowId = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
@@ -118,7 +118,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
-            methodInput = MethodInput.from(null),
+            methodParameters = MethodParameters.from(null),
             workflowId = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
@@ -139,7 +139,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
-            methodInput = MethodInput.from("a"),
+            methodParameters = MethodParameters.from("a"),
             workflowId = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
@@ -160,7 +160,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
-            methodInput = MethodInput.from(0, "a"),
+            methodParameters = MethodParameters.from(0, "a"),
             workflowId = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
@@ -183,7 +183,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
-            methodInput = MethodInput.from(fake),
+            methodParameters = MethodParameters.from(fake),
             workflowId = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
@@ -205,7 +205,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m2"),
             methodParameterTypes = MethodParameterTypes(listOf()),
-            methodInput = MethodInput(),
+            methodParameters = MethodParameters(),
             workflowId = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
@@ -229,7 +229,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
-            methodInput = MethodInput.from(0, "a"),
+            methodParameters = MethodParameters.from(0, "a"),
             workflowId = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
@@ -248,7 +248,7 @@ class ClientTaskTests : StringSpec({
         msg shouldBe CancelTask(
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
-            taskOutput = MethodOutput.from(null)
+            taskReturnValue = MethodReturnValue.from(null)
         )
     }
 
@@ -264,7 +264,7 @@ class ClientTaskTests : StringSpec({
         msg shouldBe CancelTask(
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
-            taskOutput = MethodOutput.from(output)
+            taskReturnValue = MethodReturnValue.from(output)
         )
     }
 
@@ -281,7 +281,7 @@ class ClientTaskTests : StringSpec({
             taskName = TaskName(FakeTask::class.java.name),
             methodName = null,
             methodParameterTypes = null,
-            methodInput = null,
+            methodParameters = null,
             taskOptions = null,
             taskMeta = null
         )

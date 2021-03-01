@@ -30,7 +30,7 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -58,7 +58,7 @@ internal class MockClientOutput(
                     TaskCompleted(
                         clientName = clientName,
                         taskId = msg.taskId,
-                        taskOutput = MethodOutput.from("success")
+                        taskReturnValue = MethodReturnValue.from("success")
                     )
                 )
             }
@@ -70,7 +70,7 @@ internal class MockClientOutput(
                     WorkflowCompleted(
                         clientName = clientName,
                         workflowId = msg.workflowId,
-                        workflowOutput = MethodOutput.from("success")
+                        workflowReturnValue = MethodReturnValue.from("success")
                     )
                 )
             }

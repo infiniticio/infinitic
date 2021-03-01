@@ -25,7 +25,7 @@
 
 package io.infinitic.common.fixtures
 
-import io.infinitic.common.data.methods.MethodInput
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -68,10 +68,10 @@ object TestFactory {
             .collectionSizeRange(1, 5)
             .randomize(Any::class.java) { random<String>() }
             .randomize(Step::class.java) { randomStep() }
-            .randomize(String::class.java) { String(random<ByteArray>(), Charsets.UTF_8) }
+            .randomize(String::class.java) { String(random(), Charsets.UTF_8) }
             .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
-            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random<ByteArray>()) }
-            .randomize(MethodInput::class.java) { MethodInput.from(random<ByteArray>(), random<String>()) }
+            .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
+            .randomize(MethodParameters::class.java) { MethodParameters.from(random<ByteArray>(), random<String>()) }
             .randomize(SerializedData::class.java) { SerializedData.from(random<String>()) }
             .randomize(WorkflowEngineEnvelope::class.java) {
                 val sub = WorkflowEngineMessage::class.sealedSubclasses.shuffled().first()
@@ -97,7 +97,7 @@ object TestFactory {
         return EasyRandom(parameters).nextObject(klass.java)
     }
 
-    fun steps(): Map<String, Step> {
+    private fun steps(): Map<String, Step> {
         fun getStepId() = Step.Id(CommandId(), CommandStatusOngoing)
         val stepA = getStepId()
         val stepB = getStepId()

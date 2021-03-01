@@ -28,10 +28,10 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
@@ -103,7 +103,7 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = MethodOutput.from("9")
+            taskReturnValue = MethodReturnValue.from("9")
         )
     }
 
@@ -123,7 +123,7 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = MethodOutput.from("12")
+            taskReturnValue = MethodReturnValue.from("12")
         )
     }
 
@@ -285,7 +285,7 @@ class TaskExecutorTests : StringSpec({
             taskAttemptId = msg.taskAttemptId,
             taskRetry = msg.taskRetry,
             taskAttemptRetry = msg.taskAttemptRetry,
-            taskOutput = MethodOutput.from("72")
+            taskReturnValue = MethodReturnValue.from("72")
         )
     }
 
@@ -319,7 +319,7 @@ private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out
     taskName = TaskName(name),
     methodName = MethodName(method),
     methodParameterTypes = types?.let { MethodParameterTypes(it) },
-    methodInput = MethodInput.from(*input),
+    methodParameters = MethodParameters.from(*input),
     previousTaskAttemptError = null,
     taskOptions = TaskOptions(runningTimeout = .2F),
     taskMeta = TaskMeta()

@@ -26,10 +26,10 @@
 package io.infinitic.common.tasks.executors.messages
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -57,7 +57,7 @@ data class ExecuteTaskAttempt(
     val previousTaskAttemptError: TaskAttemptError?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
-    val methodInput: MethodInput,
+    val methodParameters: MethodParameters,
     val taskOptions: TaskOptions,
     override val taskMeta: TaskMeta
 ) : TaskExecutorMessage()
@@ -66,6 +66,6 @@ data class ExecuteTaskAttempt(
 data class CancelTaskAttempt(
     override val taskName: TaskName,
     val taskId: TaskId,
-    val taskOutput: MethodOutput,
+    val taskReturnValue: MethodReturnValue,
     override val taskMeta: TaskMeta
 ) : TaskExecutorMessage()

@@ -26,7 +26,7 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.tasks.Constants
@@ -180,12 +180,12 @@ class TaskExecutor(
 
         val parameterTypes = msg.methodParameterTypes
         val method = if (parameterTypes == null) {
-            getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodInput.size)
+            getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodParameters.size)
         } else {
             getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types)
         }
 
-        return TaskCommand(task, method, msg.methodInput.get(), msg.taskOptions)
+        return TaskCommand(task, method, msg.methodParameters.get(), msg.taskOptions)
     }
 
     private fun getDelayBeforeRetry(task: Any, taskId: TaskId): RetryDelay {
@@ -248,7 +248,7 @@ class TaskExecutor(
             taskAttemptId = message.taskAttemptId,
             taskAttemptRetry = message.taskAttemptRetry,
             taskRetry = message.taskRetry,
-            taskOutput = MethodOutput.from(output)
+            taskReturnValue = MethodReturnValue.from(output)
         )
 
         taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptCompleted, MillisDuration(0))

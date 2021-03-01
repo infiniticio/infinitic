@@ -23,27 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.workflowTasks
+package io.infinitic.common.data.channels
 
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.properties.PropertyHash
-import io.infinitic.common.workflows.data.properties.PropertyValue
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-@Serializable
-data class WorkflowTaskInput(
-    val workflowId: WorkflowId,
-    val workflowName: WorkflowName,
-    val workflowOptions: WorkflowOptions,
-    val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
-    val workflowTaskIndex: WorkflowTaskIndex,
+@Serializable(with = ChannelParameterTypeSerializer::class)
+data class ChannelParameterType(val type: String)
 
-    val methodRun: MethodRun,
-    val targetPosition: MethodRunPosition = MethodRunPosition("")
-) {
-    fun getFullMethodName() = "$workflowName::${methodRun.methodName}"
+object ChannelParameterTypeSerializer : KSerializer<ChannelParameterType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelParameterType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ChannelParameterType) { encoder.encodeString(value.type) }
+    override fun deserialize(decoder: Decoder) = ChannelParameterType(decoder.decodeString())
 }

@@ -42,6 +42,6 @@ suspend fun taskCompleted(
         state,
         msg.methodRunId,
         CommandId(msg.taskId),
-        CommandOutput(msg.taskOutput.serializedData)
+        CommandOutput(msg.taskReturnValue.serializedData)
     )
 }

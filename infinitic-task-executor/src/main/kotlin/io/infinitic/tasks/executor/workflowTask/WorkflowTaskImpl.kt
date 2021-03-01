@@ -25,13 +25,13 @@
 
 package io.infinitic.tasks.executor.workflowTask
 
-import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.tasks.executor.task.TaskAttemptContext
 import io.infinitic.workflows.Workflow
 import java.lang.reflect.InvocationTargetException
@@ -39,26 +39,26 @@ import java.lang.reflect.InvocationTargetException
 class WorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
 
-    override fun handle(workflowTaskInput: WorkflowTaskInput): WorkflowTaskOutput {
+    override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskOutput {
         // get  instance workflow by name
-        val workflow = taskAttemptContext.taskExecutor.getWorkflowInstance("${workflowTaskInput.workflowName}")
+        val workflow = taskAttemptContext.taskExecutor.getWorkflowInstance("${workflowTaskParameters.workflowName}")
 
         // set methodContext
-        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskInput, workflow)
+        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskParameters, workflow)
 
         // set workflow's initial properties
         setWorkflowProperties(
             workflow,
-            workflowTaskInput.workflowPropertiesHashValue,
-            workflowTaskInput.methodRun.propertiesNameHashAtStart
+            workflowTaskParameters.workflowPropertiesHashValue,
+            workflowTaskParameters.methodRun.propertiesNameHashAtStart
         )
 
         // get method
-        val method = getMethod(workflow, workflowTaskInput.methodRun)
+        val method = getMethod(workflow, workflowTaskParameters.methodRun)
 
         // run method and get output (null if end not reached)
-        val methodOutput = try {
-            MethodOutput.from(method.invoke(workflow, *workflowTaskInput.methodRun.methodInput.get().toTypedArray()))
+        val methodReturnValue = try {
+            MethodReturnValue.from(method.invoke(workflow, *workflowTaskParameters.methodRun.methodParameters.get().toTypedArray()))
         } catch (e: InvocationTargetException) {
             when (e.cause) {
                 is WorkflowTaskException -> null
@@ -69,12 +69,12 @@ class WorkflowTaskImpl : WorkflowTask {
         val properties = getWorkflowProperties(workflow)
 
         return WorkflowTaskOutput(
-            workflowTaskInput.workflowId,
-            workflowTaskInput.methodRun.methodRunId,
+            workflowTaskParameters.workflowId,
+            workflowTaskParameters.methodRun.methodRunId,
             workflowTaskContext.newCommands,
             workflowTaskContext.newSteps,
             properties,
-            methodOutput
+            methodReturnValue
         )
     }
 
@@ -82,7 +82,7 @@ class WorkflowTaskImpl : WorkflowTask {
         getMethodPerNameAndParameterCount(
             workflow,
             "${methodRun.methodName}",
-            methodRun.methodInput.size
+            methodRun.methodParameters.size
         )
     } else {
         getMethodPerNameAndParameterTypes(

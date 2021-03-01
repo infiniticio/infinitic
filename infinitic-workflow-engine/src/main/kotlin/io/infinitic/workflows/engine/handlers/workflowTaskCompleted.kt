@@ -72,7 +72,7 @@ suspend fun workflowTaskCompleted(
     // remove currentWorkflowTaskId
     state.runningWorkflowTaskId = null
 
-    val workflowTaskOutput = msg.workflowTaskOutput
+    val workflowTaskOutput = msg.workflowTaskReturnValue
     val methodRun = getMethodRun(state, workflowTaskOutput.methodRunId)
 
     // properties updates
@@ -114,9 +114,9 @@ suspend fun workflowTaskCompleted(
     }
 
     // if method is completed for the first time
-    if (workflowTaskOutput.methodOutput != null && methodRun.methodOutput == null) {
+    if (workflowTaskOutput.methodReturnValue != null && methodRun.methodReturnValue == null) {
         // set methodOutput in state
-        methodRun.methodOutput = workflowTaskOutput.methodOutput
+        methodRun.methodReturnValue = workflowTaskOutput.methodReturnValue
 
         // if this is the main method, it means the workflow is completed
         if (methodRun.isMain) {
@@ -124,7 +124,7 @@ suspend fun workflowTaskCompleted(
                 state,
                 WorkflowCompleted(
                     workflowId = state.workflowId,
-                    workflowOutput = methodRun.methodOutput!!
+                    workflowReturnValue = methodRun.methodReturnValue!!
                 ),
                 MillisDuration(0)
             )
@@ -136,7 +136,7 @@ suspend fun workflowTaskCompleted(
                     WorkflowCompletedInClient(
                         clientName = state.clientName,
                         workflowId = state.workflowId,
-                        workflowOutput = methodRun.methodOutput!!
+                        workflowReturnValue = methodRun.methodReturnValue!!
                     )
                 )
             }
@@ -150,7 +150,7 @@ suspend fun workflowTaskCompleted(
                     workflowId = it,
                     methodRunId = methodRun.parentMethodRunId!!,
                     childWorkflowId = state.workflowId,
-                    childWorkflowOutput = workflowTaskOutput.methodOutput!!
+                    childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!
                 ),
                 MillisDuration(0)
             )
@@ -309,7 +309,7 @@ private suspend fun dispatchTask(
         taskName = command.taskName,
         methodName = command.methodName,
         methodParameterTypes = command.methodParameterTypes,
-        methodInput = command.methodInput,
+        methodParameters = command.methodParameters,
         workflowId = state.workflowId,
         methodRunId = methodRun.methodRunId,
         taskMeta = command.taskMeta
@@ -336,7 +336,7 @@ private suspend fun dispatchChildWorkflow(
         workflowName = command.childWorkflowName,
         methodName = command.childMethodName,
         methodParameterTypes = command.childMethodParameterTypes,
-        methodInput = command.childMethodInput,
+        methodParameters = command.childMethodParameters,
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )

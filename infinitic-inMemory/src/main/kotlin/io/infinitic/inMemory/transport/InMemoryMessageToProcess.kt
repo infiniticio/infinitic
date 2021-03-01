@@ -31,5 +31,5 @@ data class InMemoryMessageToProcess<T> (
     override val message: T
 ) : MessageToProcess<T> {
     override var exception: Exception? = null
-    override var output: Any? = null
+    override var returnValue: Any? = null
 }

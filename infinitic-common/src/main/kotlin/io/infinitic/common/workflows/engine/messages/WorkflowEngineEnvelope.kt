@@ -34,6 +34,7 @@ data class WorkflowEngineEnvelope(
     val workflowId: WorkflowId,
     val type: WorkflowEngineMessageType,
     val cancelWorkflow: CancelWorkflow? = null,
+    val emitToChannel: EmitToChannel? = null,
     val childWorkflowCanceled: ChildWorkflowCanceled? = null,
     val childWorkflowCompleted: ChildWorkflowCompleted? = null,
     val workflowTaskCompleted: WorkflowTaskCompleted? = null,
@@ -50,6 +51,7 @@ data class WorkflowEngineEnvelope(
     init {
         val noNull = listOfNotNull(
             cancelWorkflow,
+            emitToChannel,
             childWorkflowCanceled,
             childWorkflowCompleted,
             workflowTaskCompleted,
@@ -87,6 +89,11 @@ data class WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CANCEL_WORKFLOW,
                 cancelWorkflow = msg
+            )
+            is EmitToChannel -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.EMIT_TO_CHANNEL,
+                emitToChannel = msg
             )
             is ChildWorkflowCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -155,6 +162,7 @@ data class WorkflowEngineEnvelope(
 
     fun message(): WorkflowEngineMessage = when (type) {
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
+        WorkflowEngineMessageType.EMIT_TO_CHANNEL -> emitToChannel!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!
         WorkflowEngineMessageType.WORKFLOW_TASK_COMPLETED -> workflowTaskCompleted!!

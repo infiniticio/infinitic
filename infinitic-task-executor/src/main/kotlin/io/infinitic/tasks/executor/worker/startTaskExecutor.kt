@@ -57,7 +57,7 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
 
     for (message in taskExecutorInput.taskExecutorChannel) {
         try {
-            message.output = taskExecutor.handle(message.message)
+            message.returnValue = taskExecutor.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
             logError(message, e)

@@ -452,7 +452,7 @@ fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Milli
 
         // defines output if reached
         if (msg is WorkflowCompleted) {
-            workflowOutput = msg.workflowOutput.get()
+            workflowOutput = msg.workflowReturnValue.get()
         }
     }
 }

@@ -25,26 +25,34 @@
 
 package io.infinitic.common.data.methods
 
-import io.infinitic.common.data.Data
+import io.infinitic.common.data.Parameters
 import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.lang.reflect.Method
 
-@Serializable(with = MethodOutputSerializer::class)
-data class MethodOutput(override val serializedData: SerializedData) : Data(serializedData) {
+@Serializable(with = MethodInputSerializer::class)
+class MethodParameters(override vararg val serializedData: SerializedData) : Parameters(*serializedData), Collection<SerializedData> by serializedData.toList() {
     companion object {
-        fun from(data: Any?) = MethodOutput(SerializedData.from(data))
+        fun from(method: Method, data: Array<out Any>) = MethodParameters(
+            *data.mapIndexed { index, value -> getSerializedParameter(method, index, value) }.toTypedArray()
+        )
+
+        fun from(vararg data: Any?) = MethodParameters(
+            *data.map { SerializedData.from(it) }.toTypedArray()
+        )
     }
 }
 
-object MethodOutputSerializer : KSerializer<MethodOutput> {
-    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
-    override fun serialize(encoder: Encoder, value: MethodOutput) {
-        SerializedData.serializer().serialize(encoder, value.serializedData)
+object MethodInputSerializer : KSerializer<MethodParameters> {
+    override val descriptor: SerialDescriptor = ListSerializer(SerializedData.serializer()).descriptor
+    override fun serialize(encoder: Encoder, value: MethodParameters) {
+        ListSerializer(SerializedData.serializer()).serialize(encoder, value.serializedData.toList())
     }
     override fun deserialize(decoder: Decoder) =
-        MethodOutput(SerializedData.serializer().deserialize(decoder))
+        MethodParameters(*(ListSerializer(SerializedData.serializer()).deserialize(decoder).toTypedArray()))
 }

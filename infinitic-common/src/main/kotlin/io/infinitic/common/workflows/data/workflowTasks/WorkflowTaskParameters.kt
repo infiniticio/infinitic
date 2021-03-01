@@ -23,31 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.clients.messages
+package io.infinitic.common.workflows.data.workflowTasks
 
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class ClientResponseMessage() {
-    val messageId: MessageId = MessageId()
-    abstract val clientName: ClientName
-}
-
-@Serializable
-data class TaskCompleted(
-    override val clientName: ClientName,
-    val taskId: TaskId,
-    val taskReturnValue: MethodReturnValue,
-) : ClientResponseMessage()
-
-@Serializable
-data class WorkflowCompleted(
-    override val clientName: ClientName,
+data class WorkflowTaskParameters(
     val workflowId: WorkflowId,
-    val workflowReturnValue: MethodReturnValue
-) : ClientResponseMessage()
+    val workflowName: WorkflowName,
+    val workflowOptions: WorkflowOptions,
+    val workflowPropertiesHashValue: Map<PropertyHash, PropertyValue>,
+    val workflowTaskIndex: WorkflowTaskIndex,
+
+    val methodRun: MethodRun,
+    val targetPosition: MethodRunPosition = MethodRunPosition("")
+) {
+    fun getFullMethodName() = "$workflowName::${methodRun.methodName}"
+}

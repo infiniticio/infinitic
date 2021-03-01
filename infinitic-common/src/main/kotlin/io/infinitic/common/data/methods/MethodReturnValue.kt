@@ -23,31 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.clients.messages
+package io.infinitic.common.data.methods
 
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.data.Data
+import io.infinitic.common.serDe.SerializedData
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-@Serializable
-sealed class ClientResponseMessage() {
-    val messageId: MessageId = MessageId()
-    abstract val clientName: ClientName
+@Serializable(with = MethodReturnValueSerializer::class)
+data class MethodReturnValue(override val serializedData: SerializedData) : Data(serializedData) {
+    companion object {
+        fun from(data: Any?) = MethodReturnValue(SerializedData.from(data))
+    }
 }
 
-@Serializable
-data class TaskCompleted(
-    override val clientName: ClientName,
-    val taskId: TaskId,
-    val taskReturnValue: MethodReturnValue,
-) : ClientResponseMessage()
-
-@Serializable
-data class WorkflowCompleted(
-    override val clientName: ClientName,
-    val workflowId: WorkflowId,
-    val workflowReturnValue: MethodReturnValue
-) : ClientResponseMessage()
+object MethodReturnValueSerializer : KSerializer<MethodReturnValue> {
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: MethodReturnValue) {
+        SerializedData.serializer().serialize(encoder, value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        MethodReturnValue(SerializedData.serializer().deserialize(decoder))
+}

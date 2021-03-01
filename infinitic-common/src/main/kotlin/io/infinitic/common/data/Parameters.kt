@@ -32,7 +32,7 @@ import io.infinitic.common.tasks.exceptions.ErrorDuringJsonSerializationOfParame
 import io.infinitic.common.tasks.exceptions.InconsistentJsonSerializationOfParameter
 import java.lang.reflect.Method
 
-abstract class Input(open vararg val serializedData: SerializedData) {
+abstract class Parameters(open vararg val serializedData: SerializedData) {
     companion object {
         fun getSerializedParameter(method: Method, index: Int, parameterValue: Any?): SerializedData {
             val restoredValue: Any?
@@ -69,7 +69,7 @@ abstract class Input(open vararg val serializedData: SerializedData) {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as Input
+        other as Parameters
 
         if (!serializedData.contentDeepEquals(other.serializedData)) return false
 

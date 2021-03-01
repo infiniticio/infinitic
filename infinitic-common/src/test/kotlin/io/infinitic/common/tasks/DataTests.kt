@@ -25,10 +25,10 @@
 
 package io.infinitic.common.tasks
 
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -57,12 +57,12 @@ class DataTests : StringSpec({
     }
 
     "MethodInput should be serialized as List<SerializedData>" {
-        val m = MethodInput.from("a", "b")
+        val m = MethodParameters.from("a", "b")
 
         val json = Json.encodeToString(m)
         json shouldBe Json.encodeToString(listOf(SerializedData.from("a"), SerializedData.from("b")))
 
-        val m2 = Json.decodeFromString<MethodInput>(json)
+        val m2 = Json.decodeFromString<MethodParameters>(json)
         m2 shouldBe m
     }
 
@@ -76,13 +76,13 @@ class DataTests : StringSpec({
         m2 shouldBe m
     }
 
-    "MethodOutput should be serialized as SerializedData" {
-        val m = MethodOutput.from("qwerty")
+    "MethodReturnValue should be serialized as SerializedData" {
+        val m = MethodReturnValue.from("qwerty")
 
         val json = Json.encodeToString(m)
         json shouldBe Json.encodeToString(SerializedData.from(m.get()))
 
-        val m2 = Json.decodeFromString<MethodOutput>(json)
+        val m2 = Json.decodeFromString<MethodReturnValue>(json)
         m2 shouldBe m
     }
 

@@ -23,36 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.data.methods
+package io.infinitic.common.data.channels
 
-import io.infinitic.common.data.Input
-import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.data.Name
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
-@Serializable(with = MethodInputSerializer::class)
-class MethodInput(override vararg val serializedData: SerializedData) : Input(*serializedData), Collection<SerializedData> by serializedData.toList() {
+@Serializable(with = ChannelNameSerializer::class)
+data class ChannelName(override val name: String) : Name(name) {
     companion object {
-        fun from(method: Method, data: Array<out Any>) = MethodInput(
-            *data.mapIndexed { index, value -> getSerializedParameter(method, index, value) }.toTypedArray()
-        )
-
-        fun from(vararg data: Any?) = MethodInput(
-            *data.map { SerializedData.from(it) }.toTypedArray()
-        )
+        fun from(method: Method) = ChannelName(method.name)
     }
 }
 
-object MethodInputSerializer : KSerializer<MethodInput> {
-    override val descriptor: SerialDescriptor = ListSerializer(SerializedData.serializer()).descriptor
-    override fun serialize(encoder: Encoder, value: MethodInput) {
-        ListSerializer(SerializedData.serializer()).serialize(encoder, value.serializedData.toList())
-    }
-    override fun deserialize(decoder: Decoder) =
-        MethodInput(*(ListSerializer(SerializedData.serializer()).deserialize(decoder).toTypedArray()))
+object ChannelNameSerializer : KSerializer<ChannelName> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelName", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ChannelName) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = ChannelName(decoder.decodeString())
 }

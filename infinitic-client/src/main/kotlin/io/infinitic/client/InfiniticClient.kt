@@ -30,10 +30,10 @@ import io.infinitic.client.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskId
@@ -198,7 +198,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         val msg = CancelTask(
             taskId = TaskId(handle.taskId),
             taskName = TaskName.from(handle.klass),
-            taskOutput = MethodOutput.from(output)
+            taskReturnValue = MethodReturnValue.from(output)
         )
         GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
     }
@@ -207,7 +207,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
         val msg = CancelWorkflow(
             workflowId = WorkflowId(handler.workflowId),
             clientName = null,
-            workflowOutput = MethodOutput.from(output)
+            workflowOutput = MethodReturnValue.from(output)
         )
         GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()
     }
@@ -218,7 +218,7 @@ open class InfiniticClient(val clientOutput: ClientOutput) {
             taskName = TaskName(handler.klass.name),
             methodName = handler.method?.let { MethodName.from(it) },
             methodParameterTypes = handler.method?.let { MethodParameterTypes.from(it) },
-            methodInput = handler.method?.let { MethodInput.from(it, handler.args) },
+            methodParameters = handler.method?.let { MethodParameters.from(it, handler.args) },
             taskOptions = handler.taskOptions,
             taskMeta = handler.taskMeta
         )
