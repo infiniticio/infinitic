@@ -23,17 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.proxies
+package io.infinitic.common.proxies
 
-import io.infinitic.common.proxies.Dispatcher
-import io.infinitic.common.proxies.MethodProxyHandler
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import java.lang.reflect.Method
 
-internal class ExistingWorkflowProxyHandler<T : Any>(
-    private val klass: Class<T>,
-    val workflowId: String,
-    private val workflowOptions: WorkflowOptions?,
-    private val workflowMeta: WorkflowMeta?,
+class SendChannelProxyHandler<T : Any>(
+    val klass: Class<T>,
+    val workflowId: WorkflowId,
+    val workflowName: WorkflowName,
+    val channelName: ChannelName,
     private val dispatcherFn: () -> Dispatcher
-) : MethodProxyHandler<T>(klass)
+) : MethodProxyHandler<T>(klass) {
+
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        val any = super.invoke(proxy, method, args)
+
+        if (method.name == "toString") return any
+
+        return when (isSync) {
+            true -> dispatcherFn().dispatchAndWait(this)
+            false -> any
+        }
+    }
+}

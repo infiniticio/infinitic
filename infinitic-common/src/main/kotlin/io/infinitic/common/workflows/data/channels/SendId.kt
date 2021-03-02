@@ -23,27 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.tasks.data.TaskOptions
-import java.lang.reflect.Method
+import io.infinitic.common.data.Id
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import java.util.UUID
 
-class NewTaskProxyHandler<T : Any>(
-    val klass: Class<T>,
-    val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta,
-    private val dispatcherFn: () -> Dispatcher
-) : MethodProxyHandler<T>(klass) {
+@Serializable(with = SendIdSerializer::class)
+data class SendId(override val id: String = UUID.randomUUID().toString()) : Id(id)
 
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        val any = super.invoke(proxy, method, args)
-
-        if (method.name == "toString") return any
-
-        return when (isSync) {
-            true -> dispatcherFn().dispatchAndWait(this)
-            false -> any
-        }
-    }
+object SendIdSerializer : KSerializer<SendId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("SendId", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: SendId) { encoder.encodeString(value.id) }
+    override fun deserialize(decoder: Decoder) = SendId(decoder.decodeString())
 }

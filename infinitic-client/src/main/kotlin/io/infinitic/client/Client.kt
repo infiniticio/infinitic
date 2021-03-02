@@ -25,8 +25,6 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.proxies.ExistingTaskProxyHandler
-import io.infinitic.client.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.data.MillisDuration
@@ -34,15 +32,17 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.proxies.ExistingTaskProxyHandler
+import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.exceptions.IncorrectExistingStub
 import io.infinitic.common.tasks.exceptions.IncorrectNewStub
 import io.infinitic.common.tasks.exceptions.NotAStub
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -122,7 +122,7 @@ open class Client(val clientOutput: ClientOutput) {
         id: String,
         options: WorkflowOptions? = null,
         meta: WorkflowMeta? = null
-    ): T = ExistingWorkflowProxyHandler(klass, id, options, meta) { dispatcher }.stub()
+    ): T = ExistingWorkflowProxyHandler(klass, WorkflowId(id), options, meta) { dispatcher }.stub()
 
     /*
      * Create stub for an existing workflow
@@ -144,18 +144,27 @@ open class Client(val clientOutput: ClientOutput) {
             is NewTaskProxyHandler<*> -> {
                 handler.isSync = false
                 proxy.method()
-                dispatcher.dispatchTask(handler)
+                dispatcher.dispatch(handler)
             }
             is NewWorkflowProxyHandler<*> -> {
                 handler.isSync = false
                 proxy.method()
-                dispatcher.dispatchWorkflow(handler)
+                dispatcher.dispatch(handler)
             }
             is ExistingTaskProxyHandler<*> -> {
-                throw IncorrectExistingStub(proxy::class.java.name, "async", "task")
+                handler.isSync = false
+                proxy.method()
+                dispatcher.dispatch(handler)
             }
             is ExistingWorkflowProxyHandler<*> -> {
-                throw IncorrectExistingStub(proxy::class.java.name, "async", "workflow")
+                handler.isSync = false
+                proxy.method()
+                dispatcher.dispatch(handler)
+            }
+            is SendChannelProxyHandler<*> -> {
+                handler.isSync = false
+                proxy.method()
+                dispatcher.dispatch(handler)
             }
             else -> throw RuntimeException()
         }
@@ -170,8 +179,8 @@ open class Client(val clientOutput: ClientOutput) {
         when (val handler = Proxy.getInvocationHandler(proxy)) {
             is NewTaskProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "task")
             is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "workflow")
-            is ExistingTaskProxyHandler<*> -> cancelTask(handler, output)
-            is ExistingWorkflowProxyHandler<*> -> cancelWorkflow(handler, output)
+            is ExistingTaskProxyHandler<*> -> cancel(handler, output)
+            is ExistingWorkflowProxyHandler<*> -> cancel(handler, output)
             else -> throw RuntimeException()
         }
     }
@@ -186,15 +195,15 @@ open class Client(val clientOutput: ClientOutput) {
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
             is NewTaskProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "task")
             is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "workflow")
-            is ExistingTaskProxyHandler<*> -> retryTask(handler)
-            is ExistingWorkflowProxyHandler<*> -> retryWorkflowTask(handler)
+            is ExistingTaskProxyHandler<*> -> retry(handler)
+            is ExistingWorkflowProxyHandler<*> -> retry(handler)
             else -> throw RuntimeException()
         }
     }
 
     suspend fun handle(message: ClientResponseMessage) = dispatcher.handle(message)
 
-    private fun <T : Any> cancelTask(handle: ExistingTaskProxyHandler<T>, output: Any?) {
+    private fun <T : Any> cancel(handle: ExistingTaskProxyHandler<T>, output: Any?) {
         val msg = CancelTask(
             taskId = TaskId(handle.taskId),
             taskName = TaskName.from(handle.klass),
@@ -203,16 +212,16 @@ open class Client(val clientOutput: ClientOutput) {
         GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
     }
 
-    private fun <T : Any> cancelWorkflow(handler: ExistingWorkflowProxyHandler<T>, output: Any?) {
+    private fun <T : Any> cancel(handler: ExistingWorkflowProxyHandler<T>, output: Any?) {
         val msg = CancelWorkflow(
-            workflowId = WorkflowId(handler.workflowId),
+            workflowId = handler.workflowId,
             clientName = null,
             workflowOutput = MethodReturnValue.from(output)
         )
         GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()
     }
 
-    private fun <T : Any> retryTask(handler: ExistingTaskProxyHandler<T>) {
+    private fun <T : Any> retry(handler: ExistingTaskProxyHandler<T>) {
         val msg = RetryTask(
             taskId = TaskId(handler.taskId),
             taskName = TaskName(handler.klass.name),
@@ -225,7 +234,7 @@ open class Client(val clientOutput: ClientOutput) {
         GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
     }
 
-    private fun <T : Any> retryWorkflowTask(handler: ExistingWorkflowProxyHandler<T>) {
+    private fun <T : Any> retry(handler: ExistingWorkflowProxyHandler<T>) {
         TODO("Not yet implemented")
     }
 }

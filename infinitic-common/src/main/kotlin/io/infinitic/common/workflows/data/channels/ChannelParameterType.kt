@@ -23,30 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.data.channels
+package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.data.Data
-import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = ChannelParameterSerializer::class)
-data class ChannelParameter(override val serializedData: SerializedData) : Data(serializedData) {
+@Serializable(with = ChannelParameterTypeSerializer::class)
+data class ChannelParameterType(val type: String) {
     companion object {
-        fun from(data: Any?) = ChannelParameter(
-            SerializedData.from(data)
-        )
+        fun from(value: Any) = ChannelParameterType(value::class.java.name)
     }
 }
 
-object ChannelParameterSerializer : KSerializer<ChannelParameter> {
-    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
-    override fun serialize(encoder: Encoder, value: ChannelParameter) {
-        SerializedData.serializer().serialize(encoder, value.serializedData)
-    }
-    override fun deserialize(decoder: Decoder) =
-        ChannelParameter(SerializedData.serializer().deserialize(decoder))
+object ChannelParameterTypeSerializer : KSerializer<ChannelParameterType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelParameterType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ChannelParameterType) { encoder.encodeString(value.type) }
+    override fun deserialize(decoder: Decoder) = ChannelParameterType(decoder.decodeString())
 }

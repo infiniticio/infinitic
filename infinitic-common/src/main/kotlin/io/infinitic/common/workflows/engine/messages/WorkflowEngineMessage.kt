@@ -27,14 +27,15 @@ package io.infinitic.common.workflows.engine.messages
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.channels.ChannelName
-import io.infinitic.common.data.channels.ChannelParameter
-import io.infinitic.common.data.channels.ChannelParameterType
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelParameter
+import io.infinitic.common.workflows.data.channels.ChannelParameterType
+import io.infinitic.common.workflows.data.channels.SendId
 import io.infinitic.common.workflows.data.events.EventData
 import io.infinitic.common.workflows.data.events.EventName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -77,10 +78,12 @@ data class CancelWorkflow(
 ) : WorkflowEngineMessage()
 
 @Serializable
-data class EmitToChannel(
+data class SendToChannel(
     val clientName: ClientName,
+    val clientWaiting: Boolean,
     override val workflowId: WorkflowId,
     val workflowName: WorkflowName,
+    val sendId: SendId,
     val channelName: ChannelName,
     val channelParameterType: ChannelParameterType,
     val channelParameter: ChannelParameter

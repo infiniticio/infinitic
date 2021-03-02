@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap
 open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
     // multiple threads can use a same MethodProxyHandler instance without mixing values
     private val _dataMethodHash = ConcurrentHashMap<Thread, DataMethod>()
+
     private val dataMethod: DataMethod
         get() = _dataMethodHash.getOrPut(currentThread(), { DataMethod() })
 

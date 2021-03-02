@@ -125,10 +125,9 @@ data class NotAStub(
 
 data class IncorrectExistingStub(
     val name: String,
-    val async: String,
     val type: String
 ) : UserExceptionInClient(
-    msg = "The first parameter of the client.$async(.) function should be the stub of an existing $type",
+    msg = "The first parameter of the client.async(.) function should be the stub of an existing $type",
     help = "Make sure to provide the stub returned by client.$type($name, id) function, with an id."
 )
 
@@ -150,11 +149,18 @@ data class SuspendMethodNotSupported(
 )
 
 data class NoMethodCall(
-    val name: String,
-    val async: String
+    val name: String
 ) : UserExceptionInClient(
     msg = "The method to call for your task or workflow is missing",
-    help = "Make sure to call a method of \"$name\" in the second parameter of client.$async()"
+    help = "Make sure to call a method of \"$name\" in the second parameter of client.async()"
+)
+
+data class NoSendMethodCall(
+    val className: String,
+    val channelName: String
+) : UserExceptionInClient(
+    msg = "Nothing to send for $className::$channelName",
+    help = "Make sure to call the \"send\" method in the second parameter of client.async($channelName())"
 )
 
 data class MultipleMethodCalls(

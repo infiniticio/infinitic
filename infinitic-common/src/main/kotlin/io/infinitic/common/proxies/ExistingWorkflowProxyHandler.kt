@@ -23,21 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.data.channels
+package io.infinitic.common.proxies
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import java.lang.reflect.Method
 
-@Serializable(with = ChannelParameterTypeSerializer::class)
-data class ChannelParameterType(val type: String)
+class ExistingWorkflowProxyHandler<T : Any>(
+    val klass: Class<T>,
+    val workflowId: WorkflowId,
+    private val workflowOptions: WorkflowOptions?,
+    private val workflowMeta: WorkflowMeta?,
+    private val dispatcherFn: () -> Dispatcher
+) : MethodProxyHandler<T>(klass) {
 
-object ChannelParameterTypeSerializer : KSerializer<ChannelParameterType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelParameterType", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ChannelParameterType) { encoder.encodeString(value.type) }
-    override fun deserialize(decoder: Decoder) = ChannelParameterType(decoder.decodeString())
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        val any = super.invoke(proxy, method, args)
+
+        if (method.name == "toString") return any
+
+        return when (isSync) {
+            true -> dispatcherFn().dispatchAndWait(this)
+            false -> any
+        }
+    }
 }

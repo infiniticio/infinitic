@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.data.channels
+package io.infinitic.common.workflows.data.channels
 
 import io.infinitic.common.data.Name
 import kotlinx.serialization.KSerializer

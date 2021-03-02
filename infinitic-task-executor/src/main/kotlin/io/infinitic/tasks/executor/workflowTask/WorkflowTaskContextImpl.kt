@@ -27,8 +27,10 @@ package io.infinitic.tasks.executor.workflowTask
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.tasks.exceptions.SuspendMethodNotSupported
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
@@ -293,7 +295,7 @@ class WorkflowTaskContextImpl(
         return deferred
     }
 
-    override fun <S> dispatchTaskAndWaitResult(handler: NewTaskProxyHandler<*>): S =
+    override fun <S> dispatchAndWait(handler: NewTaskProxyHandler<*>): S =
         dispatchTask<S>(handler).await()
 
     /*
@@ -311,8 +313,16 @@ class WorkflowTaskContextImpl(
         return deferred
     }
 
-    override fun <S> dispatchWorkflowAndWaitResult(handler: NewWorkflowProxyHandler<*>): S =
+    override fun <S> dispatchAndWait(handler: NewWorkflowProxyHandler<*>): S =
         dispatchWorkflow<S>(handler).await()
+
+    override fun <S> dispatchAndWait(handler: ExistingWorkflowProxyHandler<*>): S {
+        TODO("Not yet implemented")
+    }
+
+    override fun dispatchAndWait(handler: SendChannelProxyHandler<*>) {
+        TODO("Not yet implemented")
+    }
 
     /*
      * Duration Timer dispatching

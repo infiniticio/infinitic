@@ -34,12 +34,14 @@ data class ClientResponseEnvelope(
     val clientName: ClientName,
     val type: ClientResponseMessageType,
     val taskCompleted: TaskCompleted? = null,
-    val workflowCompleted: WorkflowCompleted? = null
+    val workflowCompleted: WorkflowCompleted? = null,
+    val sendCompleted: SendCompleted? = null
 ) {
     init {
         val noNull = listOfNotNull(
             taskCompleted,
-            workflowCompleted
+            workflowCompleted,
+            sendCompleted
         )
 
         require(noNull.size == 1)
@@ -59,6 +61,11 @@ data class ClientResponseEnvelope(
                 ClientResponseMessageType.WORKFLOW_COMPLETED,
                 workflowCompleted = msg
             )
+            is SendCompleted -> ClientResponseEnvelope(
+                msg.clientName,
+                ClientResponseMessageType.SEND_COMPLETED,
+                sendCompleted = msg
+            )
         }
 
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
@@ -67,6 +74,7 @@ data class ClientResponseEnvelope(
     fun message(): ClientResponseMessage = when (type) {
         ClientResponseMessageType.TASK_COMPLETED -> taskCompleted!!
         ClientResponseMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
+        ClientResponseMessageType.SEND_COMPLETED -> sendCompleted!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

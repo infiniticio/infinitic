@@ -23,14 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.proxies
+package io.infinitic.common.proxies
 
-import io.infinitic.common.proxies.Dispatcher
-import io.infinitic.common.proxies.MethodProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 
-internal class ExistingTaskProxyHandler<T : Any>(
+class ExistingTaskProxyHandler<T : Any>(
     val klass: Class<T>,
     val taskId: String,
     val taskOptions: TaskOptions?,

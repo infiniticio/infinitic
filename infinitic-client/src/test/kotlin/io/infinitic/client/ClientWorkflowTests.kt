@@ -31,12 +31,18 @@ import io.infinitic.client.samples.FakeWorkflow
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.channels.ChannelParameter
+import io.infinitic.common.workflows.data.channels.ChannelParameterType
+import io.infinitic.common.workflows.data.channels.SendId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -49,7 +55,9 @@ class ClientWorkflowTests : StringSpec({
     val clientOutput = MockClientOutput(taskSlot, workflowSlot)
     val client = Client(clientOutput)
     clientOutput.client = client
+    val id = TestFactory.random<String>()
     val fakeWorkflow = client.workflow(FakeWorkflow::class.java)
+    val fakeWorkflowId = client.workflow(FakeWorkflow::class.java, id)
 
     beforeTest {
         taskSlot.clear()
@@ -187,23 +195,24 @@ class ClientWorkflowTests : StringSpec({
             workflowMeta = WorkflowMeta()
         )
     }
-//
-//    "Should be able to emit to a channel" {
-//        // when
-//        coroutineScope {
-//            fakeWorkflow.ch.send("a")
-//        }
-//        // then
-//        val msg = workflowSlot.captured
-//        msg shouldBe EmitToChannel(
-//            clientName = clientOutput.clientName,
-//            workflowId = msg.workflowId,
-//            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-//            channelName = ChannelName("ch"),
-//            channelParameterType = ChannelParameterType(String::class.java.name),
-//            channelParameter = ChannelParameter.from("a")
-//        )
-//    }
+
+    "Should be able to asynchronously emit to a channel" {
+        // when
+        val sendId = SendId(client.async(fakeWorkflowId.ch) { send("a") })
+
+        // then
+        val msg = workflowSlot.captured
+        msg shouldBe SendToChannel(
+            clientName = clientOutput.clientName,
+            clientWaiting = false,
+            sendId = sendId,
+            workflowId = msg.workflowId,
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            channelName = ChannelName("getCh"),
+            channelParameterType = ChannelParameterType(String::class.java.name),
+            channelParameter = ChannelParameter.from("a")
+        )
+    }
 
     // TODO: add tests for options
 
