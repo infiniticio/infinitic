@@ -27,6 +27,7 @@ package io.infinitic.client
 
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.clients.messages.SendCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.MillisDuration
@@ -35,6 +36,7 @@ import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.mockk.CapturingSlot
@@ -71,6 +73,14 @@ internal class MockClientOutput(
                         clientName = clientName,
                         workflowId = msg.workflowId,
                         workflowReturnValue = MethodReturnValue.from("success")
+                    )
+                )
+            }
+            if (msg is SendToChannel && msg.clientWaiting) {
+                client.handle(
+                    SendCompleted(
+                        clientName = clientName,
+                        sendId = msg.sendId
                     )
                 )
             }

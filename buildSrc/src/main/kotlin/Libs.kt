@@ -87,6 +87,8 @@ object Libs {
     }
 
     object Slf4j {
-        const val api = "org.slf4j:slf4j-api:1.7.30"
+        private const val version = "1.7.30"
+        const val simple = "org.slf4j:slf4j-simple:$version"
+        const val api = "org.slf4j:slf4j-api:$version"
     }
 }

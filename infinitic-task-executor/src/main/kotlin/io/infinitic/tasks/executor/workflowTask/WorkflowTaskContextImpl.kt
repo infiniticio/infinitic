@@ -69,7 +69,7 @@ import kotlin.reflect.jvm.kotlinFunction
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
-class WorkflowTaskContextImpl(
+internal class WorkflowTaskContextImpl(
     private val workflowTaskParameters: WorkflowTaskParameters,
     private val workflow: Workflow
 ) : WorkflowTaskContext {
@@ -107,7 +107,7 @@ class WorkflowTaskContextImpl(
             proxy.method()
             dispatchWorkflow(handler)
         }
-        else -> throw RuntimeException("Unknown handler")
+        else -> throw RuntimeException("Not Yet Implemented")
     }
 
     /*

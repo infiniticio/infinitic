@@ -30,9 +30,12 @@ import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.executors.parser.getPropertiesFromObject
 import io.infinitic.common.workflows.executors.parser.setPropertiesToObject
+import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.RuntimeException
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaType
 
 fun setWorkflowProperties(
@@ -48,13 +51,17 @@ fun setWorkflowProperties(
 }
 
 /*
-get current workflow properties (WorkflowTaskContext and proxies excluded)
+get current workflow properties (WorkflowTaskContext, channels and proxies excluded)
 TODO: manage Deferred in properties (including WorkflowTaskContext property)
  */
 fun getWorkflowProperties(workflow: Workflow) = getPropertiesFromObject(
     workflow,
     {
+        // excludes context
         it.third.javaType.typeName != WorkflowTaskContext::class.java.name &&
+            // excludes Channel
+            ! it.third.isSubtypeOf(Channel::class.starProjectedType) &&
+            // excludes Proxies
             ! it.second!!::class.java.name.startsWith("com.sun.proxy.")
     }
 )

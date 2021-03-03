@@ -29,7 +29,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 
 const val POSITION_SEPARATOR = "."
 
-data class MethodRunIndex(
+internal data class MethodRunIndex(
     val parent: MethodRunIndex? = null,
     val index: Int = -1,
 ) {

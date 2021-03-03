@@ -56,6 +56,7 @@ subprojects {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))
         "implementation"(Libs.Slf4j.api)
 
+        "testImplementation"(Libs.Slf4j.simple)
         "testImplementation"(Libs.Kotest.junit5)
         "testImplementation"(Libs.Kotest.property)
         "testImplementation"(Libs.Mockk.mockk)

@@ -25,4 +25,18 @@
 
 package io.infinitic.workflows
 
-interface Channel<T> : SendChannel<T>, ReceiveChannel<T>
+import io.infinitic.common.workflows.data.channels.ChannelName
+
+data class Channel<T>(
+    private val context: () -> WorkflowTaskContext
+) : SendChannel<T>, ReceiveChannel<T> {
+    lateinit var name: ChannelName
+
+    override fun receive(): Deferred<T> {
+        TODO("Not yet implemented")
+    }
+
+    override fun send(signal: T) {
+        TODO("Not yet implemented")
+    }
+}

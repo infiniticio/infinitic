@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.tests.workflows
 
+import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
@@ -33,6 +34,8 @@ import io.infinitic.workflows.tests.tasks.TaskA
 import java.time.LocalDateTime
 
 interface WorkflowA {
+    val channel: Channel<String>
+
     fun empty(): String
     fun seq1(): String
     fun seq2(): String
@@ -58,6 +61,7 @@ interface WorkflowA {
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
+    override val channel = channel<String>()
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
     private var p1 = ""

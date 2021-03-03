@@ -36,7 +36,7 @@ import io.infinitic.tasks.executor.task.TaskAttemptContext
 import io.infinitic.workflows.Workflow
 import java.lang.reflect.InvocationTargetException
 
-class WorkflowTaskImpl : WorkflowTask {
+internal class WorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskOutput {

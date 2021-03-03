@@ -196,7 +196,7 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "Should be able to asynchronously emit to a channel" {
+    "Should be able to emit to a channel asynchronously" {
         // when
         val sendId = SendId(client.async(fakeWorkflowId.ch) { send("a") })
 
@@ -206,6 +206,26 @@ class ClientWorkflowTests : StringSpec({
             clientName = clientOutput.clientName,
             clientWaiting = false,
             sendId = sendId,
+            workflowId = msg.workflowId,
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            channelName = ChannelName("getCh"),
+            channelParameterType = ChannelParameterType(String::class.java.name),
+            channelParameter = ChannelParameter.from("a")
+        )
+    }
+
+    "Should be able to emit to a channel synchronously" {
+        // when
+        coroutineScope {
+            fakeWorkflowId.ch.send("a")
+        }
+
+        // then
+        val msg = workflowSlot.captured as SendToChannel
+        msg shouldBe SendToChannel(
+            clientName = clientOutput.clientName,
+            clientWaiting = true,
+            sendId = msg.sendId,
             workflowId = msg.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             channelName = ChannelName("getCh"),
