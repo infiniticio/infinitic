@@ -34,6 +34,7 @@ include("infinitic-task-tests")
 include("infinitic-task-executor")
 include("infinitic-workflow-engine")
 include("infinitic-workflow-tests")
+include("infinitic-workflow-task")
 
 include("infinitic-inMemory")
 include("infinitic-pulsar")

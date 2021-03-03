@@ -23,28 +23,38 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.workflowTask
+package io.infinitic.tasks
 
-import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.workflows.Workflow
 
-const val POSITION_SEPARATOR = "."
+typealias InstanceFactory = () -> Any
 
-internal data class MethodRunIndex(
-    val parent: MethodRunIndex? = null,
-    val index: Int = -1,
-) {
-    val methodPosition: MethodRunPosition = when (parent) {
-        null -> MethodRunPosition("$index")
-        else -> MethodRunPosition("${parent.methodPosition}$POSITION_SEPARATOR$index")
-    }
+interface TaskExecutorRegister {
 
-    override fun toString() = "$methodPosition"
+    /**
+     * Register an instance factory for task or workflow name
+     */
+    fun register(name: String, factory: InstanceFactory)
 
-    fun next() = MethodRunIndex(parent, index + 1)
+    /**
+     * Unregister a given name (mostly used in tests)
+     */
+    fun unregister(name: String)
 
-    fun up() = parent
+    /**
+     * Get task instance per name
+     */
+    fun getTaskInstance(name: String): Any
 
-    fun down() = MethodRunIndex(this, -1)
+    /**
+     * Get workflow instance per name
+     */
+    fun getWorkflowInstance(name: String): Workflow
 
-    fun leadsTo(target: MethodRunPosition) = "${target}$POSITION_SEPARATOR".startsWith("$methodPosition$POSITION_SEPARATOR")
+    /**
+     * Get list of all registered tasks
+     */
+    fun getTasks(): List<String>
 }
+
+inline fun <reified T> TaskExecutorRegister.register(noinline factory: InstanceFactory) = this.register(T::class.java.name, factory)

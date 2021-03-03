@@ -23,42 +23,61 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.workflowTask
+package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.tasks.executor.task.TaskAttemptContext
+import io.infinitic.common.workflows.exceptions.MultipleNamesForChannel
+import io.infinitic.common.workflows.exceptions.NonUniqueChannelFromChannelMethod
+import io.infinitic.common.workflows.exceptions.ParametersInChannelMethod
+import io.infinitic.tasks.TaskAttemptContext
+import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import java.lang.reflect.InvocationTargetException
 
-internal class WorkflowTaskImpl : WorkflowTask {
+class WorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskOutput {
         // get  instance workflow by name
-        val workflow = taskAttemptContext.taskExecutor.getWorkflowInstance("${workflowTaskParameters.workflowName}")
+        val workflow = taskAttemptContext.register.getWorkflowInstance("${workflowTaskParameters.workflowName}")
 
-        // set methodContext
-        val workflowTaskContext = WorkflowTaskContextImpl(workflowTaskParameters, workflow)
+        // setProperties function
+        val setProperties = {
+            hashValues: Map<PropertyHash, PropertyValue>,
+            nameHashes: Map<PropertyName, PropertyHash>
+            ->
+            setWorkflowProperties(workflow, hashValues, nameHashes)
+        }
 
         // set workflow's initial properties
-        setWorkflowProperties(
-            workflow,
+        setProperties(
             workflowTaskParameters.workflowPropertiesHashValue,
             workflowTaskParameters.methodRun.propertiesNameHashAtStart
         )
 
+        // set context
+        workflow.context = WorkflowTaskContextImpl(workflowTaskParameters, setProperties)
+
+        // initialize name of channels for this workflow, based on the methods that provide them
+        setChannelNames(workflow)
+
         // get method
         val method = getMethod(workflow, workflowTaskParameters.methodRun)
 
-        // run method and get output (null if end not reached)
+        // run method and get return value (null if end not reached)
+        val parameters = workflowTaskParameters.methodRun.methodParameters.get().toTypedArray()
+
         val methodReturnValue = try {
-            MethodReturnValue.from(method.invoke(workflow, *workflowTaskParameters.methodRun.methodParameters.get().toTypedArray()))
+            MethodReturnValue.from(method.invoke(workflow, *parameters))
         } catch (e: InvocationTargetException) {
             when (e.cause) {
                 is WorkflowTaskException -> null
@@ -71,8 +90,8 @@ internal class WorkflowTaskImpl : WorkflowTask {
         return WorkflowTaskOutput(
             workflowTaskParameters.workflowId,
             workflowTaskParameters.methodRun.methodRunId,
-            workflowTaskContext.newCommands,
-            workflowTaskContext.newSteps,
+            (workflow.context as WorkflowTaskContextImpl).newCommands,
+            (workflow.context as WorkflowTaskContextImpl).newSteps,
             properties,
             methodReturnValue
         )
@@ -90,5 +109,30 @@ internal class WorkflowTaskImpl : WorkflowTask {
             "${methodRun.methodName}",
             methodRun.methodParameterTypes!!.types
         )
+    }
+
+    private fun setChannelNames(workflow: Workflow) {
+        workflow::class.java.declaredMethods
+            .filter { it.returnType.name == Channel::class.java.name }
+            .map {
+                // channel must not have parameters
+                if (it.parameterCount > 0) {
+                    throw ParametersInChannelMethod(workflow::class.java.name, it.name)
+                }
+                // channel must be created only once per method
+                it.isAccessible = true
+                val channel = it.invoke(workflow)
+                val channelBis = it.invoke(workflow)
+                if (channel !== channelBis) {
+                    throw NonUniqueChannelFromChannelMethod(workflow::class.java.name, it.name)
+                }
+                // this channel must not have a name already
+                channel as Channel<*>
+                if (channel.isNameInitialized()) {
+                    throw MultipleNamesForChannel(workflow::class.java.name, it.name, channel.name)
+                }
+                // set channel name
+                channel.name = it.name
+            }
     }
 }

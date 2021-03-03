@@ -56,8 +56,8 @@ import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.tasks.executor.register.register
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
+import io.infinitic.tasks.register
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage

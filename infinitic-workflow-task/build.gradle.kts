@@ -23,12 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.workflowTask
+dependencies {
+    implementation(kotlin("reflect"))
+    implementation(Libs.Coroutines.core)
 
-internal sealed class WorkflowTaskException : RuntimeException()
+    implementation(project(":infinitic-common"))
+}
 
-internal class NewStepException() : WorkflowTaskException()
-
-internal class KnownStepException : WorkflowTaskException()
-
-internal class AsyncCompletedException : WorkflowTaskException()
+apply("../publish.gradle.kts")

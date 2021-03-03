@@ -28,6 +28,7 @@ dependencies {
     implementation(Libs.Coroutines.core)
 
     implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-workflow-task"))
 }
 
 apply("../publish.gradle.kts")

@@ -62,6 +62,7 @@ interface WorkflowA {
 
 class WorkflowAImpl : Workflow(), WorkflowA {
     override val channel = channel<String>()
+
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
     private var p1 = ""

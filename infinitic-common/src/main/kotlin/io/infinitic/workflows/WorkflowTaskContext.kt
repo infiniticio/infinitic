@@ -34,19 +34,23 @@ import java.time.Instant
 interface WorkflowTaskContext : Dispatcher {
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
 
-    fun <S> async(branch: () -> S): Deferred<S>
+    fun <T> async(branch: () -> T): Deferred<T>
 
-    fun <S> inline(task: () -> S): S
+    fun <T> inline(task: () -> T): T
 
-    fun <S> await(deferred: Deferred<S>): S
+    fun <T> await(deferred: Deferred<T>): T
 
-    fun <S> status(deferred: Deferred<S>): DeferredStatus
+    fun <T> status(deferred: Deferred<T>): DeferredStatus
 
-    fun <S> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<S>
+    fun <T> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<T>
 
-    fun <S> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<S>
+    fun <T> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<T>
 
     fun timer(duration: Duration): Deferred<Instant>
 
     fun timer(instant: Instant): Deferred<Instant>
+
+    fun <T> receiveFromChannel(channelName: String): Deferred<T>
+
+    fun <T> sendToChannel(channelName: String, signal: T)
 }

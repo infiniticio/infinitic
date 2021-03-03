@@ -23,18 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.workflows.workflowTask
 
-abstract class Task {
-    lateinit var context: TaskAttemptContext
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 
-    /*
-     * Retry
-     */
-    fun retry(after: Double) = context.retry(after)
+const val POSITION_SEPARATOR = "."
 
-    /*
-     * Cancel
-     */
-    open fun cancel() {}
+internal data class MethodRunIndex(
+    val parent: MethodRunIndex? = null,
+    val index: Int = -1,
+) {
+    val methodPosition: MethodRunPosition = when (parent) {
+        null -> MethodRunPosition("$index")
+        else -> MethodRunPosition("${parent.methodPosition}$POSITION_SEPARATOR$index")
+    }
+
+    override fun toString() = "$methodPosition"
+
+    fun next() = MethodRunIndex(parent, index + 1)
+
+    fun up() = parent
+
+    fun down() = MethodRunIndex(this, -1)
+
+    fun leadsTo(target: MethodRunPosition) = "${target}$POSITION_SEPARATOR".startsWith("$methodPosition$POSITION_SEPARATOR")
 }

@@ -26,16 +26,17 @@
 package io.infinitic.tasks.executor.task
 
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.tasks.TaskAttemptContext
 import io.infinitic.tasks.executor.TaskExecutor
 
-data class TaskAttemptContext(
-    val taskExecutor: TaskExecutor,
-    val taskId: String,
-    val taskRetry: Int,
-    val taskAttemptId: String,
-    val taskAttemptRetry: Int,
-    val previousTaskAttemptError: Any?,
-    var currentTaskAttemptError: Throwable? = null,
-    val taskMeta: Map<String, Any?>,
-    val taskOptions: TaskOptions
-)
+data class TaskAttemptContextImpl(
+    override val register: TaskExecutor,
+    override val taskId: String,
+    override val taskRetry: Int,
+    override val taskAttemptId: String,
+    override val taskAttemptRetry: Int,
+    override val lastTaskAttemptError: Exception?,
+    override var currentTaskAttemptError: Exception? = null,
+    override val taskMeta: Map<String, Any?>,
+    override val taskOptions: TaskOptions
+) : TaskAttemptContext

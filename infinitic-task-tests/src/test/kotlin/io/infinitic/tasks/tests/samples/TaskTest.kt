@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.tests.samples
 
-import io.infinitic.tasks.executor.task.TaskAttemptContext
+import io.infinitic.tasks.executor.task.TaskAttemptContextImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
@@ -36,14 +36,14 @@ interface TaskTest {
 class TaskException(val log: String) : Exception()
 
 class TaskTestImpl : TaskTest {
-    private lateinit var context: TaskAttemptContext
+    private lateinit var context: TaskAttemptContextImpl
     lateinit var behavior: (index: Int, retry: Int) -> Status
     lateinit var log: String
 
     override fun log(): String {
         val status = behavior(context.taskRetry, context.taskAttemptRetry)
 
-        log = context.previousTaskAttemptError?.let { (it as TaskException).log } ?: ""
+        log = context.lastTaskAttemptError?.let { (it as TaskException).log } ?: ""
         log += when (status) {
             Status.SUCCESS -> "1"
             else -> "0"

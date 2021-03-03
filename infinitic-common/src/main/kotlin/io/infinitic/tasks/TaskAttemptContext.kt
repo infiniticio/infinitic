@@ -28,8 +28,8 @@ package io.infinitic.tasks
 import io.infinitic.common.tasks.data.TaskOptions
 
 interface TaskAttemptContext {
+    val register: TaskExecutorRegister
     val taskId: String
-    val methodName: String
     val taskRetry: Int
     val taskAttemptId: String
     val taskAttemptRetry: Int
@@ -37,9 +37,4 @@ interface TaskAttemptContext {
     var currentTaskAttemptError: Exception?
     val taskMeta: Map<String, Any?>
     val taskOptions: TaskOptions
-
-    /*
-     * Retry
-     */
-    fun retry(after: Double)
 }

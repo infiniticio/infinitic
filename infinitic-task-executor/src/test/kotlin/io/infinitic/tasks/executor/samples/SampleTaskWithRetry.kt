@@ -25,10 +25,10 @@
 
 package io.infinitic.tasks.executor.samples
 
-import io.infinitic.tasks.executor.task.TaskAttemptContext
+import io.infinitic.tasks.executor.task.TaskAttemptContextImpl
 
 internal class SampleTaskWithRetry() {
-    lateinit var context: TaskAttemptContext
+    lateinit var context: TaskAttemptContextImpl
 
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 
@@ -36,7 +36,7 @@ internal class SampleTaskWithRetry() {
 }
 
 internal class SampleTaskWithBadTypeRetry() {
-    lateinit var context: TaskAttemptContext
+    lateinit var context: TaskAttemptContextImpl
 
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 
@@ -44,7 +44,7 @@ internal class SampleTaskWithBadTypeRetry() {
 }
 
 internal class SampleTaskWithBuggyRetry() {
-    lateinit var context: TaskAttemptContext
+    lateinit var context: TaskAttemptContextImpl
 
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 

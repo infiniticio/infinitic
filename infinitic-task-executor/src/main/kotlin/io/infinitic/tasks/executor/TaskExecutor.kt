@@ -40,11 +40,12 @@ import io.infinitic.common.tasks.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.common.tasks.executors.messages.CancelTaskAttempt
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.tasks.executor.register.TaskExecutorRegister
+import io.infinitic.tasks.TaskAttemptContext
+import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.task.RetryDelay
 import io.infinitic.tasks.executor.task.RetryDelayFailed
 import io.infinitic.tasks.executor.task.RetryDelayRetrieved
-import io.infinitic.tasks.executor.task.TaskAttemptContext
+import io.infinitic.tasks.executor.task.TaskAttemptContextImpl
 import io.infinitic.tasks.executor.task.TaskCommand
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import kotlinx.coroutines.TimeoutCancellationException
@@ -55,9 +56,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaField
-import kotlin.reflect.jvm.javaType
 
 class TaskExecutor(
     val taskExecutorOutput: TaskExecutorOutput,
@@ -80,13 +82,13 @@ class TaskExecutor(
     }
 
     private suspend fun executeTaskAttempt(message: ExecuteTaskAttempt) {
-        val taskAttemptContext = TaskAttemptContext(
-            taskExecutor = this,
+        val taskAttemptContext = TaskAttemptContextImpl(
+            register = this,
             taskId = "${message.taskId}",
             taskAttemptId = "${message.taskAttemptId}",
             taskRetry = message.taskRetry.int,
             taskAttemptRetry = message.taskAttemptRetry.int,
-            previousTaskAttemptError = message.previousTaskAttemptError?.get(),
+            lastTaskAttemptError = message.previousTaskAttemptError?.get() as Exception?,
             taskMeta = message.taskMeta.get(),
             taskOptions = message.taskOptions
         )
@@ -125,7 +127,7 @@ class TaskExecutor(
             sendTaskCompleted(message, output)
         } catch (e: InvocationTargetException) {
             // update context with the cause (to be potentially used in getRetryDelay method)
-            taskAttemptContext.currentTaskAttemptError = e.cause
+            taskAttemptContext.currentTaskAttemptError = e.cause as Exception?
             // retrieve delay before retry
             getRetryDelayAndFailTask(task, message, taskAttemptContext)
         } catch (e: TimeoutCancellationException) {
@@ -147,7 +149,7 @@ class TaskExecutor(
 
     private fun setTaskContext(task: Any, context: TaskAttemptContext) {
         task::class.memberProperties.find {
-            it.returnType.javaType.typeName == TaskAttemptContext::class.java.name
+            it.returnType.isSubtypeOf(TaskAttemptContext::class.starProjectedType)
         }?.javaField?.apply {
             isAccessible = true
             set(task, context)

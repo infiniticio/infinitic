@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.workflowTask
+package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -38,7 +38,7 @@ import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaType
 
-fun setWorkflowProperties(
+internal fun setWorkflowProperties(
     workflow: Workflow,
     propertiesHashValue: Map<PropertyHash, PropertyValue>,
     propertiesNameHash: Map<PropertyName, PropertyHash>
@@ -54,7 +54,7 @@ fun setWorkflowProperties(
 get current workflow properties (WorkflowTaskContext, channels and proxies excluded)
 TODO: manage Deferred in properties (including WorkflowTaskContext property)
  */
-fun getWorkflowProperties(workflow: Workflow) = getPropertiesFromObject(
+internal fun getWorkflowProperties(workflow: Workflow) = getPropertiesFromObject(
     workflow,
     {
         // excludes context

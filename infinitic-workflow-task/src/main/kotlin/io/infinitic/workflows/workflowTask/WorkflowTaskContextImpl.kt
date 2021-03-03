@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.workflowTask
+package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
@@ -49,6 +49,9 @@ import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.StartAsync
 import io.infinitic.common.workflows.data.commands.StartInlineTask
+import io.infinitic.common.workflows.data.properties.PropertyHash
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.Step
@@ -62,7 +65,6 @@ import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
-import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowTaskContext
 import java.lang.reflect.Proxy
 import kotlin.reflect.jvm.kotlinFunction
@@ -71,7 +73,7 @@ import java.time.Instant as JavaInstant
 
 internal class WorkflowTaskContextImpl(
     private val workflowTaskParameters: WorkflowTaskParameters,
-    private val workflow: Workflow
+    private val setProperties: (Map<PropertyHash, PropertyValue>, Map<PropertyName, PropertyHash>) -> Unit
 ) : WorkflowTaskContext {
     // position in the current method processing
     private var methodRunIndex = MethodRunIndex()
@@ -84,11 +86,6 @@ internal class WorkflowTaskContextImpl(
 
     // new steps (if any) discovered during execution the method (can be multiple due to `async` function)
     var newSteps: MutableList<NewStep> = mutableListOf()
-
-    init {
-        // set workflowTask context
-        workflow.context = this
-    }
 
     /*
      * Async Task dispatching
@@ -140,8 +137,7 @@ internal class WorkflowTaskContextImpl(
             workflowTaskIndex = pastCommand.workflowTaskIndexAtStart!!
 
             // update workflow instance properties
-            setWorkflowProperties(
-                workflow,
+            setProperties(
                 workflowTaskParameters.workflowPropertiesHashValue,
                 pastCommand.propertiesNameHashAtStart!!
             )
@@ -261,8 +257,7 @@ internal class WorkflowTaskContextImpl(
         }
 
         // update workflow instance properties
-        setWorkflowProperties(
-            workflow,
+        setProperties(
             workflowTaskParameters.workflowPropertiesHashValue,
             pastStep.propertiesNameHashAtTermination!!
         )
@@ -339,6 +334,14 @@ internal class WorkflowTaskContextImpl(
         DispatchInstantTimer(MillisInstant(instant.toEpochMilli())),
         CommandSimpleName("${CommandType.DISPATCH_INSTANT_TIMER}")
     )
+
+    override fun <T> receiveFromChannel(channelName: String): Deferred<T> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T> sendToChannel(channelName: String, signal: T) {
+        TODO("Not yet implemented")
+    }
 
     /*
      * Get return value from Deferred

@@ -25,10 +25,10 @@
 
 package io.infinitic.tasks.executor.samples
 
-import io.infinitic.tasks.executor.task.TaskAttemptContext
+import io.infinitic.tasks.executor.task.TaskAttemptContextImpl
 
 internal class SampleTaskWithTimeout() {
-    lateinit var context: TaskAttemptContext
+    lateinit var context: TaskAttemptContextImpl
 
     fun handle(i: Int, j: String): String {
         Thread.sleep(400)

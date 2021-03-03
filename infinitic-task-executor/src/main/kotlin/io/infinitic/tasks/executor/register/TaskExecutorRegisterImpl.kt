@@ -29,8 +29,10 @@ import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
 import io.infinitic.common.workflows.exceptions.WorkflowUsedAsTask
-import io.infinitic.tasks.executor.workflowTask.WorkflowTaskImpl
+import io.infinitic.tasks.InstanceFactory
+import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 
 class TaskExecutorRegisterImpl : TaskExecutorRegister {
     // map taskName <> task factory
@@ -69,8 +71,4 @@ class TaskExecutorRegisterImpl : TaskExecutorRegister {
 
     private fun getInstance(name: String) =
         registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
-
-    @PublishedApi
-    internal val `access$registeredFactories`: MutableMap<String, InstanceFactory>
-        get() = registeredFactories
 }

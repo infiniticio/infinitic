@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.exceptions
 
+import io.infinitic.workflows.Channel
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -100,4 +101,38 @@ data class TaskUsedAsWorkflow(
 ) : UserExceptionInWorker(
     msg = "$name is used as a workflow, but registered implementation $task is a task",
     help = "Check that you are using $name consistently between client and workers"
+)
+
+@Serializable
+data class ParametersInChannelMethod(
+    val workflowName: String,
+    val methodName: String
+) : UserExceptionInWorker(
+    msg = "in workflow $workflowName, method $methodName returning a ${Channel::class.simpleName} should NOT have any parameter",
+    help = ""
+)
+
+@Serializable
+data class NonUniqueChannelFromChannelMethod(
+    val workflowName: String,
+    val methodName: String
+) : UserExceptionInWorker(
+    msg = "in workflow $workflowName, method $methodName should return the same ${Channel::class.simpleName} instance when called multiple times",
+    help = ""
+)
+
+@Serializable
+data class MultipleNamesForChannel(
+    val workflowName: String,
+    val methodName: String,
+    val otherName: String
+) : UserExceptionInWorker(
+    msg = "in workflow $workflowName, method $methodName return a ${Channel::class.simpleName} instance already associated with name $otherName",
+    help = "Make sure to not have multiple methods returning the same channel"
+)
+
+@Serializable
+object NameNotInitializedInChannel : UserExceptionInWorker(
+    msg = "A ${Channel::class.simpleName} is used without name",
+    help = "Make sure to have a method that returns this channel."
 )

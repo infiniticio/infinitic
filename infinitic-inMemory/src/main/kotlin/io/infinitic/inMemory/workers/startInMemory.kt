@@ -36,8 +36,8 @@ import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
+import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
-import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineName

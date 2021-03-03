@@ -23,38 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.register
+package io.infinitic.workflows.workflowTask
 
-import io.infinitic.workflows.Workflow
+internal sealed class WorkflowTaskException : RuntimeException()
 
-typealias InstanceFactory = () -> Any
+internal class NewStepException() : WorkflowTaskException()
 
-interface TaskExecutorRegister {
+internal class KnownStepException : WorkflowTaskException()
 
-    /**
-     * Register an instance factory for task or workflow name
-     */
-    fun register(name: String, factory: InstanceFactory)
-
-    /**
-     * Unregister a given name (mostly used in tests)
-     */
-    fun unregister(name: String)
-
-    /**
-     * Get task instance per name
-     */
-    fun getTaskInstance(name: String): Any
-
-    /**
-     * Get workflow instance per name
-     */
-    fun getWorkflowInstance(name: String): Workflow
-
-    /**
-     * Get list of all registered tasks
-     */
-    fun getTasks(): List<String>
-}
-
-inline fun <reified T> TaskExecutorRegister.register(noinline factory: InstanceFactory) = this.register(T::class.java.name, factory)
+internal class AsyncCompletedException : WorkflowTaskException()
