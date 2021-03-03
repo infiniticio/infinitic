@@ -35,6 +35,8 @@ import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
@@ -134,4 +136,15 @@ data class DispatchDurationTimer(
 @Serializable
 data class DispatchInstantTimer(
     val instant: MillisInstant
+) : Command()
+
+@Serializable
+data class ReceiveFromChannel(
+    val channelName: ChannelName
+) : Command()
+
+@Serializable
+data class SendToChannel(
+    val channelName: ChannelName,
+    val event: ChannelEvent
 ) : Command()

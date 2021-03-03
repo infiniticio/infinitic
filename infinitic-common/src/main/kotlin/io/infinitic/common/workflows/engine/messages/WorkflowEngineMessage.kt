@@ -32,12 +32,10 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelParameter
 import io.infinitic.common.workflows.data.channels.ChannelParameterType
-import io.infinitic.common.workflows.data.channels.SendId
-import io.infinitic.common.workflows.data.events.EventData
-import io.infinitic.common.workflows.data.events.EventName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
@@ -83,7 +81,7 @@ data class SendToChannel(
     val clientWaiting: Boolean,
     override val workflowId: WorkflowId,
     val workflowName: WorkflowName,
-    val sendId: SendId,
+    val channelEventId: ChannelEventId,
     val channelName: ChannelName,
     val channelParameterType: ChannelParameterType,
     val channelParameter: ChannelParameter
@@ -124,13 +122,6 @@ data class TimerCompleted(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val timerId: TimerId
-) : WorkflowEngineMessage()
-
-@Serializable
-data class ObjectReceived(
-    override val workflowId: WorkflowId,
-    val eventName: EventName,
-    val eventData: EventData?
 ) : WorkflowEngineMessage()
 
 @Serializable

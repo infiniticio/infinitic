@@ -32,6 +32,8 @@ import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.tasks.exceptions.SuspendMethodNotSupported
+import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
@@ -47,6 +49,8 @@ import io.infinitic.common.workflows.data.commands.EndAsync
 import io.infinitic.common.workflows.data.commands.EndInlineTask
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
+import io.infinitic.common.workflows.data.commands.ReceiveFromChannel
+import io.infinitic.common.workflows.data.commands.SendToChannel
 import io.infinitic.common.workflows.data.commands.StartAsync
 import io.infinitic.common.workflows.data.commands.StartInlineTask
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -63,6 +67,7 @@ import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
 import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
+import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowTaskContext
@@ -282,7 +287,7 @@ internal class WorkflowTaskContextImpl(
         val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
         if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(handler.klass.name, method.name)
 
-        val deferred = dispatch<S>(
+        val deferred = dispatchCommand<S>(
             DispatchTask.from(method, handler.args, handler.taskMeta, handler.taskOptions),
             CommandSimpleName.fromMethod(method)
         )
@@ -300,7 +305,7 @@ internal class WorkflowTaskContextImpl(
         val method = handler.method ?: throw NoMethodCallAtAsync(handler.klass.name)
         if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(handler.klass.name, method.name)
 
-        val deferred = dispatch<S>(
+        val deferred = dispatchCommand<S>(
             DispatchChildWorkflow.from(method, handler.args, handler.workflowMeta, handler.workflowOptions),
             CommandSimpleName.fromMethod(method)
         )
@@ -308,39 +313,58 @@ internal class WorkflowTaskContextImpl(
         return deferred
     }
 
+    /*
+     * Start another running child workflow
+     */
     override fun <S> dispatchAndWait(handler: NewWorkflowProxyHandler<*>): S =
         dispatchWorkflow<S>(handler).await()
 
+    /*
+     * Process another running workflow's method
+     */
     override fun <S> dispatchAndWait(handler: ExistingWorkflowProxyHandler<*>): S {
         TODO("Not yet implemented")
     }
 
+    /*
+     * Send event to another workflow's channel
+     */
     override fun dispatchAndWait(handler: SendChannelProxyHandler<*>) {
         TODO("Not yet implemented")
     }
 
     /*
-     * Duration Timer dispatching
+     * Start_Duration_Timer command dispatching
      */
-    override fun timer(duration: JavaDuration): Deferred<JavaInstant> = dispatch(
+    override fun timer(duration: JavaDuration): Deferred<JavaInstant> = dispatchCommand(
         DispatchDurationTimer(MillisDuration(duration.toMillis())),
-        CommandSimpleName("${CommandType.DISPATCH_DURATION_TIMER}")
+        CommandSimpleName("${CommandType.START_DURATION_TIMER}")
     )
 
     /*
-     * Instant Timer dispatching
+     * Start_Instant_Timer command dispatching
      */
-    override fun timer(instant: JavaInstant): Deferred<JavaInstant> = dispatch(
+    override fun timer(instant: JavaInstant): Deferred<JavaInstant> = dispatchCommand(
         DispatchInstantTimer(MillisInstant(instant.toEpochMilli())),
-        CommandSimpleName("${CommandType.DISPATCH_INSTANT_TIMER}")
+        CommandSimpleName("${CommandType.START_INSTANT_TIMER}")
     )
 
-    override fun <T> receiveFromChannel(channelName: String): Deferred<T> {
-        TODO("Not yet implemented")
-    }
+    /*
+     * Receive_From_Channel command dispatching
+     */
+    override fun <T> receiveFromChannel(channel: Channel<T>): Deferred<T> = dispatchCommand(
+        ReceiveFromChannel(ChannelName(channel.getNameOrThrow())),
+        CommandSimpleName("${CommandType.RECEIVE_FROM_CHANNEL}")
+    )
 
-    override fun <T> sendToChannel(channelName: String, signal: T) {
-        TODO("Not yet implemented")
+    /*
+     * Sent_to_Channel command dispatching
+     */
+    override fun <T> sendToChannel(channel: Channel<T>, event: T) {
+        dispatchCommand<T>(
+            SendToChannel(ChannelName(channel.getNameOrThrow()), ChannelEvent.from(event)),
+            CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")
+        )
     }
 
     /*
@@ -374,7 +398,7 @@ internal class WorkflowTaskContextImpl(
         methodRunIndex = methodRunIndex.down()
     }
 
-    private fun <S> dispatch(command: Command, commandSimpleName: CommandSimpleName): Deferred<S> {
+    private fun <S> dispatchCommand(command: Command, commandSimpleName: CommandSimpleName): Deferred<S> {
         // increment position
         positionNext()
 
@@ -387,14 +411,14 @@ internal class WorkflowTaskContextImpl(
 
         val pastCommand = findPastCommandSimilarTo(newCommand)
 
-        if (pastCommand == null) {
+        return if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
             newCommands.add(newCommand)
             // and returns a Deferred with an ongoing step
-            return Deferred(Step.Id.from(newCommand), this)
+            Deferred(Step.Id.from(newCommand), this)
         } else {
             // else ew return a Deferred linked to pastCommand
-            return Deferred(Step.Id.from(pastCommand), this)
+            Deferred(Step.Id.from(pastCommand), this)
         }
     }
 

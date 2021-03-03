@@ -41,7 +41,6 @@ data class WorkflowEngineEnvelope(
     val workflowTaskDispatched: WorkflowTaskDispatched? = null,
     val timerCompleted: TimerCompleted? = null,
     val dispatchWorkflow: DispatchWorkflow? = null,
-    val objectReceived: ObjectReceived? = null,
     val taskCanceled: TaskCanceled? = null,
     val taskCompleted: TaskCompleted? = null,
     val taskDispatched: TaskDispatched? = null,
@@ -58,7 +57,6 @@ data class WorkflowEngineEnvelope(
             workflowTaskDispatched,
             timerCompleted,
             dispatchWorkflow,
-            objectReceived,
             taskCanceled,
             taskCompleted,
             taskDispatched,
@@ -125,11 +123,6 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.DISPATCH_WORKFLOW,
                 dispatchWorkflow = msg
             )
-            is ObjectReceived -> WorkflowEngineEnvelope(
-                msg.workflowId,
-                WorkflowEngineMessageType.OBJECT_RECEIVED,
-                objectReceived = msg
-            )
             is TaskCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.TASK_CANCELED,
@@ -169,7 +162,6 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.WORKFLOW_TASK_DISPATCHED -> workflowTaskDispatched!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
         WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow!!
-        WorkflowEngineMessageType.OBJECT_RECEIVED -> objectReceived!!
         WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!
         WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted!!
         WorkflowEngineMessageType.TASK_DISPATCHED -> taskDispatched!!

@@ -50,7 +50,7 @@ interface WorkflowTaskContext : Dispatcher {
 
     fun timer(instant: Instant): Deferred<Instant>
 
-    fun <T> receiveFromChannel(channelName: String): Deferred<T>
+    fun <T> receiveFromChannel(channel: Channel<T>): Deferred<T>
 
-    fun <T> sendToChannel(channelName: String, signal: T)
+    fun <T> sendToChannel(channel: Channel<T>, event: T)
 }

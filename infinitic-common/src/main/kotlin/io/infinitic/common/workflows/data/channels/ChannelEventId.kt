@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.events
+package io.infinitic.common.workflows.data.channels
 
 import io.infinitic.common.data.Id
 import kotlinx.serialization.KSerializer
@@ -35,11 +35,11 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
-@Serializable(with = EventIdSerializer::class)
-data class EventId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+@Serializable(with = SendIdSerializer::class)
+data class ChannelEventId(override val id: String = UUID.randomUUID().toString()) : Id(id)
 
-object EventIdSerializer : KSerializer<EventId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EventId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: EventId) { encoder.encodeString(value.id) }
-    override fun deserialize(decoder: Decoder) = EventId(decoder.decodeString())
+object SendIdSerializer : KSerializer<ChannelEventId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("SendId", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ChannelEventId) { encoder.encodeString(value.id) }
+    override fun deserialize(decoder: Decoder) = ChannelEventId(decoder.decodeString())
 }

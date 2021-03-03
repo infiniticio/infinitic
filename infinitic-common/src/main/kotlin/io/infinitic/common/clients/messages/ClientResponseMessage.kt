@@ -29,7 +29,7 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.channels.SendId
+import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
@@ -56,5 +56,5 @@ data class WorkflowCompleted(
 @Serializable
 data class SendCompleted(
     override val clientName: ClientName,
-    val sendId: SendId
+    val channelEventId: ChannelEventId
 ) : ClientResponseMessage()

@@ -27,7 +27,7 @@ package io.infinitic.common.workflows.data.commands
 
 import io.infinitic.common.data.Id
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.events.EventId
+import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.KSerializer
@@ -44,7 +44,7 @@ data class CommandId(override val id: String = UUID.randomUUID().toString()) : I
     constructor(taskId: TaskId) : this(taskId.id)
     constructor(timerId: TimerId) : this(timerId.id)
     constructor(workflowId: WorkflowId) : this(workflowId.id)
-    constructor(eventId: EventId) : this(eventId.id)
+    constructor(eventId: ChannelEventId) : this(eventId.id)
 }
 
 @Serializable(with = CommandIdSerializer::class)

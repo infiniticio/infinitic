@@ -47,10 +47,10 @@ import io.infinitic.common.tasks.exceptions.IncorrectExistingStub
 import io.infinitic.common.tasks.exceptions.NoMethodCall
 import io.infinitic.common.tasks.exceptions.NoSendMethodCall
 import io.infinitic.common.tasks.exceptions.SuspendMethodNotSupported
+import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelParameter
 import io.infinitic.common.workflows.data.channels.ChannelParameterType
-import io.infinitic.common.workflows.data.channels.SendId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
@@ -187,6 +187,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         checkMethodIsNotSuspend(method)
 
         // case of channel, eg. myWorkflow.channel
+        @Suppress("UNCHECKED_CAST")
         if (method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
             val channel = SendChannelProxyHandler(
                 method.returnType,
@@ -212,7 +213,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         val msg = SendToChannel(
             clientName = clientOutput.clientName,
             clientWaiting = handler.isSync,
-            sendId = SendId(),
+            channelEventId = ChannelEventId(),
             workflowId = handler.workflowId,
             workflowName = handler.workflowName,
             channelName = handler.channelName,
@@ -225,18 +226,18 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         // reset for reuse
         handler.reset()
 
-        return "${msg.sendId}"
+        return "${msg.channelEventId}"
     }
 
     // synchronous send on a channel: existingWorkflow.channel.send()
     override fun dispatchAndWait(handler: SendChannelProxyHandler<*>) {
         // dispatch
-        val sendId = SendId(dispatch(handler))
+        val sendId = ChannelEventId(dispatch(handler))
 
         // wait for response
         runBlocking {
             responseFlow.first {
-                it is SendCompleted && it.sendId == sendId
+                it is SendCompleted && it.channelEventId == sendId
             }
         }
     }

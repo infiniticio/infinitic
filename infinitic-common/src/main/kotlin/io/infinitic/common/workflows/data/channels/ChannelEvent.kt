@@ -23,29 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.events
+package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.data.Name
+import io.infinitic.common.data.Data
+import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.lang.reflect.Method
 
-@Serializable(with = EventNameSerializer::class)
-data class EventName(override val name: String) : Name(name)
-
-data class WorkflowName(override val name: String) : Name(name) {
+@Serializable(with = ChannelEventSerializer::class)
+data class ChannelEvent(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        fun from(method: Method) = WorkflowName(method.declaringClass.name)
+        fun from(data: Any?) = ChannelEvent(SerializedData.from(data))
     }
 }
 
-object EventNameSerializer : KSerializer<EventName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EventName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: EventName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = EventName(decoder.decodeString())
+object ChannelEventSerializer : KSerializer<ChannelEvent> {
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: ChannelEvent) {
+        SerializedData.serializer().serialize(encoder, value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        ChannelEvent(SerializedData.serializer().deserialize(decoder))
 }

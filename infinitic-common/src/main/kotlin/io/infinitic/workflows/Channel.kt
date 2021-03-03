@@ -39,7 +39,7 @@ class Channel<T>(
         else -> throw NameNotInitializedInChannel
     }
 
-    override fun receive(): Deferred<T> = context().receiveFromChannel(getNameOrThrow())
+    override fun receive(): Deferred<T> = context().receiveFromChannel(this)
 
-    override fun send(signal: T) = context().sendToChannel(getNameOrThrow(), signal)
+    override fun send(event: T) = context().sendToChannel(this, event)
 }

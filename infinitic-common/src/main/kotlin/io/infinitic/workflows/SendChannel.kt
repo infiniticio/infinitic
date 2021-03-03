@@ -26,5 +26,5 @@
 package io.infinitic.workflows
 
 interface SendChannel<T> {
-    fun send(signal: T)
+    fun send(event: T)
 }

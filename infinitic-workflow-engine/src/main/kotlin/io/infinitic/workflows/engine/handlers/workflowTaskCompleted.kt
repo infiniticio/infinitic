@@ -179,8 +179,8 @@ suspend fun workflowTaskCompleted(
             }
             CommandType.DISPATCH_CHILD_WORKFLOW,
             CommandType.DISPATCH_TASK,
-            CommandType.DISPATCH_DURATION_TIMER,
-            CommandType.DISPATCH_INSTANT_TIMER,
+            CommandType.START_DURATION_TIMER,
+            CommandType.START_INSTANT_TIMER,
             CommandType.END_ASYNC -> {
                 // note: pastSteps is naturally ordered by time
                 // => the first branch completed is the earliest step

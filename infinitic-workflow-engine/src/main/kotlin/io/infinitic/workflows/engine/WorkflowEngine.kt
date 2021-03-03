@@ -29,7 +29,6 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.ObjectReceived
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TaskDispatched
@@ -153,7 +152,6 @@ class WorkflowEngine(
             is ChildWorkflowCompleted -> childWorkflowCompleted(workflowEngineOutput, state, message)
             is WorkflowTaskCompleted -> workflowTaskCompleted(workflowEngineOutput, state, message)
             is TimerCompleted -> timerCompleted(workflowEngineOutput, state, message)
-            is ObjectReceived -> objectReceived(state, message)
             is TaskCanceled -> taskCanceled(state, message)
             is TaskCompleted -> taskCompleted(workflowEngineOutput, state, message)
             else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
@@ -169,10 +167,6 @@ class WorkflowEngine(
     }
 
     private suspend fun taskCanceled(state: WorkflowState, msg: TaskCanceled) {
-        TODO()
-    }
-
-    private suspend fun objectReceived(state: WorkflowState, msg: ObjectReceived): WorkflowState {
         TODO()
     }
 }

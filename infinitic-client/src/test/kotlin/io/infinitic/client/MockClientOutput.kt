@@ -80,7 +80,7 @@ internal class MockClientOutput(
                 client.handle(
                     SendCompleted(
                         clientName = clientName,
-                        sendId = msg.sendId
+                        channelEventId = msg.channelEventId
                     )
                 )
             }
