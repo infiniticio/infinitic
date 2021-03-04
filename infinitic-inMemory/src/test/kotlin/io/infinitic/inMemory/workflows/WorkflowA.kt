@@ -36,7 +36,8 @@ import java.time.Instant
 import java.time.LocalDateTime
 
 interface WorkflowA {
-    val channel: Channel<String>
+    val channelA: Channel<String>
+    val channelB: Channel<String>
 
     fun empty(): String
     fun seq1(): String
@@ -65,7 +66,8 @@ interface WorkflowA {
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
-    override val channel = channel<String>()
+    override val channelA = channel<String>()
+    override val channelB = channel<String>()
 
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
@@ -301,7 +303,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun channel1(): String {
-        val deferred: Deferred<String> = channel.receive()
+        val deferred: Deferred<String> = channelA.receive()
 
         return deferred.await()
     }

@@ -32,10 +32,9 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelParameter
-import io.infinitic.common.workflows.data.channels.ChannelParameterType
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
@@ -83,8 +82,7 @@ data class SendToChannel(
     val workflowName: WorkflowName,
     val channelEventId: ChannelEventId,
     val channelName: ChannelName,
-    val channelParameterType: ChannelParameterType,
-    val channelParameter: ChannelParameter
+    val channelEvent: ChannelEvent
 ) : WorkflowEngineMessage()
 
 @Serializable

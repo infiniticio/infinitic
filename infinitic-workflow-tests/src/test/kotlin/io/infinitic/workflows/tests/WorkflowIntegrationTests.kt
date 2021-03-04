@@ -76,6 +76,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 private var workflowOutput: Any? = null
 private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage(), NoCache())
@@ -386,6 +387,62 @@ class WorkflowIntegrationTests : StringSpec({
         }
         result1 shouldBe "123"
         result2 shouldBe "ac"
+    }
+
+    "Waiting for event" {
+        var id: String
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel1() }
+            client.workflow<WorkflowA>(id).channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "test"
+    }
+
+    "Waiting for event, sent to the right channel" {
+        var id: String
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel2() }
+            client.workflow<WorkflowA>(id).channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "test"
+    }
+
+    "Waiting for event but sent to the wrong channel" {
+        var id: String
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel2() }
+            client.workflow<WorkflowA>(id).channelB.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput!!::class.java.name shouldBe Instant::class.java.name
+    }
+
+    "Sending event before waiting for it prevents catching" {
+        var id: String
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel3() }
+            client.workflow<WorkflowA>(id).channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput!!::class.java.name shouldBe Instant::class.java.name
     }
 })
 

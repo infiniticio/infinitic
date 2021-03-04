@@ -34,7 +34,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
-suspend fun jobCompleted(
+suspend fun commandCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRunId: MethodRunId,
@@ -51,7 +51,7 @@ suspend fun jobCompleted(
     pastCommand.commandStatus = CommandStatusCompleted(commandOutput, state.workflowTaskIndex)
 
     // trigger a new workflow task for the first step solved by this command
-    // note: pastSteps is naturally ordered by time => the first branch completed is the earliest step
+    // note: pastSteps is naturally ordered by time (workflowTaskIndex) => the first branch completed is the earliest step
     methodRun.pastSteps
         .find { it.isTerminatedBy(pastCommand) }
         ?.also {

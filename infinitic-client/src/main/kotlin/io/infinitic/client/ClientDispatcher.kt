@@ -27,7 +27,7 @@ package io.infinitic.client
 
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
-import io.infinitic.common.clients.messages.SendCompleted
+import io.infinitic.common.clients.messages.SendToChannelCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.MillisDuration
@@ -43,14 +43,14 @@ import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelParameter
-import io.infinitic.common.workflows.data.channels.ChannelParameterType
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
+import io.infinitic.exceptions.ChannelUsedOnNewWorkflow
 import io.infinitic.exceptions.IncorrectExistingStub
 import io.infinitic.exceptions.NoMethodCall
 import io.infinitic.exceptions.NoSendMethodCall
@@ -156,7 +156,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
 
         // calling a channel from a new workflow does not make sense.
         if (method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
-            TODO("Exception")
+            throw ChannelUsedOnNewWorkflow(handler.klass.name)
         }
 
         // dispatch
@@ -217,8 +217,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             workflowId = handler.workflowId,
             workflowName = handler.workflowName,
             channelName = handler.channelName,
-            channelParameterType = ChannelParameterType.from(handler.args[0]),
-            channelParameter = ChannelParameter.from(handler.args[0])
+            channelEvent = ChannelEvent.from(handler.args[0])
         )
 
         GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()
@@ -237,7 +236,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         // wait for response
         runBlocking {
             responseFlow.first {
-                it is SendCompleted && it.channelEventId == sendId
+                it is SendToChannelCompleted && it.channelEventId == sendId
             }
         }
     }

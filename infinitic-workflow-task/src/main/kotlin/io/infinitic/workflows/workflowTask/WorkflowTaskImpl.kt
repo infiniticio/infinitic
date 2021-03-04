@@ -28,6 +28,7 @@ package io.infinitic.workflows.workflowTask
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -127,7 +128,7 @@ class WorkflowTaskImpl : WorkflowTask {
                     throw NonUniqueChannelFromChannelMethod(workflow::class.java.name, it.name)
                 }
                 // this channel must not have a name already
-                channel as Channel<*>
+                channel as ChannelImpl<*>
                 if (channel.isNameInitialized()) {
                     throw MultipleNamesForChannel(workflow::class.java.name, it.name, channel.name)
                 }

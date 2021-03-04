@@ -26,6 +26,8 @@
 package io.infinitic.inMemory.workers
 
 import io.infinitic.cache.no.NoCache
+import io.infinitic.client.Client
+import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -52,6 +54,7 @@ private const val N_WORKERS = 10
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     keyValueStorage: KeyValueStorage,
+    client: Client,
     clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
     workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>
@@ -77,33 +80,27 @@ fun CoroutineScope.startInMemory(
                     println("Task engine        : $message")
                 is WorkflowEngineMessage ->
                     println("Workflow engine    : $message")
+                is ClientResponseMessage ->
+                    println("Client response    : $message")
                 else -> throw RuntimeException("Unknown messageToProcess type: $messageToProcess")
             }
         }
     }
 
-    startInMemoryMonitoringGlobalWorker(
-        keyValueStorage,
-        NoCache(),
-        monitoringGlobalChannel,
-        logChannel
+    startInMemoryClientWorker(
+        client,
+        clientResponsesChannel,
+        logChannel,
     )
 
-    startInMemoryMonitoringPerNameWorker(
+    startInMemoryWorkflowEngineWorker(
         keyValueStorage,
         NoCache(),
-        monitoringPerNameChannel,
+        clientResponsesChannel,
+        workflowEngineCommandsChannel,
+        workflowEngineEventsChannel,
         logChannel,
-        monitoringGlobalChannel,
-        logChannel
-    )
-
-    startInMemoryTaskExecutorWorker(
-        taskExecutorRegister,
-        taskEngineEventsChannel,
-        taskExecutorChannel,
-        logChannel,
-        N_WORKERS
+        taskEngineCommandsChannel
     )
 
     startInMemoryTaskEngineWorker(
@@ -118,13 +115,27 @@ fun CoroutineScope.startInMemory(
         workflowEngineEventsChannel
     )
 
-    startInMemoryWorkflowEngineWorker(
+    startInMemoryTaskExecutorWorker(
+        taskExecutorRegister,
+        taskEngineEventsChannel,
+        taskExecutorChannel,
+        logChannel,
+        N_WORKERS
+    )
+
+    startInMemoryMonitoringPerNameWorker(
         keyValueStorage,
         NoCache(),
-        clientResponsesChannel,
-        workflowEngineCommandsChannel,
-        workflowEngineEventsChannel,
+        monitoringPerNameChannel,
         logChannel,
-        taskEngineCommandsChannel
+        monitoringGlobalChannel,
+        logChannel
+    )
+
+    startInMemoryMonitoringGlobalWorker(
+        keyValueStorage,
+        NoCache(),
+        monitoringGlobalChannel,
+        logChannel
     )
 }

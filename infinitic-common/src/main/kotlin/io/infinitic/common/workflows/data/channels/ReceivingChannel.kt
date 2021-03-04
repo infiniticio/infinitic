@@ -1,5 +1,5 @@
 /**
- * "Commons Clause" License Condition v1.0
+* "Commons Clause" License Condition v1.0
  *
  * The Software is provided to you by the Licensor under the License, as defined
  * below, subject to the following condition.
@@ -25,23 +25,13 @@
 
 package io.infinitic.common.workflows.data.channels
 
-import kotlinx.serialization.KSerializer
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = ChannelParameterTypeSerializer::class)
-data class ChannelParameterType(val type: String) {
-    companion object {
-        fun from(value: Any) = ChannelParameterType(value::class.java.name)
-    }
-}
-
-object ChannelParameterTypeSerializer : KSerializer<ChannelParameterType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelParameterType", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ChannelParameterType) { encoder.encodeString(value.type) }
-    override fun deserialize(decoder: Decoder) = ChannelParameterType(decoder.decodeString())
-}
+@Serializable
+data class ReceivingChannel(
+    val channelName: ChannelName,
+    val methodRunId: MethodRunId,
+    val commandId: CommandId
+)

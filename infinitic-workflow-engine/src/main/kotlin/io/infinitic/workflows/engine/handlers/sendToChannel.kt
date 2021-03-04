@@ -25,25 +25,40 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.clients.messages.SendToChannelCompleted
 import io.infinitic.common.workflows.data.commands.CommandOutput
-import io.infinitic.common.workflows.engine.messages.TimerCompleted
+import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandCompleted
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
-import java.time.Instant
 
-suspend fun timerCompleted(
+suspend fun sendToChannel(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TimerCompleted
+    msg: SendToChannel
 ) {
-    commandCompleted(
-        workflowEngineOutput,
-        state,
-        msg.methodRunId,
-        CommandId(msg.timerId),
-        CommandOutput(SerializedData.from(Instant.now()))
-    )
+    state.receivingChannels.firstOrNull {
+        it.channelName == msg.channelName
+    }?.also {
+        state.receivingChannels.remove(it)
+
+        commandCompleted(
+            workflowEngineOutput,
+            state,
+            it.methodRunId,
+            it.commandId,
+            CommandOutput(msg.channelEvent.serializedData)
+        )
+    }
+
+    // if client is waiting, send output back to it
+    if (msg.clientWaiting) {
+        workflowEngineOutput.sendToClientResponse(
+            state,
+            SendToChannelCompleted(
+                clientName = msg.clientName,
+                channelEventId = msg.channelEventId
+            )
+        )
+    }
 }

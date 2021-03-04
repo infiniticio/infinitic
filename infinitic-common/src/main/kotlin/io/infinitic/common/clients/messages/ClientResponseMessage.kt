@@ -54,7 +54,7 @@ data class WorkflowCompleted(
 ) : ClientResponseMessage()
 
 @Serializable
-data class SendCompleted(
+data class SendToChannelCompleted(
     override val clientName: ClientName,
     val channelEventId: ChannelEventId
 ) : ClientResponseMessage()

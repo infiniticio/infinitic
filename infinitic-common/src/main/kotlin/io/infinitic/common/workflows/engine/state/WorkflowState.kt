@@ -29,6 +29,7 @@ import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -105,6 +106,11 @@ data class WorkflowState(
     Methods currently running. Once completed this data can be deleted to limit memory usage
      */
     val methodRuns: MutableList<MethodRun>,
+
+    /*
+    Ordered list of channels currently receiving
+     */
+    val receivingChannels: MutableList<ReceivingChannel> = mutableListOf(),
 
     /*
     Current (last) hash of instance's properties. hash is used as an index to actual value

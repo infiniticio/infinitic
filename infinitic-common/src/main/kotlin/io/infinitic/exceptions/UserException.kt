@@ -52,7 +52,7 @@ sealed class UserExceptionInClient(
 }
 
 @Serializable
-sealed class UserExceptionInWorker(
+sealed class UserExceptionInTaskExecutor(
     val msg: String,
     val help: String
 ) : UserException() {
@@ -224,6 +224,14 @@ data class MultipleMethodCalls(
     help = "Make sure you call only one method of \"$name\" - multiple calls in the provided lambda is forbidden"
 )
 
+@Serializable
+data class ChannelUsedOnNewWorkflow(
+    val name: String
+) : UserExceptionInClient(
+    msg = "Channels can only be used for an existing instance of $name workflow",
+    help = "Make sure you target a running workflow, by providing and id when defining your workflow stub"
+)
+
 /***********************
  * Exceptions in task executor
  ***********************/
@@ -231,7 +239,7 @@ data class MultipleMethodCalls(
 @Serializable
 data class ClassNotFoundDuringInstantiation(
     val name: String
-) : UserExceptionInWorker(
+) : UserExceptionInTaskExecutor(
     msg = "Impossible to find a Class associated to $name",
     help = "Use \"register\" method to provide an instance that will be used associated to $name"
 )
@@ -241,7 +249,7 @@ data class NoMethodFoundWithParameterTypes(
     val klass: String,
     val method: String,
     val parameterTypes: List<String>
-) : UserExceptionInWorker(
+) : UserExceptionInTaskExecutor(
     msg = "No method \"$method(${ parameterTypes.joinToString() })\" found in \"$klass\" class",
     help = "Make sure parameter types are consistent with your method definition"
 )
@@ -251,7 +259,7 @@ data class NoMethodFoundWithParameterCount(
     val klass: String,
     val method: String,
     val parameterCount: Int
-) : UserExceptionInWorker(
+) : UserExceptionInTaskExecutor(
     msg = "No method \"$method\" with $parameterCount parameters found in \"$klass\" class",
     help = ""
 )
@@ -261,7 +269,7 @@ data class TooManyMethodsFoundWithParameterCount(
     val klass: String,
     val method: String,
     val parameterCount: Int
-) : UserExceptionInWorker(
+) : UserExceptionInTaskExecutor(
     msg = "Unable to decide which method \"$method\" with $parameterCount parameters to use in \"$klass\" class",
     help = ""
 )
@@ -271,7 +279,7 @@ data class RetryDelayHasWrongReturnType(
     val klass: String,
     val actualType: String,
     val expectedType: String
-) : UserExceptionInWorker(
+) : UserExceptionInTaskExecutor(
     msg = "In \"$klass\" class, method ${Constants.DELAY_BEFORE_RETRY_METHOD} returns a $actualType, it must be a $expectedType",
     help = "Please update your method definition to return a $expectedType (or null)"
 )
@@ -280,7 +288,7 @@ data class RetryDelayHasWrongReturnType(
 data class ProcessingTimeout(
     val klass: String,
     val delay: Float
-) : UserExceptionInWorker(
+) : UserExceptionInTaskExecutor(
     msg = "The processing of task \"$klass\" took more than $delay seconds",
     help = "You can increase (or remove entirely) this constraint in the options ${TaskOptions::javaClass.name}"
 )

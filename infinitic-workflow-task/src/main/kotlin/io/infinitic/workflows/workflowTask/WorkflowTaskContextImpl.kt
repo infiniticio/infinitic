@@ -32,6 +32,7 @@ import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandOutput
@@ -41,17 +42,17 @@ import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
-import io.infinitic.common.workflows.data.commands.DispatchDurationTimer
-import io.infinitic.common.workflows.data.commands.DispatchInstantTimer
 import io.infinitic.common.workflows.data.commands.DispatchTask
 import io.infinitic.common.workflows.data.commands.EndAsync
 import io.infinitic.common.workflows.data.commands.EndInlineTask
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
-import io.infinitic.common.workflows.data.commands.ReceiveFromChannel
+import io.infinitic.common.workflows.data.commands.ReceiveInChannel
 import io.infinitic.common.workflows.data.commands.SendToChannel
 import io.infinitic.common.workflows.data.commands.StartAsync
+import io.infinitic.common.workflows.data.commands.StartDurationTimer
 import io.infinitic.common.workflows.data.commands.StartInlineTask
+import io.infinitic.common.workflows.data.commands.StartInstantTimer
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -67,7 +68,6 @@ import io.infinitic.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
 import io.infinitic.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.exceptions.SuspendMethodNotSupported
 import io.infinitic.exceptions.WorkflowUpdatedWhileRunning
-import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowTaskContext
@@ -337,7 +337,7 @@ internal class WorkflowTaskContextImpl(
      * Start_Duration_Timer command dispatching
      */
     override fun timer(duration: JavaDuration): Deferred<JavaInstant> = dispatchCommand(
-        DispatchDurationTimer(MillisDuration(duration.toMillis())),
+        StartDurationTimer(MillisDuration(duration.toMillis())),
         CommandSimpleName("${CommandType.START_DURATION_TIMER}")
     )
 
@@ -345,22 +345,22 @@ internal class WorkflowTaskContextImpl(
      * Start_Instant_Timer command dispatching
      */
     override fun timer(instant: JavaInstant): Deferred<JavaInstant> = dispatchCommand(
-        DispatchInstantTimer(MillisInstant(instant.toEpochMilli())),
+        StartInstantTimer(MillisInstant(instant.toEpochMilli())),
         CommandSimpleName("${CommandType.START_INSTANT_TIMER}")
     )
 
     /*
      * Receive_From_Channel command dispatching
      */
-    override fun <T> receiveFromChannel(channel: Channel<T>): Deferred<T> = dispatchCommand(
-        ReceiveFromChannel(ChannelName(channel.getNameOrThrow())),
-        CommandSimpleName("${CommandType.RECEIVE_FROM_CHANNEL}")
+    override fun <T> receiveFromChannel(channel: ChannelImpl<T>): Deferred<T> = dispatchCommand(
+        ReceiveInChannel(ChannelName(channel.getNameOrThrow())),
+        CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )
 
     /*
      * Sent_to_Channel command dispatching
      */
-    override fun <T> sendToChannel(channel: Channel<T>, event: T) {
+    override fun <T> sendToChannel(channel: ChannelImpl<T>, event: T) {
         dispatchCommand<T>(
             SendToChannel(ChannelName(channel.getNameOrThrow()), ChannelEvent.from(event)),
             CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")

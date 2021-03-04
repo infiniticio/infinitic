@@ -42,13 +42,13 @@ data class NewCommand(
     val commandType: CommandType = when (command) {
         is DispatchTask -> CommandType.DISPATCH_TASK
         is DispatchChildWorkflow -> CommandType.DISPATCH_CHILD_WORKFLOW
-        is DispatchDurationTimer -> CommandType.START_DURATION_TIMER
-        is DispatchInstantTimer -> CommandType.START_INSTANT_TIMER
+        is StartDurationTimer -> CommandType.START_DURATION_TIMER
+        is StartInstantTimer -> CommandType.START_INSTANT_TIMER
         is StartAsync -> CommandType.START_ASYNC
         is EndAsync -> CommandType.END_ASYNC
         is StartInlineTask -> CommandType.START_INLINE_TASK
         is EndInlineTask -> CommandType.END_INLINE_TASK
-        is ReceiveFromChannel -> CommandType.RECEIVE_FROM_CHANNEL
+        is ReceiveInChannel -> CommandType.RECEIVE_IN_CHANNEL
         is SendToChannel -> CommandType.SENT_TO_CHANNEL
     }
 }

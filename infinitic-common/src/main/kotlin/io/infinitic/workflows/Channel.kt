@@ -25,21 +25,4 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.exceptions.NameNotInitializedInChannel
-
-class Channel<T>(
-    private val context: () -> WorkflowTaskContext
-) : SendChannel<T>, ReceiveChannel<T> {
-    lateinit var name: String
-
-    fun isNameInitialized() = ::name.isInitialized
-
-    fun getNameOrThrow() = when (isNameInitialized()) {
-        true -> name
-        else -> throw NameNotInitializedInChannel
-    }
-
-    override fun receive(): Deferred<T> = context().receiveFromChannel(this)
-
-    override fun send(event: T) = context().sendToChannel(this, event)
-}
+interface Channel<T> : SendChannel<T>, ReceiveChannel<T>

@@ -129,17 +129,17 @@ data class EndInlineTask(
 ) : Command()
 
 @Serializable
-data class DispatchDurationTimer(
+data class StartDurationTimer(
     val duration: MillisDuration
 ) : Command()
 
 @Serializable
-data class DispatchInstantTimer(
+data class StartInstantTimer(
     val instant: MillisInstant
 ) : Command()
 
 @Serializable
-data class ReceiveFromChannel(
+data class ReceiveInChannel(
     val channelName: ChannelName
 ) : Command()
 

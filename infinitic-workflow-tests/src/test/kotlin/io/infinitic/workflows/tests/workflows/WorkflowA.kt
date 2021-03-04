@@ -25,16 +25,18 @@
 
 package io.infinitic.workflows.tests.workflows
 
-import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
 import io.infinitic.workflows.or
 import io.infinitic.workflows.tests.tasks.TaskA
+import java.time.Duration
 import java.time.LocalDateTime
 
 interface WorkflowA {
-    val channel: Channel<String>
+    val channelA: SendChannel<String>
+    val channelB: SendChannel<String>
 
     fun empty(): String
     fun seq1(): String
@@ -58,10 +60,14 @@ interface WorkflowA {
     fun prop4(): String
     fun prop5(): String
     fun prop6(): String
+    fun channel1(): String
+    fun channel2(): Any
+    fun channel3(): Any
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
-    override val channel = channel<String>()
+    override val channelA = channel<String>()
+    override val channelB = channel<String>()
 
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
@@ -286,5 +292,26 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         // not sure, how to avoid that
 
         return p1 // should be "abab"
+    }
+
+    override fun channel1(): String {
+        val deferred: Deferred<String> = channelA.receive()
+
+        return deferred.await()
+    }
+
+    override fun channel2(): Any {
+        val deferredChannel = channelA.receive()
+        val deferredTimer = timer(Duration.ofMillis(100))
+
+        return (deferredChannel or deferredTimer).await()
+    }
+
+    override fun channel3(): Any {
+        timer(Duration.ofMillis(100)).await()
+        val deferredChannel = channelA.receive()
+        val deferredTimer = timer(Duration.ofMillis(100))
+
+        return (deferredChannel or deferredTimer).await()
     }
 }

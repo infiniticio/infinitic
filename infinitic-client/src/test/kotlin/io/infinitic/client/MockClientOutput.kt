@@ -27,7 +27,7 @@ package io.infinitic.client
 
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.SendCompleted
+import io.infinitic.common.clients.messages.SendToChannelCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.MillisDuration
@@ -78,7 +78,7 @@ internal class MockClientOutput(
             }
             if (msg is SendToChannel && msg.clientWaiting) {
                 client.handle(
-                    SendCompleted(
+                    SendToChannelCompleted(
                         clientName = clientName,
                         channelEventId = msg.channelEventId
                     )

@@ -25,28 +25,24 @@
 
 package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.data.Data
-import io.infinitic.common.serDe.SerializedData
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import io.infinitic.exceptions.NameNotInitializedInChannel
+import io.infinitic.workflows.Channel
+import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.WorkflowTaskContext
 
-@Serializable(with = ChannelParameterSerializer::class)
-data class ChannelParameter(override val serializedData: SerializedData) : Data(serializedData) {
-    companion object {
-        fun from(data: Any?) = ChannelParameter(
-            SerializedData.from(data)
-        )
-    }
-}
+class ChannelImpl<T>(
+    private val context: () -> WorkflowTaskContext
+) : Channel<T> {
+    lateinit var name: String
 
-object ChannelParameterSerializer : KSerializer<ChannelParameter> {
-    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
-    override fun serialize(encoder: Encoder, value: ChannelParameter) {
-        SerializedData.serializer().serialize(encoder, value.serializedData)
+    fun isNameInitialized() = ::name.isInitialized
+
+    fun getNameOrThrow() = when (isNameInitialized()) {
+        true -> name
+        else -> throw NameNotInitializedInChannel
     }
-    override fun deserialize(decoder: Decoder) =
-        ChannelParameter(SerializedData.serializer().deserialize(decoder))
+
+    override fun receive(): Deferred<T> = context().receiveFromChannel(this)
+
+    override fun send(event: T) = context().sendToChannel(this, event)
 }

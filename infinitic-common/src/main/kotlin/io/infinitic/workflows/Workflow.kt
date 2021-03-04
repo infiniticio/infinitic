@@ -29,6 +29,7 @@ import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import java.time.Duration
@@ -41,7 +42,7 @@ abstract class Workflow {
     /*
      *  Create a channel
      */
-    fun <T : Any> channel(): Channel<T> = Channel { context }
+    fun <T : Any> channel(): Channel<T> = ChannelImpl { context }
 
     /*
      * Stub task

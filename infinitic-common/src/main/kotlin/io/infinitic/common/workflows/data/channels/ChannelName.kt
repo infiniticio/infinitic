@@ -1,5 +1,5 @@
 /**
- * "Commons Clause" License Condition v1.0
+* "Commons Clause" License Condition v1.0
  *
  * The Software is provided to you by the Licensor under the License, as defined
  * below, subject to the following condition.

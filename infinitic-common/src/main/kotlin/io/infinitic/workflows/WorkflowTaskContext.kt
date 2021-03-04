@@ -28,6 +28,7 @@ package io.infinitic.workflows
 import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.workflows.data.channels.ChannelImpl
 import java.time.Duration
 import java.time.Instant
 
@@ -50,7 +51,7 @@ interface WorkflowTaskContext : Dispatcher {
 
     fun timer(instant: Instant): Deferred<Instant>
 
-    fun <T> receiveFromChannel(channel: Channel<T>): Deferred<T>
+    fun <T> receiveFromChannel(channel: ChannelImpl<T>): Deferred<T>
 
-    fun <T> sendToChannel(channel: Channel<T>, event: T)
+    fun <T> sendToChannel(channel: ChannelImpl<T>, event: T)
 }

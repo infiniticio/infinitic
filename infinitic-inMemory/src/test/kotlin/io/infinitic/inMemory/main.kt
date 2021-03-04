@@ -41,7 +41,6 @@ import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 fun main() {
@@ -62,6 +61,7 @@ fun main() {
         startInMemory(
             taskExecutorRegister,
             InMemoryStorage(),
+            client,
             clientResponsesChannel,
             taskEngineCommandsChannel,
             workflowEngineCommandsChannel
@@ -70,12 +70,16 @@ fun main() {
         val taskA = client.task(TaskA::class.java)
         val workflowA = client.workflow(WorkflowA::class.java)
 
-//        val id = client.async(workflowA) { channel1() }
+        val id = client.async(workflowA) { channel1() }
 
-        launch { println(workflowA.channel1()) }
+        val w = client.workflow<WorkflowA>(id)
 
-        delay(1000)
+        delay(2000)
 
-        workflowA.channel.send("test")
+        w.channelB.send("test")
+
+        delay(2000)
+
+        w.channelA.send("test")
     }
 }

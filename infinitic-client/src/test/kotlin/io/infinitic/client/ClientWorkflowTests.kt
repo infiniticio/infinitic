@@ -33,10 +33,9 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.channels.ChannelParameter
-import io.infinitic.common.workflows.data.channels.ChannelParameterType
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -209,8 +208,7 @@ class ClientWorkflowTests : StringSpec({
             workflowId = msg.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             channelName = ChannelName("getCh"),
-            channelParameterType = ChannelParameterType(String::class.java.name),
-            channelParameter = ChannelParameter.from("a")
+            channelEvent = ChannelEvent.from("a")
         )
     }
 
@@ -229,8 +227,7 @@ class ClientWorkflowTests : StringSpec({
             workflowId = msg.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             channelName = ChannelName("getCh"),
-            channelParameterType = ChannelParameterType(String::class.java.name),
-            channelParameter = ChannelParameter.from("a")
+            channelEvent = ChannelEvent.from("a")
         )
     }
 
