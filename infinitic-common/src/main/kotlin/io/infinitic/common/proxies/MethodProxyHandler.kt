@@ -25,7 +25,7 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.tasks.exceptions.MultipleMethodCalls
+import io.infinitic.exceptions.MultipleMethodCalls
 import java.lang.Thread.currentThread
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method

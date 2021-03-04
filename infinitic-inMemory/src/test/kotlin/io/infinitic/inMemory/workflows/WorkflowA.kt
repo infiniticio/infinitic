@@ -26,6 +26,7 @@
 package io.infinitic.inMemory.workflows
 
 import io.infinitic.inMemory.tasks.TaskA
+import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
@@ -35,6 +36,8 @@ import java.time.Instant
 import java.time.LocalDateTime
 
 interface WorkflowA {
+    val channel: Channel<String>
+
     fun empty(): String
     fun seq1(): String
     fun seq2(): String
@@ -57,10 +60,13 @@ interface WorkflowA {
     fun prop4(): String
     fun prop5(): String
     fun prop6(): String
-    fun wait1(): Instant
+    fun timer1(): Instant
+    fun channel1(): String
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
+    override val channel = channel<String>()
+
     private val taskA = task<TaskA>()
     private val workflowB = workflow<WorkflowB>()
     private var p1 = ""
@@ -286,11 +292,17 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return p1 // should be "abab"
     }
 
-    override fun wait1(): Instant {
+    override fun timer1(): Instant {
         val timer = timer(Duration.ofSeconds(6))
 
         taskA.await(3000)
 
         return timer.await()
+    }
+
+    override fun channel1(): String {
+        val deferred: Deferred<String> = channel.receive()
+
+        return deferred.await()
     }
 }

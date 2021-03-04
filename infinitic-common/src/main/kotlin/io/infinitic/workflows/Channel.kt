@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.common.workflows.exceptions.NameNotInitializedInChannel
+import io.infinitic.exceptions.NameNotInitializedInChannel
 
 class Channel<T>(
     private val context: () -> WorkflowTaskContext

@@ -25,10 +25,10 @@
 
 package io.infinitic.common.parser
 
-import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
-import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterCount
-import io.infinitic.common.tasks.exceptions.NoMethodFoundWithParameterTypes
-import io.infinitic.common.tasks.exceptions.TooManyMethodsFoundWithParameterCount
+import io.infinitic.exceptions.ClassNotFoundDuringInstantiation
+import io.infinitic.exceptions.NoMethodFoundWithParameterCount
+import io.infinitic.exceptions.NoMethodFoundWithParameterTypes
+import io.infinitic.exceptions.TooManyMethodsFoundWithParameterCount
 import java.lang.reflect.Method
 
 fun getClassForName(name: String): Class<out Any> = when (name) {

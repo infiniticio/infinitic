@@ -40,6 +40,8 @@ import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 fun main() {
@@ -68,10 +70,12 @@ fun main() {
         val taskA = client.task(TaskA::class.java)
         val workflowA = client.workflow(WorkflowA::class.java)
 
-        repeat(1) {
-//            client.async(taskA) { await(2000) }
-//            client.async(workflowA) { seq1() }
-            println(workflowA.wait1())
-        }
+//        val id = client.async(workflowA) { channel1() }
+
+        launch { println(workflowA.channel1()) }
+
+        delay(1000)
+
+        workflowA.channel.send("test")
     }
 }

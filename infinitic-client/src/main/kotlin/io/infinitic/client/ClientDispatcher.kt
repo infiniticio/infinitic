@@ -43,10 +43,6 @@ import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.DispatchTask
-import io.infinitic.common.tasks.exceptions.IncorrectExistingStub
-import io.infinitic.common.tasks.exceptions.NoMethodCall
-import io.infinitic.common.tasks.exceptions.NoSendMethodCall
-import io.infinitic.common.tasks.exceptions.SuspendMethodNotSupported
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelParameter
@@ -55,6 +51,10 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
+import io.infinitic.exceptions.IncorrectExistingStub
+import io.infinitic.exceptions.NoMethodCall
+import io.infinitic.exceptions.NoSendMethodCall
+import io.infinitic.exceptions.SuspendMethodNotSupported
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableSharedFlow

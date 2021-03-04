@@ -31,7 +31,6 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
-import io.infinitic.common.tasks.exceptions.SuspendMethodNotSupported
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
@@ -63,10 +62,11 @@ import io.infinitic.common.workflows.data.steps.StepStatusCanceled
 import io.infinitic.common.workflows.data.steps.StepStatusCompleted
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.common.workflows.exceptions.NoMethodCallAtAsync
-import io.infinitic.common.workflows.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
-import io.infinitic.common.workflows.exceptions.ShouldNotWaitInsideInlinedTask
-import io.infinitic.common.workflows.exceptions.WorkflowUpdatedWhileRunning
+import io.infinitic.exceptions.NoMethodCallAtAsync
+import io.infinitic.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
+import io.infinitic.exceptions.ShouldNotWaitInsideInlinedTask
+import io.infinitic.exceptions.SuspendMethodNotSupported
+import io.infinitic.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus

@@ -25,10 +25,10 @@
 
 package io.infinitic.tasks.executor.register
 
-import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.exceptions.TaskUsedAsWorkflow
-import io.infinitic.common.workflows.exceptions.WorkflowUsedAsTask
+import io.infinitic.exceptions.ClassNotFoundDuringInstantiation
+import io.infinitic.exceptions.TaskUsedAsWorkflow
+import io.infinitic.exceptions.WorkflowUsedAsTask
 import io.infinitic.tasks.InstanceFactory
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.workflows.Workflow

@@ -27,9 +27,9 @@ package io.infinitic.common.data
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.tasks.exceptions.ErrorDuringJsonDeserializationOfParameter
-import io.infinitic.common.tasks.exceptions.ErrorDuringJsonSerializationOfParameter
-import io.infinitic.common.tasks.exceptions.InconsistentJsonSerializationOfParameter
+import io.infinitic.exceptions.ErrorDuringJsonDeserializationOfParameter
+import io.infinitic.exceptions.ErrorDuringJsonSerializationOfParameter
+import io.infinitic.exceptions.InconsistentJsonSerializationOfParameter
 import java.lang.reflect.Method
 
 abstract class Parameters(open vararg val serializedData: SerializedData) {
@@ -44,16 +44,16 @@ abstract class Parameters(open vararg val serializedData: SerializedData) {
             val serializedData = try {
                 SerializedData.from(parameterValue)
             } catch (e: JsonProcessingException) {
-                throw ErrorDuringJsonSerializationOfParameter(parameterName, parameterValue, parameterType.name, methodName, className)
+                throw ErrorDuringJsonSerializationOfParameter(parameterName, parameterType.name, methodName, className)
             }
             // for user convenience, we check right here that data can actually be deserialized
             try {
                 restoredValue = serializedData.deserialize()
             } catch (e: JsonProcessingException) {
-                throw ErrorDuringJsonDeserializationOfParameter(parameterName, parameterValue, parameterType.name, methodName, className)
+                throw ErrorDuringJsonDeserializationOfParameter(parameterName, parameterType.name, methodName, className)
             }
             // check that serialization/deserialization process works as expected
-            if (parameterValue != restoredValue) throw InconsistentJsonSerializationOfParameter(parameterName, parameterValue, restoredValue, parameterType.name, methodName, className)
+            if (parameterValue != restoredValue) throw InconsistentJsonSerializationOfParameter(parameterName, parameterType.name, methodName, className)
 
             return serializedData
         }
