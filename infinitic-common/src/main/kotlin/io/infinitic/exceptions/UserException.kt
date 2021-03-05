@@ -30,6 +30,7 @@ import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.workflows.Channel
+import io.infinitic.workflows.SendChannel
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -190,46 +191,56 @@ data class IncorrectNewStub(
 
 @Serializable
 data class SuspendMethodNotSupported(
-    val name: String,
+    val klass: String,
     val method: String
 ) : UserExceptionInClient(
-    msg = "method \"$method\" in class \"$name\" is a suspend function",
+    msg = "method \"$method\" in class \"$klass\" is a suspend function",
     help = "Suspend functions are not supported"
 )
 
 @Serializable
 data class NoMethodCall(
-    val name: String
+    val klass: String
 ) : UserExceptionInClient(
     msg = "The method to call for your task or workflow is missing",
-    help = "Make sure to call a method of \"$name\" in the second parameter of client.async()"
+    help = "Make sure to call a method of \"$klass\" in the second parameter of client.async()"
 )
 
 @Serializable
 data class NoSendMethodCall(
-    val className: String,
-    val channelName: String
+    val klass: String,
+    val channel: String
 ) : UserExceptionInClient(
-    msg = "Nothing to send for $className::$channelName",
-    help = "Make sure to call the \"send\" method in the second parameter of client.async($channelName())"
+    msg = "Nothing to send for $klass::$channel",
+    help = "Make sure to call the \"send\" method in the second parameter of client.async($channel())"
 )
 
 @Serializable
 data class MultipleMethodCalls(
-    val name: String,
+    val klass: String,
     val method1: String?,
     val method2: String
 ) : UserExceptionInClient(
-    msg = "Only one method of \"$name\" can be dispatched at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
-    help = "Make sure you call only one method of \"$name\" - multiple calls in the provided lambda is forbidden"
+    msg = "Only one method of \"$klass\" can be dispatched at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
+    help = "Make sure you call only one method of \"$klass\" - multiple calls in the provided lambda is forbidden"
 )
 
 @Serializable
 data class ChannelUsedOnNewWorkflow(
-    val name: String
+    val workflow: String
 ) : UserExceptionInClient(
-    msg = "Channels can only be used for an existing instance of $name workflow",
+    msg = "Channels can only be used for an existing instance of $workflow workflow",
     help = "Make sure you target a running workflow, by providing and id when defining your workflow stub"
+)
+
+@Serializable
+data class UnknownMethodInSendChannel(
+    val workflow: String,
+    val channel: String,
+    val method: String
+) : UserExceptionInClient(
+    msg = "Unknown method $method used on channel $channel in $workflow",
+    help = "Make sure to use the ${SendChannel<*>::send.name} method"
 )
 
 /***********************
@@ -299,20 +310,20 @@ data class ProcessingTimeout(
 
 @Serializable
 data class WorkflowUpdatedWhileRunning(
-    val workflowName: String,
-    val workflowMethodName: String,
+    val workflow: String,
+    val method: String,
     val position: String
 ) : UserExceptionInWorkflowTask(
-    msg = "Definition of workflow \"$workflowName\" has been updated since its launch (detected at position $position in $workflowMethodName)",
+    msg = "Definition of workflow \"$workflow\" has been updated since its launch (detected at position $position in $method)",
     help = "You can either kill this instance or revert its previous definition to be able to resume it"
 )
 
 @Serializable
 data class NoMethodCallAtAsync(
-    val name: String
+    val klass: String
 ) : UserExceptionInWorkflowTask(
-    msg = "You must use a method of \"$name\" when using \"async\" method",
-    help = "Make sure to call exactly one method of \"$name\" within the curly braces - example: async(foo) { bar(*args) }"
+    msg = "You must use a method of \"$klass\" when using \"async\" method",
+    help = "Make sure to call exactly one method of \"$klass\" within the curly braces - example: async(foo) { bar(*args) }"
 )
 
 @Serializable
@@ -351,29 +362,29 @@ data class TaskUsedAsWorkflow(
 
 @Serializable
 data class ParametersInChannelMethod(
-    val workflowName: String,
-    val methodName: String
+    val workflow: String,
+    val method: String
 ) : UserExceptionInWorkflowTask(
-    msg = "in workflow $workflowName, method $methodName returning a ${Channel::class.simpleName} should NOT have any parameter",
+    msg = "in workflow $workflow, method $method returning a ${Channel::class.simpleName} should NOT have any parameter",
     help = ""
 )
 
 @Serializable
 data class NonUniqueChannelFromChannelMethod(
-    val workflowName: String,
-    val methodName: String
+    val workflow: String,
+    val method: String
 ) : UserExceptionInWorkflowTask(
-    msg = "in workflow $workflowName, method $methodName should return the same ${Channel::class.simpleName} instance when called multiple times",
+    msg = "in workflow $workflow, method $method should return the same ${Channel::class.simpleName} instance when called multiple times",
     help = ""
 )
 
 @Serializable
 data class MultipleNamesForChannel(
-    val workflowName: String,
-    val methodName: String,
-    val otherName: String
+    val workflow: String,
+    val method: String,
+    val otherMethod: String
 ) : UserExceptionInWorkflowTask(
-    msg = "in workflow $workflowName, method $methodName return a ${Channel::class.simpleName} instance already associated with name $otherName",
+    msg = "in workflow $workflow, method $method return a ${Channel::class.simpleName} instance already associated with name $otherMethod",
     help = "Make sure to not have multiple methods returning the same channel"
 )
 

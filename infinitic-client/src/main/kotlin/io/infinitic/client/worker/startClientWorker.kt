@@ -23,21 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory.workers
+package io.infinitic.client.worker
 
 import io.infinitic.client.Client
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
-import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 private val logger: Logger
-    get() = LoggerFactory.getLogger(MonitoringGlobalEngine::class.java)
+    get() = LoggerFactory.getLogger(Client::class.java)
 
 private fun logError(messageToProcess: ClientResponseMessageToProcess, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
@@ -45,11 +44,12 @@ private fun logError(messageToProcess: ClientResponseMessageToProcess, e: Except
     e
 )
 
-fun CoroutineScope.startInMemoryClientWorker(
+fun CoroutineScope.startClientWorker(
+    coroutineName: String,
     client: Client,
-    clientChannel: Channel<ClientResponseMessageToProcess>,
+    clientChannel: ReceiveChannel<ClientResponseMessageToProcess>,
     logChannel: SendChannel<ClientResponseMessageToProcess>
-) = launch(CoroutineName("in-memory-client")) {
+) = launch(CoroutineName(coroutineName)) {
 
     for (message in clientChannel) {
         try {

@@ -25,7 +25,7 @@
 
 package io.infinitic.client.samples
 
-import io.infinitic.workflows.SendChannel
+import io.infinitic.workflows.Channel
 
 internal interface FakeWorkflow {
     fun m1()
@@ -34,5 +34,5 @@ internal interface FakeWorkflow {
     fun m1(p1: Int, p2: String): String
     fun m1(id: FakeInterface): String
 
-    val ch: SendChannel<String>
+    val ch: Channel<String>
 }

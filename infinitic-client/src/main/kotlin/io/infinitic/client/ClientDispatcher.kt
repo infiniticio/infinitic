@@ -55,6 +55,7 @@ import io.infinitic.exceptions.IncorrectExistingStub
 import io.infinitic.exceptions.NoMethodCall
 import io.infinitic.exceptions.NoSendMethodCall
 import io.infinitic.exceptions.SuspendMethodNotSupported
+import io.infinitic.exceptions.UnknownMethodInSendChannel
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -209,6 +210,10 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
     fun dispatch(handler: SendChannelProxyHandler<*>): String {
         val method = handler.method ?: throw NoSendMethodCall(handler.klass.name, "${handler.channelName}")
         checkMethodIsNotSuspend(method)
+
+        if (method.name != SendChannel<*>::send.name) {
+            throw UnknownMethodInSendChannel("${handler.workflowName}", "${handler.channelName}", method.name)
+        }
 
         val msg = SendToChannel(
             clientName = clientOutput.clientName,
