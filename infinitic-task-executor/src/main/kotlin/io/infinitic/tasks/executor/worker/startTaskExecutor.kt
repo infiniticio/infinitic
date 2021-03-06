@@ -26,8 +26,8 @@
 package io.infinitic.tasks.executor.worker
 
 import io.infinitic.common.workers.singleThreadedContext
+import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.TaskExecutor
-import io.infinitic.tasks.executor.register.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
@@ -57,7 +57,7 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
 
     for (message in taskExecutorInput.taskExecutorChannel) {
         try {
-            message.output = taskExecutor.handle(message.message)
+            message.returnValue = taskExecutor.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
             logError(message, e)

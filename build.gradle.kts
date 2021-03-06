@@ -28,7 +28,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 buildscript {
     repositories {
         gradlePluginPortal()
-        jcenter()
         maven(url = "https://dl.bintray.com/gradle/gradle-plugins")
     }
 }
@@ -42,7 +41,6 @@ plugins {
 subprojects {
     repositories {
         mavenCentral()
-        jcenter()
     }
 
     apply(plugin = "org.jetbrains.kotlin.jvm")
@@ -56,6 +54,7 @@ subprojects {
         "implementation"(platform("org.jetbrains.kotlin:kotlin-bom"))
         "implementation"(Libs.Slf4j.api)
 
+        "testImplementation"(Libs.Slf4j.simple)
         "testImplementation"(Libs.Kotest.junit5)
         "testImplementation"(Libs.Kotest.property)
         "testImplementation"(Libs.Mockk.mockk)

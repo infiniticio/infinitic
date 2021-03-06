@@ -28,13 +28,15 @@ package io.infinitic.common.workflows.data.commands
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
@@ -55,7 +57,7 @@ data class DispatchTask(
     val taskName: TaskName,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes,
-    val methodInput: MethodInput,
+    val methodParameters: MethodParameters,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions
 ) : Command() {
@@ -67,7 +69,7 @@ data class DispatchTask(
             taskOptions: TaskOptions
         ) = DispatchTask(
             taskName = TaskName.from(method),
-            methodInput = MethodInput.from(method, args),
+            methodParameters = MethodParameters.from(method, args),
             methodParameterTypes = MethodParameterTypes.from(method),
             methodName = MethodName.from(method),
             taskMeta = taskMeta,
@@ -81,7 +83,7 @@ data class DispatchChildWorkflow(
     val childWorkflowName: WorkflowName,
     val childMethodName: MethodName,
     val childMethodParameterTypes: MethodParameterTypes,
-    val childMethodInput: MethodInput,
+    val childMethodParameters: MethodParameters,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : Command() {
@@ -95,7 +97,7 @@ data class DispatchChildWorkflow(
             childWorkflowName = WorkflowName.from(method),
             childMethodName = MethodName.from(method),
             childMethodParameterTypes = MethodParameterTypes.from(method),
-            childMethodInput = MethodInput.from(method, args),
+            childMethodParameters = MethodParameters.from(method, args),
             workflowMeta = workflowMeta,
             workflowOptions = workflowOptions
         )
@@ -127,11 +129,22 @@ data class EndInlineTask(
 ) : Command()
 
 @Serializable
-data class DispatchDurationTimer(
+data class StartDurationTimer(
     val duration: MillisDuration
 ) : Command()
 
 @Serializable
-data class DispatchInstantTimer(
+data class StartInstantTimer(
     val instant: MillisInstant
+) : Command()
+
+@Serializable
+data class ReceiveInChannel(
+    val channelName: ChannelName
+) : Command()
+
+@Serializable
+data class SendToChannel(
+    val channelName: ChannelName,
+    val event: ChannelEvent
 ) : Command()

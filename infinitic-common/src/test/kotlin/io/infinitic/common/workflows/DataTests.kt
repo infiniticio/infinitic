@@ -27,13 +27,13 @@ package io.infinitic.common.workflows
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.workflows.data.channels.ChannelEventId
+import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
-import io.infinitic.common.workflows.data.events.EventData
-import io.infinitic.common.workflows.data.events.EventId
-import io.infinitic.common.workflows.data.events.EventName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
@@ -97,30 +97,30 @@ class DataTests : StringSpec({
         m2 shouldBe m
     }
 
-    "EventData should be serialized as SerializedData" {
-        val m = EventData(SerializedData.from("qwerty"))
+    "ChannelEvent should be serialized as SerializedData" {
+        val m = ChannelEvent(SerializedData.from("qwerty"))
 
         val json = Json.encodeToString(m)
         json shouldBe Json.encodeToString(SerializedData.from("qwerty"))
-        val m2 = Json.decodeFromString<EventData>(json)
+        val m2 = Json.decodeFromString<ChannelEvent>(json)
         m2 shouldBe m
     }
 
-    "EventId should be serialized as String" {
-        val m = EventId("qwerty")
+    "ChannelEventId should be serialized as String" {
+        val m = ChannelEventId("qwerty")
 
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
-        val m2 = Json.decodeFromString<EventId>(json)
+        val m2 = Json.decodeFromString<ChannelEventId>(json)
         m2 shouldBe m
     }
 
-    "EventName should be serialized as String" {
-        val m = EventName("qwerty")
+    "ChannelName should be serialized as String" {
+        val m = ChannelName("qwerty")
 
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
-        val m2 = Json.decodeFromString<EventName>(json)
+        val m2 = Json.decodeFromString<ChannelName>(json)
         m2 shouldBe m
     }
 

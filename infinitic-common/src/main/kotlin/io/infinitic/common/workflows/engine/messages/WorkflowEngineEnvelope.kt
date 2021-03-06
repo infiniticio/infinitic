@@ -34,13 +34,13 @@ data class WorkflowEngineEnvelope(
     val workflowId: WorkflowId,
     val type: WorkflowEngineMessageType,
     val cancelWorkflow: CancelWorkflow? = null,
+    val sendToChannel: SendToChannel? = null,
     val childWorkflowCanceled: ChildWorkflowCanceled? = null,
     val childWorkflowCompleted: ChildWorkflowCompleted? = null,
     val workflowTaskCompleted: WorkflowTaskCompleted? = null,
     val workflowTaskDispatched: WorkflowTaskDispatched? = null,
     val timerCompleted: TimerCompleted? = null,
     val dispatchWorkflow: DispatchWorkflow? = null,
-    val objectReceived: ObjectReceived? = null,
     val taskCanceled: TaskCanceled? = null,
     val taskCompleted: TaskCompleted? = null,
     val taskDispatched: TaskDispatched? = null,
@@ -50,13 +50,13 @@ data class WorkflowEngineEnvelope(
     init {
         val noNull = listOfNotNull(
             cancelWorkflow,
+            sendToChannel,
             childWorkflowCanceled,
             childWorkflowCompleted,
             workflowTaskCompleted,
             workflowTaskDispatched,
             timerCompleted,
             dispatchWorkflow,
-            objectReceived,
             taskCanceled,
             taskCompleted,
             taskDispatched,
@@ -88,6 +88,11 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.CANCEL_WORKFLOW,
                 cancelWorkflow = msg
             )
+            is SendToChannel -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.EMIT_TO_CHANNEL,
+                sendToChannel = msg
+            )
             is ChildWorkflowCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED,
@@ -117,11 +122,6 @@ data class WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.DISPATCH_WORKFLOW,
                 dispatchWorkflow = msg
-            )
-            is ObjectReceived -> WorkflowEngineEnvelope(
-                msg.workflowId,
-                WorkflowEngineMessageType.OBJECT_RECEIVED,
-                objectReceived = msg
             )
             is TaskCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -155,13 +155,13 @@ data class WorkflowEngineEnvelope(
 
     fun message(): WorkflowEngineMessage = when (type) {
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
+        WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendToChannel!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!
         WorkflowEngineMessageType.WORKFLOW_TASK_COMPLETED -> workflowTaskCompleted!!
         WorkflowEngineMessageType.WORKFLOW_TASK_DISPATCHED -> workflowTaskDispatched!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
         WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow!!
-        WorkflowEngineMessageType.OBJECT_RECEIVED -> objectReceived!!
         WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!
         WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted!!
         WorkflowEngineMessageType.TASK_DISPATCHED -> taskDispatched!!

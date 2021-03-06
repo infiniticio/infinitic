@@ -27,18 +27,19 @@ package io.infinitic.common.workflows.engine.messages
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
-import io.infinitic.common.data.methods.MethodOutput
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.workflows.data.events.EventData
-import io.infinitic.common.workflows.data.events.EventName
+import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.workflows.data.channels.ChannelEventId
+import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -61,7 +62,7 @@ data class DispatchWorkflow(
     val workflowName: WorkflowName,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
-    val methodInput: MethodInput,
+    val methodParameters: MethodParameters,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : WorkflowEngineMessage()
@@ -70,14 +71,25 @@ data class DispatchWorkflow(
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
     val clientName: ClientName?,
-    val workflowOutput: MethodOutput
+    val workflowOutput: MethodReturnValue
+) : WorkflowEngineMessage()
+
+@Serializable
+data class SendToChannel(
+    val clientName: ClientName,
+    val clientWaiting: Boolean,
+    override val workflowId: WorkflowId,
+    val workflowName: WorkflowName,
+    val channelEventId: ChannelEventId,
+    val channelName: ChannelName,
+    val channelEvent: ChannelEvent
 ) : WorkflowEngineMessage()
 
 @Serializable
 data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     val childWorkflowId: WorkflowId,
-    val childWorkflowOutput: MethodOutput
+    val childWorkflowReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()
 
 @Serializable
@@ -85,14 +97,14 @@ data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val childWorkflowId: WorkflowId,
-    val childWorkflowOutput: MethodOutput
+    val childWorkflowReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()
 
 @Serializable
 data class WorkflowTaskCompleted(
     override val workflowId: WorkflowId,
     val workflowTaskId: WorkflowTaskId,
-    val workflowTaskOutput: WorkflowTaskOutput
+    val workflowTaskReturnValue: WorkflowTaskOutput
 ) : WorkflowEngineMessage()
 
 @Serializable
@@ -100,7 +112,7 @@ data class WorkflowTaskDispatched(
     override val workflowId: WorkflowId,
     val workflowTaskId: WorkflowTaskId,
     val workflowName: WorkflowName,
-    val workflowTaskInput: WorkflowTaskInput
+    val workflowTaskParameters: WorkflowTaskParameters
 ) : WorkflowEngineMessage()
 
 @Serializable
@@ -111,18 +123,11 @@ data class TimerCompleted(
 ) : WorkflowEngineMessage()
 
 @Serializable
-data class ObjectReceived(
-    override val workflowId: WorkflowId,
-    val eventName: EventName,
-    val eventData: EventData?
-) : WorkflowEngineMessage()
-
-@Serializable
 data class TaskCanceled(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val taskId: TaskId,
-    val methodOutput: MethodOutput
+    val taskReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()
 
 @Serializable
@@ -130,7 +135,7 @@ data class TaskCompleted(
     override val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val taskId: TaskId,
-    val taskOutput: MethodOutput
+    val taskReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()
 
 @Serializable
@@ -139,17 +144,17 @@ data class TaskDispatched(
     val methodRunId: MethodRunId,
     val taskId: TaskId,
     val methodName: MethodName,
-    val methodInput: MethodInput
+    val methodParameters: MethodParameters
 ) : WorkflowEngineMessage()
 
 @Serializable
 data class WorkflowCanceled(
     override val workflowId: WorkflowId,
-    val workflowOutput: MethodOutput
+    val workflowReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()
 
 @Serializable
 data class WorkflowCompleted(
     override val workflowId: WorkflowId,
-    val workflowOutput: MethodOutput
+    val workflowReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()

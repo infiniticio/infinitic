@@ -34,5 +34,5 @@ data class PulsarMessageToProcess<T> (
     val redeliveryCount: Int
 ) : MessageToProcess<T> {
     override var exception: Exception? = null
-    override var output: Any? = null
+    override var returnValue: Any? = null
 }

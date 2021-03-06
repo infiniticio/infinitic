@@ -58,7 +58,7 @@ fun <T : MonitoringGlobalMessageToProcess> CoroutineScope.startMonitoringGlobalE
 
     for (message in monitoringGlobalInputChannels.monitoringGlobalChannel) {
         try {
-            message.output = monitoringGlobalEngine.handle(message.message)
+            message.returnValue = monitoringGlobalEngine.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
             logError(message, e)

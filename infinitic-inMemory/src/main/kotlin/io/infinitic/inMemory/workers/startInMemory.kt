@@ -26,6 +26,9 @@
 package io.infinitic.inMemory.workers
 
 import io.infinitic.cache.no.NoCache
+import io.infinitic.client.Client
+import io.infinitic.client.worker.startClientWorker
+import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
@@ -34,12 +37,32 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.inMemory.transport.InMemoryMonitoringPerNameOutput
+import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
+import io.infinitic.inMemory.transport.InMemoryTaskExecutorOutput
+import io.infinitic.inMemory.transport.InMemoryWorkflowEngineOutput
+import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
+import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
 import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
+import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
+import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
+import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
+import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
+import io.infinitic.tasks.TaskExecutorRegister
+import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
-import io.infinitic.tasks.executor.register.TaskExecutorRegister
+import io.infinitic.tasks.engine.worker.startTaskEngine
+import io.infinitic.tasks.executor.transport.TaskExecutorInput
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
+import io.infinitic.tasks.executor.worker.startTaskExecutor
+import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
+import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
+import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
+import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +75,7 @@ private const val N_WORKERS = 10
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     keyValueStorage: KeyValueStorage,
+    client: Client,
     clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
     workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>
@@ -77,54 +101,84 @@ fun CoroutineScope.startInMemory(
                     println("Task engine        : $message")
                 is WorkflowEngineMessage ->
                     println("Workflow engine    : $message")
+                is ClientResponseMessage ->
+                    println("Client response    : $message")
                 else -> throw RuntimeException("Unknown messageToProcess type: $messageToProcess")
             }
         }
     }
 
-    startInMemoryMonitoringGlobalWorker(
-        keyValueStorage,
-        NoCache(),
-        monitoringGlobalChannel,
-        logChannel
-    )
-
-    startInMemoryMonitoringPerNameWorker(
-        keyValueStorage,
-        NoCache(),
-        monitoringPerNameChannel,
-        logChannel,
-        monitoringGlobalChannel,
-        logChannel
-    )
-
-    startInMemoryTaskExecutorWorker(
-        taskExecutorRegister,
-        taskEngineEventsChannel,
-        taskExecutorChannel,
-        logChannel,
-        N_WORKERS
-    )
-
-    startInMemoryTaskEngineWorker(
-        keyValueStorage,
-        NoCache(),
+    startClientWorker(
+        "in-memory-client",
+        client,
         clientResponsesChannel,
-        taskEngineCommandsChannel,
-        taskEngineEventsChannel,
         logChannel,
-        taskExecutorChannel,
-        monitoringPerNameChannel,
-        workflowEngineEventsChannel
     )
 
-    startInMemoryWorkflowEngineWorker(
-        keyValueStorage,
-        NoCache(),
-        clientResponsesChannel,
-        workflowEngineCommandsChannel,
-        workflowEngineEventsChannel,
-        logChannel,
-        taskEngineCommandsChannel
+    startWorkflowEngine(
+        "in-memory-workflow-engine",
+        WorkflowStateKeyValueStorage(keyValueStorage, NoCache()),
+        NoWorkflowEventStorage(),
+        WorkflowEngineInputChannels(
+            workflowEngineCommandsChannel,
+            workflowEngineEventsChannel,
+            logChannel
+        ),
+        InMemoryWorkflowEngineOutput(
+            this,
+            clientResponsesChannel,
+            taskEngineCommandsChannel,
+            workflowEngineEventsChannel
+        )
+    )
+
+    startTaskEngine(
+        "in-memory-task-engine",
+        TaskStateKeyValueStorage(keyValueStorage, NoCache()),
+        NoTaskEventStorage(),
+        TaskEngineInputChannels(
+            taskEngineCommandsChannel,
+            taskEngineEventsChannel,
+            logChannel
+        ),
+        InMemoryTaskEngineOutput(
+            this,
+            clientResponsesChannel,
+            taskEngineEventsChannel,
+            taskExecutorChannel,
+            monitoringPerNameChannel,
+            workflowEngineEventsChannel
+        )
+    )
+
+    repeat(N_WORKERS) {
+        startTaskExecutor(
+            "in-memory-task-executor-$it",
+            taskExecutorRegister,
+            TaskExecutorInput(taskExecutorChannel, logChannel),
+            InMemoryTaskExecutorOutput(this, taskEngineEventsChannel),
+        )
+    }
+
+    startMonitoringPerNameEngine(
+        "in-memory-monitoring-per-name-engine",
+        MonitoringPerNameStateKeyValueStorage(keyValueStorage, NoCache()),
+        MonitoringPerNameInputChannels(
+            monitoringPerNameChannel,
+            logChannel
+        ),
+        InMemoryMonitoringPerNameOutput(
+            this,
+            monitoringGlobalChannel
+        )
+    )
+
+    startMonitoringGlobalEngine(
+        "in-memory-monitoring-global-engine",
+        MonitoringGlobalStateKeyValueStorage(keyValueStorage, NoCache()),
+        MonitoringGlobalInputChannels(
+            monitoringGlobalChannel,
+            logChannel
+        )
     )
 }

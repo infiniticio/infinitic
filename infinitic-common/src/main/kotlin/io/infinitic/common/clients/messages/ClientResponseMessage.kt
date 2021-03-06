@@ -27,8 +27,9 @@ package io.infinitic.common.clients.messages
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
@@ -42,12 +43,18 @@ sealed class ClientResponseMessage() {
 data class TaskCompleted(
     override val clientName: ClientName,
     val taskId: TaskId,
-    val taskOutput: MethodOutput,
+    val taskReturnValue: MethodReturnValue,
 ) : ClientResponseMessage()
 
 @Serializable
 data class WorkflowCompleted(
     override val clientName: ClientName,
     val workflowId: WorkflowId,
-    val workflowOutput: MethodOutput
+    val workflowReturnValue: MethodReturnValue
+) : ClientResponseMessage()
+
+@Serializable
+data class SendToChannelCompleted(
+    override val clientName: ClientName,
+    val channelEventId: ChannelEventId
 ) : ClientResponseMessage()

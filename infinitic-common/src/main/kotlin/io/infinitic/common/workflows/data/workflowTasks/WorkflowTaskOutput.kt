@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
-import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -41,5 +41,5 @@ data class WorkflowTaskOutput(
     val newCommands: List<NewCommand>,
     val newSteps: List<NewStep>,
     val properties: Map<PropertyName, PropertyValue>,
-    val methodOutput: MethodOutput?
+    val methodReturnValue: MethodReturnValue?
 )

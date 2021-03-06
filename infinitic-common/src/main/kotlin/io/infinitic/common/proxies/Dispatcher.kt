@@ -26,7 +26,11 @@
 package io.infinitic.common.proxies
 
 interface Dispatcher {
-    fun <S> dispatchTaskAndWaitResult(handler: NewTaskProxyHandler<*>): S
+    fun <S> dispatchAndWait(handler: NewTaskProxyHandler<*>): S
 
-    fun <S> dispatchWorkflowAndWaitResult(handler: NewWorkflowProxyHandler<*>): S
+    fun <S> dispatchAndWait(handler: NewWorkflowProxyHandler<*>): S
+
+    fun <S> dispatchAndWait(handler: ExistingWorkflowProxyHandler<*>): S
+
+    fun dispatchAndWait(handler: SendChannelProxyHandler<*>)
 }

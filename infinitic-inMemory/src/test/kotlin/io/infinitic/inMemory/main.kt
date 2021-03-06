@@ -25,7 +25,7 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.client.Client
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.inMemory.tasks.TaskA
 import io.infinitic.inMemory.tasks.TaskAImpl
@@ -40,6 +40,7 @@ import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
 fun main() {
@@ -47,7 +48,7 @@ fun main() {
     val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
     val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
     runBlocking {
-        val client = InfiniticClient(
+        val client = Client(
             InMemoryClientOutput(this, taskEngineCommandsChannel, workflowEngineCommandsChannel)
         )
 
@@ -60,6 +61,7 @@ fun main() {
         startInMemory(
             taskExecutorRegister,
             InMemoryStorage(),
+            client,
             clientResponsesChannel,
             taskEngineCommandsChannel,
             workflowEngineCommandsChannel
@@ -68,10 +70,16 @@ fun main() {
         val taskA = client.task(TaskA::class.java)
         val workflowA = client.workflow(WorkflowA::class.java)
 
-        repeat(1) {
-//            client.async(taskA) { await(2000) }
-//            client.async(workflowA) { seq1() }
-            println(workflowA.wait1())
-        }
+        val id = client.async(workflowA) { channel1() }
+
+        val w = client.workflow<WorkflowA>(id)
+
+        delay(2000)
+
+        w.channelB.send("test")
+
+        delay(2000)
+
+        w.channelA.send("test")
     }
 }

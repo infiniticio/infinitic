@@ -28,9 +28,9 @@ package io.infinitic.common.tasks.engine.state
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -54,7 +54,7 @@ data class TaskState(
     val taskName: TaskName,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
-    val methodInput: MethodInput,
+    val methodParameters: MethodParameters,
     val workflowId: WorkflowId?,
     val methodRunId: MethodRunId?,
     val taskStatus: TaskStatus,

@@ -25,17 +25,28 @@
 
 package io.infinitic.workflows.engine.helpers
 
+import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.engine.state.WorkflowState
 
 fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
     // if everything is completed in methodRun then filter state
-    if (methodRun.methodOutput != null &&
-        methodRun.pastCommands.all { it.isTerminated() } &&
+    // (non-blocking waiting for events or for timer do not prevent cleaning)
+    if (methodRun.methodReturnValue != null &&
+        methodRun.pastCommands.all {
+            it.commandType == CommandType.RECEIVE_IN_CHANNEL ||
+                it.commandType == CommandType.START_DURATION_TIMER ||
+                it.commandType == CommandType.START_INSTANT_TIMER ||
+                it.isTerminated()
+        } &&
         methodRun.pastSteps.all { it.isTerminated() }
     ) {
         state.methodRuns.remove(methodRun)
+
+        state.receivingChannels.removeAll {
+            it.methodRunId == methodRun.methodRunId
+        }
 
         removeUnusedPropertyHash(state)
     }

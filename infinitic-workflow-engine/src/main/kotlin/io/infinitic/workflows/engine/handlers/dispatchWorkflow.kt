@@ -41,7 +41,7 @@ suspend fun dispatchWorkflow(
         parentMethodRunId = message.parentMethodRunId,
         methodName = message.methodName,
         methodParameterTypes = message.methodParameterTypes,
-        methodInput = message.methodInput,
+        methodParameters = message.methodParameters,
         propertiesNameHashAtStart = mapOf()
     )
 

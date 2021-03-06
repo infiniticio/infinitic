@@ -26,7 +26,7 @@
 package io.infinitic.tasks.tests
 
 import io.infinitic.cache.no.NoCache
-import io.infinitic.client.InfiniticClient
+import io.infinitic.client.Client
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
@@ -80,7 +80,7 @@ private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
 private lateinit var taskExecutor: TaskExecutor
-private lateinit var client: InfiniticClient
+private lateinit var client: Client
 private lateinit var taskTestStub: TaskTest
 
 class TaskIntegrationTests : StringSpec({
@@ -293,7 +293,7 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     taskStatus = null
 
-    client = InfiniticClient(TestClientOutput(this))
+    client = Client(TestClientOutput(this))
 
     taskTestStub = client.task(TaskTest::class.java)
 

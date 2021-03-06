@@ -28,11 +28,11 @@ package io.infinitic.common.serDe
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.serDe.kserializer.getKSerializerOrNull
-import io.infinitic.common.tasks.exceptions.ClassNotFoundDuringDeserialization
-import io.infinitic.common.tasks.exceptions.ExceptionDuringJsonDeserialization
-import io.infinitic.common.tasks.exceptions.ExceptionDuringKotlinDeserialization
-import io.infinitic.common.tasks.exceptions.MissingMetaJavaClassDuringDeserialization
-import io.infinitic.common.tasks.exceptions.SerializerNotFoundDuringDeserialization
+import io.infinitic.exceptions.ClassNotFoundDuringDeserialization
+import io.infinitic.exceptions.ExceptionDuringJsonDeserialization
+import io.infinitic.exceptions.ExceptionDuringKotlinDeserialization
+import io.infinitic.exceptions.MissingMetaJavaClassDuringDeserialization
+import io.infinitic.exceptions.SerializerNotFoundDuringDeserialization
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException

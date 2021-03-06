@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.client.InfiniticClient
+import io.infinitic.client.Client
 import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import kotlinx.coroutines.CoroutineName
@@ -60,7 +60,7 @@ private fun logError(message: ClientResponseMessage, e: Exception) = logger.erro
 )
 
 fun CoroutineScope.startClientResponseWorker(
-    client: InfiniticClient,
+    client: Client,
     clientResponseConsumer: Consumer<ClientResponseEnvelope>
 ) = launch(CoroutineName(CLIENT_RESPONSE_THREAD_NAME)) {
 

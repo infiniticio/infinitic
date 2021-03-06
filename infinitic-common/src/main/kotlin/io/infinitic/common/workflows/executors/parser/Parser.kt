@@ -27,6 +27,7 @@ package io.infinitic.common.workflows.executors.parser
 
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import jdk.nashorn.internal.objects.NativeArray.map
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties

@@ -29,7 +29,7 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.ObjectReceived
+import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TaskDispatched
@@ -42,6 +42,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
+import io.infinitic.workflows.engine.handlers.sendToChannel
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
@@ -153,9 +154,9 @@ class WorkflowEngine(
             is ChildWorkflowCompleted -> childWorkflowCompleted(workflowEngineOutput, state, message)
             is WorkflowTaskCompleted -> workflowTaskCompleted(workflowEngineOutput, state, message)
             is TimerCompleted -> timerCompleted(workflowEngineOutput, state, message)
-            is ObjectReceived -> objectReceived(state, message)
             is TaskCanceled -> taskCanceled(state, message)
             is TaskCompleted -> taskCompleted(workflowEngineOutput, state, message)
+            is SendToChannel -> sendToChannel(workflowEngineOutput, state, message)
             else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
         }
     }
@@ -169,10 +170,6 @@ class WorkflowEngine(
     }
 
     private suspend fun taskCanceled(state: WorkflowState, msg: TaskCanceled) {
-        TODO()
-    }
-
-    private suspend fun objectReceived(state: WorkflowState, msg: ObjectReceived): WorkflowState {
         TODO()
     }
 }

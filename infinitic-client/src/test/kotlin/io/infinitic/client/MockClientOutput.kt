@@ -27,14 +27,16 @@ package io.infinitic.client
 
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.clients.messages.SendToChannelCompleted
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.methods.MethodOutput
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.mockk.CapturingSlot
@@ -48,7 +50,7 @@ internal class MockClientOutput(
     override val clientName = ClientName("clientTest")
     override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
     override val sendToWorkflowEngineFn = mockk<SendToWorkflowEngine>()
-    lateinit var client: InfiniticClient
+    lateinit var client: Client
 
     init {
         coEvery { sendToTaskEngineFn(capture(taskSlot), MillisDuration(0)) } coAnswers {
@@ -58,7 +60,7 @@ internal class MockClientOutput(
                     TaskCompleted(
                         clientName = clientName,
                         taskId = msg.taskId,
-                        taskOutput = MethodOutput.from("success")
+                        taskReturnValue = MethodReturnValue.from("success")
                     )
                 )
             }
@@ -70,7 +72,15 @@ internal class MockClientOutput(
                     WorkflowCompleted(
                         clientName = clientName,
                         workflowId = msg.workflowId,
-                        workflowOutput = MethodOutput.from("success")
+                        workflowReturnValue = MethodReturnValue.from("success")
+                    )
+                )
+            }
+            if (msg is SendToChannel && msg.clientWaiting) {
+                client.handle(
+                    SendToChannelCompleted(
+                        clientName = clientName,
+                        channelEventId = msg.channelEventId
                     )
                 )
             }

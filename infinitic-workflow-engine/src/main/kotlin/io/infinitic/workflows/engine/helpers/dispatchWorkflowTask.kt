@@ -29,9 +29,9 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.inc
-import io.infinitic.common.data.methods.MethodInput
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
@@ -41,7 +41,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskInput
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
@@ -55,7 +55,7 @@ suspend fun dispatchWorkflowTask(
     state.workflowTaskIndex++
 
     // defines workflow task input
-    val workflowTaskInput = WorkflowTaskInput(
+    val workflowTaskInput = WorkflowTaskParameters(
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         workflowOptions = state.workflowOptions,
@@ -74,8 +74,8 @@ suspend fun dispatchWorkflowTask(
         taskId = TaskId("$workflowTaskId"),
         taskName = TaskName(WorkflowTask::class.java.name),
         methodName = MethodName(WorkflowTask.DEFAULT_METHOD),
-        methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskInput::class.java.name)),
-        methodInput = MethodInput.from(workflowTaskInput),
+        methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
+        methodParameters = MethodParameters.from(workflowTaskInput),
         workflowId = state.workflowId,
         methodRunId = methodRun.methodRunId,
         taskOptions = TaskOptions(),
@@ -96,7 +96,7 @@ suspend fun dispatchWorkflowTask(
             workflowTaskId = workflowTaskId,
             workflowId = state.workflowId,
             workflowName = state.workflowName,
-            workflowTaskInput = workflowTaskInput
+            workflowTaskParameters = workflowTaskInput
         ),
         MillisDuration(0)
     )

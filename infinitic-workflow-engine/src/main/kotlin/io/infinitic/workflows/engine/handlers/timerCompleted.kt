@@ -30,7 +30,7 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.jobCompleted
+import io.infinitic.workflows.engine.helpers.commandCompleted
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import java.time.Instant
 
@@ -39,7 +39,7 @@ suspend fun timerCompleted(
     state: WorkflowState,
     msg: TimerCompleted
 ) {
-    jobCompleted(
+    commandCompleted(
         workflowEngineOutput,
         state,
         msg.methodRunId,

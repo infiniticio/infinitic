@@ -29,7 +29,7 @@ import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandOutput
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.jobCompleted
+import io.infinitic.workflows.engine.helpers.commandCompleted
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
 suspend fun taskCompleted(
@@ -37,11 +37,11 @@ suspend fun taskCompleted(
     state: WorkflowState,
     msg: TaskCompleted
 ) {
-    jobCompleted(
+    commandCompleted(
         workflowEngineOutput,
         state,
         msg.methodRunId,
         CommandId(msg.taskId),
-        CommandOutput(msg.taskOutput.serializedData)
+        CommandOutput(msg.taskReturnValue.serializedData)
     )
 }

@@ -162,13 +162,13 @@ class TaskEngine(
                     WorkflowTask::class.java.name -> WorkflowTaskCompleted(
                         workflowId = it,
                         workflowTaskId = WorkflowTaskId("${newState.taskId}"),
-                        workflowTaskOutput = message.taskOutput.get() as WorkflowTaskOutput
+                        workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskOutput
                     )
                     else -> TaskCompletedInWorkflow(
                         workflowId = it,
                         methodRunId = newState.methodRunId!!,
                         taskId = newState.taskId,
-                        taskOutput = message.taskOutput
+                        taskReturnValue = message.taskReturnValue
                     )
                 },
                 MillisDuration(0)
@@ -182,7 +182,7 @@ class TaskEngine(
                 TaskCompletedInClient(
                     newState.clientName,
                     newState.taskId,
-                    message.taskOutput
+                    message.taskReturnValue
                 )
             )
         }
@@ -191,7 +191,7 @@ class TaskEngine(
         val tad = TaskCanceled(
             taskId = newState.taskId,
             taskName = newState.taskName,
-            taskOutput = message.taskOutput,
+            taskReturnValue = message.taskReturnValue,
             taskMeta = newState.taskMeta
         )
         taskEngineOutput.sendToTaskEngine(newState, tad, MillisDuration(0))
@@ -212,7 +212,7 @@ class TaskEngine(
             taskName = message.taskName,
             methodName = message.methodName,
             methodParameterTypes = message.methodParameterTypes,
-            methodInput = message.methodInput,
+            methodParameters = message.methodParameters,
             workflowId = message.workflowId,
             methodRunId = message.methodRunId,
             taskAttemptId = TaskAttemptId(),
@@ -229,7 +229,7 @@ class TaskEngine(
             taskAttemptRetry = newState.taskAttemptRetry,
             taskName = newState.taskName,
             methodName = newState.methodName,
-            methodInput = newState.methodInput,
+            methodParameters = newState.methodParameters,
             methodParameterTypes = newState.methodParameterTypes,
             previousTaskAttemptError = null,
             taskOptions = newState.taskOptions,
@@ -257,9 +257,9 @@ class TaskEngine(
             taskAttemptId = TaskAttemptId(),
             taskAttemptRetry = TaskAttemptRetry(0),
             taskRetry = oldState.taskRetry + 1,
-            taskName = message.taskName ?: oldState.taskName,
+            taskName = message.taskName,
             methodName = message.methodName ?: oldState.methodName,
-            methodInput = message.methodInput ?: oldState.methodInput,
+            methodParameters = message.methodParameters ?: oldState.methodParameters,
             methodParameterTypes = message.methodParameterTypes ?: oldState.methodParameterTypes,
             taskOptions = message.taskOptions ?: oldState.taskOptions,
             taskMeta = message.taskMeta ?: oldState.taskMeta
@@ -273,7 +273,7 @@ class TaskEngine(
             taskRetry = newState.taskRetry,
             taskName = newState.taskName,
             methodName = newState.methodName,
-            methodInput = newState.methodInput,
+            methodParameters = newState.methodParameters,
             methodParameterTypes = newState.methodParameterTypes,
             previousTaskAttemptError = newState.previousTaskAttemptError,
             taskOptions = newState.taskOptions,
@@ -310,7 +310,7 @@ class TaskEngine(
             taskName = state.taskName,
             methodName = state.methodName,
             methodParameterTypes = state.methodParameterTypes,
-            methodInput = state.methodInput,
+            methodParameters = state.methodParameters,
             previousTaskAttemptError = state.previousTaskAttemptError,
             taskOptions = state.taskOptions,
             taskMeta = state.taskMeta
@@ -350,13 +350,13 @@ class TaskEngine(
                     WorkflowTask::class.java.name -> WorkflowTaskCompleted(
                         workflowId = it,
                         workflowTaskId = WorkflowTaskId("${newState.taskId}"),
-                        workflowTaskOutput = message.taskOutput.get() as WorkflowTaskOutput
+                        workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskOutput
                     )
                     else -> TaskCompletedInWorkflow(
                         workflowId = it,
                         methodRunId = newState.methodRunId!!,
                         taskId = newState.taskId,
-                        taskOutput = message.taskOutput
+                        taskReturnValue = message.taskReturnValue
                     )
                 },
                 MillisDuration(0)
@@ -370,7 +370,7 @@ class TaskEngine(
                 TaskCompletedInClient(
                     newState.clientName,
                     newState.taskId,
-                    message.taskOutput
+                    message.taskReturnValue
                 )
             )
         }
@@ -379,7 +379,7 @@ class TaskEngine(
         val tc = TaskCompleted(
             taskId = newState.taskId,
             taskName = newState.taskName,
-            taskOutput = message.taskOutput,
+            taskReturnValue = message.taskReturnValue,
             taskMeta = newState.taskMeta
         )
         taskEngineOutput.sendToTaskEngine(newState, tc, MillisDuration(0))

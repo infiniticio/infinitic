@@ -30,7 +30,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
-import io.infinitic.tasks.executor.register.TaskExecutorRegister
+import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.executor.worker.startTaskExecutor
