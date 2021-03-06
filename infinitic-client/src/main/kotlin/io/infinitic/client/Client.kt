@@ -47,7 +47,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.exceptions.IncorrectNewStub
+import io.infinitic.exceptions.IncorrectExistingStub
 import io.infinitic.exceptions.NotAStub
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
@@ -173,14 +173,15 @@ open class Client(val clientOutput: ClientOutput) {
     /*
      *  Cancel a task or a workflow
      */
-    fun <T : Any> cancel(proxy: T, output: Any? = null) {
+    fun <T : Any> cancel(proxy: T, returnValue: Any? = null) {
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "cancel")
 
         when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is NewTaskProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "task")
-            is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "cancel", "workflow")
-            is ExistingTaskProxyHandler<*> -> cancel(handler, output)
-            is ExistingWorkflowProxyHandler<*> -> cancel(handler, output)
+            is NewTaskProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "cancel")
+            is NewWorkflowProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "cancel")
+            is ExistingTaskProxyHandler<*> -> cancel(handler, returnValue)
+            is ExistingWorkflowProxyHandler<*> -> cancel(handler, returnValue)
+            is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "cancel")
             else -> throw RuntimeException()
         }
     }
@@ -193,10 +194,11 @@ open class Client(val clientOutput: ClientOutput) {
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "retry")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is NewTaskProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "task")
-            is NewWorkflowProxyHandler<*> -> throw IncorrectNewStub(proxy::class.java.name, "retry", "workflow")
+            is NewTaskProxyHandler<*> -> throw IncorrectExistingStub(proxy::class.java.name, "retry")
+            is NewWorkflowProxyHandler<*> -> throw IncorrectExistingStub(proxy::class.java.name, "retry")
             is ExistingTaskProxyHandler<*> -> retry(handler)
             is ExistingWorkflowProxyHandler<*> -> retry(handler)
+            is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "retry")
             else -> throw RuntimeException()
         }
     }

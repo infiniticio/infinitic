@@ -51,7 +51,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.exceptions.ChannelUsedOnNewWorkflow
-import io.infinitic.exceptions.IncorrectExistingStub
+import io.infinitic.exceptions.IncorrectNewStub
 import io.infinitic.exceptions.NoMethodCall
 import io.infinitic.exceptions.NoSendMethodCall
 import io.infinitic.exceptions.SuspendMethodNotSupported
@@ -78,7 +78,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         val method = handler.method ?: throw NoMethodCall(handler.klass.name)
         checkMethodIsNotSuspend(method)
 
-        throw IncorrectExistingStub(handler.klass.name, "task")
+        throw IncorrectNewStub(handler.klass.name, "dispatch")
     }
 
     // asynchronous call on a new task: async(newTask) { method() }
@@ -179,7 +179,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         val method = handler.method ?: throw NoMethodCall(handler.klass.name)
         checkMethodIsNotSuspend(method)
 
-        throw IncorrectExistingStub(handler.klass.name, "workflow")
+        throw IncorrectNewStub(handler.klass.name, "dispatch")
     }
 
     // synchronous call on a existing workflow: existingWorkflow.method()

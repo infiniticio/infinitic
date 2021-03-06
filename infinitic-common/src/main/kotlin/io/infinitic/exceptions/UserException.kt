@@ -173,20 +173,19 @@ data class NotAStub(
 @Serializable
 data class IncorrectExistingStub(
     val name: String,
-    val type: String
+    val action: String
 ) : UserExceptionInClient(
-    msg = "The first parameter of the client.async(.) function should be the stub of an existing $type",
-    help = "Make sure to provide the stub returned by client.$type($name, id) function, with an id."
+    msg = "The first parameter of the client.$action(.) function should be the stub of an existing task or workflow",
+    help = "Make sure to provide the stub returned by client.task($name, id) or client.workflow($name, id)function, with an id."
 )
 
 @Serializable
 data class IncorrectNewStub(
     val name: String,
-    val async: String,
-    val type: String
+    val action: String
 ) : UserExceptionInClient(
-    msg = "The first parameter of the client.$async(.) function should be the stub of a new $type",
-    help = "Make sure to provide the stub returned by client.$type($name), without id."
+    msg = "The first parameter of the client.$action(.) function should be the stub of a new task or workflow",
+    help = "Make sure to provide the stub returned by client.task($name) or client.workflow($name)."
 )
 
 @Serializable

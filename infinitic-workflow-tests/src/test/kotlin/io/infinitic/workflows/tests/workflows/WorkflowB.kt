@@ -47,11 +47,8 @@ class WorkflowBImpl() : Workflow(), WorkflowB {
         return str // should be "${input}123"
     }
 
-    override fun factorial(n: Long): Long {
-        return if (n > 1) {
-            n * workflow.factorial(n - 1)
-        } else {
-            1
-        }
+    override fun factorial(n: Long) = when {
+        n > 1 -> n * workflow.factorial(n - 1)
+        else -> 1
     }
 }
