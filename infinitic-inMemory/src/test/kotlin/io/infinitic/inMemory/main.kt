@@ -25,61 +25,34 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.client.Client
-import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.inMemory.tasks.TaskA
 import io.infinitic.inMemory.tasks.TaskAImpl
-import io.infinitic.inMemory.transport.InMemoryClientOutput
-import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.inMemory.workflows.WorkflowA
 import io.infinitic.inMemory.workflows.WorkflowAImpl
 import io.infinitic.inMemory.workflows.WorkflowB
 import io.infinitic.inMemory.workflows.WorkflowBImpl
-import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
-import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 
 fun main() {
-    val clientResponsesChannel = Channel<ClientResponseMessageToProcess>()
-    val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
-    val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
-    runBlocking {
-        val client = Client(
-            InMemoryClientOutput(this, taskEngineCommandsChannel, workflowEngineCommandsChannel)
-        )
+    val client = InfiniticClient.build()
 
-        val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
-            register(TaskA::class.java.name) { TaskAImpl() }
-            register(WorkflowA::class.java.name) { WorkflowAImpl() }
-            register(WorkflowB::class.java.name) { WorkflowBImpl() }
-        }
+    client.register(TaskA::class.java.name) { TaskAImpl() }
+    client.register(WorkflowA::class.java.name) { WorkflowAImpl() }
+    client.register(WorkflowB::class.java.name) { WorkflowBImpl() }
 
-        startInMemory(
-            taskExecutorRegister,
-            InMemoryStorage(),
-            client,
-            clientResponsesChannel,
-            taskEngineCommandsChannel,
-            workflowEngineCommandsChannel
-        )
+    val taskA = client.task<TaskA>()
+    val workflowA = client.workflow<WorkflowA>()
+    val workflowB = client.workflow<WorkflowB>()
 
-        val taskA = client.task(TaskA::class.java)
-        val workflowA = client.workflow(WorkflowA::class.java)
+    println(workflowB.concat("rr"))
+    val id = client.async(workflowA) { channel1() }
 
-        val id = client.async(workflowA) { channel1() }
+    val w = client.workflow<WorkflowA>(id)
 
-        val w = client.workflow<WorkflowA>(id)
+    Thread.sleep(3000)
 
-        delay(2000)
+    w.channelB.send("test")
 
-        w.channelB.send("test")
+    Thread.sleep(3000)
 
-        delay(2000)
-
-        w.channelA.send("test")
-    }
+    w.channelA.send("test")
 }

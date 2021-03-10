@@ -37,6 +37,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.inMemory.transport.InMemoryMessageToProcess
 import io.infinitic.inMemory.transport.InMemoryMonitoringPerNameOutput
 import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
 import io.infinitic.inMemory.transport.InMemoryTaskExecutorOutput
@@ -76,12 +77,12 @@ fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     keyValueStorage: KeyValueStorage,
     client: Client,
-    clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
-    workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>
-) = launch(Dispatchers.IO) {
-
+    workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>,
+    logFn: (_: MessageToProcess<*>) -> Unit = { }
+    ) {
     val logChannel = Channel<MessageToProcess<Any>>()
+    val clientResponsesChannel = Channel<ClientResponseMessageToProcess>()
     val workflowEngineEventsChannel = Channel<WorkflowEngineMessageToProcess>()
     val taskEngineEventsChannel = Channel<TaskEngineMessageToProcess>()
     val taskExecutorChannel = Channel<TaskExecutorMessageToProcess>()
@@ -90,21 +91,7 @@ fun CoroutineScope.startInMemory(
 
     launch(CoroutineName("logger")) {
         for (messageToProcess in logChannel) {
-            when (val message = messageToProcess.message) {
-                is MonitoringGlobalMessage ->
-                    println("Monitoring Global  : $message")
-                is MonitoringPerNameEngineMessage ->
-                    println("Monitoring Per Name: $message")
-                is TaskExecutorMessage ->
-                    println("Task Executor      : $message")
-                is TaskEngineMessage ->
-                    println("Task engine        : $message")
-                is WorkflowEngineMessage ->
-                    println("Workflow engine    : $message")
-                is ClientResponseMessage ->
-                    println("Client response    : $message")
-                else -> throw RuntimeException("Unknown messageToProcess type: $messageToProcess")
-            }
+            logFn(messageToProcess)
         }
     }
 
