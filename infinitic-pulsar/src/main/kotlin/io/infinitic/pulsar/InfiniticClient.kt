@@ -26,22 +26,30 @@
 package io.infinitic.pulsar
 
 import io.infinitic.client.transport.ClientOutput
-import io.infinitic.common.clients.messages.ClientResponseEnvelope
+import io.infinitic.inMemory.transport.InMemoryClientOutput
+import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.pulsar.config.ClientConfig
+import io.infinitic.pulsar.config.data.Transport
 import io.infinitic.pulsar.config.loaders.loadConfigFromFile
 import io.infinitic.pulsar.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startClientResponseWorker
+import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
+import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
+import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
+import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 import io.infinitic.client.Client as Client
 
 @Suppress("unused")
 class InfiniticClient private constructor(
-    clientResponseConsumer: Consumer<ClientResponseEnvelope>,
     clientOutput: ClientOutput,
     private val closeFn: () -> Unit
 ) : Client(clientOutput) {
@@ -59,31 +67,70 @@ class InfiniticClient private constructor(
         ): InfiniticClient {
             // checks uniqueness if not null, provides a unique name if null
             val clientName = getPulsarName(pulsarClient, clientName)
-
             val clientOutput = PulsarOutputs.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName).clientOutput
+            val infiniticClient = InfiniticClient(clientOutput) { pulsarClient.close() }
 
-            val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
-                .newClientResponseConsumer(clientName)
+            thread {
+                runBlocking {
+                    val clientResponseConsumer =
+                        PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
+                            .newClientResponseConsumer(clientName)
 
-            return InfiniticClient(clientResponseConsumer, clientOutput) { pulsarClient.close() }
+                    startClientResponseWorker(infiniticClient, clientResponseConsumer)
+                }
+            }
+
+            return infiniticClient
         }
 
         /*
         Create InfiniticClient from a ClientConfig instance
         */
         @JvmStatic
-        fun fromConfig(config: ClientConfig): InfiniticClient {
-            val pulsarClient = PulsarClient
-                .builder()
-                .serviceUrl(config.pulsar.serviceUrl)
-                .build()
+        fun fromConfig(config: ClientConfig): InfiniticClient = when (config.transport) {
+            Transport.pulsar -> {
+                val pulsarClient = PulsarClient
+                    .builder()
+                    .serviceUrl(config.pulsar!!.serviceUrl)
+                    .build()
 
-            return from(
-                pulsarClient,
-                config.pulsar.tenant,
-                config.pulsar.namespace,
-                config.name
-            )
+                from(
+                    pulsarClient,
+                    config.pulsar.tenant,
+                    config.pulsar.namespace,
+                    config.name
+                )
+            }
+
+            Transport.inMemory -> {
+                val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
+                val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
+                val clientOutput = InMemoryClientOutput(taskEngineCommandsChannel, workflowEngineCommandsChannel)
+                val threadPool = Executors.newCachedThreadPool()
+                val infiniticClient = InfiniticClient(clientOutput) { threadPool.shutdown() }
+
+                val taskExecutorRegister = TaskExecutorRegisterImpl()
+                config.tasks.map {
+                    taskExecutorRegister.register(it.name) { it.instance }
+                }
+                config.workflows.map {
+                    taskExecutorRegister.register(it.name) { it.instance }
+                }
+
+                runBlocking {
+                    launch(threadPool.asCoroutineDispatcher()) {
+                        startInMemory(
+                            taskExecutorRegister,
+                            InMemoryStorage(),
+                            infiniticClient,
+                            taskEngineCommandsChannel,
+                            workflowEngineCommandsChannel
+                        )
+                    }
+                }
+
+                infiniticClient
+            }
         }
 
         /*
@@ -99,15 +146,6 @@ class InfiniticClient private constructor(
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
             fromConfig(loadConfigFromFile(files.toList()))
-    }
-
-    init {
-        val client = this
-        thread {
-            runBlocking {
-                startClientResponseWorker(client, clientResponseConsumer)
-            }
-        }
     }
 
     fun close() = closeFn()

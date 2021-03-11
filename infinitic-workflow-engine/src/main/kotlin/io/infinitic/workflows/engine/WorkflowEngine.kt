@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.engine
 
+import io.infinitic.common.clients.messages.SendToChannelFailed
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
@@ -82,6 +83,12 @@ class WorkflowEngine(
                 state = dispatchWorkflow(workflowEngineOutput, message)
                 workflowStateStorage.createState(message.workflowId, state)
                 return
+            }
+            if (message is SendToChannel && message.clientWaiting) {
+                workflowEngineOutput.sendToClientResponse(
+                    null,
+                    SendToChannelFailed(message.clientName, message.channelEventId)
+                )
             }
             // discard all other messages if workflow is already terminated
             return logDiscardingMessage(message, "for having null state")

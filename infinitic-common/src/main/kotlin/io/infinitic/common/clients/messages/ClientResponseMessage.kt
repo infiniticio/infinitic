@@ -58,3 +58,9 @@ data class SendToChannelCompleted(
     override val clientName: ClientName,
     val channelEventId: ChannelEventId
 ) : ClientResponseMessage()
+
+@Serializable
+data class SendToChannelFailed(
+    override val clientName: ClientName,
+    val channelEventId: ChannelEventId
+) : ClientResponseMessage()

@@ -242,6 +242,16 @@ data class UnknownMethodInSendChannel(
     help = "Make sure to use the ${SendChannel<*>::send.name} method"
 )
 
+@Serializable
+data class SendToChannelFailed(
+    val workflowId: String,
+    val klass: String,
+    val channel: String,
+) : UserExceptionInClient(
+    msg = "Failed to send message to channel $channel",
+    help = "Workflow $klass with id $workflowId does not exist or is already terminated"
+)
+
 /***********************
  * Exceptions in task executor
  ***********************/

@@ -36,7 +36,6 @@ import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
-import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
@@ -45,6 +44,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.exceptions.SendToChannelFailed
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -69,6 +69,7 @@ import io.infinitic.workflows.tests.workflows.WorkflowA
 import io.infinitic.workflows.tests.workflows.WorkflowAImpl
 import io.infinitic.workflows.tests.workflows.WorkflowB
 import io.infinitic.workflows.tests.workflows.WorkflowBImpl
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -457,6 +458,17 @@ class WorkflowIntegrationTests : StringSpec({
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
         workflowOutput!!::class.java.name shouldBe Instant::class.java.name
+    }
+
+    "Sending event synchronously to unknown workflow should throw exception" {
+        // run system
+        coroutineScope {
+            init()
+            val id = client.async(workflowA) { channel3() }
+            shouldThrow<SendToChannelFailed> {
+                client.workflow<WorkflowA>("other" + id).channelA.send("test")
+            }
+        }
     }
 })
 

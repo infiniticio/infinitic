@@ -43,6 +43,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.exceptions.SendToChannelFailed
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
@@ -229,6 +231,15 @@ class ClientWorkflowTests : StringSpec({
             channelName = ChannelName("getCh"),
             channelEvent = ChannelEvent.from("a")
         )
+    }
+
+    "Should throw an exception when emit to a channel synchronously to non-existing workflow" {
+        // when
+        coroutineScope {
+            shouldThrow<SendToChannelFailed> {
+                fakeWorkflowId.ch.send("unknown")
+            }
+        }
     }
 
     // TODO: add tests for options
