@@ -33,7 +33,9 @@ import io.infinitic.inMemory.workflows.WorkflowB
 import io.infinitic.inMemory.workflows.WorkflowBImpl
 
 fun main() {
-    val client = InfiniticClient.build()
+    val client = InfiniticClient.build {
+        println(it)
+    }
 
     client.register(TaskA::class.java.name) { TaskAImpl() }
     client.register(WorkflowA::class.java.name) { WorkflowAImpl() }
@@ -43,7 +45,6 @@ fun main() {
     val workflowA = client.workflow<WorkflowA>()
     val workflowB = client.workflow<WorkflowB>()
 
-    println(workflowB.concat("rr"))
     val id = client.async(workflowA) { channel1() }
 
     val w = client.workflow<WorkflowA>(id)

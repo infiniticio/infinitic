@@ -28,7 +28,6 @@ package io.infinitic.inMemory
 import io.infinitic.client.Client
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryClientOutput
-import io.infinitic.inMemory.transport.InMemoryMessageToProcess
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.TaskExecutorRegister

@@ -34,11 +34,9 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -59,7 +57,7 @@ class InMemoryClientOutput(
     }
 
     override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
-        with(CoroutineScope(Dispatchers.IO))  {
+        with(CoroutineScope(Dispatchers.IO)) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             launch {
                 delay(after.long)
