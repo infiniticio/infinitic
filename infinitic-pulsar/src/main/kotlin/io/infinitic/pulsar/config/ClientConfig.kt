@@ -26,6 +26,9 @@
 package io.infinitic.pulsar.config
 
 import io.infinitic.pulsar.config.data.Pulsar
+import io.infinitic.pulsar.config.data.Task
+import io.infinitic.pulsar.config.data.Transport
+import io.infinitic.pulsar.config.data.Workflow
 
 data class ClientConfig(
     /*
@@ -34,7 +37,29 @@ data class ClientConfig(
     @JvmField val name: String? = null,
 
     /*
+    Transport configuration
+     */
+    @JvmField val transport: Transport = Transport.pulsar,
+
+    /*
     Pulsar configuration
      */
-    @JvmField val pulsar: Pulsar
-)
+    @JvmField val pulsar: Pulsar? = null,
+
+    /*
+    Tasks configuration (Used only inMemory)
+     */
+    @JvmField val tasks: List<Task> = listOf(),
+
+    /*
+    Workflows configuration (Used only inMemory)
+     */
+    @JvmField val workflows: List<Workflow> = listOf(),
+
+) {
+    init {
+        if (transport == Transport.pulsar) {
+            require(pulsar != null) { "Missing Pulsar configuration" }
+        }
+    }
+}

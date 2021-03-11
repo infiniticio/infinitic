@@ -45,15 +45,23 @@ interface WorkflowEngineOutput {
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun sendToClientResponse(
-        state: WorkflowState,
+        state: WorkflowState?,
         sendToClientResponse: ClientResponseMessage
     ) {
-        logger.debug(
-            "from messageId {}: workflowId {} - sendToClientResponse {}",
-            state.lastMessageId,
-            state.workflowId,
-            sendToClientResponse
-        )
+        if (state == null) {
+            logger.debug(
+                "from messageId {}: sendToClientResponse {}",
+                sendToClientResponse
+            )
+        } else {
+            logger.debug(
+                "from messageId {}: workflowId {} - sendToClientResponse {}",
+                state.lastMessageId,
+                state.workflowId,
+                sendToClientResponse
+            )
+        }
+
         sendToClientResponseFn(sendToClientResponse)
     }
 

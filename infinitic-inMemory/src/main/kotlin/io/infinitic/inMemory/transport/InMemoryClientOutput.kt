@@ -35,30 +35,34 @@ import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class InMemoryClientOutput(
-    scope: CoroutineScope,
     taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
     workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : ClientOutput {
     override val clientName = ClientName("client: inMemory")
 
     override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: MillisDuration ->
-        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
-        scope.launch {
-            delay(after.long)
-            workflowCommandsChannel.send(InMemoryMessageToProcess(msg))
+        with(CoroutineScope(Dispatchers.IO)) {
+            // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+            launch {
+                delay(after.long)
+                workflowCommandsChannel.send(InMemoryMessageToProcess(msg))
+            }
         }
     }
 
     override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
-        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
-        scope.launch {
-            delay(after.long)
-            taskCommandsChannel.send(InMemoryMessageToProcess(msg))
+        with(CoroutineScope(Dispatchers.IO)) {
+            // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+            launch {
+                delay(after.long)
+                taskCommandsChannel.send(InMemoryMessageToProcess(msg))
+            }
         }
     }
 }

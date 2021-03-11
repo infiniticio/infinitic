@@ -44,6 +44,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.exceptions.SendToChannelFailed
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -68,11 +69,13 @@ import io.infinitic.workflows.tests.workflows.WorkflowA
 import io.infinitic.workflows.tests.workflows.WorkflowAImpl
 import io.infinitic.workflows.tests.workflows.WorkflowB
 import io.infinitic.workflows.tests.workflows.WorkflowBImpl
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -330,17 +333,17 @@ class WorkflowIntegrationTests : StringSpec({
         workflowOutput shouldBe "acbd"
     }
 
-//    "Check prop4" {
-//        // run system
-//        coroutineScope {
-//            init()
-//            workflowId = WorkflowId(infiniticClient.async(workflowA) { prop4() })
-//        }
-//        // check that the w is terminated
-//        workflowStateStorage.getState(workflowId) shouldBe null
-//        // checks number of task processing
-//        workflowOutput shouldBe "acd"
-//    }
+    "Check prop4" {
+        // run system
+        coroutineScope {
+            init()
+            workflowId = WorkflowId(client.async(workflowA) { prop4() })
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(workflowId) shouldBe null
+        // checks number of task processing
+        workflowOutput shouldBe "acd"
+    }
 
     "Check prop5" {
         // run system
@@ -364,6 +367,18 @@ class WorkflowIntegrationTests : StringSpec({
         workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
         workflowOutput shouldBe "abab"
+    }
+
+    "Check prop7" {
+        // run system
+        coroutineScope {
+            init()
+            workflowId = WorkflowId(client.async(workflowA) { prop7() })
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(workflowId) shouldBe null
+        // checks number of task processing
+        workflowOutput shouldBe "acbd"
     }
 
     "Check prop6 sync" {
@@ -443,6 +458,17 @@ class WorkflowIntegrationTests : StringSpec({
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
         workflowOutput!!::class.java.name shouldBe Instant::class.java.name
+    }
+
+    "Sending event synchronously to unknown workflow should throw exception" {
+        // run system
+        coroutineScope {
+            init()
+            val id = client.async(workflowA) { channel3() }
+            shouldThrow<SendToChannelFailed> {
+                client.workflow<WorkflowA>("other" + id).channelA.send("test")
+            }
+        }
     }
 })
 
@@ -534,7 +560,8 @@ fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
 }
 
 fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) {
-    launch {
+    // without Dispatchers.IO we have some obscure race conditions when waiting in tasks
+    launch(Dispatchers.IO) {
         executor.handle(msg)
     }
 }

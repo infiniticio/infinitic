@@ -28,6 +28,7 @@ package io.infinitic.client
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.messages.SendToChannelCompleted
+import io.infinitic.common.clients.messages.SendToChannelFailed
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.MillisDuration
@@ -65,6 +66,7 @@ import kotlinx.coroutines.runBlocking
 import java.lang.reflect.Method
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.kotlinFunction
+import io.infinitic.exceptions.SendToChannelFailed as SendToChannelFailedException
 
 internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispatcher {
     // could be replay = 0
@@ -239,10 +241,19 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         val sendId = ChannelEventId(dispatch(handler))
 
         // wait for response
-        runBlocking {
+        val response: ClientResponseMessage = runBlocking {
             responseFlow.first {
-                it is SendToChannelCompleted && it.channelEventId == sendId
+                (it is SendToChannelCompleted && it.channelEventId == sendId) ||
+                    (it is SendToChannelFailed && it.channelEventId == sendId)
             }
+        }
+        when (response) {
+            is SendToChannelCompleted -> Unit
+            is SendToChannelFailed -> throw SendToChannelFailedException(
+                "${handler.workflowId}",
+                handler.klass.name,
+                "$sendId"
+            )
         }
     }
 

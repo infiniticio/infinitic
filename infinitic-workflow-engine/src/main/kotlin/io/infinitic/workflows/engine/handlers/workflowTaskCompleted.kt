@@ -164,7 +164,7 @@ suspend fun workflowTaskCompleted(
     }
 
     // does previous commands trigger another workflowTask?
-    if (state.bufferedCommands.isNotEmpty()) {
+    while (state.bufferedCommands.isNotEmpty() && state.runningWorkflowTaskId == null) {
         val commandId = state.bufferedCommands.first()
         val pastCommand = getPastCommand(methodRun, commandId)
 
@@ -206,7 +206,7 @@ suspend fun workflowTaskCompleted(
                         methodRun,
                         pastStep.stepPosition
                     )
-                    // state.bufferedWorkflowTasks is untouched as we could have another pastStep solved by this command
+                    // state.bufferedCommands is untouched as we could have another pastStep solved by this command
                 }
             }
             else -> throw RuntimeException("This should not happen: unmanaged ${pastCommand.commandType} type in  state.bufferedCommands")

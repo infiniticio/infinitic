@@ -25,17 +25,15 @@
 
 dependencies {
     api(Libs.Coroutines.core)
-    api(Libs.Coroutines.jdk8)
-    api(Libs.Hoplite.core)
-    api(Libs.Hoplite.yaml)
-    implementation("org.slf4j:slf4j-simple:1.7.+")
 
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))
-    api(project(":infinitic-storage"))
-    api(project(":infinitic-cache"))
-    api(project(":infinitic-task-engine"))
-    api(project(":infinitic-workflow-engine"))
-    api(project(":infinitic-monitoring-engines"))
-    api(project(":infinitic-task-executor"))
+    implementation(project(":infinitic-storage"))
+    implementation(project(":infinitic-cache"))
+    implementation(project(":infinitic-task-engine"))
+    implementation(project(":infinitic-workflow-engine"))
+    implementation(project(":infinitic-monitoring-engines"))
+    implementation(project(":infinitic-task-executor"))
 }
+
+apply("../publish.gradle.kts")

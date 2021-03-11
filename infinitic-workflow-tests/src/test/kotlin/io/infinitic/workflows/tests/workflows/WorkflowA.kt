@@ -60,6 +60,7 @@ interface WorkflowA {
     fun prop4(): String
     fun prop5(): String
     fun prop6(): String
+    fun prop7(): String
     fun channel1(): String
     fun channel2(): Any
     fun channel3(): Any
@@ -240,7 +241,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
             p1 += "b"
         }
         p1 += "c"
-        taskA.await(100)
+        taskA.await(200)
         p1 += "d"
 
         return p1 // should be "acbd"
@@ -271,6 +272,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
             p1 += "c"
         }
         p1 += "d"
+
         taskA.await(100)
 
         return p1 // should be "adbc"
@@ -292,6 +294,19 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         // not sure, how to avoid that
 
         return p1 // should be "abab"
+    }
+
+    override fun prop7(): String {
+        p1 = taskA.reverse("a")
+
+        async {
+            p1 += taskA.reverse("b")
+        }
+        p1 += "c"
+        taskA.await(200)
+        p1 += "d"
+
+        return p1 // should be "acbd"
     }
 
     override fun channel1(): String {

@@ -23,29 +23,10 @@
  * Licensor: infinitic.io
  */
 
-plugins {
-    `java-library`
+package io.infinitic.pulsar.config.data
+
+@Suppress("EnumEntryName")
+enum class Transport {
+    pulsar,
+    inMemory
 }
-
-dependencies {
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
-    implementation(Libs.Pulsar.functions)
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    api(Libs.Pulsar.client)
-    api(Libs.Pulsar.clientAdmin)
-    api(project(":infinitic-storage"))
-    api(project(":infinitic-cache"))
-    api(project(":infinitic-client"))
-
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-inMemory"))
-}
-
-apply("../publish.gradle.kts")
