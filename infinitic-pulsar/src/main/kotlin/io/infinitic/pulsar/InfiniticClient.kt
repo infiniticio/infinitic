@@ -117,15 +117,17 @@ class InfiniticClient private constructor(
                     taskExecutorRegister.register(it.name) { it.instance }
                 }
 
-                runBlocking {
-                    launch(threadPool.asCoroutineDispatcher()) {
-                        startInMemory(
-                            taskExecutorRegister,
-                            InMemoryStorage(),
-                            infiniticClient,
-                            taskEngineCommandsChannel,
-                            workflowEngineCommandsChannel
-                        )
+                thread {
+                    runBlocking {
+                        launch(threadPool.asCoroutineDispatcher()) {
+                            startInMemory(
+                                taskExecutorRegister,
+                                InMemoryStorage(),
+                                infiniticClient,
+                                taskEngineCommandsChannel,
+                                workflowEngineCommandsChannel
+                            )
+                        }
                     }
                 }
 
