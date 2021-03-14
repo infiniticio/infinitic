@@ -240,7 +240,7 @@ private suspend fun endAsync(
         state,
         methodRun.methodRunId,
         pastStartAsync.commandId,
-        command.asyncOutput
+        command.asyncReturnValue
     )
 }
 
@@ -255,8 +255,8 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_INLINE_TASK
     }
     // past command completed
-    pastStartInlineTask.commandStatus = CommandStatusCompleted(
-        command.inlineTaskOutput,
+    pastStartInlineTask.commandStatus = CommandStatusCompleted.from(
+        command.inlineTaskReturnValue,
         state.workflowTaskIndex
     )
 }

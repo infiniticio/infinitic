@@ -27,7 +27,7 @@ package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.data.plus
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -39,7 +39,7 @@ suspend fun commandCompleted(
     state: WorkflowState,
     methodRunId: MethodRunId,
     commandId: CommandId,
-    commandOutput: CommandOutput
+    commandReturnValue: CommandReturnValue
 ) {
     val methodRun = getMethodRun(state, methodRunId)
     val pastCommand = getPastCommand(methodRun, commandId)
@@ -48,7 +48,7 @@ suspend fun commandCompleted(
     if (pastCommand.commandStatus !is CommandStatusOngoing) return
 
     // update command status
-    pastCommand.commandStatus = CommandStatusCompleted(commandOutput, state.workflowTaskIndex)
+    pastCommand.commandStatus = CommandStatusCompleted.from(commandReturnValue, state.workflowTaskIndex)
 
     // trigger a new workflow task for the first step solved by this command
     // note: pastSteps is naturally ordered by time (workflowTaskIndex) => the first branch completed is the earliest step
@@ -58,6 +58,7 @@ suspend fun commandCompleted(
             // update pastStep with a copy (!) of current properties and anticipated workflowTaskIndex
             it.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
             it.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
+
             // dispatch a new workflowTask
             dispatchWorkflowTask(
                 workflowEngineOutput,

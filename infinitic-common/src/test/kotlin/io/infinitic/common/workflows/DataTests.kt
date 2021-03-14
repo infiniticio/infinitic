@@ -32,7 +32,7 @@ import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
@@ -79,12 +79,12 @@ class DataTests : StringSpec({
     }
 
     "CommandOutput should be serialized as SerializedData" {
-        val m = CommandOutput.from("qwerty")
+        val m = CommandReturnValue.from("qwerty")
 
         val json = Json.encodeToString(m)
         json shouldBe Json.encodeToString(SerializedData.from(m.get()))
 
-        val m2 = Json.decodeFromString<CommandOutput>(json)
+        val m2 = Json.decodeFromString<CommandReturnValue>(json)
         m2 shouldBe m
     }
 

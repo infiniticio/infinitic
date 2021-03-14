@@ -113,7 +113,7 @@ object StartAsync : Command() {
 @Serializable
 data class EndAsync(
     @JsonProperty("output")
-    val asyncOutput: CommandOutput
+    val asyncReturnValue: CommandReturnValue
 ) : Command()
 
 @Serializable
@@ -125,7 +125,7 @@ object StartInlineTask : Command() {
 @Serializable
 data class EndInlineTask(
     @JsonProperty("output")
-    val inlineTaskOutput: CommandOutput
+    val inlineTaskReturnValue: CommandReturnValue
 ) : Command()
 
 @Serializable

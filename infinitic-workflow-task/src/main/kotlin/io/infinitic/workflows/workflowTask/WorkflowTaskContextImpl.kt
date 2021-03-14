@@ -35,7 +35,7 @@ import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
-import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandStatusCanceled
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
@@ -71,6 +71,7 @@ import io.infinitic.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowTaskContext
+import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 import kotlin.reflect.jvm.kotlinFunction
 import java.time.Duration as JavaDuration
@@ -80,6 +81,8 @@ internal class WorkflowTaskContextImpl(
     private val workflowTaskParameters: WorkflowTaskParameters,
     private val setProperties: (Map<PropertyHash, PropertyValue>, Map<PropertyName, PropertyHash>) -> Unit
 ) : WorkflowTaskContext {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     // position in the current method processing
     private var methodRunIndex = MethodRunIndex()
 
@@ -126,7 +129,7 @@ internal class WorkflowTaskContextImpl(
             commandPosition = methodRunIndex.methodPosition
         )
 
-        val pastCommand = findPastCommandSimilarTo(newCommand)
+        val pastCommand = getSimilarPastCommand(newCommand)
 
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
@@ -151,7 +154,7 @@ internal class WorkflowTaskContextImpl(
             positionDown()
 
             // exceptions caught by runMethod
-            val commandOutput = CommandOutput.from(branch())
+            val commandOutput = CommandReturnValue.from(branch())
 
             // go up
             positionUp()
@@ -186,7 +189,7 @@ internal class WorkflowTaskContextImpl(
             commandPosition = methodRunIndex.methodPosition
         )
 
-        val pastCommand = findPastCommandSimilarTo(startCommand)
+        val pastCommand = getSimilarPastCommand(startCommand)
 
         if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
@@ -194,7 +197,7 @@ internal class WorkflowTaskContextImpl(
             // go down (in case this inline task asynchronously dispatches some tasks)
             positionDown()
             // run inline task
-            val commandOutput = try { CommandOutput.from(task()) } catch (e: Exception) {
+            val commandOutput = try { CommandReturnValue.from(task()) } catch (e: Exception) {
                 when (e) {
                     is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskParameters.getFullMethodName())
                     is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskParameters.getFullMethodName())
@@ -218,7 +221,7 @@ internal class WorkflowTaskContextImpl(
             return when (val status = pastCommand.commandStatus) {
                 is CommandStatusOngoing -> throw RuntimeException("This should not happen: uncompleted inline task")
                 is CommandStatusCanceled -> throw RuntimeException("This should not happen: canceled inline task")
-                is CommandStatusCompleted -> status.completionResult.get() as S
+                is CommandStatusCompleted -> status.returnValue.get() as S
             }
         }
     }
@@ -235,11 +238,11 @@ internal class WorkflowTaskContextImpl(
             step = deferred.step,
             stepPosition = methodRunIndex.methodPosition
         )
-        val pastStep = getPastStepSimilarTo(newStep)
+        val pastStep = getSimilarPastStep(newStep)
 
         // if this is really a new step, we check its status based on current workflow message index
         if (pastStep == null) {
-            deferred.stepStatus = newStep.step.stepStatusAtMessageIndex(workflowTaskIndex)
+            deferred.stepStatus = newStep.step.stepStatusAtWorkflowTaskIndex(workflowTaskIndex)
             // if this deferred is still ongoing,
             if (deferred.stepStatus is StepStatusOngoing) {
                 // we add a new step
@@ -274,7 +277,7 @@ internal class WorkflowTaskContextImpl(
     /*
      * Deferred status()
      */
-    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtMessageIndex(workflowTaskIndex)) {
+    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtWorkflowTaskIndex(workflowTaskIndex)) {
         is StepStatusOngoing -> DeferredStatus.ONGOING
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
@@ -409,7 +412,7 @@ internal class WorkflowTaskContextImpl(
             commandPosition = methodRunIndex.methodPosition
         )
 
-        val pastCommand = findPastCommandSimilarTo(newCommand)
+        val pastCommand = getSimilarPastCommand(newCommand)
 
         return if (pastCommand == null) {
             // if this is a new command, we add it to the newCommands list
@@ -417,18 +420,21 @@ internal class WorkflowTaskContextImpl(
             // and returns a Deferred with an ongoing step
             Deferred(Step.Id.from(newCommand), this)
         } else {
-            // else ew return a Deferred linked to pastCommand
+            // else returns a Deferred linked to pastCommand
             Deferred(Step.Id.from(pastCommand), this)
         }
     }
 
-    private fun findPastCommandSimilarTo(newCommand: NewCommand): PastCommand? {
+    private fun getSimilarPastCommand(newCommand: NewCommand): PastCommand? {
         // find pastCommand in current position
         val pastCommand = workflowTaskParameters.methodRun.pastCommands
             .find { it.commandPosition == methodRunIndex.methodPosition }
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskParameters.workflowOptions.workflowChangeCheckMode)) {
+            logger.error("pastCommand =  {}", pastCommand)
+            logger.error("newCommand =  {}", newCommand)
+            logger.error("workflowChangeCheckMode =  {}", workflowTaskParameters.workflowOptions.workflowChangeCheckMode)
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskParameters.workflowName.name,
                 "${workflowTaskParameters.methodRun.methodName}",
@@ -439,13 +445,15 @@ internal class WorkflowTaskContextImpl(
         return pastCommand
     }
 
-    private fun getPastStepSimilarTo(newStep: NewStep): PastStep? {
+    private fun getSimilarPastStep(newStep: NewStep): PastStep? {
         // find pastCommand in current position
         val pastStep = workflowTaskParameters.methodRun.pastSteps
             .find { it.stepPosition == methodRunIndex.methodPosition }
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
+            logger.error("pastStep =  {}", pastStep)
+            logger.error("newStep =  {}", newStep)
             throw WorkflowUpdatedWhileRunning(
                 workflowTaskParameters.workflowName.name,
                 "${workflowTaskParameters.methodRun.methodName}",

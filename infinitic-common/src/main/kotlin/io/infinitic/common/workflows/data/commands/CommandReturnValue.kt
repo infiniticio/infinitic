@@ -34,17 +34,17 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = CommandOutputSerializer::class)
-data class CommandOutput(override val serializedData: SerializedData) : Data(serializedData) {
+data class CommandReturnValue(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
-        fun from(data: Any?) = CommandOutput(SerializedData.from(data))
+        fun from(data: Any?) = CommandReturnValue(SerializedData.from(data))
     }
 }
 
-object CommandOutputSerializer : KSerializer<CommandOutput> {
+object CommandOutputSerializer : KSerializer<CommandReturnValue> {
     override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
-    override fun serialize(encoder: Encoder, value: CommandOutput) {
+    override fun serialize(encoder: Encoder, value: CommandReturnValue) {
         SerializedData.serializer().serialize(encoder, value.serializedData)
     }
     override fun deserialize(decoder: Decoder) =
-        CommandOutput(SerializedData.serializer().deserialize(decoder))
+        CommandReturnValue(SerializedData.serializer().deserialize(decoder))
 }

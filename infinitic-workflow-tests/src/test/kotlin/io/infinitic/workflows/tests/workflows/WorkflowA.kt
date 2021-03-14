@@ -148,9 +148,10 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun or4(): String {
-        var s3 = ""
+        var s3 = taskA.concat("1", "2")
+
         val d1 = async(taskA) { reverse("ab") }
-        val d2 = async(taskA) { await(50) }
+        val d2 = timer(Duration.ofMillis(50))
         val d = (d1 or d2)
         if ((d1 or d2).status() != DeferredStatus.COMPLETED) {
             s3 = taskA.reverse("ab")

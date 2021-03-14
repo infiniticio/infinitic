@@ -26,7 +26,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.SendToChannelCompleted
-import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandCompleted
@@ -47,7 +47,7 @@ suspend fun sendToChannel(
             state,
             it.methodRunId,
             it.commandId,
-            CommandOutput(msg.channelEvent.serializedData)
+            CommandReturnValue(msg.channelEvent.serializedData)
         )
     }
 
