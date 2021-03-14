@@ -38,12 +38,12 @@ object CommandStatusOngoing : CommandStatus() {
 
 @Serializable
 data class CommandStatusCompleted(
-    val completionResult: CommandOutput,
+    val returnValue: CommandReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()
 
 @Serializable
 data class CommandStatusCanceled(
-    val cancellationResult: CommandOutput,
+    val returnValue: CommandReturnValue,
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()

@@ -26,7 +26,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandOutput
+import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandCompleted
@@ -42,6 +42,6 @@ suspend fun childWorkflowCompleted(
         state,
         msg.methodRunId,
         CommandId(msg.childWorkflowId),
-        CommandOutput(msg.childWorkflowReturnValue.serializedData)
+        CommandReturnValue(msg.childWorkflowReturnValue.serializedData)
     )
 }

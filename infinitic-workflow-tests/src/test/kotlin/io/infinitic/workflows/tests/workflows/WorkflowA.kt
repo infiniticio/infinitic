@@ -26,6 +26,7 @@
 package io.infinitic.workflows.tests.workflows
 
 import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
@@ -43,9 +44,11 @@ interface WorkflowA {
     fun seq2(): String
     fun seq3(): String
     fun seq4(): String
+    fun deferred1(): String
     fun or1(): String
     fun or2(): Any
     fun or3(): String
+    fun or4(): String
     fun and1(): List<String>
     fun and2(): List<String>
     fun and3(): List<String>
@@ -120,6 +123,41 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         return str + d.await() // should be "23bac"
     }
 
+    override fun deferred1(): String {
+        var str = ""
+
+        val d = async {
+            taskA.reverse("X")
+        }
+        str += d.isOngoing().toString()
+        str += d.isCompleted().toString()
+        str += d.isTerminated().toString()
+        d.await()
+        str += d.isOngoing().toString()
+        str += d.isCompleted().toString()
+        str += d.isTerminated().toString()
+
+        return str // should be "truefalsefalsefalsetruetrue"
+    }
+
+//    override fun deferred1(): String {
+//        var str = ""
+//
+//        val d = async {
+//            println("str = $str")
+//            str += taskA.reverse("X")
+//        }
+//        str += d.isOngoing().toString()
+//        str += d.isCompleted().toString()
+//        str += d.isTerminated().toString()
+//        d.await()
+//        str += d.isOngoing().toString()
+//        str += d.isCompleted().toString()
+//        str += d.isTerminated().toString()
+//
+//        return str  // should be "truefalsefalseXfalsetruetrue"
+//    }
+
     override fun or1(): String {
         val d1 = async(taskA) { reverse("ab") }
         val d2 = async(taskA) { reverse("cd") }
@@ -143,6 +181,20 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         list.add(async(taskA) { reverse("ef") })
 
         return list.or().await() // should be "ba" or "dc" or "fe"
+    }
+
+    override fun or4(): String {
+        var s3 = taskA.concat("1", "2")
+
+        val d1 = async(taskA) { reverse("ab") }
+        val d2 = timer(Duration.ofMillis(50))
+        val d = (d1 or d2)
+        if ((d1 or d2).status() != DeferredStatus.COMPLETED) {
+            s3 = taskA.reverse("ab")
+        }
+        d.await()
+
+        return d1.await() + s3 // should be "baba"
     }
 
     override fun and1(): List<String> {

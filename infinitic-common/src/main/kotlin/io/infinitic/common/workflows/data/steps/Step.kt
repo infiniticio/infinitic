@@ -40,11 +40,11 @@ import kotlin.Int.Companion.MIN_VALUE
 
 @Serializable
 sealed class Step {
-    fun isTerminated() = isTerminatedAtMessageIndex(WorkflowTaskIndex(MAX_VALUE))
-    fun stepStatus() = stepStatusAtMessageIndex(WorkflowTaskIndex(MAX_VALUE))
+    fun isTerminated() = isTerminatedAtWorkflowTaskIndex(WorkflowTaskIndex(MAX_VALUE))
+    fun stepStatus() = stepStatusAtWorkflowTaskIndex(WorkflowTaskIndex(MAX_VALUE))
 
-    abstract fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex): Boolean
-    abstract fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus
+    abstract fun isTerminatedAtWorkflowTaskIndex(index: WorkflowTaskIndex): Boolean
+    abstract fun stepStatusAtWorkflowTaskIndex(index: WorkflowTaskIndex): StepStatus
 
     /*
      * hash function is defined to exclude commandStatus and provide a hopefully unique hash linked to the structure of the step
@@ -59,23 +59,23 @@ sealed class Step {
 
         override fun hash() = StepHash(SerializedData.from(commandId).hash())
 
-        override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = when (stepStatusAtMessageIndex(index)) {
+        override fun isTerminatedAtWorkflowTaskIndex(index: WorkflowTaskIndex) = when (stepStatusAtWorkflowTaskIndex(index)) {
             is StepStatusCanceled -> true
             is StepStatusCompleted -> true
             is StepStatusOngoing -> false
         }
 
-        override fun stepStatusAtMessageIndex(index: WorkflowTaskIndex) = when (commandStatus) {
+        override fun stepStatusAtWorkflowTaskIndex(index: WorkflowTaskIndex) = when (commandStatus) {
             is CommandStatusOngoing -> StepStatusOngoing
             is CommandStatusCompleted -> with(commandStatus as CommandStatusCompleted) {
                 when (index >= this.completionWorkflowTaskIndex) {
-                    true -> StepStatusCompleted(StepOutput.from(this.completionResult.get()), this.completionWorkflowTaskIndex)
+                    true -> StepStatusCompleted(StepOutput.from(this.returnValue.get()), this.completionWorkflowTaskIndex)
                     false -> StepStatusOngoing
                 }
             }
             is CommandStatusCanceled -> with(commandStatus as CommandStatusCanceled) {
                 when (index >= this.cancellationWorkflowTaskIndex) {
-                    true -> StepStatusCanceled(StepOutput.from(this.cancellationResult.get()), this.cancellationWorkflowTaskIndex)
+                    true -> StepStatusCanceled(StepOutput.from(this.returnValue.get()), this.cancellationWorkflowTaskIndex)
                     false -> StepStatusOngoing
                 }
             }
@@ -92,10 +92,10 @@ sealed class Step {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = this.steps.all { s -> s.isTerminatedAtMessageIndex(index) }
+        override fun isTerminatedAtWorkflowTaskIndex(index: WorkflowTaskIndex) = this.steps.all { s -> s.isTerminatedAtWorkflowTaskIndex(index) }
 
-        override fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus {
-            val statuses = steps.map { it.stepStatusAtMessageIndex(index) }
+        override fun stepStatusAtWorkflowTaskIndex(index: WorkflowTaskIndex): StepStatus {
+            val statuses = steps.map { it.stepStatusAtWorkflowTaskIndex(index) }
             if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing
 
             val results = statuses.map {
@@ -124,10 +124,10 @@ sealed class Step {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        override fun isTerminatedAtMessageIndex(index: WorkflowTaskIndex) = this.steps.any { s -> s.isTerminatedAtMessageIndex(index) }
+        override fun isTerminatedAtWorkflowTaskIndex(index: WorkflowTaskIndex) = this.steps.any { s -> s.isTerminatedAtWorkflowTaskIndex(index) }
 
-        override fun stepStatusAtMessageIndex(index: WorkflowTaskIndex): StepStatus {
-            val statuses = steps.map { it.stepStatusAtMessageIndex(index) }
+        override fun stepStatusAtWorkflowTaskIndex(index: WorkflowTaskIndex): StepStatus {
+            val statuses = steps.map { it.stepStatusAtWorkflowTaskIndex(index) }
             // if all steps are ongoing then returns StepStatusOngoing
             if (statuses.all { it is StepStatusOngoing }) return StepStatusOngoing
             // find first step not ongoing

@@ -323,7 +323,7 @@ data class WorkflowUpdatedWhileRunning(
     val method: String,
     val position: String
 ) : UserExceptionInWorkflowTask(
-    msg = "Definition of workflow \"$workflow\" has been updated since its launch (detected at position $position in $method)",
+    msg = "Workflow \"$workflow\" has been updated since its launch (detected at position $position in $method)",
     help = "You can either kill this instance or revert its previous definition to be able to resume it"
 )
 

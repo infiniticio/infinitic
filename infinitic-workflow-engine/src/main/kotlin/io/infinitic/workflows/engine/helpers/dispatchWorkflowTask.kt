@@ -28,7 +28,6 @@ package io.infinitic.workflows.engine.helpers
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.inc
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -42,6 +41,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
@@ -52,7 +52,7 @@ suspend fun dispatchWorkflowTask(
     methodRun: MethodRun,
     branchPosition: MethodRunPosition = MethodRunPosition("")
 ) {
-    state.workflowTaskIndex++
+    state.workflowTaskIndex = state.workflowTaskIndex + 1
 
     // defines workflow task input
     val workflowTaskInput = WorkflowTaskParameters(

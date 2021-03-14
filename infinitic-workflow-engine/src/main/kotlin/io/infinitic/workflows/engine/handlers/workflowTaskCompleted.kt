@@ -51,6 +51,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.timers.TimerId
+import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
@@ -240,7 +241,7 @@ private suspend fun endAsync(
         state,
         methodRun.methodRunId,
         pastStartAsync.commandId,
-        command.asyncOutput
+        command.asyncReturnValue
     )
 }
 
@@ -256,8 +257,8 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
     }
     // past command completed
     pastStartInlineTask.commandStatus = CommandStatusCompleted(
-        command.inlineTaskOutput,
-        state.workflowTaskIndex
+        returnValue = command.inlineTaskReturnValue,
+        completionWorkflowTaskIndex = state.workflowTaskIndex
     )
 }
 

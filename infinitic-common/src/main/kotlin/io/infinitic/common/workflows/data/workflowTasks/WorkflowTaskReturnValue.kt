@@ -23,20 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.data
+package io.infinitic.common.workflows.data.workflowTasks
 
-import kotlin.reflect.full.createInstance
+import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.workflows.data.commands.NewCommand
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.data.steps.NewStep
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import kotlinx.serialization.Serializable
 
-interface MillisDurationInterface : LongInterface
-
-operator fun <T : MillisDurationInterface> T.plus(other: MillisDurationInterface): T {
-    val o = this::class.createInstance()
-    o.long = this.long + other.long
-    return o
-}
-
-operator fun <T : MillisDurationInterface> T.minus(other: MillisDurationInterface): T {
-    val o = this::class.createInstance()
-    o.long = this.long - other.long
-    return o
-}
+@Serializable
+data class WorkflowTaskReturnValue(
+    val workflowId: WorkflowId,
+    val methodRunId: MethodRunId,
+    val newCommands: List<NewCommand>,
+    val newSteps: List<NewStep>,
+    val properties: Map<PropertyName, PropertyValue>,
+    val methodReturnValue: MethodReturnValue?
+)

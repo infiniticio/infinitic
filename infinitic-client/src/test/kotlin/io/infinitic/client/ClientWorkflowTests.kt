@@ -173,7 +173,7 @@ class ClientWorkflowTests : StringSpec({
     }
 
     "Should be able to dispatch a workflow synchronously" {
-        var result = ""
+        var result: String
         // when
         coroutineScope {
             result = fakeWorkflow.m1(0, "a")

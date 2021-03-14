@@ -25,7 +25,6 @@
 
 package io.infinitic.common.tasks.data
 
-import io.infinitic.common.data.IntInterface
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -35,7 +34,13 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = TaskAttemptRetrySerializer::class)
-data class TaskAttemptRetry(override var int: kotlin.Int = 0) : IntInterface
+data class TaskAttemptRetry(val int: Int = 0) : Comparable<TaskAttemptRetry> {
+    override fun toString() = "$int"
+
+    override operator fun compareTo(other: TaskAttemptRetry): Int = this.int.compareTo(other.int)
+}
+
+operator fun TaskAttemptRetry.plus(increment: Int) = TaskAttemptRetry(this.int + increment)
 
 object TaskAttemptRetrySerializer : KSerializer<TaskAttemptRetry> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskAttemptRetry", PrimitiveKind.INT)

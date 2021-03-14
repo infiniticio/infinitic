@@ -33,6 +33,7 @@ import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
