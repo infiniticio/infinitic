@@ -37,23 +37,13 @@ object CommandStatusOngoing : CommandStatus() {
 }
 
 @Serializable
-data class CommandStatusCompleted private constructor(
+data class CommandStatusCompleted(
     val returnValue: CommandReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus() {
-    companion object {
-        fun from(returnValue: CommandReturnValue, workflowTaskIndex: WorkflowTaskIndex) =
-            CommandStatusCompleted(returnValue, workflowTaskIndex.copy())
-    }
-}
+) : CommandStatus()
 
 @Serializable
-data class CommandStatusCanceled private constructor(
+data class CommandStatusCanceled(
     val returnValue: CommandReturnValue,
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus() {
-    companion object {
-        fun from(returnValue: CommandReturnValue, workflowTaskIndex: WorkflowTaskIndex) =
-            CommandStatusCanceled(returnValue, workflowTaskIndex.copy())
-    }
-}
+) : CommandStatus()

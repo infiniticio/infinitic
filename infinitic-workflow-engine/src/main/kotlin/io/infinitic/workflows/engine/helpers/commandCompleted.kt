@@ -31,6 +31,7 @@ import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 
@@ -48,7 +49,7 @@ suspend fun commandCompleted(
     if (pastCommand.commandStatus !is CommandStatusOngoing) return
 
     // update command status
-    pastCommand.commandStatus = CommandStatusCompleted.from(commandReturnValue, state.workflowTaskIndex)
+    pastCommand.commandStatus = CommandStatusCompleted(commandReturnValue, state.workflowTaskIndex)
 
     // trigger a new workflow task for the first step solved by this command
     // note: pastSteps is naturally ordered by time (workflowTaskIndex) => the first branch completed is the earliest step

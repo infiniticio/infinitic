@@ -25,7 +25,6 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
-import io.infinitic.common.data.IntInterface
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -35,9 +34,13 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = WorkflowTaskIndexSerializer::class)
-data class WorkflowTaskIndex(override var int: Int = 0) : IntInterface {
+data class WorkflowTaskIndex(val int: Int = 0) : Comparable<WorkflowTaskIndex> {
     override fun toString() = "$int"
+
+    override operator fun compareTo(other: WorkflowTaskIndex): Int = this.int.compareTo(other.int)
 }
+
+operator fun WorkflowTaskIndex.plus(increment: Int) = WorkflowTaskIndex(this.int + increment)
 
 object WorkflowTaskIndexSerializer : KSerializer<WorkflowTaskIndex> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("WorkflowTaskIndex", PrimitiveKind.INT)

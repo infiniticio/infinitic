@@ -35,14 +35,24 @@ import kotlinx.serialization.encoding.Encoder
 import java.time.Instant as JavaInstant
 
 @Serializable(with = InstantSerializer::class)
-data class MillisInstant(override var long: Long = 0) : MillisInstantInterface {
+data class MillisInstant(val long: Long = 0) : Comparable<Long> {
     companion object {
         fun now() = MillisInstant(JavaInstant.now().toEpochMilli())
     }
+
+    override fun toString() = "$long"
+
+    override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
 }
 
+operator fun MillisInstant.plus(other: MillisDuration) = MillisInstant(this.long + other.long)
+
+operator fun MillisInstant.minus(other: MillisDuration) = MillisInstant(this.long - other.long)
+
+operator fun MillisInstant.minus(other: MillisInstant) = MillisDuration(this.long - other.long)
+
 object InstantSerializer : KSerializer<MillisInstant> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.LONG)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MillisInstant", PrimitiveKind.LONG)
     override fun serialize(encoder: Encoder, value: MillisInstant) { encoder.encodeLong(value.long) }
     override fun deserialize(decoder: Decoder) = MillisInstant(decoder.decodeLong())
 }

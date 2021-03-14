@@ -37,9 +37,9 @@ import io.kotest.matchers.shouldBe
 
 fun getStepId() = Step.Id(CommandId(), CommandStatusOngoing)
 
-fun getCompletedStatus(output: Any? = null, index: Int = 0) = CommandStatusCompleted.from(
+fun getCompletedStatus(output: Any? = null, index: Int = 0) = CommandStatusCompleted(
     returnValue = CommandReturnValue.from(output),
-    workflowTaskIndex = WorkflowTaskIndex(index)
+    completionWorkflowTaskIndex = WorkflowTaskIndex(index)
 )
 
 class StepTests : StringSpec({
