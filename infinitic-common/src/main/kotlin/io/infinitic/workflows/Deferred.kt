@@ -23,6 +23,8 @@
  * Licensor: infinitic.io
  */
 
+
+
 package io.infinitic.workflows
 
 import io.infinitic.common.workflows.data.steps.Step
@@ -30,6 +32,7 @@ import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.data.steps.and as stepAnd
 import io.infinitic.common.workflows.data.steps.or as stepOr
 
+@Suppress("unused", "MemberVisibilityCanBePrivate")
 data class Deferred<T> (
     val step: Step,
     internal val workflowTaskContext: WorkflowTaskContext
@@ -51,6 +54,14 @@ data class Deferred<T> (
      * Use this method to get the status of a deferred
      */
     fun status(): DeferredStatus = workflowTaskContext.status(this)
+
+    fun isCompleted() = status() == DeferredStatus.COMPLETED
+
+    fun isCanceled() = status() == DeferredStatus.CANCELED
+
+    fun isOngoing() = status() == DeferredStatus.ONGOING
+
+    fun isTerminated() = ! isOngoing()
 }
 
 fun or(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc or deferred }
