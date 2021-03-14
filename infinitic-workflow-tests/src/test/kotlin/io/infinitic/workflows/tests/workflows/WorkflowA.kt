@@ -44,6 +44,7 @@ interface WorkflowA {
     fun seq2(): String
     fun seq3(): String
     fun seq4(): String
+    fun deferred1(): String
     fun or1(): String
     fun or2(): Any
     fun or3(): String
@@ -121,6 +122,41 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
         return str + d.await() // should be "23bac"
     }
+
+    override fun deferred1(): String {
+        var str = ""
+
+        val d = async {
+            taskA.reverse("X")
+        }
+        str += d.isOngoing().toString()
+        str += d.isCompleted().toString()
+        str += d.isTerminated().toString()
+        d.await()
+        str += d.isOngoing().toString()
+        str += d.isCompleted().toString()
+        str += d.isTerminated().toString()
+
+        return str // should be "truefalsefalsefalsetruetrue"
+    }
+
+//    override fun deferred1(): String {
+//        var str = ""
+//
+//        val d = async {
+//            println("str = $str")
+//            str += taskA.reverse("X")
+//        }
+//        str += d.isOngoing().toString()
+//        str += d.isCompleted().toString()
+//        str += d.isTerminated().toString()
+//        d.await()
+//        str += d.isOngoing().toString()
+//        str += d.isCompleted().toString()
+//        str += d.isTerminated().toString()
+//
+//        return str  // should be "truefalsefalseXfalsetruetrue"
+//    }
 
     override fun or1(): String {
         val d1 = async(taskA) { reverse("ab") }

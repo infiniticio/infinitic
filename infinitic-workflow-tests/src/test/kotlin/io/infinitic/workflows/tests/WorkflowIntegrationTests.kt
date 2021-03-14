@@ -159,6 +159,18 @@ class WorkflowIntegrationTests : StringSpec({
         workflowOutput shouldBe "23bac"
     }
 
+    "Test Deferred methods" {
+        // run system
+        coroutineScope {
+            init()
+            workflowId = WorkflowId(client.async(workflowA) { deferred1() })
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(workflowId) shouldBe null
+        // checks number of task processing
+        workflowOutput shouldBe "truefalsefalsefalsetruetrue"
+    }
+
     "Or step with 3 async tasks" {
         // run system
         coroutineScope {
