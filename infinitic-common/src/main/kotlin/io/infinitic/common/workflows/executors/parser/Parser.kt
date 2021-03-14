@@ -27,7 +27,6 @@ package io.infinitic.common.workflows.executors.parser
 
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
-import jdk.nashorn.internal.objects.NativeArray.map
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
@@ -52,8 +51,7 @@ private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>) = kPr
     ?.let {
         val errorMsg = "Property ${obj::class.java.name}:${it.name} is not readable"
 
-        val accessible = it.isAccessible
-        if (!accessible) try {
+        try {
             it.isAccessible = true
         } catch (e: SecurityException) {
             throw RuntimeException("$errorMsg (can not set accessible)")
@@ -63,7 +61,6 @@ private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>) = kPr
         } catch (e: Exception) {
             throw RuntimeException("$errorMsg ($e)")
         }
-        // do NOT set `it.isAccessible = accessible`, being a static property, it triggers errors by race conditions
 
         value
     }
@@ -72,8 +69,7 @@ private fun <T : Any> setProperty(obj: T, kProperty: KProperty1<out T, *>, value
     kProperty.javaField?.apply {
         val errorMsg = "Property ${obj::class.java.name}:$name can not be set"
 
-        val accessible = isAccessible
-        if (!accessible) try {
+        try {
             isAccessible = true
         } catch (e: SecurityException) {
             throw RuntimeException("$errorMsg (can not set it as accessible)")
@@ -87,6 +83,5 @@ private fun <T : Any> setProperty(obj: T, kProperty: KProperty1<out T, *>, value
         } catch (e: Exception) {
             throw RuntimeException("$errorMsg ($e)")
         }
-        // do NOT set `it.isAccessible = accessible`, being a static property, it triggers errors by race conditions
     }
 }
