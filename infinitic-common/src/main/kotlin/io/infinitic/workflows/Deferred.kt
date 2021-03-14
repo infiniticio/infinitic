@@ -23,8 +23,6 @@
  * Licensor: infinitic.io
  */
 
-
-
 package io.infinitic.workflows
 
 import io.infinitic.common.workflows.data.steps.Step
