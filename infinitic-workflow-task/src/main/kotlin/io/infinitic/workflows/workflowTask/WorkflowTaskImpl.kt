@@ -34,8 +34,8 @@ import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.exceptions.MultipleNamesForChannel
 import io.infinitic.exceptions.NonUniqueChannelFromChannelMethod
 import io.infinitic.exceptions.ParametersInChannelMethod
@@ -47,7 +47,7 @@ import java.lang.reflect.InvocationTargetException
 class WorkflowTaskImpl : WorkflowTask {
     private lateinit var taskAttemptContext: TaskAttemptContext
 
-    override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskOutput {
+    override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name
         val workflow = taskAttemptContext.register.getWorkflowInstance("${workflowTaskParameters.workflowName}")
 
@@ -88,7 +88,7 @@ class WorkflowTaskImpl : WorkflowTask {
 
         val properties = getWorkflowProperties(workflow)
 
-        return WorkflowTaskOutput(
+        return WorkflowTaskReturnValue(
             workflowTaskParameters.workflowId,
             workflowTaskParameters.methodRun.methodRunId,
             (workflow.context as WorkflowTaskContextImpl).newCommands,

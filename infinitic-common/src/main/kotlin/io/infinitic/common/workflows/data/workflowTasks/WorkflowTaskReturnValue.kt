@@ -35,7 +35,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class WorkflowTaskOutput(
+data class WorkflowTaskReturnValue(
     val workflowId: WorkflowId,
     val methodRunId: MethodRunId,
     val newCommands: List<NewCommand>,

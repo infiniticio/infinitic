@@ -38,8 +38,8 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -104,7 +104,7 @@ data class ChildWorkflowCompleted(
 data class WorkflowTaskCompleted(
     override val workflowId: WorkflowId,
     val workflowTaskId: WorkflowTaskId,
-    val workflowTaskReturnValue: WorkflowTaskOutput
+    val workflowTaskReturnValue: WorkflowTaskReturnValue
 ) : WorkflowEngineMessage()
 
 @Serializable

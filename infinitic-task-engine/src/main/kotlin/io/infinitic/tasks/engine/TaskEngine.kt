@@ -27,7 +27,6 @@ package io.infinitic.tasks.engine
 
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.plus
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
@@ -51,7 +50,7 @@ import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskOutput
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.tasks.engine.storage.events.TaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateStorage
@@ -163,7 +162,7 @@ class TaskEngine(
                     WorkflowTask::class.java.name -> WorkflowTaskCompleted(
                         workflowId = it,
                         workflowTaskId = WorkflowTaskId("${newState.taskId}"),
-                        workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskOutput
+                        workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskReturnValue
                     )
                     else -> TaskCompletedInWorkflow(
                         workflowId = it,
@@ -351,7 +350,7 @@ class TaskEngine(
                     WorkflowTask::class.java.name -> WorkflowTaskCompleted(
                         workflowId = it,
                         workflowTaskId = WorkflowTaskId("${newState.taskId}"),
-                        workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskOutput
+                        workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskReturnValue
                     )
                     else -> TaskCompletedInWorkflow(
                         workflowId = it,

@@ -31,5 +31,5 @@ interface WorkflowTask {
         const val META_WORKFLOW_NAME = "workflowName"
     }
 
-    fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskOutput
+    fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue
 }
