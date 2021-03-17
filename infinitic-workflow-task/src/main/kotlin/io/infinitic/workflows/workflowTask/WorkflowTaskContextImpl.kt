@@ -354,7 +354,7 @@ internal class WorkflowTaskContextImpl(
     )
 
     /*
-     * Receive_From_Channel command dispatching
+     * Receive_From_Channel command
      */
     override fun <T : Any> receiveFromChannel(channel: ChannelImpl<T>): Deferred<T> = dispatchCommand(
         ReceiveInChannel(ChannelName(channel.getNameOrThrow()), null),
@@ -362,7 +362,7 @@ internal class WorkflowTaskContextImpl(
     )
 
     /*
-     * Receive_From_Channel command dispatching
+     * Receive_From_Channel command with channelEventType
      */
     override fun <S : T, T : Any> receiveFromChannel(channel: ChannelImpl<T>, klass: Class<S>): Deferred<S> = dispatchCommand(
         ReceiveInChannel(ChannelName(channel.getNameOrThrow()), ChannelEventType.from(klass)),
