@@ -65,6 +65,8 @@ import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.tests.tasks.TaskAImpl
+import io.infinitic.workflows.tests.workflows.Obj1
+import io.infinitic.workflows.tests.workflows.Obj2
 import io.infinitic.workflows.tests.workflows.WorkflowA
 import io.infinitic.workflows.tests.workflows.WorkflowAImpl
 import io.infinitic.workflows.tests.workflows.WorkflowB
@@ -493,6 +495,52 @@ class WorkflowIntegrationTests : StringSpec({
                 client.workflow<WorkflowA>("other" + id).channelA.send("test")
             }
         }
+    }
+
+    "Waiting for Obj event" {
+        var id: String
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel4() }
+            client.workflow<WorkflowA>(id).channelObj.send(Obj1("1"))
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe Obj1("1")
+    }
+
+    "Waiting for child Obj event" {
+        var id: String
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel5() }
+            client.workflow<WorkflowA>(id).channelObj.send(Obj2("2"))
+            delay(50)
+            client.workflow<WorkflowA>(id).channelObj.send(Obj1("1"))
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe Obj1("1")
+    }
+
+    "Waiting for 2 child Obj event" {
+        var id: String
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel6() }
+            client.workflow<WorkflowA>(id).channelObj.send(Obj2("2"))
+            delay(50)
+            client.workflow<WorkflowA>(id).channelObj.send(Obj1("1"))
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "12"
     }
 })
 

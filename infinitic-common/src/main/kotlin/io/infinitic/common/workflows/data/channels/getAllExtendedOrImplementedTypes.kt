@@ -25,26 +25,29 @@
 
 package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.exceptions.NameNotInitializedInChannel
-import io.infinitic.workflows.Channel
-import io.infinitic.workflows.Deferred
-import io.infinitic.workflows.WorkflowTaskContext
+internal fun getAllExtendedOrImplementedTypes(klass: Class<*>): Set<ChannelEventType> {
+    var klass = klass
+    val all: MutableList<ChannelEventType> = mutableListOf()
+    do {
+        all.add(ChannelEventType(klass.name))
 
-class ChannelImpl<T : Any>(
-    private val context: () -> WorkflowTaskContext
-) : Channel<T> {
-    lateinit var name: String
+        // First, add all the interfaces implemented by this class
+        val interfaces = klass.interfaces.toList()
+        if (interfaces.isNotEmpty()) {
+            all.addAll(interfaces.map { ChannelEventType(it.name) })
+            for (interfaze in interfaces) {
+                all.addAll(getAllExtendedOrImplementedTypes(interfaze))
+            }
+        }
 
-    fun isNameInitialized() = ::name.isInitialized
+        // Add the super class
+        val superClass = klass.superclass ?: break
 
-    fun getNameOrThrow() = when (isNameInitialized()) {
-        true -> name
-        else -> throw NameNotInitializedInChannel
-    }
+        // Interfaces does not have java,lang.Object as superclass, they have null, so break the cycle and return
 
-    override fun send(event: T) = context().sendToChannel(this, event)
+        // Now inspect the superclass
+        klass = superClass
+    } while ("java.lang.Object" != klass.canonicalName)
 
-    override fun receive(): Deferred<T> = context().receiveFromChannel(this)
-
-    override fun <S : T> receive(klass: Class<S>): Deferred<S> = context().receiveFromChannel(this, klass)
+    return all.toSet()
 }

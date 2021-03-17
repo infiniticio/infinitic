@@ -25,4 +25,4 @@
 
 package io.infinitic.workflows
 
-interface Channel<T> : SendChannel<T>, ReceiveChannel<T>
+interface Channel<T : Any> : SendChannel<T>, ReceiveChannel<T>

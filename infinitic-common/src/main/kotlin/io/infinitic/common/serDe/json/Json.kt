@@ -27,6 +27,7 @@ package io.infinitic.common.json
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.avro.specific.SpecificRecordBase
 
@@ -35,6 +36,7 @@ object Json {
         .addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
         .addMixIn(Exception::class.java, ExceptionMixIn::class.java)
         .registerModule(JavaTimeModule())
+        .registerModule(KotlinModule())
 
     // https://stackoverflow.com/questions/56742226/avro-generated-class-issue-with-json-conversion-kotlin
     abstract class AvroMixIn {

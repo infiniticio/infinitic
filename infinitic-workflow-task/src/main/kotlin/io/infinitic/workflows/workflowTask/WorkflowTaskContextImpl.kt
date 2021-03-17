@@ -32,6 +32,7 @@ import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
@@ -355,17 +356,29 @@ internal class WorkflowTaskContextImpl(
     /*
      * Receive_From_Channel command dispatching
      */
-    override fun <T> receiveFromChannel(channel: ChannelImpl<T>): Deferred<T> = dispatchCommand(
-        ReceiveInChannel(ChannelName(channel.getNameOrThrow())),
+    override fun <T : Any> receiveFromChannel(channel: ChannelImpl<T>): Deferred<T> = dispatchCommand(
+        ReceiveInChannel(ChannelName(channel.getNameOrThrow()), null),
+        CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
+    )
+
+    /*
+     * Receive_From_Channel command dispatching
+     */
+    override fun <S : T, T : Any> receiveFromChannel(channel: ChannelImpl<T>, klass: Class<S>): Deferred<S> = dispatchCommand(
+        ReceiveInChannel(ChannelName(channel.getNameOrThrow()), ChannelEventType.from(klass)),
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )
 
     /*
      * Sent_to_Channel command dispatching
      */
-    override fun <T> sendToChannel(channel: ChannelImpl<T>, event: T) {
+    override fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T) {
         dispatchCommand<T>(
-            SendToChannel(ChannelName(channel.getNameOrThrow()), ChannelEvent.from(event)),
+            SendToChannel(
+                ChannelName(channel.getNameOrThrow()),
+                ChannelEvent.from(event),
+                ChannelEventType.allFrom(event::class.java)
+            ),
             CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")
         )
     }

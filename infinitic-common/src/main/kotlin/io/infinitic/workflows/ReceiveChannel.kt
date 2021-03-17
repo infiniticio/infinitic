@@ -25,6 +25,12 @@
 
 package io.infinitic.workflows
 
-interface ReceiveChannel<T> {
+import kotlin.reflect.KClass
+
+interface ReceiveChannel<T : Any> {
     fun receive(): Deferred<T>
+
+    fun <S : T> receive(klass: Class<S>): Deferred<S>
+
+    fun <S : T> receive(klass: KClass<S>) = receive(klass.java)
 }

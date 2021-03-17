@@ -312,6 +312,7 @@ private fun receiveFromChannel(
     state.receivingChannels.add(
         ReceivingChannel(
             channelName = command.channelName,
+            channelEventType = command.channelEventType,
             methodRunId = methodRun.methodRunId,
             commandId = newCommand.commandId
         )

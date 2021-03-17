@@ -33,17 +33,17 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.lang.reflect.Method
 
-@Serializable(with = ChannelNameSerializer::class)
-data class ChannelName(override val name: String) : Name(name) {
+@Serializable(with = ChannelEventTypeSerializer::class)
+data class ChannelEventType(override val name: String) : Name(name) {
     companion object {
-        fun from(method: Method) = ChannelName(method.name)
+        fun <T> from(klass: Class<T>) = ChannelEventType(klass.name)
+        fun <T> allFrom(klass: Class<T>) = getAllExtendedOrImplementedTypes(klass)
     }
 }
 
-object ChannelNameSerializer : KSerializer<ChannelName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ChannelName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = ChannelName(decoder.decodeString())
+object ChannelEventTypeSerializer : KSerializer<ChannelEventType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelEventType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ChannelEventType) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = ChannelEventType(decoder.decodeString())
 }

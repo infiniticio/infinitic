@@ -46,6 +46,7 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
+import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -224,7 +225,8 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             workflowId = handler.workflowId,
             workflowName = handler.workflowName,
             channelName = handler.channelName,
-            channelEvent = ChannelEvent.from(handler.args[0])
+            channelEvent = ChannelEvent.from(handler.args[0]),
+            channelEventTypes = ChannelEventType.allFrom(handler.args[0]::class.java)
         )
 
         GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()

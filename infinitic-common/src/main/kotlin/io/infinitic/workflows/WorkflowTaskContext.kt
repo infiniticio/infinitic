@@ -51,7 +51,9 @@ interface WorkflowTaskContext : Dispatcher {
 
     fun timer(instant: Instant): Deferred<Instant>
 
-    fun <T> receiveFromChannel(channel: ChannelImpl<T>): Deferred<T>
+    fun <T : Any> receiveFromChannel(channel: ChannelImpl<T>): Deferred<T>
 
-    fun <T> sendToChannel(channel: ChannelImpl<T>, event: T)
+    fun <S : T, T : Any> receiveFromChannel(channel: ChannelImpl<T>, klass: Class<S>): Deferred<S>
+
+    fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T)
 }
