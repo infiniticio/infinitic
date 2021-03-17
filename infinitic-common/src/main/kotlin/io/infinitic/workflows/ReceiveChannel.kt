@@ -28,9 +28,9 @@ package io.infinitic.workflows
 import kotlin.reflect.KClass
 
 interface ReceiveChannel<T : Any> {
-    fun receive(): Deferred<T>
+    fun receive(jsonPath: String? = null): Deferred<T>
 
-    fun <S : T> receive(klass: Class<S>): Deferred<S>
+    fun <S : T> receive(klass: Class<S>, jsonPath: String? = null): Deferred<S>
 
-    fun <S : T> receive(klass: KClass<S>) = receive(klass.java)
+    fun <S : T> receive(klass: KClass<S>, jsonPath: String? = null) = receive(klass.java, jsonPath)
 }

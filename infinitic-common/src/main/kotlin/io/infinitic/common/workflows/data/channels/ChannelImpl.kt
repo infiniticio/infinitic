@@ -42,9 +42,12 @@ class ChannelImpl<T : Any>(
         else -> throw NameNotInitializedInChannel
     }
 
-    override fun send(event: T) = context().sendToChannel(this, event)
+    override fun send(event: T) =
+        context().sendToChannel(this, event)
 
-    override fun receive(): Deferred<T> = context().receiveFromChannel(this)
+    override fun receive(jsonPath: String?): Deferred<T> =
+        context().receiveFromChannel(this, jsonPath)
 
-    override fun <S : T> receive(klass: Class<S>): Deferred<S> = context().receiveFromChannel(this, klass)
+    override fun <S : T> receive(klass: Class<S>, jsonPath: String?): Deferred<S> =
+        context().receiveFromChannel(this, klass, jsonPath)
 }

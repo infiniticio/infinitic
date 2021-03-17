@@ -29,8 +29,12 @@ import io.infinitic.common.clients.messages.SendToChannelCompleted
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.helpers.commandCompleted
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
 
 suspend fun sendToChannel(
     workflowEngineOutput: WorkflowEngineOutput,
@@ -40,17 +44,19 @@ suspend fun sendToChannel(
     state.receivingChannels.firstOrNull {
         it.channelName == msg.channelName &&
             (it.channelEventType == null || msg.channelEventTypes.contains(it.channelEventType))
-    }?.also {
-        state.receivingChannels.remove(it)
-
-        commandCompleted(
-            workflowEngineOutput,
-            state,
-            it.methodRunId,
-            it.commandId,
-            CommandReturnValue(msg.channelEvent.serializedData)
-        )
     }
+        ?.also {
+            state.receivingChannels.remove(it)
+
+            commandCompleted(
+                workflowEngineOutput,
+                state,
+                it.methodRunId,
+                it.commandId,
+                CommandReturnValue(msg.channelEvent.serializedData)
+            )
+        }
+        ?: logger.debug("workflowId {} - discarding {} (messageId {})", msg.workflowId, msg, msg.messageId)
 
     // if client is waiting, send output back to it
     if (msg.clientWaiting) {
