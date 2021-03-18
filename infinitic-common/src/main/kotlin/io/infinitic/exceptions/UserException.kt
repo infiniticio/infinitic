@@ -27,6 +27,7 @@ package io.infinitic.exceptions
 
 import io.infinitic.common.json.Json
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.serDe.SerializedDataType
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.workflows.Channel
@@ -84,11 +85,19 @@ data class MissingMetaJavaClassDuringDeserialization(
 
 @Serializable
 data class ClassNotFoundDuringDeserialization(
-    val data: SerializedData,
     val name: String
 ) : UserExceptionInSerialization(
-    msg = "Trying to deserialize data into \"$name\$ (according to \"${SerializedData.META_JAVA_CLASS}\" meta value) but this class is unknown",
-    help = "Please make sure to include the \"$name\" class in your code base."
+    msg = "Trying to deserialize data into \"$name\$ but this class is unknown",
+    help = "Please make sure to include this class in your code base."
+)
+
+@Serializable
+data class TryingToRetrieveJsonFromNonJsonData(
+    val name: String?,
+    val type: SerializedDataType
+) : UserExceptionInSerialization(
+    msg = "Trying to retrieve json from \"$name\$ serialized data, but the serialized format is $type",
+    help = ""
 )
 
 @Serializable

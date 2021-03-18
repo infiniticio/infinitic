@@ -39,7 +39,6 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class EnvelopesTests : StringSpec({
-
     TaskEngineMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 

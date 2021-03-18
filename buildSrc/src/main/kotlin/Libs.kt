@@ -46,6 +46,10 @@ object Libs {
         const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0"
     }
 
+    object JsonPath {
+        const val jayway = "com.jayway.jsonpath:json-path:2.5.0"
+    }
+
     object Jackson {
         private const val version = "2.12.1"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"

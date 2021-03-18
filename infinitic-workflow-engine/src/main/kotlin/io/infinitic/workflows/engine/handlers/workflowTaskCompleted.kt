@@ -313,6 +313,7 @@ private fun receiveFromChannel(
         ReceivingChannel(
             channelName = command.channelName,
             channelEventType = command.channelEventType,
+            channelEventFilter = command.channelEventFilter,
             methodRunId = methodRun.methodRunId,
             commandId = newCommand.commandId
         )

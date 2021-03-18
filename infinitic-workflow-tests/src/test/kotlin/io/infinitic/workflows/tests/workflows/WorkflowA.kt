@@ -38,11 +38,11 @@ import java.time.LocalDateTime
 
 sealed class Obj
 @Serializable
-data class Obj1(val p: String) : Obj()
+data class Obj1(val foo: String, val bar: Int) : Obj()
 @Serializable
-data class Obj2(val p: String) : Obj()
+data class Obj2(val foo: String, val bar: Int) : Obj()
 @Serializable
-data class Obj3(val p: String) : Obj()
+data class Obj3(val foo: String) : Obj()
 
 interface WorkflowA {
     val channelObj: SendChannel<Obj>
@@ -80,6 +80,8 @@ interface WorkflowA {
     fun channel4(): Obj
     fun channel5(): Obj1
     fun channel6(): String
+    fun channel7(jsonPath: String): Obj
+    fun channel8(jsonPath: String): Obj1
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -413,6 +415,18 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class)
         val obj1 = deferred1.await()
         val obj2 = deferred2.await()
-        return obj1.p + obj2.p
+        return obj1.foo + obj2.foo + obj1.bar * obj2.bar
+    }
+
+    override fun channel7(jsonPath: String): Obj {
+        val deferred: Deferred<Obj> = channelObj.receive(jsonPath)
+
+        return deferred.await()
+    }
+
+    override fun channel8(jsonPath: String): Obj1 {
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class, jsonPath)
+
+        return deferred.await()
     }
 }

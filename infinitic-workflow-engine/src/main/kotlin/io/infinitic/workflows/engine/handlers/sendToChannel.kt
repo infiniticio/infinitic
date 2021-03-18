@@ -43,7 +43,8 @@ suspend fun sendToChannel(
 ) {
     state.receivingChannels.firstOrNull {
         it.channelName == msg.channelName &&
-            (it.channelEventType == null || msg.channelEventTypes.contains(it.channelEventType))
+            (it.channelEventType == null || msg.channelEventTypes.contains(it.channelEventType)) &&
+            (it.channelEventFilter == null || it.channelEventFilter!!.validate(msg.channelEvent))
     }
         ?.also {
             state.receivingChannels.remove(it)

@@ -32,6 +32,7 @@ import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelEvent
+import io.infinitic.common.workflows.data.channels.ChannelEventFilter
 import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
@@ -360,7 +361,11 @@ internal class WorkflowTaskContextImpl(
         channel: ChannelImpl<T>,
         jsonPath: String?
     ): Deferred<T> = dispatchCommand(
-        ReceiveInChannel(ChannelName(channel.getNameOrThrow()), null),
+        ReceiveInChannel(
+            ChannelName(channel.getNameOrThrow()),
+            null,
+            jsonPath?.let { ChannelEventFilter(it) }
+        ),
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )
 
@@ -372,7 +377,11 @@ internal class WorkflowTaskContextImpl(
         klass: Class<S>,
         jsonPath: String?
     ): Deferred<S> = dispatchCommand(
-        ReceiveInChannel(ChannelName(channel.getNameOrThrow()), ChannelEventType.from(klass)),
+        ReceiveInChannel(
+            ChannelName(channel.getNameOrThrow()),
+            ChannelEventType.from(klass),
+            jsonPath?.let { ChannelEventFilter(it) }
+        ),
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )
 
