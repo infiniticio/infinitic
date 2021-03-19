@@ -152,13 +152,11 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         }
         str += d.isOngoing().toString()
         str += d.isCompleted().toString()
-        str += d.isTerminated().toString()
         d.await()
         str += d.isOngoing().toString()
         str += d.isCompleted().toString()
-        str += d.isTerminated().toString()
 
-        return str // should be "truefalsefalsefalsetruetrue"
+        return str // should be "truefalsefalsetrue"
     }
 
 //    override fun deferred1(): String {

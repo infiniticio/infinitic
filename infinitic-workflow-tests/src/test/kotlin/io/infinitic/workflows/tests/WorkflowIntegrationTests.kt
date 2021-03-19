@@ -170,7 +170,7 @@ class WorkflowIntegrationTests : StringSpec({
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "truefalsefalsefalsetruetrue"
+        workflowOutput shouldBe "truefalsefalsetrue"
     }
 
     "Or step with 3 async tasks" {
