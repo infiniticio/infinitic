@@ -39,7 +39,8 @@ import java.security.InvalidParameterException
 @Serializable
 data class ChannelEventFilter(val jsonPath: String, val filter: String? = null) {
     companion object {
-        fun from(jsonPath: String?, criteria: Criteria?): ChannelEventFilter? = jsonPath
+        @JvmOverloads
+        fun from(jsonPath: String?, criteria: Criteria? = null): ChannelEventFilter? = jsonPath
             ?.let { ChannelEventFilter(it, criteria?.let { c -> filter(c).toString() }) }
             ?: if (criteria != null) throw InvalidParameterException("jsonPath can not be null if criteria is non null") else null
 
