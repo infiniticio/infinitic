@@ -26,23 +26,23 @@
 package io.infinitic.common.workflows.data.channels
 
 import com.jayway.jsonpath.Configuration
+import com.jayway.jsonpath.Criteria
+import com.jayway.jsonpath.Filter
+import com.jayway.jsonpath.Filter.filter
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import java.security.InvalidParameterException
 
-@Serializable(with = ChannelEventFilterSerializer::class)
-data class ChannelEventFilter(val jsonPath: String) {
-    override fun toString() = jsonPath
-
+@Serializable
+data class ChannelEventFilter(val jsonPath: String, val filter: String? = null) {
     companion object {
+        fun from(jsonPath: String?, criteria: Criteria?): ChannelEventFilter? = jsonPath
+            ?.let { ChannelEventFilter(it, criteria?.let { c -> filter(c).toString() }) }
+            ?: if (criteria != null) throw InvalidParameterException("jsonPath can not be null if criteria is non null") else null
+
         init {
             Configuration.setDefaults(object : Configuration.Defaults {
                 override fun jsonProvider() = JacksonJsonProvider()
@@ -57,16 +57,13 @@ data class ChannelEventFilter(val jsonPath: String) {
      * true if this event should be caught
      * false either
      */
-    fun validate(event: ChannelEvent): Boolean {
+    fun check(event: ChannelEvent): Boolean {
         // get Json of the provided event
         val json = event.serializedData.getJson()
         // is this json filtered by the provided jsonPath
-        return JsonPath.parse(json).read<List<Any>>(jsonPath).isNotEmpty()
+        return when (filter) {
+            null -> JsonPath.parse(json).read<List<Any>>(jsonPath)
+            else -> JsonPath.parse(json).read(jsonPath, Filter.parse(filter))
+        }.isNotEmpty()
     }
-}
-
-object ChannelEventFilterSerializer : KSerializer<ChannelEventFilter> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelEventFilter", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ChannelEventFilter) { encoder.encodeString(value.jsonPath) }
-    override fun deserialize(decoder: Decoder) = ChannelEventFilter(decoder.decodeString())
 }

@@ -512,6 +512,42 @@ class WorkflowIntegrationTests : StringSpec({
         workflowOutput shouldBe obj1
     }
 
+    "Waiting for filtered event using jsonPath only" {
+        var id: String
+        val obj1a = Obj1("oof", 12)
+        val obj1b = Obj1("foo", 12)
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel4bis() }
+            client.workflow<WorkflowA>(id).channelObj.send(obj1a)
+            delay(50)
+            client.workflow<WorkflowA>(id).channelObj.send(obj1b)
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe obj1b
+    }
+
+    "Waiting for filtered event using using jsonPath and criteria" {
+        var id: String
+        val obj1a = Obj1("oof", 12)
+        val obj1b = Obj1("foo", 12)
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel4ter() }
+            client.workflow<WorkflowA>(id).channelObj.send(obj1a)
+            delay(50)
+            client.workflow<WorkflowA>(id).channelObj.send(obj1b)
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe obj1b
+    }
+
     "Waiting for event of specific type" {
         var id: String
         val obj1 = Obj1("foo", 42)
@@ -530,7 +566,49 @@ class WorkflowIntegrationTests : StringSpec({
         workflowOutput shouldBe obj1
     }
 
-    "Waiting for 2 filtered events presented in wrong order" {
+    "Waiting event of specific type filtered using jsonPath only" {
+        var id: String
+        val obj1 = Obj1("foo", 42)
+        val obj2 = Obj2("foo", 42)
+        val obj3 = Obj1("oof", 42)
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel5bis() }
+            client.workflow<WorkflowA>(id).channelObj.send(obj3)
+            delay(50)
+            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            delay(50)
+            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe obj1
+    }
+
+    "Waiting event of specific type filtered using jsonPath and criteria" {
+        var id: String
+        val obj1 = Obj1("foo", 42)
+        val obj2 = Obj2("foo", 42)
+        val obj3 = Obj1("oof", 42)
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel5ter() }
+            client.workflow<WorkflowA>(id).channelObj.send(obj3)
+            delay(50)
+            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            delay(50)
+            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe obj1
+    }
+
+    "Waiting for 2 events of specific types presented in wrong order" {
         var id: String
         val obj1 = Obj1("foo", 6)
         val obj2 = Obj2("bar", 7)
@@ -546,42 +624,6 @@ class WorkflowIntegrationTests : StringSpec({
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
         workflowOutput shouldBe "foobar42"
-    }
-
-    "Waiting for filtered event" {
-        var id: String
-        val obj1a = Obj1("falseFoo", 12)
-        val obj1b = Obj1("trueFoo", 12)
-        // run system
-        coroutineScope {
-            init()
-            id = client.async(workflowA) { channel7("[?(\$.foo == \"trueFoo\")]") }
-            client.workflow<WorkflowA>(id).channelObj.send(obj1a)
-            delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1b)
-        }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
-        // check output
-        workflowOutput shouldBe obj1b
-    }
-
-    "Waiting for filtered event of specific type" {
-        var id: String
-        val obj1 = Obj1("foo", 42)
-        val obj2 = Obj2("foo", 42)
-        // run system
-        coroutineScope {
-            init()
-            id = client.async(workflowA) { channel8("[?(\$.foo == \"foo\")]") }
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
-            delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
-        }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
-        // check output
-        workflowOutput shouldBe obj1
     }
 })
 

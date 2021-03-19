@@ -24,6 +24,8 @@
  */
 
 dependencies {
+    testImplementation(Libs.JsonPath.jayway)
+
     testImplementation(project(":infinitic-common"))
     testImplementation(project(":infinitic-monitoring-engines"))
     testImplementation(project(":infinitic-task-engine"))

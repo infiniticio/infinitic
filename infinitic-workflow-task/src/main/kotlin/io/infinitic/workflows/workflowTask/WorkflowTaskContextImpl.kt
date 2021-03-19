@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.workflowTask
 
+import com.jayway.jsonpath.Criteria
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
@@ -359,12 +360,14 @@ internal class WorkflowTaskContextImpl(
      */
     override fun <T : Any> receiveFromChannel(
         channel: ChannelImpl<T>,
-        jsonPath: String?
+        jsonPath: String?,
+        criteria: Criteria?
     ): Deferred<T> = dispatchCommand(
         ReceiveInChannel(
             ChannelName(channel.getNameOrThrow()),
             null,
-            jsonPath?.let { ChannelEventFilter(it) }
+            ChannelEventFilter.from(jsonPath, criteria)
+
         ),
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )
@@ -375,12 +378,13 @@ internal class WorkflowTaskContextImpl(
     override fun <S : T, T : Any> receiveFromChannel(
         channel: ChannelImpl<T>,
         klass: Class<S>,
-        jsonPath: String?
+        jsonPath: String?,
+        criteria: Criteria?
     ): Deferred<S> = dispatchCommand(
         ReceiveInChannel(
             ChannelName(channel.getNameOrThrow()),
             ChannelEventType.from(klass),
-            jsonPath?.let { ChannelEventFilter(it) }
+            ChannelEventFilter.from(jsonPath, criteria)
         ),
         CommandSimpleName("${CommandType.RECEIVE_IN_CHANNEL}")
     )

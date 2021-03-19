@@ -26,6 +26,7 @@
 dependencies {
     implementation(kotlin("reflect"))
     implementation(Libs.Coroutines.core)
+    implementation(Libs.JsonPath.jayway)
 
     implementation(project(":infinitic-common"))
 }
