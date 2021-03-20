@@ -51,7 +51,7 @@ object Libs {
     }
 
     object Jackson {
-        private const val version = "2.12.1"
+        private const val version = "2.12.2"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
         const val module = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"

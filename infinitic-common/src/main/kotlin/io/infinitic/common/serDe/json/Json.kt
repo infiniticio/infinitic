@@ -25,9 +25,7 @@
 
 package io.infinitic.common.serDe.json
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.PropertyAccessor
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
@@ -41,28 +39,31 @@ object Json {
         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         .registerModule(JavaTimeModule())
         .registerModule(KotlinModule())
-        .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-        .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-        .setVisibility(PropertyAccessor.SETTER, JsonAutoDetect.Visibility.NONE)
-        .setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
-        .setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.NONE)
 
-    abstract class ExceptionMixIn {
-        @JsonIgnore abstract fun getMessage(): String
-        @JsonIgnore abstract fun getCause(): Throwable
-    }
-
-    // https://stackoverflow.com/questions/56742226/avro-generated-class-issue-with-json-conversion-kotlin
-    abstract class AvroMixIn {
-        @JsonIgnore abstract fun getSchema(): org.apache.avro.Schema
-        @JsonIgnore abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
-    }
-
-    fun stringify(msg: Any?, pretty: Boolean = false): String = if (pretty) {
-        mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
-    } else {
-        mapper.writeValueAsString(msg)
+    fun stringify(msg: Any?, pretty: Boolean = false): String = when (pretty) {
+        true -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)
+        false -> mapper.writeValueAsString(msg)
     }
 
     fun <T : Any> parse(json: String, klass: Class<out T>): T = mapper.readValue(json, klass)
+
+    /**
+     * Cause should not be included to the json, as it triggers
+     * a circular reference when cause = this
+     */
+    private abstract class ExceptionMixIn {
+        @JsonIgnore abstract fun getCause(): Throwable
+        @JsonIgnore abstract fun getMessage(): String
+    }
+
+    /**
+     * Schema and Data should not be included to the json
+     * https://stackoverflow.com/questions/56742226/avro-generated-class-issue-with-json-conversion-kotlin
+     *
+     * IMPORTANT: properties of generated Avro classes MUST have public visibility
+     */
+    private abstract class AvroMixIn {
+        @JsonIgnore abstract fun getSchema(): org.apache.avro.Schema
+        @JsonIgnore abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
+    }
 }
