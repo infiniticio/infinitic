@@ -27,43 +27,25 @@ package io.infinitic.common.data
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.exceptions.ErrorDuringJsonDeserializationOfParameter
 import io.infinitic.exceptions.ErrorDuringJsonSerializationOfParameter
-import io.infinitic.exceptions.InconsistentJsonSerializationOfParameter
 import java.lang.reflect.Method
 
-abstract class Parameters(open vararg val serializedData: SerializedData) {
+abstract class Parameters(open vararg val serializedDataArray: SerializedData) {
     companion object {
-        fun getSerializedParameter(method: Method, index: Int, parameterValue: Any?): SerializedData {
-            val restoredValue: Any?
+        fun getSerializedParameter(method: Method, index: Int, parameterValue: Any?) = try {
+            SerializedData.from(parameterValue)
+        } catch (e: JsonProcessingException) {
             val parameterName = method.parameters[index].name
             val parameterType = method.parameterTypes[index]
             val methodName = method.name
             val className = method.declaringClass.name
-            // get serialized data
-            val serializedData = try {
-                SerializedData.from(parameterValue)
-            } catch (e: JsonProcessingException) {
-                throw ErrorDuringJsonSerializationOfParameter(parameterName, parameterType.name, methodName, className)
-            }
-            // for user convenience, we check right here that data can actually be deserialized
-            try {
-                restoredValue = serializedData.deserialize()
-            } catch (e: JsonProcessingException) {
-                throw ErrorDuringJsonDeserializationOfParameter(parameterName, parameterType.name, methodName, className)
-            }
-            // check that serialization/deserialization process works as expected
-            if (parameterValue != restoredValue) throw InconsistentJsonSerializationOfParameter(parameterName, parameterType.name, methodName, className)
-
-            return serializedData
+            throw ErrorDuringJsonSerializationOfParameter(parameterName, parameterType.name, methodName, className)
         }
     }
 
-    final override fun toString() = "${serializedData.toList()}"
+    final override fun toString() = "${serializedDataArray.toList()}"
 
-    final override fun hashCode(): Int {
-        return serializedData.contentHashCode()
-    }
+    final override fun hashCode() = serializedDataArray.contentHashCode()
 
     final override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -71,10 +53,10 @@ abstract class Parameters(open vararg val serializedData: SerializedData) {
 
         other as Parameters
 
-        if (!serializedData.contentDeepEquals(other.serializedData)) return false
+        if (!serializedDataArray.contentDeepEquals(other.serializedDataArray)) return false
 
         return true
     }
 
-    fun get() = serializedData.map { it.deserialize() }
+    fun get() = serializedDataArray.map { it.deserialize() }
 }
