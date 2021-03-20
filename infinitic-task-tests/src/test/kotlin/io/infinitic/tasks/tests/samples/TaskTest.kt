@@ -38,7 +38,7 @@ class TaskException(val log: String) : Exception()
 class TaskTestImpl : TaskTest {
     private lateinit var context: TaskAttemptContextImpl
     lateinit var behavior: (index: Int, retry: Int) -> Status
-    lateinit var log: String
+    var log = ""
 
     override fun log(): String {
         val status = behavior(context.taskRetry, context.taskAttemptRetry)

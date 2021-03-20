@@ -26,7 +26,6 @@
 package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.serDe.kserializer.getKSerializerOrNull
 import io.infinitic.exceptions.ClassNotFoundDuringDeserialization
 import io.infinitic.exceptions.ExceptionDuringJsonDeserialization
@@ -37,10 +36,9 @@ import io.infinitic.exceptions.TryingToRetrieveJsonFromNonJsonData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import org.apache.avro.specific.SpecificRecordBase
 import java.math.BigInteger
 import java.security.MessageDigest
-import io.infinitic.common.json.Json as JsonJackson
+import io.infinitic.common.serDe.json.Json as JsonJackson
 import kotlinx.serialization.json.Json as JsonKotlin
 
 @Serializable
@@ -70,10 +68,6 @@ data class SerializedData(
                     bytes = value
                     type = SerializedDataType.BYTES
                 }
-                is SpecificRecordBase -> {
-                    bytes = toAvroJavaByteArray(value)
-                    type = SerializedDataType.AVRO_JAVA
-                }
                 else -> {
                     val serializer = getKSerializerOrNull(value::class.java)
                     if (serializer == null) {
@@ -94,9 +88,6 @@ data class SerializedData(
 
         private fun <T : Any> toJsonKotlinByteArray(serializer: KSerializer<T>, value: T): ByteArray =
             JsonKotlin.encodeToString(serializer, value).toByteArray(charset = Charsets.UTF_8)
-
-        private fun toAvroJavaByteArray(value: SpecificRecordBase): ByteArray =
-            AvroSerDe.writeBinary(value)
     }
 
     /**
@@ -152,7 +143,6 @@ data class SerializedData(
         SerializedDataType.BYTES -> bytes
         SerializedDataType.JSON_JACKSON -> fromJsonJackson(klass)
         SerializedDataType.JSON_KOTLIN -> fromJsonKotlin(klass)
-        SerializedDataType.AVRO_JAVA -> fromAvroJava(klass)
         SerializedDataType.CUSTOM -> throw RuntimeException("Can't deserialize data with CUSTOM serialization")
     }
 
@@ -170,10 +160,5 @@ data class SerializedData(
         } catch (e: SerializationException) {
             throw ExceptionDuringKotlinDeserialization(klass.name, causeString = e.toString())
         }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T : Any> fromAvroJava(klass: Class<out T>): SpecificRecordBase {
-        return AvroSerDe.readBinary(bytes, klass as Class<out SpecificRecordBase>)
     }
 }

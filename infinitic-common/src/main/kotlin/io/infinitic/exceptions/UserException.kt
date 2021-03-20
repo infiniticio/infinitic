@@ -25,9 +25,9 @@
 
 package io.infinitic.exceptions
 
-import io.infinitic.common.json.Json
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.serDe.SerializedDataType
+import io.infinitic.common.serDe.json.Json
 import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.workflows.Channel

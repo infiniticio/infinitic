@@ -23,31 +23,39 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.json
+package io.infinitic.common.serDe.json
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.PropertyAccessor
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.avro.specific.SpecificRecordBase
 
 object Json {
-    val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper()
         .addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
         .addMixIn(Exception::class.java, ExceptionMixIn::class.java)
+        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         .registerModule(JavaTimeModule())
         .registerModule(KotlinModule())
-
-    // https://stackoverflow.com/questions/56742226/avro-generated-class-issue-with-json-conversion-kotlin
-    abstract class AvroMixIn {
-        @JsonIgnore
-        abstract fun getSchema(): org.apache.avro.Schema
-        @JsonIgnore
-        abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
-    }
+        .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+        .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+        .setVisibility(PropertyAccessor.SETTER, JsonAutoDetect.Visibility.NONE)
+        .setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
+        .setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.NONE)
 
     abstract class ExceptionMixIn {
         @JsonIgnore abstract fun getMessage(): String
+        @JsonIgnore abstract fun getCause(): Throwable
+    }
+
+    // https://stackoverflow.com/questions/56742226/avro-generated-class-issue-with-json-conversion-kotlin
+    abstract class AvroMixIn {
+        @JsonIgnore abstract fun getSchema(): org.apache.avro.Schema
+        @JsonIgnore abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
     }
 
     fun stringify(msg: Any?, pretty: Boolean = false): String = if (pretty) {
