@@ -46,8 +46,12 @@ object Libs {
         const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0"
     }
 
+    object JsonPath {
+        const val jayway = "com.jayway.jsonpath:json-path:2.5.0"
+    }
+
     object Jackson {
-        private const val version = "2.12.1"
+        private const val version = "2.12.2"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
         const val module = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"

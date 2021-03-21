@@ -29,6 +29,7 @@ plugins {
 
 dependencies {
     api(Libs.Serialization.json)
+    api(Libs.JsonPath.jayway)
     implementation(Libs.Jackson.databind)
     implementation(Libs.Jackson.module)
     implementation(Libs.Jackson.jsr310)

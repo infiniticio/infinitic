@@ -25,12 +25,13 @@
 
 package io.infinitic.common.workflows.data.channels
 
+import com.jayway.jsonpath.Criteria
 import io.infinitic.exceptions.NameNotInitializedInChannel
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.WorkflowTaskContext
 
-class ChannelImpl<T>(
+class ChannelImpl<T : Any>(
     private val context: () -> WorkflowTaskContext
 ) : Channel<T> {
     lateinit var name: String
@@ -42,7 +43,12 @@ class ChannelImpl<T>(
         else -> throw NameNotInitializedInChannel
     }
 
-    override fun receive(): Deferred<T> = context().receiveFromChannel(this)
+    override fun send(event: T) =
+        context().sendToChannel(this, event)
 
-    override fun send(event: T) = context().sendToChannel(this, event)
+    override fun receive(jsonPath: String?, criteria: Criteria?): Deferred<T> =
+        context().receiveFromChannel(this, jsonPath, criteria)
+
+    override fun <S : T> receive(klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S> =
+        context().receiveFromChannel(this, klass, jsonPath, criteria)
 }

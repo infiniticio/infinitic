@@ -25,15 +25,25 @@
 
 package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.data.Name
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-@Serializable
-data class ReceivingChannel(
-    val channelName: ChannelName,
-    val channelEventType: ChannelEventType?,
-    val channelEventFilter: ChannelEventFilter?,
-    val methodRunId: MethodRunId,
-    val commandId: CommandId
-)
+@Serializable(with = ChannelEventTypeSerializer::class)
+data class ChannelEventType(override val name: String) : Name(name) {
+    companion object {
+        fun <T> from(klass: Class<T>) = ChannelEventType(klass.name)
+        fun <T> allFrom(klass: Class<T>) = getAllExtendedOrImplementedTypes(klass)
+    }
+}
+
+object ChannelEventTypeSerializer : KSerializer<ChannelEventType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChannelEventType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ChannelEventType) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = ChannelEventType(decoder.decodeString())
+}

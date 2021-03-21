@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.tests.workflows
 
+import com.jayway.jsonpath.Criteria.where
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
@@ -32,10 +33,20 @@ import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.and
 import io.infinitic.workflows.or
 import io.infinitic.workflows.tests.tasks.TaskA
+import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.LocalDateTime
 
+sealed class Obj
+@Serializable
+data class Obj1(val foo: String, val bar: Int) : Obj()
+@Serializable
+data class Obj2(val foo: String, val bar: Int) : Obj()
+@Serializable
+data class Obj3(val foo: String) : Obj()
+
 interface WorkflowA {
+    val channelObj: SendChannel<Obj>
     val channelA: SendChannel<String>
     val channelB: SendChannel<String>
 
@@ -67,9 +78,19 @@ interface WorkflowA {
     fun channel1(): String
     fun channel2(): Any
     fun channel3(): Any
+    fun channel4(): Obj
+    fun channel4bis(): Obj
+    fun channel4ter(): Obj
+    fun channel5(): Obj1
+    fun channel5bis(): Obj1
+    fun channel5ter(): Obj1
+    fun channel6(): String
+    fun channel6bis(): String
+    fun channel6ter(): String
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
+    override val channelObj = channel<Obj>()
     override val channelA = channel<String>()
     override val channelB = channel<String>()
 
@@ -131,13 +152,11 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         }
         str += d.isOngoing().toString()
         str += d.isCompleted().toString()
-        str += d.isTerminated().toString()
         d.await()
         str += d.isOngoing().toString()
         str += d.isCompleted().toString()
-        str += d.isTerminated().toString()
 
-        return str // should be "truefalsefalsefalsetruetrue"
+        return str // should be "truefalsefalsetrue"
     }
 
 //    override fun deferred1(): String {
@@ -380,5 +399,65 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         val deferredTimer = timer(Duration.ofMillis(100))
 
         return (deferredChannel or deferredTimer).await()
+    }
+
+    override fun channel4(): Obj {
+        val deferred: Deferred<Obj> = channelObj.receive()
+
+        return deferred.await()
+    }
+
+    override fun channel4bis(): Obj {
+        val deferred: Deferred<Obj> = channelObj.receive("[?(\$.foo == \"foo\")]")
+
+        return deferred.await()
+    }
+
+    override fun channel4ter(): Obj {
+        val deferred: Deferred<Obj> = channelObj.receive("[?]", where("foo").eq("foo"))
+
+        return deferred.await()
+    }
+
+    override fun channel5(): Obj1 {
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class)
+
+        return deferred.await()
+    }
+
+    override fun channel5bis(): Obj1 {
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class, "[?(\$.foo == \"foo\")]")
+
+        return deferred.await()
+    }
+
+    override fun channel5ter(): Obj1 {
+        val deferred: Deferred<Obj1> = channelObj.receive(Obj1::class, "[?]", where("foo").eq("foo"))
+
+        return deferred.await()
+    }
+
+    override fun channel6(): String {
+        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class)
+        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class)
+        val obj1 = deferred1.await()
+        val obj2 = deferred2.await()
+        return obj1.foo + obj2.foo + obj1.bar * obj2.bar
+    }
+
+    override fun channel6bis(): String {
+        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class, "[?(\$.foo == \"foo\")]")
+        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class, "[?(\$.foo == \"foo\")]")
+        val obj1 = deferred1.await()
+        val obj2 = deferred2.await()
+        return obj1.foo + obj2.foo + obj1.bar * obj2.bar
+    }
+
+    override fun channel6ter(): String {
+        val deferred1: Deferred<Obj1> = channelObj.receive(Obj1::class, "[?]", where("foo").eq("foo"))
+        val deferred2: Deferred<Obj2> = channelObj.receive(Obj2::class, "[?]", where("foo").eq("foo"))
+        val obj1 = deferred1.await()
+        val obj2 = deferred2.await()
+        return obj1.foo + obj2.foo + obj1.bar * obj2.bar
     }
 }

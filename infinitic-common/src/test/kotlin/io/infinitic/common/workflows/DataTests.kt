@@ -29,6 +29,7 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
+import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.CommandHash
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -112,6 +113,15 @@ class DataTests : StringSpec({
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<ChannelEventId>(json)
+        m2 shouldBe m
+    }
+
+    "ChannelEventType should be serialized as String" {
+        val m = ChannelEventType("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+        val m2 = Json.decodeFromString<ChannelEventType>(json)
         m2 shouldBe m
     }
 

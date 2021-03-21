@@ -25,6 +25,14 @@
 
 package io.infinitic.workflows
 
-interface ReceiveChannel<T> {
-    fun receive(): Deferred<T>
+import com.jayway.jsonpath.Criteria
+import kotlin.reflect.KClass
+
+interface ReceiveChannel<T : Any> {
+    fun receive(jsonPath: String? = null, criteria: Criteria? = null): Deferred<T>
+
+    fun <S : T> receive(klass: Class<S>, jsonPath: String? = null, criteria: Criteria? = null): Deferred<S>
+
+    fun <S : T> receive(klass: KClass<S>, jsonPath: String? = null, criteria: Criteria? = null) =
+        receive(klass.java, jsonPath, criteria)
 }

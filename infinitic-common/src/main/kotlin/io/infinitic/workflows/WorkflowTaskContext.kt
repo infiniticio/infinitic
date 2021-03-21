@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows
 
+import com.jayway.jsonpath.Criteria
 import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -51,7 +52,9 @@ interface WorkflowTaskContext : Dispatcher {
 
     fun timer(instant: Instant): Deferred<Instant>
 
-    fun <T> receiveFromChannel(channel: ChannelImpl<T>): Deferred<T>
+    fun <T : Any> receiveFromChannel(channel: ChannelImpl<T>, jsonPath: String?, criteria: Criteria?): Deferred<T>
 
-    fun <T> sendToChannel(channel: ChannelImpl<T>, event: T)
+    fun <S : T, T : Any> receiveFromChannel(channel: ChannelImpl<T>, klass: Class<S>, jsonPath: String?, criteria: Criteria?): Deferred<S>
+
+    fun <T : Any> sendToChannel(channel: ChannelImpl<T>, event: T)
 }

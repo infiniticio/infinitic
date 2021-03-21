@@ -36,7 +36,7 @@ import kotlinx.serialization.encoding.Encoder
 import java.lang.reflect.Method
 
 @Serializable(with = MethodInputSerializer::class)
-class MethodParameters(override vararg val serializedData: SerializedData) : Parameters(*serializedData), Collection<SerializedData> by serializedData.toList() {
+class MethodParameters(override vararg val serializedDataArray: SerializedData) : Parameters(*serializedDataArray), Collection<SerializedData> by serializedDataArray.toList() {
     companion object {
         fun from(method: Method, data: Array<out Any>) = MethodParameters(
             *data.mapIndexed { index, value -> getSerializedParameter(method, index, value) }.toTypedArray()
@@ -51,7 +51,7 @@ class MethodParameters(override vararg val serializedData: SerializedData) : Par
 object MethodInputSerializer : KSerializer<MethodParameters> {
     override val descriptor: SerialDescriptor = ListSerializer(SerializedData.serializer()).descriptor
     override fun serialize(encoder: Encoder, value: MethodParameters) {
-        ListSerializer(SerializedData.serializer()).serialize(encoder, value.serializedData.toList())
+        ListSerializer(SerializedData.serializer()).serialize(encoder, value.serializedDataArray.toList())
     }
     override fun deserialize(decoder: Decoder) =
         MethodParameters(*(ListSerializer(SerializedData.serializer()).deserialize(decoder).toTypedArray()))

@@ -23,37 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory
+package io.infinitic.common.workflows.data.channels
 
-import io.infinitic.inMemory.tasks.TaskA
-import io.infinitic.inMemory.tasks.TaskAImpl
-import io.infinitic.inMemory.workflows.WorkflowA
-import io.infinitic.inMemory.workflows.WorkflowAImpl
-import io.infinitic.inMemory.workflows.WorkflowB
-import io.infinitic.inMemory.workflows.WorkflowBImpl
+internal fun getAllExtendedOrImplementedTypes(klass: Class<*>): Set<ChannelEventType> {
+    var klass = klass
+    val all: MutableList<ChannelEventType> = mutableListOf()
+    do {
+        all.add(ChannelEventType(klass.name))
 
-fun main() {
-    val client = InfiniticClient.build {
-        println(it)
-    }
+        // First, add all the interfaces implemented by this class
+        val interfaces = klass.interfaces.toList()
+        if (interfaces.isNotEmpty()) {
+            all.addAll(interfaces.map { ChannelEventType(it.name) })
+            for (interfaze in interfaces) {
+                all.addAll(getAllExtendedOrImplementedTypes(interfaze))
+            }
+        }
 
-    client.register(TaskA::class.java.name) { TaskAImpl() }
-    client.register(WorkflowA::class.java.name) { WorkflowAImpl() }
-    client.register(WorkflowB::class.java.name) { WorkflowBImpl() }
+        // Add the super class
+        val superClass = klass.superclass ?: break
 
-    val taskA = client.task<TaskA>()
-    val workflowA = client.workflow<WorkflowA>()
-    val workflowB = client.workflow<WorkflowB>()
+        // Interfaces does not have java,lang.Object as superclass, they have null, so break the cycle and return
 
-    val id = client.async(workflowA) { channel1() }
+        // Now inspect the superclass
+        klass = superClass
+    } while ("java.lang.Object" != klass.canonicalName)
 
-    val w = client.workflow<WorkflowA>(id)
-
-    Thread.sleep(3000)
-
-    w.channelB.send("test")
-
-    Thread.sleep(3000)
-
-    w.channelA.send("test")
+    return all.toSet()
 }
