@@ -25,83 +25,55 @@
 
 package io.infinitic.workflows
 
+import io.infinitic.common.deferred.DeferredHandler
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.common.workflows.data.steps.StepStatus
-import io.infinitic.common.workflows.data.steps.and as stepAnd
-import io.infinitic.common.workflows.data.steps.or as stepOr
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
-data class Deferred<T> (
-    val step: Step,
-    internal val workflowTaskContext: WorkflowTaskContext
-) {
-    val id: String?
-        get() = when (step) {
-            is Step.Id -> "${step.commandId}"
-            else -> null
-        }
-
-    lateinit var stepStatus: StepStatus
+interface Deferred<T> {
+    val step: Step
+    val deferredHandler: DeferredHandler
 
     /*
      * Use this method to wait the completion or cancellation of a deferred and get its result
      */
-    fun await(): T = workflowTaskContext.await(this)
+    fun await(): T = deferredHandler.await(this)
 
     /*
      * Use this method to get the status of a deferred
      */
-    fun status(): DeferredStatus = workflowTaskContext.status(this)
+    fun status(): DeferredStatus = deferredHandler.status(this)
 
     fun isCompleted() = status() == DeferredStatus.COMPLETED
 
     fun isCanceled() = status() == DeferredStatus.CANCELED
 
     fun isOngoing() = status() == DeferredStatus.ONGOING
-
-    fun isTerminated() = ! isOngoing()
 }
 
 fun or(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc or deferred }
 
 fun and(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc and deferred }
 
-@JvmName("orT0")
-infix fun <T> Deferred<out T>.or(other: Deferred<out T>) =
-    Deferred<T>(stepOr(this.step, other.step), this.workflowTaskContext)
+@JvmName("or0")
+infix fun <T> Deferred<out T>.or(other: Deferred<out T>) = this.deferredHandler.or0(this, other)
 
-@JvmName("orT1")
-infix fun <T> Deferred<List<T>>.or(other: Deferred<out T>) =
-    Deferred<Any>(stepOr(this.step, other.step), this.workflowTaskContext)
+@JvmName("or1")
+infix fun <T> Deferred<List<T>>.or(other: Deferred<out T>) = this.deferredHandler.or1(this, other)
 
-@JvmName("orT2")
-infix fun <T> Deferred<List<T>>.or(other: Deferred<List<T>>) =
-    Deferred<List<T>>(stepOr(this.step, other.step), this.workflowTaskContext)
+@JvmName("or2")
+infix fun <T> Deferred<List<T>>.or(other: Deferred<List<T>>) = this.deferredHandler.or2(this, other)
 
-@JvmName("orT3")
-infix fun <T> Deferred<out T>.or(other: Deferred<List<T>>) =
-    Deferred<Any>(stepOr(this.step, other.step), this.workflowTaskContext)
+@JvmName("or3")
+infix fun <T> Deferred<out T>.or(other: Deferred<List<T>>) = this.deferredHandler.or3(this, other)
 
-@JvmName("andT0")
-infix fun <T> Deferred<out T>.and(other: Deferred<out T>) =
-    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowTaskContext)
+@JvmName("and0")
+infix fun <T> Deferred<out T>.and(other: Deferred<out T>) = this.deferredHandler.and0(this, other)
 
-@JvmName("andT1")
-infix fun <T> Deferred<List<T>>.and(other: Deferred<out T>) =
-    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowTaskContext)
+@JvmName("and1")
+infix fun <T> Deferred<List<T>>.and(other: Deferred<out T>) = this.deferredHandler.and1(this, other)
 
-@JvmName("andT2")
-infix fun <T> Deferred<List<T>>.and(other: Deferred<List<T>>) =
-    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowTaskContext)
+@JvmName("and2")
+infix fun <T> Deferred<List<T>>.and(other: Deferred<List<T>>) = this.deferredHandler.and2(this, other)
 
-@JvmName("andT3")
-infix fun <T> Deferred<out T>.and(other: Deferred<List<T>>) =
-    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowTaskContext)
-
-// extension function to apply AND to a List<Deferred<T>>
-fun <T> List<Deferred<T>>.and() =
-    Deferred<List<T>>(Step.And(this.map { it.step }), this.first().workflowTaskContext)
-
-// extension function to apply OR to a List<Deferred<T>>
-fun <T> List<Deferred<T>>.or() =
-    Deferred<T>(Step.Or(this.map { it.step }), this.first().workflowTaskContext)
+@JvmName("and3")
+infix fun <T> Deferred<out T>.and(other: Deferred<List<T>>) = this.deferredHandler.and3(this, other)

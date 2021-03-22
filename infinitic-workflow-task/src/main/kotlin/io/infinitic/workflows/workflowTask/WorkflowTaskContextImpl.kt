@@ -72,11 +72,14 @@ import io.infinitic.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.exceptions.SuspendMethodNotSupported
 import io.infinitic.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflows.Deferred
+import io.infinitic.workflows.DeferredImpl
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowTaskContext
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 import kotlin.reflect.jvm.kotlinFunction
+import io.infinitic.common.workflows.data.steps.and as stepAnd
+import io.infinitic.common.workflows.data.steps.or as stepOr
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
@@ -139,7 +142,7 @@ internal class WorkflowTaskContextImpl(
             newCommands.add(newCommand)
 
             // returns a Deferred with an ongoing step
-            return Deferred(Step.Id.from(newCommand), this)
+            return DeferredImpl(Step.Id.from(newCommand), this)
         }
 
         // async branch is processed only if on path of targetPosition
@@ -175,7 +178,7 @@ internal class WorkflowTaskContextImpl(
         }
 
         // returns a Deferred linked to pastCommand
-        return Deferred(Step.Id.from(pastCommand), this)
+        return DeferredImpl(Step.Id.from(pastCommand), this)
     }
 
     /*
@@ -233,6 +236,7 @@ internal class WorkflowTaskContextImpl(
      * Deferred await()
      */
     override fun <T> await(deferred: Deferred<T>): T {
+        deferred as DeferredImpl<T>
         // increment position
         positionNext()
 
@@ -285,6 +289,36 @@ internal class WorkflowTaskContextImpl(
         is StepStatusCompleted -> DeferredStatus.COMPLETED
         is StepStatusCanceled -> DeferredStatus.CANCELED
     }
+
+    override fun <T> or0(d1: Deferred<out T>, d2: Deferred<out T>): Deferred<T> =
+        DeferredImpl(stepOr(d1.step, d2.step), this)
+
+    override fun <T> or1(d1: Deferred<List<T>>, d2: Deferred<out T>): Deferred<Any> =
+        DeferredImpl(stepOr(d1.step, d2.step), this)
+
+    override fun <T> or2(d1: Deferred<List<T>>, d2: Deferred<List<T>>): Deferred<List<T>> =
+        DeferredImpl(stepOr(d1.step, d2.step), this)
+
+    override fun <T> or3(d1: Deferred<out T>, d2: Deferred<List<T>>): Deferred<Any> =
+        DeferredImpl(stepOr(d1.step, d2.step), this)
+
+    override fun <T> and0(d1: Deferred<out T>, d2: Deferred<out T>): Deferred<List<T>> =
+        DeferredImpl(stepAnd(d1.step, d2.step), this)
+
+    override fun <T> and1(d1: Deferred<List<T>>, d2: Deferred<out T>): Deferred<List<T>> =
+        DeferredImpl(stepAnd(d1.step, d2.step), this)
+
+    override fun <T> and2(d1: Deferred<List<T>>, d2: Deferred<List<T>>): Deferred<List<T>> =
+        DeferredImpl(stepAnd(d1.step, d2.step), this)
+
+    override fun <T> and3(d1: Deferred<out T>, d2: Deferred<List<T>>): Deferred<List<T>> =
+        DeferredImpl(stepAnd(d1.step, d2.step), this)
+
+    override fun <T> or(list: List<Deferred<T>>): Deferred<T> =
+        DeferredImpl(Step.Or(list.map { it.step }), this)
+
+    override fun <T> and(list: List<Deferred<T>>): Deferred<List<T>> =
+        DeferredImpl(Step.And(list.map { it.step }), this)
 
     /*
      * Task dispatching
@@ -407,7 +441,7 @@ internal class WorkflowTaskContextImpl(
      * Get return value from Deferred
      */
     @Suppress("UNCHECKED_CAST")
-    private fun <T> result(deferred: Deferred<T>): T = when (val status = deferred.stepStatus) {
+    private fun <T> result(deferred: DeferredImpl<T>): T = when (val status = deferred.stepStatus) {
         is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
         is StepStatusCompleted -> status.completionResult.get() as T
         is StepStatusCanceled -> status.cancellationResult.get() as T
@@ -451,10 +485,10 @@ internal class WorkflowTaskContextImpl(
             // if this is a new command, we add it to the newCommands list
             newCommands.add(newCommand)
             // and returns a Deferred with an ongoing step
-            Deferred(Step.Id.from(newCommand), this)
+            DeferredImpl(Step.Id.from(newCommand), this)
         } else {
             // else returns a Deferred linked to pastCommand
-            Deferred(Step.Id.from(pastCommand), this)
+            DeferredImpl(Step.Id.from(pastCommand), this)
         }
     }
 

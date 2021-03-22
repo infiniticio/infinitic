@@ -199,7 +199,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         list.add(async(taskA) { reverse("cd") })
         list.add(async(taskA) { reverse("ef") })
 
-        return list.or().await() // should be "ba" or "dc" or "fe"
+        return or(list).await() // should be "ba" or "dc" or "fe"
     }
 
     override fun or4(): String {
@@ -231,7 +231,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         list.add(async(taskA) { reverse("cd") })
         list.add(async(taskA) { reverse("ef") })
 
-        return list.and().await() // should be listOf("ba","dc","fe")
+        return and(list).await() // should be listOf("ba","dc","fe")
     }
 
     override fun and3(): List<String> {
@@ -240,7 +240,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         for (i in 1..1_00) {
             list.add(async(taskA) { reverse("ab") })
         }
-        return list.and().await() // should be listOf("ba","dc","fe")
+        return and(list).await() // should be listOf("ba","dc","fe")
     }
 
     override fun inline1(): String {

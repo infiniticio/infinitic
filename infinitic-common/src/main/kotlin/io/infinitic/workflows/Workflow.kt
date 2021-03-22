@@ -104,4 +104,8 @@ abstract class Workflow {
      * Create a timer from an instant
      */
     fun timer(instant: Instant): Deferred<Instant> = context.timer(instant)
+
+    fun <T> or(list: List<Deferred<T>>): Deferred<T> = context.or(list)
+
+    fun <T> and(list: List<Deferred<T>>): Deferred<List<T>> = context.and(list)
 }

@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.data.steps
 
-internal fun and(step1: Step, step2: Step) = Step.And(
+fun and(step1: Step, step2: Step) = Step.And(
     when (step1) {
         is Step.And -> when (step2) {
             is Step.And -> step1.steps + step2.steps

@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.data.steps
 
-internal fun or(step1: Step, step2: Step) = Step.Or(
+fun or(step1: Step, step2: Step) = Step.Or(
     when (step1) {
         is Step.And -> when (step2) {
             is Step.And -> listOf(step1, step2)
