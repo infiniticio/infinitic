@@ -80,7 +80,7 @@ object Libs {
     }
 
     object Pulsar {
-        private const val version = "2.7.0"
+        private const val version = "2.7.1"
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
