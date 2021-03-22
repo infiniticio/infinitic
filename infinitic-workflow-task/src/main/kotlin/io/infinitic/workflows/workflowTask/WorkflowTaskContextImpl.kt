@@ -72,7 +72,6 @@ import io.infinitic.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.exceptions.SuspendMethodNotSupported
 import io.infinitic.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflows.Deferred
-import io.infinitic.workflows.DeferredImpl
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowTaskContext
 import org.slf4j.LoggerFactory

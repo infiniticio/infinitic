@@ -30,20 +30,33 @@ import io.infinitic.workflows.DeferredStatus
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 interface DeferredHandler {
+    // wait deferred result
     fun <T> await(deferred: Deferred<T>): T
 
+    // get deferred status
     fun <T> status(deferred: Deferred<T>): DeferredStatus
 
+    // da or db
     fun <T> or0(d1: Deferred<out T>, d2: Deferred<out T>): Deferred<T>
+    // (da and db) or dc
     fun <T> or1(d1: Deferred<List<T>>, d2: Deferred<out T>): Deferred<Any>
+    // (da and db) or (dc and dd)
     fun <T> or2(d1: Deferred<List<T>>, d2: Deferred<List<T>>): Deferred<List<T>>
+    // da or (db and dc)
     fun <T> or3(d1: Deferred<out T>, d2: Deferred<List<T>>): Deferred<Any>
 
+    // da and db
     fun <T> and0(d1: Deferred<out T>, d2: Deferred<out T>): Deferred<List<T>>
+    // (da and db) and dc
     fun <T> and1(d1: Deferred<List<T>>, d2: Deferred<out T>): Deferred<List<T>>
+    // (da and db) and (dc and dd)
     fun <T> and2(d1: Deferred<List<T>>, d2: Deferred<List<T>>): Deferred<List<T>>
+    // da and (db and dc)
     fun <T> and3(d1: Deferred<out T>, d2: Deferred<List<T>>): Deferred<List<T>>
 
     fun <T> or(list: List<Deferred<T>>): Deferred<T>
     fun <T> and(list: List<Deferred<T>>): Deferred<List<T>>
+
+    fun <T> or(vararg array: Deferred<T>) = or(array.toList())
+    fun <T> and(vararg array: Deferred<T>) = and(array.toList())
 }

@@ -50,10 +50,6 @@ interface Deferred<T> {
     fun isOngoing() = status() == DeferredStatus.ONGOING
 }
 
-fun or(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc or deferred }
-
-fun and(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc and deferred }
-
 @JvmName("or0")
 infix fun <T> Deferred<out T>.or(other: Deferred<out T>) = this.deferredHandler.or0(this, other)
 
