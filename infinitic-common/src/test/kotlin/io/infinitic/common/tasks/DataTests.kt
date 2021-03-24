@@ -137,10 +137,9 @@ class DataTests : StringSpec({
     }
 
     "TaskMeta should be serialized as Map<String, SerializedData>" {
-        val m = TaskMeta.from(mapOf("a" to 1))
+        val m = TaskMeta(mapOf("a" to "1".toByteArray()))
 
         val json = Json.encodeToString(m)
-        json shouldBe "{\"a\":${Json.encodeToString(SerializedData.from(1))}}"
 
         val m2 = Json.decodeFromString<TaskMeta>(json)
         m2 shouldBe m

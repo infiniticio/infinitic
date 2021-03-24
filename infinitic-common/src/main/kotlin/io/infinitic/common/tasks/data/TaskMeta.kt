@@ -25,10 +25,9 @@
 
 package io.infinitic.common.tasks.data
 
-import io.infinitic.common.data.Meta
-import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ByteArraySerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -36,21 +35,11 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = TaskMetaSerializer::class)
-data class TaskMeta(override val serialized: Map<String, SerializedData> = mapOf()) : Meta(serialized) {
-    companion object {
-        fun from(data: Map<String, Any?>) = TaskMeta(data.mapValues { SerializedData.from(it.value) })
-    }
-}
-
-operator fun TaskMeta.plus(other: Pair<String, Any?>) =
-    TaskMeta(this.serialized + Pair(other.first, SerializedData.from(other.second)))
-
-operator fun TaskMeta.minus(other: String) =
-    TaskMeta(this.serialized - other)
+data class TaskMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, ByteArray> by map
 
 object TaskMetaSerializer : KSerializer<TaskMeta> {
-    val ser = MapSerializer(String.serializer(), SerializedData.serializer())
+    val ser = MapSerializer(String.serializer(), ByteArraySerializer())
     override val descriptor: SerialDescriptor = ser.descriptor
-    override fun serialize(encoder: Encoder, value: TaskMeta) { ser.serialize(encoder, value.serialized) }
+    override fun serialize(encoder: Encoder, value: TaskMeta) { ser.serialize(encoder, value.map) }
     override fun deserialize(decoder: Decoder) = TaskMeta(ser.deserialize(decoder))
 }

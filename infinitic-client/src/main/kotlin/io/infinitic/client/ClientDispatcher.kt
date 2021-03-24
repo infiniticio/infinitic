@@ -98,6 +98,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             methodParameterTypes = MethodParameterTypes.from(method),
             methodParameters = MethodParameters.from(method, handler.args),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = handler.taskOptions,
             taskMeta = handler.taskMeta

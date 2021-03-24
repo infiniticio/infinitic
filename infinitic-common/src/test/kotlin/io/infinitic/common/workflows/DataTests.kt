@@ -94,6 +94,7 @@ class DataTests : StringSpec({
 
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
+
         val m2 = Json.decodeFromString<CommandSimpleName>(json)
         m2 shouldBe m
     }
@@ -103,6 +104,7 @@ class DataTests : StringSpec({
 
         val json = Json.encodeToString(m)
         json shouldBe Json.encodeToString(SerializedData.from("qwerty"))
+
         val m2 = Json.decodeFromString<ChannelEvent>(json)
         m2 shouldBe m
     }
@@ -213,15 +215,15 @@ class DataTests : StringSpec({
 
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
+
         val m2 = Json.decodeFromString<WorkflowId>(json)
         m2 shouldBe m
     }
 
     "WorkflowMeta should be serialized as Map<String, SerializedData>" {
-        val m = WorkflowMeta(mapOf("a" to SerializedData.from(1)))
+        val m = WorkflowMeta(mapOf("a" to "1".toByteArray()))
 
         val json = Json.encodeToString(m)
-        json shouldBe "{\"a\":${Json.encodeToString(SerializedData.from(1))}}"
 
         val m2 = Json.decodeFromString<WorkflowMeta>(json)
         m2 shouldBe m

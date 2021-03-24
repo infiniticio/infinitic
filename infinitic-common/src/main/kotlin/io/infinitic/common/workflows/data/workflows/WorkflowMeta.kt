@@ -25,10 +25,9 @@
 
 package io.infinitic.common.workflows.data.workflows
 
-import io.infinitic.common.data.Meta
-import io.infinitic.common.serDe.SerializedData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ByteArraySerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -36,21 +35,11 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = WorkflowMetaSerializer::class)
-data class WorkflowMeta(override val serialized: Map<String, SerializedData> = mapOf()) : Meta(serialized) {
-    companion object {
-        fun from(data: Map<String, Any?>) = WorkflowMeta(data.mapValues { SerializedData.from(it) })
-    }
-}
-
-operator fun WorkflowMeta.plus(other: Pair<String, Any?>) =
-    WorkflowMeta(this.serialized + Pair(other.first, SerializedData.from(other.second)))
-
-operator fun WorkflowMeta.minus(other: String) =
-    WorkflowMeta(this.serialized - other)
+data class WorkflowMeta(val map: Map<String, ByteArray> = mapOf()) : Map<String, ByteArray> by map
 
 object WorkflowMetaSerializer : KSerializer<WorkflowMeta> {
-    val ser = MapSerializer(String.serializer(), SerializedData.serializer())
+    val ser = MapSerializer(String.serializer(), ByteArraySerializer())
     override val descriptor: SerialDescriptor = ser.descriptor
-    override fun serialize(encoder: Encoder, value: WorkflowMeta) { ser.serialize(encoder, value.serialized) }
+    override fun serialize(encoder: Encoder, value: WorkflowMeta) { ser.serialize(encoder, value.map) }
     override fun deserialize(decoder: Decoder) = WorkflowMeta(ser.deserialize(decoder))
 }

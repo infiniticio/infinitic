@@ -77,9 +77,10 @@ suspend fun dispatchWorkflowTask(
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
         methodParameters = MethodParameters.from(workflowTaskInput),
         workflowId = state.workflowId,
+        workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
         taskOptions = TaskOptions(),
-        taskMeta = TaskMeta.from(mapOf(WorkflowTask.META_WORKFLOW_NAME to "${state.workflowName}"))
+        taskMeta = TaskMeta(mapOf(WorkflowTask.META_WORKFLOW_NAME to "${state.workflowName}".toByteArray()))
     )
 
     // dispatch workflow task

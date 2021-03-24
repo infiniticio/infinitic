@@ -339,6 +339,7 @@ private suspend fun dispatchTask(
         methodParameterTypes = command.methodParameterTypes,
         methodParameters = command.methodParameters,
         workflowId = state.workflowId,
+        workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
         taskMeta = command.taskMeta
     )

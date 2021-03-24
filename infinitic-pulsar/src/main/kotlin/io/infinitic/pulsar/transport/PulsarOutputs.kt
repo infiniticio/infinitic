@@ -162,7 +162,7 @@ class PulsarOutputs(
         val taskName = "${message.taskName}"
         val isWorkflowTask = (taskName == WorkflowTask::class.java.name)
         val (key, topicName) = if (isWorkflowTask) {
-            val workflowName = message.taskMeta.get(WorkflowTask.META_WORKFLOW_NAME) as String
+            val workflowName = String(message.taskMeta[WorkflowTask.META_WORKFLOW_NAME]!!)
             listOf(workflowName, WorkflowExecutorTopic.name(workflowName))
         } else {
             listOf(taskName, TaskExecutorTopic.name(taskName))
@@ -265,7 +265,7 @@ class PulsarOutputs(
     val sendToTaskExecutorDeadLetters: SendToTaskExecutors = { message: TaskExecutorMessage ->
         val taskName = "${message.taskName}"
         val topicName = if (taskName == WorkflowTask::class.java.name) {
-            WorkflowExecutorDeadLettersTopic.name(message.taskMeta.get(WorkflowTask.META_WORKFLOW_NAME) as String)
+            WorkflowExecutorDeadLettersTopic.name(String(message.taskMeta[WorkflowTask.META_WORKFLOW_NAME]!!))
         } else {
             TaskExecutorDeadLettersTopic.name(taskName)
         }

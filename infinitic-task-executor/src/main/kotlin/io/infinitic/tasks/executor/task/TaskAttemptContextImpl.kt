@@ -37,6 +37,6 @@ data class TaskAttemptContextImpl(
     override val taskAttemptRetry: Int,
     override val lastTaskAttemptError: Exception?,
     override var currentTaskAttemptError: Exception? = null,
-    override val taskMeta: Map<String, Any?>,
+    override val taskMeta: Map<String, ByteArray>,
     override val taskOptions: TaskOptions
 ) : TaskAttemptContext

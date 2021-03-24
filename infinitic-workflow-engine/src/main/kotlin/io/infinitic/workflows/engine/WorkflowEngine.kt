@@ -91,24 +91,32 @@ class WorkflowEngine(
                 )
             }
             // discard all other messages if workflow is already terminated
-            return logDiscardingMessage(message, "for having null state")
+            logDiscardingMessage(message, "for having null state")
+
+            return
         }
 
         // check if this message has already been handled
         if (state.lastMessageId == message.messageId) {
-            return warnDiscardingMessage(message, "as state already contains this messageId")
+            warnDiscardingMessage(message, "as state already contains this messageId")
+
+            return
         }
 
         // check is this workflow has already been launched
         // (a DispatchWorkflow (child) can be dispatched twice if the engine is shutdown while processing a workflowTask)
         if (message is DispatchWorkflow) {
-            return warnDiscardingMessage(message, "as workflow has already been launched")
+            warnDiscardingMessage(message, "as workflow has already been launched")
+
+            return
         }
 
         // check is this workflowTask is the current one
         // (a workflowTask can be dispatched twice if the engine is shutdown while processing a workflowTask)
         if (message is WorkflowTaskCompleted && message.workflowTaskId != state.runningWorkflowTaskId) {
-            return warnDiscardingMessage(message, "as workflowTask is not the current one")
+            warnDiscardingMessage(message, "as workflowTask is not the current one")
+
+            return
         }
 
         // set current messageId

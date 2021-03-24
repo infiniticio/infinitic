@@ -78,6 +78,7 @@ class ClientTaskTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
@@ -99,6 +100,7 @@ class ClientTaskTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name)),
             methodParameters = MethodParameters.from(0),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
@@ -120,6 +122,7 @@ class ClientTaskTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodParameters = MethodParameters.from(null),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
@@ -141,6 +144,7 @@ class ClientTaskTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodParameters = MethodParameters.from("a"),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
@@ -162,6 +166,7 @@ class ClientTaskTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodParameters = MethodParameters.from(0, "a"),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
@@ -185,6 +190,7 @@ class ClientTaskTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             methodParameters = MethodParameters.from(fake),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
@@ -207,6 +213,7 @@ class ClientTaskTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
@@ -231,6 +238,7 @@ class ClientTaskTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodParameters = MethodParameters.from(0, "a"),
             workflowId = null,
+            workflowName = null,
             methodRunId = null,
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
