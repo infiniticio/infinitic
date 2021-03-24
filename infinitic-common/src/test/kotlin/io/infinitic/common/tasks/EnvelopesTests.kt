@@ -29,8 +29,8 @@ import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -53,7 +53,7 @@ class EnvelopesTests : StringSpec({
         }
     }
 
-    MonitoringPerNameEngineMessage::class.sealedSubclasses.map {
+    MonitoringPerNameMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
         "MonitoringPerNameEnvelope(${msg::class.simpleName}) should be avro-convertible" {

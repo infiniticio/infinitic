@@ -23,9 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.storage.states
+package io.infinitic.common.tags.state
 
+import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.state.WorkflowState
+import kotlinx.serialization.Serializable
+import java.nio.ByteBuffer
 
-typealias GetWorkflowState = suspend (WorkflowId) -> WorkflowState?
+@Serializable
+data class TagState(
+    val tag: Tag,
+    var lastMessageId: MessageId?,
+    val workflowIds: MutableSet<WorkflowId>
+) {
+    companion object {
+        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
+    }
+
+    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
+    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
+}

@@ -25,6 +25,6 @@
 
 package io.infinitic.common.monitoring.perName.transport
 
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 
-typealias SendToMonitoringPerName = suspend (MonitoringPerNameEngineMessage) -> Unit
+typealias SendToMonitoringPerName = suspend (MonitoringPerNameMessage) -> Unit

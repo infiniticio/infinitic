@@ -29,6 +29,6 @@ import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 
 typealias GetMonitoringGlobalState = suspend () -> MonitoringGlobalState?
 
-typealias UpdateMonitoringGlobalState = suspend (MonitoringGlobalState, MonitoringGlobalState?) -> Unit
+typealias PutMonitoringGlobalState = suspend (MonitoringGlobalState) -> Unit
 
-typealias DeleteMonitoringGlobalState = suspend () -> Unit
+typealias DelMonitoringGlobalState = suspend () -> Unit

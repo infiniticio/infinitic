@@ -47,11 +47,11 @@ class CaffeineCache<S>(config: CaffeineConfig) : KeyValueCache<S>, Flushable {
         }
         .build()
 
-    override fun delete(key: String) {
+    override fun del(key: String) {
         caffeine.invalidate(key)
     }
 
-    override fun set(key: String, value: S) {
+    override fun put(key: String, value: S) {
         caffeine.put(key, value!!)
     }
 

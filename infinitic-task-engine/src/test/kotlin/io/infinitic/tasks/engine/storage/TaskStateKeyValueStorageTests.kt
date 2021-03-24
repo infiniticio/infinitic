@@ -38,7 +38,6 @@ import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.mockk
 import io.mockk.slot
-import java.nio.ByteBuffer
 
 class TaskStateKeyValueStorageTests : ShouldSpec({
     context("TaskStateKeyValueStorage.getState") {
@@ -61,7 +60,7 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random<TaskState>()
-            coEvery { storage.getState(any()) } returns stateIn.toByteBuffer()
+            coEvery { storage.getState(any()) } returns stateIn.toByteArray()
             // given
             val stateStorage = TaskStateKeyValueStorage(storage, NoCache())
             // when
@@ -73,36 +72,36 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
         }
     }
 
-    context("TaskStateKeyValueStorage.updateState") {
+    context("TaskStateKeyValueStorage.putState") {
         should("record state") {
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random<TaskState>()
-            val binSlot = slot<ByteBuffer>()
+            val binSlot = slot<ByteArray>()
 
             coEvery { storage.putState("task.state.${stateIn.taskId}", capture(binSlot)) } returns Unit
             // given
             val stateStorage = TaskStateKeyValueStorage(storage, NoCache())
             // when
-            stateStorage.updateState(stateIn.taskId, stateIn, null)
+            stateStorage.putState(stateIn.taskId, stateIn)
             // then
             binSlot.isCaptured shouldBe true
-            TaskState.fromByteBuffer(binSlot.captured) shouldBe stateIn
+            TaskState.fromByteArray(binSlot.captured) shouldBe stateIn
         }
     }
 
-    context("TaskStateKeyValueStorage.deleteState") {
+    context("TaskStateKeyValueStorage.delState") {
         should("delete state") {
             // mocking
             val context = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random<TaskState>()
-            coEvery { context.deleteState(any()) } returns Unit
+            coEvery { context.delState(any()) } returns Unit
             // given
             val stageStorage = TaskStateKeyValueStorage(context, NoCache())
             // when
-            stageStorage.deleteState(stateIn.taskId)
+            stageStorage.delState(stateIn.taskId)
             // then
-            coVerify(exactly = 1) { context.deleteState("task.state.${stateIn.taskId}") }
+            coVerify(exactly = 1) { context.delState("task.state.${stateIn.taskId}") }
             confirmVerified(context)
         }
     }

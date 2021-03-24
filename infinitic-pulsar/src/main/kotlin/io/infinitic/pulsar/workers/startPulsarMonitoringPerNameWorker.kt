@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.storage.keyValue.KeyValueCache
@@ -57,7 +57,7 @@ private fun logError(message: Message<MonitoringPerNameEnvelope>, e: Exception) 
     e
 )
 
-private fun logError(message: MonitoringPerNameEngineMessage, e: Exception) = logger.error(
+private fun logError(message: MonitoringPerNameMessage, e: Exception) = logger.error(
     "taskName {} - exception on message {}:${System.getProperty("line.separator")}{}",
     message.taskName,
     message,

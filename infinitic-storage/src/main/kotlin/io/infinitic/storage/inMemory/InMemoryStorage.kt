@@ -27,23 +27,20 @@ package io.infinitic.storage.inMemory
 
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.LongAdder
 
 class InMemoryStorage() : KeyValueStorage, Flushable {
-    private val stateStorage = ConcurrentHashMap<String, ByteBuffer>()
+    private val stateStorage = ConcurrentHashMap<String, ByteArray>()
     private val counterStorage = ConcurrentHashMap<String, LongAdder>()
 
-    override suspend fun getState(key: String): ByteBuffer? = stateStorage[key]
+    override suspend fun getState(key: String) = stateStorage[key]
 
-    override suspend fun putState(key: String, value: ByteBuffer) {
+    override suspend fun putState(key: String, value: ByteArray) {
         stateStorage[key] = value
     }
 
-    override suspend fun updateState(key: String, value: ByteBuffer) = putState(key, value)
-
-    override suspend fun deleteState(key: String) {
+    override suspend fun delState(key: String) {
         stateStorage.remove(key)
     }
 

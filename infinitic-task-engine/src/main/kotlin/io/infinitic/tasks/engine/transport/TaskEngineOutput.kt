@@ -28,7 +28,7 @@ package io.infinitic.tasks.engine.transport
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.state.TaskState
@@ -108,14 +108,14 @@ interface TaskEngineOutput {
 
     suspend fun sendToMonitoringPerName(
         state: TaskState,
-        monitoringPerNameEngineMessage: MonitoringPerNameEngineMessage
+        monitoringPerNameMessage: MonitoringPerNameMessage
     ) {
         logger.debug(
             "from messageId {}: taskId {} - sendToMonitoringPerName {}",
             state.lastMessageId,
             state.taskId,
-            monitoringPerNameEngineMessage
+            monitoringPerNameMessage
         )
-        sendToMonitoringPerNameFn(monitoringPerNameEngineMessage)
+        sendToMonitoringPerNameFn(monitoringPerNameMessage)
     }
 }

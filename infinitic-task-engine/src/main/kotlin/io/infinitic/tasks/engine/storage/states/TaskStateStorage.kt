@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory
  */
 interface TaskStateStorage {
     val getStateFn: GetTaskState
-    val updateStateFn: UpdateTaskState
-    val deleteStateFn: DeleteTaskState
+    val putStateFn: PutTaskState
+    val delStateFn: DelTaskState
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -51,13 +51,13 @@ interface TaskStateStorage {
         return taskState
     }
 
-    suspend fun updateState(taskId: TaskId, newState: TaskState, oldState: TaskState?) {
-        updateStateFn(taskId, newState, oldState)
-        logger.debug("taskId {} - updateState {}", taskId, newState)
+    suspend fun putState(taskId: TaskId, state: TaskState) {
+        putStateFn(taskId, state)
+        logger.debug("taskId {} - putState {}", taskId, state)
     }
 
-    suspend fun deleteState(taskId: TaskId) {
-        deleteStateFn(taskId)
-        logger.debug("taskId {} - deleteState", taskId)
+    suspend fun delState(taskId: TaskId) {
+        delStateFn(taskId)
+        logger.debug("taskId {} - delState", taskId)
     }
 }

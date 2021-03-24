@@ -40,30 +40,24 @@ open class WorkflowStateKeyValueStorage(
     private val cache: KeyValueCache<WorkflowState>
 ) : WorkflowStateStorage {
 
-    override val createStateFn: CreateWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
-        val key = getWorkflowStateKey(workflowId)
-        cache.set(key, state)
-        storage.putState(key, state.toByteBuffer())
-    }
-
     override val getStateFn: GetWorkflowState = { workflowId: WorkflowId ->
         val key = getWorkflowStateKey(workflowId)
         cache.get(key) ?: run {
             logger.debug("workflowId {} - getStateFn - absent from cache, get from storage", workflowId)
-            storage.getState(key)?.let { WorkflowState.fromByteBuffer(it) }
+            storage.getState(key)?.let { WorkflowState.fromByteArray(it) }
         }
     }
 
-    override val updateStateFn: UpdateWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
+    override val putStateFn: PutWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
         val key = getWorkflowStateKey(workflowId)
-        cache.set(key, state)
-        storage.putState(key, state.toByteBuffer())
+        cache.put(key, state)
+        storage.putState(key, state.toByteArray())
     }
 
-    override val deleteStateFn: DeleteWorkflowState = { workflowId: WorkflowId ->
+    override val delStateFn: DeleteWorkflowState = { workflowId: WorkflowId ->
         val key = getWorkflowStateKey(workflowId)
-        cache.delete(key)
-        storage.deleteState(key)
+        cache.del(key)
+        storage.delState(key)
     }
 
     /*

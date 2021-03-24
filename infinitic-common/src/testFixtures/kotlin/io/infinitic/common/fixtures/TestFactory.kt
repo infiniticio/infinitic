@@ -28,8 +28,8 @@ package io.infinitic.common.fixtures
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -82,7 +82,7 @@ object TestFactory {
                 TaskEngineEnvelope.from(random(sub))
             }
             .randomize(MonitoringPerNameEnvelope::class.java) {
-                val sub = MonitoringPerNameEngineMessage::class.sealedSubclasses.shuffled().first()
+                val sub = MonitoringPerNameMessage::class.sealedSubclasses.shuffled().first()
                 MonitoringPerNameEnvelope.from(random(sub))
             }
             .randomize(MonitoringGlobalEnvelope::class.java) {

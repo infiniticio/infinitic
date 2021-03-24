@@ -30,7 +30,6 @@ import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskStatus
 
 /**
  * This MonitoringPerNameStateStorage implementation converts state objects used by the engine to Avro objects, and saves
@@ -45,55 +44,23 @@ open class MonitoringPerNameStateKeyValueStorage(
         val key = getMonitoringPerNameStateKey(taskName)
         cache.get(key) ?: run {
             logger.debug("taskName {} - getStateFn - absent from cache, get from storage", taskName)
-            storage.getState(key)?.let { MonitoringPerNameState.fromByteBuffer(it) }
+            storage.getState(key)?.let { MonitoringPerNameState.fromByteArray(it) }
         }
     }
 
-    override val updateStateFn: UpdateMonitoringPerNameState = {
+    override val putStateFn: PutMonitoringPerNameState = {
         taskName: TaskName,
-        newState: MonitoringPerNameState,
-        oldState: MonitoringPerNameState?
+        state: MonitoringPerNameState,
         ->
         val key = getMonitoringPerNameStateKey(taskName)
-        cache.set(key, newState)
-
-        val counterOkKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_OK)
-        val counterWarningKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_WARNING)
-        val counterErrorKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.RUNNING_ERROR)
-        val counterCompletedKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.TERMINATED_COMPLETED)
-        val counterCanceledKey = getMonitoringPerNameCounterKey(taskName, TaskStatus.TERMINATED_CANCELED)
-
-        // use counters to save state, to avoid race conditions
-        val incrOk = newState.runningOkCount - (oldState?.runningOkCount ?: 0L)
-        val incrWarning = newState.runningWarningCount - (oldState?.runningWarningCount ?: 0L)
-        val incrError = newState.runningErrorCount - (oldState?.runningErrorCount ?: 0L)
-        val incrCompleted = newState.terminatedCompletedCount - (oldState?.terminatedCompletedCount ?: 0L)
-        val incrCanceled = newState.terminatedCanceledCount - (oldState?.terminatedCanceledCount ?: 0L)
-
-        incrementCounter(counterOkKey, incrOk, force = oldState == null)
-        incrementCounter(counterWarningKey, incrWarning, force = oldState == null)
-        incrementCounter(counterErrorKey, incrError, force = oldState == null)
-        incrementCounter(counterCompletedKey, incrCompleted, force = oldState == null)
-        incrementCounter(counterCanceledKey, incrCanceled, force = oldState == null)
-
-        // save state retrieved from counters
-        val state = MonitoringPerNameState(
-            lastMessageId = newState.lastMessageId,
-            taskName = taskName,
-            runningOkCount = storage.getCounter(counterOkKey),
-            runningWarningCount = storage.getCounter(counterWarningKey),
-            runningErrorCount = storage.getCounter(counterErrorKey),
-            terminatedCompletedCount = storage.getCounter(counterCompletedKey),
-            terminatedCanceledCount = storage.getCounter(counterCanceledKey)
-        )
-
-        storage.putState(key, state.toByteBuffer())
+        cache.put(key, state)
+        storage.putState(key, state.toByteArray())
     }
 
-    override val deleteStateFn: DeleteMonitoringPerNameState = { taskName: TaskName ->
+    override val delStateFn: DelMonitoringPerNameState = { taskName: TaskName ->
         val key = getMonitoringPerNameStateKey(taskName)
-        cache.delete(key)
-        storage.deleteState(getMonitoringPerNameStateKey(taskName))
+        cache.del(key)
+        storage.delState(key)
     }
 
     /*
@@ -112,12 +79,5 @@ open class MonitoringPerNameStateKeyValueStorage(
         }
     }
 
-    private suspend fun incrementCounter(key: String, amount: Long, force: Boolean = false) {
-        if (force || amount != 0L) {
-            storage.incrementCounter(key, amount)
-        }
-    }
-
     internal fun getMonitoringPerNameStateKey(taskName: TaskName) = "monitoringPerName.state.$taskName"
-    internal fun getMonitoringPerNameCounterKey(taskName: TaskName, taskStatus: TaskStatus) = "monitoringPerName.counter.${taskStatus.toString().toLowerCase()}.${taskName.toString().toLowerCase()}"
 }

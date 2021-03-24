@@ -31,18 +31,12 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 interface WorkflowStateStorage {
-    val createStateFn: CreateWorkflowState
     val getStateFn: GetWorkflowState
-    val updateStateFn: UpdateWorkflowState
-    val deleteStateFn: DeleteWorkflowState
+    val putStateFn: PutWorkflowState
+    val delStateFn: DeleteWorkflowState
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
-
-    suspend fun createState(workflowId: WorkflowId, workflowState: WorkflowState) {
-        createStateFn(workflowId, workflowState)
-        logger.debug("workflowId {} - createState {}", workflowId, workflowState)
-    }
 
     suspend fun getState(workflowId: WorkflowId): WorkflowState? {
         val workflowState = getStateFn(workflowId)
@@ -51,13 +45,13 @@ interface WorkflowStateStorage {
         return workflowState
     }
 
-    suspend fun updateState(workflowId: WorkflowId, workflowState: WorkflowState) {
-        updateStateFn(workflowId, workflowState)
+    suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
+        putStateFn(workflowId, workflowState)
         logger.debug("workflowId {} - updateState {}", workflowId, workflowState)
     }
 
-    suspend fun deleteState(workflowId: WorkflowId) {
-        deleteStateFn(workflowId)
+    suspend fun delState(workflowId: WorkflowId) {
+        delStateFn(workflowId)
         logger.debug("workflowId {} - deleteState", workflowId)
     }
 }

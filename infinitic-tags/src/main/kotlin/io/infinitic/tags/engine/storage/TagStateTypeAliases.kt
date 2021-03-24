@@ -23,9 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.storage.states
+package io.infinitic.tags.engine.storage
 
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tags.state.TagState
 
-typealias CreateWorkflowState = suspend (WorkflowId, WorkflowState) -> Unit
+typealias GetTagState = suspend (Tag) -> TagState?
+
+typealias PutTagState = suspend (Tag, TagState) -> Unit
+
+typealias DelTagState = suspend (Tag) -> Unit

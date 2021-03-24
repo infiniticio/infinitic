@@ -23,24 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.perName.messages
+package io.infinitic.workflows.engine.storage.states
 
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskStatus
-import kotlinx.serialization.Serializable
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.engine.state.WorkflowState
 
-@Serializable
-sealed class MonitoringPerNameEngineMessage {
-    val messageId = MessageId()
-    abstract val taskName: TaskName
-}
+typealias GetWorkflowState = suspend (WorkflowId) -> WorkflowState?
 
-@Serializable
-data class TaskStatusUpdated constructor(
-    override val taskName: TaskName,
-    val taskId: TaskId,
-    val oldStatus: TaskStatus?,
-    val newStatus: TaskStatus
-) : MonitoringPerNameEngineMessage()
+typealias PutWorkflowState = suspend (WorkflowId, WorkflowState) -> Unit
+
+typealias DeleteWorkflowState = suspend (WorkflowId) -> Unit

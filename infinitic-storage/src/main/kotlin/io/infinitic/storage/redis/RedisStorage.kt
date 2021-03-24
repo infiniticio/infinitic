@@ -28,56 +28,26 @@ package io.infinitic.storage.redis
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 
 class RedisStorage(config: Redis) : KeyValueStorage {
     private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
 
     init {
-        Runtime.getRuntime().addShutdownHook(
-            Thread() {
-                pool.close()
-            }
-        )
+        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
-    override suspend fun getState(key: String): ByteBuffer? =
-        pool.resource.use { jedis ->
-            jedis.get(key.toByteArray(StandardCharsets.UTF_8))?.toByteBuffer()
-        }
+    override suspend fun getState(key: String): ByteArray? =
+        pool.resource.use { it.get(key.toByteArray()) }
 
-    override suspend fun putState(key: String, value: ByteBuffer) =
-        pool.resource.use { jedis ->
-            jedis.set(key.toByteArray(StandardCharsets.UTF_8), value.toByteArray())
+    override suspend fun putState(key: String, value: ByteArray) =
+        pool.resource.use { it.set(key.toByteArray(), value); Unit }
 
-            Unit
-        }
-
-    override suspend fun updateState(key: String, value: ByteBuffer) = putState(key, value)
-
-    override suspend fun deleteState(key: String) =
-        pool.resource.use { jedis ->
-            jedis.del(key.toByteArray(StandardCharsets.UTF_8))
-
-            Unit
-        }
+    override suspend fun delState(key: String) =
+        pool.resource.use { it.del(key.toByteArray()); Unit }
 
     override suspend fun incrementCounter(key: String, amount: Long) =
-        pool.resource.use { jedis ->
-            jedis.incrBy(key.toByteArray(StandardCharsets.UTF_8), amount)
+        pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
 
-            Unit
-        }
-
-    override suspend fun getCounter(key: String): Long = getState(key)?.let { String(it.toByteArray()) }?.toLong() ?: 0L
-}
-
-fun ByteArray.toByteBuffer(): ByteBuffer = ByteBuffer.wrap(this)
-
-fun ByteBuffer.toByteArray(): ByteArray {
-    val byteArray = ByteArray(capacity())
-    get(byteArray)
-
-    return byteArray
+    override suspend fun getCounter(key: String): Long =
+        getState(key)?.let { String(it) }?.toLong() ?: 0L
 }

@@ -56,7 +56,7 @@ class MonitoringPerNameTests : ShouldSpec({
             val stateIn = TestFactory.random(MonitoringPerNameState::class, mapOf("taskName" to msg.taskName))
             val stateOutSlot = slot<MonitoringPerNameState>()
             coEvery { storage.getState(msg.taskName) } returns stateIn
-            coEvery { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
+            coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
 
             val monitoringPerName = MonitoringPerNameEngine(
                 storage,
@@ -68,7 +68,7 @@ class MonitoringPerNameTests : ShouldSpec({
             val stateOut = stateOutSlot.captured
             coVerifyAll {
                 storage.getState(msg.taskName)
-                storage.updateState(msg.taskName, stateOut, stateIn)
+                storage.putState(msg.taskName, stateOut)
             }
             stateOut.runningErrorCount shouldBe stateIn.runningErrorCount + 1
             stateOut.runningOkCount shouldBe stateIn.runningOkCount - 1
@@ -85,7 +85,7 @@ class MonitoringPerNameTests : ShouldSpec({
             val storage = mockk<MonitoringPerNameStateStorage>()
             val stateOutSlot = slot<MonitoringPerNameState>()
             coEvery { storage.getState(msg.taskName) } returns null
-            coEvery { storage.updateState(msg.taskName, capture(stateOutSlot), any()) } just runs
+            coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
             val monitoringPerNameOutput = MockMonitoringPerNameOutput()
             val monitoringPerName = MonitoringPerNameEngine(storage, monitoringPerNameOutput)
 
@@ -95,7 +95,7 @@ class MonitoringPerNameTests : ShouldSpec({
             val stateOut = stateOutSlot.captured
             coVerifyAll {
                 storage.getState(msg.taskName)
-                storage.updateState(msg.taskName, stateOut, null)
+                storage.putState(msg.taskName, stateOut)
                 monitoringPerNameOutput.sendToMonitoringGlobal(stateOut, ofType<TaskCreated>())
             }
         }

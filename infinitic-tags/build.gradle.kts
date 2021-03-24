@@ -23,9 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.storage.states
+dependencies {
+    api(Libs.Coroutines.core)
 
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.state.WorkflowState
+    api(project(":infinitic-common"))
+    api(project(":infinitic-cache"))
+}
 
-typealias UpdateWorkflowState = suspend (WorkflowId, WorkflowState) -> Unit
+apply("../publish.gradle.kts")

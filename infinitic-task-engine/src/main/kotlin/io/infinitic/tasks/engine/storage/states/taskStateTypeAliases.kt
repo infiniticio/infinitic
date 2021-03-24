@@ -30,6 +30,6 @@ import io.infinitic.common.tasks.engine.state.TaskState
 
 typealias GetTaskState = suspend (TaskId) -> TaskState?
 
-typealias DeleteTaskState = suspend (TaskId) -> Unit
+typealias PutTaskState = suspend (TaskId, TaskState) -> Unit
 
-typealias UpdateTaskState = suspend (TaskId, TaskState, TaskState?) -> Unit
+typealias DelTaskState = suspend (TaskId) -> Unit

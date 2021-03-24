@@ -44,20 +44,20 @@ class TaskStateKeyValueStorage(
         val key = getTaskStateKey(taskId)
         cache.get(key) ?: run {
             logger.debug("taskId {} - getStateFn - absent from cache, get from storage", taskId)
-            storage.getState(key)?.let { TaskState.fromByteBuffer(it) }
+            storage.getState(key)?.let { TaskState.fromByteArray(it) }
         }
     }
 
-    override val updateStateFn: UpdateTaskState = { taskId: TaskId, newState: TaskState, _: TaskState? ->
+    override val putStateFn: PutTaskState = { taskId: TaskId, state: TaskState ->
         val key = getTaskStateKey(taskId)
-        cache.set(key, newState)
-        storage.putState(key, newState.toByteBuffer())
+        cache.put(key, state)
+        storage.putState(key, state.toByteArray())
     }
 
-    override val deleteStateFn: DeleteTaskState = { taskId: TaskId ->
+    override val delStateFn: DelTaskState = { taskId: TaskId ->
         val key = getTaskStateKey(taskId)
-        cache.delete(key)
-        storage.deleteState(key)
+        cache.del(key)
+        storage.delState(key)
     }
 
     /*

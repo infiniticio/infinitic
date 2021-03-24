@@ -37,8 +37,8 @@ import org.slf4j.LoggerFactory
  */
 interface MonitoringGlobalStateStorage {
     val getStateFn: GetMonitoringGlobalState
-    val updateStateFn: UpdateMonitoringGlobalState
-    val deleteStateFn: DeleteMonitoringGlobalState
+    val putStateFn: PutMonitoringGlobalState
+    val delStateFn: DelMonitoringGlobalState
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -50,13 +50,13 @@ interface MonitoringGlobalStateStorage {
         return taskState
     }
 
-    suspend fun updateState(newState: MonitoringGlobalState, oldState: MonitoringGlobalState?) {
-        updateStateFn(newState, oldState)
+    suspend fun putState(newState: MonitoringGlobalState) {
+        putStateFn(newState)
         logger.debug("updateState {}", newState)
     }
 
-    suspend fun deleteState() {
-        deleteStateFn()
+    suspend fun delState() {
+        delStateFn()
         logger.debug("deleteState")
     }
 }

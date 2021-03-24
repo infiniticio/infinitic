@@ -128,7 +128,7 @@ class TaskEngine(
 
         // Update stored state if needed and existing
         if (newState != oldState && !newState.taskStatus.isTerminated) {
-            taskStateStorage.updateState(message.taskId, newState, oldState)
+            taskStateStorage.putState(message.taskId, newState)
         }
 
         // Send TaskStatusUpdated if needed
@@ -197,7 +197,7 @@ class TaskEngine(
         taskEngineOutput.sendToTaskEngine(newState, tad, MillisDuration(0))
 
         // Delete stored state
-        taskStateStorage.deleteState(newState.taskId)
+        taskStateStorage.delState(newState.taskId)
 
         return newState
     }
@@ -386,7 +386,7 @@ class TaskEngine(
         taskEngineOutput.sendToTaskEngine(newState, tc, MillisDuration(0))
 
         // delete stored state
-        taskStateStorage.deleteState(newState.taskId)
+        taskStateStorage.delState(newState.taskId)
 
         return newState
     }

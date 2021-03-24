@@ -59,7 +59,7 @@ class MonitoringGlobalEngine(
 
         // Update stored state if needed and existing
         if (newState != oldState) {
-            storage.updateState(newState, oldState)
+            storage.putState(newState)
         }
     }
 

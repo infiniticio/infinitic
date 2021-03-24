@@ -23,8 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.storage.states
+package io.infinitic.common.tags.messages
 
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-
-typealias DeleteWorkflowState = suspend (WorkflowId) -> Unit
+enum class TagMessageType {
+    SEND_TO_CHANNEL,
+    WORKFLOW_STARTED,
+    WORKFLOW_TERMINATED
+}

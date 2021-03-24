@@ -30,6 +30,6 @@ import io.infinitic.common.tasks.data.TaskName
 
 typealias GetMonitoringPerNameState = suspend (TaskName) -> MonitoringPerNameState?
 
-typealias UpdateMonitoringPerNameState = suspend (TaskName, MonitoringPerNameState, MonitoringPerNameState?) -> Unit
+typealias PutMonitoringPerNameState = suspend (TaskName, MonitoringPerNameState) -> Unit
 
-typealias DeleteMonitoringPerNameState = suspend (TaskName) -> Unit
+typealias DelMonitoringPerNameState = suspend (TaskName) -> Unit

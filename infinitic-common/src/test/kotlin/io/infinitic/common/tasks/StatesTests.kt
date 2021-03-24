@@ -27,7 +27,7 @@ package io.infinitic.common.tasks
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.tags.state.TagState
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -44,8 +44,8 @@ class StatesTests : StringSpec({
 
     "MonitoringPerNameState should be avro-convertible" {
         shouldNotThrowAny {
-            val state = TestFactory.random<MonitoringPerNameState>()
-            state shouldBe MonitoringPerNameState.fromByteArray(state.toByteArray())
+            val state = TestFactory.random<TagState>()
+            state shouldBe TagState.fromByteArray(state.toByteArray())
         }
     }
 

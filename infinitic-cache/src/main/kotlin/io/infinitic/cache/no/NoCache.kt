@@ -29,11 +29,11 @@ import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueCache
 
 class NoCache<T>() : KeyValueCache<T>, Flushable {
-    override fun delete(key: String) {
+    override fun del(key: String) {
         // nothing
     }
 
-    override fun set(key: String, value: T) {
+    override fun put(key: String, value: T) {
         // nothing
     }
 

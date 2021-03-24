@@ -34,8 +34,8 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -176,7 +176,7 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToMonitoringPerName(): SendToMonitoringPerName = { message: MonitoringPerNameEngineMessage ->
+    private fun sendToMonitoringPerName(): SendToMonitoringPerName = { message: MonitoringPerNameMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name),
             MonitoringPerNameEnvelope.from(message),
@@ -242,7 +242,7 @@ class PulsarOutputs(
         logger.debug("taskId {} - sendToTaskEngineDeadLetters {}", message.taskId, message)
     }
 
-    val sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName = { message: MonitoringPerNameEngineMessage ->
+    val sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName = { message: MonitoringPerNameMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameDeadLettersTopic.name),
             MonitoringPerNameEnvelope.from(message),

@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory
  */
 interface MonitoringPerNameStateStorage {
     val getStateFn: GetMonitoringPerNameState
-    val updateStateFn: UpdateMonitoringPerNameState
-    val deleteStateFn: DeleteMonitoringPerNameState
+    val putStateFn: PutMonitoringPerNameState
+    val delStateFn: DelMonitoringPerNameState
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -51,13 +51,13 @@ interface MonitoringPerNameStateStorage {
         return taskState
     }
 
-    suspend fun updateState(taskName: TaskName, newState: MonitoringPerNameState, oldState: MonitoringPerNameState?) {
-        updateStateFn(taskName, newState, oldState)
-        logger.debug("taskName {} - updateState {}", taskName, newState)
+    suspend fun putState(taskName: TaskName, state: MonitoringPerNameState) {
+        putStateFn(taskName, state)
+        logger.debug("taskName {} - putState {}", taskName, state)
     }
 
-    suspend fun deleteState(taskName: TaskName) {
-        deleteStateFn(taskName)
-        logger.debug("taskName {} - deleteState", taskName)
+    suspend fun delState(taskName: TaskName) {
+        delStateFn(taskName)
+        logger.debug("taskName {} - delState", taskName)
     }
 }

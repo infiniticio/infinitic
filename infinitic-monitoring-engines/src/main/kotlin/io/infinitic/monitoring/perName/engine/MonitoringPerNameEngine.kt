@@ -26,7 +26,7 @@
 package io.infinitic.monitoring.perName.engine
 
 import io.infinitic.common.monitoring.global.messages.TaskCreated
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
@@ -42,7 +42,7 @@ class MonitoringPerNameEngine(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun handle(message: MonitoringPerNameEngineMessage) {
+    suspend fun handle(message: MonitoringPerNameMessage) {
         logger.debug("name {} - receiving {} (messageId {})", message.taskName, message, message.messageId)
 
         // get state
@@ -69,11 +69,11 @@ class MonitoringPerNameEngine(
 
         // Update stored state if needed and existing
         if (newState != oldState) {
-            storage.updateState(message.taskName, newState, oldState)
+            storage.putState(message.taskName, newState)
         }
     }
 
-    private fun logDiscardingMessage(message: MonitoringPerNameEngineMessage, reason: String) {
+    private fun logDiscardingMessage(message: MonitoringPerNameMessage, reason: String) {
         logger.info("name {} - discarding {}: {} (messageId {})", message.taskName, reason, message, message.messageId)
     }
 

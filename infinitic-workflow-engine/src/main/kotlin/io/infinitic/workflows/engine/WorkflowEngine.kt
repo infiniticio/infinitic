@@ -81,7 +81,8 @@ class WorkflowEngine(
         if (state == null) {
             if (message is DispatchWorkflow) {
                 state = dispatchWorkflow(workflowEngineOutput, message)
-                workflowStateStorage.createState(message.workflowId, state)
+                workflowStateStorage.putState(message.workflowId, state)
+
                 return
             }
             if (message is SendToChannel && message.clientWaiting) {
@@ -127,7 +128,7 @@ class WorkflowEngine(
             // buffer this message
             state.bufferedMessages.add(message)
             // update state
-            workflowStateStorage.updateState(message.workflowId, state)
+            workflowStateStorage.putState(message.workflowId, state)
 
             return
         }
@@ -148,9 +149,9 @@ class WorkflowEngine(
 
         // update state
         if (state.methodRuns.size == 0) {
-            workflowStateStorage.deleteState(message.workflowId)
+            workflowStateStorage.delState(message.workflowId)
         } else {
-            workflowStateStorage.updateState(message.workflowId, state)
+            workflowStateStorage.putState(message.workflowId, state)
         }
     }
 

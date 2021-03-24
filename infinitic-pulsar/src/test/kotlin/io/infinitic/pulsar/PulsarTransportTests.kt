@@ -29,8 +29,8 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
@@ -62,7 +62,7 @@ class PulsarTransportTests : StringSpec({
         include(shouldBeAbleToSendMessageToTaskEngineCommandsTopic(TestFactory.random(it)))
     }
 
-    MonitoringPerNameEngineMessage::class.sealedSubclasses.forEach {
+    MonitoringPerNameMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToMonitoringPerNameTopic(TestFactory.random(it)))
     }
 
@@ -137,7 +137,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
     }
 }
 
-private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPerNameEngineMessage) = stringSpec {
+private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPerNameMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MonitoringPerName topic " {
         // given
         val context = context()

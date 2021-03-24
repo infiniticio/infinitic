@@ -36,7 +36,6 @@ import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.mockk
 import io.mockk.slot
-import java.nio.ByteBuffer
 
 class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
     context("MonitoringGlobalStateKeyValueStorage.getState") {
@@ -58,7 +57,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
-            coEvery { storage.getState(any()) } returns ByteBuffer.wrap(stateIn.toByteArray())
+            coEvery { storage.getState(any()) } returns stateIn.toByteArray()
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
@@ -75,16 +74,16 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
-            val binSlot = slot<ByteBuffer>()
+            val binSlot = slot<ByteArray>()
 
             coEvery { storage.putState("monitoringGlobal.state", capture(binSlot)) } returns Unit
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
-            stateStorage.updateState(stateIn, null)
+            stateStorage.putState(stateIn)
             // then
             binSlot.isCaptured shouldBe true
-            MonitoringGlobalState.fromByteBuffer(binSlot.captured) shouldBe stateIn
+            MonitoringGlobalState.fromByteArray(binSlot.captured) shouldBe stateIn
         }
     }
 
@@ -92,13 +91,13 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
         should("delete state") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.deleteState(any()) } returns Unit
+            coEvery { storage.delState(any()) } returns Unit
             // given
             val stageStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
-            stageStorage.deleteState()
+            stageStorage.delState()
             // then
-            coVerify(exactly = 1) { storage.deleteState("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.delState("monitoringGlobal.state") }
             confirmVerified(storage)
         }
     }

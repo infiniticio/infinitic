@@ -44,7 +44,6 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class TaskState(
@@ -69,10 +68,9 @@ data class TaskState(
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
+
     fun deepCopy() = fromByteArray(toByteArray())
 }

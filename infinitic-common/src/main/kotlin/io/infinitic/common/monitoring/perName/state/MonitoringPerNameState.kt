@@ -29,7 +29,6 @@ import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class MonitoringPerNameState(
@@ -43,9 +42,7 @@ data class MonitoringPerNameState(
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
 }

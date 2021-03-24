@@ -34,7 +34,7 @@ import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
+import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tasks.data.TaskId
@@ -225,7 +225,7 @@ class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
 
     override val sendToMonitoringPerNameFn: SendToMonitoringPerName =
-        { msg: MonitoringPerNameEngineMessage -> scope.sendToMonitoringPerName(msg) }
+        { msg: MonitoringPerNameMessage -> scope.sendToMonitoringPerName(msg) }
 }
 
 class TestMonitoringPerNameOutput(private val scope: CoroutineScope) : MonitoringPerNameOutput {
@@ -264,7 +264,7 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuratio
     }
 }
 
-fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) {
+fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameMessage) {
     launch {
         monitoringPerNameEngine.handle(msg)
 

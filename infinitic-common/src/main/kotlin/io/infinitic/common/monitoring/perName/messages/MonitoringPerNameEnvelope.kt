@@ -46,7 +46,7 @@ data class MonitoringPerNameEnvelope(
     }
 
     companion object {
-        fun from(msg: MonitoringPerNameEngineMessage) = when (msg) {
+        fun from(msg: MonitoringPerNameMessage) = when (msg) {
             is TaskStatusUpdated -> MonitoringPerNameEnvelope(
                 msg.taskName,
                 MonitoringPerNameMessageType.TASK_STATUS_UPDATED,
@@ -57,7 +57,7 @@ data class MonitoringPerNameEnvelope(
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message(): MonitoringPerNameEngineMessage = when (type) {
+    fun message(): MonitoringPerNameMessage = when (type) {
         MonitoringPerNameMessageType.TASK_STATUS_UPDATED -> taskStatusUpdated!!
     }
 
