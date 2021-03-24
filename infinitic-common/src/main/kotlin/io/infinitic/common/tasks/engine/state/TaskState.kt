@@ -42,6 +42,7 @@ import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 import java.nio.ByteBuffer
 
@@ -56,6 +57,7 @@ data class TaskState(
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val workflowId: WorkflowId?,
+    val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,
     val taskStatus: TaskStatus,
     var taskRetry: TaskRetry = TaskRetry(0),

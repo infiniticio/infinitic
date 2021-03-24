@@ -31,7 +31,7 @@ dependencies {
     api(Libs.Serialization.json)
     api(Libs.JsonPath.jayway)
     implementation(Libs.Jackson.databind)
-    implementation(Libs.Jackson.module)
+    implementation(Libs.Jackson.kotlin)
     implementation(Libs.Jackson.jsr310)
     implementation(Libs.Avro4k.core)
     implementation(Libs.Coroutines.core)

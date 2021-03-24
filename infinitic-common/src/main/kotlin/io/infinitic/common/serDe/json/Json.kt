@@ -29,16 +29,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.jsonMapper
 import org.apache.avro.specific.SpecificRecordBase
 
 object Json {
-    private val mapper = jacksonObjectMapper()
-        .addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
-        .addMixIn(Exception::class.java, ExceptionMixIn::class.java)
-        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-        .registerModule(JavaTimeModule())
-        .registerModule(KotlinModule())
+    private val mapper = jsonMapper {
+        addMixIn(SpecificRecordBase::class.java, AvroMixIn::class.java)
+        addMixIn(Exception::class.java, ExceptionMixIn::class.java)
+        configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+        addModule(JavaTimeModule())
+        addModule(KotlinModule())
+    }
 
     fun stringify(msg: Any?, pretty: Boolean = false): String = when (pretty) {
         true -> mapper.writerWithDefaultPrettyPrinter().writeValueAsString(msg)

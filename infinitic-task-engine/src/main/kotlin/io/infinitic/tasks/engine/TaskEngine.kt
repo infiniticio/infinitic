@@ -214,6 +214,7 @@ class TaskEngine(
             methodParameterTypes = message.methodParameterTypes,
             methodParameters = message.methodParameters,
             workflowId = message.workflowId,
+            workflowName = message.workflowName,
             methodRunId = message.methodRunId,
             taskAttemptId = TaskAttemptId(),
             taskStatus = TaskStatus.RUNNING_OK,
