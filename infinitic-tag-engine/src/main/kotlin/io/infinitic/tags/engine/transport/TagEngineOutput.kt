@@ -22,15 +22,34 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.storage
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.storage.redis.RedisKeyValueStorage
+package io.infinitic.tags.engine.transport
 
-fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryStorage()
-    StateStorage.redis -> RedisKeyValueStorage(workerConfig.redis!!)
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+interface TagEngineOutput {
+    val sendToWorkflowEngineFn: SendToWorkflowEngine
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    suspend fun sendToWorkflowEngine(
+        messageId: MessageId,
+        tag: Tag,
+        workflowEngineMessage: WorkflowEngineMessage
+    ) {
+        logger.debug(
+            "from messageId {}: tag {} - sendToWorkflowEngine {}",
+            messageId,
+            tag,
+            workflowEngineMessage
+        )
+        sendToWorkflowEngineFn(workflowEngineMessage, MillisDuration(0))
+    }
 }

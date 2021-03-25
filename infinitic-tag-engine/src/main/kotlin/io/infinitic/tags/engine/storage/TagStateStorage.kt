@@ -22,15 +22,27 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.storage
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.storage.redis.RedisKeyValueStorage
+package io.infinitic.tags.engine.storage
 
-fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryStorage()
-    StateStorage.redis -> RedisKeyValueStorage(workerConfig.redis!!)
+import io.infinitic.common.data.Id
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.tags.data.Tag
+
+/**
+ * TagStateStorage implementations are responsible for storing the different state objects used by the engine.
+ *
+ * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
+ * transformed before being stored. These details are left to the different implementations.
+ */
+interface TagStateStorage {
+    suspend fun getLastMessageId(tag: Tag): MessageId
+
+    suspend fun setLastMessageId(tag: Tag, messageId: MessageId)
+
+    suspend fun <T : Id> getIds(tag: Tag): Set<T>
+
+    suspend fun <T : Id> addId(tag: Tag, id: T)
+
+    suspend fun <T : Id> removeId(tag: Tag, id: T)
 }

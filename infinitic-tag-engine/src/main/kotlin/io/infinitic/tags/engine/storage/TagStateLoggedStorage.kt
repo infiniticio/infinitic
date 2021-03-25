@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory
  * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
  * transformed before being stored. These details are left to the different implementations.
  */
-interface TagStateStorage {
+interface TagStateLoggedStorage {
     val getStateFn: GetTagState
     val putStateFn: PutTagState
     val delStateFn: DelTagState

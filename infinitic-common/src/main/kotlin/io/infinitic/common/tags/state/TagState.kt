@@ -30,7 +30,6 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class TagState(
@@ -43,5 +42,4 @@ data class TagState(
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
 }

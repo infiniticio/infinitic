@@ -22,15 +22,26 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.storage
+
+package io.infinitic.storage.redis
 
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.InMemoryStorage
-import io.infinitic.storage.redis.RedisKeyValueStorage
+import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisPoolConfig
 
-fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryStorage()
-    StateStorage.redis -> RedisKeyValueStorage(workerConfig.redis!!)
+class RedisKeyValueStorage(config: Redis) : KeyValueStorage {
+    private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
+
+    init {
+        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+    }
+
+    override suspend fun getState(key: String): ByteArray? =
+        pool.resource.use { it.get(key.toByteArray()) }
+
+    override suspend fun putState(key: String, value: ByteArray) =
+        pool.resource.use { it.set(key.toByteArray(), value); Unit }
+
+    override suspend fun delState(key: String) =
+        pool.resource.use { it.del(key.toByteArray()); Unit }
 }

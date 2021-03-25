@@ -23,9 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyValue
+package io.infinitic.storage.redis
 
-interface CounterKeyValueStorage {
-    suspend fun incrementCounter(key: String, amount: Long)
-    suspend fun getCounter(key: String): Long
+import io.infinitic.common.storage.keyValue.KeyCounterStorage
+import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisPoolConfig
+
+class RedisKeyCounterStorage(config: Redis) : KeyCounterStorage {
+    private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
+
+    init {
+        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+    }
+
+    override suspend fun getCounter(key: String): Long =
+        pool.resource.use { it.get(key.toByteArray()) }
+            ?.let { String(it) }?.toLong() ?: 0L
+
+    override suspend fun incrementCounter(key: String, amount: Long) =
+        pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
 }

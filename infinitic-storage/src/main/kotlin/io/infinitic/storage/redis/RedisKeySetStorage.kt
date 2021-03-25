@@ -25,29 +25,22 @@
 
 package io.infinitic.storage.redis
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 
-class RedisStorage(config: Redis) : KeyValueStorage {
+class RedisKeySetStorage(config: Redis) {
     private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
 
     init {
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
-    override suspend fun getState(key: String): ByteArray? =
-        pool.resource.use { it.get(key.toByteArray()) }
+    suspend fun getSet(key: String): MutableSet<ByteArray> =
+        pool.resource.use { it.smembers(key.toByteArray()) }
 
-    override suspend fun putState(key: String, value: ByteArray) =
-        pool.resource.use { it.set(key.toByteArray(), value); Unit }
+    suspend fun addSet(key: String, value: ByteArray) =
+        pool.resource.use { it.sadd(key.toByteArray(), value); Unit }
 
-    override suspend fun delState(key: String) =
-        pool.resource.use { it.del(key.toByteArray()); Unit }
-
-    override suspend fun incrementCounter(key: String, amount: Long) =
-        pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
-
-    override suspend fun getCounter(key: String): Long =
-        getState(key)?.let { String(it) }?.toLong() ?: 0L
+    suspend fun delSet(key: String, value: ByteArray) =
+        pool.resource.use { it.srem(key.toByteArray(), value); Unit }
 }

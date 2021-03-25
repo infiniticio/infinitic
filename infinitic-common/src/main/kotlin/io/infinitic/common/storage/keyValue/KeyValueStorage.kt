@@ -25,4 +25,4 @@
 
 package io.infinitic.common.storage.keyValue
 
-interface KeyValueStorage : StateKeyValueStorage, CounterKeyValueStorage
+interface KeyValueStorage : StateKeyValueStorage

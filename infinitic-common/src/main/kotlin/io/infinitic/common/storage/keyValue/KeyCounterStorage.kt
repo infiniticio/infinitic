@@ -23,28 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tags.engine.transport
+package io.infinitic.common.storage.keyValue
 
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.tags.state.TagState
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
-interface TagEngineOutput {
-    val sendToWorkflowEngineFn: SendToWorkflowEngine
-
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
-
-    suspend fun sendToWorkflowEngine(state: TagState, workflowEngineMessage: WorkflowEngineMessage) {
-        logger.debug(
-            "from messageId {}: tag {} - sendToWorkflowEngine {}",
-            state.lastMessageId,
-            state.tag,
-            workflowEngineMessage
-        )
-        sendToWorkflowEngineFn(workflowEngineMessage, MillisDuration(0))
-    }
+interface KeyCounterStorage {
+    suspend fun incrementCounter(key: String, amount: Long)
+    suspend fun getCounter(key: String): Long
 }

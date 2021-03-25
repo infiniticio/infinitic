@@ -29,7 +29,7 @@ import io.infinitic.common.tags.messages.SendToChannel
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.messages.WorkflowStarted
 import io.infinitic.common.tags.messages.WorkflowTerminated
-import io.infinitic.common.tags.state.TagState
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.tags.engine.storage.TagStateStorage
 import io.infinitic.tags.engine.transport.TagEngineOutput
 import org.slf4j.Logger
@@ -46,29 +46,23 @@ class TagEngine(
     suspend fun handle(message: TagEngineMessage) {
         logger.debug("receiving {} (messageId {})", message, message.messageId)
 
-        // get state
-        val state = storage
-            .getState(message.tag)
-            ?: TagState(message.tag, null, mutableSetOf())
-
-        if (state.lastMessageId == message.messageId) {
-            // this message has already been handled
-            logger.info("discarding as state already contains this messageId: {}", message)
-
-            return
-        }
-
         when (message) {
-            is SendToChannel -> sendToChannel(state, message)
-            is WorkflowStarted -> workflowStarted(state, message)
-            is WorkflowTerminated -> workflowTerminated(state, message)
+            is SendToChannel -> sendToChannel(message)
+            is WorkflowStarted -> workflowStarted(message)
+            is WorkflowTerminated -> workflowTerminated(message)
         }
+
+        storage.setLastMessageId(message.tag, message.messageId)
     }
 
-    private suspend fun sendToChannel(state: TagState, message: SendToChannel) {
-        when (state.workflowIds.isEmpty()) {
-            true -> logger.debug("discarding as state does not contain any workflowIds: {}", message)
-            false -> state.workflowIds.forEach {
+    private suspend fun sendToChannel(message: SendToChannel) {
+        // sending to channel is not an idempotent action
+        if (hasMessageAlreadyBeenHandled(message)) return
+
+        val ids = storage.getIds<WorkflowId>(message.tag)
+        when (ids.isEmpty()) {
+            true -> logger.debug("discarding {} as no id found for the provided tag", message)
+            false -> ids.forEach {
                 val msg = SendToChannelInWorkflowEngine(
                     clientName = message.clientName,
                     clientWaiting = message.clientWaiting,
@@ -80,21 +74,25 @@ class TagEngine(
                     channelEventTypes = message.channelEventTypes
                 )
 
-                tagEngineOutput.sendToWorkflowEngine(state, msg)
+                tagEngineOutput.sendToWorkflowEngine(message.messageId, message.tag, msg)
             }
         }
     }
 
-    private suspend fun workflowStarted(state: TagState, message: WorkflowStarted) {
-        state.workflowIds.add(message.workflowId)
-        storage.puState(state.tag, state)
+    private suspend fun workflowStarted(message: WorkflowStarted) {
+        storage.addId(message.tag, message.workflowId)
     }
 
-    private suspend fun workflowTerminated(state: TagState, message: WorkflowTerminated) {
-        state.workflowIds.remove(message.workflowId)
-        when (state.workflowIds.isEmpty()) {
-            true -> storage.delState(state.tag)
-            false -> storage.puState(state.tag, state)
+    private suspend fun workflowTerminated(message: WorkflowTerminated) {
+        storage.removeId(message.tag, message.workflowId)
+    }
+
+    private suspend fun hasMessageAlreadyBeenHandled(message: TagEngineMessage): Boolean {
+        if (storage.getLastMessageId(message.tag) == message.messageId) {
+            logger.info("discarding as state already contains this messageId: {}", message)
+
+            return true
         }
+        return false
     }
 }

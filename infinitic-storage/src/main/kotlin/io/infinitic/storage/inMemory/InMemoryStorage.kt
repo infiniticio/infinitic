@@ -44,10 +44,6 @@ class InMemoryStorage() : KeyValueStorage, Flushable {
         stateStorage.remove(key)
     }
 
-    override suspend fun incrementCounter(key: String, amount: Long) = counterStorage.computeIfAbsent(key) { LongAdder() }.add(amount)
-
-    override suspend fun getCounter(key: String): Long = counterStorage.computeIfAbsent(key) { LongAdder() }.sum()
-
     override fun flush() {
         stateStorage.clear()
         counterStorage.clear()

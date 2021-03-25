@@ -38,10 +38,4 @@ class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
 
     override suspend fun delState(key: String) =
         context.deleteState(key)
-
-    override suspend fun incrementCounter(key: String, amount: Long) =
-        context.incrCounter(key, amount)
-
-    override suspend fun getCounter(key: String): Long =
-        context.getCounter(key)
 }
