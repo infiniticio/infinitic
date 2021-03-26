@@ -28,6 +28,8 @@ package io.infinitic.workflows.engine.transport
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -38,6 +40,7 @@ import org.slf4j.LoggerFactory
 
 interface WorkflowEngineOutput {
     val sendToClientResponseFn: SendToClientResponse
+    val sendToTagEngineFn: SendToTagEngine
     val sendToWorkflowEngineFn: SendToWorkflowEngine
     val sendToTaskEngineFn: SendToTaskEngine
 
@@ -65,19 +68,17 @@ interface WorkflowEngineOutput {
         sendToClientResponseFn(sendToClientResponse)
     }
 
-    suspend fun sendToWorkflowEngine(
+    suspend fun sendToTagEngine(
         state: WorkflowState,
-        workflowEngineMessage: WorkflowEngineMessage,
-        after: MillisDuration
+        tagEngineMessage: TagEngineMessage
     ) {
         logger.debug(
-            "from messageId {}: workflowId {} - after {} sendToWorkflowEngine {}",
+            "from messageId {}: workflowId {} - sendToTagEngine {}",
             state.lastMessageId,
             state.workflowId,
-            after,
-            workflowEngineMessage
+            tagEngineMessage
         )
-        sendToWorkflowEngineFn(workflowEngineMessage, after)
+        sendToTagEngineFn(tagEngineMessage)
     }
 
     suspend fun sendToTaskEngine(
@@ -93,5 +94,20 @@ interface WorkflowEngineOutput {
             taskEngineMessage
         )
         sendToTaskEngineFn(taskEngineMessage, after)
+    }
+
+    suspend fun sendToWorkflowEngine(
+        state: WorkflowState,
+        workflowEngineMessage: WorkflowEngineMessage,
+        after: MillisDuration
+    ) {
+        logger.debug(
+            "from messageId {}: workflowId {} - after {} sendToWorkflowEngine {}",
+            state.lastMessageId,
+            state.workflowId,
+            after,
+            workflowEngineMessage
+        )
+        sendToWorkflowEngineFn(workflowEngineMessage, after)
     }
 }

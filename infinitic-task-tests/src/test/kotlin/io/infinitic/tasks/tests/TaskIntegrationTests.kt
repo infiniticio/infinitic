@@ -241,11 +241,14 @@ class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput
     override val sendToClientResponseFn: SendToClientResponse =
         { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
 
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { _: WorkflowEngineMessage, _: MillisDuration -> }
+    override val sendToTagEngineFn: SendToTagEngine =
+        { msg: TagEngineMessage -> scope.sendToTagEngine(msg) }
 
     override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
+
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
+        { _: WorkflowEngineMessage, _: MillisDuration -> }
 
     override val sendToTaskExecutorsFn: SendToTaskExecutors =
         { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }

@@ -28,19 +28,12 @@ package io.infinitic.inMemory.transport
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
-import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
-import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
+import io.infinitic.tags.engine.transport.TagEngineOutput
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
-import io.infinitic.tasks.engine.transport.TaskEngineOutput
-import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -48,15 +41,12 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class InMemoryTaskEngineOutput(
+class InMemoryTagEngineOutput(
     scope: CoroutineScope,
     clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
-    tagEventsChannel: Channel<TagEngineMessageToProcess>,
-    taskEventsChannel: Channel<TaskEngineMessageToProcess>,
-    executorChannel: SendChannel<TaskExecutorMessageToProcess>,
-    monitoringPerNameChannel: SendChannel<MonitoringPerNameMessageToProcess>,
-    workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>
-) : TaskEngineOutput {
+    taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
+    workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>
+) : TagEngineOutput {
 
     override val sendToClientResponseFn: SendToClientResponse = {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
@@ -65,18 +55,11 @@ class InMemoryTaskEngineOutput(
         }
     }
 
-    override val sendToTagEngineFn: SendToTagEngine = { msg: TagEngineMessage ->
-        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
-        scope.launch {
-            tagEventsChannel.send(InMemoryMessageToProcess(msg))
-        }
-    }
-
     override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             delay(after.long)
-            taskEventsChannel.send(InMemoryMessageToProcess(msg))
+            taskCommandsChannel.send(InMemoryMessageToProcess(msg))
         }
     }
 
@@ -84,15 +67,7 @@ class InMemoryTaskEngineOutput(
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             delay(after.long)
-            workflowEventsChannel.send(InMemoryMessageToProcess(msg))
+            workflowCommandsChannel.send(InMemoryMessageToProcess(msg))
         }
-    }
-
-    override val sendToTaskExecutorsFn: SendToTaskExecutors = {
-        executorChannel.send(InMemoryMessageToProcess(it))
-    }
-
-    override val sendToMonitoringPerNameFn: SendToMonitoringPerName = {
-        monitoringPerNameChannel.send(InMemoryMessageToProcess(it))
     }
 }

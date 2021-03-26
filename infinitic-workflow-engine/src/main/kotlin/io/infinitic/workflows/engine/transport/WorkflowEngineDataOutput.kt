@@ -26,11 +26,13 @@
 package io.infinitic.workflows.engine.transport
 
 import io.infinitic.common.clients.transport.SendToClientResponse
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
 data class WorkflowEngineDataOutput(
     override val sendToClientResponseFn: SendToClientResponse,
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine,
-    override val sendToTaskEngineFn: SendToTaskEngine
+    override val sendToTagEngineFn: SendToTagEngine,
+    override val sendToTaskEngineFn: SendToTaskEngine,
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine
 ) : WorkflowEngineOutput

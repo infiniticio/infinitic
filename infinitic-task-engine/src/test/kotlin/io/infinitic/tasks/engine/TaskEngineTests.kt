@@ -30,6 +30,9 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.tags.messages.AddTaskTag
+import io.infinitic.common.tags.messages.RemoveTaskTag
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
@@ -113,11 +116,14 @@ class MockTaskEventStorage : TaskEventStorage {
 
 class MockTaskEngineOutput : TaskEngineOutput {
     override val sendToClientResponseFn = mockk<SendToClientResponse>()
-    override val sendToWorkflowEngineFn = mockk<SendToWorkflowEngine>()
+    override val sendToTagEngineFn = mockk<SendToTagEngine>()
     override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
+    override val sendToWorkflowEngineFn = mockk<SendToWorkflowEngine>()
     override val sendToTaskExecutorsFn = mockk<SendToTaskExecutors>()
     override val sendToMonitoringPerNameFn = mockk<SendToMonitoringPerName>()
 
+    val addTaskTag = slot<AddTaskTag>()
+    val removeTaskTag = slot<RemoveTaskTag>()
     val taskCompletedInClient = slot<TaskCompletedInClient>()
     val workerMessageSlot = slot<TaskExecutorMessage>()
     val retryTaskAttemptSlot = slot<RetryTaskAttempt>()
@@ -131,6 +137,8 @@ class MockTaskEngineOutput : TaskEngineOutput {
         coEvery { sendToClientResponseFn(capture(taskCompletedInClient)) } just Runs
         coEvery { sendToTaskExecutorsFn(capture(workerMessageSlot)) } just Runs
         coEvery { sendToMonitoringPerNameFn(capture(taskStatusUpdatedSlot)) } just Runs
+        coEvery { sendToTagEngineFn(capture(addTaskTag)) } just Runs
+        coEvery { sendToTagEngineFn(capture(removeTaskTag)) } just Runs
         coEvery { sendToTaskEngineFn(capture(retryTaskAttemptSlot), capture(retryTaskAttemptDelaySlot)) } just Runs
         coEvery { sendToTaskEngineFn(capture(taskCanceledSlot), MillisDuration(0)) } just Runs
         coEvery { sendToTaskEngineFn(capture(taskAttemptDispatchedSlot), MillisDuration(0)) } just Runs

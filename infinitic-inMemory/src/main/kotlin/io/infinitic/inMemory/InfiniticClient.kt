@@ -78,6 +78,7 @@ class InfiniticClient private constructor(
                 taskExecutorRegister,
                 InMemoryKeyValueStorage(),
                 this@InfiniticClient,
+                tagEngineCommandsChannel,
                 taskEngineCommandsChannel,
                 workflowEngineCommandsChannel,
                 logFn

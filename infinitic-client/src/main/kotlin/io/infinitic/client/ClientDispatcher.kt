@@ -95,12 +95,15 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         val taskId = TaskId()
         val taskName = TaskName.from(method)
 
-        // add tag
-        val addWorkflowTag = AddTaskTag(
-            tag = Tag.of(taskId),
-            name = taskName,
-            taskId = taskId
-        )
+        // add provided tags + id tag
+        val tags = handler.taskOptions.tags.map { Tag(it) }.toSet().plus(Tag.of(taskId))
+        val addWorkflowTags = tags.map {
+            AddTaskTag(
+                tag = it,
+                name = taskName,
+                taskId = taskId
+            )
+        }
 
         // dispatch workflow
         val dispatchTask = DispatchTask(
@@ -120,7 +123,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
 
         // send messages
         GlobalScope.future {
-            clientOutput.sendToTagEngine(addWorkflowTag)
+            addWorkflowTags.map { clientOutput.sendToTagEngine(it) }
             clientOutput.sendToTaskEngine(dispatchTask)
         }.join()
 
@@ -154,12 +157,15 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         val workflowId = WorkflowId()
         val workflowName = WorkflowName.from(method)
 
-        // add tag
-        val addWorkflowTag = AddWorkflowTag(
-            tag = Tag.of(workflowId),
-            name = workflowName,
-            workflowId = workflowId
-        )
+        // add provided tags + id tag
+        val tags = handler.workflowOptions.tags.map { Tag(it) }.toSet().plus(Tag.of(workflowId))
+        val addWorkflowTags = tags.map {
+            AddWorkflowTag(
+                tag = it,
+                name = workflowName,
+                workflowId = workflowId
+            )
+        }
 
         // dispatch workflow
         val dispatchWorkflow = DispatchWorkflow(
@@ -178,7 +184,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
 
         // send messages
         GlobalScope.future {
-            clientOutput.sendToTagEngine(addWorkflowTag)
+            addWorkflowTags.map { clientOutput.sendToTagEngine(it) }
             clientOutput.sendToWorkflowEngine(dispatchWorkflow)
         }.join()
 

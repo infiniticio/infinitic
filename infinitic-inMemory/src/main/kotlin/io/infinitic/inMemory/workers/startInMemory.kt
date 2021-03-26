@@ -32,6 +32,7 @@ import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryMonitoringPerNameOutput
+import io.infinitic.inMemory.transport.InMemoryTagEngineOutput
 import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
 import io.infinitic.inMemory.transport.InMemoryTaskExecutorOutput
 import io.infinitic.inMemory.transport.InMemoryWorkflowEngineOutput
@@ -43,6 +44,11 @@ import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyV
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.tags.engine.storage.TagStateCachedKeyStorage
+import io.infinitic.tags.engine.transport.TagEngineInputChannels
+import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
+import io.infinitic.tags.engine.worker.startTagEngine
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
@@ -68,14 +74,16 @@ fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     keyValueStorage: KeyValueStorage,
     client: Client,
+    tagEngineCommandsChannel: Channel<TagEngineMessageToProcess>,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
     workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>,
     logFn: (_: MessageToProcess<*>) -> Unit = { }
 ) {
     val logChannel = Channel<MessageToProcess<Any>>()
     val clientResponsesChannel = Channel<ClientResponseMessageToProcess>()
-    val workflowEngineEventsChannel = Channel<WorkflowEngineMessageToProcess>()
+    val tagEngineEventsChannel = Channel<TagEngineMessageToProcess>()
     val taskEngineEventsChannel = Channel<TaskEngineMessageToProcess>()
+    val workflowEngineEventsChannel = Channel<WorkflowEngineMessageToProcess>()
     val taskExecutorChannel = Channel<TaskExecutorMessageToProcess>()
     val monitoringPerNameChannel = Channel<MonitoringPerNameMessageToProcess>()
     val monitoringGlobalChannel = Channel<MonitoringGlobalMessageToProcess>()
@@ -93,20 +101,19 @@ fun CoroutineScope.startInMemory(
         logChannel,
     )
 
-    startWorkflowEngine(
-        "in-memory-workflow-engine",
-        WorkflowStateCachedKeyStorage(keyValueStorage, NoCache()),
-        NoWorkflowEventStorage(),
-        WorkflowEngineInputChannels(
-            workflowEngineCommandsChannel,
-            workflowEngineEventsChannel,
+    startTagEngine(
+        "in-memory-tag-engine",
+        TagStateCachedKeyStorage(keyValueStorage, NoCache(), InMemoryKeySetStorage(), NoCache()),
+        TagEngineInputChannels(
+            tagEngineCommandsChannel,
+            tagEngineEventsChannel,
             logChannel
         ),
-        InMemoryWorkflowEngineOutput(
+        InMemoryTagEngineOutput(
             this,
             clientResponsesChannel,
             taskEngineCommandsChannel,
-            workflowEngineEventsChannel
+            workflowEngineCommandsChannel
         )
     )
 
@@ -122,9 +129,28 @@ fun CoroutineScope.startInMemory(
         InMemoryTaskEngineOutput(
             this,
             clientResponsesChannel,
+            tagEngineEventsChannel,
             taskEngineEventsChannel,
             taskExecutorChannel,
             monitoringPerNameChannel,
+            workflowEngineEventsChannel
+        )
+    )
+
+    startWorkflowEngine(
+        "in-memory-workflow-engine",
+        WorkflowStateCachedKeyStorage(keyValueStorage, NoCache()),
+        NoWorkflowEventStorage(),
+        WorkflowEngineInputChannels(
+            workflowEngineCommandsChannel,
+            workflowEngineEventsChannel,
+            logChannel
+        ),
+        InMemoryWorkflowEngineOutput(
+            this,
+            clientResponsesChannel,
+            tagEngineEventsChannel,
+            taskEngineCommandsChannel,
             workflowEngineEventsChannel
         )
     )

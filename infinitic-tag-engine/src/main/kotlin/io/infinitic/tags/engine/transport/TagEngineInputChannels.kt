@@ -33,6 +33,7 @@ import kotlinx.coroutines.channels.SendChannel
 typealias TagEngineMessageToProcess = MessageToProcess<TagEngineMessage>
 
 data class TagEngineInputChannels<T : MessageToProcess<*>>(
-    val tagEngineChannel: ReceiveChannel<T>,
-    val tagEngineResultsChannel: SendChannel<T>
+    val tagEngineCommandsChannel: ReceiveChannel<T>,
+    val tagEngineEventsChannel: ReceiveChannel<T>,
+    val logChannel: SendChannel<T>
 )

@@ -29,6 +29,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowOptions(
+    val tags: Set<String> = setOf(),
     val workflowChangeCheckMode: WorkflowChangeCheckMode = WorkflowChangeCheckMode.ALL
 )
 

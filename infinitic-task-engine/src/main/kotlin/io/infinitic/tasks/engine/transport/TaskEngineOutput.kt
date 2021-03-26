@@ -30,6 +30,8 @@ import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -42,8 +44,9 @@ import org.slf4j.LoggerFactory
 
 interface TaskEngineOutput {
     val sendToClientResponseFn: SendToClientResponse
-    val sendToWorkflowEngineFn: SendToWorkflowEngine
+    val sendToTagEngineFn: SendToTagEngine
     val sendToTaskEngineFn: SendToTaskEngine
+    val sendToWorkflowEngineFn: SendToWorkflowEngine
     val sendToTaskExecutorsFn: SendToTaskExecutors
     val sendToMonitoringPerNameFn: SendToMonitoringPerName
 
@@ -63,19 +66,17 @@ interface TaskEngineOutput {
         sendToClientResponseFn(clientResponseMessage)
     }
 
-    suspend fun sendToWorkflowEngine(
+    suspend fun sendToTagEngine(
         state: TaskState,
-        workflowEngineMessage: WorkflowEngineMessage,
-        after: MillisDuration
+        tagEngineMessage: TagEngineMessage
     ) {
         logger.debug(
-            "from messageId {}: taskId {} - after {} sendToWorkflowEngine {}",
+            "from messageId {}: taskId {} - sendToTagEngine {}",
             state.lastMessageId,
             state.taskId,
-            after,
-            workflowEngineMessage
+            tagEngineMessage
         )
-        sendToWorkflowEngineFn(workflowEngineMessage, after)
+        sendToTagEngineFn(tagEngineMessage)
     }
 
     suspend fun sendToTaskEngine(
@@ -91,6 +92,21 @@ interface TaskEngineOutput {
             taskEngineMessage
         )
         sendToTaskEngineFn(taskEngineMessage, after)
+    }
+
+    suspend fun sendToWorkflowEngine(
+        state: TaskState,
+        workflowEngineMessage: WorkflowEngineMessage,
+        after: MillisDuration
+    ) {
+        logger.debug(
+            "from messageId {}: taskId {} - after {} sendToWorkflowEngine {}",
+            state.lastMessageId,
+            state.taskId,
+            after,
+            workflowEngineMessage
+        )
+        sendToWorkflowEngineFn(workflowEngineMessage, after)
     }
 
     suspend fun sendToTaskExecutors(

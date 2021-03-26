@@ -61,6 +61,7 @@ import io.infinitic.pulsar.topics.MonitoringGlobalTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameDeadLettersTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameTopic
 import io.infinitic.pulsar.topics.TagEngineCommandsTopic
+import io.infinitic.pulsar.topics.TagEngineEventsTopic
 import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
 import io.infinitic.pulsar.topics.TaskEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.TaskEngineEventsTopic
@@ -153,6 +154,15 @@ class PulsarOutputs(
         )
     }
 
+    private fun sendToTagEngineEvents(): SendToTagEngine = { message: TagEngineMessage ->
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineEventsTopic.name),
+            TagEngineEnvelope.from(message),
+            "${message.tag}",
+            MillisDuration(0)
+        )
+    }
+
     private fun sendToTaskEngineCommands(): SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
@@ -216,14 +226,16 @@ class PulsarOutputs(
 
     val workflowEngineOutput = WorkflowEngineDataOutput(
         sendToClientResponse(),
+        sendToTagEngineCommands(),
+        sendToTaskEngineCommands(),
         sendToWorkflowEngineEvents(),
-        sendToTaskEngineCommands()
     )
 
     val taskEngineOutput = TaskEngineDataOutput(
         sendToClientResponse(),
-        sendToWorkflowEngineEvents(),
+        sendToTagEngineEvents(),
         sendToTaskEngineEvents(),
+        sendToWorkflowEngineEvents(),
         sendToTaskExecutors(),
         sendToMonitoringPerName()
     )

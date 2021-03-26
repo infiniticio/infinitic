@@ -28,6 +28,8 @@ package io.infinitic.tasks.engine
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tags.messages.RemoveTaskTag
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -384,6 +386,19 @@ class TaskEngine(
             taskMeta = newState.taskMeta
         )
         taskEngineOutput.sendToTaskEngine(newState, tc, MillisDuration(0))
+
+        // remove tags reference to this instance
+        val tags = newState.taskOptions.tags.map { Tag(it) } + Tag.of(newState.taskId)
+        tags.map {
+            taskEngineOutput.sendToTagEngine(
+                newState,
+                RemoveTaskTag(
+                    tag = it,
+                    name = newState.taskName,
+                    taskId = newState.taskId,
+                )
+            )
+        }
 
         // delete stored state
         taskStateStorage.delState(newState.taskId)
