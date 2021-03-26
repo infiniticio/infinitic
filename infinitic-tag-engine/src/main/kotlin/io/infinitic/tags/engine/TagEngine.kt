@@ -182,14 +182,14 @@ class TagEngine(
         tagStateStorage.removeId(message.tag, message.name, message.workflowId.id)
     }
 
-    private suspend fun hasMessageAlreadyBeenHandled(message: TagEngineMessage): Boolean {
-        if (tagStateStorage.getLastMessageId(message.tag, message.name) == message.messageId) {
-            logger.info("discarding as state already contains this messageId: {}", message)
-
-            return true
+    private suspend fun hasMessageAlreadyBeenHandled(message: TagEngineMessage) =
+        when (tagStateStorage.getLastMessageId(message.tag, message.name)) {
+            message.messageId -> {
+                logger.info("discarding as state already contains this messageId: {}", message)
+                true
+            }
+            else -> false
         }
-        return false
-    }
 
     private fun discardMessageWithoutIds(message: TagEngineMessage) {
         logger.debug("discarding {} as no id found for the provided tag", message)
