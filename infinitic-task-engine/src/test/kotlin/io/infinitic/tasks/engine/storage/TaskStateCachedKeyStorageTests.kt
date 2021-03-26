@@ -30,7 +30,7 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -39,19 +39,19 @@ import io.mockk.confirmVerified
 import io.mockk.mockk
 import io.mockk.slot
 
-class TaskStateKeyValueStorageTests : ShouldSpec({
+class TaskStateCachedKeyStorageTests : ShouldSpec({
     context("TaskStateKeyValueStorage.getState") {
         should("return null when state does not exist") {
             val taskId = TestFactory.random<TaskId>()
             // mocking
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.getState(any()) } returns null
+            coEvery { storage.getValue(any()) } returns null
             // given
-            val stateStorage = TaskStateKeyValueStorage(storage, NoCache())
+            val stateStorage = TaskStateCachedKeyStorage(storage, NoCache())
             // when
             val state = stateStorage.getState(taskId)
             // then
-            coVerify(exactly = 1) { storage.getState("task.state.$taskId") }
+            coVerify(exactly = 1) { storage.getValue("task.state.$taskId") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -60,13 +60,13 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random<TaskState>()
-            coEvery { storage.getState(any()) } returns stateIn.toByteArray()
+            coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
             // given
-            val stateStorage = TaskStateKeyValueStorage(storage, NoCache())
+            val stateStorage = TaskStateCachedKeyStorage(storage, NoCache())
             // when
             val stateOut = stateStorage.getState(stateIn.taskId)
             // then
-            coVerify(exactly = 1) { storage.getState("task.state.${stateIn.taskId}") }
+            coVerify(exactly = 1) { storage.getValue("task.state.${stateIn.taskId}") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
@@ -79,9 +79,9 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
             val stateIn = TestFactory.random<TaskState>()
             val binSlot = slot<ByteArray>()
 
-            coEvery { storage.putState("task.state.${stateIn.taskId}", capture(binSlot)) } returns Unit
+            coEvery { storage.putValue("task.state.${stateIn.taskId}", capture(binSlot)) } returns Unit
             // given
-            val stateStorage = TaskStateKeyValueStorage(storage, NoCache())
+            val stateStorage = TaskStateCachedKeyStorage(storage, NoCache())
             // when
             stateStorage.putState(stateIn.taskId, stateIn)
             // then
@@ -95,13 +95,13 @@ class TaskStateKeyValueStorageTests : ShouldSpec({
             // mocking
             val context = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random<TaskState>()
-            coEvery { context.delState(any()) } returns Unit
+            coEvery { context.delValue(any()) } returns Unit
             // given
-            val stageStorage = TaskStateKeyValueStorage(context, NoCache())
+            val stageStorage = TaskStateCachedKeyStorage(context, NoCache())
             // when
             stageStorage.delState(stateIn.taskId)
             // then
-            coVerify(exactly = 1) { context.delState("task.state.${stateIn.taskId}") }
+            coVerify(exactly = 1) { context.delValue("task.state.${stateIn.taskId}") }
             confirmVerified(context)
         }
     }

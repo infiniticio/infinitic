@@ -161,7 +161,7 @@ class TaskEngine(
                 when ("${newState.taskName}") {
                     WorkflowTask::class.java.name -> WorkflowTaskCompleted(
                         workflowId = it,
-                        workflowTaskId = WorkflowTaskId("${newState.taskId}"),
+                        workflowTaskId = WorkflowTaskId(newState.taskId.id),
                         workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskReturnValue
                     )
                     else -> TaskCompletedInWorkflow(
@@ -350,7 +350,7 @@ class TaskEngine(
                 when ("${newState.taskName}") {
                     WorkflowTask::class.java.name -> WorkflowTaskCompleted(
                         workflowId = it,
-                        workflowTaskId = WorkflowTaskId("${newState.taskId}"),
+                        workflowTaskId = WorkflowTaskId(newState.taskId.id),
                         workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskReturnValue
                     )
                     else -> TaskCompletedInWorkflow(

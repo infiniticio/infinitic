@@ -33,11 +33,13 @@ import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.tags.messages.SendToChannelPerTag
+import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.mockk.CapturingSlot
@@ -45,15 +47,36 @@ import io.mockk.coEvery
 import io.mockk.mockk
 
 internal class MockClientOutput(
+    tagSlot: CapturingSlot<TagEngineMessage>,
     taskSlot: CapturingSlot<TaskEngineMessage>,
     workflowSlot: CapturingSlot<WorkflowEngineMessage>
 ) : ClientOutput {
     override val clientName = ClientName("clientTest")
     override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
     override val sendToWorkflowEngineFn = mockk<SendToWorkflowEngine>()
+    override val sendToTagEngineFn = mockk<SendToTagEngine>()
     lateinit var client: Client
 
     init {
+        coEvery { sendToTagEngineFn(capture(tagSlot)) } coAnswers {
+            val msg = tagSlot.captured
+            if (msg is SendToChannelPerTag && msg.clientWaiting) {
+                client.handle(
+                    if (msg.channelEvent.get() == "unknown") {
+                        SendToChannelFailed(
+                            clientName = clientName,
+                            channelEventId = msg.channelEventId
+                        )
+                    } else {
+                        SendToChannelCompleted(
+                            clientName = clientName,
+                            channelEventId = msg.channelEventId
+                        )
+                    }
+
+                )
+            }
+        }
         coEvery { sendToTaskEngineFn(capture(taskSlot), MillisDuration(0)) } coAnswers {
             val msg = taskSlot.captured
             if (msg is DispatchTask && msg.clientWaiting) {
@@ -75,22 +98,6 @@ internal class MockClientOutput(
                         workflowId = msg.workflowId,
                         workflowReturnValue = MethodReturnValue.from("success")
                     )
-                )
-            }
-            if (msg is SendToChannel && msg.clientWaiting) {
-                client.handle(
-                    if (msg.channelEvent.get() == "unknown") {
-                        SendToChannelFailed(
-                            clientName = clientName,
-                            channelEventId = msg.channelEventId
-                        )
-                    } else {
-                        SendToChannelCompleted(
-                            clientName = clientName,
-                            channelEventId = msg.channelEventId
-                        )
-                    }
-
                 )
             }
         }

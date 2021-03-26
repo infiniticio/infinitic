@@ -23,13 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tags.engine.storage
+package io.infinitic.storage.inMemory
 
-import io.infinitic.common.tags.data.Tag
-import io.infinitic.common.tags.state.TagState
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyCounter.KeyCounterStorage
+import java.util.concurrent.ConcurrentHashMap
 
-typealias GetTagState = suspend (Tag) -> TagState?
+class InMemoryKeyCounterStorage() : KeyCounterStorage, Flushable {
+    private val counterStorage = ConcurrentHashMap<String, Long>()
 
-typealias PutTagState = suspend (Tag, TagState) -> Unit
+    override suspend fun getCounter(key: String) = counterStorage[key] ?: 0L
 
-typealias DelTagState = suspend (Tag) -> Unit
+    override suspend fun incrCounter(key: String, amount: Long) {
+        counterStorage[key] = getCounter(key) + amount
+    }
+
+    override fun flush() {
+        counterStorage.clear()
+    }
+}

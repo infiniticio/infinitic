@@ -36,6 +36,9 @@ import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
@@ -50,10 +53,14 @@ import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyVal
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
-import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.tags.engine.TagEngine
+import io.infinitic.tags.engine.storage.TagStateCachedKeyStorage
+import io.infinitic.tags.engine.transport.TagEngineOutput
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
@@ -61,7 +68,7 @@ import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.register
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
-import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
+import io.infinitic.workflows.engine.storage.states.WorkflowStateCachedKeyStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.tests.tasks.TaskAImpl
@@ -82,15 +89,23 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.util.UUID
 
 private var workflowOutput: Any? = null
-private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage(), NoCache())
+private val tagStateStorage = TagStateCachedKeyStorage(
+    InMemoryKeyValueStorage(),
+    NoCache(),
+    InMemoryKeySetStorage(),
+    NoCache()
+)
+private val taskStateStorage = TaskStateCachedKeyStorage(InMemoryKeyValueStorage(), NoCache())
+private val workflowStateStorage = WorkflowStateCachedKeyStorage(InMemoryKeyValueStorage(), NoCache())
+private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryKeyValueStorage(), NoCache())
+private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryKeyValueStorage(), NoCache())
 
-private lateinit var workflowEngine: WorkflowEngine
+private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
+private lateinit var workflowEngine: WorkflowEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
 private lateinit var executor: TaskExecutor
@@ -431,12 +446,12 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for event" {
-        var id: String
+        var id: UUID
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel1() }
-            client.workflow<WorkflowA>(id).channelA.send("test")
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -445,12 +460,12 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for event, sent to the right channel" {
-        var id: String
+        var id: UUID
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel2() }
-            client.workflow<WorkflowA>(id).channelA.send("test")
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -459,12 +474,12 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for event but sent to the wrong channel" {
-        var id: String
+        var id: UUID
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel2() }
-            client.workflow<WorkflowA>(id).channelB.send("test")
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelB.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -473,12 +488,12 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Sending event before waiting for it prevents catching" {
-        var id: String
+        var id: UUID
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel3() }
-            client.workflow<WorkflowA>(id).channelA.send("test")
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -498,13 +513,13 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for Obj event" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 42)
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel4() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -513,16 +528,16 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for filtered event using jsonPath only" {
-        var id: String
+        var id: UUID
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel4bis() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj1a)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1a)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1b)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1b)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -531,16 +546,16 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for filtered event using using jsonPath and criteria" {
-        var id: String
+        var id: UUID
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel4ter() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj1a)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1a)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1b)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1b)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -549,16 +564,16 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for event of specific type" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel5() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -567,7 +582,7 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting event of specific type filtered using jsonPath only" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
@@ -575,11 +590,11 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel5bis() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj3)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj3)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -588,7 +603,7 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting event of specific type filtered using jsonPath and criteria" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
@@ -596,11 +611,11 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel5ter() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj3)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj3)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -609,16 +624,16 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for 2 events of specific types presented in wrong order" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 6)
         val obj2 = Obj2("bar", 7)
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel6() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.workflow<WorkflowA>("${Tag.of(id)}").channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -631,6 +646,14 @@ class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : Workflow
     override val sendToClientResponseFn: SendToClientResponse =
         { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
 
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
+        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
+
+    override val sendToTaskEngineFn: SendToTaskEngine =
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
+}
+
+class InMemoryTagEngineOutput(private val scope: CoroutineScope) : TagEngineOutput {
     override val sendToWorkflowEngineFn: SendToWorkflowEngine =
         { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
 
@@ -670,6 +693,9 @@ class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecut
 class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
     override val clientName = ClientName("client: testing")
 
+    override val sendToTagEngineFn: SendToTagEngine =
+        { msg: TagEngineMessage -> scope.sendToTagEngine(msg) }
+
     override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 
@@ -692,6 +718,12 @@ fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: Milli
         if (msg is WorkflowCompleted) {
             workflowOutput = msg.workflowReturnValue.get()
         }
+    }
+}
+
+fun CoroutineScope.sendToTagEngine(msg: TagEngineMessage) {
+    launch {
+        tagEngine.handle(msg)
     }
 }
 
@@ -733,16 +765,21 @@ fun CoroutineScope.init() {
     workflowA = client.workflow(WorkflowA::class.java)
     workflowB = client.workflow(WorkflowB::class.java)
 
-    workflowEngine = WorkflowEngine(
-        workflowStateStorage,
-        NoWorkflowEventStorage(),
-        InMemoryWorkflowEngineOutput(this)
+    tagEngine = TagEngine(
+        tagStateStorage,
+        InMemoryTagEngineOutput(this)
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
         NoTaskEventStorage(),
         InMemoryTaskEngineOutput(this)
+    )
+
+    workflowEngine = WorkflowEngine(
+        workflowStateStorage,
+        NoWorkflowEventStorage(),
+        InMemoryWorkflowEngineOutput(this)
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(

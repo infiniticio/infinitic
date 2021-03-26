@@ -30,34 +30,47 @@ import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
+ * them in a persistent key value binary storage.
  */
-class TaskStateKeyValueStorage(
+class TaskStateCachedKeyStorage(
     private val storage: KeyValueStorage,
     private val cache: KeyValueCache<TaskState>
 ) : TaskStateStorage {
 
-    override val getStateFn: GetTaskState = { taskId: TaskId ->
+    val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    override suspend fun getState(taskId: TaskId): TaskState? {
         val key = getTaskStateKey(taskId)
-        cache.get(key) ?: run {
-            logger.debug("taskId {} - getStateFn - absent from cache, get from storage", taskId)
-            storage.getState(key)?.let { TaskState.fromByteArray(it) }
+
+        val taskState = cache.getValue(key) ?: run {
+            logger.debug("taskId {} - getState - absent from cache, get from storage", taskId)
+            storage.getValue(key)
+                ?.let { TaskState.fromByteArray(it) }
+                ?.also { cache.putValue(key, it) }
         }
+        logger.debug("taskId {} - getState {}", taskId, taskState)
+
+        return taskState
     }
 
-    override val putStateFn: PutTaskState = { taskId: TaskId, state: TaskState ->
+    override suspend fun putState(taskId: TaskId, state: TaskState) {
         val key = getTaskStateKey(taskId)
-        cache.put(key, state)
-        storage.putState(key, state.toByteArray())
+        cache.putValue(key, state)
+        storage.putValue(key, state.toByteArray())
+        logger.debug("taskId {} - putState {}", taskId, state)
     }
 
-    override val delStateFn: DelTaskState = { taskId: TaskId ->
+    override suspend fun delState(taskId: TaskId) {
         val key = getTaskStateKey(taskId)
-        cache.del(key)
-        storage.delState(key)
+        cache.delValue(key)
+        storage.delValue(key)
+        logger.debug("taskId {} - delState", taskId)
     }
 
     /*

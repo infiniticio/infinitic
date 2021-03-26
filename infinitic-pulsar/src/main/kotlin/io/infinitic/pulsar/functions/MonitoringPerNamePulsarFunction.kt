@@ -26,7 +26,7 @@
 package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineCache
+import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
@@ -52,7 +52,7 @@ class MonitoringPerNamePulsarFunction : Function<MonitoringPerNameEnvelope, Void
     }
 
     internal fun getMonitoringPerNameEngine(context: Context) = MonitoringPerNameEngine(
-        MonitoringPerNameStateKeyValueStorage(context.keyValueStorage(), CaffeineCache(Caffeine(expireAfterAccess = 3600))),
+        MonitoringPerNameStateKeyValueStorage(context.keyValueStorage(), CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600))),
         PulsarOutputs.from(context).monitoringPerNameOutput
     )
 }

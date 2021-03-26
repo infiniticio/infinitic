@@ -25,8 +25,23 @@
 
 package io.infinitic.common.data
 
-abstract class Name(open val name: String) : CharSequence by name, Comparable<String> by name {
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+
+@Serializable(with = NameSerializer::class)
+open class Name(open val name: String) : CharSequence by name, Comparable<String> by name {
     final override fun toString() = name
 
     fun get() = name
+}
+
+object NameSerializer : KSerializer<Name> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Name", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: Name) { encoder.encodeString(value.name) }
+    override fun deserialize(decoder: Decoder) = Name(decoder.decodeString())
 }

@@ -25,7 +25,7 @@
 
 package io.infinitic.storage.redis
 
-import io.infinitic.common.storage.keyValue.KeyCounterStorage
+import io.infinitic.common.storage.keyCounter.KeyCounterStorage
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 
@@ -40,6 +40,6 @@ class RedisKeyCounterStorage(config: Redis) : KeyCounterStorage {
         pool.resource.use { it.get(key.toByteArray()) }
             ?.let { String(it) }?.toLong() ?: 0L
 
-    override suspend fun incrementCounter(key: String, amount: Long) =
+    override suspend fun incrCounter(key: String, amount: Long) =
         pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
 }

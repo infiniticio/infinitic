@@ -47,12 +47,12 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             // given
             val taskName = TaskName(TestFactory.random(String::class))
             val context = mockk<KeyValueStorage>()
-            coEvery { context.getState(any()) } returns null
+            coEvery { context.getValue(any()) } returns null
             // when
             val stateStorage = MonitoringPerNameStateKeyValueStorage(context, NoCache())
             val state = stateStorage.getState(taskName)
             // then
-            coVerify(exactly = 1) { context.getState("monitoringPerName.state.$taskName") }
+            coVerify(exactly = 1) { context.getValue("monitoringPerName.state.$taskName") }
             confirmVerified(context)
             state shouldBe null
         }
@@ -61,12 +61,12 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             // given
             val stateIn = TestFactory.random<MonitoringPerNameState>()
             val context = mockk<KeyValueStorage>()
-            coEvery { context.getState(any()) } returns stateIn.toByteArray()
+            coEvery { context.getValue(any()) } returns stateIn.toByteArray()
             // when
             val stateStorage = MonitoringPerNameStateKeyValueStorage(context, NoCache())
             val stateOut = stateStorage.getState(stateIn.taskName)
             // then
-            coVerify(exactly = 1) { context.getState("monitoringPerName.state.${stateIn.taskName}") }
+            coVerify(exactly = 1) { context.getValue("monitoringPerName.state.${stateIn.taskName}") }
             confirmVerified(context)
             stateOut shouldBe stateIn
         }
@@ -79,7 +79,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             val state = TestFactory.random<MonitoringPerNameState>()
             val context = mockk<KeyValueStorage>()
             val binSlot = slot<ByteArray>()
-            coEvery { context.putState("monitoringPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
+            coEvery { context.putValue("monitoringPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
             // when
             val stateStorage = MonitoringPerNameStateKeyValueStorage(context, NoCache())
             stateStorage.putState(state.taskName, state)
@@ -94,12 +94,12 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             // given
             val stateIn = TestFactory.random(MonitoringPerNameState::class)
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.delState(any()) } just runs
+            coEvery { storage.delValue(any()) } just runs
             // when
             val stateStorage = MonitoringPerNameStateKeyValueStorage(storage, NoCache())
             stateStorage.delState(stateIn.taskName)
             // then
-            coVerify(exactly = 1) { storage.delState(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }
+            coVerify(exactly = 1) { storage.delValue(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }
             confirmVerified(storage)
         }
     }

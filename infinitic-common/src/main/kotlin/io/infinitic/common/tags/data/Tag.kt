@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tags.data
 
+import io.infinitic.common.data.Id
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -32,9 +33,18 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.util.UUID
 
 @Serializable(with = TagSerializer::class)
-data class Tag(val tag: String)
+data class Tag(val tag: String) {
+    override fun toString() = tag
+
+    companion object {
+        fun of(id: Id) = Tag("id:$id")
+
+        fun of(id: UUID) = Tag("id:$id")
+    }
+}
 
 object TagSerializer : KSerializer<Tag> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Tag", PrimitiveKind.STRING)

@@ -28,34 +28,30 @@ package io.infinitic.cache.caffeine
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyValue.KeyValueCache
-import java.util.concurrent.TimeUnit
+import io.infinitic.common.storage.keySet.KeySetCache
 import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
-class CaffeineCache<S>(config: CaffeineConfig) : KeyValueCache<S>, Flushable {
-    private var caffeine: Cache<String, S> = Caffeine.newBuilder()
-        .also {
-            if (config.maximumSize is Int) {
-                it.maximumSize(config.maximumSize.toLong())
-            }
-            if (config.expireAfterAccess is Int) {
-                it.expireAfterAccess(config.expireAfterAccess.toLong(), TimeUnit.SECONDS)
-            }
-            if (config.expireAfterWrite is Int) {
-                it.expireAfterWrite(config.expireAfterWrite.toLong(), TimeUnit.SECONDS)
-            }
+class CaffeineKeySetCache<S>(config: CaffeineConfig) : KeySetCache<S>, Flushable {
+    private var caffeine: Cache<String, Set<S>> =
+        Caffeine.newBuilder().setup(config).build()
+
+    override fun getSet(key: String): Set<S>? = caffeine.getIfPresent(key)
+
+    override fun setSet(key: String, value: Set<S>) {
+        caffeine.put(key, value)
+    }
+
+    override fun addToSet(key: String, value: S) {
+        getSet(key)?.also {
+            caffeine.put(key, it.toMutableSet().plus(value))
         }
-        .build()
-
-    override fun del(key: String) {
-        caffeine.invalidate(key)
     }
 
-    override fun put(key: String, value: S) {
-        caffeine.put(key, value!!)
+    override fun removeFromSet(key: String, value: S) {
+        getSet(key)?.also {
+            caffeine.put(key, it.toMutableSet().minus(value))
+        }
     }
-
-    override fun get(key: String): S? = caffeine.getIfPresent(key)
 
     override fun flush() {
         caffeine.invalidateAll()

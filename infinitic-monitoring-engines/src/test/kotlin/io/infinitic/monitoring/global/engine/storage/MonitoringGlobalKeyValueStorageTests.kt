@@ -42,13 +42,13 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
         should("return null when state does not exist") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.getState(any()) } returns null
+            coEvery { storage.getValue(any()) } returns null
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
             val state = stateStorage.getState()
             // then
-            coVerify(exactly = 1) { storage.getState("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.getValue("monitoringGlobal.state") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -57,13 +57,13 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
-            coEvery { storage.getState(any()) } returns stateIn.toByteArray()
+            coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
             val stateOut = stateStorage.getState()
             // then
-            coVerify(exactly = 1) { storage.getState("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.getValue("monitoringGlobal.state") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
@@ -76,7 +76,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
             val binSlot = slot<ByteArray>()
 
-            coEvery { storage.putState("monitoringGlobal.state", capture(binSlot)) } returns Unit
+            coEvery { storage.putValue("monitoringGlobal.state", capture(binSlot)) } returns Unit
             // given
             val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
@@ -91,13 +91,13 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
         should("delete state") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.delState(any()) } returns Unit
+            coEvery { storage.delValue(any()) } returns Unit
             // given
             val stageStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
             // when
             stageStorage.delState()
             // then
-            coVerify(exactly = 1) { storage.delState("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.delValue("monitoringGlobal.state") }
             confirmVerified(storage)
         }
     }

@@ -27,10 +27,10 @@ package io.infinitic.pulsar.config.storage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.pulsar.config.WorkerConfig
 import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.storage.redis.RedisKeyValueStorage
 
 fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryStorage()
+    StateStorage.inMemory -> InMemoryKeyValueStorage()
     StateStorage.redis -> RedisKeyValueStorage(workerConfig.redis!!)
 }

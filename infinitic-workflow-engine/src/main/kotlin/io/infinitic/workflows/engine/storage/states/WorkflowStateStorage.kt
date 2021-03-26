@@ -27,31 +27,9 @@ package io.infinitic.workflows.engine.storage.states
 
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 interface WorkflowStateStorage {
-    val getStateFn: GetWorkflowState
-    val putStateFn: PutWorkflowState
-    val delStateFn: DeleteWorkflowState
-
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
-
-    suspend fun getState(workflowId: WorkflowId): WorkflowState? {
-        val workflowState = getStateFn(workflowId)
-        logger.debug("workflowId {} - getState {}", workflowId, workflowState)
-
-        return workflowState
-    }
-
-    suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
-        putStateFn(workflowId, workflowState)
-        logger.debug("workflowId {} - updateState {}", workflowId, workflowState)
-    }
-
-    suspend fun delState(workflowId: WorkflowId) {
-        delStateFn(workflowId)
-        logger.debug("workflowId {} - deleteState", workflowId)
-    }
+    suspend fun getState(workflowId: WorkflowId): WorkflowState?
+    suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState)
+    suspend fun delState(workflowId: WorkflowId)
 }

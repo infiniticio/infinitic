@@ -23,10 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyValue
+package io.infinitic.common.storage.keySet
 
-interface StateKeyValueStorage {
-    suspend fun getState(key: String): ByteArray?
-    suspend fun putState(key: String, value: ByteArray)
-    suspend fun delState(key: String)
+interface KeySetCache<T> {
+    fun getSet(key: String): Set<T>?
+    fun setSet(key: String, value: Set<T>)
+    fun addToSet(key: String, value: T)
+    fun removeFromSet(key: String, value: T)
 }

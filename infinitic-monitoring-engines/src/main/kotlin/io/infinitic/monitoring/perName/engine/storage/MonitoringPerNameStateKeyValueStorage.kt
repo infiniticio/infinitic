@@ -42,9 +42,9 @@ open class MonitoringPerNameStateKeyValueStorage(
 
     override val getStateFn: GetMonitoringPerNameState = { taskName: TaskName ->
         val key = getMonitoringPerNameStateKey(taskName)
-        cache.get(key) ?: run {
+        cache.getValue(key) ?: run {
             logger.debug("taskName {} - getStateFn - absent from cache, get from storage", taskName)
-            storage.getState(key)?.let { MonitoringPerNameState.fromByteArray(it) }
+            storage.getValue(key)?.let { MonitoringPerNameState.fromByteArray(it) }
         }
     }
 
@@ -53,14 +53,14 @@ open class MonitoringPerNameStateKeyValueStorage(
         state: MonitoringPerNameState,
         ->
         val key = getMonitoringPerNameStateKey(taskName)
-        cache.put(key, state)
-        storage.putState(key, state.toByteArray())
+        cache.putValue(key, state)
+        storage.putValue(key, state.toByteArray())
     }
 
     override val delStateFn: DelMonitoringPerNameState = { taskName: TaskName ->
         val key = getMonitoringPerNameStateKey(taskName)
-        cache.del(key)
-        storage.delState(key)
+        cache.delValue(key)
+        storage.delValue(key)
     }
 
     /*

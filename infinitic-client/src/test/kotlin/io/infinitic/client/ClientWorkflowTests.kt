@@ -32,6 +32,9 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tags.messages.SendToChannelPerTag
+import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
@@ -42,7 +45,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.SendToChannelFailed
 import io.kotest.assertions.throwables.shouldThrow
@@ -52,14 +54,15 @@ import io.mockk.slot
 import kotlinx.coroutines.coroutineScope
 
 class ClientWorkflowTests : StringSpec({
+    val tagSlot = slot<TagEngineMessage>()
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
-    val clientOutput = MockClientOutput(taskSlot, workflowSlot)
+    val clientOutput = MockClientOutput(tagSlot, taskSlot, workflowSlot)
     val client = Client(clientOutput)
     clientOutput.client = client
-    val id = TestFactory.random<String>()
-    val fakeWorkflow = client.workflow(FakeWorkflow::class.java)
-    val fakeWorkflowId = client.workflow(FakeWorkflow::class.java, id)
+    val tag = TestFactory.random<String>()
+    val newWorkflow = client.workflow(FakeWorkflow::class.java)
+    val existingWorkflows = client.workflow(FakeWorkflow::class.java, tag)
 
     beforeTest {
         taskSlot.clear()
@@ -68,7 +71,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow without parameter" {
         // when
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
+        val workflowId = WorkflowId(client.async(newWorkflow) { m1() })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -89,7 +92,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with a primitive as parameter" {
         // when
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(0) })
+        val workflowId = WorkflowId(client.async(newWorkflow) { m1(0) })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -110,7 +113,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple method definition" {
         // when
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1("a") })
+        val workflowId = WorkflowId(client.async(newWorkflow) { m1("a") })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -131,7 +134,7 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow with multiple parameters" {
         // when
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(0, "a") })
+        val workflowId = WorkflowId(client.async(newWorkflow) { m1(0, "a") })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -153,7 +156,7 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with an interface as parameter" {
         // when
         val klass = FakeClass()
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(klass) })
+        val workflowId = WorkflowId(client.async(newWorkflow) { m1(klass) })
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -177,7 +180,7 @@ class ClientWorkflowTests : StringSpec({
         var result: String
         // when
         coroutineScope {
-            result = fakeWorkflow.m1(0, "a")
+            result = newWorkflow.m1(0, "a")
         }
         // then
         result shouldBe "success"
@@ -200,16 +203,16 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to emit to a channel asynchronously" {
         // when
-        val sendId = ChannelEventId(client.async(fakeWorkflowId.ch) { send("a") })
+        val sendId = ChannelEventId(client.async(existingWorkflows.ch) { send("a") })
 
         // then
-        val msg = workflowSlot.captured
-        msg shouldBe SendToChannel(
+        val msg = tagSlot.captured
+        msg shouldBe SendToChannelPerTag(
+            tag = Tag(tag),
+            name = WorkflowName(FakeWorkflow::class.java.name),
             clientName = clientOutput.clientName,
             clientWaiting = false,
             channelEventId = sendId,
-            workflowId = msg.workflowId,
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
             channelName = ChannelName("getCh"),
             channelEvent = ChannelEvent.from("a"),
             channelEventTypes = ChannelEventType.allFrom(String::class.java)
@@ -219,17 +222,17 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel synchronously" {
         // when
         coroutineScope {
-            fakeWorkflowId.ch.send("a")
+            existingWorkflows.ch.send("a")
         }
 
         // then
-        val msg = workflowSlot.captured as SendToChannel
-        msg shouldBe SendToChannel(
+        val msg = tagSlot.captured as SendToChannelPerTag
+        msg shouldBe SendToChannelPerTag(
+            tag = Tag(tag),
+            name = WorkflowName(FakeWorkflow::class.java.name),
             clientName = clientOutput.clientName,
             clientWaiting = true,
             channelEventId = msg.channelEventId,
-            workflowId = msg.workflowId,
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
             channelName = ChannelName("getCh"),
             channelEvent = ChannelEvent.from("a"),
             channelEventTypes = ChannelEventType.allFrom(String::class.java)
@@ -240,7 +243,7 @@ class ClientWorkflowTests : StringSpec({
         // when
         coroutineScope {
             shouldThrow<SendToChannelFailed> {
-                fakeWorkflowId.ch.send("unknown")
+                existingWorkflows.ch.send("unknown")
             }
         }
     }

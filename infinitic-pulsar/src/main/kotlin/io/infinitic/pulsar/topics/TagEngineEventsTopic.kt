@@ -23,9 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyValue
+package io.infinitic.pulsar.topics
 
-interface KeyCounterStorage {
-    suspend fun incrementCounter(key: String, amount: Long)
-    suspend fun getCounter(key: String): Long
+object TagEngineEventsTopic {
+    const val name = "tag-engine-events"
 }

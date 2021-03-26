@@ -37,6 +37,9 @@ import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.tags.messages.TagEngineEnvelope
+import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -57,6 +60,7 @@ import io.infinitic.pulsar.topics.MonitoringGlobalDeadLettersTopic
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameDeadLettersTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameTopic
+import io.infinitic.pulsar.topics.TagEngineCommandsTopic
 import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
 import io.infinitic.pulsar.topics.TaskEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.TaskEngineEventsTopic
@@ -140,6 +144,15 @@ class PulsarOutputs(
         )
     }
 
+    private fun sendToTagEngineCommands(): SendToTagEngine = { message: TagEngineMessage ->
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineCommandsTopic.name),
+            TagEngineEnvelope.from(message),
+            "${message.tag}",
+            MillisDuration(0)
+        )
+    }
+
     private fun sendToTaskEngineCommands(): SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
@@ -196,8 +209,9 @@ class PulsarOutputs(
 
     val clientOutput = ClientDataOutput(
         clientName,
-        sendToWorkflowEngineCommands(),
-        sendToTaskEngineCommands()
+        sendToTagEngineCommands(),
+        sendToTaskEngineCommands(),
+        sendToWorkflowEngineCommands()
     )
 
     val workflowEngineOutput = WorkflowEngineDataOutput(

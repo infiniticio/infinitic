@@ -23,13 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.storage.states
+package io.infinitic.common.storage.keySet
 
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.state.WorkflowState
-
-typealias GetWorkflowState = suspend (WorkflowId) -> WorkflowState?
-
-typealias PutWorkflowState = suspend (WorkflowId, WorkflowState) -> Unit
-
-typealias DeleteWorkflowState = suspend (WorkflowId) -> Unit
+interface KeySetStorage {
+    suspend fun getSet(key: String): Set<ByteArray>
+    suspend fun addToSet(key: String, value: ByteArray)
+    suspend fun removeFromSet(key: String, value: ByteArray)
+}

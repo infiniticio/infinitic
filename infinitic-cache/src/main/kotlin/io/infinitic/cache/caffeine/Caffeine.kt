@@ -25,6 +25,9 @@
 
 package io.infinitic.cache.caffeine
 
+import java.util.concurrent.TimeUnit
+import com.github.benmanes.caffeine.cache.Caffeine as CaffeineCache
+
 data class Caffeine(
     @JvmField val maximumSize: Int? = null,
     @JvmField val expireAfterAccess: Int? = null,
@@ -35,4 +38,18 @@ data class Caffeine(
         expireAfterAccess?. let { require(it > 0) { "expireAfterAccess MUST be >0" } }
         expireAfterWrite?. let { require(it > 0) { "expireAfterWrite MUST be >0" } }
     }
+}
+
+fun <S, T> CaffeineCache<S, T>.setup(config: Caffeine): CaffeineCache<S, T> {
+    if (config.maximumSize is Int) {
+        this.maximumSize(config.maximumSize.toLong())
+    }
+    if (config.expireAfterAccess is Int) {
+        this.expireAfterAccess(config.expireAfterAccess.toLong(), TimeUnit.SECONDS)
+    }
+    if (config.expireAfterWrite is Int) {
+        this.expireAfterWrite(config.expireAfterWrite.toLong(), TimeUnit.SECONDS)
+    }
+
+    return this
 }

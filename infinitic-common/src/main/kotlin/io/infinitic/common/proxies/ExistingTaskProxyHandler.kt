@@ -25,13 +25,14 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 
 class ExistingTaskProxyHandler<T : Any>(
     val klass: Class<T>,
-    val taskId: String,
-    val taskOptions: TaskOptions?,
-    val taskMeta: TaskMeta?,
+    val tag: Tag,
+    val taskOptions: TaskOptions,
+    val taskMeta: TaskMeta,
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass)

@@ -26,12 +26,12 @@ package io.infinitic.pulsar.config.cache
 
 import io.infinitic.cache.StateCache
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineCache
+import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.cache.no.NoCache
 import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.pulsar.config.WorkerConfig
 
 fun <T> StateCache.getKeyValueCache(workerConfig: WorkerConfig): KeyValueCache<T> = when (this) {
     StateCache.none -> NoCache()
-    StateCache.caffeine -> CaffeineCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
+    StateCache.caffeine -> CaffeineKeyValueCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
 }

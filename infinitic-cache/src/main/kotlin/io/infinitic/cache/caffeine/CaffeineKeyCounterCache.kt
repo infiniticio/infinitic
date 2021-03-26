@@ -23,13 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.engine.storage.states
+package io.infinitic.cache.caffeine
 
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.engine.state.TaskState
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyCounter.KeyCounterCache
+import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
-typealias GetTaskState = suspend (TaskId) -> TaskState?
+class CaffeineKeyCounterCache(config: CaffeineConfig) : KeyCounterCache, Flushable {
+    private var caffeine: Cache<String, Long> =
+        Caffeine.newBuilder().setup(config).build()
 
-typealias PutTaskState = suspend (TaskId, TaskState) -> Unit
+    override suspend fun getCounter(key: String): Long? = caffeine.getIfPresent(key)
 
-typealias DelTaskState = suspend (TaskId) -> Unit
+    override suspend fun setCounter(key: String, amount: Long) {
+        caffeine.put(key, amount)
+    }
+
+    override suspend fun incrCounter(key: String, amount: Long) {
+        getCounter(key)?.also {
+            caffeine.put(key, it + amount)
+        }
+    }
+
+    override fun flush() {
+        caffeine.invalidateAll()
+    }
+}

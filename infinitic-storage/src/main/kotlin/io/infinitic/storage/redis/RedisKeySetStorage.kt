@@ -25,22 +25,23 @@
 
 package io.infinitic.storage.redis
 
+import io.infinitic.common.storage.keySet.KeySetStorage
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 
-class RedisKeySetStorage(config: Redis) {
+class RedisKeySetStorage(config: Redis) : KeySetStorage {
     private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
 
     init {
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
-    suspend fun getSet(key: String): MutableSet<ByteArray> =
+    override suspend fun getSet(key: String): Set<ByteArray> =
         pool.resource.use { it.smembers(key.toByteArray()) }
 
-    suspend fun addSet(key: String, value: ByteArray) =
+    override suspend fun addToSet(key: String, value: ByteArray) =
         pool.resource.use { it.sadd(key.toByteArray(), value); Unit }
 
-    suspend fun delSet(key: String, value: ByteArray) =
+    override suspend fun removeFromSet(key: String, value: ByteArray) =
         pool.resource.use { it.srem(key.toByteArray(), value); Unit }
 }

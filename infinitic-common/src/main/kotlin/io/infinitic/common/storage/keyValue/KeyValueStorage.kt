@@ -25,4 +25,8 @@
 
 package io.infinitic.common.storage.keyValue
 
-interface KeyValueStorage : StateKeyValueStorage
+interface KeyValueStorage {
+    suspend fun getValue(key: String): ByteArray?
+    suspend fun putValue(key: String, value: ByteArray)
+    suspend fun delValue(key: String)
+}

@@ -27,7 +27,6 @@ package io.infinitic.client
 
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -37,21 +36,22 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
-import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tags.messages.CancelTaskPerTag
+import io.infinitic.common.tags.messages.CancelWorkflowPerTag
+import io.infinitic.common.tags.messages.RetryTaskPerTag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.engine.messages.CancelTask
-import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.exceptions.IncorrectExistingStub
 import io.infinitic.exceptions.NotAStub
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
 import java.lang.reflect.Proxy
+import java.util.UUID
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 open class Client(val clientOutput: ClientOutput) {
@@ -63,35 +63,39 @@ open class Client(val clientOutput: ClientOutput) {
      */
     @JvmOverloads fun <T : Any> task(
         klass: Class<out T>,
-        options: TaskOptions = TaskOptions(),
-        meta: TaskMeta = TaskMeta()
-    ): T = NewTaskProxyHandler(klass, options, meta) { dispatcher }.stub()
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = NewTaskProxyHandler(klass, options ?: TaskOptions(), TaskMeta(meta)) { dispatcher }.stub()
 
     /*
      * Create stub for a new task
      * (Kotlin way)
      */
     inline fun <reified T : Any> task(
-        options: TaskOptions = TaskOptions(),
-        meta: TaskMeta = TaskMeta()
-    ): T = task(T::class.java, options, meta)
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = task(T::class.java, options, TaskMeta(meta))
 
     /*
      * Create stub for a new workflow
      */
     @JvmOverloads fun <T : Any> workflow(
         klass: Class<out T>,
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: WorkflowMeta = WorkflowMeta()
-    ): T = NewWorkflowProxyHandler(klass, options, meta) { dispatcher }.stub()
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = NewWorkflowProxyHandler(
+        klass,
+        options ?: WorkflowOptions(),
+        WorkflowMeta(meta)
+    ) { dispatcher }.stub()
 
     /*
      * Create stub for a new workflow
      * (Kotlin way)
      */
     inline fun <reified T : Any> workflow(
-        options: WorkflowOptions = WorkflowOptions(),
-        meta: WorkflowMeta = WorkflowMeta()
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
     ): T = workflow(T::class.java, options, meta)
 
     /*
@@ -99,45 +103,55 @@ open class Client(val clientOutput: ClientOutput) {
      */
     @JvmOverloads fun <T : Any> task(
         klass: Class<out T>,
-        id: String,
+        tag: String,
         options: TaskOptions? = null,
-        meta: TaskMeta? = null
-    ): T = ExistingTaskProxyHandler(klass, id, options, meta) { dispatcher }.stub()
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = ExistingTaskProxyHandler(
+        klass,
+        Tag(tag),
+        options ?: TaskOptions(),
+        TaskMeta(meta)
+    ) { dispatcher }.stub()
 
     /*
      * Create stub for an existing task
      * (Kotlin way)
      */
     inline fun <reified T : Any> task(
-        id: String,
+        tag: String,
         options: TaskOptions? = null,
-        meta: TaskMeta? = null
-    ): T = task(T::class.java, id, options, meta)
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = task(T::class.java, tag, options, meta)
 
     /*
      * Create stub for an existing workflow
      */
     @JvmOverloads fun <T : Any> workflow(
         klass: Class<out T>,
-        id: String,
+        tag: String,
         options: WorkflowOptions? = null,
-        meta: WorkflowMeta? = null
-    ): T = ExistingWorkflowProxyHandler(klass, WorkflowId(id), options, meta) { dispatcher }.stub()
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = ExistingWorkflowProxyHandler(
+        klass,
+        Tag(tag),
+        options ?: WorkflowOptions(),
+        WorkflowMeta(meta)
+    ) { dispatcher }.stub()
 
     /*
      * Create stub for an existing workflow
      * (kotlin way)
      */
     inline fun <reified T : Any> workflow(
-        id: String,
+        tag: String,
         options: WorkflowOptions? = null,
-        meta: WorkflowMeta? = null
-    ): T = workflow(T::class.java, id, options, meta)
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = workflow(T::class.java, tag, options, meta)
 
     /*
      *  Process (asynchronously) a task or a workflow
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): String {
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): UUID {
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "async")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -206,34 +220,34 @@ open class Client(val clientOutput: ClientOutput) {
     suspend fun handle(message: ClientResponseMessage) = dispatcher.handle(message)
 
     private fun <T : Any> cancel(handle: ExistingTaskProxyHandler<T>, output: Any?) {
-        val msg = CancelTask(
-            taskId = TaskId(handle.taskId),
-            taskName = TaskName.from(handle.klass),
+        val msg = CancelTaskPerTag(
+            tag = handle.tag,
+            name = TaskName(handle.klass.name),
             taskReturnValue = MethodReturnValue.from(output)
         )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
+        GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
     }
 
     private fun <T : Any> cancel(handler: ExistingWorkflowProxyHandler<T>, output: Any?) {
-        val msg = CancelWorkflow(
-            workflowId = handler.workflowId,
-            clientName = null,
+        val msg = CancelWorkflowPerTag(
+            tag = handler.tag,
+            name = WorkflowName(handler.klass.name),
             workflowOutput = MethodReturnValue.from(output)
         )
-        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()
+        GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
     }
 
     private fun <T : Any> retry(handler: ExistingTaskProxyHandler<T>) {
-        val msg = RetryTask(
-            taskId = TaskId(handler.taskId),
-            taskName = TaskName(handler.klass.name),
+        val msg = RetryTaskPerTag(
+            tag = handler.tag,
+            name = TaskName(handler.klass.name),
             methodName = handler.method?.let { MethodName.from(it) },
             methodParameterTypes = handler.method?.let { MethodParameterTypes.from(it) },
             methodParameters = handler.method?.let { MethodParameters.from(it, handler.args) },
             taskOptions = handler.taskOptions,
             taskMeta = handler.taskMeta
         )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
+        GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
     }
 
     private fun <T : Any> retry(handler: ExistingWorkflowProxyHandler<T>) {

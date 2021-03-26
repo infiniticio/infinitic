@@ -35,7 +35,7 @@ import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -75,7 +75,7 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
 ) = launch(singleThreadedContext("$TASK_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val taskEngine = TaskEngine(
-        TaskStateKeyValueStorage(keyValueStorage, keyValueCache),
+        TaskStateCachedKeyStorage(keyValueStorage, keyValueCache),
         NoTaskEventStorage(),
         taskEngineOutput
     )

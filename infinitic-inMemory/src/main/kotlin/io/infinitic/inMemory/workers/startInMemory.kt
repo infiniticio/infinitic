@@ -45,7 +45,7 @@ import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessage
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
 import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.worker.startTaskEngine
@@ -53,7 +53,7 @@ import io.infinitic.tasks.executor.transport.TaskExecutorInput
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
-import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
+import io.infinitic.workflows.engine.storage.states.WorkflowStateCachedKeyStorage
 import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
@@ -95,7 +95,7 @@ fun CoroutineScope.startInMemory(
 
     startWorkflowEngine(
         "in-memory-workflow-engine",
-        WorkflowStateKeyValueStorage(keyValueStorage, NoCache()),
+        WorkflowStateCachedKeyStorage(keyValueStorage, NoCache()),
         NoWorkflowEventStorage(),
         WorkflowEngineInputChannels(
             workflowEngineCommandsChannel,
@@ -112,7 +112,7 @@ fun CoroutineScope.startInMemory(
 
     startTaskEngine(
         "in-memory-task-engine",
-        TaskStateKeyValueStorage(keyValueStorage, NoCache()),
+        TaskStateCachedKeyStorage(keyValueStorage, NoCache()),
         NoTaskEventStorage(),
         TaskEngineInputChannels(
             taskEngineCommandsChannel,

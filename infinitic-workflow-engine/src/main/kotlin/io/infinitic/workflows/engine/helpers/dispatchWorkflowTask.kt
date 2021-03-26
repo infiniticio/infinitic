@@ -71,7 +71,7 @@ suspend fun dispatchWorkflowTask(
     val workflowTask = DispatchTask(
         clientName = ClientName("workflow engine"),
         clientWaiting = false,
-        taskId = TaskId("$workflowTaskId"),
+        taskId = TaskId(workflowTaskId.id),
         taskName = TaskName(WorkflowTask::class.java.name),
         methodName = MethodName(WorkflowTask.DEFAULT_METHOD),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),

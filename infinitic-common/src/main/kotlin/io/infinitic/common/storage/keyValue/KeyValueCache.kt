@@ -26,9 +26,7 @@
 package io.infinitic.common.storage.keyValue
 
 interface KeyValueCache<T> {
-    fun get(key: String): T?
-
-    fun put(key: String, value: T)
-
-    fun del(key: String)
+    fun getValue(key: String): T?
+    fun putValue(key: String, value: T)
+    fun delValue(key: String)
 }

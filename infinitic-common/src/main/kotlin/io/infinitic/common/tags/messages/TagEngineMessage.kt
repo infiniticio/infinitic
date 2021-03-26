@@ -27,7 +27,15 @@ package io.infinitic.common.tags.messages
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.Name
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelEventType
@@ -40,13 +48,13 @@ import kotlinx.serialization.Serializable
 sealed class TagEngineMessage {
     val messageId = MessageId()
     abstract val tag: Tag
-    abstract val workflowName: WorkflowName
+    abstract val name: Name
 }
 
 @Serializable
-data class SendToChannel(
-    override val workflowName: WorkflowName,
+data class SendToChannelPerTag(
     override val tag: Tag,
+    override val name: WorkflowName,
     val clientName: ClientName,
     val clientWaiting: Boolean,
     val channelEventId: ChannelEventId,
@@ -56,15 +64,40 @@ data class SendToChannel(
 ) : TagEngineMessage()
 
 @Serializable
+data class RetryTaskPerTag(
+    override val tag: Tag,
+    override val name: TaskName,
+    val methodName: MethodName?,
+    val methodParameterTypes: MethodParameterTypes?,
+    val methodParameters: MethodParameters?,
+    val taskMeta: TaskMeta?,
+    val taskOptions: TaskOptions?
+) : TagEngineMessage()
+
+@Serializable
+data class CancelTaskPerTag(
+    override val tag: Tag,
+    override val name: TaskName,
+    val taskReturnValue: MethodReturnValue
+) : TagEngineMessage()
+
+@Serializable
+data class CancelWorkflowPerTag(
+    override val tag: Tag,
+    override val name: WorkflowName,
+    val workflowOutput: MethodReturnValue
+) : TagEngineMessage()
+
+@Serializable
 data class WorkflowStarted(
+    override val tag: Tag,
+    override val name: WorkflowName,
     val workflowId: WorkflowId,
-    override val workflowName: WorkflowName,
-    override val tag: Tag
 ) : TagEngineMessage()
 
 @Serializable
 data class WorkflowTerminated(
+    override val tag: Tag,
+    override val name: WorkflowName,
     val workflowId: WorkflowId,
-    override val workflowName: WorkflowName,
-    override val tag: Tag
 ) : TagEngineMessage()

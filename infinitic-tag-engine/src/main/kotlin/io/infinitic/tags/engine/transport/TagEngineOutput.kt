@@ -28,6 +28,8 @@ package io.infinitic.tags.engine.transport
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import org.slf4j.Logger
@@ -35,6 +37,7 @@ import org.slf4j.LoggerFactory
 
 interface TagEngineOutput {
     val sendToWorkflowEngineFn: SendToWorkflowEngine
+    val sendToTaskEngineFn: SendToTaskEngine
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -51,5 +54,19 @@ interface TagEngineOutput {
             workflowEngineMessage
         )
         sendToWorkflowEngineFn(workflowEngineMessage, MillisDuration(0))
+    }
+
+    suspend fun sendToTaskEngine(
+        messageId: MessageId,
+        tag: Tag,
+        taskEngineMessage: TaskEngineMessage
+    ) {
+        logger.debug(
+            "from messageId {}: tag {} - sendToTaskEngine {}",
+            messageId,
+            tag,
+            taskEngineMessage
+        )
+        sendToTaskEngineFn(taskEngineMessage, MillisDuration(0))
     }
 }

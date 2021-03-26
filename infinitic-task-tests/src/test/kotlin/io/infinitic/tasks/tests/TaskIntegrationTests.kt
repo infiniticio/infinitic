@@ -37,6 +37,9 @@ import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -50,10 +53,14 @@ import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyVal
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
 import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
-import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.tags.engine.TagEngine
+import io.infinitic.tags.engine.storage.TagStateCachedKeyStorage
+import io.infinitic.tags.engine.transport.TagEngineOutput
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
@@ -72,10 +79,17 @@ import kotlinx.coroutines.launch
 private var taskStatus: TaskStatus? = null
 private val taskTest = TaskTestImpl()
 
-private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage(), NoCache())
+private val tagStateStorage = TagStateCachedKeyStorage(
+    InMemoryKeyValueStorage(),
+    NoCache(),
+    InMemoryKeySetStorage(),
+    NoCache()
+)
+private val taskStateStorage = TaskStateCachedKeyStorage(InMemoryKeyValueStorage(), NoCache())
+private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryKeyValueStorage(), NoCache())
+private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryKeyValueStorage(), NoCache())
 
+private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
@@ -164,11 +178,11 @@ class TaskIntegrationTests : StringSpec({
             init()
             val id = client.async(taskTestStub) { log() }
             taskId = TaskId(id)
-            val taskTestStubId = client.task<TaskTest>(id)
+            val existingTask = client.task<TaskTest>(Tag.of(id).toString())
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
-            client.retry(taskTestStubId)
+            client.retry(existingTask)
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -187,9 +201,9 @@ class TaskIntegrationTests : StringSpec({
             init()
             val id = client.async(taskTestStub) { log() }
             taskId = TaskId(id)
-            val taskTestStubId = client.task(TaskTest::class.java, id)
+            val existingTask = client.task(TaskTest::class.java, Tag.of(id).toString())
             delay(100)
-            client.cancel(taskTestStubId)
+            client.cancel(existingTask)
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -212,11 +226,20 @@ class TaskIntegrationTests : StringSpec({
     }
 })
 
+class TestTagEngineOutput(private val scope: CoroutineScope) : TagEngineOutput {
+    override val sendToTaskEngineFn: SendToTaskEngine =
+        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
+
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
+        { _: WorkflowEngineMessage, _: MillisDuration -> }
+}
+
 class TestTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
     override val sendToClientResponseFn: SendToClientResponse =
         { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
 
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: MillisDuration -> }
+    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
+        { _: WorkflowEngineMessage, _: MillisDuration -> }
 
     override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
@@ -243,6 +266,9 @@ class TestTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOu
 class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
     override val clientName = ClientName("client: InMemory")
 
+    override val sendToTagEngineFn: SendToTagEngine =
+        { msg: TagEngineMessage -> scope.sendToTagEngine(msg) }
+
     override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 
@@ -252,6 +278,12 @@ class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
 fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
     launch {
         client.handle(msg)
+    }
+}
+
+fun CoroutineScope.sendToTagEngine(msg: TagEngineMessage) {
+    launch {
+        tagEngine.handle(msg)
     }
 }
 
@@ -296,6 +328,11 @@ fun CoroutineScope.init() {
     client = Client(TestClientOutput(this))
 
     taskTestStub = client.task(TaskTest::class.java)
+
+    tagEngine = TagEngine(
+        tagStateStorage,
+        TestTagEngineOutput(this)
+    )
 
     taskEngine = TaskEngine(
         taskStateStorage,

@@ -26,18 +26,51 @@
 package io.infinitic.cache.no
 
 import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyCounter.KeyCounterCache
+import io.infinitic.common.storage.keySet.KeySetCache
 import io.infinitic.common.storage.keyValue.KeyValueCache
 
-class NoCache<T>() : KeyValueCache<T>, Flushable {
-    override fun del(key: String) {
+class NoCache<T>() : KeyValueCache<T>, KeySetCache<T>, KeyCounterCache, Flushable {
+
+    override fun getValue(key: String): T? {
+        return null
+    }
+
+    override fun putValue(key: String, value: T) {
         // nothing
     }
 
-    override fun put(key: String, value: T) {
+    override fun delValue(key: String) {
         // nothing
     }
 
-    override fun get(key: String): T? = null
+    override suspend fun getCounter(key: String): Long? {
+        return null
+    }
+
+    override suspend fun setCounter(key: String, amount: Long) {
+        // nothing
+    }
+
+    override suspend fun incrCounter(key: String, amount: Long) {
+        // nothing
+    }
+
+    override fun getSet(key: String): Set<T>? {
+        return null
+    }
+
+    override fun setSet(key: String, value: Set<T>) {
+        // nothing
+    }
+
+    override fun addToSet(key: String, value: T) {
+        // nothing
+    }
+
+    override fun removeFromSet(key: String, value: T) {
+        // nothing
+    }
 
     override fun flush() {
         // nothing

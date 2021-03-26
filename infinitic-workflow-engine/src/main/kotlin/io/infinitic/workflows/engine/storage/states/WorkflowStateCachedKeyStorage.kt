@@ -30,34 +30,46 @@ import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-open class WorkflowStateKeyValueStorage(
+open class WorkflowStateCachedKeyStorage(
     private val storage: KeyValueStorage,
     private val cache: KeyValueCache<WorkflowState>
 ) : WorkflowStateStorage {
 
-    override val getStateFn: GetWorkflowState = { workflowId: WorkflowId ->
+    val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
         val key = getWorkflowStateKey(workflowId)
-        cache.get(key) ?: run {
+        val workflowState = cache.getValue(key) ?: run {
             logger.debug("workflowId {} - getStateFn - absent from cache, get from storage", workflowId)
-            storage.getState(key)?.let { WorkflowState.fromByteArray(it) }
+            storage.getValue(key)
+                ?.let { WorkflowState.fromByteArray(it) }
+                ?.also { cache.putValue(key, it) }
         }
+        logger.debug("workflowId {} - getState {}", workflowId, workflowState)
+
+        return workflowState
     }
 
-    override val putStateFn: PutWorkflowState = { workflowId: WorkflowId, state: WorkflowState ->
+    override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
         val key = getWorkflowStateKey(workflowId)
-        cache.put(key, state)
-        storage.putState(key, state.toByteArray())
+        cache.putValue(key, workflowState)
+        storage.putValue(key, workflowState.toByteArray())
+        logger.debug("workflowId {} - updateState {}", workflowId, workflowState)
     }
 
-    override val delStateFn: DeleteWorkflowState = { workflowId: WorkflowId ->
+    override suspend fun delState(workflowId: WorkflowId) {
         val key = getWorkflowStateKey(workflowId)
-        cache.del(key)
-        storage.delState(key)
+        cache.delValue(key)
+        storage.delValue(key)
+        logger.debug("workflowId {} - deleteState", workflowId)
     }
 
     /*

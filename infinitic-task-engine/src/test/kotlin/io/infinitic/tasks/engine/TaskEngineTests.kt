@@ -53,9 +53,6 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tasks.engine.storage.events.TaskEventStorage
-import io.infinitic.tasks.engine.storage.states.DelTaskState
-import io.infinitic.tasks.engine.storage.states.GetTaskState
-import io.infinitic.tasks.engine.storage.states.PutTaskState
 import io.infinitic.tasks.engine.storage.states.TaskStateStorage
 import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import io.kotest.core.spec.style.StringSpec
@@ -75,18 +72,15 @@ import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClie
 
 fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
 
-class MockTaskStateStorage(state: TaskState?) : TaskStateStorage {
-    override val getStateFn = mockk<GetTaskState>()
-    override val putStateFn = mockk<PutTaskState>()
-    override val delStateFn = mockk<DelTaskState>()
+val stateSlot = slot<TaskState>()
 
-    val stateSlot = slot<TaskState>()
+fun mockTaskStateStorage(state: TaskState?): TaskStateStorage {
+    val taskStateStorage = mockk<TaskStateStorage>()
+    coEvery { taskStateStorage.getState(any()) } returns state?.deepCopy()
+    coEvery { taskStateStorage.putState(any(), capture(stateSlot)) } just Runs
+    coEvery { taskStateStorage.delState(any()) } just Runs
 
-    init {
-        coEvery { getState(any()) } returns state?.deepCopy()
-        coEvery { putState(any(), capture(stateSlot)) } just Runs
-        coEvery { delState(any()) } just Runs
-    }
+    return taskStateStorage
 }
 
 class MockTaskEventStorage : TaskEventStorage {
@@ -146,7 +140,7 @@ class MockTaskEngineOutput : TaskEngineOutput {
 }
 class TestEngine(stateIn: TaskState?, private val msgIn: TaskEngineMessage) {
     // mocking TaskStateStorage
-    val taskStateStorage = MockTaskStateStorage(stateIn)
+    val taskStateStorage = mockTaskStateStorage(stateIn)
     // mocking TaskEventStorage
     val taskEventStorage = MockTaskEventStorage()
     // mocking TaskEngineOutput
@@ -197,7 +191,7 @@ internal class TaskEngineTests : StringSpec({
         val taskEngineOutput = test.taskEngineOutput
         test.handle()
         val runTask = captured(taskEngineOutput.workerMessageSlot)!!
-        val state = captured(taskStateStorage.stateSlot)!!
+        val state = captured(stateSlot)!!
         val taskStatusUpdated = captured(taskEngineOutput.taskStatusUpdatedSlot)!!
         val taskAttemptDispatched = captured(taskEngineOutput.taskAttemptDispatchedSlot)!!
         coVerifySequence {
@@ -250,7 +244,7 @@ internal class TaskEngineTests : StringSpec({
         test.handle()
         val executeTaskAttempt = captured(taskEngineOutput.workerMessageSlot)!!
         val taskAttemptDispatched = captured(taskEngineOutput.taskAttemptDispatchedSlot)!!
-        val state = captured(taskStateStorage.stateSlot)!!
+        val state = captured(stateSlot)!!
         val taskStatusUpdated = captured(taskEngineOutput.taskStatusUpdatedSlot)!!
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.retryTaskSlot)!!)
@@ -341,7 +335,7 @@ internal class TaskEngineTests : StringSpec({
         val taskEngineOutput = test.taskEngineOutput
         test.handle()
 
-        val state = captured(taskStateStorage.stateSlot)!!
+        val state = captured(stateSlot)!!
         val taskStatusUpdated = captured(taskEngineOutput.taskStatusUpdatedSlot)!!
         coVerifySequence {
             taskEventStorage.insertTaskEvent(captured(taskEventStorage.taskAttemptFailedSlot)!!)
@@ -375,7 +369,7 @@ internal class TaskEngineTests : StringSpec({
         val taskEngineOutput = test.taskEngineOutput
         test.handle()
 
-        val state = captured(taskStateStorage.stateSlot)!!
+        val state = captured(stateSlot)!!
         val taskStatusUpdated = captured(taskEngineOutput.taskStatusUpdatedSlot)!!
         val retryTaskAttempt = captured(taskEngineOutput.retryTaskAttemptSlot)!!
         val retryTaskAttemptDelay = captured(taskEngineOutput.retryTaskAttemptDelaySlot)!!
@@ -480,13 +474,13 @@ internal class TaskEngineTests : StringSpec({
 private fun checkShouldRetryTaskAttempt(
     msgIn: TaskEngineMessage,
     stateIn: TaskState,
-    taskStateStorage: MockTaskStateStorage,
+    taskStateStorage: TaskStateStorage,
     taskEventStorage: MockTaskEventStorage,
     taskEngineOutput: MockTaskEngineOutput
 ) {
     val runTask = captured(taskEngineOutput.workerMessageSlot)!!
     val taskAttemptDispatched = captured(taskEngineOutput.taskAttemptDispatchedSlot)!!
-    val state = captured(taskStateStorage.stateSlot)!!
+    val state = captured(stateSlot)!!
     val taskStatusUpdated = captured(taskEngineOutput.taskStatusUpdatedSlot)!!
 
     coVerifyOrder {

@@ -25,14 +25,14 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.workflows.data.channels.ChannelName
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import java.lang.reflect.Method
 
 class SendChannelProxyHandler<T : Any>(
     val klass: Class<T>,
-    val workflowId: WorkflowId,
+    val tag: Tag,
     val workflowName: WorkflowName,
     val channelName: ChannelName,
     private val dispatcherFn: () -> Dispatcher

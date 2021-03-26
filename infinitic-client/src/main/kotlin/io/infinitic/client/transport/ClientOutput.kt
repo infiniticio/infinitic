@@ -27,6 +27,8 @@ package io.infinitic.client.transport
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -38,17 +40,23 @@ interface ClientOutput {
     val clientName: ClientName
     val sendToWorkflowEngineFn: SendToWorkflowEngine
     val sendToTaskEngineFn: SendToTaskEngine
+    val sendToTagEngineFn: SendToTagEngine
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage, after: MillisDuration) {
-        sendToWorkflowEngineFn(workflowEngineMessage, after)
+    suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage) {
+        sendToWorkflowEngineFn(workflowEngineMessage, MillisDuration(0))
         logger.debug("workflowId {} - sendToWorkflowEngine {}", workflowEngineMessage.workflowId, workflowEngineMessage)
     }
 
-    suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage, after: MillisDuration) {
-        sendToTaskEngineFn(taskEngineMessage, after)
+    suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage) {
+        sendToTaskEngineFn(taskEngineMessage, MillisDuration(0))
         logger.debug("taskId {} - sendToTaskEngine {}", taskEngineMessage.taskId, taskEngineMessage)
+    }
+
+    suspend fun sendToTagEngine(tagEngineMessage: TagEngineMessage) {
+        sendToTagEngineFn(tagEngineMessage)
+        logger.debug("tag {} - sendToTaskEngine {}", tagEngineMessage.tag, tagEngineMessage)
     }
 }

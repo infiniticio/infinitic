@@ -36,10 +36,10 @@ import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
 @Serializable(with = TaskIdSerializer::class)
-data class TaskId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+data class TaskId(override val id: UUID = UUID.randomUUID()) : Id(id)
 
 object TaskIdSerializer : KSerializer<TaskId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TaskId) { encoder.encodeString(value.id) }
-    override fun deserialize(decoder: Decoder) = TaskId(decoder.decodeString())
+    override fun serialize(encoder: Encoder, value: TaskId) { encoder.encodeString("${value.id}") }
+    override fun deserialize(decoder: Decoder) = TaskId(UUID.fromString(decoder.decodeString()))
 }

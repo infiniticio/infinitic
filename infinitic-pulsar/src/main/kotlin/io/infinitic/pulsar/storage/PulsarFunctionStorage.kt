@@ -30,12 +30,12 @@ import org.apache.pulsar.functions.api.Context
 import java.nio.ByteBuffer
 
 class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
-    override suspend fun getState(key: String): ByteArray? =
+    override suspend fun getValue(key: String): ByteArray? =
         context.getState(key).array()
 
-    override suspend fun putState(key: String, value: ByteArray) =
+    override suspend fun putValue(key: String, value: ByteArray) =
         context.putState(key, ByteBuffer.wrap(value))
 
-    override suspend fun delState(key: String) =
+    override suspend fun delValue(key: String) =
         context.deleteState(key)
 }

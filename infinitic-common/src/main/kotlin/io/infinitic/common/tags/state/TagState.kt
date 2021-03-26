@@ -26,16 +26,16 @@
 package io.infinitic.common.tags.state
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.data.Id
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.tags.data.Tag
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class TagState(
     val tag: Tag,
     var lastMessageId: MessageId?,
-    val workflowIds: MutableSet<WorkflowId>
+    val ids: MutableSet<Id>
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())

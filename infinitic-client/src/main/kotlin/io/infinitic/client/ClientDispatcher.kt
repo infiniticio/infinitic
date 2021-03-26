@@ -31,7 +31,6 @@ import io.infinitic.common.clients.messages.SendToChannelCompleted
 import io.infinitic.common.clients.messages.SendToChannelFailed
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -41,6 +40,7 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
+import io.infinitic.common.tags.messages.SendToChannelPerTag
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.DispatchTask
@@ -51,7 +51,6 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.exceptions.ChannelUsedOnNewWorkflow
 import io.infinitic.exceptions.IncorrectNewStub
 import io.infinitic.exceptions.NoMethodCall
@@ -65,6 +64,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
 import java.lang.reflect.Method
+import java.util.UUID
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.kotlinFunction
 import io.infinitic.exceptions.SendToChannelFailed as SendToChannelFailedException
@@ -77,7 +77,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
     suspend fun handle(message: ClientResponseMessage) = responseFlow.emit(message)
 
     // asynchronous call on an existing task: async(existingTask) { method() }
-    fun dispatch(handler: ExistingTaskProxyHandler<*>): String {
+    fun dispatch(handler: ExistingTaskProxyHandler<*>): UUID {
         val method = handler.method ?: throw NoMethodCall(handler.klass.name)
         checkMethodIsNotSuspend(method)
 
@@ -85,7 +85,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
     }
 
     // asynchronous call on a new task: async(newTask) { method() }
-    fun dispatch(handler: NewTaskProxyHandler<*>): String {
+    fun dispatch(handler: NewTaskProxyHandler<*>): UUID {
         val method = handler.method ?: throw NoMethodCall(handler.klass.name)
         checkMethodIsNotSuspend(method)
 
@@ -103,12 +103,12 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             taskOptions = handler.taskOptions,
             taskMeta = handler.taskMeta
         )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg, MillisDuration(0)) }.join()
+        GlobalScope.future { clientOutput.sendToTaskEngine(msg) }.join()
 
         // reset for reuse
         handler.reset()
 
-        return "${msg.taskId}"
+        return msg.taskId.id
     }
 
     // synchronous call on a new task: newTask.method()
@@ -128,7 +128,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
     }
 
     // asynchronous call on a new workflow: async(newWorkflow) { method() }
-    fun dispatch(handler: NewWorkflowProxyHandler<*>): String {
+    fun dispatch(handler: NewWorkflowProxyHandler<*>): UUID {
         val method = handler.method ?: throw NoMethodCall(handler.klass.name)
         checkMethodIsNotSuspend(method)
 
@@ -146,12 +146,12 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             workflowMeta = handler.workflowMeta,
             workflowOptions = handler.workflowOptions
         )
-        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()
+        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg) }.join()
 
         // reset for reuse
         handler.reset()
 
-        return "${msg.workflowId}"
+        return msg.workflowId.id
     }
 
     // synchronous call on a new workflow: newWorkflow.method()
@@ -179,7 +179,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
     }
 
     // asynchronous call on an existing workflow: async(existingWorkflow) { method() }
-    fun dispatch(handler: ExistingWorkflowProxyHandler<*>): String {
+    fun dispatch(handler: ExistingWorkflowProxyHandler<*>): UUID {
         val method = handler.method ?: throw NoMethodCall(handler.klass.name)
         checkMethodIsNotSuspend(method)
 
@@ -196,7 +196,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         if (method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
             val channel = SendChannelProxyHandler(
                 method.returnType,
-                handler.workflowId,
+                handler.tag,
                 WorkflowName(handler.klass.name),
                 ChannelName(method.name)
             ) { this }.stub() as S
@@ -211,7 +211,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
     }
 
     // asynchronous send on a channel: async(existingWorkflow.channel) { send() }
-    fun dispatch(handler: SendChannelProxyHandler<*>): String {
+    fun dispatch(handler: SendChannelProxyHandler<*>): UUID {
         val method = handler.method ?: throw NoSendMethodCall(handler.klass.name, "${handler.channelName}")
         checkMethodIsNotSuspend(method)
 
@@ -219,23 +219,23 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             throw UnknownMethodInSendChannel("${handler.workflowName}", "${handler.channelName}", method.name)
         }
 
-        val msg = SendToChannel(
+        val msg = SendToChannelPerTag(
+            tag = handler.tag,
+            name = handler.workflowName,
             clientName = clientOutput.clientName,
             clientWaiting = handler.isSync,
             channelEventId = ChannelEventId(),
-            workflowId = handler.workflowId,
-            workflowName = handler.workflowName,
             channelName = handler.channelName,
             channelEvent = ChannelEvent.from(handler.args[0]),
             channelEventTypes = ChannelEventType.allFrom(handler.args[0]::class.java)
         )
 
-        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg, MillisDuration(0)) }.join()
+        GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
 
         // reset for reuse
         handler.reset()
 
-        return "${msg.channelEventId}"
+        return msg.channelEventId.id
     }
 
     // synchronous send on a channel: existingWorkflow.channel.send()
@@ -253,7 +253,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         when (response) {
             is SendToChannelCompleted -> Unit
             is SendToChannelFailed -> throw SendToChannelFailedException(
-                "${handler.workflowId}",
+                "${handler.tag}",
                 handler.klass.name,
                 "$sendId"
             )

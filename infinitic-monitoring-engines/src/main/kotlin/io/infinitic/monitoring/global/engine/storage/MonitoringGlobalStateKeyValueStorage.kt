@@ -41,9 +41,9 @@ open class MonitoringGlobalStateKeyValueStorage(
 
     override val getStateFn: GetMonitoringGlobalState = {
         val key = getMonitoringGlobalStateKey()
-        cache.get(key) ?: run {
+        cache.getValue(key) ?: run {
             logger.debug("taskName {} - getStateFn - absent from cache, get from storage")
-            storage.getState(key)?.let { MonitoringGlobalState.fromByteArray(it) }
+            storage.getValue(key)?.let { MonitoringGlobalState.fromByteArray(it) }
         }
     }
 
@@ -51,14 +51,14 @@ open class MonitoringGlobalStateKeyValueStorage(
         state: MonitoringGlobalState
         ->
         val key = getMonitoringGlobalStateKey()
-        cache.put(key, state)
-        storage.putState(key, state.toByteArray())
+        cache.putValue(key, state)
+        storage.putValue(key, state.toByteArray())
     }
 
     override val delStateFn: DelMonitoringGlobalState = {
         val key = getMonitoringGlobalStateKey()
-        cache.del(key)
-        storage.delState(key)
+        cache.delValue(key)
+        storage.delValue(key)
     }
 
     private fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"

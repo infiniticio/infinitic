@@ -25,9 +25,10 @@
 
 package io.infinitic.tags.engine.storage
 
-import io.infinitic.common.data.Id
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.Name
 import io.infinitic.common.tags.data.Tag
+import java.util.UUID
 
 /**
  * TagStateStorage implementations are responsible for storing the different state objects used by the engine.
@@ -36,13 +37,13 @@ import io.infinitic.common.tags.data.Tag
  * transformed before being stored. These details are left to the different implementations.
  */
 interface TagStateStorage {
-    suspend fun getLastMessageId(tag: Tag): MessageId
+    suspend fun getLastMessageId(tag: Tag, name: Name): MessageId?
 
-    suspend fun setLastMessageId(tag: Tag, messageId: MessageId)
+    suspend fun setLastMessageId(tag: Tag, name: Name, messageId: MessageId)
 
-    suspend fun <T : Id> getIds(tag: Tag): Set<T>
+    suspend fun getIds(tag: Tag, name: Name): Set<UUID>
 
-    suspend fun <T : Id> addId(tag: Tag, id: T)
+    suspend fun addId(tag: Tag, name: Name, id: UUID)
 
-    suspend fun <T : Id> removeId(tag: Tag, id: T)
+    suspend fun removeId(tag: Tag, name: Name, id: UUID)
 }

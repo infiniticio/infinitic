@@ -29,7 +29,8 @@ import io.infinitic.client.Client
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryClientOutput
 import io.infinitic.inMemory.workers.startInMemory
-import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
@@ -40,20 +41,30 @@ import kotlinx.coroutines.channels.Channel
 
 class InfiniticClient private constructor(
     private val taskExecutorRegister: TaskExecutorRegister,
+    private val tagEngineCommandsChannel: Channel<TagEngineMessageToProcess>,
     private val taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
     private val workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>,
     private val logFn: (_: MessageToProcess<*>) -> Unit
-) : Client(InMemoryClientOutput(taskEngineCommandsChannel, workflowEngineCommandsChannel)), TaskExecutorRegister by taskExecutorRegister {
+) : Client(
+        InMemoryClientOutput(
+            tagEngineCommandsChannel,
+            taskEngineCommandsChannel,
+            workflowEngineCommandsChannel
+        )
+    ),
+    TaskExecutorRegister by taskExecutorRegister {
 
     companion object {
         @JvmStatic @JvmOverloads
         fun build(logFn: (_: MessageToProcess<*>) -> Unit = { }): InfiniticClient {
             val taskExecutorRegister = TaskExecutorRegisterImpl()
+            val tagEngineCommandsChannel = Channel<TagEngineMessageToProcess>()
             val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
             val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
 
             return InfiniticClient(
                 taskExecutorRegister,
+                tagEngineCommandsChannel,
                 taskEngineCommandsChannel,
                 workflowEngineCommandsChannel,
                 logFn
@@ -65,7 +76,7 @@ class InfiniticClient private constructor(
         with(CoroutineScope(Dispatchers.IO)) {
             startInMemory(
                 taskExecutorRegister,
-                InMemoryStorage(),
+                InMemoryKeyValueStorage(),
                 this@InfiniticClient,
                 taskEngineCommandsChannel,
                 workflowEngineCommandsChannel,

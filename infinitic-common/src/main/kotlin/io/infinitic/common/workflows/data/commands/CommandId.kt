@@ -40,7 +40,7 @@ import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
 @Serializable(with = CommandIdSerializer::class)
-data class CommandId(override val id: String = UUID.randomUUID().toString()) : Id(id) {
+data class CommandId(override val id: UUID = UUID.randomUUID()) : Id(id) {
     constructor(taskId: TaskId) : this(taskId.id)
     constructor(timerId: TimerId) : this(timerId.id)
     constructor(workflowId: WorkflowId) : this(workflowId.id)
@@ -48,10 +48,10 @@ data class CommandId(override val id: String = UUID.randomUUID().toString()) : I
 }
 
 @Serializable(with = CommandIdSerializer::class)
-data class TaskAttemptId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+data class TaskAttemptId(override val id: UUID = UUID.randomUUID()) : Id(id)
 
 object CommandIdSerializer : KSerializer<CommandId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CommandId) { encoder.encodeString(value.id) }
-    override fun deserialize(decoder: Decoder) = CommandId(decoder.decodeString())
+    override fun serialize(encoder: Encoder, value: CommandId) { encoder.encodeString("${value.id}") }
+    override fun deserialize(decoder: Decoder) = CommandId(UUID.fromString(decoder.decodeString()))
 }

@@ -35,7 +35,8 @@ import io.infinitic.pulsar.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startClientResponseWorker
-import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
@@ -103,9 +104,14 @@ class InfiniticClient private constructor(
             }
 
             Transport.inMemory -> {
+                val tagEngineCommandsChannel = Channel<TagEngineMessageToProcess>()
                 val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
                 val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
-                val clientOutput = InMemoryClientOutput(taskEngineCommandsChannel, workflowEngineCommandsChannel)
+                val clientOutput = InMemoryClientOutput(
+                    tagEngineCommandsChannel,
+                    taskEngineCommandsChannel,
+                    workflowEngineCommandsChannel
+                )
                 val threadPool = Executors.newCachedThreadPool()
                 val infiniticClient = InfiniticClient(clientOutput) { threadPool.shutdown() }
 
@@ -122,7 +128,7 @@ class InfiniticClient private constructor(
                         launch(threadPool.asCoroutineDispatcher()) {
                             startInMemory(
                                 taskExecutorRegister,
-                                InMemoryStorage(),
+                                InMemoryKeyValueStorage(),
                                 infiniticClient,
                                 taskEngineCommandsChannel,
                                 workflowEngineCommandsChannel

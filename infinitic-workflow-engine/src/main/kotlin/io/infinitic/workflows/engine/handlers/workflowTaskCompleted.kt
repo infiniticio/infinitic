@@ -273,7 +273,7 @@ private suspend fun startDurationTimer(
     val msg = TimerCompleted(
         workflowId = state.workflowId,
         methodRunId = methodRun.methodRunId,
-        timerId = TimerId("${newCommand.commandId}")
+        timerId = TimerId(newCommand.commandId.id)
     )
 
     val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
@@ -294,7 +294,7 @@ private suspend fun startInstantTimer(
     val msg = TimerCompleted(
         workflowId = state.workflowId,
         methodRunId = methodRun.methodRunId,
-        timerId = TimerId("${newCommand.commandId}")
+        timerId = TimerId(newCommand.commandId.id)
     )
 
     workflowEngineOutput.sendToWorkflowEngine(state, msg, command.instant - MillisInstant.now())
@@ -333,7 +333,7 @@ private suspend fun dispatchTask(
     val msg = DispatchTask(
         clientName = ClientName("workflow engine"),
         clientWaiting = false,
-        taskId = TaskId("${newCommand.commandId}"),
+        taskId = TaskId(newCommand.commandId.id),
         taskName = command.taskName,
         methodName = command.methodName,
         methodParameterTypes = command.methodParameterTypes,
@@ -359,7 +359,7 @@ private suspend fun dispatchChildWorkflow(
     val msg = DispatchWorkflow(
         clientName = ClientName("workflow engine"),
         clientWaiting = false,
-        workflowId = WorkflowId("${newCommand.commandId}"),
+        workflowId = WorkflowId(newCommand.commandId.id),
         parentWorkflowId = state.workflowId,
         parentMethodRunId = methodRun.methodRunId,
         workflowName = command.childWorkflowName,

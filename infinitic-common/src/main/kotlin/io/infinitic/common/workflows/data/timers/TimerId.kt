@@ -36,10 +36,10 @@ import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
 @Serializable(with = TimerIdSerializer::class)
-data class TimerId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+data class TimerId(override val id: UUID = UUID.randomUUID()) : Id(id)
 
 object TimerIdSerializer : KSerializer<TimerId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TimerId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TimerId) { encoder.encodeString(value.id) }
-    override fun deserialize(decoder: Decoder) = TimerId(decoder.decodeString())
+    override fun serialize(encoder: Encoder, value: TimerId) { encoder.encodeString("${value.id}") }
+    override fun deserialize(decoder: Decoder) = TimerId(UUID.fromString(decoder.decodeString()))
 }
