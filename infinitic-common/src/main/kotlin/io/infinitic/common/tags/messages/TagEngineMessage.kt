@@ -33,6 +33,7 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
@@ -85,18 +86,32 @@ data class CancelTaskPerTag(
 data class CancelWorkflowPerTag(
     override val tag: Tag,
     override val name: WorkflowName,
-    val workflowOutput: MethodReturnValue
+    val workflowReturnValue: MethodReturnValue
 ) : TagEngineMessage()
 
 @Serializable
-data class WorkflowStarted(
+data class AddTaskTag(
+    override val tag: Tag,
+    override val name: TaskName,
+    val taskId: TaskId,
+) : TagEngineMessage()
+
+@Serializable
+data class RemoveTaskTag(
+    override val tag: Tag,
+    override val name: TaskName,
+    val taskId: TaskId,
+) : TagEngineMessage()
+
+@Serializable
+data class AddWorkflowTag(
     override val tag: Tag,
     override val name: WorkflowName,
     val workflowId: WorkflowId,
 ) : TagEngineMessage()
 
 @Serializable
-data class WorkflowTerminated(
+data class RemoveWorkflowTag(
     override val tag: Tag,
     override val name: WorkflowName,
     val workflowId: WorkflowId,

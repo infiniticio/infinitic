@@ -40,6 +40,9 @@ import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewTaskProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.SendChannelProxyHandler
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tags.messages.AddTaskTag
+import io.infinitic.common.tags.messages.AddWorkflowTag
 import io.infinitic.common.tags.messages.SendToChannelPerTag
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
@@ -84,16 +87,27 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         throw IncorrectNewStub(handler.klass.name, "dispatch")
     }
 
-    // asynchronous call on a new task: async(newTask) { method() }
+    // new asynchronous task: async(newTask) { method() }
     fun dispatch(handler: NewTaskProxyHandler<*>): UUID {
         val method = handler.method ?: throw NoMethodCall(handler.klass.name)
         checkMethodIsNotSuspend(method)
 
-        val msg = DispatchTask(
-            taskId = TaskId(),
+        val taskId = TaskId()
+        val taskName = TaskName.from(method)
+
+        // add tag
+        val addWorkflowTag = AddTaskTag(
+            tag = Tag.of(taskId),
+            name = taskName,
+            taskId = taskId
+        )
+
+        // dispatch workflow
+        val dispatchTask = DispatchTask(
+            taskId = taskId,
             clientName = clientOutput.clientName,
             clientWaiting = handler.isSync,
-            taskName = TaskName.from(method),
+            taskName = taskName,
             methodName = MethodName.from(method),
             methodParameterTypes = MethodParameterTypes.from(method),
             methodParameters = MethodParameters.from(method, handler.args),
@@ -103,12 +117,17 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             taskOptions = handler.taskOptions,
             taskMeta = handler.taskMeta
         )
-        GlobalScope.future { clientOutput.sendToTaskEngine(msg) }.join()
+
+        // send messages
+        GlobalScope.future {
+            clientOutput.sendToTagEngine(addWorkflowTag)
+            clientOutput.sendToTaskEngine(dispatchTask)
+        }.join()
 
         // reset for reuse
         handler.reset()
 
-        return msg.taskId.id
+        return dispatchTask.taskId.id
     }
 
     // synchronous call on a new task: newTask.method()
@@ -127,14 +146,24 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         return taskCompleted.taskReturnValue.get() as S
     }
 
-    // asynchronous call on a new workflow: async(newWorkflow) { method() }
+    // new asynchronous workflow: async(newWorkflow) { method() }
     fun dispatch(handler: NewWorkflowProxyHandler<*>): UUID {
         val method = handler.method ?: throw NoMethodCall(handler.klass.name)
         checkMethodIsNotSuspend(method)
 
-        // other case
-        val msg = DispatchWorkflow(
-            workflowId = WorkflowId(),
+        val workflowId = WorkflowId()
+        val workflowName = WorkflowName.from(method)
+
+        // add tag
+        val addWorkflowTag = AddWorkflowTag(
+            tag = Tag.of(workflowId),
+            name = workflowName,
+            workflowId = workflowId
+        )
+
+        // dispatch workflow
+        val dispatchWorkflow = DispatchWorkflow(
+            workflowId = workflowId,
             clientName = clientOutput.clientName,
             clientWaiting = handler.isSync,
             workflowName = WorkflowName.from(method),
@@ -146,12 +175,17 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             workflowMeta = handler.workflowMeta,
             workflowOptions = handler.workflowOptions
         )
-        GlobalScope.future { clientOutput.sendToWorkflowEngine(msg) }.join()
+
+        // send messages
+        GlobalScope.future {
+            clientOutput.sendToTagEngine(addWorkflowTag)
+            clientOutput.sendToWorkflowEngine(dispatchWorkflow)
+        }.join()
 
         // reset for reuse
         handler.reset()
 
-        return msg.workflowId.id
+        return dispatchWorkflow.workflowId.id
     }
 
     // synchronous call on a new workflow: newWorkflow.method()

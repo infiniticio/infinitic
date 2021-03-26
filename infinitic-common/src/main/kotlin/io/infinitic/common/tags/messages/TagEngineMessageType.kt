@@ -26,10 +26,12 @@
 package io.infinitic.common.tags.messages
 
 enum class TagEngineMessageType {
+    ADD_TASK_TAG,
+    REMOVE_TASK_TAG,
     CANCEL_TASK_PER_TAG,
     RETRY_TASK_PER_TAG,
+    ADD_WORKFLOW_TAG,
+    REMOVE_WORKFLOW_TAG,
     CANCEL_WORKFLOW_PER_TAG,
-    SEND_TO_CHANNEL_PER_TAG,
-    WORKFLOW_STARTED,
-    WORKFLOW_TERMINATED
+    SEND_TO_CHANNEL_PER_TAG
 }

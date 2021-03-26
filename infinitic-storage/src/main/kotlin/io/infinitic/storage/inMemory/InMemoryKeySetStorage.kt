@@ -32,14 +32,19 @@ import java.util.concurrent.ConcurrentHashMap
 class InMemoryKeySetStorage() : KeySetStorage, Flushable {
     private val setStorage = ConcurrentHashMap<String, MutableSet<ByteArray>>()
 
-    override suspend fun getSet(key: String) = setStorage[key] ?: mutableSetOf()
+    override suspend fun getSet(key: String) = setStorage[key]
 
     override suspend fun addToSet(key: String, value: ByteArray) {
-        getSet(key).add(value)
+        getSet(key)
+            ?.add(value)
+            // create set if null
+            ?: run { setStorage[key] = mutableSetOf(value) }
     }
 
     override suspend fun removeFromSet(key: String, value: ByteArray) {
-        getSet(key).remove(value)
+        getSet(key)?.remove(value)
+        // clean key if now empty
+        if (getSet(key)?.isEmpty() == true) setStorage.remove(key)
     }
 
     override fun flush() {

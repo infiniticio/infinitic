@@ -26,7 +26,7 @@
 package io.infinitic.common.storage.keySet
 
 interface KeySetStorage {
-    suspend fun getSet(key: String): Set<ByteArray>
+    suspend fun getSet(key: String): Set<ByteArray>?
     suspend fun addToSet(key: String, value: ByteArray)
     suspend fun removeFromSet(key: String, value: ByteArray)
 }

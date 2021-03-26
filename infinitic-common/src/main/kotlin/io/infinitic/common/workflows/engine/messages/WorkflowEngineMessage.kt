@@ -71,8 +71,8 @@ data class DispatchWorkflow(
 @Serializable
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
-    val clientName: ClientName?,
-    val workflowOutput: MethodReturnValue
+    val workflowName: WorkflowName,
+    val workflowReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()
 
 @Serializable

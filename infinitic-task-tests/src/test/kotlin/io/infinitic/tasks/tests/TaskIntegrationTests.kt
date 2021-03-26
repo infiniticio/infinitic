@@ -178,7 +178,7 @@ class TaskIntegrationTests : StringSpec({
             init()
             val id = client.async(taskTestStub) { log() }
             taskId = TaskId(id)
-            val existingTask = client.task<TaskTest>(Tag.of(id).toString())
+            val existingTask = client.task<TaskTest>("${Tag.of(id)}")
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
@@ -201,7 +201,7 @@ class TaskIntegrationTests : StringSpec({
             init()
             val id = client.async(taskTestStub) { log() }
             taskId = TaskId(id)
-            val existingTask = client.task(TaskTest::class.java, Tag.of(id).toString())
+            val existingTask = client.task(TaskTest::class.java, "${Tag.of(id)}")
             delay(100)
             client.cancel(existingTask)
         }
@@ -227,6 +227,9 @@ class TaskIntegrationTests : StringSpec({
 })
 
 class TestTagEngineOutput(private val scope: CoroutineScope) : TagEngineOutput {
+    override val sendToClientResponseFn: SendToClientResponse =
+        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
+
     override val sendToTaskEngineFn: SendToTaskEngine =
         { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 

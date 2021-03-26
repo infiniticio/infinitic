@@ -232,7 +232,7 @@ open class Client(val clientOutput: ClientOutput) {
         val msg = CancelWorkflowPerTag(
             tag = handler.tag,
             name = WorkflowName(handler.klass.name),
-            workflowOutput = MethodReturnValue.from(output)
+            workflowReturnValue = MethodReturnValue.from(output)
         )
         GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
     }

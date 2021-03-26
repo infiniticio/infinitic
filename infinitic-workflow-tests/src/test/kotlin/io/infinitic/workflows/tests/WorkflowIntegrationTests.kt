@@ -512,6 +512,17 @@ class WorkflowIntegrationTests : StringSpec({
         }
     }
 
+//    "Sending event synchronously to completed workflow should throw exception" {
+//        // run system
+//        coroutineScope {
+//            init()
+//            val id = client.async(workflowA) { channel3() }
+//            shouldThrow<SendToChannelFailed> {
+//                client.workflow<WorkflowA>("other$id").channelA.send("test")
+//            }
+//        }
+//    }
+
     "Waiting for Obj event" {
         var id: UUID
         val obj1 = Obj1("foo", 42)
@@ -654,6 +665,9 @@ class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : Workflow
 }
 
 class InMemoryTagEngineOutput(private val scope: CoroutineScope) : TagEngineOutput {
+    override val sendToClientResponseFn: SendToClientResponse =
+        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
+
     override val sendToWorkflowEngineFn: SendToWorkflowEngine =
         { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
 

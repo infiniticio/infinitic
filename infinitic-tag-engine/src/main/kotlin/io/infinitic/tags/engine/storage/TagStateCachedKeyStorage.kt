@@ -79,10 +79,10 @@ open class TagStateCachedKeyStorage(
         val set = keySetCache.getSet(key) ?: run {
             logger.debug("tag {} - name {} - getIds - absent from cache, get from storage", tag, name)
             keySetStorage.getSet(key)
-                .map { it.toUUID() }.toSet()
-                .also { keySetCache.setSet(key, it) }
+                ?.map { it.toUUID() }?.toSet()
+                ?.also { keySetCache.setSet(key, it) }
         }
-        logger.debug("tag {} - name {} - getIds count {}", tag, name, set.size)
+        logger.debug("tag {} - name {} - getIds count {}", tag, name, set?.size ?: 0)
 
         return set ?: setOf()
     }

@@ -32,21 +32,25 @@ import kotlinx.serialization.Serializable
 data class TagEngineEnvelope(
     val name: String,
     val type: TagEngineMessageType,
-    val sendToChannelPerTag: SendToChannelPerTag? = null,
-    val workflowStarted: WorkflowStarted? = null,
-    val workflowTerminated: WorkflowTerminated? = null,
+    val addTaskTag: AddTaskTag? = null,
+    val removeTaskTag: RemoveTaskTag? = null,
     val cancelTaskPerTag: CancelTaskPerTag? = null,
-    val cancelWorkflowPerTag: CancelWorkflowPerTag? = null,
-    val retryTaskPerTag: RetryTaskPerTag? = null
+    val retryTaskPerTag: RetryTaskPerTag? = null,
+    val addWorkflowTag: AddWorkflowTag? = null,
+    val removeWorkflowTag: RemoveWorkflowTag? = null,
+    val sendToChannelPerTag: SendToChannelPerTag? = null,
+    val cancelWorkflowPerTag: CancelWorkflowPerTag? = null
 ) {
     init {
         val noNull = listOfNotNull(
-            sendToChannelPerTag,
-            workflowStarted,
-            workflowTerminated,
+            addTaskTag,
+            removeTaskTag,
             cancelTaskPerTag,
-            cancelWorkflowPerTag,
-            retryTaskPerTag
+            retryTaskPerTag,
+            addWorkflowTag,
+            removeWorkflowTag,
+            sendToChannelPerTag,
+            cancelWorkflowPerTag
         )
 
         require(noNull.size == 1)
@@ -56,35 +60,45 @@ data class TagEngineEnvelope(
 
     companion object {
         fun from(msg: TagEngineMessage) = when (msg) {
-            is SendToChannelPerTag -> TagEngineEnvelope(
+            is AddTaskTag -> TagEngineEnvelope(
                 "${msg.name}",
-                TagEngineMessageType.SEND_TO_CHANNEL_PER_TAG,
-                sendToChannelPerTag = msg
+                TagEngineMessageType.ADD_TASK_TAG,
+                addTaskTag = msg
             )
-            is WorkflowStarted -> TagEngineEnvelope(
+            is RemoveTaskTag -> TagEngineEnvelope(
                 "${msg.name}",
-                TagEngineMessageType.WORKFLOW_STARTED,
-                workflowStarted = msg
-            )
-            is WorkflowTerminated -> TagEngineEnvelope(
-                "${msg.name}",
-                TagEngineMessageType.WORKFLOW_TERMINATED,
-                workflowTerminated = msg
+                TagEngineMessageType.REMOVE_TASK_TAG,
+                removeTaskTag = msg
             )
             is CancelTaskPerTag -> TagEngineEnvelope(
                 "${msg.name}",
                 TagEngineMessageType.CANCEL_TASK_PER_TAG,
                 cancelTaskPerTag = msg
             )
-            is CancelWorkflowPerTag -> TagEngineEnvelope(
-                "${msg.name}",
-                TagEngineMessageType.CANCEL_WORKFLOW_PER_TAG,
-                cancelWorkflowPerTag = msg
-            )
             is RetryTaskPerTag -> TagEngineEnvelope(
                 "${msg.name}",
                 TagEngineMessageType.RETRY_TASK_PER_TAG,
                 retryTaskPerTag = msg
+            )
+            is AddWorkflowTag -> TagEngineEnvelope(
+                "${msg.name}",
+                TagEngineMessageType.ADD_WORKFLOW_TAG,
+                addWorkflowTag = msg
+            )
+            is RemoveWorkflowTag -> TagEngineEnvelope(
+                "${msg.name}",
+                TagEngineMessageType.REMOVE_WORKFLOW_TAG,
+                removeWorkflowTag = msg
+            )
+            is SendToChannelPerTag -> TagEngineEnvelope(
+                "${msg.name}",
+                TagEngineMessageType.SEND_TO_CHANNEL_PER_TAG,
+                sendToChannelPerTag = msg
+            )
+            is CancelWorkflowPerTag -> TagEngineEnvelope(
+                "${msg.name}",
+                TagEngineMessageType.CANCEL_WORKFLOW_PER_TAG,
+                cancelWorkflowPerTag = msg
             )
         }
 
@@ -92,12 +106,14 @@ data class TagEngineEnvelope(
     }
 
     fun message() = when (type) {
-        TagEngineMessageType.SEND_TO_CHANNEL_PER_TAG -> sendToChannelPerTag!!
-        TagEngineMessageType.WORKFLOW_STARTED -> workflowStarted!!
-        TagEngineMessageType.WORKFLOW_TERMINATED -> workflowTerminated!!
+        TagEngineMessageType.ADD_TASK_TAG -> addTaskTag!!
+        TagEngineMessageType.REMOVE_TASK_TAG -> removeTaskTag!!
+        TagEngineMessageType.ADD_WORKFLOW_TAG -> addWorkflowTag!!
+        TagEngineMessageType.REMOVE_WORKFLOW_TAG -> removeWorkflowTag!!
         TagEngineMessageType.CANCEL_TASK_PER_TAG -> cancelTaskPerTag!!
         TagEngineMessageType.RETRY_TASK_PER_TAG -> retryTaskPerTag!!
         TagEngineMessageType.CANCEL_WORKFLOW_PER_TAG -> cancelWorkflowPerTag!!
+        TagEngineMessageType.SEND_TO_CHANNEL_PER_TAG -> sendToChannelPerTag!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
