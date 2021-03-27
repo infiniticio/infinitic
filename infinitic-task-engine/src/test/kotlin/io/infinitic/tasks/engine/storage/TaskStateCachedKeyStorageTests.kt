@@ -30,7 +30,7 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
+import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -47,7 +47,7 @@ class TaskStateCachedKeyStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getValue(any()) } returns null
             // given
-            val stateStorage = TaskStateCachedKeyStorage(storage, NoCache())
+            val stateStorage = CachedKeyTaskStateStorage(storage, NoCache())
             // when
             val state = stateStorage.getState(taskId)
             // then
@@ -62,7 +62,7 @@ class TaskStateCachedKeyStorageTests : ShouldSpec({
             val stateIn = TestFactory.random<TaskState>()
             coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
             // given
-            val stateStorage = TaskStateCachedKeyStorage(storage, NoCache())
+            val stateStorage = CachedKeyTaskStateStorage(storage, NoCache())
             // when
             val stateOut = stateStorage.getState(stateIn.taskId)
             // then
@@ -81,7 +81,7 @@ class TaskStateCachedKeyStorageTests : ShouldSpec({
 
             coEvery { storage.putValue("task.state.${stateIn.taskId}", capture(binSlot)) } returns Unit
             // given
-            val stateStorage = TaskStateCachedKeyStorage(storage, NoCache())
+            val stateStorage = CachedKeyTaskStateStorage(storage, NoCache())
             // when
             stateStorage.putState(stateIn.taskId, stateIn)
             // then
@@ -97,7 +97,7 @@ class TaskStateCachedKeyStorageTests : ShouldSpec({
             val stateIn = TestFactory.random<TaskState>()
             coEvery { context.delValue(any()) } returns Unit
             // given
-            val stageStorage = TaskStateCachedKeyStorage(context, NoCache())
+            val stageStorage = CachedKeyTaskStateStorage(context, NoCache())
             // when
             stageStorage.delState(stateIn.taskId)
             // then

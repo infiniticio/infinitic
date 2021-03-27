@@ -41,15 +41,20 @@ import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
+import io.infinitic.tags.engine.output.LoggedTagEngineOutput
+import io.infinitic.tags.engine.output.TagEngineOutput
+import io.infinitic.tags.engine.storage.LoggedTagStateStorage
 import io.infinitic.tags.engine.storage.TagStateStorage
-import io.infinitic.tags.engine.transport.TagEngineOutput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class TagEngine(
-    private val tagStateStorage: TagStateStorage,
-    private val tagEngineOutput: TagEngineOutput
+    storage: TagStateStorage,
+    output: TagEngineOutput
 ) {
+    private val storage = LoggedTagStateStorage(storage)
+    private val output = LoggedTagEngineOutput(output)
+
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
@@ -67,28 +72,28 @@ class TagEngine(
             is SendToChannelPerTag -> sendToChannelPerTag(message)
         }
 
-        tagStateStorage.setLastMessageId(message.tag, message.name, message.messageId)
+        storage.setLastMessageId(message.tag, message.name, message.messageId)
     }
 
     private suspend fun addTaskTag(message: AddTaskTag) {
-        tagStateStorage.addId(message.tag, message.name, message.taskId.id)
+        storage.addId(message.tag, message.name, message.taskId.id)
     }
 
     private suspend fun removeTaskTag(message: RemoveTaskTag) {
-        tagStateStorage.removeId(message.tag, message.name, message.taskId.id)
+        storage.removeId(message.tag, message.name, message.taskId.id)
     }
 
     private suspend fun retryTaskPerTag(message: RetryTaskPerTag) {
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
-        val ids = tagStateStorage.getIds(message.tag, message.name)
+        val ids = storage.getIds(message.tag, message.name)
         when (ids.isEmpty()) {
             true -> {
-                discardMessageWithoutIds(message)
+                discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                val msg = RetryTask(
+                val retryTask = RetryTask(
                     taskId = TaskId(it),
                     taskName = message.name,
                     methodName = message.methodName,
@@ -97,7 +102,7 @@ class TagEngine(
                     taskMeta = message.taskMeta,
                     taskOptions = message.taskOptions
                 )
-                tagEngineOutput.sendToTaskEngine(message.messageId, message.tag, msg)
+                output.sendToTaskEngine(retryTask)
             }
         }
     }
@@ -106,18 +111,18 @@ class TagEngine(
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
-        val ids = tagStateStorage.getIds(message.tag, message.name)
+        val ids = storage.getIds(message.tag, message.name)
         when (ids.isEmpty()) {
             true -> {
-                discardMessageWithoutIds(message)
+                discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                val msg = CancelTask(
+                val cancelTask = CancelTask(
                     taskId = TaskId(it),
                     taskName = message.name,
                     taskReturnValue = message.taskReturnValue
                 )
-                tagEngineOutput.sendToTaskEngine(message.messageId, message.tag, msg)
+                output.sendToTaskEngine(cancelTask)
             }
         }
     }
@@ -126,18 +131,18 @@ class TagEngine(
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
-        val ids = tagStateStorage.getIds(message.tag, message.name)
+        val ids = storage.getIds(message.tag, message.name)
         when (ids.isEmpty()) {
             true -> {
-                discardMessageWithoutIds(message)
+                discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                val msg = CancelWorkflow(
+                val cancelWorkflow = CancelWorkflow(
                     workflowId = WorkflowId(it),
                     workflowName = message.name,
                     workflowReturnValue = message.workflowReturnValue
                 )
-                tagEngineOutput.sendToWorkflowEngine(message.messageId, message.tag, msg)
+                output.sendToWorkflowEngine(cancelWorkflow)
             }
         }
     }
@@ -146,20 +151,20 @@ class TagEngine(
         // sending to channel is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
-        val ids = tagStateStorage.getIds(message.tag, message.name)
+        val ids = storage.getIds(message.tag, message.name)
         when (ids.isEmpty()) {
             true -> {
                 if (message.clientWaiting) {
-                    tagEngineOutput.sendToClientResponse(
-                        message.messageId,
-                        message.tag,
-                        SendToChannelFailed(message.clientName, message.channelEventId)
+                    val sendToChannelFailed = SendToChannelFailed(
+                        message.clientName,
+                        message.channelEventId
                     )
+                    output.sendToClientResponse(sendToChannelFailed)
                 }
-                discardMessageWithoutIds(message)
+                discardTagWithoutIds(message)
             }
             false -> ids.forEach {
-                val msg = SendToChannel(
+                val sendToChannel = SendToChannel(
                     clientName = message.clientName,
                     clientWaiting = message.clientWaiting,
                     workflowId = WorkflowId(it),
@@ -169,21 +174,21 @@ class TagEngine(
                     channelEvent = message.channelEvent,
                     channelEventTypes = message.channelEventTypes
                 )
-                tagEngineOutput.sendToWorkflowEngine(message.messageId, message.tag, msg)
+                output.sendToWorkflowEngine(sendToChannel)
             }
         }
     }
 
     private suspend fun addWorkflowTag(message: AddWorkflowTag) {
-        tagStateStorage.addId(message.tag, message.name, message.workflowId.id)
+        storage.addId(message.tag, message.name, message.workflowId.id)
     }
 
     private suspend fun removeWorkflowTag(message: RemoveWorkflowTag) {
-        tagStateStorage.removeId(message.tag, message.name, message.workflowId.id)
+        storage.removeId(message.tag, message.name, message.workflowId.id)
     }
 
     private suspend fun hasMessageAlreadyBeenHandled(message: TagEngineMessage) =
-        when (tagStateStorage.getLastMessageId(message.tag, message.name)) {
+        when (storage.getLastMessageId(message.tag, message.name)) {
             message.messageId -> {
                 logger.info("discarding as state already contains this messageId: {}", message)
                 true
@@ -191,7 +196,7 @@ class TagEngine(
             else -> false
         }
 
-    private fun discardMessageWithoutIds(message: TagEngineMessage) {
+    private fun discardTagWithoutIds(message: TagEngineMessage) {
         logger.debug("discarding {} as no id found for the provided tag", message)
     }
 }

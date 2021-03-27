@@ -26,11 +26,11 @@
 package io.infinitic.tasks.engine.worker
 
 import io.infinitic.tasks.engine.TaskEngine
+import io.infinitic.tasks.engine.input.TaskEngineInputChannels
+import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
+import io.infinitic.tasks.engine.output.TaskEngineOutput
 import io.infinitic.tasks.engine.storage.events.TaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateStorage
-import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
-import io.infinitic.tasks.engine.transport.TaskEngineOutput
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

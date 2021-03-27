@@ -30,20 +30,25 @@ import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.monitoring.perName.engine.output.LoggedMonitoringPerNameOutput
+import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
+import io.infinitic.monitoring.perName.engine.storage.LoggedMonitoringPerNameStateStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class MonitoringPerNameEngine(
-    private val storage: MonitoringPerNameStateStorage,
-    private val monitoringPerNameOutput: MonitoringPerNameOutput
+    storage: MonitoringPerNameStateStorage,
+    output: MonitoringPerNameOutput
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
+    private val storage = LoggedMonitoringPerNameStateStorage(storage)
+    private val output = LoggedMonitoringPerNameOutput(output)
+
     suspend fun handle(message: MonitoringPerNameMessage) {
-        logger.debug("name {} - receiving {} (messageId {})", message.taskName, message, message.messageId)
+        logger.debug("receiving {}", message)
 
         // get state
         val oldState = storage.getState(message.taskName)
@@ -63,18 +68,14 @@ class MonitoringPerNameEngine(
 
         // It's a new task type
         if (oldState == null) {
-            val tsc = TaskCreated(taskName = message.taskName)
-            monitoringPerNameOutput.sendToMonitoringGlobal(newState, tsc)
+            val taskCreated = TaskCreated(taskName = message.taskName)
+            output.sendToMonitoringGlobal(taskCreated)
         }
 
         // Update stored state if needed and existing
         if (newState != oldState) {
             storage.putState(message.taskName, newState)
         }
-    }
-
-    private fun logDiscardingMessage(message: MonitoringPerNameMessage, reason: String) {
-        logger.info("name {} - discarding {}: {} (messageId {})", message.taskName, reason, message, message.messageId)
     }
 
     private fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MonitoringPerNameState) {
@@ -94,5 +95,9 @@ class MonitoringPerNameEngine(
             TaskStatus.TERMINATED_COMPLETED -> state.terminatedCompletedCount++
             TaskStatus.TERMINATED_CANCELED -> state.terminatedCanceledCount++
         }
+    }
+
+    private fun logDiscardingMessage(message: MonitoringPerNameMessage, reason: String) {
+        logger.info("{} - discarding {}", reason, message)
     }
 }

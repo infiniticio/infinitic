@@ -25,7 +25,7 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.transport.ClientOutput
+import io.infinitic.client.output.ClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.SendToChannelCompleted
 import io.infinitic.common.clients.messages.SendToChannelFailed

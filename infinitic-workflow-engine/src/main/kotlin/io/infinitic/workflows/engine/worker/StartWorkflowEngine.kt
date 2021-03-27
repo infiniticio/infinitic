@@ -26,11 +26,11 @@
 package io.infinitic.workflows.engine.worker
 
 import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.engine.input.WorkflowEngineInputChannels
+import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.events.WorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

@@ -29,7 +29,7 @@ import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
+import io.infinitic.monitoring.perName.engine.storage.KeyCachedMonitoringPerNameStateStorage
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutputs
 import kotlinx.coroutines.runBlocking
@@ -52,7 +52,7 @@ class MonitoringPerNamePulsarFunction : Function<MonitoringPerNameEnvelope, Void
     }
 
     internal fun getMonitoringPerNameEngine(context: Context) = MonitoringPerNameEngine(
-        MonitoringPerNameStateKeyValueStorage(context.keyValueStorage(), CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600))),
+        KeyCachedMonitoringPerNameStateStorage(context.keyValueStorage(), CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600))),
         PulsarOutputs.from(context).monitoringPerNameOutput
     )
 }

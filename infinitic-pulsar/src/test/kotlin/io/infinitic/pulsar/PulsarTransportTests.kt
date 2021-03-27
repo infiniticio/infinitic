@@ -149,7 +149,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MonitoringPer
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).taskEngineOutput.sendToMonitoringPerName(TestFactory.random(), msg)
+        PulsarOutputs.from(context).taskEngineOutput.sendToMonitoringPerName(msg)
         // then
         verify {
             context.newOutputMessage(
@@ -181,7 +181,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MonitoringGlob
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).monitoringPerNameOutput.sendToMonitoringGlobal(TestFactory.random(), msg)
+        PulsarOutputs.from(context).monitoringPerNameOutput.sendToMonitoringGlobal(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/monitoring-global"
@@ -205,7 +205,7 @@ private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessag
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).taskEngineOutput.sendToTaskExecutors(TestFactory.random(), msg)
+        PulsarOutputs.from(context).taskEngineOutput.sendToTaskExecutors(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/task-executor: ${msg.taskName}"

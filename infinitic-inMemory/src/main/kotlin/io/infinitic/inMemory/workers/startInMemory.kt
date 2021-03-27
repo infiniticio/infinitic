@@ -36,32 +36,32 @@ import io.infinitic.inMemory.transport.InMemoryTagEngineOutput
 import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
 import io.infinitic.inMemory.transport.InMemoryTaskExecutorOutput
 import io.infinitic.inMemory.transport.InMemoryWorkflowEngineOutput
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
-import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalInputChannels
-import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
+import io.infinitic.monitoring.global.engine.input.MonitoringGlobalInputChannels
+import io.infinitic.monitoring.global.engine.input.MonitoringGlobalMessageToProcess
+import io.infinitic.monitoring.global.engine.storage.KeyCachedMonitoringGlobalStateStorage
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
+import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameInputChannels
+import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameMessageToProcess
+import io.infinitic.monitoring.perName.engine.storage.KeyCachedMonitoringPerNameStateStorage
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
-import io.infinitic.storage.inMemory.InMemoryKeySetStorage
-import io.infinitic.tags.engine.storage.TagStateCachedKeyStorage
-import io.infinitic.tags.engine.transport.TagEngineInputChannels
-import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
+import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
+import io.infinitic.tags.engine.input.TagEngineInputChannels
+import io.infinitic.tags.engine.input.TagEngineMessageToProcess
+import io.infinitic.tags.engine.storage.CachedKeyTagStateStorage
 import io.infinitic.tags.engine.worker.startTagEngine
 import io.infinitic.tasks.TaskExecutorRegister
+import io.infinitic.tasks.engine.input.TaskEngineInputChannels
+import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
-import io.infinitic.tasks.engine.transport.TaskEngineInputChannels
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
+import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
 import io.infinitic.tasks.engine.worker.startTaskEngine
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.worker.startTaskExecutor
+import io.infinitic.workflows.engine.input.WorkflowEngineInputChannels
+import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
-import io.infinitic.workflows.engine.storage.states.WorkflowStateCachedKeyStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineInputChannels
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
+import io.infinitic.workflows.engine.storage.states.CachedKeyWorkflowStateStorage
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -103,7 +103,7 @@ fun CoroutineScope.startInMemory(
 
     startTagEngine(
         "in-memory-tag-engine",
-        TagStateCachedKeyStorage(keyValueStorage, NoCache(), InMemoryKeySetStorage(), NoCache()),
+        CachedKeyTagStateStorage(keyValueStorage, NoCache(), InMemoryKeySetStorage(), NoCache()),
         TagEngineInputChannels(
             tagEngineCommandsChannel,
             tagEngineEventsChannel,
@@ -119,7 +119,7 @@ fun CoroutineScope.startInMemory(
 
     startTaskEngine(
         "in-memory-task-engine",
-        TaskStateCachedKeyStorage(keyValueStorage, NoCache()),
+        CachedKeyTaskStateStorage(keyValueStorage, NoCache()),
         NoTaskEventStorage(),
         TaskEngineInputChannels(
             taskEngineCommandsChannel,
@@ -139,7 +139,7 @@ fun CoroutineScope.startInMemory(
 
     startWorkflowEngine(
         "in-memory-workflow-engine",
-        WorkflowStateCachedKeyStorage(keyValueStorage, NoCache()),
+        CachedKeyWorkflowStateStorage(keyValueStorage, NoCache()),
         NoWorkflowEventStorage(),
         WorkflowEngineInputChannels(
             workflowEngineCommandsChannel,
@@ -166,20 +166,19 @@ fun CoroutineScope.startInMemory(
 
     startMonitoringPerNameEngine(
         "in-memory-monitoring-per-name-engine",
-        MonitoringPerNameStateKeyValueStorage(keyValueStorage, NoCache()),
+        KeyCachedMonitoringPerNameStateStorage(keyValueStorage, NoCache()),
         MonitoringPerNameInputChannels(
             monitoringPerNameChannel,
             logChannel
         ),
         InMemoryMonitoringPerNameOutput(
-            this,
             monitoringGlobalChannel
         )
     )
 
     startMonitoringGlobalEngine(
         "in-memory-monitoring-global-engine",
-        MonitoringGlobalStateKeyValueStorage(keyValueStorage, NoCache()),
+        KeyCachedMonitoringGlobalStateStorage(keyValueStorage, NoCache()),
         MonitoringGlobalInputChannels(
             monitoringGlobalChannel,
             logChannel

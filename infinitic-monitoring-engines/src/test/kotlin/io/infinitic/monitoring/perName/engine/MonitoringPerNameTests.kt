@@ -27,12 +27,11 @@ package io.infinitic.monitoring.perName.engine
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.global.messages.TaskCreated
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -60,7 +59,7 @@ class MonitoringPerNameTests : ShouldSpec({
 
             val monitoringPerName = MonitoringPerNameEngine(
                 storage,
-                MockMonitoringPerNameOutput()
+                mockMonitoringPerNameOutput()
             )
 
             monitoringPerName.handle(msg)
@@ -86,7 +85,7 @@ class MonitoringPerNameTests : ShouldSpec({
             val stateOutSlot = slot<MonitoringPerNameState>()
             coEvery { storage.getState(msg.taskName) } returns null
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
-            val monitoringPerNameOutput = MockMonitoringPerNameOutput()
+            val monitoringPerNameOutput = mockMonitoringPerNameOutput()
             val monitoringPerName = MonitoringPerNameEngine(storage, monitoringPerNameOutput)
 
             // when
@@ -96,16 +95,15 @@ class MonitoringPerNameTests : ShouldSpec({
             coVerifyAll {
                 storage.getState(msg.taskName)
                 storage.putState(msg.taskName, stateOut)
-                monitoringPerNameOutput.sendToMonitoringGlobal(stateOut, ofType<TaskCreated>())
+                monitoringPerNameOutput.sendToMonitoringGlobal(ofType<TaskCreated>())
             }
         }
     }
 })
 
-class MockMonitoringPerNameOutput : MonitoringPerNameOutput {
-    override val sendToMonitoringGlobalFn = mockk<SendToMonitoringGlobal>()
+fun mockMonitoringPerNameOutput(): MonitoringPerNameOutput {
+    val mock = mockk<MonitoringPerNameOutput>()
+    coEvery { mock.sendToMonitoringGlobal(any()) } just runs
 
-    init {
-        coEvery { sendToMonitoringGlobalFn(any()) } just runs
-    }
+    return mock
 }

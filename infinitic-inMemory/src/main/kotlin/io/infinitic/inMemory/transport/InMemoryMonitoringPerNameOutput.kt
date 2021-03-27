@@ -25,18 +25,16 @@
 
 package io.infinitic.inMemory.transport
 
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.monitoring.global.engine.transport.MonitoringGlobalMessageToProcess
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
-import kotlinx.coroutines.CoroutineScope
+import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.monitoring.global.engine.input.MonitoringGlobalMessageToProcess
+import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
 import kotlinx.coroutines.channels.Channel
 
 class InMemoryMonitoringPerNameOutput(
-    scope: CoroutineScope,
-    monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>
+    private val monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess>
 ) : MonitoringPerNameOutput {
 
-    override val sendToMonitoringGlobalFn: SendToMonitoringGlobal = {
-        monitoringGlobalChannel.send(InMemoryMessageToProcess(it))
+    override suspend fun sendToMonitoringGlobal(message: MonitoringGlobalMessage) {
+        monitoringGlobalChannel.send(InMemoryMessageToProcess(message))
     }
 }

@@ -31,7 +31,7 @@ import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.helpers.commandCompleted
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
@@ -62,7 +62,6 @@ suspend fun sendToChannel(
     // if client is waiting, send output back to it
     if (msg.clientWaiting) {
         workflowEngineOutput.sendToClientResponse(
-            state,
             SendToChannelCompleted(
                 clientName = msg.clientName,
                 channelEventId = msg.channelEventId

@@ -25,8 +25,8 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.transport.ClientLoggedOutput
-import io.infinitic.client.transport.ClientOutput
+import io.infinitic.client.output.ClientOutput
+import io.infinitic.client.output.LoggedClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -66,7 +66,7 @@ open class Client {
 
     var clientOutput: ClientOutput
         set(value) {
-            _clientOutput = ClientLoggedOutput(value)
+            _clientOutput = LoggedClientOutput(value)
             dispatcher = ClientDispatcher(_clientOutput)
         }
         get() = _clientOutput

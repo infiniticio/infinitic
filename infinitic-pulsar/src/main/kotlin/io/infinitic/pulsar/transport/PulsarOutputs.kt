@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar.transport
 
-import io.infinitic.client.transport.FunctionsClientOutput
+import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.common.clients.messages.ClientResponseMessage
@@ -50,7 +50,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameDataOutput
+import io.infinitic.monitoring.perName.engine.output.FunctionsMonitoringPerNameOutput
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
@@ -73,9 +73,9 @@ import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorDeadLettersTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
-import io.infinitic.tasks.engine.transport.TaskEngineDataOutput
+import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.executor.transport.TaskExecutorDataOutput
-import io.infinitic.workflows.engine.transport.WorkflowEngineDataOutput
+import io.infinitic.workflows.engine.output.FunctionsWorkflowEngineOutput
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
@@ -224,14 +224,14 @@ class PulsarOutputs(
         sendToWorkflowEngineCommands()
     )
 
-    val workflowEngineOutput = WorkflowEngineDataOutput(
+    val workflowEngineOutput = FunctionsWorkflowEngineOutput(
         sendToClientResponse(),
         sendToTagEngineCommands(),
         sendToTaskEngineCommands(),
         sendToWorkflowEngineEvents(),
     )
 
-    val taskEngineOutput = TaskEngineDataOutput(
+    val taskEngineOutput = FunctionsTaskEngineOutput(
         sendToClientResponse(),
         sendToTagEngineEvents(),
         sendToTaskEngineEvents(),
@@ -240,7 +240,7 @@ class PulsarOutputs(
         sendToMonitoringPerName()
     )
 
-    val monitoringPerNameOutput = MonitoringPerNameDataOutput(
+    val monitoringPerNameOutput = FunctionsMonitoringPerNameOutput(
         sendToMonitoringGlobal()
     )
 

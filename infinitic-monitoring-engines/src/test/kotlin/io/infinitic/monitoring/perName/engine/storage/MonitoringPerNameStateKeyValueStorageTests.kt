@@ -49,7 +49,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             val context = mockk<KeyValueStorage>()
             coEvery { context.getValue(any()) } returns null
             // when
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(context, NoCache())
+            val stateStorage = KeyCachedMonitoringPerNameStateStorage(context, NoCache())
             val state = stateStorage.getState(taskName)
             // then
             coVerify(exactly = 1) { context.getValue("monitoringPerName.state.$taskName") }
@@ -63,7 +63,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             val context = mockk<KeyValueStorage>()
             coEvery { context.getValue(any()) } returns stateIn.toByteArray()
             // when
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(context, NoCache())
+            val stateStorage = KeyCachedMonitoringPerNameStateStorage(context, NoCache())
             val stateOut = stateStorage.getState(stateIn.taskName)
             // then
             coVerify(exactly = 1) { context.getValue("monitoringPerName.state.${stateIn.taskName}") }
@@ -81,7 +81,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             val binSlot = slot<ByteArray>()
             coEvery { context.putValue("monitoringPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
             // when
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(context, NoCache())
+            val stateStorage = KeyCachedMonitoringPerNameStateStorage(context, NoCache())
             stateStorage.putState(state.taskName, state)
             // then
             binSlot.isCaptured shouldBe true
@@ -96,7 +96,7 @@ class MonitoringPerNameStateKeyValueStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.delValue(any()) } just runs
             // when
-            val stateStorage = MonitoringPerNameStateKeyValueStorage(storage, NoCache())
+            val stateStorage = KeyCachedMonitoringPerNameStateStorage(storage, NoCache())
             stateStorage.delState(stateIn.taskName)
             // then
             coVerify(exactly = 1) { storage.delValue(stateStorage.getMonitoringPerNameStateKey(stateIn.taskName)) }

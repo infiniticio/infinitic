@@ -29,12 +29,12 @@ import io.infinitic.client.Client
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryClientOutput
 import io.infinitic.inMemory.workers.startInMemory
-import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
+import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
+import io.infinitic.tags.engine.input.TagEngineMessageToProcess
 import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
+import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
+import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel

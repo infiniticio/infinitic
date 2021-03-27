@@ -25,49 +25,43 @@
 
 package io.infinitic.inMemory.transport
 
+import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
-import io.infinitic.common.clients.transport.SendToClientResponse
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.tags.engine.transport.TagEngineOutput
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
+import io.infinitic.tags.engine.output.TagEngineOutput
+import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
+import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class InMemoryTagEngineOutput(
-    scope: CoroutineScope,
-    clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
-    taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
-    workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>
+    private val scope: CoroutineScope,
+    private val clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
+    private val taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
+    private val workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : TagEngineOutput {
 
-    override val sendToClientResponseFn: SendToClientResponse = {
+    override suspend fun sendToClientResponse(message: ClientResponseMessage) {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            clientResponsesChannel.send(InMemoryMessageToProcess(it))
+            clientResponsesChannel.send(InMemoryMessageToProcess(message))
         }
     }
 
-    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
+    override suspend fun sendToTaskEngine(message: TaskEngineMessage) {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            delay(after.long)
-            taskCommandsChannel.send(InMemoryMessageToProcess(msg))
+            taskCommandsChannel.send(InMemoryMessageToProcess(message))
         }
     }
 
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: MillisDuration ->
+    override suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage) {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            delay(after.long)
-            workflowCommandsChannel.send(InMemoryMessageToProcess(msg))
+            workflowCommandsChannel.send(InMemoryMessageToProcess(message))
         }
     }
 }

@@ -27,49 +27,43 @@ package io.infinitic.workflows.tests
 
 import io.infinitic.cache.no.NoCache
 import io.infinitic.client.Client
-import io.infinitic.client.transport.FunctionsClientOutput
+import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
-import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
 import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.exceptions.SendToChannelFailed
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
+import io.infinitic.monitoring.global.engine.storage.KeyCachedMonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
-import io.infinitic.storage.inMemory.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.monitoring.perName.engine.output.FunctionsMonitoringPerNameOutput
+import io.infinitic.monitoring.perName.engine.storage.KeyCachedMonitoringPerNameStateStorage
+import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
-import io.infinitic.tags.engine.storage.TagStateCachedKeyStorage
-import io.infinitic.tags.engine.transport.TagEngineOutput
+import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
+import io.infinitic.tags.engine.storage.CachedKeyTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
+import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateCachedKeyStorage
-import io.infinitic.tasks.engine.transport.TaskEngineOutput
+import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.register
 import io.infinitic.workflows.engine.WorkflowEngine
+import io.infinitic.workflows.engine.output.FunctionsWorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
-import io.infinitic.workflows.engine.storage.states.WorkflowStateCachedKeyStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.workflows.engine.storage.states.CachedKeyWorkflowStateStorage
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.tests.tasks.TaskAImpl
 import io.infinitic.workflows.tests.workflows.Obj1
@@ -92,16 +86,16 @@ import java.time.Instant
 import java.util.UUID
 
 private var workflowOutput: Any? = null
-private val tagStateStorage = TagStateCachedKeyStorage(
+private val tagStateStorage = CachedKeyTagStateStorage(
     InMemoryKeyValueStorage(),
     NoCache(),
     InMemoryKeySetStorage(),
     NoCache()
 )
-private val taskStateStorage = TaskStateCachedKeyStorage(InMemoryKeyValueStorage(), NoCache())
-private val workflowStateStorage = WorkflowStateCachedKeyStorage(InMemoryKeyValueStorage(), NoCache())
-private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryKeyValueStorage(), NoCache())
-private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryKeyValueStorage(), NoCache())
+private val taskStateStorage = CachedKeyTaskStateStorage(InMemoryKeyValueStorage(), NoCache())
+private val workflowStateStorage = CachedKeyWorkflowStateStorage(InMemoryKeyValueStorage(), NoCache())
+private val monitoringPerNameStateStorage = KeyCachedMonitoringPerNameStateStorage(InMemoryKeyValueStorage(), NoCache())
+private val monitoringGlobalStateStorage = KeyCachedMonitoringGlobalStateStorage(InMemoryKeyValueStorage(), NoCache())
 
 private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
@@ -653,57 +647,6 @@ class WorkflowIntegrationTests : StringSpec({
     }
 })
 
-class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : WorkflowEngineOutput {
-    override val sendToClientResponseFn: SendToClientResponse =
-        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
-
-    override val sendToTagEngineFn: SendToTagEngine =
-        { msg: TagEngineMessage -> scope.sendToTagEngine(msg) }
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
-}
-
-class InMemoryTagEngineOutput(private val scope: CoroutineScope) : TagEngineOutput {
-    override val sendToClientResponseFn: SendToClientResponse =
-        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
-
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-}
-
-class InMemoryTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
-    override val sendToClientResponseFn: SendToClientResponse =
-        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
-
-    override val sendToTagEngineFn: SendToTagEngine =
-        { msg: TagEngineMessage -> scope.sendToTagEngine(msg) }
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
-
-    override val sendToTaskExecutorsFn: SendToTaskExecutors =
-        { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
-
-    override val sendToMonitoringPerNameFn: SendToMonitoringPerName =
-        { msg: MonitoringPerNameMessage -> scope.sendToMonitoringPerName(msg) }
-}
-
-class InMemoryMonitoringPerNameOutput(private val scope: CoroutineScope) : MonitoringPerNameOutput {
-
-    override val sendToMonitoringGlobalFn: SendToMonitoringGlobal =
-        { msg: MonitoringGlobalMessage -> scope.sendToMonitoringGlobal(msg) }
-}
-
 class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
 
     override val sendToTaskEngineFn: SendToTaskEngine =
@@ -781,24 +724,42 @@ fun CoroutineScope.init() {
 
     tagEngine = TagEngine(
         tagStateStorage,
-        InMemoryTagEngineOutput(this)
+        FunctionsTagEngineOutput(
+            { msg: ClientResponseMessage -> sendToClientResponse(msg) },
+            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+            { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
+        )
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
         NoTaskEventStorage(),
-        InMemoryTaskEngineOutput(this)
+        FunctionsTaskEngineOutput(
+            { msg: ClientResponseMessage -> sendToClientResponse(msg) },
+            { msg: TagEngineMessage -> sendToTagEngine(msg) },
+            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+            { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) },
+            { msg: TaskExecutorMessage -> sendToWorkers(msg) },
+            { msg: MonitoringPerNameMessage -> sendToMonitoringPerName(msg) }
+        )
     )
 
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
         NoWorkflowEventStorage(),
-        InMemoryWorkflowEngineOutput(this)
+        FunctionsWorkflowEngineOutput(
+            { msg: ClientResponseMessage -> sendToClientResponse(msg) },
+            { msg: TagEngineMessage -> sendToTagEngine(msg) },
+            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+            { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
+        )
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(
         monitoringPerNameStateStorage,
-        InMemoryMonitoringPerNameOutput(this)
+        FunctionsMonitoringPerNameOutput(
+            { msg: MonitoringGlobalMessage -> sendToMonitoringGlobal(msg) }
+        )
     )
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)

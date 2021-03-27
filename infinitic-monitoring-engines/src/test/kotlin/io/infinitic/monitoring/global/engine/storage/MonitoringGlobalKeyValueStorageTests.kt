@@ -44,7 +44,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getValue(any()) } returns null
             // given
-            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
+            val stateStorage = KeyCachedMonitoringGlobalStateStorage(storage, NoCache())
             // when
             val state = stateStorage.getState()
             // then
@@ -59,7 +59,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(MonitoringGlobalState::class)
             coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
             // given
-            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
+            val stateStorage = KeyCachedMonitoringGlobalStateStorage(storage, NoCache())
             // when
             val stateOut = stateStorage.getState()
             // then
@@ -78,7 +78,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
 
             coEvery { storage.putValue("monitoringGlobal.state", capture(binSlot)) } returns Unit
             // given
-            val stateStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
+            val stateStorage = KeyCachedMonitoringGlobalStateStorage(storage, NoCache())
             // when
             stateStorage.putState(stateIn)
             // then
@@ -93,7 +93,7 @@ class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.delValue(any()) } returns Unit
             // given
-            val stageStorage = MonitoringGlobalStateKeyValueStorage(storage, NoCache())
+            val stageStorage = KeyCachedMonitoringGlobalStateStorage(storage, NoCache())
             // when
             stageStorage.delState()
             // then

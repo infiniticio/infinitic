@@ -29,7 +29,6 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.minus
-import io.infinitic.common.data.plus
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
@@ -64,7 +63,7 @@ import io.infinitic.workflows.engine.helpers.commandCompleted
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.helpers.getMethodRun
 import io.infinitic.workflows.engine.helpers.getPastCommand
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowCompletedInClient
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
@@ -128,7 +127,6 @@ suspend fun workflowTaskCompleted(
         // if this is the main method, it means the workflow is completed
         if (methodRun.isMain) {
             workflowEngineOutput.sendToWorkflowEngine(
-                state,
                 WorkflowCompleted(
                     workflowId = state.workflowId,
                     workflowReturnValue = methodRun.methodReturnValue!!
@@ -139,7 +137,6 @@ suspend fun workflowTaskCompleted(
             // if client is waiting, send output back to it
             if (state.clientWaiting) {
                 workflowEngineOutput.sendToClientResponse(
-                    state,
                     WorkflowCompletedInClient(
                         clientName = state.clientName,
                         workflowId = state.workflowId,
@@ -152,7 +149,6 @@ suspend fun workflowTaskCompleted(
         // tell parent workflow if any
         methodRun.parentWorkflowId?.let {
             workflowEngineOutput.sendToWorkflowEngine(
-                state,
                 ChildWorkflowCompleted(
                     workflowId = it,
                     methodRunId = methodRun.parentMethodRunId!!,
@@ -278,7 +274,7 @@ private suspend fun startDurationTimer(
 
     val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
 
-    workflowEngineOutput.sendToWorkflowEngine(state, msg, command.duration - diff)
+    workflowEngineOutput.sendToWorkflowEngine(msg, command.duration - diff)
 
     addPastCommand(methodRun, newCommand)
 }
@@ -297,7 +293,7 @@ private suspend fun startInstantTimer(
         timerId = TimerId(newCommand.commandId.id)
     )
 
-    workflowEngineOutput.sendToWorkflowEngine(state, msg, command.instant - MillisInstant.now())
+    workflowEngineOutput.sendToWorkflowEngine(msg, command.instant - MillisInstant.now())
 
     addPastCommand(methodRun, newCommand)
 }
@@ -343,7 +339,7 @@ private suspend fun dispatchTask(
         methodRunId = methodRun.methodRunId,
         taskMeta = command.taskMeta
     )
-    workflowEngineOutput.sendToTaskEngine(state, msg, MillisDuration(0))
+    workflowEngineOutput.sendToTaskEngine(msg)
 
     addPastCommand(methodRun, newCommand)
 }
@@ -369,7 +365,7 @@ private suspend fun dispatchChildWorkflow(
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )
-    workflowEngineOutput.sendToWorkflowEngine(state, msg, MillisDuration(0))
+    workflowEngineOutput.sendToWorkflowEngine(msg, MillisDuration(0))
 
     addPastCommand(methodRun, newCommand)
 }

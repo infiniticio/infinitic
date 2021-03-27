@@ -27,18 +27,14 @@ package io.infinitic.inMemory.transport
 
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
-import io.infinitic.common.clients.transport.SendToClientResponse
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.tags.engine.input.TagEngineMessageToProcess
+import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
+import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -46,40 +42,39 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class InMemoryWorkflowEngineOutput(
-    scope: CoroutineScope,
-    clientResponseChannel: Channel<ClientResponseMessageToProcess>,
-    tagCommandsChannel: Channel<TagEngineMessageToProcess>,
-    taskCommandsChannel: Channel<TaskEngineMessageToProcess>,
-    workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>
+    private val scope: CoroutineScope,
+    private val clientResponseChannel: Channel<ClientResponseMessageToProcess>,
+    private val tagCommandsChannel: Channel<TagEngineMessageToProcess>,
+    private val taskCommandsChannel: Channel<TaskEngineMessageToProcess>,
+    private val workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : WorkflowEngineOutput {
 
-    override val sendToClientResponseFn: SendToClientResponse = { msg: ClientResponseMessage ->
+    override suspend fun sendToClientResponse(message: ClientResponseMessage) {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            clientResponseChannel.send(InMemoryMessageToProcess(msg))
+            clientResponseChannel.send(InMemoryMessageToProcess(message))
         }
     }
 
-    override val sendToTagEngineFn: SendToTagEngine = { msg: TagEngineMessage ->
+    override suspend fun sendToTagEngine(message: TagEngineMessage) {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            tagCommandsChannel.send(InMemoryMessageToProcess(msg))
+            tagCommandsChannel.send(InMemoryMessageToProcess(message))
         }
     }
 
-    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
+    override suspend fun sendToTaskEngine(message: TaskEngineMessage) {
+        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+        scope.launch {
+            taskCommandsChannel.send(InMemoryMessageToProcess(message))
+        }
+    }
+
+    override suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage, after: MillisDuration) {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             delay(after.long)
-            taskCommandsChannel.send(InMemoryMessageToProcess(msg))
-        }
-    }
-
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: MillisDuration ->
-        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
-        scope.launch {
-            delay(after.long)
-            workflowEventsChannel.send(InMemoryMessageToProcess(msg))
+            workflowEventsChannel.send(InMemoryMessageToProcess(message))
         }
     }
 }

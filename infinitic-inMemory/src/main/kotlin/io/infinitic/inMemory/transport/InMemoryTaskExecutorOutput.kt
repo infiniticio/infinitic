@@ -28,7 +28,7 @@ package io.infinitic.inMemory.transport
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
+import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -36,9 +36,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class InMemoryTaskExecutorOutput(
-    scope: CoroutineScope,
-    taskEventChannel: Channel<TaskEngineMessageToProcess>
+    private val scope: CoroutineScope,
+    private val taskEventChannel: Channel<TaskEngineMessageToProcess>
 ) : TaskExecutorOutput {
+
     override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {

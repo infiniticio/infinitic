@@ -26,10 +26,10 @@
 package io.infinitic.tags.engine.worker
 
 import io.infinitic.tags.engine.TagEngine
+import io.infinitic.tags.engine.input.TagEngineInputChannels
+import io.infinitic.tags.engine.input.TagEngineMessageToProcess
+import io.infinitic.tags.engine.output.TagEngineOutput
 import io.infinitic.tags.engine.storage.TagStateStorage
-import io.infinitic.tags.engine.transport.TagEngineInputChannels
-import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
-import io.infinitic.tags.engine.transport.TagEngineOutput
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -41,8 +41,7 @@ private val logger: Logger
     get() = LoggerFactory.getLogger(TagEngine::class.java)
 
 private fun logError(messageToProcess: TagEngineMessageToProcess, e: Exception) = logger.error(
-    "tag {} - exception on message {}:${System.getProperty("line.separator")}{}",
-    messageToProcess.message.tag,
+    "exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message,
     e
 )

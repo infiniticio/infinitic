@@ -27,8 +27,6 @@ package io.infinitic.monitoring.perName.engine.storage
 
 import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskName
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
@@ -37,27 +35,10 @@ import org.slf4j.LoggerFactory
  * transformed before being stored. These details are left to the different implementations.
  */
 interface MonitoringPerNameStateStorage {
-    val getStateFn: GetMonitoringPerNameState
-    val putStateFn: PutMonitoringPerNameState
-    val delStateFn: DelMonitoringPerNameState
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    suspend fun getState(taskName: TaskName): MonitoringPerNameState?
 
-    suspend fun getState(taskName: TaskName): MonitoringPerNameState? {
-        val taskState = getStateFn(taskName)
-        logger.debug("taskName {} - getState {}", taskName, taskState)
+    suspend fun putState(taskName: TaskName, state: MonitoringPerNameState)
 
-        return taskState
-    }
-
-    suspend fun putState(taskName: TaskName, state: MonitoringPerNameState) {
-        putStateFn(taskName, state)
-        logger.debug("taskName {} - putState {}", taskName, state)
-    }
-
-    suspend fun delState(taskName: TaskName) {
-        delStateFn(taskName)
-        logger.debug("taskName {} - delState", taskName)
-    }
+    suspend fun delState(taskName: TaskName)
 }

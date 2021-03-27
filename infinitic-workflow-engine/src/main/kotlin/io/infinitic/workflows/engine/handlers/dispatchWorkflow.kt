@@ -29,7 +29,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
 suspend fun dispatchWorkflow(
     workflowEngineOutput: WorkflowEngineOutput,

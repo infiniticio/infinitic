@@ -48,9 +48,9 @@ import io.infinitic.workflows.engine.handlers.sendToChannel
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.events.WorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
 import org.slf4j.LoggerFactory
 
 class WorkflowEngine(
@@ -150,7 +150,6 @@ class WorkflowEngine(
                 val tags = state.workflowOptions.tags.map { Tag(it) } + Tag.of(state.workflowId)
                 tags.map {
                     workflowEngineOutput.sendToTagEngine(
-                        state,
                         RemoveWorkflowTag(
                             tag = it,
                             name = state.workflowName,

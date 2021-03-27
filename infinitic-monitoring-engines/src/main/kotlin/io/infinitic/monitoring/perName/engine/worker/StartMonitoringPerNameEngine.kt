@@ -26,10 +26,10 @@
 package io.infinitic.monitoring.perName.engine.worker
 
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
+import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameInputChannels
+import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameMessageToProcess
+import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameInputChannels
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameMessageToProcess
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

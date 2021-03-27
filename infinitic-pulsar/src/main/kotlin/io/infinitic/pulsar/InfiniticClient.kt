@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.client.transport.ClientOutput
+import io.infinitic.client.output.ClientOutput
 import io.infinitic.inMemory.transport.InMemoryClientOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.pulsar.config.ClientConfig
@@ -35,11 +35,11 @@ import io.infinitic.pulsar.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startClientResponseWorker
-import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
+import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
+import io.infinitic.tags.engine.input.TagEngineMessageToProcess
+import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
+import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
