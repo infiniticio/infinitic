@@ -23,21 +23,37 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.engine.storage.events
+package io.infinitic.tasks.engine.storage.states
 
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.storage.InsertTaskEvent
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.engine.state.TaskState
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-interface TaskEventStorage {
-    val insertTaskEventFn: InsertTaskEvent
+/**
+ * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
+ */
+class LoggedTaskStateStorage(
+    val storage: TaskStateStorage
+) : TaskStateStorage {
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun insertTaskEvent(taskEngineMessage: TaskEngineMessage) {
-        insertTaskEventFn(taskEngineMessage)
-        logger.debug("taskId {} - insertTaskEvent {}", taskEngineMessage.taskId, taskEngineMessage)
+    override suspend fun getState(taskId: TaskId): TaskState? {
+        val state = storage.getState(taskId)
+        logger.debug("taskId {} - getState {}", taskId, state)
+
+        return state
+    }
+
+    override suspend fun putState(taskId: TaskId, state: TaskState) {
+        logger.debug("taskId {} - putState {}", taskId, state)
+        storage.putState(taskId, state)
+    }
+
+    override suspend fun delState(taskId: TaskId) {
+        logger.debug("taskId {} - delState", taskId)
+        storage.delState(taskId)
     }
 }

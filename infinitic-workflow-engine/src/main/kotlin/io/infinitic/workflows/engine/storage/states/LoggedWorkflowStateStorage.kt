@@ -23,10 +23,33 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.storage.events
+package io.infinitic.workflows.engine.storage.states
 
-import io.infinitic.common.workflows.engine.storage.InsertWorkflowEvent
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-class NoWorkflowEventStorage : WorkflowEventStorage {
-    override val insertWorkflowEventFn: InsertWorkflowEvent = { }
+class LoggedWorkflowStateStorage(
+    val storage: WorkflowStateStorage
+) : WorkflowStateStorage {
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
+        val state = storage.getState(workflowId)
+        logger.debug("workflowId {} - getState {}", workflowId, state)
+
+        return state
+    }
+
+    override suspend fun putState(workflowId: WorkflowId, state: WorkflowState) {
+        logger.debug("taskId {} - putState {}", workflowId, state)
+        storage.putState(workflowId, state)
+    }
+    override suspend fun delState(workflowId: WorkflowId) {
+        logger.debug("workflowId {} - delState", workflowId)
+        storage.delState(workflowId)
+    }
 }

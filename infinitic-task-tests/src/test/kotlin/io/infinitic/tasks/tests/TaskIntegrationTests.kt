@@ -54,7 +54,6 @@ import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
 import io.infinitic.tags.engine.storage.CachedKeyTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
-import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
@@ -298,7 +297,6 @@ fun CoroutineScope.init() {
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        NoTaskEventStorage(),
         FunctionsTaskEngineOutput(
             { msg: ClientResponseMessage -> sendToClientResponse(msg) },
             { msg: TagEngineMessage -> sendToTagEngine(msg) },

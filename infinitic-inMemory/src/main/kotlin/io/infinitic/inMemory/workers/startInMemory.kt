@@ -52,7 +52,6 @@ import io.infinitic.tags.engine.worker.startTagEngine
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.input.TaskEngineInputChannels
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
-import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
 import io.infinitic.tasks.engine.worker.startTaskEngine
 import io.infinitic.tasks.executor.transport.TaskExecutorInput
@@ -60,7 +59,6 @@ import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import io.infinitic.workflows.engine.input.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
-import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.CachedKeyWorkflowStateStorage
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineName
@@ -120,7 +118,6 @@ fun CoroutineScope.startInMemory(
     startTaskEngine(
         "in-memory-task-engine",
         CachedKeyTaskStateStorage(keyValueStorage, NoCache()),
-        NoTaskEventStorage(),
         TaskEngineInputChannels(
             taskEngineCommandsChannel,
             taskEngineEventsChannel,
@@ -140,7 +137,6 @@ fun CoroutineScope.startInMemory(
     startWorkflowEngine(
         "in-memory-workflow-engine",
         CachedKeyWorkflowStateStorage(keyValueStorage, NoCache()),
-        NoWorkflowEventStorage(),
         WorkflowEngineInputChannels(
             workflowEngineCommandsChannel,
             workflowEngineEventsChannel,

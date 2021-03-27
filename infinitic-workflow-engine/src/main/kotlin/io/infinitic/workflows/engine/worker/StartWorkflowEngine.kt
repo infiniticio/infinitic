@@ -29,7 +29,6 @@ import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.input.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import io.infinitic.workflows.engine.storage.events.WorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -51,14 +50,12 @@ private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Except
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     coroutineName: String,
     workflowStateStorage: WorkflowStateStorage,
-    workflowEventStorage: WorkflowEventStorage,
     workflowEngineInputChannels: WorkflowEngineInputChannels<T>,
     workflowEngineOutput: WorkflowEngineOutput
 ) = launch(CoroutineName(coroutineName)) {
 
     val workflowEngine = WorkflowEngine(
         workflowStateStorage,
-        workflowEventStorage,
         workflowEngineOutput
     )
 

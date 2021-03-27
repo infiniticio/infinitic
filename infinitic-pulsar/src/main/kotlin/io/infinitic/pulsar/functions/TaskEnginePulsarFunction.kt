@@ -31,7 +31,6 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
 import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
@@ -54,7 +53,6 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
 
     internal fun getTaskEngine(context: Context) = TaskEngine(
         CachedKeyTaskStateStorage(context.keyValueStorage(), CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600))),
-        NoTaskEventStorage(),
         PulsarOutputs.from(context).taskEngineOutput
     )
 }

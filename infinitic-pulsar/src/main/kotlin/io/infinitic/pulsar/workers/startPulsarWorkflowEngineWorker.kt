@@ -36,7 +36,6 @@ import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
 import io.infinitic.workflows.engine.storage.states.CachedKeyWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -79,7 +78,6 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
 
     val workflowEngine = WorkflowEngine(
         CachedKeyWorkflowStateStorage(keyValueStorage, keyValueCache),
-        NoWorkflowEventStorage(),
         workflowEngineOutput
     )
 

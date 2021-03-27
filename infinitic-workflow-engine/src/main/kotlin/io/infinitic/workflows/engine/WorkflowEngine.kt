@@ -48,23 +48,23 @@ import io.infinitic.workflows.engine.handlers.sendToChannel
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
+import io.infinitic.workflows.engine.output.LoggedWorkflowEngineOutput
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import io.infinitic.workflows.engine.storage.events.WorkflowEventStorage
+import io.infinitic.workflows.engine.storage.states.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
 import org.slf4j.LoggerFactory
 
 class WorkflowEngine(
-    private val workflowStateStorage: WorkflowStateStorage,
-    private val workflowEventStorage: WorkflowEventStorage,
-    private val workflowEngineOutput: WorkflowEngineOutput
+    storage: WorkflowStateStorage,
+    output: WorkflowEngineOutput
 ) {
+    private val storage = LoggedWorkflowStateStorage(storage)
+    private val output = LoggedWorkflowEngineOutput(output)
+
     private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: WorkflowEngineMessage) {
         logger.debug("workflowId {} - receiving {} (messageId {})", message.workflowId, message, message.messageId)
-
-        // store event
-        workflowEventStorage.insertWorkflowEvent(message)
 
         // immediately discard irrelevant messages
         when (message) {
@@ -76,13 +76,13 @@ class WorkflowEngine(
         }
 
         // get associated state
-        var state = workflowStateStorage.getState(message.workflowId)
+        var state = storage.getState(message.workflowId)
 
         // if no state (newly created workflow or terminated workflow)
         if (state == null) {
             if (message is DispatchWorkflow) {
-                state = dispatchWorkflow(workflowEngineOutput, message)
-                workflowStateStorage.putState(message.workflowId, state)
+                state = dispatchWorkflow(output, message)
+                storage.putState(message.workflowId, state)
 
                 return
             }
@@ -123,7 +123,7 @@ class WorkflowEngine(
             // buffer this message
             state.bufferedMessages.add(message)
             // update state
-            workflowStateStorage.putState(message.workflowId, state)
+            storage.putState(message.workflowId, state)
 
             return
         }
@@ -149,7 +149,7 @@ class WorkflowEngine(
                 // remove tags reference to this instance
                 val tags = state.workflowOptions.tags.map { Tag(it) } + Tag.of(state.workflowId)
                 tags.map {
-                    workflowEngineOutput.sendToTagEngine(
+                    output.sendToTagEngine(
                         RemoveWorkflowTag(
                             tag = it,
                             name = state.workflowName,
@@ -158,10 +158,10 @@ class WorkflowEngine(
                     )
                 }
                 // delete workflow state
-                workflowStateStorage.delState(message.workflowId)
+                storage.delState(message.workflowId)
             }
             else -> {
-                workflowStateStorage.putState(message.workflowId, state)
+                storage.putState(message.workflowId, state)
             }
         }
     }
@@ -178,12 +178,12 @@ class WorkflowEngine(
         when (message) {
             is CancelWorkflow -> cancelWorkflow(state, message)
             is ChildWorkflowCanceled -> childWorkflowCanceled(state, message)
-            is ChildWorkflowCompleted -> childWorkflowCompleted(workflowEngineOutput, state, message)
-            is WorkflowTaskCompleted -> workflowTaskCompleted(workflowEngineOutput, state, message)
-            is TimerCompleted -> timerCompleted(workflowEngineOutput, state, message)
+            is ChildWorkflowCompleted -> childWorkflowCompleted(output, state, message)
+            is WorkflowTaskCompleted -> workflowTaskCompleted(output, state, message)
+            is TimerCompleted -> timerCompleted(output, state, message)
             is TaskCanceled -> taskCanceled(state, message)
-            is TaskCompleted -> taskCompleted(workflowEngineOutput, state, message)
-            is SendToChannel -> sendToChannel(workflowEngineOutput, state, message)
+            is TaskCompleted -> taskCompleted(output, state, message)
+            is SendToChannel -> sendToChannel(output, state, message)
             else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
         }
     }

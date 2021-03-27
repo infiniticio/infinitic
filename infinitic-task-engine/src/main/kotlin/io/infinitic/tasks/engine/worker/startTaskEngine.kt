@@ -29,7 +29,6 @@ import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.input.TaskEngineInputChannels
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.output.TaskEngineOutput
-import io.infinitic.tasks.engine.storage.events.TaskEventStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -51,14 +50,12 @@ private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Exception)
 fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     coroutineName: String,
     taskStateStorage: TaskStateStorage,
-    taskEventStorage: TaskEventStorage,
     taskEngineInputChannels: TaskEngineInputChannels<T>,
     taskEngineOutput: TaskEngineOutput
 ) = launch(CoroutineName(coroutineName)) {
 
     val taskEngine = TaskEngine(
         taskStateStorage,
-        taskEventStorage,
         taskEngineOutput
     )
 
