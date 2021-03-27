@@ -53,7 +53,11 @@ import io.infinitic.client.Client as Client
 class InfiniticClient private constructor(
     clientOutput: ClientOutput,
     private val closeFn: () -> Unit
-) : Client(clientOutput) {
+) : Client() {
+
+    init {
+        this.clientOutput = clientOutput
+    }
 
     companion object {
         /*

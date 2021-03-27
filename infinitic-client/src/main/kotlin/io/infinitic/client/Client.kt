@@ -25,6 +25,7 @@
 
 package io.infinitic.client
 
+import io.infinitic.client.transport.ClientLoggedOutput
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.data.methods.MethodName
@@ -54,9 +55,21 @@ import java.lang.reflect.Proxy
 import java.util.UUID
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-open class Client(val clientOutput: ClientOutput) {
+open class Client {
 
-    private val dispatcher = ClientDispatcher(clientOutput)
+    companion object {
+        fun with(clientOutput: ClientOutput) = Client().apply { this.clientOutput = clientOutput }
+    }
+
+    private lateinit var dispatcher: ClientDispatcher
+    private lateinit var _clientOutput: ClientOutput
+
+    var clientOutput: ClientOutput
+        set(value) {
+            _clientOutput = ClientLoggedOutput(value)
+            dispatcher = ClientDispatcher(_clientOutput)
+        }
+        get() = _clientOutput
 
     /*
      * Create stub for a new task

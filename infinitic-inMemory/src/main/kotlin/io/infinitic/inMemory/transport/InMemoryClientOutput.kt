@@ -27,54 +27,47 @@ package io.infinitic.inMemory.transport
 
 import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tags.engine.transport.TagEngineMessageToProcess
 import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
 import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class InMemoryClientOutput(
-    tagCommandsChannel: SendChannel<TagEngineMessageToProcess>,
-    taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
-    workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>
+    private val tagCommandsChannel: SendChannel<TagEngineMessageToProcess>,
+    private val taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
+    private val workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : ClientOutput {
     override val clientName = ClientName("client: inMemory")
 
-    override val sendToTagEngineFn: SendToTagEngine = { msg: TagEngineMessage ->
+    override suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage) {
         with(CoroutineScope(Dispatchers.IO)) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             launch {
-                tagCommandsChannel.send(InMemoryMessageToProcess(msg))
+                workflowCommandsChannel.send(InMemoryMessageToProcess(workflowEngineMessage))
             }
         }
     }
 
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { msg: WorkflowEngineMessage, after: MillisDuration ->
+    override suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage) {
         with(CoroutineScope(Dispatchers.IO)) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             launch {
-                delay(after.long)
-                workflowCommandsChannel.send(InMemoryMessageToProcess(msg))
+                taskCommandsChannel.send(InMemoryMessageToProcess(taskEngineMessage))
             }
         }
     }
 
-    override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->
+    override suspend fun sendToTagEngine(tagEngineMessage: TagEngineMessage) {
         with(CoroutineScope(Dispatchers.IO)) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             launch {
-                delay(after.long)
-                taskCommandsChannel.send(InMemoryMessageToProcess(msg))
+                tagCommandsChannel.send(InMemoryMessageToProcess(tagEngineMessage))
             }
         }
     }

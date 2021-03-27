@@ -27,7 +27,7 @@ package io.infinitic.tasks.tests
 
 import io.infinitic.cache.no.NoCache
 import io.infinitic.client.Client
-import io.infinitic.client.transport.ClientOutput
+import io.infinitic.client.transport.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.clients.transport.SendToClientResponse
@@ -269,18 +269,6 @@ class TestTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOu
         { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 }
 
-class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
-    override val clientName = ClientName("client: InMemory")
-
-    override val sendToTagEngineFn: SendToTagEngine =
-        { msg: TagEngineMessage -> scope.sendToTagEngine(msg) }
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine = { _: WorkflowEngineMessage, _: MillisDuration -> }
-}
-
 fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
     launch {
         client.handle(msg)
@@ -331,7 +319,14 @@ fun CoroutineScope.init() {
     monitoringGlobalStateStorage.flush()
     taskStatus = null
 
-    client = Client(TestClientOutput(this))
+    client = Client.with(
+        FunctionsClientOutput(
+            ClientName("client: InMemory"),
+            { msg: TagEngineMessage -> sendToTagEngine(msg) },
+            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+            { _: WorkflowEngineMessage, _: MillisDuration -> }
+        )
+    )
 
     taskTestStub = client.task(TaskTest::class.java)
 

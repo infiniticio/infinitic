@@ -75,9 +75,11 @@ import io.infinitic.exceptions.SendToChannelFailed as SendToChannelFailedExcepti
 internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispatcher {
     // could be replay = 0
     // but replay = 1 makes tests easier, as we can emit a message before listening
-    private val responseFlow = MutableSharedFlow<ClientResponseMessage>(replay = 1)
+    private val responseFlow = MutableSharedFlow<ClientResponseMessage>(replay = 100)
 
-    suspend fun handle(message: ClientResponseMessage) = responseFlow.emit(message)
+    suspend fun handle(message: ClientResponseMessage) {
+        responseFlow.emit(message)
+    }
 
     // asynchronous call on an existing task: async(existingTask) { method() }
     fun dispatch(handler: ExistingTaskProxyHandler<*>): UUID {

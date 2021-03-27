@@ -57,9 +57,9 @@ class ClientWorkflowTests : StringSpec({
     val tagSlot = slot<TagEngineMessage>()
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
-    val clientOutput = MockClientOutput(tagSlot, taskSlot, workflowSlot)
-    val client = Client(clientOutput)
-    clientOutput.client = client
+    val client = Client()
+    val clientOutput = mockClientOutput(client, tagSlot, taskSlot, workflowSlot)
+    client.clientOutput = clientOutput
     val tag = TestFactory.random<String>()
     val newWorkflow = client.workflow(FakeWorkflow::class.java)
     val existingWorkflows = client.workflow(FakeWorkflow::class.java, tag)

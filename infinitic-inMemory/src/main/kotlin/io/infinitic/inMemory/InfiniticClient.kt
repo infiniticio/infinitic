@@ -45,14 +45,7 @@ class InfiniticClient private constructor(
     private val taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
     private val workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>,
     private val logFn: (_: MessageToProcess<*>) -> Unit
-) : Client(
-        InMemoryClientOutput(
-            tagEngineCommandsChannel,
-            taskEngineCommandsChannel,
-            workflowEngineCommandsChannel
-        )
-    ),
-    TaskExecutorRegister by taskExecutorRegister {
+) : Client(), TaskExecutorRegister by taskExecutorRegister {
 
     companion object {
         @JvmStatic @JvmOverloads
@@ -73,6 +66,12 @@ class InfiniticClient private constructor(
     }
 
     init {
+        clientOutput = InMemoryClientOutput(
+            tagEngineCommandsChannel,
+            taskEngineCommandsChannel,
+            workflowEngineCommandsChannel
+        )
+
         with(CoroutineScope(Dispatchers.IO)) {
             startInMemory(
                 taskExecutorRegister,

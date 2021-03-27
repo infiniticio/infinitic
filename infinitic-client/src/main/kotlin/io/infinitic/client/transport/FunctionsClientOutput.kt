@@ -26,13 +26,27 @@
 package io.infinitic.client.transport
 
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
-data class ClientDataOutput(
+class FunctionsClientOutput(
     override val clientName: ClientName,
-    override val sendToTagEngineFn: SendToTagEngine,
-    override val sendToTaskEngineFn: SendToTaskEngine,
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine
-) : ClientOutput
+    private val sendToTagEngineFn: SendToTagEngine,
+    private val sendToTaskEngineFn: SendToTaskEngine,
+    private val sendToWorkflowEngineFn: SendToWorkflowEngine
+) : ClientOutput {
+
+    override suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage) =
+        sendToWorkflowEngineFn(workflowEngineMessage, MillisDuration(0))
+
+    override suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage) =
+        sendToTaskEngineFn(taskEngineMessage, MillisDuration(0))
+
+    override suspend fun sendToTagEngine(tagEngineMessage: TagEngineMessage) =
+        sendToTagEngineFn(tagEngineMessage)
+}

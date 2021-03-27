@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar.transport
 
-import io.infinitic.client.transport.ClientDataOutput
+import io.infinitic.client.transport.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseEnvelope
 import io.infinitic.common.clients.messages.ClientResponseMessage
@@ -217,7 +217,7 @@ class PulsarOutputs(
         )
     }
 
-    val clientOutput = ClientDataOutput(
+    val clientOutput = FunctionsClientOutput(
         clientName,
         sendToTagEngineCommands(),
         sendToTaskEngineCommands(),
