@@ -27,7 +27,6 @@ package io.infinitic.pulsar
 
 import io.infinitic.common.storage.keySet.CachedLoggedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
-import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.pulsar.config.WorkerConfig
 import io.infinitic.pulsar.config.cache.getKeySetCache
@@ -128,8 +127,10 @@ class InfiniticWorker(
     ) {
         config.tagEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<TaskState>(config)
+                val keyValueStorage = CachedLoggedKeyValueStorage(
+                    it.stateCacheOrDefault.getKeyValueCache(config),
+                    it.stateStorage!!.getKeyValueStorage(config)
+                )
                 print(
                     "Tag engine".padEnd(25) + ": starting ${it.consumers} instances... " +
                         "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
@@ -141,8 +142,7 @@ class InfiniticWorker(
                         pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
                         pulsarOutputs.taskEngineOutput,
                         pulsarOutputs.sendToTaskEngineDeadLetters,
-                        keyValueStorage,
-                        keyValueCache
+                        keyValueStorage
                     )
                 }
                 println(" done")

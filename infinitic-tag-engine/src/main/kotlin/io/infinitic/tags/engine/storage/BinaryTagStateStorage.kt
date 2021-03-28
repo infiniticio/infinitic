@@ -29,6 +29,7 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.Name
 import io.infinitic.common.data.UUIDConversion.toByteArray
 import io.infinitic.common.data.UUIDConversion.toUUID
+import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tags.data.Tag
@@ -41,7 +42,7 @@ import java.util.UUID
 class BinaryTagStateStorage(
     private val keyValueStorage: KeyValueStorage,
     private val keySetStorage: KeySetStorage,
-) : TagStateStorage {
+) : TagStateStorage, Flushable {
 
     override suspend fun getLastMessageId(tag: Tag, name: Name): MessageId? {
         val key = getTagMessageIdKey(tag, name)
@@ -75,4 +76,9 @@ class BinaryTagStateStorage(
     private fun getTagMessageIdKey(tag: Tag, name: Name) = "name**$name**tag**$tag**messageId"
 
     private fun getTagSetIdsKey(tag: Tag, name: Name) = "name**$name**tag**$tag**setIds"
+
+    override fun flush() {
+        keyValueStorage.flush()
+        keySetStorage.flush()
+    }
 }

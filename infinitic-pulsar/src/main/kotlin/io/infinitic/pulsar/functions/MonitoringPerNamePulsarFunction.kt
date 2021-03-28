@@ -54,7 +54,7 @@ class MonitoringPerNamePulsarFunction : Function<MonitoringPerNameEnvelope, Void
 
     internal fun getMonitoringPerNameEngine(context: Context) = MonitoringPerNameEngine(
         BinaryMonitoringPerNameStateStorage(
-            // context storage decorated with a 1h cache
+            // context storage decorated with logging and a 1h cache
             CachedLoggedKeyValueStorage(
                 CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
                 context.keyValueStorage()

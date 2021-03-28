@@ -56,7 +56,6 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.tasks.engine.output.LoggedTaskEngineOutput
 import io.infinitic.tasks.engine.output.TaskEngineOutput
-import io.infinitic.tasks.engine.storage.states.LoggedTaskStateStorage
 import io.infinitic.tasks.engine.storage.states.TaskStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -64,10 +63,9 @@ import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClie
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine(
-    storage: TaskStateStorage,
+    val storage: TaskStateStorage,
     output: TaskEngineOutput
 ) {
-    private val storage = LoggedTaskStateStorage(storage)
     private val output = LoggedTaskEngineOutput(output)
 
     private val logger: Logger

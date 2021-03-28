@@ -25,17 +25,15 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.output.TaskEngineOutput
-import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
+import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
@@ -69,12 +67,11 @@ fun CoroutineScope.startPulsarTaskEngineWorker(
     taskEngineConsumer: Consumer<TaskEngineEnvelope>,
     taskEngineOutput: TaskEngineOutput,
     sendToTaskEngineDeadLetters: SendToTaskEngine,
-    keyValueStorage: KeyValueStorage,
-    keyValueCache: KeyValueCache<TaskState>
+    keyValueStorage: KeyValueStorage
 ) = launch(singleThreadedContext("$TASK_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val taskEngine = TaskEngine(
-        CachedKeyTaskStateStorage(keyValueStorage, keyValueCache),
+        BinaryTaskStateStorage(keyValueStorage),
         taskEngineOutput
     )
 

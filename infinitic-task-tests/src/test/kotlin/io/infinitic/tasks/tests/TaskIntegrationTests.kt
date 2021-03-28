@@ -25,7 +25,6 @@
 
 package io.infinitic.tasks.tests
 
-import io.infinitic.cache.no.NoCache
 import io.infinitic.client.Client
 import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
@@ -54,7 +53,7 @@ import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
-import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
+import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
@@ -74,7 +73,7 @@ private val taskTest = TaskTestImpl()
 val keyValueStorage = InMemoryKeyValueStorage()
 val keySetStorage = InMemoryKeySetStorage()
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
-private val taskStateStorage = CachedKeyTaskStateStorage(keyValueStorage, NoCache())
+private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
 private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(keyValueStorage)
 private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(keyValueStorage)
 
@@ -266,9 +265,8 @@ fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) {
 }
 
 fun CoroutineScope.init() {
-    taskStateStorage.flush()
-    monitoringPerNameStateStorage.flush()
-    monitoringGlobalStateStorage.flush()
+    keyValueStorage.flush()
+    keySetStorage.flush()
     taskStatus = null
 
     client = Client.with(
