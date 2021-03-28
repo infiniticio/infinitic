@@ -25,20 +25,23 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.common.storage.keySet.CachedLoggedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.pulsar.config.cache.getKeyValueBinaryCache
+import io.infinitic.pulsar.config.cache.getKeySetCache
 import io.infinitic.pulsar.config.cache.getKeyValueCache
 import io.infinitic.pulsar.config.data.Mode
 import io.infinitic.pulsar.config.loaders.loadConfigFromFile
 import io.infinitic.pulsar.config.loaders.loadConfigFromResource
+import io.infinitic.pulsar.config.storage.getKeySetStorage
 import io.infinitic.pulsar.config.storage.getKeyValueStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startPulsarMonitoringGlobalWorker
 import io.infinitic.pulsar.workers.startPulsarMonitoringPerNameWorker
+import io.infinitic.pulsar.workers.startPulsarTagEngineWorker
 import io.infinitic.pulsar.workers.startPulsarTaskEngineWorker
 import io.infinitic.pulsar.workers.startPulsarTaskExecutorWorker
 import io.infinitic.pulsar.workers.startPulsarWorkflowEngineWorker
@@ -104,15 +107,84 @@ class InfiniticWorker(
         val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
         val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, workerName)
 
-        startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+        startTagEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
         startTaskEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+
+        startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
         startMonitoringWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
         startTaskExecutorWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
         println("Worker \"$workerName\" ready")
+    }
+
+    private fun CoroutineScope.startTagEngineWorkers(
+        consumerName: String,
+        config: WorkerConfig,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutputs: PulsarOutputs
+    ) {
+        config.tagEngine?.let {
+            if (it.modeOrDefault == Mode.worker) {
+                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
+                val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<TaskState>(config)
+                print(
+                    "Tag engine".padEnd(25) + ": starting ${it.consumers} instances... " +
+                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+                )
+                repeat(it.consumersOrDefault) { counter ->
+                    logger.info("InfiniticWorker - starting task engine {}", counter)
+                    startPulsarTaskEngineWorker(
+                        counter,
+                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
+                        pulsarOutputs.taskEngineOutput,
+                        pulsarOutputs.sendToTaskEngineDeadLetters,
+                        keyValueStorage,
+                        keyValueCache
+                    )
+                }
+                println(" done")
+            }
+        }
+    }
+
+    private fun CoroutineScope.startTaskEngineWorkers(
+        consumerName: String,
+        config: WorkerConfig,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutputs: PulsarOutputs
+    ) {
+        config.taskEngine?.let {
+            if (it.modeOrDefault == Mode.worker) {
+                // storage decorated by the cache
+                val keyValueStorage = CachedLoggedKeyValueStorage(
+                    it.stateCacheOrDefault.getKeyValueCache(config),
+                    it.stateStorage!!.getKeyValueStorage(config)
+                )
+                val keySetStorage = CachedLoggedKeySetStorage(
+                    it.stateCacheOrDefault.getKeySetCache(config),
+                    it.stateStorage!!.getKeySetStorage(config)
+                )
+                print(
+                    "Task engine".padEnd(25) + ": starting ${it.consumers} instances... " +
+                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+                )
+                repeat(it.consumersOrDefault) { counter ->
+                    logger.info("InfiniticWorker - starting tag engine {}", counter)
+                    startPulsarTagEngineWorker(
+                        counter,
+                        pulsarConsumerFactory.newTagEngineConsumer(consumerName, counter),
+                        pulsarOutputs.tagEngineOutput,
+                        pulsarOutputs.sendToTagEngineDeadLetters,
+                        keyValueStorage,
+                        keySetStorage
+                    )
+                }
+                println(" done")
+            }
+        }
     }
 
     private fun CoroutineScope.startWorkflowEngineWorkers(
@@ -145,36 +217,6 @@ class InfiniticWorker(
         }
     }
 
-    private fun CoroutineScope.startTaskEngineWorkers(
-        consumerName: String,
-        config: WorkerConfig,
-        pulsarConsumerFactory: PulsarConsumerFactory,
-        pulsarOutputs: PulsarOutputs
-    ) {
-        config.taskEngine?.let {
-            if (it.modeOrDefault == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<TaskState>(config)
-                print(
-                    "Task engine".padEnd(25) + ": starting ${it.consumers} instances... " +
-                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
-                )
-                repeat(it.consumersOrDefault) { counter ->
-                    logger.info("InfiniticWorker - starting task engine {}", counter)
-                    startPulsarTaskEngineWorker(
-                        counter,
-                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
-                        pulsarOutputs.taskEngineOutput,
-                        pulsarOutputs.sendToTaskEngineDeadLetters,
-                        keyValueStorage,
-                        keyValueCache
-                    )
-                }
-                println(" done")
-            }
-        }
-    }
-
     private fun CoroutineScope.startMonitoringWorkers(
         consumerName: String,
         config: WorkerConfig,
@@ -183,10 +225,9 @@ class InfiniticWorker(
     ) {
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
                 // storage decorated by the cache
                 val storage = CachedLoggedKeyValueStorage(
-                    it.stateCacheOrDefault.getKeyValueBinaryCache(config),
+                    it.stateCacheOrDefault.getKeyValueCache(config),
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
                 repeat(it.consumersOrDefault) { counter ->

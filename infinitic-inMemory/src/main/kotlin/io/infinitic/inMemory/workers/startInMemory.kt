@@ -29,6 +29,7 @@ import io.infinitic.cache.no.NoCache
 import io.infinitic.client.Client
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
+import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryMonitoringPerNameOutput
@@ -44,10 +45,9 @@ import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameInputChanne
 import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
-import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
 import io.infinitic.tags.engine.input.TagEngineInputChannels
 import io.infinitic.tags.engine.input.TagEngineMessageToProcess
-import io.infinitic.tags.engine.storage.CachedKeyTagStateStorage
+import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tags.engine.worker.startTagEngine
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.input.TaskEngineInputChannels
@@ -71,6 +71,7 @@ private const val N_WORKERS = 10
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     keyValueStorage: KeyValueStorage,
+    keySetStorage: KeySetStorage,
     client: Client,
     tagEngineCommandsChannel: Channel<TagEngineMessageToProcess>,
     taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
@@ -101,7 +102,7 @@ fun CoroutineScope.startInMemory(
 
     startTagEngine(
         "in-memory-tag-engine",
-        CachedKeyTagStateStorage(keyValueStorage, NoCache(), InMemoryKeySetStorage(), NoCache()),
+        BinaryTagStateStorage(keyValueStorage, keySetStorage),
         TagEngineInputChannels(
             tagEngineCommandsChannel,
             tagEngineEventsChannel,

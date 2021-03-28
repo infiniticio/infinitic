@@ -22,16 +22,15 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.cache
+package io.infinitic.pulsar.config.storage
 
-import io.infinitic.cache.StateCache
-import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.cache.no.NoCache
-import io.infinitic.common.storage.keyValue.KeyValueCache
+import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.pulsar.config.WorkerConfig
+import io.infinitic.storage.StateStorage
+import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
+import io.infinitic.storage.redis.RedisKeySetStorage
 
-fun <T> StateCache.getKeyValueCache(workerConfig: WorkerConfig): KeyValueCache<T> = when (this) {
-    StateCache.none -> NoCache()
-    StateCache.caffeine -> CaffeineKeyValueCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
+fun StateStorage.getKeySetStorage(workerConfig: WorkerConfig): KeySetStorage = when (this) {
+    StateStorage.inMemory -> InMemoryKeySetStorage()
+    StateStorage.redis -> RedisKeySetStorage(workerConfig.redis!!)
 }

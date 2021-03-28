@@ -43,7 +43,6 @@ class MonitoringPerNameEngine(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-//    private val storage = LoggedMonitoringPerNameStateStorage(storage)
     private val output = LoggedMonitoringPerNameOutput(output)
 
     suspend fun handle(message: MonitoringPerNameMessage) {

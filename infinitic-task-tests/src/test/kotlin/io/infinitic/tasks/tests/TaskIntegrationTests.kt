@@ -51,7 +51,7 @@ import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
 import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
-import io.infinitic.tags.engine.storage.CachedKeyTagStateStorage
+import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.engine.storage.states.CachedKeyTaskStateStorage
@@ -71,16 +71,12 @@ import kotlinx.coroutines.launch
 
 private var taskStatus: TaskStatus? = null
 private val taskTest = TaskTestImpl()
-
-private val tagStateStorage = CachedKeyTagStateStorage(
-    InMemoryKeyValueStorage(),
-    NoCache(),
-    InMemoryKeySetStorage(),
-    NoCache()
-)
-private val taskStateStorage = CachedKeyTaskStateStorage(InMemoryKeyValueStorage(), NoCache())
-private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(InMemoryKeyValueStorage())
-private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(InMemoryKeyValueStorage())
+val keyValueStorage = InMemoryKeyValueStorage()
+val keySetStorage = InMemoryKeySetStorage()
+private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
+private val taskStateStorage = CachedKeyTaskStateStorage(keyValueStorage, NoCache())
+private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(keyValueStorage)
+private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(keyValueStorage)
 
 private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine

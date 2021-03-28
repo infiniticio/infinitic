@@ -43,16 +43,14 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.tags.engine.output.LoggedTagEngineOutput
 import io.infinitic.tags.engine.output.TagEngineOutput
-import io.infinitic.tags.engine.storage.LoggedTagStateStorage
 import io.infinitic.tags.engine.storage.TagStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class TagEngine(
-    storage: TagStateStorage,
+    val storage: TagStateStorage,
     output: TagEngineOutput
 ) {
-    private val storage = LoggedTagStateStorage(storage)
     private val output = LoggedTagEngineOutput(output)
 
     private val logger: Logger

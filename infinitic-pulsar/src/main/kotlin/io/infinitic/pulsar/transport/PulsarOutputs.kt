@@ -61,6 +61,7 @@ import io.infinitic.pulsar.topics.MonitoringGlobalTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameDeadLettersTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameTopic
 import io.infinitic.pulsar.topics.TagEngineCommandsTopic
+import io.infinitic.pulsar.topics.TagEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.TagEngineEventsTopic
 import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
 import io.infinitic.pulsar.topics.TaskEngineDeadLettersTopic
@@ -73,6 +74,7 @@ import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorDeadLettersTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
+import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
 import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.executor.transport.TaskExecutorDataOutput
 import io.infinitic.workflows.engine.output.FunctionsWorkflowEngineOutput
@@ -224,11 +226,10 @@ class PulsarOutputs(
         sendToWorkflowEngineCommands()
     )
 
-    val workflowEngineOutput = FunctionsWorkflowEngineOutput(
+    val tagEngineOutput = FunctionsTagEngineOutput(
         sendToClientResponse(),
-        sendToTagEngineCommands(),
         sendToTaskEngineCommands(),
-        sendToWorkflowEngineEvents(),
+        sendToWorkflowEngineCommands()
     )
 
     val taskEngineOutput = FunctionsTaskEngineOutput(
@@ -240,6 +241,13 @@ class PulsarOutputs(
         sendToMonitoringPerName()
     )
 
+    val workflowEngineOutput = FunctionsWorkflowEngineOutput(
+        sendToClientResponse(),
+        sendToTagEngineEvents(),
+        sendToTaskEngineCommands(),
+        sendToWorkflowEngineEvents(),
+    )
+
     val monitoringPerNameOutput = FunctionsMonitoringPerNameOutput(
         sendToMonitoringGlobal()
     )
@@ -248,14 +256,14 @@ class PulsarOutputs(
         sendToTaskEngineEvents()
     )
 
-    val sendToWorkflowEngineDeadLetters: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
+    val sendToTagEngineDeadLetters: SendToTagEngine = { message: TagEngineMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineDeadLettersTopic.name),
-            WorkflowEngineEnvelope.from(message),
-            "${message.workflowId}",
-            after
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineDeadLettersTopic.name),
+            TagEngineEnvelope.from(message),
+            "${message.tag}",
+            MillisDuration(0)
         )
-        logger.debug("workflowId {} - sendToWorkflowEngineDeadLetters {}", message.workflowId, message)
+        logger.debug("taskId {} - sendToTagEngineDeadLetters {}", message.tag, message)
     }
 
     val sendToTaskEngineDeadLetters: SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
@@ -266,6 +274,16 @@ class PulsarOutputs(
             after
         )
         logger.debug("taskId {} - sendToTaskEngineDeadLetters {}", message.taskId, message)
+    }
+
+    val sendToWorkflowEngineDeadLetters: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
+        pulsarMessageBuilder.sendPulsarMessage(
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineDeadLettersTopic.name),
+            WorkflowEngineEnvelope.from(message),
+            "${message.workflowId}",
+            after
+        )
+        logger.debug("workflowId {} - sendToWorkflowEngineDeadLetters {}", message.workflowId, message)
     }
 
     val sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName = { message: MonitoringPerNameMessage ->

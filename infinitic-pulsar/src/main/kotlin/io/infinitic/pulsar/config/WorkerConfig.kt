@@ -30,6 +30,7 @@ import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.pulsar.config.data.Mode
 import io.infinitic.pulsar.config.data.Monitoring
 import io.infinitic.pulsar.config.data.Pulsar
+import io.infinitic.pulsar.config.data.TagEngine
 import io.infinitic.pulsar.config.data.Task
 import io.infinitic.pulsar.config.data.TaskEngine
 import io.infinitic.pulsar.config.data.Workflow
@@ -68,6 +69,11 @@ data class WorkerConfig(
     Infinitic workflow engine configuration
      */
     @JvmField val workflowEngine: WorkflowEngine? = null,
+
+    /*
+    Infinitic tag engine configuration
+     */
+    @JvmField val tagEngine: TagEngine? = null,
 
     /*
     Infinitic task engine configuration
