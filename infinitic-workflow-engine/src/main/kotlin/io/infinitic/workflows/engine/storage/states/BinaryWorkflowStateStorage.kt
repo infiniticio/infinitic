@@ -26,66 +26,32 @@
 package io.infinitic.workflows.engine.storage.states
 
 import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-open class CachedKeyWorkflowStateStorage(
+open class BinaryWorkflowStateStorage(
     private val storage: KeyValueStorage,
-    private val cache: KeyValueCache<WorkflowState>
-) : WorkflowStateStorage {
-
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+) : WorkflowStateStorage, Flushable by storage {
 
     override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
         val key = getWorkflowStateKey(workflowId)
-        val workflowState = cache.getValue(key) ?: run {
-            logger.debug("workflowId {} - getStateFn - absent from cache, get from storage", workflowId)
-            storage.getValue(key)
-                ?.let { WorkflowState.fromByteArray(it) }
-                ?.also { cache.putValue(key, it) }
-        }
-        logger.debug("workflowId {} - getState {}", workflowId, workflowState)
-
-        return workflowState
+        return storage.getValue(key)
+            ?.let { WorkflowState.fromByteArray(it) }
     }
 
     override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
         val key = getWorkflowStateKey(workflowId)
-        cache.putValue(key, workflowState)
         storage.putValue(key, workflowState.toByteArray())
-        logger.debug("workflowId {} - updateState {}", workflowId, workflowState)
     }
 
     override suspend fun delState(workflowId: WorkflowId) {
         val key = getWorkflowStateKey(workflowId)
-        cache.delValue(key)
         storage.delValue(key)
-        logger.debug("workflowId {} - deleteState", workflowId)
-    }
-
-    /*
-    Use for tests
-     */
-    fun flush() {
-        if (storage is Flushable) {
-            storage.flush()
-        } else {
-            throw Exception("Storage non flushable")
-        }
-        if (cache is Flushable) {
-            cache.flush()
-        } else {
-            throw Exception("Cache non flushable")
-        }
     }
 
     private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"

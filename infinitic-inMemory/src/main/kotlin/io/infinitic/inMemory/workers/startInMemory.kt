@@ -25,7 +25,6 @@
 
 package io.infinitic.inMemory.workers
 
-import io.infinitic.cache.no.NoCache
 import io.infinitic.client.Client
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
@@ -59,7 +58,7 @@ import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import io.infinitic.workflows.engine.input.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
-import io.infinitic.workflows.engine.storage.states.CachedKeyWorkflowStateStorage
+import io.infinitic.workflows.engine.storage.states.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -137,7 +136,7 @@ fun CoroutineScope.startInMemory(
 
     startWorkflowEngine(
         "in-memory-workflow-engine",
-        CachedKeyWorkflowStateStorage(keyValueStorage, NoCache()),
+        BinaryWorkflowStateStorage(keyValueStorage),
         WorkflowEngineInputChannels(
             workflowEngineCommandsChannel,
             workflowEngineEventsChannel,

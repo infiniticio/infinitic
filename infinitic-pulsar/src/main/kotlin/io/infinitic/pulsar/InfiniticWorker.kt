@@ -27,7 +27,6 @@ package io.infinitic.pulsar
 
 import io.infinitic.common.storage.keySet.CachedLoggedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
-import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.pulsar.config.WorkerConfig
 import io.infinitic.pulsar.config.cache.getKeySetCache
 import io.infinitic.pulsar.config.cache.getKeyValueCache
@@ -195,8 +194,11 @@ class InfiniticWorker(
     ) {
         config.workflowEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<WorkflowState>(config)
+                // storage decorated by a cache and a logger
+                val storage = CachedLoggedKeyValueStorage(
+                    it.stateCacheOrDefault.getKeyValueCache(config),
+                    it.stateStorage!!.getKeyValueStorage(config)
+                )
                 print(
                     "Workflow engine".padEnd(25) + ": starting ${it.consumers} instances... " +
                         "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
@@ -208,8 +210,7 @@ class InfiniticWorker(
                         pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName, counter),
                         pulsarOutputs.workflowEngineOutput,
                         pulsarOutputs.sendToWorkflowEngineDeadLetters,
-                        keyValueStorage,
-                        keyValueCache
+                        storage
                     )
                 }
                 println(" done")

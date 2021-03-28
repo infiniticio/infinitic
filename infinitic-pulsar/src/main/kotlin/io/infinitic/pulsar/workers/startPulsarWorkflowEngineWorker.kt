@@ -25,18 +25,16 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import io.infinitic.workflows.engine.storage.states.CachedKeyWorkflowStateStorage
+import io.infinitic.workflows.engine.storage.states.BinaryWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
@@ -73,11 +71,10 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
     workflowEngineOutput: WorkflowEngineOutput,
     sendToWorkflowEngineDeadLetters: SendToWorkflowEngine,
     keyValueStorage: KeyValueStorage,
-    keyValueCache: KeyValueCache<WorkflowState>
 ) = launch(singleThreadedContext("$WORKFLOW_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val workflowEngine = WorkflowEngine(
-        CachedKeyWorkflowStateStorage(keyValueStorage, keyValueCache),
+        BinaryWorkflowStateStorage(keyValueStorage),
         workflowEngineOutput
     )
 

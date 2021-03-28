@@ -26,6 +26,8 @@
 package io.infinitic.inMemory
 
 import io.infinitic.client.Client
+import io.infinitic.common.storage.keySet.LoggedKeySetStorage
+import io.infinitic.common.storage.keyValue.LoggedKeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryClientOutput
 import io.infinitic.inMemory.workers.startInMemory
@@ -76,8 +78,8 @@ class InfiniticClient private constructor(
         with(CoroutineScope(Dispatchers.IO)) {
             startInMemory(
                 taskExecutorRegister,
-                InMemoryKeyValueStorage(),
-                InMemoryKeySetStorage(),
+                LoggedKeyValueStorage(InMemoryKeyValueStorage()),
+                LoggedKeySetStorage(InMemoryKeySetStorage()),
                 this@InfiniticClient,
                 tagEngineCommandsChannel,
                 taskEngineCommandsChannel,

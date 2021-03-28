@@ -50,15 +50,13 @@ import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.output.LoggedWorkflowEngineOutput
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import io.infinitic.workflows.engine.storage.states.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
 import org.slf4j.LoggerFactory
 
 class WorkflowEngine(
-    storage: WorkflowStateStorage,
+    val storage: WorkflowStateStorage,
     output: WorkflowEngineOutput
 ) {
-    private val storage = LoggedWorkflowStateStorage(storage)
     private val output = LoggedWorkflowEngineOutput(output)
 
     private val logger = LoggerFactory.getLogger(javaClass)

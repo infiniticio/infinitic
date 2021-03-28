@@ -25,7 +25,6 @@
 
 package io.infinitic.workflows.tests
 
-import io.infinitic.cache.no.NoCache
 import io.infinitic.client.Client
 import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
@@ -61,7 +60,7 @@ import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.register
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.output.FunctionsWorkflowEngineOutput
-import io.infinitic.workflows.engine.storage.states.CachedKeyWorkflowStateStorage
+import io.infinitic.workflows.engine.storage.states.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.tests.tasks.TaskAImpl
 import io.infinitic.workflows.tests.workflows.Obj1
@@ -88,7 +87,7 @@ val keyValueStorage = InMemoryKeyValueStorage()
 val keySetStorage = InMemoryKeySetStorage()
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
-private val workflowStateStorage = CachedKeyWorkflowStateStorage(keyValueStorage, NoCache())
+private val workflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
 private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(keyValueStorage)
 private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(keyValueStorage)
 
@@ -699,7 +698,6 @@ fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) {
 }
 
 fun CoroutineScope.init() {
-    workflowStateStorage.flush()
     keyValueStorage.flush()
     keySetStorage.flush()
 
