@@ -44,4 +44,8 @@ class RedisKeySetStorage(config: Redis) : KeySetStorage {
 
     override suspend fun removeFromSet(key: String, value: ByteArray) =
         pool.resource.use { it.srem(key.toByteArray(), value); Unit }
+
+    override fun flush() {
+        // flush is used in tests, no actual implementation needed here
+    }
 }

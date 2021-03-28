@@ -25,7 +25,9 @@
 
 package io.infinitic.common.storage.keyValue
 
-interface KeyValueCache<T> {
+import io.infinitic.common.storage.Flushable
+
+interface KeyValueCache<T> : Flushable {
     fun getValue(key: String): T?
     fun putValue(key: String, value: T)
     fun delValue(key: String)

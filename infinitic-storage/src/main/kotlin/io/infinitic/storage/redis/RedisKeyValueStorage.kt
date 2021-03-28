@@ -44,4 +44,8 @@ class RedisKeyValueStorage(config: Redis) : KeyValueStorage {
 
     override suspend fun delValue(key: String) =
         pool.resource.use { it.del(key.toByteArray()); Unit }
+
+    override fun flush() {
+        // flush is used in tests, no actual implementation needed here
+    }
 }

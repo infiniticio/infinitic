@@ -23,12 +23,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.global.engine.storage
+package io.infinitic.common.storage.keySet
 
-import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-typealias GetMonitoringGlobalState = suspend () -> MonitoringGlobalState?
+class LoggedKeySetCache<T>(
+    val cache: KeySetCache<T>
+) : KeySetCache<T> by cache {
 
-typealias PutMonitoringGlobalState = suspend (MonitoringGlobalState) -> Unit
+    val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
 
-typealias DelMonitoringGlobalState = suspend () -> Unit
+    override fun getSet(key: String): Set<T>? {
+        val value = cache.getSet(key)
+        logger.debug("key {} - getSet.size {}", key, value?.size)
+
+        return value
+    }
+
+    override fun setSet(key: String, value: Set<T>) {
+        logger.debug("key {} - setSet.size {}", key, value.size)
+        cache.setSet(key, value)
+    }
+
+    override fun addToSet(key: String, value: T) {
+        logger.debug("key {} - addToSet {}", key, value)
+        cache.addToSet(key, value)
+    }
+    override fun removeFromSet(key: String, value: T) {
+        logger.debug("key {} - removeFromSet {}", key, value)
+        cache.removeFromSet(key, value)
+    }
+}

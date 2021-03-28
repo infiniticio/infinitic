@@ -27,14 +27,12 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
-import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
-import io.infinitic.monitoring.perName.engine.storage.KeyCachedMonitoringPerNameStateStorage
+import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.pulsar.InfiniticWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -70,11 +68,10 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     monitoringPerNameOutput: MonitoringPerNameOutput,
     sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName,
     keyValueStorage: KeyValueStorage,
-    keyValueCache: KeyValueCache<MonitoringPerNameState>
 ) = launch(singleThreadedContext("$MONITORING_PER_NAME_THREAD_NAME-$consumerCounter")) {
 
     val monitoringPerNameEngine = MonitoringPerNameEngine(
-        KeyCachedMonitoringPerNameStateStorage(keyValueStorage, keyValueCache),
+        BinaryMonitoringPerNameStateStorage(keyValueStorage),
         monitoringPerNameOutput
     )
 

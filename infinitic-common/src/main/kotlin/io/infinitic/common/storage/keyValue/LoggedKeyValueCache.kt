@@ -23,39 +23,31 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.global.engine.storage
+package io.infinitic.common.storage.keyValue
 
-import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-/**
- * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-class LoggedMonitoringGlobalStateStorage(
-    val storage: MonitoringGlobalStateStorage
-) : MonitoringGlobalStateStorage by storage {
+class LoggedKeyValueCache<T>(
+    val cache: KeyValueCache<T>
+) : KeyValueCache<T> by cache {
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun getState(): MonitoringGlobalState? {
-        val taskState = storage.getState()
-        logger.debug("getState {}", taskState)
+    override fun getValue(key: String): T? {
+        val value = cache.getValue(key)
+        logger.debug("key {} - getValue {}", key, value)
 
-        return taskState
+        return value
     }
 
-    override suspend fun putState(state: MonitoringGlobalState) {
-        logger.debug("putState {}", state)
-        storage.putState(state)
+    override fun putValue(key: String, value: T) {
+        logger.debug("key {} - putValue {}", key, value)
+        cache.putValue(key, value)
     }
-
-    override suspend fun delState() {
-        logger.debug("deleteState")
-        storage.delState()
+    override fun delValue(key: String) {
+        logger.debug("key {} - delValue", key)
+        cache.delValue(key)
     }
 }

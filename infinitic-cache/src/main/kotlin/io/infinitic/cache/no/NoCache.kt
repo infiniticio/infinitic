@@ -44,15 +44,15 @@ class NoCache<T>() : KeyValueCache<T>, KeySetCache<T>, KeyCounterCache, Flushabl
         // nothing
     }
 
-    override suspend fun getCounter(key: String): Long? {
+    override fun getCounter(key: String): Long? {
         return null
     }
 
-    override suspend fun setCounter(key: String, amount: Long) {
+    override fun setCounter(key: String, amount: Long) {
         // nothing
     }
 
-    override suspend fun incrCounter(key: String, amount: Long) {
+    override fun incrCounter(key: String, amount: Long) {
         // nothing
     }
 

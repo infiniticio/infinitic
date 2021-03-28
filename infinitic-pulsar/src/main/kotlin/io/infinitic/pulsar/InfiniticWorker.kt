@@ -25,9 +25,11 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.pulsar.config.WorkerConfig
+import io.infinitic.pulsar.config.cache.getKeyValueBinaryCache
 import io.infinitic.pulsar.config.cache.getKeyValueCache
 import io.infinitic.pulsar.config.data.Mode
 import io.infinitic.pulsar.config.loaders.loadConfigFromFile
@@ -182,6 +184,11 @@ class InfiniticWorker(
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
                 val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
+                // storage decorated by the cache
+                val storage = CachedLoggedKeyValueStorage(
+                    it.stateCacheOrDefault.getKeyValueBinaryCache(config),
+                    it.stateStorage!!.getKeyValueStorage(config)
+                )
                 repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
@@ -189,8 +196,7 @@ class InfiniticWorker(
                         pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName, counter),
                         pulsarOutputs.monitoringPerNameOutput,
                         pulsarOutputs.sendToMonitoringPerNameDeadLetters,
-                        keyValueStorage,
-                        it.stateCacheOrDefault.getKeyValueCache(config)
+                        storage
                     )
                 }
 
@@ -198,8 +204,7 @@ class InfiniticWorker(
                 startPulsarMonitoringGlobalWorker(
                     pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName),
                     pulsarOutputs.sendToMonitoringGlobalDeadLetters,
-                    keyValueStorage,
-                    it.stateCacheOrDefault.getKeyValueCache(config)
+                    storage
                 )
             }
         }

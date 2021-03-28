@@ -28,10 +28,13 @@ package io.infinitic.common.storage.keySet
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class CachedKeySetStorage(
-    val cache: KeySetCache<ByteArray>,
-    val storage: KeySetStorage
+class CachedLoggedKeySetStorage(
+    cache: KeySetCache<ByteArray>,
+    storage: KeySetStorage
 ) : KeySetStorage {
+
+    val cache = LoggedKeySetCache(cache)
+    val storage = LoggedKeySetStorage(storage)
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -50,5 +53,10 @@ class CachedKeySetStorage(
     override suspend fun removeFromSet(key: String, value: ByteArray) {
         cache.removeFromSet(key, value)
         storage.removeFromSet(key, value)
+    }
+
+    override fun flush() {
+        storage.flush()
+        cache.flush()
     }
 }

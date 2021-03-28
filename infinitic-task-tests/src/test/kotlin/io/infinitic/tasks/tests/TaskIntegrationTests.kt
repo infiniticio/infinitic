@@ -43,10 +43,10 @@ import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.KeyCachedMonitoringGlobalStateStorage
+import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.output.FunctionsMonitoringPerNameOutput
-import io.infinitic.monitoring.perName.engine.storage.KeyCachedMonitoringPerNameStateStorage
+import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
@@ -79,8 +79,8 @@ private val tagStateStorage = CachedKeyTagStateStorage(
     NoCache()
 )
 private val taskStateStorage = CachedKeyTaskStateStorage(InMemoryKeyValueStorage(), NoCache())
-private val monitoringPerNameStateStorage = KeyCachedMonitoringPerNameStateStorage(InMemoryKeyValueStorage(), NoCache())
-private val monitoringGlobalStateStorage = KeyCachedMonitoringGlobalStateStorage(InMemoryKeyValueStorage(), NoCache())
+private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(InMemoryKeyValueStorage())
+private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(InMemoryKeyValueStorage())
 
 private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine

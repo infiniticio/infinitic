@@ -23,27 +23,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis
+package io.infinitic.common.storage.keyCounter
 
-import io.infinitic.common.storage.keyCounter.KeyCounterStorage
-import redis.clients.jedis.JedisPool
-import redis.clients.jedis.JedisPoolConfig
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-class RedisKeyCounterStorage(config: Redis) : KeyCounterStorage {
-    private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
+class CachedLoggedKeyCounterStorage(
+    cache: KeyCounterCache,
+    storage: KeyCounterStorage
+) : KeyCounterStorage {
 
-    init {
-        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+    val cache = LoggedKeyCounterCache(cache)
+    val storage = LoggedKeyCounterStorage(storage)
+
+    val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    override suspend fun getCounter(key: String) = cache.getCounter(key)
+        ?: run {
+            logger.debug("key {} - getCounter - absent from cache, get from storage", key)
+            storage.getCounter(key)
+                .also { cache.setCounter(key, it) }
+        }
+
+    override suspend fun incrCounter(key: String, amount: Long) {
+        cache.incrCounter(key, amount)
+        storage.incrCounter(key, amount)
     }
 
-    override suspend fun getCounter(key: String): Long =
-        pool.resource.use { it.get(key.toByteArray()) }
-            ?.let { String(it) }?.toLong() ?: 0L
-
-    override suspend fun incrCounter(key: String, amount: Long) =
-        pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
-
     override fun flush() {
-        // flush is used in tests, no actual implementation needed here
+        storage.flush()
+        cache.flush()
     }
 }

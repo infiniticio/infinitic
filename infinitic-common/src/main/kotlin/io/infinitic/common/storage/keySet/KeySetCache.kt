@@ -25,7 +25,9 @@
 
 package io.infinitic.common.storage.keySet
 
-interface KeySetCache<T> {
+import io.infinitic.common.storage.Flushable
+
+interface KeySetCache<T> : Flushable {
     fun getSet(key: String): Set<T>?
     fun setSet(key: String, value: Set<T>)
     fun addToSet(key: String, value: T)

@@ -35,3 +35,8 @@ fun <T> StateCache.getKeyValueCache(workerConfig: WorkerConfig): KeyValueCache<T
     StateCache.none -> NoCache()
     StateCache.caffeine -> CaffeineKeyValueCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
 }
+
+fun StateCache.getKeyValueBinaryCache(workerConfig: WorkerConfig): KeyValueCache<ByteArray> = when (this) {
+    StateCache.none -> NoCache<ByteArray>()
+    StateCache.caffeine -> CaffeineKeyValueCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
+}

@@ -27,60 +27,31 @@ package io.infinitic.monitoring.global.engine.storage
 
 import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-class KeyCachedMonitoringGlobalStateStorage(
+class BinaryMonitoringGlobalStateStorage(
     private val storage: KeyValueStorage,
-    private val cache: KeyValueCache<MonitoringGlobalState>
-) : MonitoringGlobalStateStorage {
-
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+) : MonitoringGlobalStateStorage, Flushable by storage {
 
     override suspend fun getState(): MonitoringGlobalState? {
         val key = getMonitoringGlobalStateKey()
-        return cache.getValue(key) ?: run {
-            logger.debug("getState - absent from cache, get from storage")
-            storage.getValue(key)
-                ?.let { MonitoringGlobalState.fromByteArray(it) }
-                ?.also { cache.putValue(key, it) }
-        }
+        return storage.getValue(key)
+            ?.let { MonitoringGlobalState.fromByteArray(it) }
     }
 
     override suspend fun putState(state: MonitoringGlobalState) {
         val key = getMonitoringGlobalStateKey()
-        cache.putValue(key, state)
         storage.putValue(key, state.toByteArray())
     }
 
     override suspend fun delState() {
         val key = getMonitoringGlobalStateKey()
-        cache.delValue(key)
         storage.delValue(key)
     }
 
     private fun getMonitoringGlobalStateKey() = "monitoringGlobal.state"
-
-    /*
-    Used for tests
-     */
-    fun flush() {
-        if (storage is Flushable) {
-            storage.flush()
-        } else {
-            throw RuntimeException("Storage non flushable")
-        }
-        if (cache is Flushable) {
-            cache.flush()
-        } else {
-            throw Exception("Cache non flushable")
-        }
-    }
 }

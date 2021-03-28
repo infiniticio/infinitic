@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory
 
 class LoggedKeyCounterStorage(
     val storage: KeyCounterStorage
-) : KeyCounterStorage {
+) : KeyCounterStorage by storage {
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)

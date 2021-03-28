@@ -23,81 +23,82 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.global.engine.storage
+package io.infinitic.monitoring.perName.engine.storage
 
-import io.infinitic.cache.no.NoCache
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
+import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.tasks.data.TaskName
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.slot
 
-class MonitoringGlobalKeyValueStorageTests : ShouldSpec({
-    context("MonitoringGlobalStateKeyValueStorage.getState") {
+class BinaryMonitoringPerNameStateStorageTests : ShouldSpec({
+    context("BinaryMonitoringPerNameStateStorage.getState") {
+
         should("return null when state does not exist") {
-            // mocking
+            // given
+            val taskName = TaskName(TestFactory.random(String::class))
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getValue(any()) } returns null
-            // given
-            val stateStorage = KeyCachedMonitoringGlobalStateStorage(storage, NoCache())
             // when
-            val state = stateStorage.getState()
+            val stateStorage = BinaryMonitoringPerNameStateStorage(storage)
+            val state = stateStorage.getState(taskName)
             // then
-            coVerify(exactly = 1) { storage.getValue("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.getValue("monitoringPerName.state.$taskName") }
             confirmVerified(storage)
             state shouldBe null
         }
 
-        should("MonitoringGlobalStateKeyValueStorage: return state when state exists") {
-            // mocking
-            val storage = mockk<KeyValueStorage>()
-            val stateIn = TestFactory.random(MonitoringGlobalState::class)
-            coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
+        should("return state when state exists") {
             // given
-            val stateStorage = KeyCachedMonitoringGlobalStateStorage(storage, NoCache())
+            val stateIn = TestFactory.random<MonitoringPerNameState>()
+            val storage = mockk<KeyValueStorage>()
+            coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
             // when
-            val stateOut = stateStorage.getState()
+            val stateStorage = BinaryMonitoringPerNameStateStorage(storage)
+            val stateOut = stateStorage.getState(stateIn.taskName)
             // then
-            coVerify(exactly = 1) { storage.getValue("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.getValue("monitoringPerName.state.${stateIn.taskName}") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
     }
 
-    context("MonitoringGlobalStateKeyValueStorage.updateState") {
-        should("record state") {
-            // mocking
-            val storage = mockk<KeyValueStorage>()
-            val stateIn = TestFactory.random(MonitoringGlobalState::class)
-            val binSlot = slot<ByteArray>()
+    context("BinaryMonitoringPerNameStateStorage.putState") {
 
-            coEvery { storage.putValue("monitoringGlobal.state", capture(binSlot)) } returns Unit
+        should("update state") {
             // given
-            val stateStorage = KeyCachedMonitoringGlobalStateStorage(storage, NoCache())
+            val state = TestFactory.random<MonitoringPerNameState>()
+            val storage = mockk<KeyValueStorage>()
+            val binSlot = slot<ByteArray>()
+            coEvery { storage.putValue("monitoringPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
             // when
-            stateStorage.putState(stateIn)
+            val stateStorage = BinaryMonitoringPerNameStateStorage(storage)
+            stateStorage.putState(state.taskName, state)
             // then
             binSlot.isCaptured shouldBe true
-            MonitoringGlobalState.fromByteArray(binSlot.captured) shouldBe stateIn
+            MonitoringPerNameState.fromByteArray(binSlot.captured) shouldBe state
         }
     }
 
-    context("MonitoringGlobalStateKeyValueStorage.deleteState") {
+    context("BinaryMonitoringPerNameStateStorage.delState") {
         should("delete state") {
-            // mocking
-            val storage = mockk<KeyValueStorage>()
-            coEvery { storage.delValue(any()) } returns Unit
             // given
-            val stageStorage = KeyCachedMonitoringGlobalStateStorage(storage, NoCache())
+            val state = TestFactory.random(MonitoringPerNameState::class)
+            val storage = mockk<KeyValueStorage>()
+            coEvery { storage.delValue(any()) } just runs
             // when
-            stageStorage.delState()
+            val stateStorage = BinaryMonitoringPerNameStateStorage(storage)
+            stateStorage.delState(state.taskName)
             // then
-            coVerify(exactly = 1) { storage.delValue("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.delValue("monitoringPerName.state.${state.taskName}") }
             confirmVerified(storage)
         }
     }

@@ -27,13 +27,11 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
 import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.KeyCachedMonitoringGlobalStateStorage
+import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineScope
@@ -68,12 +66,11 @@ private fun logError(message: MonitoringGlobalMessage, e: Exception) = logger.er
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope>,
     sendToMonitoringGlobalDeadLetters: SendToMonitoringGlobal,
-    keyValueStorage: KeyValueStorage,
-    keyValueCache: KeyValueCache<MonitoringGlobalState>
+    keyValueStorage: KeyValueStorage
 ) = launch(singleThreadedContext(MONITORING_GLOBAL_THREAD_NAME)) {
 
     val monitoringGlobalEngine = MonitoringGlobalEngine(
-        KeyCachedMonitoringGlobalStateStorage(keyValueStorage, keyValueCache)
+        BinaryMonitoringGlobalStateStorage(keyValueStorage)
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =

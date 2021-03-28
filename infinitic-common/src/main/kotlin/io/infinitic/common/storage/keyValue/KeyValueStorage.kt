@@ -25,7 +25,9 @@
 
 package io.infinitic.common.storage.keyValue
 
-interface KeyValueStorage {
+import io.infinitic.common.storage.Flushable
+
+interface KeyValueStorage : Flushable {
     suspend fun getValue(key: String): ByteArray?
     suspend fun putValue(key: String, value: ByteArray)
     suspend fun delValue(key: String)

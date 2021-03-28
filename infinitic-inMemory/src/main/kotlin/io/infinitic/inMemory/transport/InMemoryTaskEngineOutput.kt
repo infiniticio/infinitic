@@ -40,16 +40,15 @@ import io.infinitic.tasks.engine.output.TaskEngineOutput
 import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class InMemoryTaskEngineOutput(
     private val scope: CoroutineScope,
-    private val clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
-    private val tagEventsChannel: Channel<TagEngineMessageToProcess>,
-    private val taskEventsChannel: Channel<TaskEngineMessageToProcess>,
+    private val clientResponsesChannel: SendChannel<ClientResponseMessageToProcess>,
+    private val tagEventsChannel: SendChannel<TagEngineMessageToProcess>,
+    private val taskEventsChannel: SendChannel<TaskEngineMessageToProcess>,
     private val executorChannel: SendChannel<TaskExecutorMessageToProcess>,
     private val monitoringPerNameChannel: SendChannel<MonitoringPerNameMessageToProcess>,
     private val workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>

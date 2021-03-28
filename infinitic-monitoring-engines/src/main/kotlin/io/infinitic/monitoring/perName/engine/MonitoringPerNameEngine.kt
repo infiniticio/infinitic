@@ -32,19 +32,18 @@ import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.monitoring.perName.engine.output.LoggedMonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
-import io.infinitic.monitoring.perName.engine.storage.LoggedMonitoringPerNameStateStorage
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class MonitoringPerNameEngine(
-    storage: MonitoringPerNameStateStorage,
+    val storage: MonitoringPerNameStateStorage,
     output: MonitoringPerNameOutput
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    private val storage = LoggedMonitoringPerNameStateStorage(storage)
+//    private val storage = LoggedMonitoringPerNameStateStorage(storage)
     private val output = LoggedMonitoringPerNameOutput(output)
 
     suspend fun handle(message: MonitoringPerNameMessage) {

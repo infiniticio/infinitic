@@ -31,13 +31,13 @@ import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class InMemoryTaskExecutorOutput(
     private val scope: CoroutineScope,
-    private val taskEventChannel: Channel<TaskEngineMessageToProcess>
+    private val taskEventChannel: SendChannel<TaskEngineMessageToProcess>
 ) : TaskExecutorOutput {
 
     override val sendToTaskEngineFn: SendToTaskEngine = { msg: TaskEngineMessage, after: MillisDuration ->

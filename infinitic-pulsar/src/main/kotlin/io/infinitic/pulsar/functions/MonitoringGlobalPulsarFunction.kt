@@ -28,8 +28,9 @@ package io.infinitic.pulsar.functions
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.KeyCachedMonitoringGlobalStateStorage
+import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
@@ -51,6 +52,12 @@ class MonitoringGlobalPulsarFunction : Function<MonitoringGlobalEnvelope, Void> 
     }
 
     internal fun getMonitoringGlobalEngine(context: Context) = MonitoringGlobalEngine(
-        KeyCachedMonitoringGlobalStateStorage(context.keyValueStorage(), CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)))
+        BinaryMonitoringGlobalStateStorage(
+            // context storage decorated with a 1h cache
+            CachedLoggedKeyValueStorage(
+                CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
+                context.keyValueStorage()
+            )
+        )
     )
 }

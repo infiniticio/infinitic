@@ -33,13 +33,12 @@ import io.infinitic.tags.engine.output.TagEngineOutput
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
 class InMemoryTagEngineOutput(
     private val scope: CoroutineScope,
-    private val clientResponsesChannel: Channel<ClientResponseMessageToProcess>,
+    private val clientResponsesChannel: SendChannel<ClientResponseMessageToProcess>,
     private val taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
     private val workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : TagEngineOutput {

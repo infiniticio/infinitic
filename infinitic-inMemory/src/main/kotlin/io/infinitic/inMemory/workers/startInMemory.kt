@@ -38,11 +38,11 @@ import io.infinitic.inMemory.transport.InMemoryTaskExecutorOutput
 import io.infinitic.inMemory.transport.InMemoryWorkflowEngineOutput
 import io.infinitic.monitoring.global.engine.input.MonitoringGlobalInputChannels
 import io.infinitic.monitoring.global.engine.input.MonitoringGlobalMessageToProcess
-import io.infinitic.monitoring.global.engine.storage.KeyCachedMonitoringGlobalStateStorage
+import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
 import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameInputChannels
 import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameMessageToProcess
-import io.infinitic.monitoring.perName.engine.storage.KeyCachedMonitoringPerNameStateStorage
+import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
 import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
 import io.infinitic.tags.engine.input.TagEngineInputChannels
@@ -162,7 +162,7 @@ fun CoroutineScope.startInMemory(
 
     startMonitoringPerNameEngine(
         "in-memory-monitoring-per-name-engine",
-        KeyCachedMonitoringPerNameStateStorage(keyValueStorage, NoCache()),
+        BinaryMonitoringPerNameStateStorage(keyValueStorage),
         MonitoringPerNameInputChannels(
             monitoringPerNameChannel,
             logChannel
@@ -174,7 +174,7 @@ fun CoroutineScope.startInMemory(
 
     startMonitoringGlobalEngine(
         "in-memory-monitoring-global-engine",
-        KeyCachedMonitoringGlobalStateStorage(keyValueStorage, NoCache()),
+        BinaryMonitoringGlobalStateStorage(keyValueStorage),
         MonitoringGlobalInputChannels(
             monitoringGlobalChannel,
             logChannel
