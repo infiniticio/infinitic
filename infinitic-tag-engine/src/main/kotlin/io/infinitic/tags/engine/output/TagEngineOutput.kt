@@ -30,9 +30,9 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 
 interface TagEngineOutput {
-    suspend fun sendToClientResponse(clientResponseMessage: ClientResponseMessage)
+    suspend fun sendToClientResponse(message: ClientResponseMessage)
 
-    suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage)
+    suspend fun sendToTaskEngine(message: TaskEngineMessage)
 
-    suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage)
+    suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage)
 }

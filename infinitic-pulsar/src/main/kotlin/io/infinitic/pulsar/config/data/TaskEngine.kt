@@ -42,7 +42,7 @@ data class TaskEngine(
         get() = consumers ?: 1
 
     val stateCacheOrDefault: StateCache
-        get() = stateCache ?: StateCache.caffeine
+        get() = stateCache ?: StateCache.none
 
     init {
         consumers?.let {

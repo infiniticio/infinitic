@@ -29,28 +29,34 @@ import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetCache
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
 class CaffeineKeySetCache<S>(config: CaffeineConfig) : KeySetCache<S>, Flushable {
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
     private var caffeine: Cache<String, Set<S>> =
         Caffeine.newBuilder().setup(config).build()
 
-    override fun getSet(key: String): Set<S>? = caffeine.getIfPresent(key)
+    override fun getSet(key: String): Set<S>? {
+        return caffeine.get(key) { null }
+    }
 
     override fun setSet(key: String, value: Set<S>) {
         caffeine.put(key, value)
     }
 
     override fun addToSet(key: String, value: S) {
-        getSet(key)?.also {
-            caffeine.put(key, it.toMutableSet().plus(value))
-        }
+        getSet(key)
+            ?.also { caffeine.put(key, it.toMutableSet().plus(value)) }
     }
 
     override fun removeFromSet(key: String, value: S) {
-        getSet(key)?.also {
-            caffeine.put(key, it.toMutableSet().minus(value))
-        }
+        getSet(key)
+            ?.also { caffeine.put(key, it.toMutableSet().minus(value)) }
     }
 
     override fun flush() {

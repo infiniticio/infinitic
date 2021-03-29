@@ -59,8 +59,7 @@ class BinaryTagStateStorage(
     override suspend fun getIds(tag: Tag, name: Name): Set<UUID> {
         val key = getTagSetIdsKey(tag, name)
         return keySetStorage.getSet(key)
-            ?.map { it.toUUID() }?.toSet()
-            ?: setOf()
+            .map { it.toUUID() }.toSet()
     }
 
     override suspend fun addId(tag: Tag, name: Name, id: UUID) {

@@ -35,9 +35,9 @@ class LoggedKeySetStorage(
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun getSet(key: String): Set<ByteArray>? {
+    override suspend fun getSet(key: String): Set<ByteArray> {
         val value = storage.getSet(key)
-        logger.debug("key {} - getSet.size {}", key, value?.size)
+        logger.debug("key {} - getSet.size {}", key, value.size)
 
         return value
     }

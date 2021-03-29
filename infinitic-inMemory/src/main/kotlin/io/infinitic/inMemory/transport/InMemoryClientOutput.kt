@@ -45,29 +45,29 @@ class InMemoryClientOutput(
 ) : ClientOutput {
     override val clientName = ClientName("client: inMemory")
 
-    override suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage) {
+    override suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage) {
         with(CoroutineScope(Dispatchers.IO)) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             launch {
-                workflowCommandsChannel.send(InMemoryMessageToProcess(workflowEngineMessage))
+                workflowCommandsChannel.send(InMemoryMessageToProcess(message))
             }
         }
     }
 
-    override suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage) {
+    override suspend fun sendToTaskEngine(message: TaskEngineMessage) {
         with(CoroutineScope(Dispatchers.IO)) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             launch {
-                taskCommandsChannel.send(InMemoryMessageToProcess(taskEngineMessage))
+                taskCommandsChannel.send(InMemoryMessageToProcess(message))
             }
         }
     }
 
-    override suspend fun sendToTagEngine(tagEngineMessage: TagEngineMessage) {
+    override suspend fun sendToTagEngine(message: TagEngineMessage) {
         with(CoroutineScope(Dispatchers.IO)) {
             // As it's a back loop, we trigger it asynchronously to avoid deadlocks
             launch {
-                tagCommandsChannel.send(InMemoryMessageToProcess(tagEngineMessage))
+                tagCommandsChannel.send(InMemoryMessageToProcess(message))
             }
         }
     }

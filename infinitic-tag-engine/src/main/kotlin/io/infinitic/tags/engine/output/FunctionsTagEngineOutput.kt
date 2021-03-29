@@ -39,12 +39,12 @@ class FunctionsTagEngineOutput(
     private val sendToWorkflowEngineFn: SendToWorkflowEngine
 ) : TagEngineOutput {
 
-    override suspend fun sendToClientResponse(clientResponseMessage: ClientResponseMessage) =
-        sendToClientResponseFn(clientResponseMessage)
+    override suspend fun sendToClientResponse(message: ClientResponseMessage) =
+        sendToClientResponseFn(message)
 
-    override suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage) =
-        sendToTaskEngineFn(taskEngineMessage, MillisDuration(0))
+    override suspend fun sendToTaskEngine(message: TaskEngineMessage) =
+        sendToTaskEngineFn(message, MillisDuration(0))
 
-    override suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage) =
-        sendToWorkflowEngineFn(workflowEngineMessage, MillisDuration(0))
+    override suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage) =
+        sendToWorkflowEngineFn(message, MillisDuration(0))
 }

@@ -39,16 +39,16 @@ class CachedLoggedKeySetStorage(
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun getSet(key: String): Set<ByteArray>? = cache.getSet(key)
+    override suspend fun getSet(key: String): Set<ByteArray> = cache.getSet(key)
         ?: run {
             logger.debug("key {} - getSet - absent from cache, get from storage", key)
             storage.getSet(key)
-                ?.also { cache.setSet(key, it) }
+                .also { cache.setSet(key, it) }
         }
 
     override suspend fun addToSet(key: String, value: ByteArray) {
-        cache.addToSet(key, value)
         storage.addToSet(key, value)
+        cache.addToSet(key, value)
     }
     override suspend fun removeFromSet(key: String, value: ByteArray) {
         cache.removeFromSet(key, value)

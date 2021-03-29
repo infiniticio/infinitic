@@ -38,18 +38,18 @@ class LoggedTagEngineOutput(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun sendToClientResponse(clientResponseMessage: ClientResponseMessage) {
-        logger.debug("sendToClientResponse {}", clientResponseMessage)
-        taskEngineOutput.sendToClientResponse(clientResponseMessage)
+    override suspend fun sendToClientResponse(message: ClientResponseMessage) {
+        logger.debug("sendToClientResponse {}", message)
+        taskEngineOutput.sendToClientResponse(message)
     }
 
-    override suspend fun sendToTaskEngine(taskEngineMessage: TaskEngineMessage) {
-        logger.debug("sendToTaskEngine {}", taskEngineMessage)
-        taskEngineOutput.sendToTaskEngine(taskEngineMessage)
+    override suspend fun sendToTaskEngine(message: TaskEngineMessage) {
+        logger.debug("sendToTaskEngine {}", message)
+        taskEngineOutput.sendToTaskEngine(message)
     }
 
-    override suspend fun sendToWorkflowEngine(workflowEngineMessage: WorkflowEngineMessage) {
-        logger.debug("sendToWorkflowEngine {}", workflowEngineMessage)
-        taskEngineOutput.sendToWorkflowEngine(workflowEngineMessage)
+    override suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage) {
+        logger.debug("sendToWorkflowEngine {}", message)
+        taskEngineOutput.sendToWorkflowEngine(message)
     }
 }

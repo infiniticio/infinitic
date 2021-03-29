@@ -30,24 +30,29 @@ import io.infinitic.common.storage.keySet.KeySetStorage
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryKeySetStorage() : KeySetStorage, Flushable {
-    private val setStorage = ConcurrentHashMap<String, MutableSet<ByteArray>>()
+    private val storage = ConcurrentHashMap<String, MutableSet<ByteArray>>()
 
-    override suspend fun getSet(key: String) = setStorage[key]
+    override suspend fun getSet(key: String): MutableSet<ByteArray> {
+        return storage[key]
+            ?: run {
+                // create empty set
+                val set = mutableSetOf<ByteArray>()
+                storage[key] = set
+                set
+            }
+    }
 
     override suspend fun addToSet(key: String, value: ByteArray) {
-        getSet(key)
-            ?.add(value)
-            // create set if null
-            ?: run { setStorage[key] = mutableSetOf(value) }
+        getSet(key).add(value)
     }
 
     override suspend fun removeFromSet(key: String, value: ByteArray) {
-        getSet(key)?.remove(value)
+        getSet(key).remove(value)
         // clean key if now empty
-        if (getSet(key)?.isEmpty() == true) setStorage.remove(key)
+        if (getSet(key).isEmpty()) storage.remove(key)
     }
 
     override fun flush() {
-        setStorage.clear()
+        storage.clear()
     }
 }

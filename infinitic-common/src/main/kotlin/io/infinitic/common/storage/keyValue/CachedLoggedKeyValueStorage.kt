@@ -36,8 +36,8 @@ open class CachedLoggedKeyValueStorage(
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    val cache = LoggedKeyValueCache(cache)
     val storage = LoggedKeyValueStorage(storage)
+    val cache = LoggedKeyValueCache(cache)
 
     override suspend fun getValue(key: String) = cache.getValue(key)
         ?: run {
@@ -47,17 +47,17 @@ open class CachedLoggedKeyValueStorage(
         }
 
     override suspend fun putValue(key: String, value: ByteArray) {
-        cache.putValue(key, value)
         storage.putValue(key, value)
+        cache.putValue(key, value)
     }
 
     override suspend fun delValue(key: String) {
-        cache.delValue(key)
         storage.delValue(key)
+        cache.delValue(key)
     }
 
     override fun flush() {
-        storage.flush()
         cache.flush()
+        storage.flush()
     }
 }
