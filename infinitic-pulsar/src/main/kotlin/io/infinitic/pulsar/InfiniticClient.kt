@@ -26,12 +26,12 @@
 package io.infinitic.pulsar
 
 import io.infinitic.client.output.ClientOutput
+import io.infinitic.config.ClientConfig
+import io.infinitic.config.data.Transport
+import io.infinitic.config.loaders.loadConfigFromFile
+import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.inMemory.transport.InMemoryClientOutput
 import io.infinitic.inMemory.workers.startInMemory
-import io.infinitic.pulsar.config.ClientConfig
-import io.infinitic.pulsar.config.data.Transport
-import io.infinitic.pulsar.config.loaders.loadConfigFromFile
-import io.infinitic.pulsar.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startClientResponseWorker
@@ -93,7 +93,7 @@ class InfiniticClient private constructor(
         Create InfiniticClient from a ClientConfig instance
         */
         @JvmStatic
-        fun fromConfig(config: ClientConfig): InfiniticClient = when (config.transport) {
+        fun fromConfig(config: io.infinitic.config.ClientConfig): InfiniticClient = when (config.transport) {
             Transport.pulsar -> {
                 val pulsarClient = PulsarClient
                     .builder()
@@ -102,8 +102,8 @@ class InfiniticClient private constructor(
 
                 from(
                     pulsarClient,
-                    config.pulsar.tenant,
-                    config.pulsar.namespace,
+                    config.pulsar!!.tenant,
+                    config.pulsar!!.namespace,
                     config.name
                 )
             }

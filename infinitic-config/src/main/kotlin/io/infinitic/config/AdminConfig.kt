@@ -23,29 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config.data
+package io.infinitic.config
 
-import io.infinitic.cache.StateCache
-import io.infinitic.storage.StateStorage
+import io.infinitic.config.data.Pulsar
 
-data class Monitoring(
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int? = null,
-    @JvmField var stateStorage: StateStorage? = null,
-    @JvmField var stateCache: StateCache? = null
-) {
-    val modeOrDefault: Mode
-        get() = mode ?: Mode.worker
-
-    val consumersOrDefault: Int
-        get() = consumers ?: 1
-
-    val stateCacheOrDefault: StateCache
-        get() = stateCache ?: StateCache.none
-
-    init {
-        consumers?.let {
-            require(it >= 1) { "consumers MUST be positive" }
-        }
-    }
-}
+data class AdminConfig(
+    /*
+    Pulsar configuration
+     */
+    @JvmField val pulsar: Pulsar
+)

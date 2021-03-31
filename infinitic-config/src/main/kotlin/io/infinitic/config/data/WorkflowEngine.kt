@@ -22,16 +22,31 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.cache
+
+package io.infinitic.config.data
 
 import io.infinitic.cache.StateCache
-import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineKeySetCache
-import io.infinitic.cache.no.NoCache
-import io.infinitic.common.storage.keySet.KeySetCache
-import io.infinitic.pulsar.config.WorkerConfig
+import io.infinitic.config.merge.Mergeable
+import io.infinitic.storage.StateStorage
 
-fun <T> StateCache.getKeySetCache(workerConfig: WorkerConfig): KeySetCache<T> = when (this) {
-    StateCache.none -> NoCache()
-    StateCache.caffeine -> CaffeineKeySetCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
+data class WorkflowEngine(
+    @JvmField var mode: Mode? = null,
+    @JvmField val consumers: Int? = null,
+    @JvmField var stateStorage: StateStorage? = null,
+    @JvmField var stateCache: StateCache? = null
+) : Mergeable {
+    val modeOrDefault: Mode
+        get() = mode ?: Mode.worker
+
+    val consumersOrDefault: Int
+        get() = consumers ?: 1
+
+    val stateCacheOrDefault: StateCache
+        get() = stateCache ?: StateCache.none
+
+    init {
+        consumers?.let {
+            require(it >= 1) { "consumers MUST be positive" }
+        }
+    }
 }

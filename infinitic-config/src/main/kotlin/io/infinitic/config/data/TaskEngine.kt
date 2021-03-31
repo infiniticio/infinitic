@@ -22,28 +22,31 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.loaders
 
-import com.sksamuel.hoplite.ConfigLoader
-import com.sksamuel.hoplite.PropertySource
-import java.io.File
+package io.infinitic.config.data
 
-inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T = ConfigLoader
-    .Builder()
-    .also { builder ->
-        resources.toList().map {
-            builder.addSource(PropertySource.resource(it, false))
+import io.infinitic.cache.StateCache
+import io.infinitic.config.merge.Mergeable
+import io.infinitic.storage.StateStorage
+
+data class TaskEngine(
+    @JvmField var mode: Mode? = null,
+    @JvmField val consumers: Int? = null,
+    @JvmField var stateStorage: StateStorage? = null,
+    @JvmField var stateCache: StateCache? = null
+) : Mergeable {
+    val modeOrDefault: Mode
+        get() = mode ?: Mode.worker
+
+    val consumersOrDefault: Int
+        get() = consumers ?: 1
+
+    val stateCacheOrDefault: StateCache
+        get() = stateCache ?: StateCache.none
+
+    init {
+        consumers?.let {
+            require(it >= 1) { "consumers MUST be positive" }
         }
     }
-    .build()
-    .loadConfigOrThrow()
-
-inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = ConfigLoader
-    .Builder()
-    .also { builder ->
-        files.toList().map {
-            builder.addSource(PropertySource.file(File(it), false))
-        }
-    }
-    .build()
-    .loadConfigOrThrow()
+}

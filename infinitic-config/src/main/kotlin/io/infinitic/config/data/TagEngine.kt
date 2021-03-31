@@ -23,13 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config.data
+package io.infinitic.config.data
 
 import io.infinitic.cache.StateCache
-import io.infinitic.pulsar.config.merge.Mergeable
+import io.infinitic.config.merge.Mergeable
 import io.infinitic.storage.StateStorage
 
-data class TaskEngine(
+data class TagEngine(
     @JvmField var mode: Mode? = null,
     @JvmField val consumers: Int? = null,
     @JvmField var stateStorage: StateStorage? = null,

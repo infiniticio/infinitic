@@ -23,19 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config
+package io.infinitic.config
 
 import io.infinitic.cache.StateCache
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.pulsar.config.data.Mode
-import io.infinitic.pulsar.config.data.Monitoring
-import io.infinitic.pulsar.config.data.Pulsar
-import io.infinitic.pulsar.config.data.TagEngine
-import io.infinitic.pulsar.config.data.Task
-import io.infinitic.pulsar.config.data.TaskEngine
-import io.infinitic.pulsar.config.data.Workflow
-import io.infinitic.pulsar.config.data.WorkflowEngine
-import io.infinitic.pulsar.config.merge.merge
+import io.infinitic.config.data.Mode
+import io.infinitic.config.data.Monitoring
+import io.infinitic.config.data.Pulsar
+import io.infinitic.config.data.TagEngine
+import io.infinitic.config.data.Task
+import io.infinitic.config.data.TaskEngine
+import io.infinitic.config.data.Workflow
+import io.infinitic.config.data.WorkflowEngine
+import io.infinitic.config.merge.merge
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.redis.Redis
 

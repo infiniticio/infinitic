@@ -25,10 +25,10 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.config.AdminConfig
+import io.infinitic.config.loaders.loadConfigFromFile
+import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.admin.setupInfinitic
-import io.infinitic.pulsar.config.AdminConfig
-import io.infinitic.pulsar.config.loaders.loadConfigFromFile
-import io.infinitic.pulsar.config.loaders.loadConfigFromResource
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.admin.PulsarAdmin
 
@@ -44,7 +44,7 @@ class InfiniticAdmin(
         Create InfiniticAdmin from an AdminConfig
          */
         @JvmStatic
-        fun fromConfig(config: AdminConfig): InfiniticAdmin {
+        fun fromConfig(config: io.infinitic.config.AdminConfig): InfiniticAdmin {
             // build PulsarAdmin from config
             val pulsarAdmin = PulsarAdmin
                 .builder()

@@ -22,15 +22,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.storage
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
-import io.infinitic.storage.redis.RedisKeyValueStorage
+dependencies {
+    implementation(Libs.Hoplite.core)
+    implementation(Libs.Hoplite.yaml)
 
-fun StateStorage.getKeyValueStorage(workerConfig: WorkerConfig): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryKeyValueStorage()
-    StateStorage.redis -> RedisKeyValueStorage(workerConfig.redis!!)
+    implementation(project(":infinitic-cache"))
+    implementation(project(":infinitic-storage"))
+    implementation(project(":infinitic-common"))
 }
+
+apply("../publish.gradle.kts")

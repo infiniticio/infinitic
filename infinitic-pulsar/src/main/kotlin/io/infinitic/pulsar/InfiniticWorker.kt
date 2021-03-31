@@ -27,14 +27,14 @@ package io.infinitic.pulsar
 
 import io.infinitic.common.storage.keySet.CachedLoggedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
-import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.pulsar.config.cache.getKeySetCache
-import io.infinitic.pulsar.config.cache.getKeyValueCache
-import io.infinitic.pulsar.config.data.Mode
-import io.infinitic.pulsar.config.loaders.loadConfigFromFile
-import io.infinitic.pulsar.config.loaders.loadConfigFromResource
-import io.infinitic.pulsar.config.storage.getKeySetStorage
-import io.infinitic.pulsar.config.storage.getKeyValueStorage
+import io.infinitic.config.WorkerConfig
+import io.infinitic.config.cache.getKeySetCache
+import io.infinitic.config.cache.getKeyValueCache
+import io.infinitic.config.data.Mode
+import io.infinitic.config.loaders.loadConfigFromFile
+import io.infinitic.config.loaders.loadConfigFromResource
+import io.infinitic.config.storage.getKeySetStorage
+import io.infinitic.config.storage.getKeyValueStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startPulsarMonitoringGlobalWorker
@@ -54,7 +54,7 @@ import java.util.concurrent.Executors
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class InfiniticWorker(
     @JvmField val pulsarClient: PulsarClient,
-    @JvmField val config: WorkerConfig
+    @JvmField val config: io.infinitic.config.WorkerConfig
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -63,7 +63,7 @@ class InfiniticWorker(
         Create InfiniticWorker from a WorkerConfig
         */
         @JvmStatic
-        fun fromConfig(config: WorkerConfig): InfiniticWorker {
+        fun fromConfig(config: io.infinitic.config.WorkerConfig): InfiniticWorker {
             // build Pulsar client from config
             val pulsarClient: PulsarClient = PulsarClient
                 .builder()
@@ -120,7 +120,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startTagEngineWorkers(
         consumerName: String,
-        config: WorkerConfig,
+        config: io.infinitic.config.WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
@@ -151,7 +151,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startTaskEngineWorkers(
         consumerName: String,
-        config: WorkerConfig,
+        config: io.infinitic.config.WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
@@ -188,7 +188,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startWorkflowEngineWorkers(
         consumerName: String,
-        config: WorkerConfig,
+        config: io.infinitic.config.WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
@@ -220,7 +220,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startMonitoringWorkers(
         consumerName: String,
-        config: WorkerConfig,
+        config: io.infinitic.config.WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
@@ -254,7 +254,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startTaskExecutorWorkers(
         consumerName: String,
-        config: WorkerConfig,
+        config: io.infinitic.config.WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {

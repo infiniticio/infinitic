@@ -23,47 +23,46 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.config.data
+package io.infinitic.config.data
 
-data class Task(
+import io.infinitic.workflows.Workflow
+
+data class Workflow(
     @JvmField val name: String,
     @JvmField val `class`: String? = null,
     @JvmField var mode: Mode? = null,
     @JvmField val consumers: Int = 1,
     @JvmField val concurrency: Int = 1,
-    @JvmField val shared: Boolean = true,
-    @JvmField var taskEngine: TaskEngine? = null
+    @JvmField var taskEngine: TaskEngine? = null,
+    @JvmField var workflowEngine: WorkflowEngine? = null
 ) {
-    private lateinit var _instance: Any
-
     val instance: Any
-        get() {
-            if (! shared) return Class.forName(`class`).newInstance()
-            if (! this::_instance.isInitialized) _instance = Class.forName(`class`).newInstance()
-            return _instance
-        }
+        get() = Class.forName(`class`).newInstance()
 
     val modeOrDefault: Mode
         get() = mode ?: Mode.worker
 
     init {
         require(name.isNotEmpty()) { "name can NOT be empty" }
-        require(`class` != null || taskEngine != null) {
+        require(`class` != null || workflowEngine != null) {
             "executor and engine not defined for $name, " +
-                "you should have at least \"class\" or \"taskEngine\" defined"
+                "you should have at least \"class\" or \"workflowEngine\" defined"
         }
         `class`?.let {
-            require(`class`.isNotEmpty()) { "class empty for task $name" }
+            require(`class`.isNotEmpty()) { "class empty for workflow $name" }
 
             require(try { instance; true } catch (e: ClassNotFoundException) { false }) {
-                "class \"$it\" is unknown (task $name)"
+                "class $`class` is unknown (workflow $name)"
             }
             require(try { instance; true } catch (e: Exception) { false }) {
                 "class \"$it\" can not be instantiated using newInstance(). " +
                     "This class must be public and have an empty constructor"
             }
-            require(consumers >= 1) { "consumers MUST be strictly positive (task $name)" }
-            require(concurrency >= 1) { "concurrency MUST strictly be positive (task $name)" }
+            require(instance is Workflow) {
+                "class \"$it\" is not a workflow as it does not extend ${Workflow::class.java.name}"
+            }
+            require(consumers >= 1) { "consumers MUST be strictly positive (workflow $name)" }
+            require(concurrency >= 1) { "concurrency MUST be strictly positive (workflow $name)" }
         }
     }
 }

@@ -22,31 +22,16 @@
  *
  * Licensor: infinitic.io
  */
-
-package io.infinitic.pulsar.config.data
+package io.infinitic.config.cache
 
 import io.infinitic.cache.StateCache
-import io.infinitic.pulsar.config.merge.Mergeable
-import io.infinitic.storage.StateStorage
+import io.infinitic.cache.caffeine.Caffeine
+import io.infinitic.cache.caffeine.CaffeineKeyCounterCache
+import io.infinitic.cache.no.NoCache
+import io.infinitic.common.storage.keyCounter.KeyCounterCache
+import io.infinitic.config.WorkerConfig
 
-data class TagEngine(
-    @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int? = null,
-    @JvmField var stateStorage: StateStorage? = null,
-    @JvmField var stateCache: StateCache? = null
-) : Mergeable {
-    val modeOrDefault: Mode
-        get() = mode ?: Mode.worker
-
-    val consumersOrDefault: Int
-        get() = consumers ?: 1
-
-    val stateCacheOrDefault: StateCache
-        get() = stateCache ?: StateCache.none
-
-    init {
-        consumers?.let {
-            require(it >= 1) { "consumers MUST be positive" }
-        }
-    }
+fun StateCache.getKeyCounterCache(workerConfig: io.infinitic.config.WorkerConfig): KeyCounterCache = when (this) {
+    StateCache.none -> NoCache<Long>()
+    StateCache.caffeine -> CaffeineKeyCounterCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
 }

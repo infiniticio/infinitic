@@ -22,15 +22,44 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.storage
 
-import io.infinitic.common.storage.keySet.KeySetStorage
-import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
-import io.infinitic.storage.redis.RedisKeySetStorage
+package io.infinitic.config
 
-fun StateStorage.getKeySetStorage(workerConfig: WorkerConfig): KeySetStorage = when (this) {
-    StateStorage.inMemory -> InMemoryKeySetStorage()
-    StateStorage.redis -> RedisKeySetStorage(workerConfig.redis!!)
+import io.infinitic.config.data.Pulsar
+import io.infinitic.config.data.Task
+import io.infinitic.config.data.Transport
+import io.infinitic.config.data.Workflow
+
+data class ClientConfig(
+    /*
+   Client name
+    */
+    @JvmField val name: String? = null,
+
+    /*
+    Transport configuration
+     */
+    @JvmField val transport: Transport = Transport.pulsar,
+
+    /*
+    Pulsar configuration
+     */
+    @JvmField val pulsar: Pulsar? = null,
+
+    /*
+    Tasks configuration (Used only inMemory)
+     */
+    @JvmField val tasks: List<Task> = listOf(),
+
+    /*
+    Workflows configuration (Used only inMemory)
+     */
+    @JvmField val workflows: List<Workflow> = listOf(),
+
+) {
+    init {
+        if (transport == Transport.pulsar) {
+            require(pulsar != null) { "Missing Pulsar configuration" }
+        }
+    }
 }

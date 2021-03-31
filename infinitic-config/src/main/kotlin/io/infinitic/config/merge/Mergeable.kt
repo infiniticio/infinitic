@@ -22,16 +22,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.config.cache
 
-import io.infinitic.cache.StateCache
-import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.cache.no.NoCache
-import io.infinitic.common.storage.keyValue.KeyValueCache
-import io.infinitic.pulsar.config.WorkerConfig
+package io.infinitic.config.merge
 
-fun <T> StateCache.getKeyValueCache(workerConfig: WorkerConfig): KeyValueCache<T> = when (this) {
-    StateCache.none -> NoCache()
-    StateCache.caffeine -> CaffeineKeyValueCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
-}
+interface Mergeable

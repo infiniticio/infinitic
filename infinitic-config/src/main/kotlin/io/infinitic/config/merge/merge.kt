@@ -22,22 +22,20 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.config.merge
 
-package io.infinitic.pulsar.config.data
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.primaryConstructor
 
-data class Pulsar(
-    @JvmField val serviceUrl: String = "pulsar://localhost:6650/",
-    @JvmField val serviceHttpUrl: String = "http://localhost:8080",
-    @JvmField val tenant: String,
-    @JvmField val namespace: String,
-    @JvmField val allowedClusters: Set<String>? = null
-) {
-    init {
-        require(serviceUrl.startsWith("pulsar://")) { "serviceUrl MUST start with pulsar://" }
-        require(
-            serviceHttpUrl.startsWith("http://") || serviceHttpUrl.startsWith("https://")
-        ) { "serviceUrl MUST start with http:// or https://" }
-        require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
-        require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
+inline infix fun <reified T : Mergeable> T.merge(other: T?): T {
+    if (other == null) return this
+    val propertiesByName = T::class.declaredMemberProperties.associateBy { it.name }
+    val primaryConstructor = T::class.primaryConstructor
+        ?: throw IllegalArgumentException("merge type must have a primary constructor")
+    val args = primaryConstructor.parameters.associateWith { parameter ->
+        val property = propertiesByName[parameter.name]
+            ?: throw IllegalStateException("no declared member property found with name '${parameter.name}'")
+        (property.get(this) ?: property.get(other))
     }
+    return primaryConstructor.callBy(args)
 }

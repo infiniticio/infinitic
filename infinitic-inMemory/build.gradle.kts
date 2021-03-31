@@ -28,7 +28,7 @@ dependencies {
 
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))
-    implementation(project(":infinitic-storage"))
+    api(project(":infinitic-storage"))
     implementation(project(":infinitic-cache"))
     implementation(project(":infinitic-tag-engine"))
     implementation(project(":infinitic-task-engine"))

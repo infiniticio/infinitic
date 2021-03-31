@@ -22,14 +22,15 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.config.storage
 
-package io.infinitic.pulsar.config
+import io.infinitic.common.storage.keyCounter.KeyCounterStorage
+import io.infinitic.config.WorkerConfig
+import io.infinitic.storage.StateStorage
+import io.infinitic.storage.inMemory.keyCounter.InMemoryKeyCounterStorage
+import io.infinitic.storage.redis.RedisKeyCounterStorage
 
-import io.infinitic.pulsar.config.data.Pulsar
-
-data class AdminConfig(
-    /*
-    Pulsar configuration
-     */
-    @JvmField val pulsar: Pulsar
-)
+fun StateStorage.getKeyCounterStorage(workerConfig: io.infinitic.config.WorkerConfig): KeyCounterStorage = when (this) {
+    StateStorage.inMemory -> InMemoryKeyCounterStorage()
+    StateStorage.redis -> RedisKeyCounterStorage(workerConfig.redis!!)
+}

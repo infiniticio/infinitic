@@ -22,11 +22,15 @@
  *
  * Licensor: infinitic.io
  */
+package io.infinitic.config.storage
 
-package io.infinitic.pulsar.config.data
+import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.config.WorkerConfig
+import io.infinitic.storage.StateStorage
+import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
+import io.infinitic.storage.redis.RedisKeyValueStorage
 
-@Suppress("EnumEntryName")
-enum class Transport {
-    pulsar,
-    inMemory
+fun StateStorage.getKeyValueStorage(workerConfig: io.infinitic.config.WorkerConfig): KeyValueStorage = when (this) {
+    StateStorage.inMemory -> InMemoryKeyValueStorage()
+    StateStorage.redis -> RedisKeyValueStorage(workerConfig.redis!!)
 }
