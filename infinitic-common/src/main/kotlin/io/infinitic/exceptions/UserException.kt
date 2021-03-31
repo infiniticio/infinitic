@@ -198,6 +198,40 @@ data class IncorrectNewStub(
 )
 
 @Serializable
+data class CanNotReuseTaskStub(
+    val name: String,
+) : UserExceptionInClient(
+    msg = "You can not reuse a task stub ($name) already dispatched",
+    help = "Please create a new stub using `newTask()` for each task dispatch`"
+)
+
+@Serializable
+data class CanNotReuseWorkflowStub(
+    val name: String,
+) : UserExceptionInClient(
+    msg = "You can not reuse a workflow stub ($name) already dispatched",
+    help = "Please create a new stub using `newWorkflow()` for each workflow dispatch`"
+)
+
+@Serializable
+data class CanNotUseNewTaskStub(
+    val name: String,
+    val action: String
+) : UserExceptionInClient(
+    msg = "You can not `$action` a new task stub",
+    help = "Please target an existing $name task using `getTask()` "
+)
+
+@Serializable
+data class CanNotUseNewWorkflowStub(
+    val name: String,
+    val action: String
+) : UserExceptionInClient(
+    msg = "You can not `$action` a new workflow stub",
+    help = "Please target an existing $name workflow using `getWorkflow()` "
+)
+
+@Serializable
 data class SuspendMethodNotSupported(
     val klass: String,
     val method: String
@@ -342,6 +376,16 @@ data class NoMethodCallAtAsync(
 ) : UserExceptionInWorkflowTask(
     msg = "You must use a method of \"$klass\" when using \"async\" method",
     help = "Make sure to call exactly one method of \"$klass\" within the curly braces - example: async(foo) { bar(*args) }"
+)
+
+@Serializable
+data class MultipleMethodCallsAtAsync(
+    val klass: String,
+    val method1: String?,
+    val method2: String
+) : UserExceptionInClient(
+    msg = "Only one method of \"$klass\" can be called at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
+    help = "Make sure you call only one method of \"$klass\" - multiple calls in the provided lambda is forbidden"
 )
 
 @Serializable

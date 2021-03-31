@@ -25,7 +25,6 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.clients.messages.SendToChannelCompleted
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -58,14 +57,4 @@ suspend fun sendToChannel(
             )
         }
         ?: logger.debug("workflowId {} - discarding {} (messageId {})", msg.workflowId, msg, msg.messageId)
-
-    // if client is waiting, send output back to it
-    if (msg.clientWaiting) {
-        workflowEngineOutput.sendToClientResponse(
-            SendToChannelCompleted(
-                clientName = msg.clientName,
-                channelEventId = msg.channelEventId
-            )
-        )
-    }
 }

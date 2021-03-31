@@ -33,6 +33,7 @@ internal interface FakeWorkflow {
     fun m1(str: String): Any?
     fun m1(p1: Int, p2: String): String
     fun m1(id: FakeInterface): String
+    suspend fun suspendedMethod()
 
-    val ch: Channel<String>
+    val channel: Channel<String>
 }

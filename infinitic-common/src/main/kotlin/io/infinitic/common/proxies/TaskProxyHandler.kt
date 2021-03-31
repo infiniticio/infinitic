@@ -25,16 +25,24 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import java.lang.reflect.Method
 
-class NewTaskProxyHandler<T : Any>(
-    val klass: Class<T>,
+class TaskProxyHandler<T : Any>(
+    override val klass: Class<T>,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta,
+    var perTaskId: TaskId? = null,
+    var perTag: Tag? = null,
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
+
+    init {
+        require(perTaskId == null || perTag == null)
+    }
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val any = super.invoke(proxy, method, args)
@@ -46,4 +54,6 @@ class NewTaskProxyHandler<T : Any>(
             false -> any
         }
     }
+
+    fun isNew() = perTaskId == null && perTag == null
 }

@@ -27,8 +27,8 @@ package io.infinitic.workflows
 
 import com.jayway.jsonpath.Criteria
 import io.infinitic.common.proxies.Dispatcher
-import io.infinitic.common.proxies.NewTaskProxyHandler
-import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.TaskProxyHandler
+import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import java.time.Duration
 import java.time.Instant
@@ -44,9 +44,9 @@ interface WorkflowTaskContext : Dispatcher {
 
     fun <T> status(deferred: Deferred<T>): DeferredStatus
 
-    fun <T> dispatchTask(handler: NewTaskProxyHandler<*>): Deferred<T>
+    fun <T> dispatchTask(handler: TaskProxyHandler<*>): Deferred<T>
 
-    fun <T> dispatchWorkflow(handler: NewWorkflowProxyHandler<*>): Deferred<T>
+    fun <T> dispatchWorkflow(handler: WorkflowProxyHandler<*>): Deferred<T>
 
     fun timer(duration: Duration): Deferred<Instant>
 

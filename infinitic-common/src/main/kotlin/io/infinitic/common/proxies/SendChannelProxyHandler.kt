@@ -27,16 +27,22 @@ package io.infinitic.common.proxies
 
 import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import java.lang.reflect.Method
 
 class SendChannelProxyHandler<T : Any>(
-    val klass: Class<T>,
-    val tag: Tag,
+    override val klass: Class<T>,
     val workflowName: WorkflowName,
     val channelName: ChannelName,
+    val perWorkflowId: WorkflowId? = null,
+    val perTag: Tag? = null,
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
+
+    init {
+        require(perWorkflowId == null || perTag == null)
+    }
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val any = super.invoke(proxy, method, args)
@@ -48,4 +54,6 @@ class SendChannelProxyHandler<T : Any>(
             false -> any
         }
     }
+
+    fun isNew() = perWorkflowId == null && perTag == null
 }

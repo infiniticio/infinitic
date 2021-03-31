@@ -78,7 +78,6 @@ data class CancelWorkflow(
 @Serializable
 data class SendToChannel(
     val clientName: ClientName,
-    val clientWaiting: Boolean,
     override val workflowId: WorkflowId,
     val workflowName: WorkflowName,
     val channelEventId: ChannelEventId,

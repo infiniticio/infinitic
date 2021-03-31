@@ -34,4 +34,5 @@ internal interface FakeTask {
     fun m1(p1: Int, p2: String): String
     fun m1(id: FakeInterface): TaskId
     fun m2(): Boolean
+    suspend fun suspendedMethod()
 }

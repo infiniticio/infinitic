@@ -45,7 +45,7 @@ import io.mockk.mockk
 
 fun mockClientOutput(
     client: Client,
-    tagSlot: CapturingSlot<TagEngineMessage>,
+    tagSlots: MutableList<TagEngineMessage>,
     taskSlot: CapturingSlot<TaskEngineMessage>,
     workflowSlot: CapturingSlot<WorkflowEngineMessage>
 ): ClientOutput {
@@ -54,8 +54,8 @@ fun mockClientOutput(
 
     every { mock.clientName } returns clientName
 
-    coEvery { mock.sendToTagEngine(capture(tagSlot)) } coAnswers {
-        val msg = tagSlot.captured
+    coEvery { mock.sendToTagEngine(capture(tagSlots)) } coAnswers {
+        val msg = tagSlots.last()
         if (msg is SendToChannelPerTag && msg.clientWaiting) {
             client.handle(
                 if (msg.channelEvent.get() == "unknown") {

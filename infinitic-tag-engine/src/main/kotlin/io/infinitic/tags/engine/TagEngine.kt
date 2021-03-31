@@ -164,7 +164,6 @@ class TagEngine(
             false -> ids.forEach {
                 val sendToChannel = SendToChannel(
                     clientName = message.clientName,
-                    clientWaiting = message.clientWaiting,
                     workflowId = WorkflowId(it),
                     workflowName = message.name,
                     channelEventId = message.channelEventId,

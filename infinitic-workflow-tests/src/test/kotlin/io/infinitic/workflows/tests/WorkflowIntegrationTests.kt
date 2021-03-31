@@ -39,7 +39,6 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.exceptions.SendToChannelFailed
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -68,7 +67,6 @@ import io.infinitic.workflows.tests.workflows.WorkflowA
 import io.infinitic.workflows.tests.workflows.WorkflowAImpl
 import io.infinitic.workflows.tests.workflows.WorkflowB
 import io.infinitic.workflows.tests.workflows.WorkflowBImpl
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -426,7 +424,7 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             result1 = workflowA.seq1()
-            result2 = workflowA.prop1()
+            result2 = client.newWorkflow<WorkflowA>().prop1()
         }
         result1 shouldBe "123"
         result2 shouldBe "ac"
@@ -438,7 +436,7 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel1() }
-            client.workflow<WorkflowA>("id:$id").channelA.send("test")
+            client.getWorkflow<WorkflowA>(id).channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -452,7 +450,7 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel2() }
-            client.workflow<WorkflowA>("id:$id").channelA.send("test")
+            client.getWorkflow<WorkflowA>(id).channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -466,7 +464,7 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel2() }
-            client.workflow<WorkflowA>("id:$id").channelB.send("test")
+            client.getWorkflow<WorkflowA>(id).channelB.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -480,35 +478,13 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel3() }
-            client.workflow<WorkflowA>("id:$id").channelA.send("test")
+            client.getWorkflow<WorkflowA>(id).channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
         workflowOutput!!::class.java.name shouldBe Instant::class.java.name
     }
-
-    "Sending event synchronously to unknown workflow should throw exception" {
-        // run system
-        coroutineScope {
-            init()
-            val id = client.async(workflowA) { channel3() }
-            shouldThrow<SendToChannelFailed> {
-                client.workflow<WorkflowA>("other$id").channelA.send("test")
-            }
-        }
-    }
-
-//    "Sending event synchronously to completed workflow should throw exception" {
-//        // run system
-//        coroutineScope {
-//            init()
-//            val id = client.async(workflowA) { channel3() }
-//            shouldThrow<SendToChannelFailed> {
-//                client.workflow<WorkflowA>("other$id").channelA.send("test")
-//            }
-//        }
-//    }
 
     "Waiting for Obj event" {
         var id: UUID
@@ -517,7 +493,7 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel4() }
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -533,9 +509,9 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel4bis() }
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1a)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1a)
             delay(50)
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1b)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1b)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -551,9 +527,9 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel4ter() }
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1a)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1a)
             delay(50)
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1b)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1b)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -569,9 +545,9 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel5() }
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj2)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -588,11 +564,11 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel5bis() }
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj3)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj3)
             delay(50)
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj2)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -609,11 +585,11 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel5ter() }
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj3)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj3)
             delay(50)
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj2)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -629,9 +605,9 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             id = client.async(workflowA) { channel6() }
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj2)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>("id:$id").channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -711,8 +687,8 @@ fun CoroutineScope.init() {
         )
     )
 
-    workflowA = client.workflow(WorkflowA::class.java)
-    workflowB = client.workflow(WorkflowB::class.java)
+    workflowA = client.newWorkflow(WorkflowA::class.java)
+    workflowB = client.newWorkflow(WorkflowB::class.java)
 
     tagEngine = TagEngine(
         tagStateStorage,

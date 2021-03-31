@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows
 
-import io.infinitic.common.proxies.NewTaskProxyHandler
-import io.infinitic.common.proxies.NewWorkflowProxyHandler
+import io.infinitic.common.proxies.TaskProxyHandler
+import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.channels.ChannelImpl
@@ -47,38 +47,38 @@ abstract class Workflow {
     /*
      * Stub task
      */
-    @JvmOverloads fun <T : Any> task(
+    @JvmOverloads fun <T : Any> newTask(
         klass: Class<out T>,
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta()
-    ): T = NewTaskProxyHandler(klass, options, meta) { context }.stub()
+    ): T = TaskProxyHandler(klass, options, meta) { context }.stub()
 
     /*
      * Stub task
      * (Kotlin way)
      */
-    inline fun <reified T : Any> task(
+    inline fun <reified T : Any> newTask(
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta()
-    ): T = task(T::class.java, options, meta)
+    ): T = newTask(T::class.java, options, meta)
 
     /*
      * Stub workflow
      */
-    @JvmOverloads fun <T : Any> workflow(
+    @JvmOverloads fun <T : Any> newWorkflow(
         klass: Class<out T>,
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta()
-    ): T = NewWorkflowProxyHandler(klass, options, meta) { context }.stub()
+    ): T = WorkflowProxyHandler(klass, options, meta) { context }.stub()
 
     /*
      * Stub workflow
      * (Kotlin way)
      */
-    inline fun <reified T : Any> workflow(
+    inline fun <reified T : Any> newWorkflow(
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta()
-    ): T = workflow(T::class.java, options, meta)
+    ): T = newWorkflow(T::class.java, options, meta)
 
     /*
      *  Dispatch a task or a workflow asynchronously

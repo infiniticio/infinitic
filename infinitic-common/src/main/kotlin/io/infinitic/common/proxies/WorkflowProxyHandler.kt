@@ -25,10 +25,35 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import java.lang.reflect.Method
 
-class DataMethod(
-    var isSync: Boolean = true,
-    var method: Method? = null,
-    var args: Array<out Any> = arrayOf()
-)
+class WorkflowProxyHandler<T : Any>(
+    override val klass: Class<T>,
+    val workflowOptions: WorkflowOptions,
+    val workflowMeta: WorkflowMeta,
+    var perWorkflowId: WorkflowId? = null,
+    var perTag: Tag? = null,
+    private val dispatcherFn: () -> Dispatcher
+) : MethodProxyHandler<T>(klass) {
+
+    init {
+        require(perWorkflowId == null || perTag == null)
+    }
+
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        val any = super.invoke(proxy, method, args)
+
+        if (method.name == "toString") return any
+
+        return when (isSync) {
+            true -> dispatcherFn().dispatchAndWait(this)
+            false -> any
+        }
+    }
+
+    fun isNew() = perWorkflowId == null && perTag == null
+}
