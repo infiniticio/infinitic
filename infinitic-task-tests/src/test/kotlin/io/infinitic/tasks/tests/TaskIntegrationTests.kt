@@ -33,9 +33,9 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
-import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -83,7 +83,9 @@ private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
 private lateinit var taskExecutor: TaskExecutor
 private lateinit var client: Client
-private lateinit var taskTestStub: TaskTest
+private lateinit var taskStub: TaskTest
+private lateinit var taskStub1Tag: TaskTest
+private lateinit var taskStub2Tag: TaskTest
 
 class TaskIntegrationTests : StringSpec({
     var taskId: TaskId
@@ -94,7 +96,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskTestStub) { log() })
+            taskId = TaskId(client.async(taskStub) { log() })
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -110,7 +112,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskTestStub) { log() })
+            taskId = TaskId(client.async(taskStub) { log() })
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -126,7 +128,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskTestStub) { log() })
+            taskId = TaskId(client.async(taskStub) { log() })
         }
         // check that task is not terminated
         taskStateStorage.getState(taskId) shouldNotBe null
@@ -142,7 +144,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskTestStub) { log() })
+            taskId = TaskId(client.async(taskStub) { log() })
         }
         // check that task is not terminated
         taskStateStorage.getState(taskId) shouldNotBe null
@@ -164,9 +166,37 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            val id = client.async(taskTestStub) { log() }
+            val id = client.async(taskStub) { log() }
             taskId = TaskId(id)
-            val existingTask = client.task<TaskTest>("${Tag.of(id)}")
+            val existingTask = client.task<TaskTest>("id:$id")
+            while (taskStatus != TaskStatus.RUNNING_ERROR) {
+                delay(50)
+            }
+            client.retry(existingTask)
+        }
+        // check that task is terminated
+        taskStateStorage.getState(taskId) shouldBe null
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        // checks number of task processing
+        taskTest.log shouldBe "0000001"
+    }
+
+    "Task succeeds after manual retry using tag" {
+        // task will succeed only at the 4th try
+        taskTest.behavior = { index, retry ->
+            if (index == 0) {
+                if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
+            } else {
+                if (retry < 2) Status.FAILED_WITH_RETRY else Status.SUCCESS
+            }
+        }
+        // run system
+        coroutineScope {
+            init()
+            val id = client.async(taskStub1Tag) { log() }
+            taskId = TaskId(id)
+            val existingTask = client.task<TaskTest>("foo")
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
@@ -184,17 +214,39 @@ class TaskIntegrationTests : StringSpec({
         // task will succeed only at the 4th try
         taskTest.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
         // run system
-        // run system
         coroutineScope {
             init()
-            val id = client.async(taskTestStub) { log() }
+            val id = client.async(taskStub) { log() }
             taskId = TaskId(id)
-            val existingTask = client.task(TaskTest::class.java, "${Tag.of(id)}")
+            val existingTask = client.task(TaskTest::class.java, "id:$id")
             delay(100)
             client.cancel(existingTask)
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
+    }
+
+    "Multiple Tasks canceled using tags" {
+        var taskId1: TaskId
+        var taskId2: TaskId
+        // task will succeed only at the 4th try
+        taskTest.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
+        // run system
+        coroutineScope {
+            init()
+            val id1 = client.async(taskStub1Tag) { log() }
+            val id2 = client.async(taskStub2Tag) { log() }
+            taskId1 = TaskId(id1)
+            taskId2 = TaskId(id2)
+            val existingTask = client.task(TaskTest::class.java, "foo")
+            delay(100)
+            client.cancel(existingTask)
+        }
+        // check that task is terminated
+        taskStateStorage.getState(taskId1) shouldBe null
+        taskStateStorage.getState(taskId2) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
     }
@@ -207,7 +259,7 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            r = taskTestStub.log()
+            r = taskStub.log()
         }
         // checks number of task processing
         r shouldBe "1"
@@ -278,7 +330,9 @@ fun CoroutineScope.init() {
         )
     )
 
-    taskTestStub = client.task(TaskTest::class.java)
+    taskStub = client.task(TaskTest::class.java)
+    taskStub1Tag = client.task(TaskTest::class.java, TaskOptions(tags = setOf("foo")))
+    taskStub2Tag = client.task(TaskTest::class.java, TaskOptions(tags = setOf("foo", "bar")))
 
     tagEngine = TagEngine(
         tagStateStorage,

@@ -70,7 +70,7 @@ fun CoroutineScope.startPulsarTagEngineWorker(
     sendToTagEngineDeadLetters: SendToTagEngine,
     keyValueStorage: KeyValueStorage,
     keySetStorage: KeySetStorage,
-) = launch(singleThreadedContext("$TASK_ENGINE_THREAD_NAME-$consumerCounter")) {
+) = launch(singleThreadedContext("$TAG_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val tagEngine = TagEngine(
         BinaryTagStateStorage(keyValueStorage, keySetStorage),
