@@ -33,8 +33,9 @@ import java.lang.reflect.Method
 
 class WorkflowProxyHandler<T : Any>(
     override val klass: Class<T>,
-    val workflowOptions: WorkflowOptions,
-    val workflowMeta: WorkflowMeta,
+    val tags: Set<Tag>?,
+    val workflowOptions: WorkflowOptions?,
+    val workflowMeta: WorkflowMeta?,
     var perWorkflowId: WorkflowId? = null,
     var perTag: Tag? = null,
     private val dispatcherFn: () -> Dispatcher

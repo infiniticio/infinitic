@@ -36,7 +36,6 @@ import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
-import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.AddTaskTag
 import io.infinitic.common.tags.messages.AddWorkflowTag
 import io.infinitic.common.tags.messages.SendToChannelPerTag
@@ -167,9 +166,9 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         val workflowName = WorkflowName.from(method)
 
         // add provided tags
-        val addWorkflowTags = handler.workflowOptions.tags.map {
+        val addWorkflowTags = handler.tags!!.map {
             AddWorkflowTag(
-                tag = Tag(it),
+                tag = it,
                 name = workflowName,
                 workflowId = workflowId
             )
@@ -186,8 +185,9 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             methodParameters = MethodParameters.from(method, args),
             parentWorkflowId = null,
             parentMethodRunId = null,
-            workflowMeta = handler.workflowMeta,
-            workflowOptions = handler.workflowOptions
+            tags = handler.tags!!,
+            workflowMeta = handler.workflowMeta!!,
+            workflowOptions = handler.workflowOptions!!
         )
 
         // send messages

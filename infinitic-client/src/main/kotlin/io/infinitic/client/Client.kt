@@ -162,21 +162,24 @@ open class Client {
      */
     @JvmOverloads fun <T : Any> newWorkflow(
         klass: Class<out T>,
+        tags: Set<String> = setOf(),
         options: WorkflowOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
     ): T = WorkflowProxyHandler(
-        klass,
-        options ?: WorkflowOptions(),
-        WorkflowMeta(meta)
+        klass = klass,
+        tags = tags.map { Tag(it) }.toSet(),
+        workflowOptions = options ?: WorkflowOptions(),
+        workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
 
     /*
      * (Kotlin) Create stub for a new workflow
      */
     inline fun <reified T : Any> newWorkflow(
+        tags: Set<String> = setOf(),
         options: WorkflowOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): T = newWorkflow(T::class.java, options, meta)
+    ): T = newWorkflow(T::class.java, tags, options, meta)
 
     /*
      * Create stub for an existing workflow per id
@@ -184,14 +187,16 @@ open class Client {
     @JvmOverloads fun <T : Any> getWorkflow(
         klass: Class<out T>,
         id: UUID,
+        tags: Set<String>? = null,
         options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
+        meta: Map<String, ByteArray>? = null
     ): T = WorkflowProxyHandler(
         klass = klass,
         perTag = null,
         perWorkflowId = WorkflowId(id),
-        workflowOptions = options ?: WorkflowOptions(),
-        workflowMeta = WorkflowMeta(meta)
+        tags = tags?.map { Tag(it) }?.toSet(),
+        workflowOptions = options,
+        workflowMeta = meta?.let { WorkflowMeta(it) }
     ) { dispatcher }.stub()
 
     /*
@@ -200,14 +205,16 @@ open class Client {
     @JvmOverloads fun <T : Any> getWorkflow(
         klass: Class<out T>,
         tag: String,
+        tags: Set<String>? = null,
         options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
+        meta: Map<String, ByteArray>? = null
     ): T = WorkflowProxyHandler(
         klass = klass,
         perTag = Tag(tag),
         perWorkflowId = null,
-        workflowOptions = options ?: WorkflowOptions(),
-        workflowMeta = WorkflowMeta(meta)
+        tags = tags?.map { Tag(it) }?.toSet(),
+        workflowOptions = options,
+        workflowMeta = meta?.let { WorkflowMeta(it) }
     ) { dispatcher }.stub()
 
     /*
@@ -215,18 +222,20 @@ open class Client {
      */
     inline fun <reified T : Any> getWorkflow(
         id: UUID,
+        tags: Set<String>? = null,
         options: WorkflowOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): T = getWorkflow(T::class.java, id, options, meta)
+    ): T = getWorkflow(T::class.java, id, tags, options, meta)
 
     /*
      * (kotlin) Create stub for an existing workflow per tag
      */
     inline fun <reified T : Any> getWorkflow(
         tag: String,
+        tags: Set<String>? = null,
         options: WorkflowOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): T = getWorkflow(T::class.java, tag, options, meta)
+    ): T = getWorkflow(T::class.java, tag, tags, options, meta)
 
     /*
      *  Asynchronously process a task or a workflow

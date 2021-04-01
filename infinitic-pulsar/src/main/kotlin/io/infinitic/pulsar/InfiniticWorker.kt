@@ -54,7 +54,7 @@ import java.util.concurrent.Executors
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class InfiniticWorker(
     @JvmField val pulsarClient: PulsarClient,
-    @JvmField val config: io.infinitic.config.WorkerConfig
+    @JvmField val config: WorkerConfig
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -63,7 +63,7 @@ class InfiniticWorker(
         Create InfiniticWorker from a WorkerConfig
         */
         @JvmStatic
-        fun fromConfig(config: io.infinitic.config.WorkerConfig): InfiniticWorker {
+        fun fromConfig(config: WorkerConfig): InfiniticWorker {
             // build Pulsar client from config
             val pulsarClient: PulsarClient = PulsarClient
                 .builder()

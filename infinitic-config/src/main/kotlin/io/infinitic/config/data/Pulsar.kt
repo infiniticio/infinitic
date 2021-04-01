@@ -36,7 +36,7 @@ data class Pulsar(
         require(
             serviceUrl.startsWith("pulsar://") ||
                 serviceUrl.startsWith("pulsar+ssl://")
-        )  { "serviceUrl MUST start with pulsar:// or pulsar+ssl://" }
+        ) { "serviceUrl MUST start with pulsar:// or pulsar+ssl://" }
         require(
             serviceHttpUrl.startsWith("http://") ||
                 serviceHttpUrl.startsWith("https://")

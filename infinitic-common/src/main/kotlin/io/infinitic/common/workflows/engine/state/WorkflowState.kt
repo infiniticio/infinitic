@@ -29,6 +29,7 @@ import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
@@ -75,6 +76,11 @@ data class WorkflowState(
     Workflow's name (used wy worker to instantiate)
      */
     val workflowName: WorkflowName,
+
+    /*
+    Instance's tags defined when dispatched
+     */
+    val tags: Set<Tag>,
 
     /*
     Instance's options defined when dispatched

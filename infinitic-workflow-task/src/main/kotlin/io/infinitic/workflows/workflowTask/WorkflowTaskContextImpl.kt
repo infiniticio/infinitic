@@ -330,7 +330,7 @@ internal class WorkflowTaskContextImpl(
         checkMethodIsNotSuspend(method)
 
         val deferred = dispatchCommand<S>(
-            DispatchChildWorkflow.from(method, args, handler.workflowMeta, handler.workflowOptions),
+            DispatchChildWorkflow.from(method, args, handler.tags!!, handler.workflowMeta!!, handler.workflowOptions!!),
             CommandSimpleName.fromMethod(method)
         )
         handler.reset()

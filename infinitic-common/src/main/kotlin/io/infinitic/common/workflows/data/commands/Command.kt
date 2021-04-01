@@ -90,6 +90,7 @@ data class DispatchChildWorkflow(
     val childMethodName: MethodName,
     val childMethodParameterTypes: MethodParameterTypes,
     val childMethodParameters: MethodParameters,
+    val tags: Set<Tag>,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : Command() {
@@ -97,6 +98,7 @@ data class DispatchChildWorkflow(
         fun from(
             method: Method,
             args: Array<out Any>,
+            tags: Set<Tag>,
             workflowMeta: WorkflowMeta,
             workflowOptions: WorkflowOptions
         ) = DispatchChildWorkflow(
@@ -104,6 +106,7 @@ data class DispatchChildWorkflow(
             childMethodName = MethodName.from(method),
             childMethodParameterTypes = MethodParameterTypes.from(method),
             childMethodParameters = MethodParameters.from(method, args),
+            tags = tags,
             workflowMeta = workflowMeta,
             workflowOptions = workflowOptions
         )

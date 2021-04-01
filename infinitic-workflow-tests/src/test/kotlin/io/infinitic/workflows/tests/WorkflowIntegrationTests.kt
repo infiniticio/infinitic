@@ -97,6 +97,7 @@ private lateinit var executor: TaskExecutor
 private lateinit var client: Client
 private lateinit var workflowA: WorkflowA
 private lateinit var workflowB: WorkflowB
+private lateinit var workflowATagged: WorkflowA
 
 class WorkflowIntegrationTests : StringSpec({
     var workflowId: WorkflowId
@@ -430,13 +431,41 @@ class WorkflowIntegrationTests : StringSpec({
         result2 shouldBe "ac"
     }
 
-    "Waiting for event" {
+    "Waiting for event, sent after dispatched" {
+        var id: UUID
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel1() }
+            workflowA.channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "test"
+    }
+
+    "Waiting for event, sent by id" {
         var id: UUID
         // run system
         coroutineScope {
             init()
             id = client.async(workflowA) { channel1() }
             client.getWorkflow<WorkflowA>(id).channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "test"
+    }
+
+    "Waiting for event, sent by tag" {
+        var id: UUID
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowATagged) { channel1() }
+            client.getWorkflow<WorkflowA>("foo").channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -688,6 +717,7 @@ fun CoroutineScope.init() {
     )
 
     workflowA = client.newWorkflow(WorkflowA::class.java)
+    workflowATagged = client.newWorkflow(WorkflowA::class.java, setOf("foo", "bar"))
     workflowB = client.newWorkflow(WorkflowB::class.java)
 
     tagEngine = TagEngine(

@@ -74,18 +74,25 @@ abstract class Workflow {
      */
     @JvmOverloads fun <T : Any> newWorkflow(
         klass: Class<out T>,
+        tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
-        meta: WorkflowMeta = WorkflowMeta()
-    ): T = WorkflowProxyHandler(klass, options, meta) { context }.stub()
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = WorkflowProxyHandler(
+        klass = klass,
+        tags = tags.map { Tag(it) }.toSet(),
+        workflowOptions = options,
+        workflowMeta = WorkflowMeta(meta)
+    ) { context }.stub()
 
     /*
      * Stub workflow
      * (Kotlin way)
      */
     inline fun <reified T : Any> newWorkflow(
+        tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
         meta: WorkflowMeta = WorkflowMeta()
-    ): T = newWorkflow(T::class.java, options, meta)
+    ): T = newWorkflow(T::class.java, tags, options, meta)
 
     /*
      *  Dispatch a task or a workflow asynchronously

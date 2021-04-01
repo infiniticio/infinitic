@@ -364,6 +364,7 @@ private suspend fun dispatchChildWorkflow(
         methodName = command.childMethodName,
         methodParameterTypes = command.childMethodParameterTypes,
         methodParameters = command.childMethodParameters,
+        tags = state.tags,
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )

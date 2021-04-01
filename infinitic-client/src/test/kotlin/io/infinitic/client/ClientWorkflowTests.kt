@@ -141,6 +141,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
             parentMethodRunId = null,
+            tags = setOf(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -162,6 +163,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
             parentMethodRunId = null,
+            tags = setOf(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -178,7 +180,7 @@ class ClientWorkflowTests : StringSpec({
 
         val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
         // then
-        tagSlots.size shouldBe options.tags.size
+        tagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
             clientName = clientOutput.clientName,
             clientWaiting = false,
@@ -189,6 +191,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
             parentMethodRunId = null,
+            tags = setOf(),
             workflowOptions = options,
             workflowMeta = WorkflowMeta(meta)
         )
@@ -196,8 +199,8 @@ class ClientWorkflowTests : StringSpec({
 
     "Should be able to dispatch a workflow without tags" {
         // when
-        val options = WorkflowOptions(tags = setOf("foo", "bar"))
-        val fakeWorkflow = client.newWorkflow<FakeWorkflow>(options = options)
+        val tags = setOf("foo", "bar")
+        val fakeWorkflow = client.newWorkflow<FakeWorkflow>(tags = tags)
         val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
         // then
         tagSlots.size shouldBe 2
@@ -221,7 +224,8 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
             parentMethodRunId = null,
-            workflowOptions = options,
+            tags = setOf(Tag("foo"), Tag("bar")),
+            workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
     }
@@ -243,6 +247,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters.from(0),
             parentWorkflowId = null,
             parentMethodRunId = null,
+            tags = setOf(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -265,6 +270,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters.from("a"),
             parentWorkflowId = null,
             parentMethodRunId = null,
+            tags = setOf(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -287,6 +293,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters.from(0, "a"),
             parentWorkflowId = null,
             parentMethodRunId = null,
+            tags = setOf(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -311,6 +318,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters.from(klass),
             parentWorkflowId = null,
             parentMethodRunId = null,
+            tags = setOf(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
@@ -337,6 +345,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameters = MethodParameters.from(0, "a"),
             parentWorkflowId = null,
             parentMethodRunId = null,
+            tags = setOf(),
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )

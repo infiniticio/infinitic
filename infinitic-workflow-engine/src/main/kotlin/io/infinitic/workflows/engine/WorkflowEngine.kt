@@ -25,7 +25,6 @@
 
 package io.infinitic.workflows.engine
 
-import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.RemoveWorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
@@ -145,8 +144,7 @@ class WorkflowEngine(
             0 -> { // workflow is terminated
 
                 // remove tags reference to this instance
-                val tags = state.workflowOptions.tags.map { Tag(it) } + Tag.of(state.workflowId)
-                tags.map {
+                state.tags.map {
                     output.sendToTagEngine(
                         RemoveWorkflowTag(
                             tag = it,
