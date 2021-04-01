@@ -33,9 +33,13 @@ data class Pulsar(
     @JvmField val allowedClusters: Set<String>? = null
 ) {
     init {
-        require(serviceUrl.startsWith("pulsar://")) { "serviceUrl MUST start with pulsar://" }
         require(
-            serviceHttpUrl.startsWith("http://") || serviceHttpUrl.startsWith("https://")
+            serviceUrl.startsWith("pulsar://") ||
+                serviceUrl.startsWith("pulsar+ssl://")
+        )  { "serviceUrl MUST start with pulsar:// or pulsar+ssl://" }
+        require(
+            serviceHttpUrl.startsWith("http://") ||
+                serviceHttpUrl.startsWith("https://")
         ) { "serviceUrl MUST start with http:// or https://" }
         require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
         require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
