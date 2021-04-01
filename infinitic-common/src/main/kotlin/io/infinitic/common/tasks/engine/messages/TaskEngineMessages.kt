@@ -32,6 +32,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -66,8 +67,9 @@ data class DispatchTask(
     val workflowId: WorkflowId?,
     val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,
+    val tags: Set<Tag>,
     val taskMeta: TaskMeta,
-    val taskOptions: TaskOptions = TaskOptions()
+    val taskOptions: TaskOptions
 ) : TaskEngineMessage()
 
 @Serializable
@@ -77,6 +79,7 @@ data class RetryTask(
     val methodName: MethodName?,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters?,
+    val tags: Set<Tag>?,
     val taskMeta: TaskMeta?,
     val taskOptions: TaskOptions?
 ) : TaskEngineMessage()

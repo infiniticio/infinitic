@@ -71,6 +71,7 @@ data class RetryTaskPerTag(
     val methodName: MethodName?,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters?,
+    val tags: Set<Tag>?,
     val taskMeta: TaskMeta?,
     val taskOptions: TaskOptions?
 ) : TagEngineMessage()

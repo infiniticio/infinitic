@@ -35,7 +35,6 @@ import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -361,8 +360,8 @@ fun CoroutineScope.init() {
     )
 
     taskStub = client.newTask(TaskTest::class.java)
-    taskStub1Tag = client.newTask(TaskTest::class.java, TaskOptions(tags = setOf("foo")))
-    taskStub2Tag = client.newTask(TaskTest::class.java, TaskOptions(tags = setOf("foo", "bar")))
+    taskStub1Tag = client.newTask(TaskTest::class.java, tags = setOf("foo"))
+    taskStub2Tag = client.newTask(TaskTest::class.java, tags = setOf("foo", "bar"))
 
     tagEngine = TagEngine(
         tagStateStorage,

@@ -337,7 +337,9 @@ private suspend fun dispatchTask(
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
-        taskMeta = command.taskMeta
+        tags = command.tags,
+        taskMeta = command.taskMeta,
+        taskOptions = command.taskOptions
     )
     workflowEngineOutput.sendToTaskEngine(msg)
 

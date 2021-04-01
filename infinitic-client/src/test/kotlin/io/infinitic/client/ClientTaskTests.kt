@@ -154,6 +154,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -176,6 +177,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -191,7 +193,7 @@ class ClientTaskTests : StringSpec({
         val fakeTask = client.newTask<FakeTask>(options = options, meta = meta)
         val taskId = TaskId(client.async(fakeTask) { m1() })
         // then
-        tagSlots.size shouldBe options.tags.size
+        tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = clientOutput.clientName,
             clientWaiting = false,
@@ -203,6 +205,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = options,
             taskMeta = TaskMeta(meta)
         )
@@ -210,8 +213,7 @@ class ClientTaskTests : StringSpec({
 
     "Should be able to dispatch method with tags" {
         // when
-        val options = TaskOptions(tags = setOf("foo", "bar"))
-        val fakeTask = client.newTask<FakeTask>(options = options)
+        val fakeTask = client.newTask<FakeTask>(tags = setOf("foo", "bar"))
         val taskId = TaskId(client.async(fakeTask) { m1() })
         // then
         tagSlots.size shouldBe 2
@@ -236,7 +238,8 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
-            taskOptions = options,
+            tags = setOf(Tag("foo"), Tag("bar")),
+            taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
     }
@@ -258,6 +261,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -280,6 +284,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -302,6 +307,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -324,6 +330,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -347,6 +354,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -369,6 +377,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -396,6 +405,7 @@ class ClientTaskTests : StringSpec({
             workflowId = null,
             workflowName = null,
             methodRunId = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
@@ -487,8 +497,9 @@ class ClientTaskTests : StringSpec({
             methodName = null,
             methodParameterTypes = null,
             methodParameters = null,
-            taskOptions = TaskOptions(),
-            taskMeta = TaskMeta()
+            tags = null,
+            taskOptions = null,
+            taskMeta = null
         )
     }
 
@@ -504,13 +515,14 @@ class ClientTaskTests : StringSpec({
             methodName = null,
             methodParameterTypes = null,
             methodParameters = null,
-            taskOptions = TaskOptions(),
-            taskMeta = TaskMeta()
+            tags = null,
+            taskOptions = null,
+            taskMeta = null
         )
         taskSlot.isCaptured shouldBe false
     }
 
-    "Should be able to retry task just dispatched" {
+    "Should be able to retry a task just dispatched " {
         // when
         val fakeTask = client.newTask<FakeTask>()
         val id = client.async(fakeTask) { m1() }
@@ -524,6 +536,7 @@ class ClientTaskTests : StringSpec({
             methodName = null,
             methodParameterTypes = null,
             methodParameters = null,
+            tags = setOf(),
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )

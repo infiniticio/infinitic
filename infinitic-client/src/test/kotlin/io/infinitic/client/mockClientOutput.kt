@@ -27,20 +27,19 @@ package io.infinitic.client
 
 import io.infinitic.client.output.ClientOutput
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.SendToChannelCompleted
-import io.infinitic.common.clients.messages.SendToChannelFailed
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.tags.messages.SendToChannelPerTag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.mockk.CapturingSlot
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 
 fun mockClientOutput(
@@ -54,24 +53,7 @@ fun mockClientOutput(
 
     every { mock.clientName } returns clientName
 
-    coEvery { mock.sendToTagEngine(capture(tagSlots)) } coAnswers {
-        val msg = tagSlots.last()
-        if (msg is SendToChannelPerTag && msg.clientWaiting) {
-            client.handle(
-                if (msg.channelEvent.get() == "unknown") {
-                    SendToChannelFailed(
-                        clientName = clientName,
-                        channelEventId = msg.channelEventId
-                    )
-                } else {
-                    SendToChannelCompleted(
-                        clientName = clientName,
-                        channelEventId = msg.channelEventId
-                    )
-                }
-            )
-        }
-    }
+    coEvery { mock.sendToTagEngine(capture(tagSlots)) } just Runs
 
     coEvery { mock.sendToTaskEngine(capture(taskSlot)) } coAnswers {
         val msg = taskSlot.captured

@@ -28,10 +28,10 @@ package io.infinitic.tasks.engine
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.AddTaskTag
 import io.infinitic.common.tags.messages.RemoveTaskTag
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.engine.messages.CancelTask
@@ -99,7 +99,7 @@ internal class TaskEngineTests : StringSpec({
         val stateIn = state(
             mapOf(
                 "taskStatus" to TaskStatus.RUNNING_OK,
-                "taskOptions" to TaskOptions(tags = setOf("tag"))
+                "tags" to setOf(Tag("foo"), Tag("bar"))
             )
         )
         val msgIn = cancelTask(mapOf("taskId" to stateIn.taskId))
@@ -227,7 +227,7 @@ internal class TaskEngineTests : StringSpec({
         val stateIn = state(
             mapOf(
                 "taskStatus" to TaskStatus.RUNNING_OK,
-                "taskOptions" to TaskOptions(tags = setOf("tag"))
+                "tags" to setOf(Tag("foo"), Tag("bar"))
             )
         )
         val msgIn = taskAttemptCompleted(mapOf("taskId" to stateIn.taskId))

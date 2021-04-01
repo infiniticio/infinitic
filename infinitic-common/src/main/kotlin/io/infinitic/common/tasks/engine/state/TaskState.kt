@@ -31,6 +31,7 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -63,6 +64,7 @@ data class TaskState(
     var taskAttemptId: TaskAttemptId,
     var taskAttemptRetry: TaskAttemptRetry = TaskAttemptRetry(0),
     var previousTaskAttemptError: TaskAttemptError? = null,
+    val tags: Set<Tag>,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
 ) {

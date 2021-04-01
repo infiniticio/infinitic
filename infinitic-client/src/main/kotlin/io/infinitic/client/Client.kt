@@ -82,22 +82,24 @@ open class Client {
      */
     @JvmOverloads fun <T : Any> newTask(
         klass: Class<out T>,
+        tags: Set<String> = setOf(),
         options: TaskOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
     ): T = TaskProxyHandler(
         klass = klass,
+        tags = tags.map { Tag(it) }.toSet(),
         taskOptions = options ?: TaskOptions(),
         taskMeta = TaskMeta(meta)
     ) { dispatcher }.stub()
 
     /*
-     * Create stub for a new task
-     * (Kotlin way)
+     * (Kotlin) Create stub for a new task
      */
     inline fun <reified T : Any> newTask(
+        tags: Set<String> = setOf(),
         options: TaskOptions? = null,
         meta: Map<String, ByteArray> = mapOf()
-    ): T = newTask(T::class.java, options, meta)
+    ): T = newTask(T::class.java, tags, options, meta)
 
     /*
      * Create stub for an existing task targeted per id
@@ -105,12 +107,14 @@ open class Client {
     @JvmOverloads fun <T : Any> getTask(
         klass: Class<out T>,
         id: UUID,
+        tags: Set<String>? = null,
         options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
+        meta: Map<String, ByteArray>? = null
     ): T = TaskProxyHandler(
         klass = klass,
-        taskOptions = options ?: TaskOptions(),
-        taskMeta = TaskMeta(meta),
+        tags = tags?.map { Tag(it) }?.toSet(),
+        taskOptions = options,
+        taskMeta = meta?.let { TaskMeta(it) },
         perTaskId = TaskId(id),
         perTag = null
     ) { dispatcher }.stub()
@@ -121,35 +125,37 @@ open class Client {
     @JvmOverloads fun <T : Any> getTask(
         klass: Class<out T>,
         tag: String,
+        tags: Set<String>? = null,
         options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
+        meta: Map<String, ByteArray>? = null
     ): T = TaskProxyHandler(
         klass = klass,
-        taskOptions = options ?: TaskOptions(),
-        taskMeta = TaskMeta(meta),
+        tags = tags?.map { Tag(it) }?.toSet(),
+        taskOptions = options,
+        taskMeta = meta?.let { TaskMeta(it) },
         perTaskId = null,
         perTag = Tag(tag)
     ) { dispatcher }.stub()
 
     /*
-     * Create stub for an existing task targeted per id
-     * (Kotlin way)
+     * (Kotlin) Create stub for an existing task targeted per id
      */
     inline fun <reified T : Any> getTask(
         id: UUID,
+        tags: Set<String>? = null,
         options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = getTask(T::class.java, id, options, meta)
+        meta: Map<String, ByteArray>? = null
+    ): T = getTask(T::class.java, id, tags, options, meta)
 
     /*
-     * Create stub for an existing task targeted per tag
-     * (Kotlin way)
+     * (Kotlin) Create stub for an existing task targeted per tag
      */
     inline fun <reified T : Any> getTask(
         tag: String,
+        tags: Set<String>? = null,
         options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = getTask(T::class.java, tag, options, meta)
+        meta: Map<String, ByteArray>? = null
+    ): T = getTask(T::class.java, tag, tags, options, meta)
 
     /*
      * Create stub for a new workflow
@@ -165,8 +171,7 @@ open class Client {
     ) { dispatcher }.stub()
 
     /*
-     * Create stub for a new workflow
-     * (Kotlin way)
+     * (Kotlin) Create stub for a new workflow
      */
     inline fun <reified T : Any> newWorkflow(
         options: WorkflowOptions? = null,
@@ -206,8 +211,7 @@ open class Client {
     ) { dispatcher }.stub()
 
     /*
-     * Create stub for an existing workflow per id
-     * (kotlin way)
+     * (kotlin) Create stub for an existing workflow per id
      */
     inline fun <reified T : Any> getWorkflow(
         id: UUID,
@@ -216,8 +220,7 @@ open class Client {
     ): T = getWorkflow(T::class.java, id, options, meta)
 
     /*
-     * Create stub for an existing workflow per tag
-     * (kotlin way)
+     * (kotlin) Create stub for an existing workflow per tag
      */
     inline fun <reified T : Any> getWorkflow(
         tag: String,
@@ -226,7 +229,7 @@ open class Client {
     ): T = getWorkflow(T::class.java, tag, options, meta)
 
     /*
-     *  Process (asynchronously) a task or a workflow
+     *  Asynchronously process a task or a workflow
      */
     fun <T : Any, S> async(proxy: T, method: T.() -> S): UUID {
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "async")
@@ -322,6 +325,7 @@ open class Client {
                 methodName = null,
                 methodParameterTypes = null,
                 methodParameters = null,
+                tags = handler.tags,
                 taskOptions = handler.taskOptions,
                 taskMeta = handler.taskMeta
             )
@@ -337,6 +341,7 @@ open class Client {
                 methodName = null,
                 methodParameterTypes = null,
                 methodParameters = null,
+                tags = handler.tags,
                 taskOptions = handler.taskOptions,
                 taskMeta = handler.taskMeta
             )

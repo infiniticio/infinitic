@@ -29,6 +29,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TaskOptions(
-    val tags: Set<String> = setOf(),
     val runningTimeout: Float? = null
 )

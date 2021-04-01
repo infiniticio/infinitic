@@ -27,6 +27,7 @@ package io.infinitic.workflows
 
 import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.channels.ChannelImpl
@@ -49,18 +50,24 @@ abstract class Workflow {
      */
     @JvmOverloads fun <T : Any> newTask(
         klass: Class<out T>,
+        tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
-        meta: TaskMeta = TaskMeta()
-    ): T = TaskProxyHandler(klass, options, meta) { context }.stub()
+        meta: Map<String, ByteArray> = mapOf()
+    ): T = TaskProxyHandler(
+        klass = klass,
+        tags = tags.map { Tag(it) }.toSet(),
+        taskOptions = options,
+        taskMeta = TaskMeta(meta)
+    ) { context }.stub()
 
     /*
-     * Stub task
-     * (Kotlin way)
+     * (Kotlin) Stub task
      */
     inline fun <reified T : Any> newTask(
+        tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
         meta: TaskMeta = TaskMeta()
-    ): T = newTask(T::class.java, options, meta)
+    ): T = newTask(T::class.java, tags, options, meta)
 
     /*
      * Stub workflow

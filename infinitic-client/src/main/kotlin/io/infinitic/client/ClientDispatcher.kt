@@ -93,9 +93,9 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         val taskName = TaskName.from(method)
 
         // add provided tags for this id
-        val addTaskTags = handler.taskOptions.tags.map {
+        val addTaskTags = handler.tags!!.map {
             AddTaskTag(
-                tag = Tag(it),
+                tag = it,
                 name = taskName,
                 taskId = taskId
             )
@@ -113,8 +113,9 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             workflowId = null,
             workflowName = null,
             methodRunId = null,
-            taskOptions = handler.taskOptions,
-            taskMeta = handler.taskMeta
+            tags = handler.tags!!,
+            taskOptions = handler.taskOptions!!,
+            taskMeta = handler.taskMeta!!
         )
 
         // send messages

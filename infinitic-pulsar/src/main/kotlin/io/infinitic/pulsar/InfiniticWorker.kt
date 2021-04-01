@@ -120,7 +120,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startTagEngineWorkers(
         consumerName: String,
-        config: io.infinitic.config.WorkerConfig,
+        config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
@@ -151,7 +151,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startTaskEngineWorkers(
         consumerName: String,
-        config: io.infinitic.config.WorkerConfig,
+        config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
@@ -188,7 +188,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startWorkflowEngineWorkers(
         consumerName: String,
-        config: io.infinitic.config.WorkerConfig,
+        config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
@@ -220,7 +220,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startMonitoringWorkers(
         consumerName: String,
-        config: io.infinitic.config.WorkerConfig,
+        config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
@@ -254,7 +254,7 @@ class InfiniticWorker(
 
     private fun CoroutineScope.startTaskExecutorWorkers(
         consumerName: String,
-        config: io.infinitic.config.WorkerConfig,
+        config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {

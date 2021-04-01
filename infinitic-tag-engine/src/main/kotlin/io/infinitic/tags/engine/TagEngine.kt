@@ -97,6 +97,7 @@ class TagEngine(
                     methodName = message.methodName,
                     methodParameterTypes = message.methodParameterTypes,
                     methodParameters = message.methodParameters,
+                    tags = message.tags,
                     taskMeta = message.taskMeta,
                     taskOptions = message.taskOptions
                 )
