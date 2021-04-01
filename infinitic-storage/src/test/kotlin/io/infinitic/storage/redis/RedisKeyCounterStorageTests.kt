@@ -25,6 +25,7 @@
 
 package io.infinitic.storage.redis
 
+import io.infinitic.storage.redis.keyCounter.RedisKeyCounterStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import redis.embedded.RedisServer

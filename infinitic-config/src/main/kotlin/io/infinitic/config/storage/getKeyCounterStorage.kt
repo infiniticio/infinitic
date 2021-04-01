@@ -25,10 +25,9 @@
 package io.infinitic.config.storage
 
 import io.infinitic.common.storage.keyCounter.KeyCounterStorage
-import io.infinitic.config.WorkerConfig
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.inMemory.keyCounter.InMemoryKeyCounterStorage
-import io.infinitic.storage.redis.RedisKeyCounterStorage
+import io.infinitic.storage.redis.keyCounter.RedisKeyCounterStorage
 
 fun StateStorage.getKeyCounterStorage(workerConfig: io.infinitic.config.WorkerConfig): KeyCounterStorage = when (this) {
     StateStorage.inMemory -> InMemoryKeyCounterStorage()

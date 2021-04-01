@@ -23,21 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis
+package io.infinitic.storage.redis.keyValue
 
-import io.infinitic.common.storage.keyCounter.KeyCounterStorage
+import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.storage.redis.Redis
 import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 
-class RedisKeyCounterStorage(
+class RedisKeyValueStorage(
     host: String,
     port: Int,
     jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
-) : KeyCounterStorage {
+) : KeyValueStorage {
 
     companion object {
-        fun of(config: Redis) = RedisKeyCounterStorage(config.host, config.port)
+        fun of(config: Redis) = RedisKeyValueStorage(config.host, config.port)
     }
 
     private val pool = JedisPool(jedisPoolConfig, host, port)
@@ -46,12 +47,14 @@ class RedisKeyCounterStorage(
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
-    override suspend fun getCounter(key: String): Long =
+    override suspend fun getValue(key: String): ByteArray? =
         pool.resource.use { it.get(key.toByteArray()) }
-            ?.let { String(it) }?.toLong() ?: 0L
 
-    override suspend fun incrCounter(key: String, amount: Long) =
-        pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
+    override suspend fun putValue(key: String, value: ByteArray) =
+        pool.resource.use { it.set(key.toByteArray(), value); Unit }
+
+    override suspend fun delValue(key: String) =
+        pool.resource.use { it.del(key.toByteArray()); Unit }
 
     @TestOnly
     override fun flush() {
