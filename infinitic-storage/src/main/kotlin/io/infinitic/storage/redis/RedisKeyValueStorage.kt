@@ -26,11 +26,21 @@
 package io.infinitic.storage.redis
 
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 
-class RedisKeyValueStorage(config: Redis) : KeyValueStorage {
-    private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
+class RedisKeyValueStorage(
+    host: String,
+    port: Int,
+    jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
+) : KeyValueStorage {
+
+    companion object {
+        fun of(config: Redis) = RedisKeyValueStorage(config.host, config.port)
+    }
+
+    private val pool = JedisPool(jedisPoolConfig, host, port)
 
     init {
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
@@ -45,7 +55,8 @@ class RedisKeyValueStorage(config: Redis) : KeyValueStorage {
     override suspend fun delValue(key: String) =
         pool.resource.use { it.del(key.toByteArray()); Unit }
 
+    @TestOnly
     override fun flush() {
-        // flush is used in tests, no actual implementation needed here
+        pool.resource.use { it.flushDB() }
     }
 }

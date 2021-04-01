@@ -28,6 +28,8 @@ dependencies {
 
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-cache"))
+
+    testImplementation("com.github.kstyrc:embedded-redis:0.6")
 }
 
 apply("../publish.gradle.kts")

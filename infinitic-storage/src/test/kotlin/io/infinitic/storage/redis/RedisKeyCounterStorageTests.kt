@@ -25,38 +25,48 @@
 
 package io.infinitic.storage.redis
 
-import io.infinitic.common.storage.keySet.KeySetStorage
-import org.jetbrains.annotations.TestOnly
-import redis.clients.jedis.JedisPool
-import redis.clients.jedis.JedisPoolConfig
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
+import redis.embedded.RedisServer
 
-class RedisKeySetStorage(
-    host: String,
-    port: Int,
-    jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
-) : KeySetStorage {
+class RedisKeyCounterStorageTests : StringSpec({
 
-    companion object {
-        fun of(config: Redis) = RedisKeySetStorage(config.host, config.port)
+    val redisServer = RedisServer(6379)
+    val storage = RedisKeyCounterStorage("localhost", 6379)
+    val b1 =
+        beforeSpec {
+            redisServer.start()
+        }
+
+    afterSpec {
+        redisServer.stop()
     }
 
-    private val pool = JedisPool(jedisPoolConfig, host, port)
-
-    init {
-        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+    beforeTest {
+        storage.incrCounter("foo", 42)
     }
 
-    override suspend fun getSet(key: String): Set<ByteArray> =
-        pool.resource.use { it.smembers(key.toByteArray()) }
-
-    override suspend fun addToSet(key: String, value: ByteArray) =
-        pool.resource.use { it.sadd(key.toByteArray(), value); Unit }
-
-    override suspend fun removeFromSet(key: String, value: ByteArray) =
-        pool.resource.use { it.srem(key.toByteArray(), value); Unit }
-
-    @TestOnly
-    override fun flush() {
-        pool.resource.use { it.flushDB() }
+    afterTest {
+        storage.flush()
     }
-}
+
+    "getCounter should return 0 on unknown key" {
+        storage.getCounter("unknown") shouldBe 0
+    }
+
+    "getCounter should return value on known key" {
+        storage.getCounter("foo") shouldBe 42
+    }
+
+    "incrCounter on unknown key should incr value from 0" {
+        storage.incrCounter("unknown", 42)
+
+        storage.getCounter("unknown") shouldBe 42
+    }
+
+    "incrCounter on known key should incr value from current" {
+        storage.incrCounter("foo", -7)
+
+        storage.getCounter("foo") shouldBe 35
+    }
+})

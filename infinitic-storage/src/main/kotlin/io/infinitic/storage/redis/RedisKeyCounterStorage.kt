@@ -26,11 +26,21 @@
 package io.infinitic.storage.redis
 
 import io.infinitic.common.storage.keyCounter.KeyCounterStorage
+import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 
-class RedisKeyCounterStorage(config: Redis) : KeyCounterStorage {
-    private val pool = JedisPool(JedisPoolConfig(), config.host, config.port)
+class RedisKeyCounterStorage(
+    host: String,
+    port: Int,
+    jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
+) : KeyCounterStorage {
+
+    companion object {
+        fun of(config: Redis) = RedisKeyCounterStorage(config.host, config.port)
+    }
+
+    private val pool = JedisPool(jedisPoolConfig, host, port)
 
     init {
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
@@ -43,7 +53,8 @@ class RedisKeyCounterStorage(config: Redis) : KeyCounterStorage {
     override suspend fun incrCounter(key: String, amount: Long) =
         pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
 
+    @TestOnly
     override fun flush() {
-        // flush is used in tests, no actual implementation needed here
+        pool.resource.use { it.flushDB() }
     }
 }

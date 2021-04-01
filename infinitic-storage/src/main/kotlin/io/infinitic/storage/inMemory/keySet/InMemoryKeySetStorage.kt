@@ -25,6 +25,7 @@
 
 package io.infinitic.storage.inMemory.keySet
 
+import io.infinitic.common.data.Bytes
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetStorage
 
@@ -57,22 +58,5 @@ class InMemoryKeySetStorage : KeySetStorage, Flushable {
                 storage[key] = set
                 set
             }
-    }
-
-    class Bytes(val content: ByteArray) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Bytes
-
-            if (!content.contentEquals(other.content)) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            return content.contentHashCode()
-        }
     }
 }

@@ -22,15 +22,22 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.config.storage
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.config.WorkerConfig
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
-import io.infinitic.storage.redis.RedisKeyValueStorage
+package io.infinitic.common.data
 
-fun StateStorage.getKeyValueStorage(workerConfig: io.infinitic.config.WorkerConfig): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryKeyValueStorage()
-    StateStorage.redis -> RedisKeyValueStorage.of(workerConfig.redis!!)
+class Bytes(val content: ByteArray) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Bytes
+
+        if (!content.contentEquals(other.content)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return content.contentHashCode()
+    }
 }

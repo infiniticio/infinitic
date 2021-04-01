@@ -32,5 +32,5 @@ import io.infinitic.storage.redis.RedisKeyCounterStorage
 
 fun StateStorage.getKeyCounterStorage(workerConfig: io.infinitic.config.WorkerConfig): KeyCounterStorage = when (this) {
     StateStorage.inMemory -> InMemoryKeyCounterStorage()
-    StateStorage.redis -> RedisKeyCounterStorage(workerConfig.redis!!)
+    StateStorage.redis -> RedisKeyCounterStorage.of(workerConfig.redis!!)
 }

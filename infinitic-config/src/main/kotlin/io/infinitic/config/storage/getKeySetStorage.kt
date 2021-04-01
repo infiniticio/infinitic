@@ -32,5 +32,5 @@ import io.infinitic.storage.redis.RedisKeySetStorage
 
 fun StateStorage.getKeySetStorage(workerConfig: io.infinitic.config.WorkerConfig): KeySetStorage = when (this) {
     StateStorage.inMemory -> InMemoryKeySetStorage()
-    StateStorage.redis -> RedisKeySetStorage(workerConfig.redis!!)
+    StateStorage.redis -> RedisKeySetStorage.of(workerConfig.redis!!)
 }
