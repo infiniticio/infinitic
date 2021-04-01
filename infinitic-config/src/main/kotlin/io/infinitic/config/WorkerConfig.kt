@@ -113,8 +113,6 @@ data class WorkerConfig(
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "workflowEngine.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
-
-            require(workflows.isNotEmpty()) { "You have defined workflowEngine, but no workflow" }
         }
 
         taskEngine?.let {
@@ -123,8 +121,6 @@ data class WorkerConfig(
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "taskEngine.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
-
-            require(tasks.isNotEmpty()) { "You have defined taskEngine, but no task" }
         }
 
         monitoring?.let {
