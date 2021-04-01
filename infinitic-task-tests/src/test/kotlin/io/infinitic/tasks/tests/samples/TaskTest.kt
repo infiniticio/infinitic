@@ -31,6 +31,7 @@ import kotlinx.coroutines.runBlocking
 
 interface TaskTest {
     fun log(): String
+    fun await(delay: Long)
 }
 
 class TaskException(val log: String) : Exception()
@@ -56,6 +57,10 @@ class TaskTestImpl : TaskTest {
         }
 
         return log
+    }
+
+    override fun await(delay: Long) {
+        Thread.sleep(delay)
     }
 
     fun getRetryDelay(): Float? {

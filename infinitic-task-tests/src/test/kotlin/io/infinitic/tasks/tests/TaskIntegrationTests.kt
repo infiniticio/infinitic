@@ -30,9 +30,11 @@ import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.Name
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskStatus
@@ -66,6 +68,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import java.util.UUID
 
 private var taskStatus: TaskStatus? = null
@@ -292,6 +295,27 @@ class TaskIntegrationTests : StringSpec({
         }
         // checks number of task processing
         r shouldBe "1"
+    }
+
+    "Tag should be added and deleted after completion" {
+        // task will succeed
+        taskTest.behavior = { _, _ -> Status.SUCCESS }
+        // run system
+        coroutineScope {
+            init()
+            taskId = TaskId(client.async(taskStub2Tag) { await(100) })
+            yield()
+            // checks taskId has been added to tag storage
+            tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
+            tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
+        }
+        // check that task is terminated
+        taskStateStorage.getState(taskId) shouldBe null
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        // checks taskId has been removed from tag storage
+        tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
+        tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
     }
 })
 

@@ -27,32 +27,52 @@ package io.infinitic.storage.inMemory.keySet
 
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetStorage
-import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryKeySetStorage() : KeySetStorage, Flushable {
-    private val storage = ConcurrentHashMap<String, MutableSet<ByteArray>>()
+class InMemoryKeySetStorage : KeySetStorage, Flushable {
+    val storage = mutableMapOf<String, MutableSet<Bytes>>()
 
-    override suspend fun getSet(key: String): MutableSet<ByteArray> {
+    override suspend fun getSet(key: String): Set<ByteArray> {
+        return getBytesPerKey(key).map { it.content }.toSet()
+    }
+
+    override suspend fun addToSet(key: String, value: ByteArray) {
+        getBytesPerKey(key).add(Bytes(value))
+    }
+
+    override suspend fun removeFromSet(key: String, value: ByteArray) {
+        getBytesPerKey(key).remove(Bytes(value))
+
+        // clean key if now empty
+        if (getBytesPerKey(key).isEmpty()) storage.remove(key)
+    }
+
+    override fun flush() {
+        storage.clear()
+    }
+
+    private fun getBytesPerKey(key: String): MutableSet<Bytes> {
         return storage[key]
             ?: run {
-                // create empty set
-                val set = mutableSetOf<ByteArray>()
+                val set = mutableSetOf<Bytes>()
                 storage[key] = set
                 set
             }
     }
 
-    override suspend fun addToSet(key: String, value: ByteArray) {
-        getSet(key).add(value)
-    }
+    class Bytes(val content: ByteArray) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
 
-    override suspend fun removeFromSet(key: String, value: ByteArray) {
-        getSet(key).remove(value)
-        // clean key if now empty
-        if (getSet(key).isEmpty()) storage.remove(key)
-    }
+            other as Bytes
 
-    override fun flush() {
-        storage.clear()
+            if (!content.contentEquals(other.content)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return content.contentHashCode()
+        }
     }
 }

@@ -30,8 +30,10 @@ import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientResponseMessage
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.Name
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -76,6 +78,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import java.time.Instant
 import java.util.UUID
 
@@ -642,6 +645,27 @@ class WorkflowIntegrationTests : StringSpec({
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
         workflowOutput shouldBe "foobar42"
+    }
+
+    "Tag should be added and deleted after completion" {
+        var id: UUID
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowATagged) { channel1() }
+            // checks id has been added to tag storage
+            yield()
+            tagStateStorage.getIds(Tag("foo"), Name(WorkflowA::class.java.name)).contains(id) shouldBe true
+            tagStateStorage.getIds(Tag("bar"), Name(WorkflowA::class.java.name)).contains(id) shouldBe true
+            workflowATagged.channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "test"
+        // checks id has been removed from tag storage
+        tagStateStorage.getIds(Tag("foo"), Name(WorkflowA::class.java.name)).contains(id) shouldBe false
+        tagStateStorage.getIds(Tag("bar"), Name(WorkflowA::class.java.name)).contains(id) shouldBe false
     }
 })
 

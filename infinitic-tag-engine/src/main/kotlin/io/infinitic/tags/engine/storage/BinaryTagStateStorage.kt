@@ -72,9 +72,9 @@ class BinaryTagStateStorage(
         keySetStorage.removeFromSet(key, id.toByteArray())
     }
 
-    private fun getTagMessageIdKey(tag: Tag, name: Name) = "name**$name**tag**$tag**messageId"
+    private fun getTagMessageIdKey(tag: Tag, name: Name) = "name:$name|tag:$tag|messageId"
 
-    private fun getTagSetIdsKey(tag: Tag, name: Name) = "name**$name**tag**$tag**setIds"
+    private fun getTagSetIdsKey(tag: Tag, name: Name) = "name:$name|tag:$tag|setIds"
 
     override fun flush() {
         keyValueStorage.flush()
