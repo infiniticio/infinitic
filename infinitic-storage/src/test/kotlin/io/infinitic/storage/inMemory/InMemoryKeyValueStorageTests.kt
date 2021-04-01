@@ -23,50 +23,51 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis
+package io.infinitic.storage.inMemory
 
+import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import redis.embedded.RedisServer
 
-class RedisKeyCounterStorageTests : StringSpec({
+class InMemoryKeyValueStorageTests : StringSpec({
 
-    val redisServer = RedisServer(6379)
-    val storage = RedisKeyCounterStorage("localhost", 6379)
-
-    beforeSpec {
-        redisServer.start()
-    }
-
-    afterSpec {
-        redisServer.stop()
-    }
+    val storage = InMemoryKeyValueStorage()
 
     beforeTest {
-        storage.incrCounter("foo", 42)
+        storage.putValue("foo", "bar".toByteArray())
     }
 
     afterTest {
         storage.flush()
     }
 
-    "getCounter should return 0 on unknown key" {
-        storage.getCounter("unknown") shouldBe 0
+    "getValue should return null on unknown key" {
+        storage.getValue("unknown") shouldBe null
     }
 
-    "getCounter should return value on known key" {
-        storage.getCounter("foo") shouldBe 42
+    "getValue should return value" {
+        storage.getValue("foo").contentEquals("bar".toByteArray()) shouldBe true
     }
 
-    "incrCounter on unknown key should incr value from 0" {
-        storage.incrCounter("unknown", 42)
+    "putValue on new key should create value" {
+        storage.putValue("foo2", "bar2".toByteArray())
 
-        storage.getCounter("unknown") shouldBe 42
+        storage.getValue("foo2").contentEquals("bar2".toByteArray()) shouldBe true
     }
 
-    "incrCounter on known key should incr value from current" {
-        storage.incrCounter("foo", -7)
+    "putValue on existing key should update value" {
+        storage.putValue("foo", "bar2".toByteArray())
 
-        storage.getCounter("foo") shouldBe 35
+        storage.getValue("foo").contentEquals("bar2".toByteArray()) shouldBe true
+    }
+
+    "delValue on unknown key does nothing" {
+        storage.delValue("unknown")
+    }
+
+    "delValue should delete value" {
+        storage.delValue("foo")
+
+        storage.getValue("foo") shouldBe null
     }
 })

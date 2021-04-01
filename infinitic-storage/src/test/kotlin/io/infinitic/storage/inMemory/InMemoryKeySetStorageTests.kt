@@ -23,25 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis
+package io.infinitic.storage.inMemory
 
 import io.infinitic.common.data.Bytes
+import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import redis.embedded.RedisServer
 
-class RedisKeySetStorageTests : StringSpec({
+class InMemoryKeySetStorageTests : StringSpec({
 
-    val redisServer = RedisServer(6379)
-    val storage = RedisKeySetStorage("localhost", 6379)
-
-    beforeSpec {
-        redisServer.start()
-    }
-
-    afterSpec {
-        redisServer.stop()
-    }
+    val storage = InMemoryKeySetStorage()
 
     beforeTest {
         storage.addToSet("foo", "bar".toByteArray())
