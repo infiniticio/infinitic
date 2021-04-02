@@ -32,34 +32,21 @@ fun getPool(
     host: String,
     port: Int,
     timeout: Int,
-    user: String,
-    password: String,
+    user: String?,
+    password: String?,
     database: Int,
     ssl: Boolean,
     jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
-): JedisPool {
-    return when (user.isEmpty()) {
-        true -> JedisPool(
-            jedisPoolConfig,
-            host,
-            port,
-            timeout,
-            null,
-            database,
-            ssl
-        )
-        false -> JedisPool(
-            jedisPoolConfig,
-            host,
-            port,
-            timeout,
-            user,
-            password,
-            database,
-            ssl
-        )
-    }
-}
+) = JedisPool(
+    jedisPoolConfig,
+    host,
+    port,
+    timeout,
+    user,
+    password,
+    database,
+    ssl
+)
 
 fun getPool(config: Redis) = getPool(
     host = config.host,
