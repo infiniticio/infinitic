@@ -26,24 +26,21 @@
 package io.infinitic.monitoring.perName.engine
 
 import io.infinitic.common.metrics.global.messages.TaskCreated
+import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.monitoring.perName.engine.output.LoggedMonitoringPerNameOutput
-import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class MonitoringPerNameEngine(
     val storage: MonitoringPerNameStateStorage,
-    output: MonitoringPerNameOutput
+    val sendToMetricsGlobal: SendToMetricsGlobal
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
-
-    private val output = LoggedMonitoringPerNameOutput(output)
 
     suspend fun handle(message: MetricsPerNameMessage) {
         logger.debug("receiving {}", message)
@@ -67,7 +64,7 @@ class MonitoringPerNameEngine(
         // It's a new task type
         if (oldState == null) {
             val taskCreated = TaskCreated(taskName = message.taskName)
-            output.sendToMonitoringGlobal(taskCreated)
+            sendToMetricsGlobal(taskCreated)
         }
 
         // Update stored state if needed and existing

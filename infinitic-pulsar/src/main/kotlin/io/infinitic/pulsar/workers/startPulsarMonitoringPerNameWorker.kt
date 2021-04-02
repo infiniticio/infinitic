@@ -25,13 +25,12 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
-import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.pulsar.InfiniticWorker
 import kotlinx.coroutines.CoroutineScope
@@ -65,14 +64,13 @@ private fun logError(message: MetricsPerNameMessage, e: Exception) = logger.erro
 fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     consumerCounter: Int,
     metricsPerNameConsumer: Consumer<MetricsPerNameEnvelope>,
-    monitoringPerNameOutput: MonitoringPerNameOutput,
-    sendToMetricsPerNameDeadLetters: SendToMetricsPerName,
+    sendToMetricsGlobal: SendToMetricsGlobal,
     keyValueStorage: KeyValueStorage,
 ) = launch(singleThreadedContext("$MONITORING_PER_NAME_THREAD_NAME-$consumerCounter")) {
 
     val monitoringPerNameEngine = MonitoringPerNameEngine(
         BinaryMonitoringPerNameStateStorage(keyValueStorage),
-        monitoringPerNameOutput
+        sendToMetricsGlobal
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =

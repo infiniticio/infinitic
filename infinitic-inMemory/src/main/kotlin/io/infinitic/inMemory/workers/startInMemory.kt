@@ -31,7 +31,6 @@ import io.infinitic.common.clients.transport.ClientMessageToProcess
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.inMemory.transport.InMemoryMonitoringPerNameOutput
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
 import io.infinitic.inMemory.transport.InMemoryTaskExecutorOutput
@@ -178,9 +177,7 @@ fun CoroutineScope.startInMemory(
             monitoringPerNameChannel,
             logChannel
         ),
-        InMemoryMonitoringPerNameOutput(
-            monitoringGlobalChannel
-        )
+        inMemoryOutput.sendToMetricsGlobal
     )
 
     startMonitoringGlobalEngine(

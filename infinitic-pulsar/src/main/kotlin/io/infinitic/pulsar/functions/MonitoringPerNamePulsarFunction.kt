@@ -60,6 +60,6 @@ class MonitoringPerNamePulsarFunction : Function<MetricsPerNameEnvelope, Void> {
                 context.keyValueStorage()
             )
         ),
-        PulsarOutputs.from(context).monitoringPerNameOutput
+        PulsarOutputs.from(context).sendToMetricsGlobal
     )
 }

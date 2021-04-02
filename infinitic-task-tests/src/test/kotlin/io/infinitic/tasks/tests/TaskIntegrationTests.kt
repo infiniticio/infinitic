@@ -45,7 +45,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.output.FunctionsMonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
@@ -429,9 +428,7 @@ fun CoroutineScope.init() {
 
     monitoringPerNameEngine = MonitoringPerNameEngine(
         monitoringPerNameStateStorage,
-        FunctionsMonitoringPerNameOutput(
-            { msg: MetricsGlobalMessage -> sendToMonitoringGlobal(msg) }
-        )
+        { msg: MetricsGlobalMessage -> sendToMonitoringGlobal(msg) }
     )
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)

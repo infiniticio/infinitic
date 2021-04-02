@@ -50,7 +50,6 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.monitoring.perName.engine.output.FunctionsMonitoringPerNameOutput
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
@@ -249,10 +248,6 @@ class PulsarOutputs(
         sendEventsToTagEngine,
         sendCommandsToTaskEngine,
         sendEventsToWorkflowEngine,
-    )
-
-    val monitoringPerNameOutput = FunctionsMonitoringPerNameOutput(
-        sendToMetricsGlobal
     )
 
     val taskExecutorOutput = TaskExecutorDataOutput(

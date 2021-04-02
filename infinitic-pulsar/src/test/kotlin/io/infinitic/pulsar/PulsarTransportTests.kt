@@ -181,7 +181,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MetricsGlobalM
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).monitoringPerNameOutput.sendToMonitoringGlobal(msg)
+        PulsarOutputs.from(context).sendToMetricsGlobal(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/monitoring-global"

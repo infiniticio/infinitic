@@ -38,7 +38,7 @@ dependencies {
     api(project(":infinitic-client"))
 
     implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-monitoring-engines"))
+    implementation(project(":infinitic-metrics-engines"))
     implementation(project(":infinitic-tag-engine"))
     implementation(project(":infinitic-task-engine"))
     implementation(project(":infinitic-task-executor"))

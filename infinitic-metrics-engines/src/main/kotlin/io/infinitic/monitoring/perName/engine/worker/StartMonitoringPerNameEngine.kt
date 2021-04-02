@@ -25,10 +25,10 @@
 
 package io.infinitic.monitoring.perName.engine.worker
 
+import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameInputChannels
 import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameMessageToProcess
-import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -50,12 +50,12 @@ fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNam
     coroutineName: String,
     monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
     monitoringPerNameInputChannels: MonitoringPerNameInputChannels<T>,
-    monitoringPerNameOutput: MonitoringPerNameOutput
+    sendToMetricsGlobal: SendToMetricsGlobal
 ) = launch(CoroutineName(coroutineName)) {
 
     val monitoringPerNameEngine = MonitoringPerNameEngine(
         monitoringPerNameStateStorage,
-        monitoringPerNameOutput
+        sendToMetricsGlobal
     )
 
     val out = monitoringPerNameInputChannels.monitoringPerNameResultsChannel

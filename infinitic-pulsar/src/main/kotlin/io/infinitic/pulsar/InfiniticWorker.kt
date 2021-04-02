@@ -237,8 +237,7 @@ class InfiniticWorker(
                     startPulsarMonitoringPerNameWorker(
                         counter,
                         pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName, counter),
-                        pulsarOutputs.monitoringPerNameOutput,
-                        pulsarOutputs.sendToMetricsPerNameDeadLetters,
+                        pulsarOutputs.sendToMetricsGlobal,
                         storage
                     )
                 }
