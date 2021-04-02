@@ -61,7 +61,7 @@ class WorkflowEngine(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: WorkflowEngineMessage) {
-        logger.debug("workflowId {} - receiving {} (messageId {})", message.workflowId, message, message.messageId)
+        logger.debug("receiving {}", message)
 
         // immediately discard irrelevant messages
         when (message) {

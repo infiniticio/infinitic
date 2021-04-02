@@ -39,7 +39,7 @@ class MonitoringGlobalEngine(
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: MonitoringGlobalMessage) {
-        logger.debug("receiving {} (messageId {})", message, message.messageId)
+        logger.debug("receiving {}", message)
 
         // get state
         val oldState = storage.getState()

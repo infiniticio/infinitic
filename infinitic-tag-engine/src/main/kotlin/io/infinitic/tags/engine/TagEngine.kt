@@ -57,7 +57,7 @@ class TagEngine(
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TagEngineMessage) {
-        logger.debug("receiving {} (messageId {})", message, message.messageId)
+        logger.debug("receiving {}", message)
 
         when (message) {
             is AddTaskTag -> addTaskTag(message)
