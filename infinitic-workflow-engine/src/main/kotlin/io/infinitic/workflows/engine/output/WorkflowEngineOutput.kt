@@ -25,19 +25,14 @@
 
 package io.infinitic.workflows.engine.output
 
-import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 
-interface WorkflowEngineOutput {
-
-    suspend fun sendToClientResponse(message: ClientMessage)
-
-    suspend fun sendToTagEngine(message: TagEngineMessage)
-
-    suspend fun sendToTaskEngine(message: TaskEngineMessage)
-
-    suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage, after: MillisDuration)
-}
+data class WorkflowEngineOutput(
+    val sendEventsToClient: SendToClient,
+    val sendToTagEngine: SendToTagEngine,
+    val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit),
+    val sendToWorkflowEngine: SendToWorkflowEngine
+)

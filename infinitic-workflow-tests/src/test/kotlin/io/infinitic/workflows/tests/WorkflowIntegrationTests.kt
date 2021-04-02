@@ -57,7 +57,6 @@ import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.register
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.output.FunctionsWorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.states.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.tests.tasks.TaskAImpl
@@ -763,12 +762,10 @@ fun CoroutineScope.init() {
 
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
-        FunctionsWorkflowEngineOutput(
-            { msg: ClientMessage -> sendToClientResponse(msg) },
-            { msg: TagEngineMessage -> sendToTagEngine(msg) },
-            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-            { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
-        )
+        { msg: ClientMessage -> sendToClientResponse(msg) },
+        { msg: TagEngineMessage -> sendToTagEngine(msg) },
+        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+        { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(

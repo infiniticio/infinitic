@@ -209,8 +209,10 @@ class InfiniticWorker(
                     startPulsarWorkflowEngineWorker(
                         counter,
                         pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName, counter),
-                        pulsarOutputs.workflowEngineOutput,
-                        pulsarOutputs.sendToWorkflowEngineDeadLetters,
+                        pulsarOutputs.sendEventsToClient,
+                        pulsarOutputs.sendEventsToTagEngine,
+                        pulsarOutputs.sendCommandsToTaskEngine,
+                        pulsarOutputs.sendEventsToWorkflowEngine,
                         storage
                     )
                 }

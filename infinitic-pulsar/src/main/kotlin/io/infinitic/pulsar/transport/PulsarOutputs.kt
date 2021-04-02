@@ -75,7 +75,6 @@ import io.infinitic.pulsar.topics.WorkflowExecutorTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
 import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.executor.transport.TaskExecutorDataOutput
-import io.infinitic.workflows.engine.output.FunctionsWorkflowEngineOutput
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
@@ -241,13 +240,6 @@ class PulsarOutputs(
         sendEventsToWorkflowEngine,
         sendToTaskExecutors,
         sendToMetricsPerName
-    )
-
-    val workflowEngineOutput = FunctionsWorkflowEngineOutput(
-        sendEventsToClient,
-        sendEventsToTagEngine,
-        sendCommandsToTaskEngine,
-        sendEventsToWorkflowEngine,
     )
 
     val taskExecutorOutput = TaskExecutorDataOutput(

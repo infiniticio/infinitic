@@ -25,7 +25,10 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.tags.transport.SendToTagEngine
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -33,7 +36,6 @@ import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.states.BinaryWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -68,14 +70,19 @@ private fun logError(message: WorkflowEngineMessage, e: Exception) = logger.erro
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
     consumerCounter: Int,
     workflowEngineConsumer: Consumer<WorkflowEngineEnvelope>,
-    workflowEngineOutput: WorkflowEngineOutput,
-    sendToWorkflowEngineDeadLetters: SendToWorkflowEngine,
+    sendToClient: SendToClient,
+    sendToTagEngine: SendToTagEngine,
+    sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowEngine: SendToWorkflowEngine,
     keyValueStorage: KeyValueStorage,
 ) = launch(singleThreadedContext("$WORKFLOW_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val workflowEngine = WorkflowEngine(
         BinaryWorkflowStateStorage(keyValueStorage),
-        workflowEngineOutput
+        sendToClient,
+        sendToTagEngine,
+        sendToTaskEngine,
+        sendToWorkflowEngine
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =

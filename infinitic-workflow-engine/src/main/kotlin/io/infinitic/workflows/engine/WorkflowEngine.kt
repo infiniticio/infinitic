@@ -25,7 +25,12 @@
 
 package io.infinitic.workflows.engine
 
+import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tags.messages.RemoveWorkflowTag
+import io.infinitic.common.tags.transport.SendToTagEngine
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
@@ -41,22 +46,30 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.sendToChannel
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
-import io.infinitic.workflows.engine.output.LoggedWorkflowEngineOutput
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
 import org.slf4j.LoggerFactory
 
 class WorkflowEngine(
     val storage: WorkflowStateStorage,
-    output: WorkflowEngineOutput
+    sendEventsToClient: SendToClient,
+    sendToTagEngine: SendToTagEngine,
+    sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowEngine: SendToWorkflowEngine
 ) {
-    private val output = LoggedWorkflowEngineOutput(output)
+    private val output = WorkflowEngineOutput(
+        sendEventsToClient,
+        sendToTagEngine,
+        { msg: TaskEngineMessage -> sendToTaskEngine(msg, MillisDuration(0)) },
+        sendToWorkflowEngine
+    )
 
     private val logger = LoggerFactory.getLogger(javaClass)
 

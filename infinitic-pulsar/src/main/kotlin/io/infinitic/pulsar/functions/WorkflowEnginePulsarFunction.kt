@@ -52,14 +52,21 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
         null
     }
 
-    internal fun getWorkflowEngine(context: Context) = WorkflowEngine(
-        BinaryWorkflowStateStorage(
-            // context storage decorated with logging and a 1h cache
-            CachedLoggedKeyValueStorage(
-                CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
-                context.keyValueStorage()
-            )
-        ),
-        PulsarOutputs.from(context).workflowEngineOutput
-    )
+    internal fun getWorkflowEngine(context: Context): WorkflowEngine {
+        val output = PulsarOutputs.from(context)
+
+        return WorkflowEngine(
+            BinaryWorkflowStateStorage(
+                // context storage decorated with logging and a 1h cache
+                CachedLoggedKeyValueStorage(
+                    CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
+                    context.keyValueStorage()
+                )
+            ),
+            output.sendEventsToClient,
+            output.sendEventsToTagEngine,
+            output.sendCommandsToTaskEngine,
+            output.sendEventsToWorkflowEngine
+        )
+    }
 }
