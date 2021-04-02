@@ -28,7 +28,7 @@ package io.infinitic.workflows.tests
 import io.infinitic.client.Client
 import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.Name
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
@@ -49,7 +49,6 @@ import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameSta
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
-import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
@@ -675,7 +674,7 @@ class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecut
         { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
 }
 
-fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
+fun CoroutineScope.sendToClientResponse(msg: ClientMessage) {
     launch {
         client.handle(msg)
     }
@@ -746,17 +745,15 @@ fun CoroutineScope.init() {
 
     tagEngine = TagEngine(
         tagStateStorage,
-        FunctionsTagEngineOutput(
-            { msg: ClientResponseMessage -> sendToClientResponse(msg) },
-            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-            { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
-        )
+        { msg: ClientMessage -> sendToClientResponse(msg) },
+        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+        { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
         FunctionsTaskEngineOutput(
-            { msg: ClientResponseMessage -> sendToClientResponse(msg) },
+            { msg: ClientMessage -> sendToClientResponse(msg) },
             { msg: TagEngineMessage -> sendToTagEngine(msg) },
             { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
             { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) },
@@ -768,7 +765,7 @@ fun CoroutineScope.init() {
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
         FunctionsWorkflowEngineOutput(
-            { msg: ClientResponseMessage -> sendToClientResponse(msg) },
+            { msg: ClientMessage -> sendToClientResponse(msg) },
             { msg: TagEngineMessage -> sendToTagEngine(msg) },
             { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
             { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }

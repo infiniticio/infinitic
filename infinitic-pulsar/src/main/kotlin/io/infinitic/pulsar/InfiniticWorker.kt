@@ -126,22 +126,29 @@ class InfiniticWorker(
     ) {
         config.tagEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
+                // storage decorated by the cache
                 val keyValueStorage = CachedLoggedKeyValueStorage(
                     it.stateCacheOrDefault.getKeyValueCache(config),
                     it.stateStorage!!.getKeyValueStorage(config)
+                )
+                val keySetStorage = CachedLoggedKeySetStorage(
+                    it.stateCacheOrDefault.getKeySetCache(config),
+                    it.stateStorage!!.getKeySetStorage(config)
                 )
                 print(
                     "Tag engine".padEnd(25) + ": starting ${it.consumers} instances... " +
                         "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
                 )
                 repeat(it.consumersOrDefault) { counter ->
-                    logger.info("InfiniticWorker - starting task engine {}", counter)
-                    startPulsarTaskEngineWorker(
+                    logger.info("InfiniticWorker - starting tag engine {}", counter)
+                    startPulsarTagEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
-                        pulsarOutputs.taskEngineOutput,
-                        pulsarOutputs.sendToTaskEngineDeadLetters,
-                        keyValueStorage
+                        pulsarConsumerFactory.newTagEngineConsumer(consumerName, counter),
+                        pulsarOutputs.sendEventsToClient,
+                        pulsarOutputs.sendCommandsToTaskEngine,
+                        pulsarOutputs.sendCommandsToWorkflowEngine,
+                        keyValueStorage,
+                        keySetStorage
                     )
                 }
                 println(" done")
@@ -157,28 +164,22 @@ class InfiniticWorker(
     ) {
         config.taskEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
-                // storage decorated by the cache
                 val keyValueStorage = CachedLoggedKeyValueStorage(
                     it.stateCacheOrDefault.getKeyValueCache(config),
                     it.stateStorage!!.getKeyValueStorage(config)
-                )
-                val keySetStorage = CachedLoggedKeySetStorage(
-                    it.stateCacheOrDefault.getKeySetCache(config),
-                    it.stateStorage!!.getKeySetStorage(config)
                 )
                 print(
                     "Task engine".padEnd(25) + ": starting ${it.consumers} instances... " +
                         "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
                 )
                 repeat(it.consumersOrDefault) { counter ->
-                    logger.info("InfiniticWorker - starting tag engine {}", counter)
-                    startPulsarTagEngineWorker(
+                    logger.info("InfiniticWorker - starting task engine {}", counter)
+                    startPulsarTaskEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTagEngineConsumer(consumerName, counter),
-                        pulsarOutputs.tagEngineOutput,
-                        pulsarOutputs.sendToTagEngineDeadLetters,
-                        keyValueStorage,
-                        keySetStorage
+                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
+                        pulsarOutputs.taskEngineOutput,
+                        pulsarOutputs.sendToTaskEngineDeadLetters,
+                        keyValueStorage
                     )
                 }
                 println(" done")

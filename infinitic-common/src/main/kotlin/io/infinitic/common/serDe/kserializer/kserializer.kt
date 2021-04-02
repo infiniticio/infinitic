@@ -25,7 +25,7 @@
 
 package io.infinitic.common.serDe.kserializer
 
-import io.infinitic.common.clients.messages.ClientResponseEnvelope
+import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
@@ -62,7 +62,7 @@ fun getKSerializerOrNull(klass: Class<*>): KSerializer<*>? {
 
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
-    ClientResponseEnvelope::class -> ClientResponseEnvelope.serializer()
+    ClientEnvelope::class -> ClientEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
     TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
     TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()

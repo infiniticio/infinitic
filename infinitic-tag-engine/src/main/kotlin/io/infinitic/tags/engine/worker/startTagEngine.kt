@@ -25,10 +25,12 @@
 
 package io.infinitic.tags.engine.worker
 
+import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tags.engine.TagEngine
 import io.infinitic.tags.engine.input.TagEngineInputChannels
 import io.infinitic.tags.engine.input.TagEngineMessageToProcess
-import io.infinitic.tags.engine.output.TagEngineOutput
 import io.infinitic.tags.engine.storage.TagStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -50,10 +52,17 @@ fun <T : TagEngineMessageToProcess> CoroutineScope.startTagEngine(
     coroutineName: String,
     tagStateStorage: TagStateStorage,
     tagEngineInputChannels: TagEngineInputChannels<T>,
-    tagEngineOutput: TagEngineOutput
+    sendToClient: SendToClient,
+    sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowEngine: SendToWorkflowEngine
 ) = launch(CoroutineName(coroutineName)) {
 
-    val tagEngine = TagEngine(tagStateStorage, tagEngineOutput)
+    val tagEngine = TagEngine(
+        tagStateStorage,
+        sendToClient,
+        sendToTaskEngine,
+        sendToWorkflowEngine
+    )
 
     val out = tagEngineInputChannels.logChannel
     val events = tagEngineInputChannels.tagEngineEventsChannel

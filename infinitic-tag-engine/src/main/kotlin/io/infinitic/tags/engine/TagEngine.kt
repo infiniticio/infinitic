@@ -25,7 +25,8 @@
 
 package io.infinitic.tags.engine
 
-import io.infinitic.common.clients.messages.SendToChannelFailed
+import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tags.messages.AddTaskTag
 import io.infinitic.common.tags.messages.AddWorkflowTag
 import io.infinitic.common.tags.messages.CancelTaskPerTag
@@ -38,20 +39,28 @@ import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
-import io.infinitic.tags.engine.output.LoggedTagEngineOutput
-import io.infinitic.tags.engine.output.TagEngineOutput
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tags.engine.storage.TagStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class TagEngine(
     val storage: TagStateStorage,
-    output: TagEngineOutput
+    private val sendToClient: SendToClient,
+    sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowEngine: SendToWorkflowEngine
 ) {
-    private val output = LoggedTagEngineOutput(output)
+    private val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit) =
+        { msg: TaskEngineMessage -> sendToTaskEngine(msg, MillisDuration(0)) }
+
+    private val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit) =
+        { msg: WorkflowEngineMessage -> sendToWorkflowEngine(msg, MillisDuration(0)) }
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -101,7 +110,7 @@ class TagEngine(
                     taskMeta = message.taskMeta,
                     taskOptions = message.taskOptions
                 )
-                output.sendToTaskEngine(retryTask)
+                sendToTaskEngine(retryTask)
             }
         }
     }
@@ -121,7 +130,7 @@ class TagEngine(
                     taskName = message.name,
                     taskReturnValue = message.taskReturnValue
                 )
-                output.sendToTaskEngine(cancelTask)
+                sendToTaskEngine(cancelTask)
             }
         }
     }
@@ -141,7 +150,7 @@ class TagEngine(
                     workflowName = message.name,
                     workflowReturnValue = message.workflowReturnValue
                 )
-                output.sendToWorkflowEngine(cancelWorkflow)
+                sendToWorkflowEngine(cancelWorkflow)
             }
         }
     }
@@ -152,16 +161,7 @@ class TagEngine(
 
         val ids = storage.getIds(message.tag, message.name)
         when (ids.isEmpty()) {
-            true -> {
-                if (message.clientWaiting) {
-                    val sendToChannelFailed = SendToChannelFailed(
-                        message.clientName,
-                        message.channelEventId
-                    )
-                    output.sendToClientResponse(sendToChannelFailed)
-                }
-                discardTagWithoutIds(message)
-            }
+            true -> discardTagWithoutIds(message)
             false -> ids.forEach {
                 val sendToChannel = SendToChannel(
                     clientName = message.clientName,
@@ -172,7 +172,7 @@ class TagEngine(
                     channelEvent = message.channelEvent,
                     channelEventTypes = message.channelEventTypes
                 )
-                output.sendToWorkflowEngine(sendToChannel)
+                sendToWorkflowEngine(sendToChannel)
             }
         }
     }

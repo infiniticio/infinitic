@@ -27,9 +27,9 @@ package io.infinitic.pulsar.transport
 
 import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.ClientResponseEnvelope
-import io.infinitic.common.clients.messages.ClientResponseMessage
-import io.infinitic.common.clients.transport.SendToClientResponse
+import io.infinitic.common.clients.messages.ClientEnvelope
+import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
@@ -74,7 +74,6 @@ import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorDeadLettersTopic
 import io.infinitic.pulsar.topics.WorkflowExecutorTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
-import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
 import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.executor.transport.TaskExecutorDataOutput
 import io.infinitic.workflows.engine.output.FunctionsWorkflowEngineOutput
@@ -119,17 +118,19 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToClientResponse(): SendToClientResponse = { message: ClientResponseMessage ->
+    val sendEventsToClient: SendToClient = { message: ClientMessage ->
+        logger.debug("sendEventsToClient {}", message)
         val clientName = "${message.clientName}"
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, ClientResponseTopic.name(clientName)),
-            ClientResponseEnvelope.from(message),
+            ClientEnvelope.from(message),
             null,
             MillisDuration(0)
         )
     }
 
-    private fun sendToWorkflowEngineCommands(): SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
+    val sendCommandsToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
+        logger.debug("sendCommandsToWorkflowEngine {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name),
             WorkflowEngineEnvelope.from(message),
@@ -138,7 +139,8 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToWorkflowEngineEvents(): SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
+    val sendEventsToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
+        logger.debug("sendEventsToWorkflowEngine {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name),
             WorkflowEngineEnvelope.from(message),
@@ -147,7 +149,8 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToTagEngineCommands(): SendToTagEngine = { message: TagEngineMessage ->
+    val sendCommandsToTagEngine: SendToTagEngine = { message: TagEngineMessage ->
+        logger.debug("sendCommandsToTagEngine {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineCommandsTopic.name),
             TagEngineEnvelope.from(message),
@@ -156,7 +159,8 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToTagEngineEvents(): SendToTagEngine = { message: TagEngineMessage ->
+    val sendEventsToTagEngine: SendToTagEngine = { message: TagEngineMessage ->
+        logger.debug("sendEventsToTagEngine {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineEventsTopic.name),
             TagEngineEnvelope.from(message),
@@ -165,7 +169,8 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToTaskEngineCommands(): SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
+    val sendCommandsToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
+        logger.debug("sendCommandsToTaskEngine {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
             TaskEngineEnvelope.from(message),
@@ -174,7 +179,8 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToTaskEngineEvents(): SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
+    val sendEventsToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
+        logger.debug("sendEventsToTaskEngine {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name),
             TaskEngineEnvelope.from(message),
@@ -183,7 +189,8 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToTaskExecutors(): SendToTaskExecutors = { message: TaskExecutorMessage ->
+    val sendToTaskExecutors: SendToTaskExecutors = { message: TaskExecutorMessage ->
+        logger.debug("sendToTaskExecutors {}", message)
         val taskName = "${message.taskName}"
         val isWorkflowTask = (taskName == WorkflowTask::class.java.name)
         val (key, topicName) = if (isWorkflowTask) {
@@ -201,7 +208,8 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToMonitoringPerName(): SendToMonitoringPerName = { message: MonitoringPerNameMessage ->
+    val sendToMonitoringPerName: SendToMonitoringPerName = { message: MonitoringPerNameMessage ->
+        logger.debug("sendToMonitoringPerName {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name),
             MonitoringPerNameEnvelope.from(message),
@@ -210,7 +218,8 @@ class PulsarOutputs(
         )
     }
 
-    private fun sendToMonitoringGlobal(): SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+    val sendToMonitoringGlobal: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+        logger.debug("sendToMonitoringGlobal {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name),
             MonitoringGlobalEnvelope.from(message),
@@ -221,39 +230,33 @@ class PulsarOutputs(
 
     val clientOutput = FunctionsClientOutput(
         clientName,
-        sendToTagEngineCommands(),
-        sendToTaskEngineCommands(),
-        sendToWorkflowEngineCommands()
-    )
-
-    val tagEngineOutput = FunctionsTagEngineOutput(
-        sendToClientResponse(),
-        sendToTaskEngineCommands(),
-        sendToWorkflowEngineCommands()
+        sendCommandsToTagEngine,
+        sendCommandsToTaskEngine,
+        sendCommandsToWorkflowEngine
     )
 
     val taskEngineOutput = FunctionsTaskEngineOutput(
-        sendToClientResponse(),
-        sendToTagEngineEvents(),
-        sendToTaskEngineEvents(),
-        sendToWorkflowEngineEvents(),
-        sendToTaskExecutors(),
-        sendToMonitoringPerName()
+        sendEventsToClient,
+        sendEventsToTagEngine,
+        sendEventsToTaskEngine,
+        sendEventsToWorkflowEngine,
+        sendToTaskExecutors,
+        sendToMonitoringPerName
     )
 
     val workflowEngineOutput = FunctionsWorkflowEngineOutput(
-        sendToClientResponse(),
-        sendToTagEngineEvents(),
-        sendToTaskEngineCommands(),
-        sendToWorkflowEngineEvents(),
+        sendEventsToClient,
+        sendEventsToTagEngine,
+        sendCommandsToTaskEngine,
+        sendEventsToWorkflowEngine,
     )
 
     val monitoringPerNameOutput = FunctionsMonitoringPerNameOutput(
-        sendToMonitoringGlobal()
+        sendToMonitoringGlobal
     )
 
     val taskExecutorOutput = TaskExecutorDataOutput(
-        sendToTaskEngineEvents()
+        sendEventsToTaskEngine
     )
 
     val sendToTagEngineDeadLetters: SendToTagEngine = { message: TagEngineMessage ->

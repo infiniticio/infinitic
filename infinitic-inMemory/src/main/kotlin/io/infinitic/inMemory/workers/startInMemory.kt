@@ -27,12 +27,12 @@ package io.infinitic.inMemory.workers
 
 import io.infinitic.client.Client
 import io.infinitic.client.worker.startClientWorker
-import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
+import io.infinitic.common.clients.transport.ClientMessageToProcess
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryMonitoringPerNameOutput
-import io.infinitic.inMemory.transport.InMemoryTagEngineOutput
+import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
 import io.infinitic.inMemory.transport.InMemoryTaskExecutorOutput
 import io.infinitic.inMemory.transport.InMemoryWorkflowEngineOutput
@@ -78,7 +78,7 @@ fun CoroutineScope.startInMemory(
     logFn: (_: MessageToProcess<*>) -> Unit = { }
 ) {
     val logChannel = Channel<MessageToProcess<Any>>()
-    val clientResponsesChannel = Channel<ClientResponseMessageToProcess>()
+    val clientEventsChannel = Channel<ClientMessageToProcess>()
     val tagEngineEventsChannel = Channel<TagEngineMessageToProcess>()
     val taskEngineEventsChannel = Channel<TaskEngineMessageToProcess>()
     val workflowEngineEventsChannel = Channel<WorkflowEngineMessageToProcess>()
@@ -92,10 +92,24 @@ fun CoroutineScope.startInMemory(
         }
     }
 
+    val inMemoryOutput = InMemoryOutput(
+        this,
+        clientEventsChannel,
+        tagEngineCommandsChannel,
+        tagEngineEventsChannel,
+        taskEngineCommandsChannel,
+        taskEngineEventsChannel,
+        workflowEngineCommandsChannel,
+        workflowEngineEventsChannel,
+        taskExecutorChannel,
+        monitoringPerNameChannel,
+        monitoringGlobalChannel
+    )
+
     startClientWorker(
         "in-memory-client",
         client,
-        clientResponsesChannel,
+        clientEventsChannel,
         logChannel,
     )
 
@@ -107,12 +121,9 @@ fun CoroutineScope.startInMemory(
             tagEngineEventsChannel,
             logChannel
         ),
-        InMemoryTagEngineOutput(
-            this,
-            clientResponsesChannel,
-            taskEngineCommandsChannel,
-            workflowEngineCommandsChannel
-        )
+        inMemoryOutput.sendEventsToClient,
+        inMemoryOutput.sendCommandsToTaskEngine,
+        inMemoryOutput.sendCommandsToWorkflowEngine
     )
 
     startTaskEngine(
@@ -125,7 +136,7 @@ fun CoroutineScope.startInMemory(
         ),
         InMemoryTaskEngineOutput(
             this,
-            clientResponsesChannel,
+            clientEventsChannel,
             tagEngineEventsChannel,
             taskEngineEventsChannel,
             taskExecutorChannel,
@@ -144,7 +155,7 @@ fun CoroutineScope.startInMemory(
         ),
         InMemoryWorkflowEngineOutput(
             this,
-            clientResponsesChannel,
+            clientEventsChannel,
             tagEngineEventsChannel,
             taskEngineCommandsChannel,
             workflowEngineEventsChannel

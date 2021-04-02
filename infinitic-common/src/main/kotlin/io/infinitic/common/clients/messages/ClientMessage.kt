@@ -25,9 +25,29 @@
 
 package io.infinitic.common.clients.messages
 
-enum class ClientResponseMessageType {
-    TASK_COMPLETED,
-    WORKFLOW_COMPLETED,
-    SEND_TO_CHANNEL_COMPLETED,
-    SEND_TO_CHANNEL_FAILED
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import kotlinx.serialization.Serializable
+
+@Serializable
+sealed class ClientMessage() {
+    val messageId: MessageId = MessageId()
+    abstract val clientName: ClientName
 }
+
+@Serializable
+data class TaskCompleted(
+    override val clientName: ClientName,
+    val taskId: TaskId,
+    val taskReturnValue: MethodReturnValue,
+) : ClientMessage()
+
+@Serializable
+data class WorkflowCompleted(
+    override val clientName: ClientName,
+    val workflowId: WorkflowId,
+    val workflowReturnValue: MethodReturnValue
+) : ClientMessage()

@@ -30,20 +30,16 @@ import io.infinitic.common.clients.data.ClientName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ClientResponseEnvelope(
+data class ClientEnvelope(
     val clientName: ClientName,
-    val type: ClientResponseMessageType,
+    val type: ClientMessageType,
     val taskCompleted: TaskCompleted? = null,
     val workflowCompleted: WorkflowCompleted? = null,
-    val sendToChannelCompleted: SendToChannelCompleted? = null,
-    val sendToChannelFailed: SendToChannelFailed? = null
 ) {
     init {
         val noNull = listOfNotNull(
             taskCompleted,
-            workflowCompleted,
-            sendToChannelCompleted,
-            sendToChannelFailed
+            workflowCompleted
         )
 
         require(noNull.size == 1)
@@ -52,37 +48,25 @@ data class ClientResponseEnvelope(
     }
 
     companion object {
-        fun from(msg: ClientResponseMessage) = when (msg) {
-            is TaskCompleted -> ClientResponseEnvelope(
+        fun from(msg: ClientMessage) = when (msg) {
+            is TaskCompleted -> ClientEnvelope(
                 msg.clientName,
-                ClientResponseMessageType.TASK_COMPLETED,
+                ClientMessageType.TASK_COMPLETED,
                 taskCompleted = msg
             )
-            is WorkflowCompleted -> ClientResponseEnvelope(
+            is WorkflowCompleted -> ClientEnvelope(
                 msg.clientName,
-                ClientResponseMessageType.WORKFLOW_COMPLETED,
+                ClientMessageType.WORKFLOW_COMPLETED,
                 workflowCompleted = msg
-            )
-            is SendToChannelCompleted -> ClientResponseEnvelope(
-                msg.clientName,
-                ClientResponseMessageType.SEND_TO_CHANNEL_COMPLETED,
-                sendToChannelCompleted = msg
-            )
-            is SendToChannelFailed -> ClientResponseEnvelope(
-                msg.clientName,
-                ClientResponseMessageType.SEND_TO_CHANNEL_FAILED,
-                sendToChannelFailed = msg
             )
         }
 
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message(): ClientResponseMessage = when (type) {
-        ClientResponseMessageType.TASK_COMPLETED -> taskCompleted!!
-        ClientResponseMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
-        ClientResponseMessageType.SEND_TO_CHANNEL_COMPLETED -> sendToChannelCompleted!!
-        ClientResponseMessageType.SEND_TO_CHANNEL_FAILED -> sendToChannelFailed!!
+    fun message(): ClientMessage = when (type) {
+        ClientMessageType.TASK_COMPLETED -> taskCompleted!!
+        ClientMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

@@ -26,7 +26,7 @@
 package io.infinitic.client
 
 import io.infinitic.client.output.ClientOutput
-import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.methods.MethodName
@@ -67,9 +67,9 @@ import kotlin.reflect.full.isSubclassOf
 internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispatcher {
     // could be replay = 0
     // but replay = 1 makes tests easier, as we can emit a message before listening
-    private val responseFlow = MutableSharedFlow<ClientResponseMessage>(replay = 1)
+    private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 1)
 
-    suspend fun handle(message: ClientResponseMessage) {
+    suspend fun handle(message: ClientMessage) {
         responseFlow.emit(message)
     }
 

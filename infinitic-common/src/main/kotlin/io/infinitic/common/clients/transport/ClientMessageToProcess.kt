@@ -25,7 +25,7 @@
 
 package io.infinitic.common.clients.transport
 
-import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.workers.MessageToProcess
 
-typealias ClientResponseMessageToProcess = MessageToProcess<ClientResponseMessage>
+typealias ClientMessageToProcess = MessageToProcess<ClientMessage>

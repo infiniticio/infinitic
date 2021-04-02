@@ -25,8 +25,8 @@
 
 package io.infinitic.inMemory.transport
 
-import io.infinitic.common.clients.messages.ClientResponseMessage
-import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
+import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.clients.transport.ClientMessageToProcess
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.tags.messages.TagEngineMessage
@@ -46,7 +46,7 @@ import kotlinx.coroutines.launch
 
 class InMemoryTaskEngineOutput(
     private val scope: CoroutineScope,
-    private val clientResponsesChannel: SendChannel<ClientResponseMessageToProcess>,
+    private val clientResponsesChannel: SendChannel<ClientMessageToProcess>,
     private val tagEventsChannel: SendChannel<TagEngineMessageToProcess>,
     private val taskEventsChannel: SendChannel<TaskEngineMessageToProcess>,
     private val executorChannel: SendChannel<TaskExecutorMessageToProcess>,
@@ -54,7 +54,7 @@ class InMemoryTaskEngineOutput(
     private val workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>
 ) : TaskEngineOutput {
 
-    override suspend fun sendToClientResponse(message: ClientResponseMessage) {
+    override suspend fun sendToClientResponse(message: ClientMessage) {
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             clientResponsesChannel.send(InMemoryMessageToProcess(message))

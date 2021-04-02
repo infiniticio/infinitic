@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.engine.output
 
-import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
 import io.infinitic.common.tags.messages.TagEngineMessage
@@ -35,7 +35,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 
 interface TaskEngineOutput {
 
-    suspend fun sendToClientResponse(message: ClientResponseMessage)
+    suspend fun sendToClientResponse(message: ClientMessage)
 
     suspend fun sendToTagEngine(message: TagEngineMessage)
 

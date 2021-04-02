@@ -23,8 +23,49 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.clients.transport
+package io.infinitic.tags.engine
 
-import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.kotest.core.spec.style.StringSpec
 
-typealias SendToClientResponse = suspend (ClientResponseMessage) -> Unit
+class TagEngineTests : StringSpec({
+
+    beforeTest {
+        //
+    }
+
+    afterTest {
+        //
+    }
+
+    "should not handle known messageId" {
+        //
+    }
+
+    "should store last messageId" {
+        //
+    }
+
+    "addTaskTag should complete id" {
+        //
+    }
+
+    "removeTaskTag should remove id" {
+        //
+    }
+
+    "retryTaskPerTag should retry task" {
+        //
+    }
+
+    "cancelTaskPerTag should cancel task" {
+        //
+    }
+
+    "cancelWorkflowPerTag should cancel workflow" {
+        //
+    }
+
+    "sendToChannelPerTag should send to channel" {
+        //
+    }
+})

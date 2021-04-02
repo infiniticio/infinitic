@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.engine.output
 
-import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -40,7 +40,7 @@ class LoggedWorkflowEngineOutput(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun sendToClientResponse(message: ClientResponseMessage) {
+    override suspend fun sendToClientResponse(message: ClientMessage) {
         logger.debug("sendToClientResponse {}", message)
         output.sendToClientResponse(message)
     }

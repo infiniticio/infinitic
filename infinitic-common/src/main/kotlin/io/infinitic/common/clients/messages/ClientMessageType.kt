@@ -23,16 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tags.engine.output
+package io.infinitic.common.clients.messages
 
-import io.infinitic.common.clients.messages.ClientResponseMessage
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-
-interface TagEngineOutput {
-    suspend fun sendToClientResponse(message: ClientResponseMessage)
-
-    suspend fun sendToTaskEngine(message: TaskEngineMessage)
-
-    suspend fun sendToWorkflowEngine(message: WorkflowEngineMessage)
+enum class ClientMessageType {
+    TASK_COMPLETED,
+    WORKFLOW_COMPLETED
 }

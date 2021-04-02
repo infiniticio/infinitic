@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar.transport
 
-import io.infinitic.common.clients.messages.ClientResponseEnvelope
+import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
 import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
 import io.infinitic.common.tags.messages.TagEngineEnvelope
@@ -69,8 +69,8 @@ class PulsarConsumerFactory(
         const val MONITORING_GLOBAL_SUBSCRIPTION = "monitoring-global"
     }
 
-    fun newClientResponseConsumer(clientName: String): Consumer<ClientResponseEnvelope> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<ClientResponseEnvelope>()))
+    fun newClientResponseConsumer(clientName: String): Consumer<ClientEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<ClientEnvelope>()))
             .topic(
                 getPersistentTopicFullName(pulsarTenant, pulsarNamespace, ClientResponseTopic.name(clientName)),
             )

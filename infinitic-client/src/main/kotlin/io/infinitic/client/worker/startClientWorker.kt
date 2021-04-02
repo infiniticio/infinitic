@@ -26,7 +26,7 @@
 package io.infinitic.client.worker
 
 import io.infinitic.client.Client
-import io.infinitic.common.clients.transport.ClientResponseMessageToProcess
+import io.infinitic.common.clients.transport.ClientMessageToProcess
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory
 private val logger: Logger
     get() = LoggerFactory.getLogger(Client::class.java)
 
-private fun logError(messageToProcess: ClientResponseMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message,
     e
@@ -47,8 +47,8 @@ private fun logError(messageToProcess: ClientResponseMessageToProcess, e: Except
 fun CoroutineScope.startClientWorker(
     coroutineName: String,
     client: Client,
-    clientChannel: ReceiveChannel<ClientResponseMessageToProcess>,
-    logChannel: SendChannel<ClientResponseMessageToProcess>
+    clientChannel: ReceiveChannel<ClientMessageToProcess>,
+    logChannel: SendChannel<ClientMessageToProcess>
 ) = launch(CoroutineName(coroutineName)) {
 
     for (message in clientChannel) {

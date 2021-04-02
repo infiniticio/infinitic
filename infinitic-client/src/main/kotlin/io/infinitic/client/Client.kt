@@ -27,7 +27,7 @@ package io.infinitic.client
 
 import io.infinitic.client.output.ClientOutput
 import io.infinitic.client.output.LoggedClientOutput
-import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
@@ -75,7 +75,7 @@ open class Client {
         }
         get() = _clientOutput
 
-    suspend fun handle(message: ClientResponseMessage) = dispatcher.handle(message)
+    suspend fun handle(message: ClientMessage) = dispatcher.handle(message)
 
     /*
      * Create stub for a new task

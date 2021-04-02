@@ -25,15 +25,16 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tags.messages.TagEngineEnvelope
 import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tags.transport.SendToTagEngine
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workers.singleThreadedContext
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.tags.engine.TagEngine
-import io.infinitic.tags.engine.output.TagEngineOutput
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -66,15 +67,18 @@ private fun logError(message: TagEngineMessage, e: Exception) = logger.error(
 fun CoroutineScope.startPulsarTagEngineWorker(
     consumerCounter: Int,
     tagEngineConsumer: Consumer<TagEngineEnvelope>,
-    tagEngineOutput: TagEngineOutput,
-    sendToTagEngineDeadLetters: SendToTagEngine,
+    sendToClient: SendToClient,
+    sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowEngine: SendToWorkflowEngine,
     keyValueStorage: KeyValueStorage,
     keySetStorage: KeySetStorage,
 ) = launch(singleThreadedContext("$TAG_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val tagEngine = TagEngine(
         BinaryTagStateStorage(keyValueStorage, keySetStorage),
-        tagEngineOutput
+        sendToClient,
+        sendToTaskEngine,
+        sendToWorkflowEngine
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =
