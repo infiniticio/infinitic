@@ -64,8 +64,8 @@ private fun logError(message: MetricsPerNameMessage, e: Exception) = logger.erro
 fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     consumerCounter: Int,
     metricsPerNameConsumer: Consumer<MetricsPerNameEnvelope>,
-    sendToMetricsGlobal: SendToMetricsGlobal,
     keyValueStorage: KeyValueStorage,
+    sendToMetricsGlobal: SendToMetricsGlobal
 ) = launch(singleThreadedContext("$MONITORING_PER_NAME_THREAD_NAME-$consumerCounter")) {
 
     val monitoringPerNameEngine = MonitoringPerNameEngine(

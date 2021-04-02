@@ -50,7 +50,6 @@ import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
@@ -408,14 +407,12 @@ fun CoroutineScope.init() {
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        FunctionsTaskEngineOutput(
-            { msg: ClientMessage -> sendToClientResponse(msg) },
-            { msg: TagEngineMessage -> sendToTagEngine(msg) },
-            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-            { _: WorkflowEngineMessage, _: MillisDuration -> },
-            { msg: TaskExecutorMessage -> sendToWorkers(msg) },
-            { msg: MetricsPerNameMessage -> sendToMonitoringPerName(msg) }
-        )
+        { msg: ClientMessage -> sendToClientResponse(msg) },
+        { msg: TagEngineMessage -> sendToTagEngine(msg) },
+        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+        { _: WorkflowEngineMessage, _: MillisDuration -> },
+        { msg: TaskExecutorMessage -> sendToWorkers(msg) },
+        { msg: MetricsPerNameMessage -> sendToMonitoringPerName(msg) }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(

@@ -67,11 +67,11 @@ private fun logError(message: TagEngineMessage, e: Exception) = logger.error(
 fun CoroutineScope.startPulsarTagEngineWorker(
     consumerCounter: Int,
     tagEngineConsumer: Consumer<TagEngineEnvelope>,
+    keySetStorage: KeySetStorage,
     sendToClient: SendToClient,
     sendToTaskEngine: SendToTaskEngine,
     sendToWorkflowEngine: SendToWorkflowEngine,
-    keyValueStorage: KeyValueStorage,
-    keySetStorage: KeySetStorage,
+    keyValueStorage: KeyValueStorage
 ) = launch(singleThreadedContext("$TAG_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val tagEngine = TagEngine(

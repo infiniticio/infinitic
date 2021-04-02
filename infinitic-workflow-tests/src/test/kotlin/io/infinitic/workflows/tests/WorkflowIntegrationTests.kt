@@ -49,7 +49,6 @@ import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
@@ -742,14 +741,12 @@ fun CoroutineScope.init() {
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        FunctionsTaskEngineOutput(
-            { sendToClientResponse(it) },
-            { sendToTagEngine(it) },
-            { msg, after -> sendToTaskEngine(msg, after) },
-            { msg, after -> sendToWorkflowEngine(msg, after) },
-            { sendToWorkers(it) },
-            { sendToMonitoringPerName(it) }
-        )
+        { sendToClientResponse(it) },
+        { sendToTagEngine(it) },
+        { msg, after -> sendToTaskEngine(msg, after) },
+        { msg, after -> sendToWorkflowEngine(msg, after) },
+        { sendToWorkers(it) },
+        { sendToMonitoringPerName(it) }
     )
 
     workflowEngine = WorkflowEngine(

@@ -149,7 +149,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MetricsPerNam
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).taskEngineOutput.sendToMonitoringPerName(msg)
+        PulsarOutputs.from(context).sendToMetricsPerName(msg)
         // then
         verify {
             context.newOutputMessage(
@@ -205,7 +205,7 @@ private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessag
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).taskEngineOutput.sendToTaskExecutors(msg)
+        PulsarOutputs.from(context).sendToTaskExecutors(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/task-executor: ${msg.taskName}"

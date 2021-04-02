@@ -25,10 +25,15 @@
 
 package io.infinitic.tasks.engine.worker
 
+import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
+import io.infinitic.common.tags.transport.SendToTagEngine
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.input.TaskEngineInputChannels
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
-import io.infinitic.tasks.engine.output.TaskEngineOutput
 import io.infinitic.tasks.engine.storage.states.TaskStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -51,12 +56,22 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     coroutineName: String,
     taskStateStorage: TaskStateStorage,
     taskEngineInputChannels: TaskEngineInputChannels<T>,
-    taskEngineOutput: TaskEngineOutput
+    sendToClient: SendToClient,
+    sendToTagEngine: SendToTagEngine,
+    sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToTaskExecutors: SendToTaskExecutors,
+    sendToMetricsPerName: SendToMetricsPerName
 ) = launch(CoroutineName(coroutineName)) {
 
     val taskEngine = TaskEngine(
         taskStateStorage,
-        taskEngineOutput
+        sendToClient,
+        sendToTagEngine,
+        sendToTaskEngine,
+        sendToWorkflowEngine,
+        sendToTaskExecutors,
+        sendToMetricsPerName
     )
 
     val out = taskEngineInputChannels.logChannel

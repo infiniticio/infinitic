@@ -52,14 +52,23 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
         null
     }
 
-    internal fun getTaskEngine(context: Context) = TaskEngine(
-        BinaryTaskStateStorage(
-            // context storage decorated with logging and a 1h cache
-            CachedLoggedKeyValueStorage(
-                CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
-                context.keyValueStorage()
-            )
-        ),
-        PulsarOutputs.from(context).taskEngineOutput
-    )
+    internal fun getTaskEngine(context: Context): TaskEngine {
+        val output = PulsarOutputs.from(context)
+
+        return TaskEngine(
+            BinaryTaskStateStorage(
+                // context storage decorated with logging and a 1h cache
+                CachedLoggedKeyValueStorage(
+                    CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
+                    context.keyValueStorage()
+                )
+            ),
+            output.sendEventsToClient,
+            output.sendEventsToTagEngine,
+            output.sendEventsToTaskEngine,
+            output.sendEventsToWorkflowEngine,
+            output.sendToTaskExecutors,
+            output.sendToMetricsPerName
+        )
+    }
 }

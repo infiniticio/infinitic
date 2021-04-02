@@ -144,11 +144,11 @@ class InfiniticWorker(
                     startPulsarTagEngineWorker(
                         counter,
                         pulsarConsumerFactory.newTagEngineConsumer(consumerName, counter),
+                        keySetStorage,
                         pulsarOutputs.sendEventsToClient,
                         pulsarOutputs.sendCommandsToTaskEngine,
                         pulsarOutputs.sendCommandsToWorkflowEngine,
                         keyValueStorage,
-                        keySetStorage
                     )
                 }
                 println(" done")
@@ -177,9 +177,13 @@ class InfiniticWorker(
                     startPulsarTaskEngineWorker(
                         counter,
                         pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
-                        pulsarOutputs.taskEngineOutput,
-                        pulsarOutputs.sendToTaskEngineDeadLetters,
-                        keyValueStorage
+                        keyValueStorage,
+                        pulsarOutputs.sendEventsToClient,
+                        pulsarOutputs.sendEventsToTagEngine,
+                        pulsarOutputs.sendEventsToTaskEngine,
+                        pulsarOutputs.sendEventsToWorkflowEngine,
+                        pulsarOutputs.sendToTaskExecutors,
+                        pulsarOutputs.sendToMetricsPerName
                     )
                 }
                 println(" done")
@@ -209,11 +213,11 @@ class InfiniticWorker(
                     startPulsarWorkflowEngineWorker(
                         counter,
                         pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName, counter),
+                        storage,
                         pulsarOutputs.sendEventsToClient,
                         pulsarOutputs.sendEventsToTagEngine,
                         pulsarOutputs.sendCommandsToTaskEngine,
-                        pulsarOutputs.sendEventsToWorkflowEngine,
-                        storage
+                        pulsarOutputs.sendEventsToWorkflowEngine
                     )
                 }
                 println(" done")
@@ -239,15 +243,14 @@ class InfiniticWorker(
                     startPulsarMonitoringPerNameWorker(
                         counter,
                         pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName, counter),
-                        pulsarOutputs.sendToMetricsGlobal,
-                        storage
+                        storage,
+                        pulsarOutputs.sendToMetricsGlobal
                     )
                 }
 
                 logger.info("InfiniticWorker - starting monitoring global")
                 startPulsarMonitoringGlobalWorker(
                     pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName),
-                    pulsarOutputs.sendToMetricsGlobalDeadLetters,
                     storage
                 )
             }

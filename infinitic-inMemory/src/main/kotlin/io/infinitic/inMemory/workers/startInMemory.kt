@@ -32,7 +32,6 @@ import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryOutput
-import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
 import io.infinitic.monitoring.global.engine.input.MonitoringGlobalInputChannels
 import io.infinitic.monitoring.global.engine.input.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
@@ -131,15 +130,12 @@ fun CoroutineScope.startInMemory(
             taskEngineEventsChannel,
             logChannel
         ),
-        InMemoryTaskEngineOutput(
-            this,
-            clientEventsChannel,
-            tagEngineEventsChannel,
-            taskEngineEventsChannel,
-            taskExecutorChannel,
-            monitoringPerNameChannel,
-            workflowEngineEventsChannel
-        )
+        inMemoryOutput.sendEventsToClient,
+        inMemoryOutput.sendEventsToTagEngine,
+        inMemoryOutput.sendEventsToTaskEngine,
+        inMemoryOutput.sendEventsToWorkflowEngine,
+        inMemoryOutput.sendToTaskExecutors,
+        inMemoryOutput.sendToMetricsPerName
     )
 
     startWorkflowEngine(

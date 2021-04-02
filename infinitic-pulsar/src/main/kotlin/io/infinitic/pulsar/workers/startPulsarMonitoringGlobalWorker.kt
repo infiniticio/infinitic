@@ -27,7 +27,6 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
-import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
@@ -65,7 +64,6 @@ private fun logError(message: MetricsGlobalMessage, e: Exception) = logger.error
 
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     metricsGlobalConsumer: Consumer<MetricsGlobalEnvelope>,
-    sendToMetricsGlobalDeadLetters: SendToMetricsGlobal,
     keyValueStorage: KeyValueStorage
 ) = launch(singleThreadedContext(MONITORING_GLOBAL_THREAD_NAME)) {
 

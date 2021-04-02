@@ -70,11 +70,11 @@ private fun logError(message: WorkflowEngineMessage, e: Exception) = logger.erro
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
     consumerCounter: Int,
     workflowEngineConsumer: Consumer<WorkflowEngineEnvelope>,
+    keyValueStorage: KeyValueStorage,
     sendToClient: SendToClient,
     sendToTagEngine: SendToTagEngine,
     sendToTaskEngine: SendToTaskEngine,
     sendToWorkflowEngine: SendToWorkflowEngine,
-    keyValueStorage: KeyValueStorage,
 ) = launch(singleThreadedContext("$WORKFLOW_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val workflowEngine = WorkflowEngine(

@@ -25,14 +25,18 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.workers.singleThreadedContext
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.output.TaskEngineOutput
 import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -65,14 +69,23 @@ private fun logError(message: TaskEngineMessage, e: Exception) = logger.error(
 fun CoroutineScope.startPulsarTaskEngineWorker(
     consumerCounter: Int,
     taskEngineConsumer: Consumer<TaskEngineEnvelope>,
-    taskEngineOutput: TaskEngineOutput,
-    sendToTaskEngineDeadLetters: SendToTaskEngine,
-    keyValueStorage: KeyValueStorage
+    keyValueStorage: KeyValueStorage,
+    sendToClient: SendToClient,
+    sendToTagEngine: SendToTagEngine,
+    sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToTaskExecutors: SendToTaskExecutors,
+    sendToMetricsPerName: SendToMetricsPerName
 ) = launch(singleThreadedContext("$TASK_ENGINE_THREAD_NAME-$consumerCounter")) {
 
     val taskEngine = TaskEngine(
         BinaryTaskStateStorage(keyValueStorage),
-        taskEngineOutput
+        sendToClient,
+        sendToTagEngine,
+        sendToTaskEngine,
+        sendToWorkflowEngine,
+        sendToTaskExecutors,
+        sendToMetricsPerName
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =
