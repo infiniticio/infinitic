@@ -25,12 +25,12 @@
 
 package io.infinitic.tasks.executor.worker
 
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.TaskExecutor
-import io.infinitic.tasks.executor.transport.TaskExecutorInput
-import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
-import io.infinitic.tasks.executor.transport.TaskExecutorOutput
+import io.infinitic.tasks.executor.input.TaskExecutorInput
+import io.infinitic.tasks.executor.input.TaskExecutorMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.slf4j.Logger
@@ -49,10 +49,10 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     coroutineName: String,
     taskExecutorRegister: TaskExecutorRegister,
     taskExecutorInput: TaskExecutorInput<T>,
-    taskExecutorOutput: TaskExecutorOutput
+    sendToTaskEngine: SendToTaskEngine,
 ) = launch(singleThreadedContext(coroutineName)) {
 
-    val taskExecutor = TaskExecutor(taskExecutorOutput, taskExecutorRegister)
+    val taskExecutor = TaskExecutor(sendToTaskEngine, taskExecutorRegister)
     val out = taskExecutorInput.taskExecutorResultsChannel
 
     for (message in taskExecutorInput.taskExecutorChannel) {

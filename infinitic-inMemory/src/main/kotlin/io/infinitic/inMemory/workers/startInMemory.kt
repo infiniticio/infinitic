@@ -33,7 +33,6 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.transport.InMemoryTaskEngineOutput
-import io.infinitic.inMemory.transport.InMemoryTaskExecutorOutput
 import io.infinitic.monitoring.global.engine.input.MonitoringGlobalInputChannels
 import io.infinitic.monitoring.global.engine.input.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
@@ -51,8 +50,8 @@ import io.infinitic.tasks.engine.input.TaskEngineInputChannels
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import io.infinitic.tasks.engine.worker.startTaskEngine
-import io.infinitic.tasks.executor.transport.TaskExecutorInput
-import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
+import io.infinitic.tasks.executor.input.TaskExecutorInput
+import io.infinitic.tasks.executor.input.TaskExecutorMessageToProcess
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import io.infinitic.workflows.engine.input.WorkflowEngineInputChannels
 import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
@@ -162,7 +161,7 @@ fun CoroutineScope.startInMemory(
             "in-memory-task-executor-$it",
             taskExecutorRegister,
             TaskExecutorInput(taskExecutorChannel, logChannel),
-            InMemoryTaskExecutorOutput(this, taskEngineEventsChannel),
+            inMemoryOutput.sendEventsToTaskEngine
         )
     }
 

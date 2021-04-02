@@ -39,7 +39,6 @@ import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
@@ -55,7 +54,6 @@ import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.tests.samples.Status
 import io.infinitic.tasks.tests.samples.TaskTest
 import io.infinitic.tasks.tests.samples.TaskTestImpl
@@ -339,12 +337,6 @@ class TaskIntegrationTests : StringSpec({
     }
 })
 
-class TestTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-}
-
 fun CoroutineScope.sendToClientResponse(msg: ClientMessage) {
     launch {
         client.handle(msg)
@@ -433,6 +425,9 @@ fun CoroutineScope.init() {
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    taskExecutor = TaskExecutor(TestTaskExecutorOutput(this), TaskExecutorRegisterImpl())
+    taskExecutor = TaskExecutor(
+        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+        TaskExecutorRegisterImpl()
+    )
     taskExecutor.register(TaskTest::class.java.name) { taskTest }
 }

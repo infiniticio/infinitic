@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.transport
+package io.infinitic.tasks.executor.input
 
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess

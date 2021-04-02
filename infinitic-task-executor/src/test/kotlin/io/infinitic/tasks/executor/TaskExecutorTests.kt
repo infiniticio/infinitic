@@ -58,7 +58,6 @@ import io.infinitic.tasks.executor.samples.SampleTaskWithContext
 import io.infinitic.tasks.executor.samples.SampleTaskWithRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithTimeout
 import io.infinitic.tasks.executor.samples.TestingSampleTask
-import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -68,18 +67,18 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.coroutineScope
 
-class MockTaskExecutorOutput(slots: MutableList<TaskEngineMessage>) : TaskExecutorOutput {
-    override val sendToTaskEngineFn = mockk<SendToTaskEngine>()
+fun mockSendToTaskEngine(slots: MutableList<TaskEngineMessage>): SendToTaskEngine {
+    val sendToTaskEngine = mockk<SendToTaskEngine>()
 
-    init {
-        coEvery { sendToTaskEngineFn(capture(slots), any()) } just Runs
-    }
+    coEvery { sendToTaskEngine(capture(slots), any()) } just Runs
+
+    return sendToTaskEngine
 }
 
 class TaskExecutorTests : StringSpec({
     val slots = mutableListOf<TaskEngineMessage>()
     val taskExecutorRegister = TaskExecutorRegisterImpl()
-    val taskExecutor = TaskExecutor(MockTaskExecutorOutput(slots), taskExecutorRegister)
+    val taskExecutor = TaskExecutor(mockSendToTaskEngine(slots), taskExecutorRegister)
 
     // ensure slots are emptied between each test
     beforeTest {

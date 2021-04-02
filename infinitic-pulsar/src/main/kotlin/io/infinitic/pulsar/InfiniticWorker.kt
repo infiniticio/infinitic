@@ -275,8 +275,7 @@ class InfiniticWorker(
                         workflow.name,
                         it,
                         pulsarConsumerFactory.newWorkflowExecutorConsumer(consumerName, it, workflow.name),
-                        pulsarOutputs.taskExecutorOutput,
-                        pulsarOutputs.sendToTaskExecutorDeadLetters,
+                        pulsarOutputs.sendEventsToTaskEngine,
                         taskExecutorRegister,
                         workflow.concurrency
                     )
@@ -297,8 +296,7 @@ class InfiniticWorker(
                         task.name,
                         it,
                         pulsarConsumerFactory.newTaskExecutorConsumer(consumerName, it, task.name),
-                        pulsarOutputs.taskExecutorOutput,
-                        pulsarOutputs.sendToTaskExecutorDeadLetters,
+                        pulsarOutputs.sendEventsToTaskEngine,
                         taskExecutorRegister,
                         task.concurrency
                     )

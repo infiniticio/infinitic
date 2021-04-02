@@ -45,7 +45,7 @@ import io.infinitic.monitoring.global.engine.input.MonitoringGlobalMessageToProc
 import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameMessageToProcess
 import io.infinitic.tags.engine.input.TagEngineMessageToProcess
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
-import io.infinitic.tasks.executor.transport.TaskExecutorMessageToProcess
+import io.infinitic.tasks.executor.input.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel

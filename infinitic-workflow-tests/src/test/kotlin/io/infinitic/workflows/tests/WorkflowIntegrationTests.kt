@@ -36,7 +36,6 @@ import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
@@ -54,7 +53,6 @@ import io.infinitic.tasks.engine.output.FunctionsTaskEngineOutput
 import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.register
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.states.BinaryWorkflowStateStorage
@@ -666,12 +664,6 @@ class WorkflowIntegrationTests : StringSpec({
     }
 })
 
-class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-}
-
 fun CoroutineScope.sendToClientResponse(msg: ClientMessage) {
     launch {
         client.handle(msg)
@@ -731,9 +723,9 @@ fun CoroutineScope.init() {
     client = Client.with(
         FunctionsClientOutput(
             ClientName("client: testing"),
-            { msg: TagEngineMessage -> sendToTagEngine(msg) },
-            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-            { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
+            { sendToTagEngine(it) },
+            { msg, after -> sendToTaskEngine(msg, after) },
+            { msg, after -> sendToWorkflowEngine(msg, after) }
         )
     )
 
@@ -743,39 +735,42 @@ fun CoroutineScope.init() {
 
     tagEngine = TagEngine(
         tagStateStorage,
-        { msg: ClientMessage -> sendToClientResponse(msg) },
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-        { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
+        { sendToClientResponse(it) },
+        { msg, after -> sendToTaskEngine(msg, after) },
+        { msg, after -> sendToWorkflowEngine(msg, after) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
         FunctionsTaskEngineOutput(
-            { msg: ClientMessage -> sendToClientResponse(msg) },
-            { msg: TagEngineMessage -> sendToTagEngine(msg) },
-            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-            { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) },
-            { msg: TaskExecutorMessage -> sendToWorkers(msg) },
-            { msg: MetricsPerNameMessage -> sendToMonitoringPerName(msg) }
+            { sendToClientResponse(it) },
+            { sendToTagEngine(it) },
+            { msg, after -> sendToTaskEngine(msg, after) },
+            { msg, after -> sendToWorkflowEngine(msg, after) },
+            { sendToWorkers(it) },
+            { sendToMonitoringPerName(it) }
         )
     )
 
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
-        { msg: ClientMessage -> sendToClientResponse(msg) },
-        { msg: TagEngineMessage -> sendToTagEngine(msg) },
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-        { msg: WorkflowEngineMessage, after: MillisDuration -> sendToWorkflowEngine(msg, after) }
+        { sendToClientResponse(it) },
+        { sendToTagEngine(it) },
+        { msg, after -> sendToTaskEngine(msg, after) },
+        { msg, after -> sendToWorkflowEngine(msg, after) }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(
         monitoringPerNameStateStorage,
-        { msg: MetricsGlobalMessage -> sendToMonitoringGlobal(msg) }
+        { sendToMonitoringGlobal(it) }
     )
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    executor = TaskExecutor(InMemoryTaskExecutorOutput(this), TaskExecutorRegisterImpl())
+    executor = TaskExecutor(
+        { msg, after -> sendToTaskEngine(msg, after) },
+        TaskExecutorRegisterImpl()
+    )
     executor.register<TaskA> { TaskAImpl() }
     executor.register<WorkflowA> { WorkflowAImpl() }
     executor.register<WorkflowB> { WorkflowBImpl() }
