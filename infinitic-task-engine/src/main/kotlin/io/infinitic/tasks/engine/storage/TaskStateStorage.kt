@@ -23,18 +23,16 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.engine.input
+package io.infinitic.tasks.engine.storage
 
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.workers.MessageToProcess
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.engine.state.TaskState
 
-typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
-
-data class TaskEngineInputChannels<T : MessageToProcess<*>>(
-    val taskCommandsChannel: ReceiveChannel<T>,
-    val taskEventsChannel: Channel<T>,
-    val logChannel: SendChannel<T>
-)
+/**
+ * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
+ */
+interface TaskStateStorage {
+    suspend fun getState(taskId: TaskId): TaskState?
+    suspend fun putState(taskId: TaskId, state: TaskState)
+    suspend fun delState(taskId: TaskId)
+}

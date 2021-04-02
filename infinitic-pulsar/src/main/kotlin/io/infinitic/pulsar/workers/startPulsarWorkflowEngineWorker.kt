@@ -36,7 +36,7 @@ import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.storage.states.BinaryWorkflowStateStorage
+import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive

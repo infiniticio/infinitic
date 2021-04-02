@@ -26,18 +26,22 @@
 package io.infinitic.monitoring.perName.engine.worker
 
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameInputChannels
-import io.infinitic.monitoring.perName.engine.input.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(MonitoringPerNameEngine::class.java)
+
+typealias MonitoringPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
 private fun logError(messageToProcess: MonitoringPerNameMessageToProcess, e: Exception) = logger.error(
     "taskName {} - exception on message {}:${System.getProperty("line.separator")}{}",
@@ -49,7 +53,8 @@ private fun logError(messageToProcess: MonitoringPerNameMessageToProcess, e: Exc
 fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNameEngine(
     coroutineName: String,
     monitoringPerNameStateStorage: MonitoringPerNameStateStorage,
-    monitoringPerNameInputChannels: MonitoringPerNameInputChannels<T>,
+    monitoringPerNameChannel: ReceiveChannel<T>,
+    logChannel: SendChannel<T>,
     sendToMetricsGlobal: SendToMetricsGlobal
 ) = launch(CoroutineName(coroutineName)) {
 
@@ -58,16 +63,14 @@ fun <T : MonitoringPerNameMessageToProcess> CoroutineScope.startMonitoringPerNam
         sendToMetricsGlobal
     )
 
-    val out = monitoringPerNameInputChannels.monitoringPerNameResultsChannel
-
-    for (messageToProcess in monitoringPerNameInputChannels.monitoringPerNameChannel) {
+    for (messageToProcess in monitoringPerNameChannel) {
         try {
             messageToProcess.returnValue = monitoringPerNameEngine.handle(messageToProcess.message)
         } catch (e: Exception) {
             messageToProcess.exception = e
             logError(messageToProcess, e)
         } finally {
-            out.send(messageToProcess)
+            logChannel.send(messageToProcess)
         }
     }
 }

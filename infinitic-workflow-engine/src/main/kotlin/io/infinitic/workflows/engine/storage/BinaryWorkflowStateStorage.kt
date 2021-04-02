@@ -23,42 +23,36 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.engine.storage.states
+package io.infinitic.workflows.engine.storage
 
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.engine.state.TaskState
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.engine.state.WorkflowState
 
 /**
- * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value binary storage.
+ * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
+ * them in a persistent key value storage.
  */
-class BinaryTaskStateStorage(
-    private val storage: KeyValueStorage
-) : TaskStateStorage, Flushable by storage {
+open class BinaryWorkflowStateStorage(
+    private val storage: KeyValueStorage,
+) : WorkflowStateStorage, Flushable by storage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
-
-    override suspend fun getState(taskId: TaskId): TaskState? {
-        val key = getTaskStateKey(taskId)
-
+    override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
+        val key = getWorkflowStateKey(workflowId)
         return storage.getValue(key)
-            ?.let { TaskState.fromByteArray(it) }
+            ?.let { WorkflowState.fromByteArray(it) }
     }
 
-    override suspend fun putState(taskId: TaskId, state: TaskState) {
-        val key = getTaskStateKey(taskId)
-        storage.putValue(key, state.toByteArray())
+    override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
+        val key = getWorkflowStateKey(workflowId)
+        storage.putValue(key, workflowState.toByteArray())
     }
 
-    override suspend fun delState(taskId: TaskId) {
-        val key = getTaskStateKey(taskId)
+    override suspend fun delState(workflowId: WorkflowId) {
+        val key = getWorkflowStateKey(workflowId)
         storage.delValue(key)
     }
 
-    private fun getTaskStateKey(taskId: TaskId) = "task.state.$taskId"
+    private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
 }

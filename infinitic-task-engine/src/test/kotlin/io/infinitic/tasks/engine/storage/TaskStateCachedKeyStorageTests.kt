@@ -29,7 +29,6 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery

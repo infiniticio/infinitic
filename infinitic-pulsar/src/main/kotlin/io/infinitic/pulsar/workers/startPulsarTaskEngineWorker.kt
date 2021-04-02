@@ -37,7 +37,7 @@ import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
+import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive

@@ -36,10 +36,10 @@ import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startClientResponseWorker
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.engine.input.TagEngineMessageToProcess
-import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
+import io.infinitic.tags.engine.worker.TagEngineMessageToProcess
+import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
+import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch

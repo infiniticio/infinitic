@@ -26,18 +26,22 @@
 package io.infinitic.tasks.executor.worker
 
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.TaskExecutor
-import io.infinitic.tasks.executor.input.TaskExecutorInput
-import io.infinitic.tasks.executor.input.TaskExecutorMessageToProcess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(TaskExecutor::class.java)
+
+typealias TaskExecutorMessageToProcess = MessageToProcess<TaskExecutorMessage>
 
 private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
@@ -48,21 +52,21 @@ private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Exceptio
 fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     coroutineName: String,
     taskExecutorRegister: TaskExecutorRegister,
-    taskExecutorInput: TaskExecutorInput<T>,
+    taskExecutorChannel: ReceiveChannel<T>,
+    logChannel: SendChannel<T>,
     sendToTaskEngine: SendToTaskEngine,
 ) = launch(singleThreadedContext(coroutineName)) {
 
     val taskExecutor = TaskExecutor(sendToTaskEngine, taskExecutorRegister)
-    val out = taskExecutorInput.taskExecutorResultsChannel
 
-    for (message in taskExecutorInput.taskExecutorChannel) {
+    for (message in taskExecutorChannel) {
         try {
             message.returnValue = taskExecutor.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
             logError(message, e)
         } finally {
-            out.send(message)
+            logChannel.send(message)
         }
     }
 }

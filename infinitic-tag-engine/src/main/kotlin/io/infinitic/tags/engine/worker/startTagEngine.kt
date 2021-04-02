@@ -26,14 +26,16 @@
 package io.infinitic.tags.engine.worker
 
 import io.infinitic.common.clients.transport.SendToClient
+import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tags.engine.TagEngine
-import io.infinitic.tags.engine.input.TagEngineInputChannels
-import io.infinitic.tags.engine.input.TagEngineMessageToProcess
 import io.infinitic.tags.engine.storage.TagStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import org.slf4j.Logger
@@ -41,6 +43,8 @@ import org.slf4j.LoggerFactory
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(TagEngine::class.java)
+
+typealias TagEngineMessageToProcess = MessageToProcess<TagEngineMessage>
 
 private fun logError(messageToProcess: TagEngineMessageToProcess, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
@@ -51,7 +55,9 @@ private fun logError(messageToProcess: TagEngineMessageToProcess, e: Exception) 
 fun <T : TagEngineMessageToProcess> CoroutineScope.startTagEngine(
     coroutineName: String,
     tagStateStorage: TagStateStorage,
-    tagEngineInputChannels: TagEngineInputChannels<T>,
+    tagEngineCommandsChannel: ReceiveChannel<T>,
+    tagEngineEventsChannel: ReceiveChannel<T>,
+    logChannel: SendChannel<T>,
     sendToClient: SendToClient,
     sendToTaskEngine: SendToTaskEngine,
     sendToWorkflowEngine: SendToWorkflowEngine
@@ -64,30 +70,26 @@ fun <T : TagEngineMessageToProcess> CoroutineScope.startTagEngine(
         sendToWorkflowEngine
     )
 
-    val out = tagEngineInputChannels.logChannel
-    val events = tagEngineInputChannels.tagEngineEventsChannel
-    val commands = tagEngineInputChannels.tagEngineCommandsChannel
-
     while (true) {
         select<Unit> {
-            events.onReceive {
+            tagEngineEventsChannel.onReceive {
                 try {
                     it.returnValue = tagEngine.handle(it.message)
                 } catch (e: Exception) {
                     it.exception = e
                     logError(it, e)
                 } finally {
-                    out.send(it)
+                    logChannel.send(it)
                 }
             }
-            commands.onReceive {
+            tagEngineCommandsChannel.onReceive {
                 try {
                     it.returnValue = tagEngine.handle(it.message)
                 } catch (e: Exception) {
                     it.exception = e
                     logError(it, e)
                 } finally {
-                    out.send(it)
+                    logChannel.send(it)
                 }
             }
         }

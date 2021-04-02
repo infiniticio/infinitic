@@ -60,7 +60,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.tasks.engine.storage.states.TaskStateStorage
+import io.infinitic.tasks.engine.storage.TaskStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClient

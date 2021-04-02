@@ -32,7 +32,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
+import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function

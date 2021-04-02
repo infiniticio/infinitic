@@ -23,36 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.storage.states
+package io.infinitic.workflows.engine.storage
 
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 
-/**
- * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
- */
-open class BinaryWorkflowStateStorage(
-    private val storage: KeyValueStorage,
-) : WorkflowStateStorage, Flushable by storage {
-
-    override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
-        val key = getWorkflowStateKey(workflowId)
-        return storage.getValue(key)
-            ?.let { WorkflowState.fromByteArray(it) }
-    }
-
-    override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
-        val key = getWorkflowStateKey(workflowId)
-        storage.putValue(key, workflowState.toByteArray())
-    }
-
-    override suspend fun delState(workflowId: WorkflowId) {
-        val key = getWorkflowStateKey(workflowId)
-        storage.delValue(key)
-    }
-
-    private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
+interface WorkflowStateStorage {
+    suspend fun getState(workflowId: WorkflowId): WorkflowState?
+    suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState)
+    suspend fun delState(workflowId: WorkflowId)
 }

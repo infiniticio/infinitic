@@ -57,7 +57,7 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.tasks.engine.storage.states.TaskStateStorage
+import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe

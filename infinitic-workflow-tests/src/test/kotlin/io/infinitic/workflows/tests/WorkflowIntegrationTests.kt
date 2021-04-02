@@ -49,12 +49,12 @@ import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.states.BinaryTaskStateStorage
+import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.register
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.storage.states.BinaryWorkflowStateStorage
+import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.tests.tasks.TaskAImpl
 import io.infinitic.workflows.tests.workflows.Obj1

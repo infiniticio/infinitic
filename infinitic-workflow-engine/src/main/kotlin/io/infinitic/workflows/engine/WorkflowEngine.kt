@@ -54,7 +54,7 @@ import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
+import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import org.slf4j.LoggerFactory
 
 class WorkflowEngine(

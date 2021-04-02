@@ -30,9 +30,9 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.tags.engine.input.TagEngineMessageToProcess
-import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
-import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
+import io.infinitic.tags.engine.worker.TagEngineMessageToProcess
+import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
+import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.SendChannel

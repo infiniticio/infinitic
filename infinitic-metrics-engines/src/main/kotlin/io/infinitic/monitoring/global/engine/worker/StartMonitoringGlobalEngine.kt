@@ -25,18 +25,22 @@
 
 package io.infinitic.monitoring.global.engine.worker
 
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.input.MonitoringGlobalInputChannels
-import io.infinitic.monitoring.global.engine.input.MonitoringGlobalMessageToProcess
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(MonitoringGlobalEngine::class.java)
+
+typealias MonitoringGlobalMessageToProcess = MessageToProcess<MetricsGlobalMessage>
 
 private fun logError(messageToProcess: MonitoringGlobalMessageToProcess, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
@@ -47,23 +51,22 @@ private fun logError(messageToProcess: MonitoringGlobalMessageToProcess, e: Exce
 fun <T : MonitoringGlobalMessageToProcess> CoroutineScope.startMonitoringGlobalEngine(
     coroutineName: String,
     monitoringGlobalStateStorage: MonitoringGlobalStateStorage,
-    monitoringGlobalInputChannels: MonitoringGlobalInputChannels<T>
+    monitoringGlobalChannel: ReceiveChannel<T>,
+    logChannel: SendChannel<T>
 ) = launch(CoroutineName(coroutineName)) {
 
     val monitoringGlobalEngine = MonitoringGlobalEngine(
         monitoringGlobalStateStorage
     )
 
-    val out = monitoringGlobalInputChannels.monitoringGlobalResultsChannel
-
-    for (message in monitoringGlobalInputChannels.monitoringGlobalChannel) {
+    for (message in monitoringGlobalChannel) {
         try {
             message.returnValue = monitoringGlobalEngine.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
             logError(message, e)
         } finally {
-            out.send(message)
+            logChannel.send(message)
         }
     }
 }

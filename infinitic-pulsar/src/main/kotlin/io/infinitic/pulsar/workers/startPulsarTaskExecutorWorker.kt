@@ -31,7 +31,6 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.executor.input.TaskExecutorInput
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
@@ -79,7 +78,8 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
         startTaskExecutor(
             "$TASK_EXECUTOR_PROCESSING_COROUTINE_NAME-$taskName-$consumerCounter-$it",
             taskExecutorRegister,
-            TaskExecutorInput(taskExecutorChannel, taskExecutorResultsChannel),
+            taskExecutorChannel,
+            taskExecutorResultsChannel,
             sendToTaskEngine
         )
     }

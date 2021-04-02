@@ -28,13 +28,16 @@ package io.infinitic.workflows.engine.worker
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.input.WorkflowEngineInputChannels
-import io.infinitic.workflows.engine.input.WorkflowEngineMessageToProcess
-import io.infinitic.workflows.engine.storage.states.WorkflowStateStorage
+import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import org.slf4j.Logger
@@ -42,6 +45,8 @@ import org.slf4j.LoggerFactory
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(WorkflowEngine::class.java)
+
+typealias WorkflowEngineMessageToProcess = MessageToProcess<WorkflowEngineMessage>
 
 private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Exception) = logger.error(
     "workflowId {} - exception on message {}:${System.getProperty("line.separator")}{}",
@@ -53,7 +58,9 @@ private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Except
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     coroutineName: String,
     workflowStateStorage: WorkflowStateStorage,
-    workflowEngineInputChannels: WorkflowEngineInputChannels<T>,
+    workflowCommandsChannel: ReceiveChannel<T>,
+    workflowEventsChannel: Channel<T>,
+    logChannel: SendChannel<T>,
     sendEventsToClient: SendToClient,
     sendToTagEngine: SendToTagEngine,
     sendToTaskEngine: SendToTaskEngine,
@@ -68,30 +75,26 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
         sendToWorkflowEngine
     )
 
-    val out = workflowEngineInputChannels.workflowResultsChannel
-    val events = workflowEngineInputChannels.workflowEventsChannel
-    val commands = workflowEngineInputChannels.workflowCommandsChannel
-
     while (true) {
         select<Unit> {
-            events.onReceive {
+            workflowEventsChannel.onReceive {
                 try {
                     it.returnValue = workflowEngine.handle(it.message)
                 } catch (e: Exception) {
                     it.exception = e
                     logError(it, e)
                 } finally {
-                    out.send(it)
+                    logChannel.send(it)
                 }
             }
-            commands.onReceive {
+            workflowCommandsChannel.onReceive {
                 try {
                     it.returnValue = workflowEngine.handle(it.message)
                 } catch (e: Exception) {
                     it.exception = e
                     logError(it, e)
                 } finally {
-                    out.send(it)
+                    logChannel.send(it)
                 }
             }
         }
