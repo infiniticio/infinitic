@@ -27,7 +27,7 @@ package io.infinitic.tasks.engine.output
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -65,7 +65,7 @@ class LoggedTaskEngineOutput(val output: TaskEngineOutput) : TaskEngineOutput by
         output.sendToTaskExecutors(message)
     }
 
-    override suspend fun sendToMonitoringPerName(message: MonitoringPerNameMessage) {
+    override suspend fun sendToMonitoringPerName(message: MetricsPerNameMessage) {
         logger.debug("sendToMonitoringPerName {}", message)
         output.sendToMonitoringPerName(message)
     }

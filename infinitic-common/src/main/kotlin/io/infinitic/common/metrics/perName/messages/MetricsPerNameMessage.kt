@@ -23,8 +23,24 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.perName.transport
+package io.infinitic.common.metrics.perName.messages
 
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskStatus
+import kotlinx.serialization.Serializable
 
-typealias SendToMonitoringPerName = suspend (MonitoringPerNameMessage) -> Unit
+@Serializable
+sealed class MetricsPerNameMessage {
+    val messageId = MessageId()
+    abstract val taskName: TaskName
+}
+
+@Serializable
+data class TaskStatusUpdated constructor(
+    override val taskName: TaskName,
+    val taskId: TaskId,
+    val oldStatus: TaskStatus?,
+    val newStatus: TaskStatus
+) : MetricsPerNameMessage()

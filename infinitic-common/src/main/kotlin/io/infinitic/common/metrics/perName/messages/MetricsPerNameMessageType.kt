@@ -23,26 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.perName.state
+package io.infinitic.common.metrics.perName.messages
 
-import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.tasks.data.TaskName
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class MonitoringPerNameState(
-    val lastMessageId: MessageId,
-    val taskName: TaskName,
-    var runningOkCount: Long = 0,
-    var runningWarningCount: Long = 0,
-    var runningErrorCount: Long = 0,
-    var terminatedCompletedCount: Long = 0,
-    var terminatedCanceledCount: Long = 0
-) {
-    companion object {
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
-    }
-
-    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
+enum class MetricsPerNameMessageType {
+    TASK_STATUS_UPDATED
 }

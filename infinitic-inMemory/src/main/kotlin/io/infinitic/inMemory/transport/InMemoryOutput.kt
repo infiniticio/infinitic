@@ -29,10 +29,10 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.ClientMessageToProcess
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -135,12 +135,12 @@ class InMemoryOutput(
         executorChannel.send(InMemoryMessageToProcess(message))
     }
 
-    val sendToMonitoringPerName: SendToMonitoringPerName = { message: MonitoringPerNameMessage ->
+    val sendToMetricsPerName: SendToMetricsPerName = { message: MetricsPerNameMessage ->
         logger.debug("sendToMonitoringPerName {}", message)
         monitoringPerNameChannel.send(InMemoryMessageToProcess(message))
     }
 
-    val sendToMonitoringGlobal: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+    val sendToMetricsGlobal: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
         logger.debug("sendToMonitoringGlobal {}", message)
         monitoringGlobalChannel.send(InMemoryMessageToProcess(message))
     }

@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.global.state
+package io.infinitic.common.metrics.global.state
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.data.MessageId
@@ -31,7 +31,7 @@ import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MonitoringGlobalState(
+data class MetricsGlobalState(
     val lastMessageId: MessageId,
     val taskNames: MutableSet<TaskName> = mutableSetOf()
 ) {

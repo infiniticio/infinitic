@@ -31,12 +31,12 @@ import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tags.messages.TagEngineEnvelope
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
@@ -208,21 +208,21 @@ class PulsarOutputs(
         )
     }
 
-    val sendToMonitoringPerName: SendToMonitoringPerName = { message: MonitoringPerNameMessage ->
+    val sendToMetricsPerName: SendToMetricsPerName = { message: MetricsPerNameMessage ->
         logger.debug("sendToMonitoringPerName {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name),
-            MonitoringPerNameEnvelope.from(message),
+            MetricsPerNameEnvelope.from(message),
             "${message.taskName}",
             MillisDuration(0)
         )
     }
 
-    val sendToMonitoringGlobal: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+    val sendToMetricsGlobal: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
         logger.debug("sendToMonitoringGlobal {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name),
-            MonitoringGlobalEnvelope.from(message),
+            MetricsGlobalEnvelope.from(message),
             null,
             MillisDuration(0)
         )
@@ -241,7 +241,7 @@ class PulsarOutputs(
         sendEventsToTaskEngine,
         sendEventsToWorkflowEngine,
         sendToTaskExecutors,
-        sendToMonitoringPerName
+        sendToMetricsPerName
     )
 
     val workflowEngineOutput = FunctionsWorkflowEngineOutput(
@@ -252,7 +252,7 @@ class PulsarOutputs(
     )
 
     val monitoringPerNameOutput = FunctionsMonitoringPerNameOutput(
-        sendToMonitoringGlobal
+        sendToMetricsGlobal
     )
 
     val taskExecutorOutput = TaskExecutorDataOutput(
@@ -289,20 +289,20 @@ class PulsarOutputs(
         logger.debug("workflowId {} - sendToWorkflowEngineDeadLetters {}", message.workflowId, message)
     }
 
-    val sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName = { message: MonitoringPerNameMessage ->
+    val sendToMetricsPerNameDeadLetters: SendToMetricsPerName = { message: MetricsPerNameMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameDeadLettersTopic.name),
-            MonitoringPerNameEnvelope.from(message),
+            MetricsPerNameEnvelope.from(message),
             "${message.taskName}",
             MillisDuration(0)
         )
         logger.debug("taskName {} - sendToMonitoringPerNameDeadLetters {}", message.taskName, message)
     }
 
-    val sendToMonitoringGlobalDeadLetters: SendToMonitoringGlobal = { message: MonitoringGlobalMessage ->
+    val sendToMetricsGlobalDeadLetters: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
             getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalDeadLettersTopic.name),
-            MonitoringGlobalEnvelope.from(message),
+            MetricsGlobalEnvelope.from(message),
             null,
             MillisDuration(0)
         )

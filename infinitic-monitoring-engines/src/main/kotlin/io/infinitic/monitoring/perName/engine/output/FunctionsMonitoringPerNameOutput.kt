@@ -25,14 +25,14 @@
 
 package io.infinitic.monitoring.perName.engine.output
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 
 class FunctionsMonitoringPerNameOutput(
-    val sendToMonitoringGlobalFn: SendToMonitoringGlobal
+    val sendToMetricsGlobalFn: SendToMetricsGlobal
 ) : MonitoringPerNameOutput {
 
-    override suspend fun sendToMonitoringGlobal(message: MonitoringGlobalMessage) {
-        sendToMonitoringGlobalFn(message)
+    override suspend fun sendToMonitoringGlobal(message: MetricsGlobalMessage) {
+        sendToMetricsGlobalFn(message)
     }
 }

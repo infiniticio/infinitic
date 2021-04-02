@@ -23,42 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.perName.messages
+package io.infinitic.common.metrics.perName.state
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MonitoringPerNameEnvelope(
+data class MetricsPerNameState(
+    val lastMessageId: MessageId,
     val taskName: TaskName,
-    val type: MonitoringPerNameMessageType,
-    val taskStatusUpdated: TaskStatusUpdated? = null
+    var runningOkCount: Long = 0,
+    var runningWarningCount: Long = 0,
+    var runningErrorCount: Long = 0,
+    var terminatedCompletedCount: Long = 0,
+    var terminatedCanceledCount: Long = 0
 ) {
-    init {
-        val noNull = listOfNotNull(
-            taskStatusUpdated
-        )
-
-        require(noNull.size == 1)
-        require(noNull.first() == message())
-        require(noNull.first().taskName == taskName)
-    }
-
     companion object {
-        fun from(msg: MonitoringPerNameMessage) = when (msg) {
-            is TaskStatusUpdated -> MonitoringPerNameEnvelope(
-                msg.taskName,
-                MonitoringPerNameMessageType.TASK_STATUS_UPDATED,
-                taskStatusUpdated = msg
-            )
-        }
-
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
-    }
-
-    fun message(): MonitoringPerNameMessage = when (type) {
-        MonitoringPerNameMessageType.TASK_STATUS_UPDATED -> taskStatusUpdated!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

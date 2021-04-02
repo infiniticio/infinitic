@@ -23,39 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.global.messages
+package io.infinitic.common.metrics.perName.transport
 
-import io.infinitic.common.avro.AvroSerDe
-import kotlinx.serialization.Serializable
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 
-@Serializable
-data class MonitoringGlobalEnvelope(
-    val type: MonitoringGlobalMessageType,
-    val taskCreated: TaskCreated? = null
-) {
-    init {
-        val noNull = listOfNotNull(
-            taskCreated
-        )
-
-        require(noNull.size == 1)
-        require(noNull.first() == message())
-    }
-
-    companion object {
-        fun from(msg: MonitoringGlobalMessage) = when (msg) {
-            is TaskCreated -> MonitoringGlobalEnvelope(
-                MonitoringGlobalMessageType.TASK_CREATED,
-                taskCreated = msg
-            )
-        }
-
-        fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
-    }
-
-    fun message(): MonitoringGlobalMessage = when (type) {
-        MonitoringGlobalMessageType.TASK_CREATED -> taskCreated!!
-    }
-
-    fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
-}
+typealias SendToMetricsPerName = suspend (MetricsPerNameMessage) -> Unit

@@ -25,8 +25,8 @@
 
 package io.infinitic.monitoring.perName.engine.output
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 
 interface MonitoringPerNameOutput {
-    suspend fun sendToMonitoringGlobal(message: MonitoringGlobalMessage)
+    suspend fun sendToMonitoringGlobal(message: MetricsGlobalMessage)
 }

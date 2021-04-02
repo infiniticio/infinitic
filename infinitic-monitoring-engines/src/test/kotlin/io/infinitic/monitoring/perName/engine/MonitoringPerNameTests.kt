@@ -26,9 +26,9 @@
 package io.infinitic.monitoring.perName.engine
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.monitoring.global.messages.TaskCreated
-import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.metrics.global.messages.TaskCreated
+import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
+import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
@@ -52,8 +52,8 @@ class MonitoringPerNameTests : ShouldSpec({
                     "newStatus" to TaskStatus.RUNNING_ERROR
                 )
             )
-            val stateIn = TestFactory.random(MonitoringPerNameState::class, mapOf("taskName" to msg.taskName))
-            val stateOutSlot = slot<MonitoringPerNameState>()
+            val stateIn = TestFactory.random(MetricsPerNameState::class, mapOf("taskName" to msg.taskName))
+            val stateOutSlot = slot<MetricsPerNameState>()
             coEvery { storage.getState(msg.taskName) } returns stateIn
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
 
@@ -82,7 +82,7 @@ class MonitoringPerNameTests : ShouldSpec({
                 )
             )
             val storage = mockk<MonitoringPerNameStateStorage>()
-            val stateOutSlot = slot<MonitoringPerNameState>()
+            val stateOutSlot = slot<MetricsPerNameState>()
             coEvery { storage.getState(msg.taskName) } returns null
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
             val monitoringPerNameOutput = mockMonitoringPerNameOutput()

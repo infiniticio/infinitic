@@ -25,10 +25,10 @@
 
 package io.infinitic.monitoring.perName.engine
 
-import io.infinitic.common.monitoring.global.messages.TaskCreated
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
-import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.metrics.global.messages.TaskCreated
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
+import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.monitoring.perName.engine.output.LoggedMonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.output.MonitoringPerNameOutput
@@ -45,7 +45,7 @@ class MonitoringPerNameEngine(
 
     private val output = LoggedMonitoringPerNameOutput(output)
 
-    suspend fun handle(message: MonitoringPerNameMessage) {
+    suspend fun handle(message: MetricsPerNameMessage) {
         logger.debug("receiving {}", message)
 
         // get state
@@ -58,7 +58,7 @@ class MonitoringPerNameEngine(
 
         val newState = oldState
             ?.copy(lastMessageId = message.messageId)
-            ?: MonitoringPerNameState(message.messageId, message.taskName)
+            ?: MetricsPerNameState(message.messageId, message.taskName)
 
         when (message) {
             is TaskStatusUpdated -> handleTaskStatusUpdated(message, newState)
@@ -76,7 +76,7 @@ class MonitoringPerNameEngine(
         }
     }
 
-    private fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MonitoringPerNameState) {
+    private fun handleTaskStatusUpdated(message: TaskStatusUpdated, state: MetricsPerNameState) {
         when (message.oldStatus) {
             TaskStatus.RUNNING_OK -> state.runningOkCount--
             TaskStatus.RUNNING_WARNING -> state.runningWarningCount--
@@ -95,7 +95,7 @@ class MonitoringPerNameEngine(
         }
     }
 
-    private fun logDiscardingMessage(message: MonitoringPerNameMessage, reason: String) {
+    private fun logDiscardingMessage(message: MetricsPerNameMessage, reason: String) {
         logger.info("{} - discarding {}", reason, message)
     }
 }

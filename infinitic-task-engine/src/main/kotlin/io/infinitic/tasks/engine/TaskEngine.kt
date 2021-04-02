@@ -27,7 +27,7 @@ package io.infinitic.tasks.engine
 
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.tags.messages.RemoveTaskTag
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId

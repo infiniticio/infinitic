@@ -25,7 +25,7 @@
 
 package io.infinitic.monitoring.perName.engine.storage
 
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskName
 
 /**
@@ -36,9 +36,9 @@ import io.infinitic.common.tasks.data.TaskName
  */
 interface MonitoringPerNameStateStorage {
 
-    suspend fun getState(taskName: TaskName): MonitoringPerNameState?
+    suspend fun getState(taskName: TaskName): MetricsPerNameState?
 
-    suspend fun putState(taskName: TaskName, state: MonitoringPerNameState)
+    suspend fun putState(taskName: TaskName, state: MetricsPerNameState)
 
     suspend fun delState(taskName: TaskName)
 }

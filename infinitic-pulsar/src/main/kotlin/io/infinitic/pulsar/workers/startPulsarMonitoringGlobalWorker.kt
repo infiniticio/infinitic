@@ -25,9 +25,9 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
@@ -44,28 +44,28 @@ import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<MonitoringGlobalMessage>
+typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<MetricsGlobalMessage>
 
 const val MONITORING_GLOBAL_THREAD_NAME = "monitoring-global"
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
 
-private fun logError(message: Message<MonitoringGlobalEnvelope>, e: Exception) = logger.error(
+private fun logError(message: Message<MetricsGlobalEnvelope>, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     message,
     e
 )
 
-private fun logError(message: MonitoringGlobalMessage, e: Exception) = logger.error(
+private fun logError(message: MetricsGlobalMessage, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     message,
     e
 )
 
 fun CoroutineScope.startPulsarMonitoringGlobalWorker(
-    monitoringGlobalConsumer: Consumer<MonitoringGlobalEnvelope>,
-    sendToMonitoringGlobalDeadLetters: SendToMonitoringGlobal,
+    metricsGlobalConsumer: Consumer<MetricsGlobalEnvelope>,
+    sendToMetricsGlobalDeadLetters: SendToMetricsGlobal,
     keyValueStorage: KeyValueStorage
 ) = launch(singleThreadedContext(MONITORING_GLOBAL_THREAD_NAME)) {
 
@@ -74,16 +74,16 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =
-        monitoringGlobalConsumer.negativeAcknowledge(pulsarId)
+        metricsGlobalConsumer.negativeAcknowledge(pulsarId)
 
     suspend fun acknowledge(pulsarId: MessageId) =
-        monitoringGlobalConsumer.acknowledgeAsync(pulsarId).await()
+        metricsGlobalConsumer.acknowledgeAsync(pulsarId).await()
 
     while (isActive) {
-        val pulsarMessage = monitoringGlobalConsumer.receiveAsync().await()
+        val pulsarMessage = metricsGlobalConsumer.receiveAsync().await()
 
         val message = try {
-            MonitoringGlobalEnvelope.fromByteArray(pulsarMessage.data).message()
+            MetricsGlobalEnvelope.fromByteArray(pulsarMessage.data).message()
         } catch (e: Exception) {
             logError(pulsarMessage, e)
             negativeAcknowledge(pulsarMessage.messageId)

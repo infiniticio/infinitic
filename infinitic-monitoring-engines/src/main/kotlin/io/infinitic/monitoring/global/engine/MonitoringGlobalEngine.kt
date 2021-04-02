@@ -25,9 +25,9 @@
 
 package io.infinitic.monitoring.global.engine
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.global.messages.TaskCreated
-import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.global.messages.TaskCreated
+import io.infinitic.common.metrics.global.state.MetricsGlobalState
 import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -38,7 +38,7 @@ class MonitoringGlobalEngine(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun handle(message: MonitoringGlobalMessage) {
+    suspend fun handle(message: MetricsGlobalMessage) {
         logger.debug("receiving {}", message)
 
         // get state
@@ -51,7 +51,7 @@ class MonitoringGlobalEngine(
 
         val newState = oldState
             ?.copy(lastMessageId = message.messageId)
-            ?: MonitoringGlobalState(lastMessageId = message.messageId)
+            ?: MetricsGlobalState(lastMessageId = message.messageId)
 
         when (message) {
             is TaskCreated -> handleTaskTypeCreated(message, newState)
@@ -63,11 +63,11 @@ class MonitoringGlobalEngine(
         }
     }
 
-    private fun logDiscardingMessage(message: MonitoringGlobalMessage, reason: String) {
+    private fun logDiscardingMessage(message: MetricsGlobalMessage, reason: String) {
         logger.info("discarding {}: {} (messageId {})", reason, message, message.messageId)
     }
 
-    private fun handleTaskTypeCreated(message: TaskCreated, state: MonitoringGlobalState) {
+    private fun handleTaskTypeCreated(message: TaskCreated, state: MetricsGlobalState) {
         state.taskNames.add(message.taskName)
     }
 }

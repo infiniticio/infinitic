@@ -238,7 +238,7 @@ class InfiniticWorker(
                         counter,
                         pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName, counter),
                         pulsarOutputs.monitoringPerNameOutput,
-                        pulsarOutputs.sendToMonitoringPerNameDeadLetters,
+                        pulsarOutputs.sendToMetricsPerNameDeadLetters,
                         storage
                     )
                 }
@@ -246,7 +246,7 @@ class InfiniticWorker(
                 logger.info("InfiniticWorker - starting monitoring global")
                 startPulsarMonitoringGlobalWorker(
                     pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName),
-                    pulsarOutputs.sendToMonitoringGlobalDeadLetters,
+                    pulsarOutputs.sendToMetricsGlobalDeadLetters,
                     storage
                 )
             }

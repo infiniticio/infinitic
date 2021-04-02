@@ -25,12 +25,12 @@
 
 package io.infinitic.monitoring.perName.engine.input
 
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.workers.MessageToProcess
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 
-typealias MonitoringPerNameMessageToProcess = MessageToProcess<MonitoringPerNameMessage>
+typealias MonitoringPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
 data class MonitoringPerNameInputChannels<T : MessageToProcess<*>>(
     val monitoringPerNameChannel: ReceiveChannel<T>,

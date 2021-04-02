@@ -23,8 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.perName.messages
+package io.infinitic.common.metrics.global.transport
 
-enum class MonitoringPerNameMessageType {
-    TASK_STATUS_UPDATED
-}
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+
+typealias SendToMetricsGlobal = suspend (MetricsGlobalMessage) -> Unit

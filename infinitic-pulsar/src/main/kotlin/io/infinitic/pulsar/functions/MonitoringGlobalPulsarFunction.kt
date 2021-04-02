@@ -27,7 +27,7 @@ package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
@@ -36,9 +36,9 @@ import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class MonitoringGlobalPulsarFunction : Function<MonitoringGlobalEnvelope, Void> {
+class MonitoringGlobalPulsarFunction : Function<MetricsGlobalEnvelope, Void> {
 
-    override fun process(envelope: MonitoringGlobalEnvelope, context: Context?): Void? = runBlocking {
+    override fun process(envelope: MetricsGlobalEnvelope, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {

@@ -25,7 +25,7 @@
 
 package io.infinitic.monitoring.global.engine.storage
 
-import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
+import io.infinitic.common.metrics.global.state.MetricsGlobalState
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 
@@ -37,13 +37,13 @@ class BinaryMonitoringGlobalStateStorage(
     private val storage: KeyValueStorage,
 ) : MonitoringGlobalStateStorage, Flushable by storage {
 
-    override suspend fun getState(): MonitoringGlobalState? {
+    override suspend fun getState(): MetricsGlobalState? {
         val key = getMonitoringGlobalStateKey()
         return storage.getValue(key)
-            ?.let { MonitoringGlobalState.fromByteArray(it) }
+            ?.let { MetricsGlobalState.fromByteArray(it) }
     }
 
-    override suspend fun putState(state: MonitoringGlobalState) {
+    override suspend fun putState(state: MetricsGlobalState) {
         val key = getMonitoringGlobalStateKey()
         storage.putValue(key, state.toByteArray())
     }

@@ -28,8 +28,8 @@ package io.infinitic.tasks.engine.output
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -45,7 +45,7 @@ class FunctionsTaskEngineOutput(
     val sendToTaskEngineFn: SendToTaskEngine,
     val sendToWorkflowEngineFn: SendToWorkflowEngine,
     val sendToTaskExecutorsFn: SendToTaskExecutors,
-    val sendToMonitoringPerNameFn: SendToMonitoringPerName
+    val sendToMetricsPerNameFn: SendToMetricsPerName
 ) : TaskEngineOutput {
 
     override suspend fun sendToClientResponse(message: ClientMessage) {
@@ -68,7 +68,7 @@ class FunctionsTaskEngineOutput(
         sendToTaskExecutorsFn(message)
     }
 
-    override suspend fun sendToMonitoringPerName(message: MonitoringPerNameMessage) {
-        sendToMonitoringPerNameFn(message)
+    override suspend fun sendToMonitoringPerName(message: MetricsPerNameMessage) {
+        sendToMetricsPerNameFn(message)
     }
 }

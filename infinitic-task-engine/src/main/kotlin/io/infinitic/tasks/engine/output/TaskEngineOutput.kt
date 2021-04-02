@@ -27,7 +27,7 @@ package io.infinitic.tasks.engine.output
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -45,5 +45,5 @@ interface TaskEngineOutput {
 
     suspend fun sendToTaskExecutors(message: TaskExecutorMessage)
 
-    suspend fun sendToMonitoringPerName(message: MonitoringPerNameMessage)
+    suspend fun sendToMonitoringPerName(message: MetricsPerNameMessage)
 }

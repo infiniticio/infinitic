@@ -31,9 +31,9 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.Name
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
-import io.infinitic.common.monitoring.perName.messages.TaskStatusUpdated
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.data.TaskId
@@ -367,7 +367,7 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuratio
     }
 }
 
-fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameMessage) {
+fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) {
     launch {
         monitoringPerNameEngine.handle(msg)
 
@@ -378,7 +378,7 @@ fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameMessage) {
     }
 }
 
-fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
+fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) {
     launch {
         monitoringGlobalEngine.handle(msg)
     }
@@ -423,14 +423,14 @@ fun CoroutineScope.init() {
             { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
             { _: WorkflowEngineMessage, _: MillisDuration -> },
             { msg: TaskExecutorMessage -> sendToWorkers(msg) },
-            { msg: MonitoringPerNameMessage -> sendToMonitoringPerName(msg) }
+            { msg: MetricsPerNameMessage -> sendToMonitoringPerName(msg) }
         )
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(
         monitoringPerNameStateStorage,
         FunctionsMonitoringPerNameOutput(
-            { msg: MonitoringGlobalMessage -> sendToMonitoringGlobal(msg) }
+            { msg: MetricsGlobalMessage -> sendToMonitoringGlobal(msg) }
         )
     )
 

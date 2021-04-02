@@ -26,10 +26,10 @@
 package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -81,13 +81,13 @@ object TestFactory {
                 val sub = TaskEngineMessage::class.sealedSubclasses.shuffled().first()
                 TaskEngineEnvelope.from(random(sub))
             }
-            .randomize(MonitoringPerNameEnvelope::class.java) {
-                val sub = MonitoringPerNameMessage::class.sealedSubclasses.shuffled().first()
-                MonitoringPerNameEnvelope.from(random(sub))
+            .randomize(MetricsPerNameEnvelope::class.java) {
+                val sub = MetricsPerNameMessage::class.sealedSubclasses.shuffled().first()
+                MetricsPerNameEnvelope.from(random(sub))
             }
-            .randomize(MonitoringGlobalEnvelope::class.java) {
-                val sub = MonitoringGlobalMessage::class.sealedSubclasses.shuffled().first()
-                MonitoringGlobalEnvelope.from(random(sub))
+            .randomize(MetricsGlobalEnvelope::class.java) {
+                val sub = MetricsGlobalMessage::class.sealedSubclasses.shuffled().first()
+                MetricsGlobalEnvelope.from(random(sub))
             }
 
         values?.forEach {

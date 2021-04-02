@@ -25,7 +25,7 @@
 
 package io.infinitic.monitoring.perName.engine.output
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -36,7 +36,7 @@ class LoggedMonitoringPerNameOutput(
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun sendToMonitoringGlobal(message: MonitoringGlobalMessage) {
+    override suspend fun sendToMonitoringGlobal(message: MetricsGlobalMessage) {
         logger.debug("sendToMonitoringGlobal {}", message)
         output.sendToMonitoringGlobal(message)
     }

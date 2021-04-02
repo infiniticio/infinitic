@@ -23,8 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.global.messages
+package io.infinitic.common.metrics.global.messages
 
-enum class MonitoringGlobalMessageType {
-    TASK_CREATED
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.tasks.data.TaskName
+import kotlinx.serialization.Serializable
+
+@Serializable
+sealed class MetricsGlobalMessage {
+    val messageId = MessageId()
 }
+
+@Serializable
+data class TaskCreated(
+    val taskName: TaskName
+) : MetricsGlobalMessage()

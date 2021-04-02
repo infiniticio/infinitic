@@ -28,7 +28,7 @@ package io.infinitic.inMemory.transport
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.ClientMessageToProcess
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -87,7 +87,7 @@ class InMemoryTaskEngineOutput(
         executorChannel.send(InMemoryMessageToProcess(message))
     }
 
-    override suspend fun sendToMonitoringPerName(message: MonitoringPerNameMessage) {
+    override suspend fun sendToMonitoringPerName(message: MetricsPerNameMessage) {
         monitoringPerNameChannel.send(InMemoryMessageToProcess(message))
     }
 }

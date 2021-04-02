@@ -26,8 +26,8 @@
 
 package io.infinitic.pulsar.admin
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.schemas.getPostSchemaPayload
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
@@ -61,8 +61,8 @@ suspend fun PulsarAdmin.setupInfinitic(tenant: String, namespace: String, allowe
 
     setSchema(this, tenant, namespace, WorkflowEngineCommandsTopic.name, WorkflowEngineEnvelope::class)
     setSchema(this, tenant, namespace, WorkflowEngineEventsTopic.name, WorkflowEngineEnvelope::class)
-    setSchema(this, tenant, namespace, MonitoringPerNameTopic.name, MonitoringPerNameEnvelope::class)
-    setSchema(this, tenant, namespace, MonitoringGlobalTopic.name, MonitoringGlobalEnvelope::class)
+    setSchema(this, tenant, namespace, MonitoringPerNameTopic.name, MetricsPerNameEnvelope::class)
+    setSchema(this, tenant, namespace, MonitoringGlobalTopic.name, MetricsGlobalEnvelope::class)
 }
 
 private suspend fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<String>? = null): Set<String> {

@@ -25,12 +25,12 @@
 
 package io.infinitic.monitoring.global.engine.input
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.workers.MessageToProcess
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 
-typealias MonitoringGlobalMessageToProcess = MessageToProcess<MonitoringGlobalMessage>
+typealias MonitoringGlobalMessageToProcess = MessageToProcess<MetricsGlobalMessage>
 
 data class MonitoringGlobalInputChannels<T : MessageToProcess<*>>(
     val monitoringGlobalChannel: ReceiveChannel<T>,

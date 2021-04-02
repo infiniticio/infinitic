@@ -26,8 +26,8 @@
 package io.infinitic.pulsar.transport
 
 import io.infinitic.common.clients.messages.ClientEnvelope
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.tags.messages.TagEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
@@ -165,8 +165,8 @@ class PulsarConsumerFactory(
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newMonitoringPerNameEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<MonitoringPerNameEnvelope> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringPerNameEnvelope>()))
+    fun newMonitoringPerNameEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<MetricsPerNameEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MetricsPerNameEnvelope>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name))
             .also {
                 if (consumerName != null) {
@@ -179,8 +179,8 @@ class PulsarConsumerFactory(
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newMonitoringGlobalEngineConsumer(consumerName: String?): Consumer<MonitoringGlobalEnvelope> =
-        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MonitoringGlobalEnvelope>()))
+    fun newMonitoringGlobalEngineConsumer(consumerName: String?): Consumer<MetricsGlobalEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MetricsGlobalEnvelope>()))
             .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name))
             .also {
                 if (consumerName != null) {

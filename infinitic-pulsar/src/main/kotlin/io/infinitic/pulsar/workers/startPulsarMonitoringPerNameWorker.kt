@@ -25,9 +25,9 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameMessage
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
@@ -49,13 +49,13 @@ const val MONITORING_PER_NAME_THREAD_NAME = "monitoring-per-name"
 private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
 
-private fun logError(message: Message<MonitoringPerNameEnvelope>, e: Exception) = logger.error(
+private fun logError(message: Message<MetricsPerNameEnvelope>, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     message,
     e
 )
 
-private fun logError(message: MonitoringPerNameMessage, e: Exception) = logger.error(
+private fun logError(message: MetricsPerNameMessage, e: Exception) = logger.error(
     "taskName {} - exception on message {}:${System.getProperty("line.separator")}{}",
     message.taskName,
     message,
@@ -64,9 +64,9 @@ private fun logError(message: MonitoringPerNameMessage, e: Exception) = logger.e
 
 fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     consumerCounter: Int,
-    monitoringPerNameConsumer: Consumer<MonitoringPerNameEnvelope>,
+    metricsPerNameConsumer: Consumer<MetricsPerNameEnvelope>,
     monitoringPerNameOutput: MonitoringPerNameOutput,
-    sendToMonitoringPerNameDeadLetters: SendToMonitoringPerName,
+    sendToMetricsPerNameDeadLetters: SendToMetricsPerName,
     keyValueStorage: KeyValueStorage,
 ) = launch(singleThreadedContext("$MONITORING_PER_NAME_THREAD_NAME-$consumerCounter")) {
 
@@ -76,16 +76,16 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =
-        monitoringPerNameConsumer.negativeAcknowledge(pulsarId)
+        metricsPerNameConsumer.negativeAcknowledge(pulsarId)
 
     suspend fun acknowledge(pulsarId: MessageId) =
-        monitoringPerNameConsumer.acknowledgeAsync(pulsarId).await()
+        metricsPerNameConsumer.acknowledgeAsync(pulsarId).await()
 
     while (isActive) {
-        val pulsarMessage = monitoringPerNameConsumer.receiveAsync().await()
+        val pulsarMessage = metricsPerNameConsumer.receiveAsync().await()
 
         val message = try {
-            MonitoringPerNameEnvelope.fromByteArray(pulsarMessage.data).message()
+            MetricsPerNameEnvelope.fromByteArray(pulsarMessage.data).message()
         } catch (e: Exception) {
             logError(pulsarMessage, e)
             negativeAcknowledge(pulsarMessage.messageId)

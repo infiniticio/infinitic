@@ -23,24 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.monitoring.perName.messages
+package io.infinitic.common.metrics.global.messages
 
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskStatus
-import kotlinx.serialization.Serializable
-
-@Serializable
-sealed class MonitoringPerNameMessage {
-    val messageId = MessageId()
-    abstract val taskName: TaskName
+enum class MetricsGlobalMessageType {
+    TASK_CREATED
 }
-
-@Serializable
-data class TaskStatusUpdated constructor(
-    override val taskName: TaskName,
-    val taskId: TaskId,
-    val oldStatus: TaskStatus?,
-    val newStatus: TaskStatus
-) : MonitoringPerNameMessage()

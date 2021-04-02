@@ -26,7 +26,7 @@
 package io.infinitic.monitoring.perName.engine.storage
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
 import io.kotest.core.spec.style.ShouldSpec
@@ -58,7 +58,7 @@ class BinaryMonitoringPerNameStateStorageTests : ShouldSpec({
 
         should("return state when state exists") {
             // given
-            val stateIn = TestFactory.random<MonitoringPerNameState>()
+            val stateIn = TestFactory.random<MetricsPerNameState>()
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
             // when
@@ -75,7 +75,7 @@ class BinaryMonitoringPerNameStateStorageTests : ShouldSpec({
 
         should("update state") {
             // given
-            val state = TestFactory.random<MonitoringPerNameState>()
+            val state = TestFactory.random<MetricsPerNameState>()
             val storage = mockk<KeyValueStorage>()
             val binSlot = slot<ByteArray>()
             coEvery { storage.putValue("monitoringPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
@@ -84,14 +84,14 @@ class BinaryMonitoringPerNameStateStorageTests : ShouldSpec({
             stateStorage.putState(state.taskName, state)
             // then
             binSlot.isCaptured shouldBe true
-            MonitoringPerNameState.fromByteArray(binSlot.captured) shouldBe state
+            MetricsPerNameState.fromByteArray(binSlot.captured) shouldBe state
         }
     }
 
     context("BinaryMonitoringPerNameStateStorage.delState") {
         should("delete state") {
             // given
-            val state = TestFactory.random(MonitoringPerNameState::class)
+            val state = TestFactory.random(MetricsPerNameState::class)
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.delValue(any()) } just runs
             // when

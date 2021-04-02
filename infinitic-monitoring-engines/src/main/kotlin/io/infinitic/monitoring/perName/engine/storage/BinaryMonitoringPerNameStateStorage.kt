@@ -25,7 +25,7 @@
 
 package io.infinitic.monitoring.perName.engine.storage
 
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
@@ -38,12 +38,12 @@ class BinaryMonitoringPerNameStateStorage(
     private val storage: KeyValueStorage
 ) : MonitoringPerNameStateStorage, Flushable by storage {
 
-    override suspend fun getState(taskName: TaskName): MonitoringPerNameState? {
+    override suspend fun getState(taskName: TaskName): MetricsPerNameState? {
         val key = getMonitoringPerNameStateKey(taskName)
         return storage.getValue(key)
-            ?.let { MonitoringPerNameState.fromByteArray(it) }
+            ?.let { MetricsPerNameState.fromByteArray(it) }
     }
-    override suspend fun putState(taskName: TaskName, state: MonitoringPerNameState) {
+    override suspend fun putState(taskName: TaskName, state: MetricsPerNameState) {
         val key = getMonitoringPerNameStateKey(taskName)
         storage.putValue(key, state.toByteArray())
     }

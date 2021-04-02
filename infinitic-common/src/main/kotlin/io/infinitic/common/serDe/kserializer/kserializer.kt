@@ -26,8 +26,8 @@
 package io.infinitic.common.serDe.kserializer
 
 import io.infinitic.common.clients.messages.ClientEnvelope
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
@@ -66,7 +66,7 @@ fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
     TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
     TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
-    MonitoringGlobalEnvelope::class -> MonitoringGlobalEnvelope.serializer()
-    MonitoringPerNameEnvelope::class -> MonitoringPerNameEnvelope.serializer()
+    MetricsGlobalEnvelope::class -> MetricsGlobalEnvelope.serializer()
+    MetricsPerNameEnvelope::class -> MetricsPerNameEnvelope.serializer()
     else -> throw RuntimeException("This should not happen: applying kserializer with ${klass.qualifiedName}")
 } as KSerializer <T>
