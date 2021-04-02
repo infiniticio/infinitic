@@ -23,22 +23,35 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.inMemory.keyCounter
+package io.infinitic.storage.redis
 
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyCounter.KeyCounterStorage
-import java.util.concurrent.ConcurrentHashMap
+import io.infinitic.common.storage.keySet.KeySetStorage
+import org.jetbrains.annotations.TestOnly
+import redis.clients.jedis.JedisPool
 
-class InMemoryKeyCounterStorage() : KeyCounterStorage, Flushable {
-    private val counterStorage = ConcurrentHashMap<String, Long>()
+class RedisKeySetStorage(
+    private val pool: JedisPool
+) : KeySetStorage {
 
-    override suspend fun getCounter(key: String) = counterStorage[key] ?: 0L
-
-    override suspend fun incrCounter(key: String, amount: Long) {
-        counterStorage[key] = getCounter(key) + amount
+    companion object {
+        fun of(config: Redis) = RedisKeySetStorage(getPool(config))
     }
 
+    init {
+        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+    }
+
+    override suspend fun getSet(key: String): Set<ByteArray> =
+        pool.resource.use { it.smembers(key.toByteArray()) }
+
+    override suspend fun addToSet(key: String, value: ByteArray) =
+        pool.resource.use { it.sadd(key.toByteArray(), value); Unit }
+
+    override suspend fun removeFromSet(key: String, value: ByteArray) =
+        pool.resource.use { it.srem(key.toByteArray(), value); Unit }
+
+    @TestOnly
     override fun flush() {
-        counterStorage.clear()
+        pool.resource.use { it.flushDB() }
     }
 }

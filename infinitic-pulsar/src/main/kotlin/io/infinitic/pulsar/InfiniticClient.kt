@@ -26,7 +26,6 @@
 package io.infinitic.pulsar
 
 import io.infinitic.client.output.ClientOutput
-import io.infinitic.config.ClientConfig
 import io.infinitic.config.data.Transport
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
@@ -35,8 +34,8 @@ import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startClientResponseWorker
-import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.input.TagEngineMessageToProcess
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl

@@ -46,8 +46,8 @@ import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalState
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.output.FunctionsMonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
-import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
 import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage

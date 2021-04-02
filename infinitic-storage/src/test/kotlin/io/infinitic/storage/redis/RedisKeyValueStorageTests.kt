@@ -25,7 +25,6 @@
 
 package io.infinitic.storage.redis
 
-import io.infinitic.storage.redis.keyValue.RedisKeyValueStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import redis.embedded.RedisServer
@@ -33,7 +32,7 @@ import redis.embedded.RedisServer
 class RedisKeyValueStorageTests : StringSpec({
 
     val redisServer = RedisServer(6379)
-    val storage = RedisKeyValueStorage("localhost", 6379)
+    val storage = RedisKeyValueStorage.of(Redis("localhost", 6379))
 
     beforeSpec {
         redisServer.start()

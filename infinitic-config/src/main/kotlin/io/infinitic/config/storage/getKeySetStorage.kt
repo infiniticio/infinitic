@@ -26,8 +26,8 @@ package io.infinitic.config.storage
 
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
-import io.infinitic.storage.redis.keySet.RedisKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.redis.RedisKeySetStorage
 
 fun StateStorage.getKeySetStorage(workerConfig: io.infinitic.config.WorkerConfig): KeySetStorage = when (this) {
     StateStorage.inMemory -> InMemoryKeySetStorage()

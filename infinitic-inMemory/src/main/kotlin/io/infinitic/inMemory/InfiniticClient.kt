@@ -31,8 +31,8 @@ import io.infinitic.common.storage.keyValue.LoggedKeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryClientOutput
 import io.infinitic.inMemory.workers.startInMemory
-import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.input.TagEngineMessageToProcess
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.input.TaskEngineMessageToProcess

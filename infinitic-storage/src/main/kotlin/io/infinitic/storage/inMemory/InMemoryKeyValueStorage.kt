@@ -23,8 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory.config
+package io.infinitic.storage.inMemory
 
-data class Pulsar(
-    val url: String? = "pulsar://localhost:6650/"
-)
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyValue.KeyValueStorage
+import java.util.concurrent.ConcurrentHashMap
+
+class InMemoryKeyValueStorage() : KeyValueStorage, Flushable {
+    private val stateStorage = ConcurrentHashMap<String, ByteArray>()
+
+    override suspend fun getValue(key: String): ByteArray? {
+        return stateStorage[key]
+    }
+
+    override suspend fun putValue(key: String, value: ByteArray) {
+        stateStorage[key] = value
+    }
+
+    override suspend fun delValue(key: String) {
+        stateStorage.remove(key)
+    }
+
+    override fun flush() {
+        stateStorage.clear()
+    }
+}

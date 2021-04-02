@@ -23,28 +23,50 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.inMemory.keyValue
+package io.infinitic.storage.redis
 
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import java.util.concurrent.ConcurrentHashMap
+import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisPoolConfig
 
-class InMemoryKeyValueStorage() : KeyValueStorage, Flushable {
-    private val stateStorage = ConcurrentHashMap<String, ByteArray>()
-
-    override suspend fun getValue(key: String): ByteArray? {
-        return stateStorage[key]
-    }
-
-    override suspend fun putValue(key: String, value: ByteArray) {
-        stateStorage[key] = value
-    }
-
-    override suspend fun delValue(key: String) {
-        stateStorage.remove(key)
-    }
-
-    override fun flush() {
-        stateStorage.clear()
+fun getPool(
+    host: String,
+    port: Int,
+    timeout: Int,
+    user: String,
+    password: String,
+    database: Int,
+    ssl: Boolean,
+    jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
+): JedisPool {
+    return when (user.isEmpty()) {
+        true -> JedisPool(
+            jedisPoolConfig,
+            host,
+            port,
+            timeout,
+            null,
+            database,
+            ssl
+        )
+        false -> JedisPool(
+            jedisPoolConfig,
+            host,
+            port,
+            timeout,
+            user,
+            password,
+            database,
+            ssl
+        )
     }
 }
+
+fun getPool(config: Redis) = getPool(
+    host = config.host,
+    port = config.port,
+    timeout = config.timeout,
+    user = config.user,
+    password = config.password,
+    database = config.database,
+    ssl = config.ssl
+)

@@ -23,13 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory.config
+package io.infinitic.storage.inMemory
 
-data class Redis(
-    val host: String? = "localhost",
-    val port: Int? = 6379,
-    val timeout: Int? = 2000,
-    val user: String? = "",
-    val password: String? = "",
-    val database: Int? = 0,
-)
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyCounter.KeyCounterStorage
+import java.util.concurrent.ConcurrentHashMap
+
+class InMemoryKeyCounterStorage() : KeyCounterStorage, Flushable {
+    private val counterStorage = ConcurrentHashMap<String, Long>()
+
+    override suspend fun getCounter(key: String) = counterStorage[key] ?: 0L
+
+    override suspend fun incrCounter(key: String, amount: Long) {
+        counterStorage[key] = getCounter(key) + amount
+    }
+
+    override fun flush() {
+        counterStorage.clear()
+    }
+}

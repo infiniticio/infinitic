@@ -47,8 +47,8 @@ import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalState
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.output.FunctionsMonitoringPerNameOutput
 import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
-import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.keyValue.InMemoryKeyValueStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
 import io.infinitic.tags.engine.output.FunctionsTagEngineOutput
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
@@ -243,7 +243,7 @@ class TaskIntegrationTests : StringSpec({
     }
 
     "Task canceled during automatic retry" {
-        // task will succeed only at the 4th try
+        // task will fail and retry
         taskTest.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
         // run system
         var id: UUID
@@ -263,7 +263,7 @@ class TaskIntegrationTests : StringSpec({
     "Multiple Tasks canceled using tags" {
         var taskId1: TaskId
         var taskId2: TaskId
-        // task will succeed only at the 4th try
+        // task will fail and retry
         taskTest.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
         // run system
         coroutineScope {
@@ -297,7 +297,7 @@ class TaskIntegrationTests : StringSpec({
         r shouldBe "1"
     }
 
-    "Tag should be added and deleted after completion" {
+    "Tag should be added then deleted after completion" {
         // task will succeed
         taskTest.behavior = { _, _ -> Status.SUCCESS }
         // run system
@@ -313,6 +313,28 @@ class TaskIntegrationTests : StringSpec({
         taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        // checks taskId has been removed from tag storage
+        tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
+        tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
+    }
+
+    "Tag should be added then deleted after cancellation" {
+        // task will fail and retry
+        taskTest.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
+        // run system
+        coroutineScope {
+            init()
+            taskId = TaskId(client.async(taskStub2Tag) { log() })
+            yield()
+            // checks taskId has been added to tag storage
+            tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
+            tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
+            client.cancel(taskStub2Tag)
+        }
+        // check that task is terminated
+        taskStateStorage.getState(taskId) shouldBe null
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
         // checks taskId has been removed from tag storage
         tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
         tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false

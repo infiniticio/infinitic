@@ -26,7 +26,6 @@
 package io.infinitic.storage.inMemory
 
 import io.infinitic.common.data.Bytes
-import io.infinitic.storage.inMemory.keySet.InMemoryKeySetStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

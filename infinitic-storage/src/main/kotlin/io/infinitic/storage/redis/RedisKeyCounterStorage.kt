@@ -23,13 +23,33 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory.config
+package io.infinitic.storage.redis
 
-data class Config(
-    val roles: List<WorkerRole>,
-    val transport: Transport,
-    val stateStorage: Storage,
-    val eventStorage: Storage,
-    val pulsar: Pulsar? = Pulsar(),
-    val redis: Redis? = Redis()
-)
+import io.infinitic.common.storage.keyCounter.KeyCounterStorage
+import org.jetbrains.annotations.TestOnly
+import redis.clients.jedis.JedisPool
+
+class RedisKeyCounterStorage(
+    private val pool: JedisPool
+) : KeyCounterStorage {
+
+    companion object {
+        fun of(config: Redis) = RedisKeyCounterStorage(getPool(config))
+    }
+
+    init {
+        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+    }
+
+    override suspend fun getCounter(key: String): Long =
+        pool.resource.use { it.get(key.toByteArray()) }
+            ?.let { String(it) }?.toLong() ?: 0L
+
+    override suspend fun incrCounter(key: String, amount: Long) =
+        pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
+
+    @TestOnly
+    override fun flush() {
+        pool.resource.use { it.flushDB() }
+    }
+}

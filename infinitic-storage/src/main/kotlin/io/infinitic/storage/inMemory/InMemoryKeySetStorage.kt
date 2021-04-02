@@ -23,39 +23,40 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.redis.keyCounter
+package io.infinitic.storage.inMemory
 
-import io.infinitic.common.storage.keyCounter.KeyCounterStorage
-import io.infinitic.storage.redis.Redis
-import org.jetbrains.annotations.TestOnly
-import redis.clients.jedis.JedisPool
-import redis.clients.jedis.JedisPoolConfig
+import io.infinitic.common.data.Bytes
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keySet.KeySetStorage
 
-class RedisKeyCounterStorage(
-    host: String,
-    port: Int,
-    jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
-) : KeyCounterStorage {
+class InMemoryKeySetStorage : KeySetStorage, Flushable {
+    val storage = mutableMapOf<String, MutableSet<Bytes>>()
 
-    companion object {
-        fun of(config: Redis) = RedisKeyCounterStorage(config.host, config.port)
+    override suspend fun getSet(key: String): Set<ByteArray> {
+        return getBytesPerKey(key).map { it.content }.toSet()
     }
 
-    private val pool = JedisPool(jedisPoolConfig, host, port)
-
-    init {
-        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+    override suspend fun addToSet(key: String, value: ByteArray) {
+        getBytesPerKey(key).add(Bytes(value))
     }
 
-    override suspend fun getCounter(key: String): Long =
-        pool.resource.use { it.get(key.toByteArray()) }
-            ?.let { String(it) }?.toLong() ?: 0L
+    override suspend fun removeFromSet(key: String, value: ByteArray) {
+        getBytesPerKey(key).remove(Bytes(value))
 
-    override suspend fun incrCounter(key: String, amount: Long) =
-        pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
+        // clean key if now empty
+        if (getBytesPerKey(key).isEmpty()) storage.remove(key)
+    }
 
-    @TestOnly
     override fun flush() {
-        pool.resource.use { it.flushDB() }
+        storage.clear()
+    }
+
+    private fun getBytesPerKey(key: String): MutableSet<Bytes> {
+        return storage[key]
+            ?: run {
+                val set = mutableSetOf<Bytes>()
+                storage[key] = set
+                set
+            }
     }
 }

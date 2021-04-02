@@ -23,9 +23,35 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.inMemory.config
+package io.infinitic.storage.redis
 
-enum class Storage {
-    InMemory,
-    Redis
+import io.infinitic.common.storage.keyValue.KeyValueStorage
+import org.jetbrains.annotations.TestOnly
+import redis.clients.jedis.JedisPool
+
+class RedisKeyValueStorage(
+    private val pool: JedisPool
+) : KeyValueStorage {
+
+    companion object {
+        fun of(config: Redis) = RedisKeyValueStorage(getPool(config))
+    }
+
+    init {
+        Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
+    }
+
+    override suspend fun getValue(key: String): ByteArray? =
+        pool.resource.use { it.get(key.toByteArray()) }
+
+    override suspend fun putValue(key: String, value: ByteArray) =
+        pool.resource.use { it.set(key.toByteArray(), value); Unit }
+
+    override suspend fun delValue(key: String) =
+        pool.resource.use { it.del(key.toByteArray()); Unit }
+
+    @TestOnly
+    override fun flush() {
+        pool.resource.use { it.flushDB() }
+    }
 }
