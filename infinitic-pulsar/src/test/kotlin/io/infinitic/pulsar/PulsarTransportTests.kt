@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
@@ -87,7 +88,7 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).clientOutput.sendToWorkflowEngine(msg)
+        PulsarOutputs.from(context).sendCommandsToWorkflowEngine(msg, MillisDuration(0))
         // then
         verify {
             context.newOutputMessage(
@@ -118,7 +119,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).clientOutput.sendToTaskEngine(msg)
+        PulsarOutputs.from(context).sendCommandsToTaskEngine(msg, MillisDuration(0))
         // then
         verify {
             context.newOutputMessage(

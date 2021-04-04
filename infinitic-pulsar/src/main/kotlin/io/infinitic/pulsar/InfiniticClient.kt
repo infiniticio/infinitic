@@ -25,23 +25,17 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.client.output.ClientOutput
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.config.ClientConfig
 import io.infinitic.config.data.Transport
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
-import io.infinitic.inMemory.transport.InMemoryClientOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startClientResponseWorker
-import io.infinitic.storage.inMemory.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.engine.worker.TagEngineMessageToProcess
-import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
@@ -51,13 +45,9 @@ import io.infinitic.client.Client as Client
 
 @Suppress("unused")
 class InfiniticClient private constructor(
-    clientOutput: ClientOutput,
+    clientName: ClientName,
     private val closeFn: () -> Unit
-) : Client() {
-
-    init {
-        this.clientOutput = clientOutput
-    }
+) : Client(clientName) {
 
     companion object {
         /*
@@ -72,8 +62,14 @@ class InfiniticClient private constructor(
         ): InfiniticClient {
             // checks uniqueness if not null, provides a unique name if null
             val clientName = getPulsarName(pulsarClient, clientName)
-            val clientOutput = PulsarOutputs.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName).clientOutput
-            val infiniticClient = InfiniticClient(clientOutput) { pulsarClient.close() }
+            val infiniticClient = InfiniticClient(ClientName(clientName)) { pulsarClient.close() }
+
+            val pulsarOutputs = PulsarOutputs.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName)
+            infiniticClient.setOutput(
+                pulsarOutputs.sendCommandsToTagEngine,
+                pulsarOutputs.sendCommandsToTaskEngine,
+                pulsarOutputs.sendCommandsToWorkflowEngine
+            )
 
             thread {
                 runBlocking {
@@ -92,7 +88,7 @@ class InfiniticClient private constructor(
         Create InfiniticClient from a ClientConfig instance
         */
         @JvmStatic
-        fun fromConfig(config: io.infinitic.config.ClientConfig): InfiniticClient = when (config.transport) {
+        fun fromConfig(config: ClientConfig): InfiniticClient = when (config.transport) {
             Transport.pulsar -> {
                 val pulsarClient = PulsarClient
                     .builder()
@@ -108,17 +104,7 @@ class InfiniticClient private constructor(
             }
 
             Transport.inMemory -> {
-                val tagEngineCommandsChannel = Channel<TagEngineMessageToProcess>()
-                val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
-                val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
-                val clientOutput = InMemoryClientOutput(
-                    tagEngineCommandsChannel,
-                    taskEngineCommandsChannel,
-                    workflowEngineCommandsChannel
-                )
-                val threadPool = Executors.newCachedThreadPool()
-                val infiniticClient = InfiniticClient(clientOutput) { threadPool.shutdown() }
-
+                // register task and workflows register
                 val taskExecutorRegister = TaskExecutorRegisterImpl()
                 config.tasks.map {
                     taskExecutorRegister.register(it.name) { it.instance }
@@ -127,17 +113,17 @@ class InfiniticClient private constructor(
                     taskExecutorRegister.register(it.name) { it.instance }
                 }
 
+                val threadPool = Executors.newCachedThreadPool()
+                val infiniticClient = InfiniticClient(ClientName(config.name ?: "client: InMemory")) {
+                    threadPool.shutdown()
+                }
+
                 thread {
                     runBlocking {
                         launch(threadPool.asCoroutineDispatcher()) {
                             startInMemory(
                                 taskExecutorRegister,
-                                InMemoryKeyValueStorage(),
-                                InMemoryKeySetStorage(),
-                                infiniticClient,
-                                tagEngineCommandsChannel,
-                                taskEngineCommandsChannel,
-                                workflowEngineCommandsChannel
+                                infiniticClient
                             )
                         }
                     }

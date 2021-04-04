@@ -28,8 +28,6 @@ package io.infinitic.inMemory.workers
 import io.infinitic.client.Client
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.clients.transport.ClientMessageToProcess
-import io.infinitic.common.storage.keySet.KeySetStorage
-import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
@@ -38,6 +36,8 @@ import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
 import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.monitoring.perName.engine.worker.MonitoringPerNameMessageToProcess
 import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tags.engine.worker.TagEngineMessageToProcess
 import io.infinitic.tags.engine.worker.startTagEngine
@@ -59,28 +59,23 @@ private const val N_WORKERS = 10
 
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
-    keyValueStorage: KeyValueStorage,
-    keySetStorage: KeySetStorage,
     client: Client,
-    tagEngineCommandsChannel: Channel<TagEngineMessageToProcess>,
-    taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
-    workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>,
     logFn: (_: MessageToProcess<*>) -> Unit = { }
 ) {
+    val keyValueStorage = InMemoryKeyValueStorage()
+    val keySetStorage = InMemoryKeySetStorage()
+
     val logChannel = Channel<MessageToProcess<Any>>()
     val clientEventsChannel = Channel<ClientMessageToProcess>()
+    val tagEngineCommandsChannel = Channel<TagEngineMessageToProcess>()
     val tagEngineEventsChannel = Channel<TagEngineMessageToProcess>()
+    val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
     val taskEngineEventsChannel = Channel<TaskEngineMessageToProcess>()
+    val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
     val workflowEngineEventsChannel = Channel<WorkflowEngineMessageToProcess>()
     val taskExecutorChannel = Channel<TaskExecutorMessageToProcess>()
     val monitoringPerNameChannel = Channel<MonitoringPerNameMessageToProcess>()
     val monitoringGlobalChannel = Channel<MonitoringGlobalMessageToProcess>()
-
-    launch(CoroutineName("logger")) {
-        for (messageToProcess in logChannel) {
-            logFn(messageToProcess)
-        }
-    }
 
     val inMemoryOutput = InMemoryOutput(
         this,
@@ -95,6 +90,18 @@ fun CoroutineScope.startInMemory(
         monitoringPerNameChannel,
         monitoringGlobalChannel
     )
+
+    client.setOutput(
+        inMemoryOutput.sendCommandsToTagEngine,
+        inMemoryOutput.sendCommandsToTaskEngine,
+        inMemoryOutput.sendCommandsToWorkflowEngine
+    )
+
+    launch(CoroutineName("logger")) {
+        for (messageToProcess in logChannel) {
+            logFn(messageToProcess)
+        }
+    }
 
     startClientWorker(
         "in-memory-client",

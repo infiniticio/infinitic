@@ -25,7 +25,7 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.output.ClientOutput
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
@@ -39,9 +39,11 @@ import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tags.messages.AddTaskTag
 import io.infinitic.common.tags.messages.AddWorkflowTag
 import io.infinitic.common.tags.messages.SendToChannelPerTag
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.DispatchTask
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelEventType
@@ -50,6 +52,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.ChannelUsedOnNewWorkflow
 import io.infinitic.exceptions.MultipleMethodCalls
 import io.infinitic.exceptions.NoMethodCall
@@ -64,7 +67,12 @@ import kotlinx.coroutines.runBlocking
 import java.util.UUID
 import kotlin.reflect.full.isSubclassOf
 
-internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispatcher {
+internal class ClientDispatcher(
+    val clientName: ClientName,
+    val sendToTagEngine: SendToTagEngine,
+    val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit),
+    val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
+) : Dispatcher {
     // could be replay = 0
     // but replay = 1 makes tests easier, as we can emit a message before listening
     private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 1)
@@ -103,7 +111,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         // dispatch this task
         val dispatchTask = DispatchTask(
             taskId = taskId,
-            clientName = clientOutput.clientName,
+            clientName = clientName,
             clientWaiting = handler.isSync,
             taskName = taskName,
             methodName = MethodName.from(method),
@@ -119,8 +127,8 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
 
         // send messages
         GlobalScope.future {
-            addTaskTags.map { clientOutput.sendToTagEngine(it) }
-            clientOutput.sendToTaskEngine(dispatchTask)
+            addTaskTags.map { sendToTagEngine(it) }
+            sendToTaskEngine(dispatchTask)
         }.join()
 
         // handler now target an existing task
@@ -177,7 +185,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
         // dispatch workflow
         val dispatchWorkflow = DispatchWorkflow(
             workflowId = workflowId,
-            clientName = clientOutput.clientName,
+            clientName = clientName,
             clientWaiting = handler.isSync,
             workflowName = WorkflowName.from(method),
             methodName = MethodName.from(method),
@@ -192,8 +200,8 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
 
         // send messages
         GlobalScope.future {
-            addWorkflowTags.map { clientOutput.sendToTagEngine(it) }
-            clientOutput.sendToWorkflowEngine(dispatchWorkflow)
+            addWorkflowTags.map { sendToTagEngine(it) }
+            sendToWorkflowEngine(dispatchWorkflow)
         }.join()
 
         // handler now target an existing task
@@ -252,7 +260,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             val msg = SendToChannelPerTag(
                 tag = handler.perTag!!,
                 name = handler.workflowName,
-                clientName = clientOutput.clientName,
+                clientName = clientName,
                 clientWaiting = handler.isSync,
                 channelEventId = ChannelEventId(),
                 channelName = handler.channelName,
@@ -260,7 +268,7 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
                 channelEventTypes = ChannelEventType.allFrom(event::class.java)
             )
 
-            GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
+            GlobalScope.future { sendToTagEngine(msg) }.join()
 
             return
         }
@@ -269,14 +277,14 @@ internal class ClientDispatcher(private val clientOutput: ClientOutput) : Dispat
             val msg = SendToChannel(
                 workflowId = handler.perWorkflowId!!,
                 workflowName = handler.workflowName,
-                clientName = clientOutput.clientName,
+                clientName = clientName,
                 channelEventId = ChannelEventId(),
                 channelName = handler.channelName,
                 channelEvent = ChannelEvent.from(event),
                 channelEventTypes = ChannelEventType.allFrom(event::class.java)
             )
 
-            GlobalScope.future { clientOutput.sendToWorkflowEngine(msg) }.join()
+            GlobalScope.future { sendToWorkflowEngine(msg) }.join()
         }
     }
 

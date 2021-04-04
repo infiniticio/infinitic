@@ -28,6 +28,7 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -64,9 +65,13 @@ class ClientTaskTests : StringSpec({
     val tagSlots = mutableListOf<TagEngineMessage>()
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
-    val client = Client()
-    val clientOutput = mockClientOutput(client, tagSlots, taskSlot, workflowSlot)
-    client.clientOutput = clientOutput
+    val client = Client(ClientName("clientTest"))
+
+    client.setOutput(
+        mockSendToTagEngine(tagSlots),
+        mockSendToTaskEngine(client, taskSlot),
+        mockSendToWorkflowEngine(client, workflowSlot)
+    )
 
     beforeTest {
         tagSlots.clear()
@@ -144,7 +149,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -167,7 +172,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -195,7 +200,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -228,7 +233,7 @@ class ClientTaskTests : StringSpec({
             taskId = taskId
         )
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -251,7 +256,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -274,7 +279,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -297,7 +302,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -320,7 +325,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -344,7 +349,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -367,7 +372,7 @@ class ClientTaskTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             taskId = taskId,
             taskName = TaskName(FakeTask::class.java.name),
@@ -395,7 +400,7 @@ class ClientTaskTests : StringSpec({
         tagSlots.size shouldBe 0
         val msg = taskSlot.captured
         msg shouldBe DispatchTask(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = true,
             taskId = msg.taskId,
             taskName = TaskName(FakeTask::class.java.name),

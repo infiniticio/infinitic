@@ -48,6 +48,7 @@ import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.worker.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -67,6 +68,20 @@ class InMemoryOutput(
     private val monitoringPerNameChannel: SendChannel<MonitoringPerNameMessageToProcess>,
     private val monitoringGlobalChannel: SendChannel<MonitoringGlobalMessageToProcess>
 ) {
+    companion object fun of(scope: CoroutineScope) = InMemoryOutput(
+        scope,
+        Channel(),
+        Channel(),
+        Channel(),
+        Channel(),
+        Channel(),
+        Channel(),
+        Channel(),
+        Channel(),
+        Channel(),
+        Channel()
+    )
+
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 

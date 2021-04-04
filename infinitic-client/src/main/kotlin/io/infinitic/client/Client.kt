@@ -25,9 +25,9 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.output.ClientOutput
-import io.infinitic.client.output.LoggedClientOutput
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
@@ -36,17 +36,22 @@ import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.CancelTaskPerTag
 import io.infinitic.common.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.tags.messages.RetryTaskPerTag
+import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.exceptions.CanNotReuseTaskStub
 import io.infinitic.exceptions.CanNotReuseWorkflowStub
 import io.infinitic.exceptions.CanNotUseNewTaskStub
@@ -59,21 +64,38 @@ import java.lang.reflect.Proxy
 import java.util.UUID
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-open class Client {
+open class Client(open val clientName: ClientName) {
 
     companion object {
-        fun with(clientOutput: ClientOutput) = Client().apply { this.clientOutput = clientOutput }
+        fun with(
+            clientName: ClientName,
+            sendToTagEngine: SendToTagEngine,
+            sendToTaskEngine: SendToTaskEngine,
+            sendToWorkflowEngine: SendToWorkflowEngine
+        ) = Client(clientName).apply { setOutput(sendToTagEngine, sendToTaskEngine, sendToWorkflowEngine) }
     }
 
     private lateinit var dispatcher: ClientDispatcher
-    private lateinit var _clientOutput: ClientOutput
+    private lateinit var sendToTagEngine: SendToTagEngine
+    private lateinit var sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit)
+    private lateinit var sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
 
-    var clientOutput: ClientOutput
-        set(value) {
-            _clientOutput = LoggedClientOutput(value)
-            dispatcher = ClientDispatcher(_clientOutput)
-        }
-        get() = _clientOutput
+    fun setOutput(
+        sendToTagEngine: SendToTagEngine,
+        sendToTaskEngine: SendToTaskEngine,
+        sendToWorkflowEngine: SendToWorkflowEngine
+    ) {
+        this.sendToTagEngine = sendToTagEngine
+        this.sendToTaskEngine = { sendToTaskEngine(it, MillisDuration(0)) }
+        this.sendToWorkflowEngine = { sendToWorkflowEngine(it, MillisDuration(0)) }
+
+        this.dispatcher = ClientDispatcher(
+            clientName,
+            this.sendToTagEngine,
+            this.sendToTaskEngine,
+            this.sendToWorkflowEngine
+        )
+    }
 
     suspend fun handle(message: ClientMessage) = dispatcher.handle(message)
 
@@ -311,7 +333,7 @@ open class Client {
                     name = TaskName(handler.klass.name),
                     taskReturnValue = MethodReturnValue.from(output)
                 )
-                GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
+                GlobalScope.future { sendToTagEngine(msg) }.join()
             }
             else -> {
                 val msg = CancelTask(
@@ -319,7 +341,7 @@ open class Client {
                     taskName = TaskName(handler.klass.name),
                     taskReturnValue = MethodReturnValue.from(output)
                 )
-                GlobalScope.future { clientOutput.sendToTaskEngine(msg) }.join()
+                GlobalScope.future { sendToTaskEngine(msg) }.join()
             }
         }
     }
@@ -338,7 +360,7 @@ open class Client {
                 taskOptions = handler.taskOptions,
                 taskMeta = handler.taskMeta
             )
-            GlobalScope.future { clientOutput.sendToTaskEngine(msg) }.join()
+            GlobalScope.future { sendToTaskEngine(msg) }.join()
 
             return
         }
@@ -354,7 +376,7 @@ open class Client {
                 taskOptions = handler.taskOptions,
                 taskMeta = handler.taskMeta
             )
-            GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
+            GlobalScope.future { sendToTagEngine(msg) }.join()
 
             return
         }
@@ -369,7 +391,7 @@ open class Client {
                 workflowName = WorkflowName(handler.klass.name),
                 workflowReturnValue = MethodReturnValue.from(output)
             )
-            GlobalScope.future { clientOutput.sendToWorkflowEngine(msg) }.join()
+            GlobalScope.future { sendToWorkflowEngine(msg) }.join()
 
             return
         }
@@ -380,7 +402,7 @@ open class Client {
                 name = WorkflowName(handler.klass.name),
                 workflowReturnValue = MethodReturnValue.from(output)
             )
-            GlobalScope.future { clientOutput.sendToTagEngine(msg) }.join()
+            GlobalScope.future { sendToTagEngine(msg) }.join()
 
             return
         }

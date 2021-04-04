@@ -28,6 +28,7 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -66,9 +67,14 @@ class ClientWorkflowTests : StringSpec({
     val tagSlots = mutableListOf<TagEngineMessage>()
     val taskSlot = slot<TaskEngineMessage>()
     val workflowSlot = slot<WorkflowEngineMessage>()
-    val client = Client()
-    val clientOutput = mockClientOutput(client, tagSlots, taskSlot, workflowSlot)
-    client.clientOutput = clientOutput
+    val client = Client(ClientName("clientTest"))
+
+    client.setOutput(
+        mockSendToTagEngine(tagSlots),
+        mockSendToTaskEngine(client, taskSlot),
+        mockSendToWorkflowEngine(client, workflowSlot)
+    )
+
     val tag = TestFactory.random<String>()
 
     beforeTest {
@@ -132,7 +138,7 @@ class ClientWorkflowTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -154,7 +160,7 @@ class ClientWorkflowTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -182,7 +188,7 @@ class ClientWorkflowTests : StringSpec({
         // then
         tagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -215,7 +221,7 @@ class ClientWorkflowTests : StringSpec({
             workflowId = workflowId
         )
         workflowSlot.captured shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -238,7 +244,7 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -261,7 +267,7 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -284,7 +290,7 @@ class ClientWorkflowTests : StringSpec({
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -309,7 +315,7 @@ class ClientWorkflowTests : StringSpec({
         val msg = workflowSlot.captured
 
         msg shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = false,
             workflowId = workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -336,7 +342,7 @@ class ClientWorkflowTests : StringSpec({
 
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = true,
             workflowId = msg.workflowId,
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
@@ -365,7 +371,7 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe SendToChannel(
             workflowId = WorkflowId(id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             channelEventId = msg.channelEventId,
             channelName = ChannelName("getChannel"),
             channelEvent = ChannelEvent.from("a"),
@@ -385,7 +391,7 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe SendToChannelPerTag(
             tag = Tag(tag),
             name = WorkflowName(FakeWorkflow::class.java.name),
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             clientWaiting = true,
             channelEventId = msg.channelEventId,
             channelName = ChannelName("getChannel"),
@@ -406,7 +412,7 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe SendToChannel(
             workflowId = WorkflowId(id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            clientName = clientOutput.clientName,
+            clientName = client.clientName,
             channelEventId = msg.channelEventId,
             channelName = ChannelName("getChannel"),
             channelEvent = ChannelEvent.from("a"),

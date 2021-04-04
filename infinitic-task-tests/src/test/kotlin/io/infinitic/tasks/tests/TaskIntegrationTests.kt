@@ -26,7 +26,6 @@
 package io.infinitic.tasks.tests
 
 import io.infinitic.client.Client
-import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -386,12 +385,10 @@ fun CoroutineScope.init() {
     taskStatus = null
 
     client = Client.with(
-        FunctionsClientOutput(
-            ClientName("client: InMemory"),
-            { msg: TagEngineMessage -> sendToTagEngine(msg) },
-            { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-            { _: WorkflowEngineMessage, _: MillisDuration -> }
-        )
+        ClientName("client: InMemory"),
+        { msg: TagEngineMessage -> sendToTagEngine(msg) },
+        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+        { _: WorkflowEngineMessage, _: MillisDuration -> }
     )
 
     taskStub = client.newTask(TaskTest::class.java)

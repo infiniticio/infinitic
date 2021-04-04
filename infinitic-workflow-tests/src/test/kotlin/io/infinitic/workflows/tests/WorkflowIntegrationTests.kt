@@ -26,7 +26,6 @@
 package io.infinitic.workflows.tests
 
 import io.infinitic.client.Client
-import io.infinitic.client.output.FunctionsClientOutput
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -720,12 +719,10 @@ fun CoroutineScope.init() {
     workflowOutput = null
 
     client = Client.with(
-        FunctionsClientOutput(
-            ClientName("client: testing"),
-            { sendToTagEngine(it) },
-            { msg, after -> sendToTaskEngine(msg, after) },
-            { msg, after -> sendToWorkflowEngine(msg, after) }
-        )
+        ClientName("client: testing"),
+        { sendToTagEngine(it) },
+        { msg, after -> sendToTaskEngine(msg, after) },
+        { msg, after -> sendToWorkflowEngine(msg, after) }
     )
 
     workflowA = client.newWorkflow(WorkflowA::class.java)
