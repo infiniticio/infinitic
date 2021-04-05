@@ -453,8 +453,6 @@ internal class TaskEngineTests : StringSpec({
         // then
         checkShouldRetryTaskAttempt(msgIn, stateIn)
     }
-
-    // TODO: add tests for retryTask with non-null parameters
 })
 
 private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskState) {
@@ -497,6 +495,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
         newStatus shouldBe TaskStatus.RUNNING_WARNING
     }
 }
+
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
     TestFactory.random<T>(values)
 

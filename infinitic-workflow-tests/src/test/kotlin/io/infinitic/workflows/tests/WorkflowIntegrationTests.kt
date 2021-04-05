@@ -32,6 +32,8 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.storage.keySet.LoggedKeySetStorage
+import io.infinitic.common.storage.keyValue.LoggedKeyValueStorage
 import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
@@ -76,8 +78,8 @@ import java.time.Instant
 import java.util.UUID
 
 private var workflowOutput: Any? = null
-val keyValueStorage = InMemoryKeyValueStorage()
-val keySetStorage = InMemoryKeySetStorage()
+val keyValueStorage = LoggedKeyValueStorage(InMemoryKeyValueStorage())
+val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
 private val workflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
@@ -662,54 +664,40 @@ class WorkflowIntegrationTests : StringSpec({
     }
 })
 
-fun CoroutineScope.sendToClientResponse(msg: ClientMessage) {
-    launch {
-        client.handle(msg)
+fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
+    client.handle(msg)
+}
+
+fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: MillisDuration) = launch {
+    if (after.long > 0) { delay(after.long) }
+    workflowEngine.handle(msg)
+
+    // defines output if reached
+    if (msg is WorkflowCompleted) {
+        workflowOutput = msg.workflowReturnValue.get()
     }
 }
 
-fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: MillisDuration) {
-    launch {
-        if (after.long > 0) { delay(after.long) }
-        workflowEngine.handle(msg)
-
-        // defines output if reached
-        if (msg is WorkflowCompleted) {
-            workflowOutput = msg.workflowReturnValue.get()
-        }
-    }
+fun CoroutineScope.sendToTagEngine(msg: TagEngineMessage) = launch {
+    tagEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToTagEngine(msg: TagEngineMessage) {
-    launch {
-        tagEngine.handle(msg)
-    }
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) = launch {
+    if (after.long > 0) { delay(after.long) }
+    taskEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) {
-    launch {
-        if (after.long > 0) { delay(after.long) }
-        taskEngine.handle(msg)
-    }
+fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch {
+    monitoringPerNameEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) {
-    launch {
-        monitoringPerNameEngine.handle(msg)
-    }
+fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) = launch {
+    monitoringGlobalEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) {
-    launch {
-        monitoringGlobalEngine.handle(msg)
-    }
-}
-
-fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) {
-    // without Dispatchers.IO we have some obscure race conditions when waiting in tasks
-    launch(Dispatchers.IO) {
-        executor.handle(msg)
-    }
+// without Dispatchers.IO we have some obscure race conditions when waiting in tasks
+fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) = launch(Dispatchers.IO) {
+    executor.handle(msg)
 }
 
 fun CoroutineScope.init() {

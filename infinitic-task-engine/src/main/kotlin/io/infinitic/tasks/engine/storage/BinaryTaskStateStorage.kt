@@ -29,8 +29,6 @@ import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
@@ -39,9 +37,6 @@ import org.slf4j.LoggerFactory
 class BinaryTaskStateStorage(
     private val storage: KeyValueStorage
 ) : TaskStateStorage, Flushable by storage {
-
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getState(taskId: TaskId): TaskState? {
         val key = getTaskStateKey(taskId)
