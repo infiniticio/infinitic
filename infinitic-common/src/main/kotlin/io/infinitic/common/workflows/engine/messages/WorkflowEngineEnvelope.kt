@@ -33,6 +33,7 @@ import kotlinx.serialization.Serializable
 data class WorkflowEngineEnvelope(
     val workflowId: WorkflowId,
     val type: WorkflowEngineMessageType,
+    val waitWorkflow: WaitWorkflow? = null,
     val cancelWorkflow: CancelWorkflow? = null,
     val sendToChannel: SendToChannel? = null,
     val childWorkflowCanceled: ChildWorkflowCanceled? = null,
@@ -49,6 +50,7 @@ data class WorkflowEngineEnvelope(
 ) {
     init {
         val noNull = listOfNotNull(
+            waitWorkflow,
             cancelWorkflow,
             sendToChannel,
             childWorkflowCanceled,
@@ -83,6 +85,11 @@ data class WorkflowEngineEnvelope(
 
     companion object {
         fun from(msg: WorkflowEngineMessage) = when (msg) {
+            is WaitWorkflow -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.WAIT_WORKFLOW,
+                waitWorkflow = msg
+            )
             is CancelWorkflow -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CANCEL_WORKFLOW,
@@ -154,6 +161,7 @@ data class WorkflowEngineEnvelope(
     }
 
     fun message(): WorkflowEngineMessage = when (type) {
+        WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow!!
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendToChannel!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!

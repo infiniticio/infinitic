@@ -46,8 +46,20 @@ data class TaskCompleted(
 ) : ClientMessage()
 
 @Serializable
+data class UnknownTaskWaited(
+    override val clientName: ClientName,
+    val taskId: TaskId
+) : ClientMessage()
+
+@Serializable
 data class WorkflowCompleted(
     override val clientName: ClientName,
     val workflowId: WorkflowId,
     val workflowReturnValue: MethodReturnValue
+) : ClientMessage()
+
+@Serializable
+data class UnknownWorkflowWaited(
+    override val clientName: ClientName,
+    val workflowId: WorkflowId
 ) : ClientMessage()

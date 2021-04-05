@@ -185,7 +185,7 @@ data class IncorrectExistingStub(
     val action: String
 ) : UserExceptionInClient(
     msg = "The first parameter of the client.$action(.) function should be the stub of an existing task or workflow",
-    help = "Make sure to provide the stub returned by client.task($name, id) or client.workflow($name, id)function, with an id."
+    help = "Make sure to provide the stub returned by client.getTask($name, id) or client.getWorkflow($name, id)function, with an id."
 )
 
 @Serializable
@@ -194,7 +194,7 @@ data class IncorrectNewStub(
     val action: String
 ) : UserExceptionInClient(
     msg = "The first parameter of the client.$action(.) function should be the stub of a new task or workflow",
-    help = "Make sure to provide the stub returned by client.task($name) or client.workflow($name)."
+    help = "Make sure to provide the stub returned by client.newTask($name) or client.newWorkflow($name)."
 )
 
 @Serializable
@@ -286,13 +286,21 @@ data class UnknownMethodInSendChannel(
 )
 
 @Serializable
-data class SendToChannelFailed(
-    val tag: String,
-    val klass: String,
-    val channel: String,
+data class UnknownTaskPerId(
+    val taskId: String,
+    val taskName: String,
 ) : UserExceptionInClient(
-    msg = "Failed to send message to channel $channel",
-    help = "Workflows $klass with tag $tag do not exist or are already terminated"
+    msg = "Failed to  wait for task $taskId completion ($taskName)",
+    help = "This task instance is probably already completed"
+)
+
+@Serializable
+data class UnknownWorkflowPerId(
+    val workflowId: String,
+    val workflowName: String,
+) : UserExceptionInClient(
+    msg = "Failed to  wait for workflow $workflowId completion ($workflowName)",
+    help = "This workflow instance is probably already completed"
 )
 
 /***********************

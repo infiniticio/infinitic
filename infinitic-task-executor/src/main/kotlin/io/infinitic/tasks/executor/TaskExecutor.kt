@@ -74,7 +74,7 @@ class TaskExecutor(
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskExecutorMessage) {
-        logger.debug("receiving {} (messageId {})", message, message.messageId)
+        logger.debug("receiving {}", message)
 
         when (message) {
             is ExecuteTaskAttempt -> executeTaskAttempt(message)

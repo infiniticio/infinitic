@@ -95,7 +95,8 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskStub) { log() })
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
@@ -105,16 +106,79 @@ class TaskIntegrationTests : StringSpec({
         taskTest.log shouldBe "1"
     }
 
+    "Synchronous execution succeeds at first try" {
+        var result: String? = null
+        // task will succeed
+        taskTest.behavior = { _, _ -> Status.SUCCESS }
+        // run system
+        coroutineScope {
+            init()
+            result = taskStub.log()
+        }
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        // checks number of task processing
+        result shouldBe "1"
+    }
+
+    "Waiting for asynchronous execution succeeding at first try" {
+        var result: String? = null
+        // task will succeed
+        taskTest.behavior = { _, _ -> Status.SUCCESS }
+        // run system
+        coroutineScope {
+            init()
+            val deferred = client.async(taskStub) { log() }
+            result = deferred.await()
+        }
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        // checks number of task processing
+        result shouldBe "1"
+    }
+
     "Task succeeds at 4th try" {
         // task will succeed only at the 4th try
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskStub) { log() })
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        // checks number of task processing
+        taskTest.log shouldBe "0001"
+    }
+
+    "Task succeeds synchronously at 4th try" {
+        var result: String? = null
+        // task will succeed only at the 4th try
+        taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
+        // run system
+        coroutineScope {
+            init()
+            result = taskStub.log()
+        }
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        // checks number of task processing
+        taskTest.log shouldBe "0001"
+    }
+
+    "Task succeeds asynchronously at 4th try" {
+        var result: String? = null
+        // task will succeed only at the 4th try
+        taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
+        // run system
+        coroutineScope {
+            init()
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
+        }
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
@@ -127,7 +191,8 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskStub) { log() })
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
         }
         // check that task is not terminated
         taskStateStorage.getState(taskId) shouldNotBe null
@@ -143,7 +208,8 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskStub) { log() })
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
         }
         // check that task is not terminated
         taskStateStorage.getState(taskId) shouldNotBe null
@@ -166,16 +232,17 @@ class TaskIntegrationTests : StringSpec({
         var id: UUID
         coroutineScope {
             init()
-            id = client.async(taskStub) { log() }
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
 
-            val existingTask = client.getTask<TaskTest>(id)
+            val existingTask = client.getTask<TaskTest>(deferred.id)
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
             }
             client.retry(existingTask)
         }
         // check that task is terminated
-        taskStateStorage.getState(TaskId(id)) shouldBe null
+        taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
@@ -195,7 +262,8 @@ class TaskIntegrationTests : StringSpec({
         var id: UUID
         coroutineScope {
             init()
-            id = client.async(taskStub) { log() }
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
 
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
@@ -203,7 +271,7 @@ class TaskIntegrationTests : StringSpec({
             client.retry(taskStub)
         }
         // check that task is terminated
-        taskStateStorage.getState(TaskId(id)) shouldBe null
+        taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing
@@ -222,8 +290,8 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            val id = client.async(taskStub1Tag) { log() }
-            taskId = TaskId(id)
+            val deferred = client.async(taskStub1Tag) { log() }
+            taskId = TaskId(deferred.id)
             val existingTask = client.getTask<TaskTest>("foo")
             while (taskStatus != TaskStatus.RUNNING_ERROR) {
                 delay(50)
@@ -245,13 +313,14 @@ class TaskIntegrationTests : StringSpec({
         var id: UUID
         coroutineScope {
             init()
-            id = client.async(taskStub) { log() }
-            val existingTask = client.getTask(TaskTest::class.java, id)
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
+            val existingTask = client.getTask(TaskTest::class.java, deferred.id)
             delay(100)
             client.cancel(existingTask)
         }
         // check that task is terminated
-        taskStateStorage.getState(TaskId(id)) shouldBe null
+        taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
     }
@@ -264,10 +333,10 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            val id1 = client.async(taskStub1Tag) { log() }
-            val id2 = client.async(taskStub2Tag) { log() }
-            taskId1 = TaskId(id1)
-            taskId2 = TaskId(id2)
+            val deferred1 = client.async(taskStub1Tag) { log() }
+            val deferred2 = client.async(taskStub2Tag) { log() }
+            taskId1 = TaskId(deferred1.id)
+            taskId2 = TaskId(deferred2.id)
             val existingTask = client.getTask(TaskTest::class.java, "foo")
             delay(100)
             client.cancel(existingTask)
@@ -279,27 +348,14 @@ class TaskIntegrationTests : StringSpec({
         taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
     }
 
-    "Synchronous Task succeeds at first try" {
-        // task will succeed
-        taskTest.behavior = { _, _ -> Status.SUCCESS }
-
-        var r: String
-        // run system
-        coroutineScope {
-            init()
-            r = taskStub.log()
-        }
-        // checks number of task processing
-        r shouldBe "1"
-    }
-
     "Tag should be added then deleted after completion" {
         // task will succeed
         taskTest.behavior = { _, _ -> Status.SUCCESS }
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskStub2Tag) { await(100) })
+            val deferred = client.async(taskStub2Tag) { await(100) }
+            taskId = TaskId(deferred.id)
             yield()
             // checks taskId has been added to tag storage
             tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
@@ -320,7 +376,9 @@ class TaskIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            taskId = TaskId(client.async(taskStub2Tag) { log() })
+            val deferred = client.async(taskStub2Tag) { log() }
+            taskId = TaskId(deferred.id)
+
             yield()
             // checks taskId has been added to tag storage
             tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true

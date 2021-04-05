@@ -62,4 +62,28 @@ internal class InMemoryTests : StringSpec({
 
         result shouldBe "ba"
     }
+
+    "waiting for simple asynchronous task" {
+        val taskA = client.newTask<TaskA>()
+
+        val deferred = client.async(taskA) { await(200) }
+
+        deferred.await() shouldBe 200L
+    }
+
+    "simple synchronous workflow" {
+        val workflowA = client.newWorkflow<WorkflowA>()
+
+        val result = workflowA.seq1()
+
+        result shouldBe "123"
+    }
+
+    "waiting for simple asynchronous workflow" {
+        val workflowA = client.newWorkflow<WorkflowA>()
+
+        val deferred = client.async(workflowA) { prop2() }
+
+        deferred.await() shouldBe "acbd"
+    }
 })

@@ -48,8 +48,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TaskState(
-    val clientName: ClientName,
-    val clientWaiting: Boolean,
+    val clientWaiting: Set<ClientName>,
     val lastMessageId: MessageId,
     val taskId: TaskId,
     val taskName: TaskName,

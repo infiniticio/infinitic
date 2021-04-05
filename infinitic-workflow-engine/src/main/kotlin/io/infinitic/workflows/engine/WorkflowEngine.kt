@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.engine
 
+import io.infinitic.common.clients.messages.UnknownWorkflowWaited
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tags.messages.RemoveWorkflowTag
@@ -40,6 +41,7 @@ import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TaskDispatched
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
+import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -95,6 +97,14 @@ class WorkflowEngine(
                 storage.putState(message.workflowId, state)
 
                 return
+            }
+            if (message is WaitWorkflow) {
+                output.sendEventsToClient(
+                    UnknownWorkflowWaited(
+                        message.clientName,
+                        message.workflowId
+                    )
+                )
             }
             // discard all other messages if workflow is already terminated
             logDiscardingMessage(message, "for having null state")
@@ -193,6 +203,7 @@ class WorkflowEngine(
             is TaskCanceled -> taskCanceled(state, message)
             is TaskCompleted -> taskCompleted(output, state, message)
             is SendToChannel -> sendToChannel(output, state, message)
+            is WaitWorkflow -> waitWorkflow(state, message)
             else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
         }
     }
@@ -207,5 +218,9 @@ class WorkflowEngine(
 
     private suspend fun taskCanceled(state: WorkflowState, msg: TaskCanceled) {
         TODO()
+    }
+
+    private suspend fun waitWorkflow(state: WorkflowState, msg: WaitWorkflow) {
+        state.clientWaiting.add(msg.clientName)
     }
 }

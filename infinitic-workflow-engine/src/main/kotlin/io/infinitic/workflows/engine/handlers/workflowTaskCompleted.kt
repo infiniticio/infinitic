@@ -134,11 +134,11 @@ suspend fun workflowTaskCompleted(
                 MillisDuration(0)
             )
 
-            // if client is waiting, send output back to it
-            if (state.clientWaiting) {
+            // send output back to waiting clients
+            state.clientWaiting.map {
                 workflowEngineOutput.sendEventsToClient(
                     WorkflowCompletedInClient(
-                        clientName = state.clientName,
+                        clientName = it,
                         workflowId = state.workflowId,
                         workflowReturnValue = methodRun.methodReturnValue!!
                     )

@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.engine
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MillisDuration
@@ -266,6 +267,7 @@ internal class TaskEngineTests : StringSpec({
         // given
         val stateIn = random<TaskState>(
             mapOf(
+                "clientWaiting" to mutableSetOf(ClientName("foo"), ClientName("bar")),
                 "taskStatus" to TaskStatus.RUNNING_OK,
                 "tags" to setOf(Tag("foo"), Tag("bar"))
             )
@@ -282,6 +284,7 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
             sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>(), MillisDuration(0))
+            sendToClient(ofType<TaskCompletedInClient>())
             sendToClient(ofType<TaskCompletedInClient>())
             sendToTaskEngine(ofType<TaskCompleted>(), MillisDuration(0))
             sendToTagEngine(ofType<RemoveTaskTag>())

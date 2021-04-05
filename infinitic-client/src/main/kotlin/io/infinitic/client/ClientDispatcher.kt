@@ -25,9 +25,13 @@
 
 package io.infinitic.client
 
+import io.infinitic.client.deferred.DeferredTask
+import io.infinitic.client.deferred.DeferredWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskCompleted
+import io.infinitic.common.clients.messages.UnknownTaskWaited
+import io.infinitic.common.clients.messages.UnknownWorkflowWaited
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -44,6 +48,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelEventType
@@ -52,19 +57,21 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
+import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.ChannelUsedOnNewWorkflow
 import io.infinitic.exceptions.MultipleMethodCalls
 import io.infinitic.exceptions.NoMethodCall
 import io.infinitic.exceptions.NoSendMethodCall
 import io.infinitic.exceptions.UnknownMethodInSendChannel
+import io.infinitic.exceptions.UnknownTaskPerId
+import io.infinitic.exceptions.UnknownWorkflowPerId
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
-import java.util.UUID
 import kotlin.reflect.full.isSubclassOf
 
 internal class ClientDispatcher(
@@ -82,7 +89,7 @@ internal class ClientDispatcher(
     }
 
     // asynchronous call: async(newTask) { method() }
-    internal fun dispatch(handler: TaskProxyHandler<*>): UUID {
+    internal fun <T> dispatch(handler: TaskProxyHandler<*>): DeferredTask<T> {
         val method = when (handler.methods.size) {
             0 -> throw NoMethodCall(handler.klass.name)
             1 -> handler.methods[0]
@@ -98,6 +105,7 @@ internal class ClientDispatcher(
 
         val taskId = TaskId()
         val taskName = TaskName.from(method)
+        val isSync = handler.isSync
 
         // add provided tags for this id
         val addTaskTags = handler.tags!!.map {
@@ -131,32 +139,52 @@ internal class ClientDispatcher(
             sendToTaskEngine(dispatchTask)
         }.join()
 
-        // handler now target an existing task
-        handler.perTaskId = taskId
         // reset isSync
         handler.isSync = true
 
-        return taskId.id
+        // handler now target an existing task
+        handler.perTaskId = taskId
+
+        return DeferredTask<T>(taskName, taskId, isSync, this)
+    }
+
+    internal fun <T> await(deferredTask: DeferredTask<T>): T {
+        // if task was not sync, then send WaitTask message
+        if (! deferredTask.isSync) {
+            val waitTask = WaitTask(
+                taskId = deferredTask.taskId,
+                taskName = deferredTask.taskName,
+                clientName = clientName
+            )
+            GlobalScope.future {
+                sendToTaskEngine(waitTask)
+            }.join()
+        }
+
+        // wait for result
+        val taskresult = runBlocking {
+            responseFlow.first {
+                (it is TaskCompleted && it.taskId == deferredTask.taskId) ||
+                    (it is UnknownTaskWaited && it.taskId == deferredTask.taskId)
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return when (taskresult) {
+            is TaskCompleted -> taskresult.taskReturnValue.get() as T
+            is UnknownTaskWaited -> throw UnknownTaskPerId(
+                "${deferredTask.taskId}",
+                "${deferredTask.taskName}"
+            )
+            else -> throw RuntimeException("This should not happen")
+        }
     }
 
     // synchronous call: task.method()
-    override fun <S> dispatchAndWait(handler: TaskProxyHandler<*>): S {
-        // dispatch
-        val taskId = TaskId(dispatch(handler))
-
-        // wait for result
-        val taskCompleted = runBlocking {
-            responseFlow.first {
-                it is TaskCompleted && it.taskId == taskId
-            }
-        } as TaskCompleted
-
-        @Suppress("UNCHECKED_CAST")
-        return taskCompleted.taskReturnValue.get() as S
-    }
+    override fun <S> dispatchAndWait(handler: TaskProxyHandler<*>): S = dispatch<S>(handler).await()
 
     // asynchronous workflow: async(newWorkflow) { method() }
-    internal fun dispatch(handler: WorkflowProxyHandler<*>): UUID {
+    internal fun <T> dispatch(handler: WorkflowProxyHandler<*>): DeferredWorkflow<T> {
         val method = when (handler.methods.size) {
             0 -> throw NoMethodCall(handler.klass.name)
             1 -> handler.methods[0]
@@ -172,6 +200,7 @@ internal class ClientDispatcher(
 
         val workflowId = WorkflowId()
         val workflowName = WorkflowName.from(method)
+        val isSync = handler.isSync
 
         // add provided tags
         val addWorkflowTags = handler.tags!!.map {
@@ -186,7 +215,7 @@ internal class ClientDispatcher(
         val dispatchWorkflow = DispatchWorkflow(
             workflowId = workflowId,
             clientName = clientName,
-            clientWaiting = handler.isSync,
+            clientWaiting = isSync,
             workflowName = WorkflowName.from(method),
             methodName = MethodName.from(method),
             methodParameterTypes = MethodParameterTypes.from(method),
@@ -209,7 +238,39 @@ internal class ClientDispatcher(
         // reset isSync
         handler.isSync = true
 
-        return workflowId.id
+        return DeferredWorkflow(workflowName, workflowId, isSync, this)
+    }
+
+    internal fun <T> await(deferredWorkflow: DeferredWorkflow<T>): T {
+        // if task was not sync, then send WaitTask message
+        if (! deferredWorkflow.isSync) {
+            val waitWorkflow = WaitWorkflow(
+                workflowId = deferredWorkflow.workflowId,
+                workflowName = deferredWorkflow.workflowName,
+                clientName = clientName
+            )
+            GlobalScope.future {
+                sendToWorkflowEngine(waitWorkflow)
+            }.join()
+        }
+
+        // wait for result
+        val result = runBlocking {
+            responseFlow.first {
+                (it is WorkflowCompleted && it.workflowId == deferredWorkflow.workflowId) ||
+                    (it is UnknownWorkflowWaited && it.workflowId == deferredWorkflow.workflowId)
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return when (result) {
+            is WorkflowCompleted -> result.workflowReturnValue.get() as T
+            is UnknownWorkflowWaited -> throw UnknownWorkflowPerId(
+                "${deferredWorkflow.workflowId}",
+                "${deferredWorkflow.workflowName}"
+            )
+            else -> throw RuntimeException("This should not happen")
+        }
     }
 
     // synchronous call on a new workflow: newWorkflow.method()
@@ -230,17 +291,8 @@ internal class ClientDispatcher(
             }
         }
 
-        // dispatch
-        val workflowId = WorkflowId(dispatch(handler))
-
-        // wait for result
-        val workflowCompleted = runBlocking {
-            responseFlow.first {
-                it is WorkflowCompleted && it.workflowId == workflowId
-            }
-        } as WorkflowCompleted
-
-        return workflowCompleted.workflowReturnValue.get() as S
+        // dispatch and wait
+        return dispatch<S>(handler).await()
     }
 
     // asynchronous send on a channel: async(existingWorkflow.channel) { send() }

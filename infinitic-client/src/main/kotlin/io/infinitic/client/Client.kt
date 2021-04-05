@@ -25,6 +25,7 @@
 
 package io.infinitic.client
 
+import io.infinitic.client.deferred.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -60,6 +61,8 @@ import io.infinitic.exceptions.IncorrectExistingStub
 import io.infinitic.exceptions.NotAStub
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 import java.util.UUID
 
@@ -68,6 +71,9 @@ open class Client(
     open val clientName: ClientName
 ) {
     var closeFn: () -> Unit = {}
+
+    private val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
 
     companion object {
         fun with(
@@ -102,7 +108,11 @@ open class Client(
         )
     }
 
-    suspend fun handle(message: ClientMessage) = dispatcher.handle(message)
+    suspend fun handle(message: ClientMessage) {
+        logger.debug("receiving {}", message)
+
+        dispatcher.handle(message)
+    }
 
     /*
      * Create stub for a new task
@@ -267,7 +277,7 @@ open class Client(
     /*
      *  Asynchronously process a task or a workflow
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): UUID {
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "async")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -294,14 +304,8 @@ open class Client(
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "cancel")
 
         when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> when (handler.isNew()) {
-                true -> throw CanNotUseNewTaskStub(handler.klass.name, "cancel")
-                false -> cancel(handler, returnValue)
-            }
-            is WorkflowProxyHandler<*> -> when (handler.isNew()) {
-                true -> throw CanNotUseNewWorkflowStub(handler.klass.name, "cancel")
-                false -> cancel(handler, returnValue)
-            }
+            is TaskProxyHandler<*> -> cancel(handler, returnValue)
+            is WorkflowProxyHandler<*> -> cancel(handler, returnValue)
             is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "cancel")
             else -> throw RuntimeException()
         }
@@ -315,14 +319,8 @@ open class Client(
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "retry")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> when (handler.isNew()) {
-                true -> throw CanNotUseNewTaskStub(handler.klass.name, "retry")
-                false -> retry(handler)
-            }
-            is WorkflowProxyHandler<*> -> when (handler.isNew()) {
-                true -> throw CanNotUseNewWorkflowStub(handler.klass.name, "retry")
-                false -> retry(handler)
-            }
+            is TaskProxyHandler<*> -> retry(handler)
+            is WorkflowProxyHandler<*> -> retry(handler)
             is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "retry")
             else -> throw RuntimeException()
         }
@@ -414,6 +412,8 @@ open class Client(
     }
 
     private fun <T : Any> retry(handler: WorkflowProxyHandler<T>) {
+        if (handler.isNew()) throw CanNotUseNewWorkflowStub(handler.klass.name, "retry")
+
         TODO("Not yet implemented")
     }
 }

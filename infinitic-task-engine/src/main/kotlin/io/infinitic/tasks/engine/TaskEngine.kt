@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.engine
 
+import io.infinitic.common.clients.messages.UnknownTaskWaited
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
@@ -49,6 +50,7 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.engine.messages.TaskCanceled
 import io.infinitic.common.tasks.engine.messages.TaskCompleted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -99,6 +101,14 @@ class TaskEngine(
         if (oldState == null) {
             // discard message other than DispatchTask if state does not exist
             if (message !is DispatchTask) {
+                if (message is WaitTask) {
+                    sendToClient(
+                        UnknownTaskWaited(
+                            message.clientName,
+                            message.taskId
+                        )
+                    )
+                }
                 // is should happen only if a previous retry or a cancel command has terminated this task
                 return logDiscardingMessage(message, "for having null state")
             }
@@ -133,7 +143,8 @@ class TaskEngine(
                 is TaskAttemptStarted -> taskAttemptStarted(oldState, message)
                 is TaskAttemptFailed -> taskAttemptFailed(oldState, message)
                 is TaskAttemptCompleted -> taskAttemptCompleted(oldState, message)
-                else -> throw Exception("Unknown TaskEngineMessage: $message")
+                is WaitTask -> waitTask(oldState, message)
+                else -> throw RuntimeException("Unknown TaskEngineMessage: $message")
             }
 
         // Update stored state if needed and existing
@@ -152,6 +163,12 @@ class TaskEngine(
 
             sendToMetricsPerName(taskStatusUpdated)
         }
+    }
+
+    private fun waitTask(oldState: TaskState, message: WaitTask): TaskState {
+        return oldState.copy(
+            clientWaiting = oldState.clientWaiting.toMutableSet().plus(message.clientName)
+        )
     }
 
     private suspend fun cancelTask(oldState: TaskState, message: CancelTask): TaskState {
@@ -180,10 +197,10 @@ class TaskEngine(
         }
 
         // if this task comes from a client, send TaskCompleted output back to it
-        if (newState.clientWaiting) {
+        newState.clientWaiting.map {
             sendToClient(
                 TaskCompletedInClient(
-                    newState.clientName,
+                    it,
                     newState.taskId,
                     message.taskReturnValue
                 )
@@ -208,8 +225,10 @@ class TaskEngine(
     private suspend fun dispatchTask(message: DispatchTask): TaskState {
         // init a state
         val newState = TaskState(
-            clientName = message.clientName,
-            clientWaiting = message.clientWaiting,
+            clientWaiting = when (message.clientWaiting) {
+                true -> setOf(message.clientName)
+                false -> setOf()
+            },
             lastMessageId = message.messageId,
             taskId = message.taskId,
             taskName = message.taskName,
@@ -367,10 +386,10 @@ class TaskEngine(
         }
 
         // if client is waiting, send output back to it
-        if (newState.clientWaiting) {
+        newState.clientWaiting.map {
             sendToClient(
                 TaskCompletedInClient(
-                    newState.clientName,
+                    it,
                     newState.taskId,
                     message.taskReturnValue
                 )

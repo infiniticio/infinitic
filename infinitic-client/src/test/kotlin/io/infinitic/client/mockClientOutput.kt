@@ -33,8 +33,10 @@ import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.mockk.CapturingSlot
@@ -56,7 +58,7 @@ fun mockSendToTaskEngine(
     val mock = mockk<SendToTaskEngine>()
     coEvery { mock(capture(message), MillisDuration(0)) } coAnswers {
         val msg = message.captured
-        if (msg is DispatchTask && msg.clientWaiting) {
+        if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
             client.handle(
                 TaskCompleted(
                     clientName = client.clientName,
@@ -77,7 +79,7 @@ fun mockSendToWorkflowEngine(
     val mock = mockk<SendToWorkflowEngine>()
     coEvery { mock(capture(message), MillisDuration(0)) } coAnswers {
         val msg = message.captured
-        if (msg is DispatchWorkflow && msg.clientWaiting) {
+        if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
             client.handle(
                 WorkflowCompleted(
                     clientName = client.clientName,

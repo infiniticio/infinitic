@@ -25,6 +25,7 @@
 
 package io.infinitic.client
 
+import io.infinitic.client.deferred.Deferred
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
@@ -145,13 +146,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch method without parameter" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        val taskId = TaskId(client.async(fakeTask) { m1() })
+        val deferred: Deferred<Unit> = client.async(fakeTask) { m1() }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -168,13 +169,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch method without parameter (Java syntax)" {
         // when
         val fakeTask = client.newTask(FakeTask::class.java)
-        val taskId = TaskId(client.async(fakeTask) { m1() })
+        val deferred: Deferred<Unit> = client.async(fakeTask) { m1() }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -196,13 +197,13 @@ class ClientTaskTests : StringSpec({
             "bar" to TestFactory.random<ByteArray>()
         )
         val fakeTask = client.newTask<FakeTask>(options = options, meta = meta)
-        val taskId = TaskId(client.async(fakeTask) { m1() })
+        val deferred: Deferred<Unit> = client.async(fakeTask) { m1() }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -219,23 +220,23 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch method with tags" {
         // when
         val fakeTask = client.newTask<FakeTask>(tags = setOf("foo", "bar"))
-        val taskId = TaskId(client.async(fakeTask) { m1() })
+        val deferred: Deferred<Unit> = client.async(fakeTask) { m1() }
         // then
         tagSlots.size shouldBe 2
         tagSlots[0] shouldBe AddTaskTag(
             tag = Tag("foo"),
             name = TaskName(FakeTask::class.java.name),
-            taskId = taskId
+            taskId = TaskId(deferred.id),
         )
         tagSlots[1] shouldBe AddTaskTag(
             tag = Tag("bar"),
             name = TaskName(FakeTask::class.java.name),
-            taskId = taskId
+            taskId = TaskId(deferred.id),
         )
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -252,13 +253,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with a primitive as parameter" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        val taskId = TaskId(client.async(fakeTask) { m1(0) })
+        val deferred: Deferred<String> = client.async(fakeTask) { m1(0) }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name)),
@@ -275,13 +276,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with null as parameter" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        val taskId = TaskId(client.async(fakeTask) { m1(null) })
+        val deferred = client.async(fakeTask) { m1(null) }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
@@ -298,13 +299,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with multiple definition" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        val taskId = TaskId(client.async(fakeTask) { m1("a") })
+        val deferred = client.async(fakeTask) { m1("a") }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
@@ -321,13 +322,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with multiple parameters" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        val taskId = TaskId(client.async(fakeTask) { m1(0, "a") })
+        val deferred = client.async(fakeTask) { m1(0, "a") }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
@@ -345,13 +346,13 @@ class ClientTaskTests : StringSpec({
         // when
         val fakeTask = client.newTask<FakeTask>()
         val fake = FakeClass()
-        val taskId = TaskId(client.async(fakeTask) { m1(fake) })
+        val deferred = client.async(fakeTask) { m1(fake) }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
@@ -368,13 +369,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to dispatch a method with a primitive as return value" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        val taskId = TaskId(client.async(fakeTask) { m2() })
+        val deferred = client.async(fakeTask) { m2() }
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe DispatchTask(
             clientName = client.clientName,
             clientWaiting = false,
-            taskId = taskId,
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m2"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -414,6 +415,18 @@ class ClientTaskTests : StringSpec({
             taskOptions = TaskOptions(),
             taskMeta = TaskMeta()
         )
+    }
+
+    "Should be able to await for a task just dispatched" {
+        // when
+        val fakeTask = client.newTask<FakeTask>()
+        var result: String
+        coroutineScope {
+            val deferred = client.async(fakeTask) { m1(0, "a") }
+            result = deferred.await()
+        }
+        // then
+        result shouldBe "success"
     }
 
     "Should be able to cancel task per id" {
@@ -477,13 +490,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to cancel task just dispatched" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        val id = client.async(fakeTask) { m1() }
+        val deferred = client.async(fakeTask) { m1() }
 
         client.cancel(fakeTask)
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
-            taskId = TaskId(id),
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             taskReturnValue = MethodReturnValue.from(null)
         )
@@ -530,13 +543,13 @@ class ClientTaskTests : StringSpec({
     "Should be able to retry a task just dispatched " {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        val id = client.async(fakeTask) { m1() }
+        val deferred = client.async(fakeTask) { m1() }
 
         client.retry(fakeTask)
         // then
         tagSlots.size shouldBe 0
         taskSlot.captured shouldBe RetryTask(
-            taskId = TaskId(id),
+            taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = null,
             methodParameterTypes = null,

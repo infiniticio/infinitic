@@ -46,8 +46,10 @@ suspend fun dispatchWorkflow(
     )
 
     val state = WorkflowState(
-        clientName = message.clientName,
-        clientWaiting = message.clientWaiting,
+        clientWaiting = when (message.clientWaiting) {
+            true -> mutableSetOf(message.clientName)
+            false -> mutableSetOf()
+        },
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,

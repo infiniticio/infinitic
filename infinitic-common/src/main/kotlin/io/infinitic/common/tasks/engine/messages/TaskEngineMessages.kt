@@ -73,6 +73,13 @@ data class DispatchTask(
 ) : TaskEngineMessage()
 
 @Serializable
+data class WaitTask(
+    override val taskId: TaskId,
+    override val taskName: TaskName,
+    val clientName: ClientName
+) : TaskEngineMessage()
+
+@Serializable
 data class RetryTask(
     override val taskId: TaskId,
     override val taskName: TaskName,

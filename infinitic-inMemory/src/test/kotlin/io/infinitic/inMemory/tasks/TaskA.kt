@@ -26,16 +26,18 @@
 package io.infinitic.inMemory.tasks
 
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 
 interface TaskA {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
-    fun await(delay: Long)
+    fun await(delay: Long): Long
 }
 
 class TaskAImpl : TaskA {
     override fun concat(str1: String, str2: String) = str1 + str2
     override fun reverse(str: String) = str.reversed()
-    override fun await(delay: Long) = runBlocking { delay(delay) }
+    override fun await(delay: Long): Long {
+        Thread.sleep(delay)
+        return delay
+    }
 }

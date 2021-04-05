@@ -134,13 +134,13 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow without parameter" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
+        val deferred = client.async(fakeWorkflow) { m1() }
         // then
         tagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
             clientName = client.clientName,
             clientWaiting = false,
-            workflowId = workflowId,
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -156,13 +156,13 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with Java syntax" {
         // when
         val fakeWorkflow = client.newWorkflow(FakeWorkflow::class.java)
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
+        val deferred = client.async(fakeWorkflow) { m1() }
         // then
         tagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
             clientName = client.clientName,
             clientWaiting = false,
-            workflowId = workflowId,
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -184,13 +184,13 @@ class ClientWorkflowTests : StringSpec({
         )
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>(options = options, meta = meta)
 
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
+        val deferred = client.async(fakeWorkflow) { m1() }
         // then
         tagSlots.size shouldBe 0
         workflowSlot.captured shouldBe DispatchWorkflow(
             clientName = client.clientName,
             clientWaiting = false,
-            workflowId = workflowId,
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -207,23 +207,23 @@ class ClientWorkflowTests : StringSpec({
         // when
         val tags = setOf("foo", "bar")
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>(tags = tags)
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1() })
+        val deferred = client.async(fakeWorkflow) { m1() }
         // then
         tagSlots.size shouldBe 2
         tagSlots[0] shouldBe AddWorkflowTag(
             tag = Tag("foo"),
             name = WorkflowName(FakeWorkflow::class.java.name),
-            workflowId = workflowId
+            workflowId = WorkflowId(deferred.id),
         )
         tagSlots[1] shouldBe AddWorkflowTag(
             tag = Tag("bar"),
             name = WorkflowName(FakeWorkflow::class.java.name),
-            workflowId = workflowId
+            workflowId = WorkflowId(deferred.id),
         )
         workflowSlot.captured shouldBe DispatchWorkflow(
             clientName = client.clientName,
             clientWaiting = false,
-            workflowId = workflowId,
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf()),
@@ -239,14 +239,14 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with a primitive as parameter" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(0) })
+        val deferred = client.async(fakeWorkflow) { m1(0) }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             clientName = client.clientName,
             clientWaiting = false,
-            workflowId = workflowId,
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
@@ -262,14 +262,14 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with multiple method definition" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1("a") })
+        val deferred = client.async(fakeWorkflow) { m1("a") }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             clientName = client.clientName,
             clientWaiting = false,
-            workflowId = workflowId,
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
@@ -285,14 +285,14 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to dispatch a workflow with multiple parameters" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(0, "a") })
+        val deferred = client.async(fakeWorkflow) { m1(0, "a") }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
         msg shouldBe DispatchWorkflow(
             clientName = client.clientName,
             clientWaiting = false,
-            workflowId = workflowId,
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
@@ -309,7 +309,7 @@ class ClientWorkflowTests : StringSpec({
         // when
         val klass = FakeClass()
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        val workflowId = WorkflowId(client.async(fakeWorkflow) { m1(klass) })
+        val deferred = client.async(fakeWorkflow) { m1(klass) }
         // then
         workflowSlot.isCaptured shouldBe true
         val msg = workflowSlot.captured
@@ -317,7 +317,7 @@ class ClientWorkflowTests : StringSpec({
         msg shouldBe DispatchWorkflow(
             clientName = client.clientName,
             clientWaiting = false,
-            workflowId = workflowId,
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             methodName = MethodName("m1"),
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
@@ -355,6 +355,18 @@ class ClientWorkflowTests : StringSpec({
             workflowOptions = WorkflowOptions(),
             workflowMeta = WorkflowMeta()
         )
+    }
+
+    "Should be able to wait for a workflow just dispatched" {
+        var result: String
+        // when
+        coroutineScope {
+            val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
+            val deferred = client.async(fakeWorkflow) { m1(0, "a") }
+            result = deferred.await()
+        }
+        // then
+        result shouldBe "success"
     }
 
     "Should be able to emit to a channel by id" {
@@ -403,14 +415,14 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to emit to a channel after workflow dispatch" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        val id = client.async(fakeWorkflow) { m1(0, "a") }
+        val deferred = client.async(fakeWorkflow) { m1(0, "a") }
         fakeWorkflow.channel.send("a")
 
         // then
         tagSlots.size shouldBe 0
         val msg = workflowSlot.captured as SendToChannel
         msg shouldBe SendToChannel(
-            workflowId = WorkflowId(id),
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             clientName = client.clientName,
             channelEventId = msg.channelEventId,
@@ -481,13 +493,13 @@ class ClientWorkflowTests : StringSpec({
     "Should be able to cancel workflow just dispatched" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        val id = client.async(fakeWorkflow) { m1() }
+        val deferred = client.async(fakeWorkflow) { m1() }
 
         client.cancel(fakeWorkflow)
         // then
         tagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
-            workflowId = WorkflowId(id),
+            workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowReturnValue = MethodReturnValue.from(null)
         )

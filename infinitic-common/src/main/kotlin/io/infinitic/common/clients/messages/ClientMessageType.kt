@@ -27,5 +27,7 @@ package io.infinitic.common.clients.messages
 
 enum class ClientMessageType {
     TASK_COMPLETED,
-    WORKFLOW_COMPLETED
+    UNKNOWN_TASK_WAITED,
+    WORKFLOW_COMPLETED,
+    UNKNOWN_WORKFLOW_WAITED
 }

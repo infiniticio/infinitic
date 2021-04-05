@@ -48,14 +48,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class WorkflowState(
     /*
-    Name of client that dispatched this workflow
+     clients synchronously waiting for the returned value
      */
-    val clientName: ClientName,
-
-    /*
-    Does the client synchronously waits for the output?
-     */
-    val clientWaiting: Boolean,
+    val clientWaiting: MutableSet<ClientName>,
 
     /*
     Id of last received message (used to ensure idempotency)

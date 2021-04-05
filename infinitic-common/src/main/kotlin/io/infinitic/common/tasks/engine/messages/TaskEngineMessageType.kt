@@ -26,8 +26,9 @@
 package io.infinitic.common.tasks.engine.messages
 
 enum class TaskEngineMessageType {
-    CANCEL_TASK,
     DISPATCH_TASK,
+    WAIT_TASK,
+    CANCEL_TASK,
     TASK_ATTEMPT_COMPLETED,
     TASK_ATTEMPT_DISPATCHED,
     TASK_ATTEMPT_FAILED,

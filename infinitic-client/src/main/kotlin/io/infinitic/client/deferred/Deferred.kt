@@ -23,24 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.messages
+package io.infinitic.client.deferred
 
-import kotlinx.serialization.Serializable
+import java.util.UUID
 
-@Serializable
-enum class WorkflowEngineMessageType {
-    WAIT_WORKFLOW,
-    CANCEL_WORKFLOW,
-    EMIT_TO_CHANNEL,
-    CHILD_WORKFLOW_CANCELED,
-    CHILD_WORKFLOW_COMPLETED,
-    WORKFLOW_TASK_COMPLETED,
-    WORKFLOW_TASK_DISPATCHED,
-    TIMER_COMPLETED,
-    DISPATCH_WORKFLOW,
-    TASK_CANCELED,
-    TASK_COMPLETED,
-    TASK_DISPATCHED,
-    WORKFLOW_CANCELED,
-    WORKFLOW_COMPLETED
+interface Deferred<T> {
+    fun await(): T
+    val id: UUID
 }

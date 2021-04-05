@@ -34,12 +34,16 @@ data class ClientEnvelope(
     val clientName: ClientName,
     val type: ClientMessageType,
     val taskCompleted: TaskCompleted? = null,
+    val unknownTaskWaited: UnknownTaskWaited? = null,
     val workflowCompleted: WorkflowCompleted? = null,
+    val unknownWorkflowWaited: UnknownWorkflowWaited? = null
 ) {
     init {
         val noNull = listOfNotNull(
             taskCompleted,
-            workflowCompleted
+            unknownTaskWaited,
+            workflowCompleted,
+            unknownWorkflowWaited
         )
 
         require(noNull.size == 1)
@@ -54,10 +58,20 @@ data class ClientEnvelope(
                 ClientMessageType.TASK_COMPLETED,
                 taskCompleted = msg
             )
+            is UnknownTaskWaited -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.UNKNOWN_TASK_WAITED,
+                unknownTaskWaited = msg
+            )
             is WorkflowCompleted -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.WORKFLOW_COMPLETED,
                 workflowCompleted = msg
+            )
+            is UnknownWorkflowWaited -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.UNKNOWN_WORKFLOW_WAITED,
+                unknownWorkflowWaited = msg
             )
         }
 
@@ -66,7 +80,9 @@ data class ClientEnvelope(
 
     fun message(): ClientMessage = when (type) {
         ClientMessageType.TASK_COMPLETED -> taskCompleted!!
+        ClientMessageType.UNKNOWN_TASK_WAITED -> unknownTaskWaited!!
         ClientMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
+        ClientMessageType.UNKNOWN_WORKFLOW_WAITED -> unknownWorkflowWaited!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
