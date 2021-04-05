@@ -27,9 +27,11 @@ package io.infinitic.inMemory
 
 import io.infinitic.client.Client
 import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.tasks.TaskExecutorRegister
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import java.util.concurrent.Executors
 
 fun Client.startInMemory(
@@ -40,9 +42,17 @@ fun Client.startInMemory(
     val client = this
     client.closeFn = { threadPool.shutdown() }
 
-    threadPool.submit {
-        runBlocking {
-            startInMemory(taskExecutorRegister, client, logFn)
-        }
+    val scope = CoroutineScope(Dispatchers.IO)
+
+    val inMemoryOutput = InMemoryOutput(scope)
+
+    client.setOutput(
+        inMemoryOutput.sendCommandsToTagEngine,
+        inMemoryOutput.sendCommandsToTaskEngine,
+        inMemoryOutput.sendCommandsToWorkflowEngine
+    )
+
+    with(scope) {
+        startInMemory(taskExecutorRegister, client, inMemoryOutput, logFn)
     }
 }

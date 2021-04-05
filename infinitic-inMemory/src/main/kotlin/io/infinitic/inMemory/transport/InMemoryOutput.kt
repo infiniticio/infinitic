@@ -39,6 +39,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.monitoring.global.engine.worker.MonitoringGlobalMessageToProcess
@@ -48,7 +49,7 @@ import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.worker.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.slf4j.Logger
@@ -56,16 +57,17 @@ import org.slf4j.LoggerFactory
 
 class InMemoryOutput(
     private val scope: CoroutineScope,
-    private val clientChannel: SendChannel<ClientMessageToProcess>,
-    private val tagCommandsChannel: SendChannel<TagEngineMessageToProcess>,
-    private val tagEventsChannel: SendChannel<TagEngineMessageToProcess>,
-    private val taskCommandsChannel: SendChannel<TaskEngineMessageToProcess>,
-    private val taskEventsChannel: SendChannel<TaskEngineMessageToProcess>,
-    private val workflowCommandsChannel: SendChannel<WorkflowEngineMessageToProcess>,
-    private val workflowEventsChannel: SendChannel<WorkflowEngineMessageToProcess>,
-    private val executorChannel: SendChannel<TaskExecutorMessageToProcess>,
-    private val monitoringPerNameChannel: SendChannel<MonitoringPerNameMessageToProcess>,
-    private val monitoringGlobalChannel: SendChannel<MonitoringGlobalMessageToProcess>
+    val logChannel: Channel<MessageToProcess<Any>> = Channel(),
+    val clientEventsChannel: Channel<ClientMessageToProcess> = Channel(),
+    val tagCommandsChannel: Channel<TagEngineMessageToProcess> = Channel(),
+    val tagEventsChannel: Channel<TagEngineMessageToProcess> = Channel(),
+    val taskCommandsChannel: Channel<TaskEngineMessageToProcess> = Channel(),
+    val taskEventsChannel: Channel<TaskEngineMessageToProcess> = Channel(),
+    val workflowCommandsChannel: Channel<WorkflowEngineMessageToProcess> = Channel(),
+    val workflowEventsChannel: Channel<WorkflowEngineMessageToProcess> = Channel(),
+    val executorChannel: Channel<TaskExecutorMessageToProcess> = Channel(),
+    val monitoringPerNameChannel: Channel<MonitoringPerNameMessageToProcess> = Channel(),
+    val monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess> = Channel()
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -74,7 +76,7 @@ class InMemoryOutput(
         logger.debug("sendEventsToClient {}", message)
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            clientChannel.send(InMemoryMessageToProcess(message))
+            clientEventsChannel.send(InMemoryMessageToProcess(message))
         }
     }
 
