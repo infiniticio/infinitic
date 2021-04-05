@@ -55,6 +55,7 @@ import io.infinitic.exceptions.MultipleMethodCalls
 import io.infinitic.exceptions.NoMethodCall
 import io.infinitic.exceptions.NotAStub
 import io.infinitic.exceptions.SuspendMethodNotSupported
+import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -94,10 +95,10 @@ class ClientTaskTests : StringSpec({
         }
     }
 
-    "Should throw when re-using a stub" {
+    "Should not throw when re-using a stub" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        shouldThrow<CanNotReuseTaskStub> {
+        shouldNotThrow<CanNotReuseTaskStub> {
             client.async(fakeTask) { m1() }
             client.async(fakeTask) { m1() }
         }

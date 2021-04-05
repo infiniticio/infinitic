@@ -139,8 +139,8 @@ internal class ClientDispatcher(
             sendToTaskEngine(dispatchTask)
         }.join()
 
-        // reset isSync
-        handler.isSync = true
+        // reset for reuse
+        handler.reset()
 
         // handler now target an existing task
         handler.perTaskId = taskId
@@ -235,7 +235,7 @@ internal class ClientDispatcher(
 
         // handler now target an existing task
         handler.perWorkflowId = workflowId
-        // reset isSync
+        // reset isSync only
         handler.isSync = true
 
         return DeferredWorkflow(workflowName, workflowId, isSync, this)

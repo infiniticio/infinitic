@@ -53,7 +53,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.exceptions.CanNotReuseTaskStub
 import io.infinitic.exceptions.CanNotReuseWorkflowStub
 import io.infinitic.exceptions.CanNotUseNewTaskStub
 import io.infinitic.exceptions.CanNotUseNewWorkflowStub
@@ -282,7 +281,7 @@ open class Client(
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
             is TaskProxyHandler<*> -> {
-                if (! handler.isNew()) throw CanNotReuseTaskStub(handler.klass.name)
+                handler.reset()
                 handler.isSync = false
                 proxy.method()
                 dispatcher.dispatch(handler)

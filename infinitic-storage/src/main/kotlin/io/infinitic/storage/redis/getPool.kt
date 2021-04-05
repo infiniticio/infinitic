@@ -37,16 +37,10 @@ fun getPool(
     database: Int,
     ssl: Boolean,
     jedisPoolConfig: JedisPoolConfig = JedisPoolConfig()
-) = JedisPool(
-    jedisPoolConfig,
-    host,
-    port,
-    timeout,
-    user,
-    password,
-    database,
-    ssl
-)
+) = when (password.isNullOrEmpty()) {
+    true -> JedisPool(jedisPoolConfig, host, port, database)
+    false -> JedisPool(jedisPoolConfig, host, port, timeout, user, password, database, ssl)
+}
 
 fun getPool(config: Redis) = getPool(
     host = config.host,

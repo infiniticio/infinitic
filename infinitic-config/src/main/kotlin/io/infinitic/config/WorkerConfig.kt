@@ -107,11 +107,11 @@ data class WorkerConfig(
 
 ) {
     init {
-        workflowEngine?.let {
+        tagEngine?.let {
             // apply default, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, "workflowEngine.stateStorage")
+            checkStateStorage(it.stateStorage, "tagEngine.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
         }
 
@@ -120,6 +120,14 @@ data class WorkerConfig(
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "taskEngine.stateStorage")
+            it.stateCache = it.stateCache ?: stateCache
+        }
+
+        workflowEngine?.let {
+            // apply default, if not set
+            it.mode = it.mode ?: mode
+            it.stateStorage = it.stateStorage ?: stateStorage
+            checkStateStorage(it.stateStorage, "workflowEngine.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
         }
 
