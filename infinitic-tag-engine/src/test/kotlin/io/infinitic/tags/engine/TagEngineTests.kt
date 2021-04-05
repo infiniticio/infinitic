@@ -61,20 +61,20 @@ import io.mockk.mockk
 import io.mockk.slot
 import java.util.UUID
 
-fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
+private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
 
-lateinit var tagStateMessageId: CapturingSlot<MessageId>
-lateinit var tagStateUUID: CapturingSlot<UUID>
-lateinit var clientMessage: CapturingSlot<ClientMessage>
-lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
-lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
+private lateinit var tagStateMessageId: CapturingSlot<MessageId>
+private lateinit var tagStateUUID: CapturingSlot<UUID>
+private lateinit var clientMessage: CapturingSlot<ClientMessage>
+private lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
+private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
 
-lateinit var tagStateStorage: TagStateStorage
-lateinit var sendToClient: SendToClient
-lateinit var sendToTaskEngine: SendToTaskEngine
-lateinit var sendToWorkflowEngine: SendToWorkflowEngine
+private lateinit var tagStateStorage: TagStateStorage
+private lateinit var sendToClient: SendToClient
+private lateinit var sendToTaskEngine: SendToTaskEngine
+private lateinit var sendToWorkflowEngine: SendToWorkflowEngine
 
-class TagEngineTests : StringSpec({
+internal class TagEngineTests : StringSpec({
 
     "should not handle known messageId" {
         // given
@@ -137,6 +137,7 @@ class TagEngineTests : StringSpec({
             tagStateStorage.setLastMessageId(msgIn.tag, msgIn.name, msgIn.messageId)
         }
         verifyAll()
+        // checking last message
         val retryTask = captured(taskEngineMessage)!! as RetryTask
 
         with(retryTask) {
@@ -159,6 +160,7 @@ class TagEngineTests : StringSpec({
             tagStateStorage.setLastMessageId(msgIn.tag, msgIn.name, msgIn.messageId)
         }
         verifyAll()
+        // checking last message
         val cancelTask = captured(taskEngineMessage)!! as CancelTask
 
         with(cancelTask) {
@@ -181,6 +183,7 @@ class TagEngineTests : StringSpec({
             tagStateStorage.setLastMessageId(msgIn.tag, msgIn.name, msgIn.messageId)
         }
         verifyAll()
+        // checking last message
         val cancelWorkflow = captured(workflowEngineMessage)!! as CancelWorkflow
 
         with(cancelWorkflow) {
@@ -203,6 +206,7 @@ class TagEngineTests : StringSpec({
             tagStateStorage.setLastMessageId(msgIn.tag, msgIn.name, msgIn.messageId)
         }
         verifyAll()
+        // checking last message
         val sendToChannel = captured(workflowEngineMessage)!! as SendToChannel
 
         with(sendToChannel) {
@@ -220,25 +224,25 @@ class TagEngineTests : StringSpec({
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
     TestFactory.random<T>(values)
 
-fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
+private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
     val mock = mockk<SendToClient>()
     coEvery { mock(capture(slot)) } just Runs
     return mock
 }
 
-fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>): SendToTaskEngine {
+private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>): SendToTaskEngine {
     val mock = mockk<SendToTaskEngine>()
     coEvery { mock(capture(slots), MillisDuration(0)) } just Runs
     return mock
 }
 
-fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
+private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
     coEvery { mock(capture(slot), MillisDuration(0)) } just Runs
     return mock
 }
 
-fun mockTagStateStorage(tag: Tag, name: Name, messageId: MessageId?, ids: Set<UUID>): TagStateStorage {
+private fun mockTagStateStorage(tag: Tag, name: Name, messageId: MessageId?, ids: Set<UUID>): TagStateStorage {
     val tagStateStorage = mockk<TagStateStorage>()
     coEvery { tagStateStorage.getLastMessageId(tag, name) } returns messageId
     coEvery { tagStateStorage.setLastMessageId(tag, name, capture(tagStateMessageId)) } just Runs
@@ -249,7 +253,7 @@ fun mockTagStateStorage(tag: Tag, name: Name, messageId: MessageId?, ids: Set<UU
     return tagStateStorage
 }
 
-fun getEngine(tag: Tag, name: Name, messageId: MessageId? = MessageId(), ids: Set<UUID> = setOf(UUID.randomUUID())): TagEngine {
+private fun getEngine(tag: Tag, name: Name, messageId: MessageId? = MessageId(), ids: Set<UUID> = setOf(UUID.randomUUID())): TagEngine {
     tagStateMessageId = slot()
     tagStateUUID = slot()
     clientMessage = slot()
@@ -269,7 +273,7 @@ fun getEngine(tag: Tag, name: Name, messageId: MessageId? = MessageId(), ids: Se
     )
 }
 
-fun verifyAll() = confirmVerified(
+private fun verifyAll() = confirmVerified(
     sendToClient,
     sendToTaskEngine,
     sendToWorkflowEngine

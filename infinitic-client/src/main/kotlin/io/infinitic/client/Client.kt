@@ -64,7 +64,10 @@ import java.lang.reflect.Proxy
 import java.util.UUID
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-open class Client(open val clientName: ClientName) {
+open class Client(
+    open val clientName: ClientName
+) {
+    var closeFn: () -> Unit = {}
 
     companion object {
         fun with(
@@ -79,6 +82,8 @@ open class Client(open val clientName: ClientName) {
     private lateinit var sendToTagEngine: SendToTagEngine
     private lateinit var sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit)
     private lateinit var sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
+
+    fun close() = closeFn()
 
     fun setOutput(
         sendToTagEngine: SendToTagEngine,

@@ -60,7 +60,7 @@ private const val N_WORKERS = 10
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     client: Client,
-    logFn: (_: MessageToProcess<*>) -> Unit = { }
+    logFn: (_: MessageToProcess<*>) -> Unit
 ) {
     val keyValueStorage = InMemoryKeyValueStorage()
     val keySetStorage = InMemoryKeySetStorage()

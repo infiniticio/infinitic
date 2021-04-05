@@ -73,25 +73,25 @@ import io.mockk.slot
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClient
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
-fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
+private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
 
-lateinit var taskStateStorage: TaskStateStorage
+private lateinit var taskStateStorage: TaskStateStorage
 
-lateinit var taskState: CapturingSlot<TaskState>
-lateinit var clientMessage: CapturingSlot<ClientMessage>
-lateinit var tagEngineMessage: CapturingSlot<TagEngineMessage>
-lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
-lateinit var taskEngineDelay: CapturingSlot<MillisDuration>
-lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
-lateinit var taskExecutorMessage: CapturingSlot<TaskExecutorMessage>
-lateinit var metricsPerNameMessage: CapturingSlot<MetricsPerNameMessage>
+private lateinit var taskState: CapturingSlot<TaskState>
+private lateinit var clientMessage: CapturingSlot<ClientMessage>
+private lateinit var tagEngineMessage: CapturingSlot<TagEngineMessage>
+private lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
+private lateinit var taskEngineDelay: CapturingSlot<MillisDuration>
+private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
+private lateinit var taskExecutorMessage: CapturingSlot<TaskExecutorMessage>
+private lateinit var metricsPerNameMessage: CapturingSlot<MetricsPerNameMessage>
 
-lateinit var sendToClient: SendToClient
-lateinit var sendToTagEngine: SendToTagEngine
-lateinit var sendToTaskEngine: SendToTaskEngine
-lateinit var sendToWorkflowEngine: SendToWorkflowEngine
-lateinit var sendToTaskExecutors: SendToTaskExecutors
-lateinit var sendToMetricsPerName: SendToMetricsPerName
+private lateinit var sendToClient: SendToClient
+private lateinit var sendToTagEngine: SendToTagEngine
+private lateinit var sendToTaskEngine: SendToTaskEngine
+private lateinit var sendToWorkflowEngine: SendToWorkflowEngine
+private lateinit var sendToTaskExecutors: SendToTaskExecutors
+private lateinit var sendToMetricsPerName: SendToMetricsPerName
 
 internal class TaskEngineTests : StringSpec({
 
@@ -499,43 +499,43 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
     TestFactory.random<T>(values)
 
-fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
+private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
     val mock = mockk<SendToClient>()
     coEvery { mock(capture(slot)) } just Runs
     return mock
 }
 
-fun mockSendToTaskExecutors(slot: CapturingSlot<TaskExecutorMessage>): SendToTaskExecutors {
+private fun mockSendToTaskExecutors(slot: CapturingSlot<TaskExecutorMessage>): SendToTaskExecutors {
     val mock = mockk<SendToTaskExecutors>()
     coEvery { mock(capture(slot)) } just Runs
     return mock
 }
 
-fun mockSendToMetricsPerName(slot: CapturingSlot<MetricsPerNameMessage>): SendToMetricsPerName {
+private fun mockSendToMetricsPerName(slot: CapturingSlot<MetricsPerNameMessage>): SendToMetricsPerName {
     val mock = mockk<SendToMetricsPerName>()
     coEvery { mock(capture(slot)) } returns println("mockSendToMetricsPerName")
     return mock
 }
 
-fun mockSendToTagEngine(slots: CapturingSlot<TagEngineMessage>): SendToTagEngine {
+private fun mockSendToTagEngine(slots: CapturingSlot<TagEngineMessage>): SendToTagEngine {
     val mock = mockk<SendToTagEngine>()
     coEvery { mock(capture(slots)) } just Runs
     return mock
 }
 
-fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>, delays: CapturingSlot<MillisDuration>): SendToTaskEngine {
+private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>, delays: CapturingSlot<MillisDuration>): SendToTaskEngine {
     val mock = mockk<SendToTaskEngine>()
     coEvery { mock(capture(slots), capture(delays)) } just Runs
     return mock
 }
 
-fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
+private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
     coEvery { mock(capture(slot), MillisDuration(0)) } just Runs
     return mock
 }
 
-fun mockTaskStateStorage(state: TaskState?): TaskStateStorage {
+private fun mockTaskStateStorage(state: TaskState?): TaskStateStorage {
     val taskStateStorage = mockk<TaskStateStorage>()
     coEvery { taskStateStorage.getState(any()) } returns state?.deepCopy()
     coEvery { taskStateStorage.putState(any(), capture(taskState)) } just Runs
@@ -544,7 +544,7 @@ fun mockTaskStateStorage(state: TaskState?): TaskStateStorage {
     return taskStateStorage
 }
 
-fun getEngine(state: TaskState?): TaskEngine {
+private fun getEngine(state: TaskState?): TaskEngine {
     taskState = slot()
     taskStateStorage = mockTaskStateStorage(state)
 
@@ -574,7 +574,7 @@ fun getEngine(state: TaskState?): TaskEngine {
     )
 }
 
-fun verifyAll() = confirmVerified(
+private fun verifyAll() = confirmVerified(
     sendToClient,
     sendToTagEngine,
     sendToTaskEngine,
