@@ -32,6 +32,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
@@ -60,6 +61,7 @@ data class DispatchTask(
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes,
     val methodParameters: MethodParameters,
+    val tags: Set<Tag>,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions
 ) : Command() {
@@ -67,6 +69,7 @@ data class DispatchTask(
         fun from(
             method: Method,
             args: Array<out Any>,
+            tags: Set<Tag>,
             taskMeta: TaskMeta,
             taskOptions: TaskOptions
         ) = DispatchTask(
@@ -74,6 +77,7 @@ data class DispatchTask(
             methodParameters = MethodParameters.from(method, args),
             methodParameterTypes = MethodParameterTypes.from(method),
             methodName = MethodName.from(method),
+            tags = tags,
             taskMeta = taskMeta,
             taskOptions = taskOptions
         )
@@ -86,6 +90,7 @@ data class DispatchChildWorkflow(
     val childMethodName: MethodName,
     val childMethodParameterTypes: MethodParameterTypes,
     val childMethodParameters: MethodParameters,
+    val tags: Set<Tag>,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : Command() {
@@ -93,6 +98,7 @@ data class DispatchChildWorkflow(
         fun from(
             method: Method,
             args: Array<out Any>,
+            tags: Set<Tag>,
             workflowMeta: WorkflowMeta,
             workflowOptions: WorkflowOptions
         ) = DispatchChildWorkflow(
@@ -100,6 +106,7 @@ data class DispatchChildWorkflow(
             childMethodName = MethodName.from(method),
             childMethodParameterTypes = MethodParameterTypes.from(method),
             childMethodParameters = MethodParameters.from(method, args),
+            tags = tags,
             workflowMeta = workflowMeta,
             workflowOptions = workflowOptions
         )

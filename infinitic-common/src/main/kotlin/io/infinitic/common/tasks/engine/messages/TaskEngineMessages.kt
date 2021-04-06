@@ -32,6 +32,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -44,6 +45,7 @@ import io.infinitic.common.tasks.engine.messages.interfaces.FailingTaskAttemptMe
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -63,9 +65,18 @@ data class DispatchTask(
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val workflowId: WorkflowId?,
+    val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,
+    val tags: Set<Tag>,
     val taskMeta: TaskMeta,
-    val taskOptions: TaskOptions = TaskOptions()
+    val taskOptions: TaskOptions
+) : TaskEngineMessage()
+
+@Serializable
+data class WaitTask(
+    override val taskId: TaskId,
+    override val taskName: TaskName,
+    val clientName: ClientName
 ) : TaskEngineMessage()
 
 @Serializable
@@ -75,6 +86,7 @@ data class RetryTask(
     val methodName: MethodName?,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters?,
+    val tags: Set<Tag>?,
     val taskMeta: TaskMeta?,
     val taskOptions: TaskOptions?
 ) : TaskEngineMessage()

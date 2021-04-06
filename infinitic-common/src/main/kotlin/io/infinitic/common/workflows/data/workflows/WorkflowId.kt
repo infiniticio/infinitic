@@ -36,10 +36,10 @@ import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
 @Serializable(with = WorkflowIdSerializer::class)
-data class WorkflowId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+data class WorkflowId(override val id: UUID = UUID.randomUUID()) : Id(id)
 
 object WorkflowIdSerializer : KSerializer<WorkflowId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("WorkflowId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: WorkflowId) { encoder.encodeString(value.id) }
-    override fun deserialize(decoder: Decoder) = WorkflowId(decoder.decodeString())
+    override fun serialize(encoder: Encoder, value: WorkflowId) { encoder.encodeString("${value.id}") }
+    override fun deserialize(decoder: Decoder) = WorkflowId(UUID.fromString(decoder.decodeString()))
 }

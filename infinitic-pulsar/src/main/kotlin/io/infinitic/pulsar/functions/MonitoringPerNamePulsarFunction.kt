@@ -26,19 +26,20 @@
 package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineCache
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.cache.caffeine.CaffeineKeyValueCache
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
+import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutputs
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class MonitoringPerNamePulsarFunction : Function<MonitoringPerNameEnvelope, Void> {
+class MonitoringPerNamePulsarFunction : Function<MetricsPerNameEnvelope, Void> {
 
-    override fun process(envelope: MonitoringPerNameEnvelope, context: Context?): Void? = runBlocking {
+    override fun process(envelope: MetricsPerNameEnvelope, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
@@ -52,7 +53,13 @@ class MonitoringPerNamePulsarFunction : Function<MonitoringPerNameEnvelope, Void
     }
 
     internal fun getMonitoringPerNameEngine(context: Context) = MonitoringPerNameEngine(
-        MonitoringPerNameStateKeyValueStorage(context.keyValueStorage(), CaffeineCache(Caffeine(expireAfterAccess = 3600))),
-        PulsarOutputs.from(context).monitoringPerNameOutput
+        BinaryMonitoringPerNameStateStorage(
+            // context storage decorated with logging and a 1h cache
+            CachedLoggedKeyValueStorage(
+                CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
+                context.keyValueStorage()
+            )
+        ),
+        PulsarOutputs.from(context).sendToMetricsGlobal
     )
 }

@@ -25,12 +25,18 @@
 
 package io.infinitic.common.proxies
 
+import io.infinitic.exceptions.SuspendMethodNotSupported
+import java.lang.reflect.Method
+import kotlin.reflect.jvm.kotlinFunction
+
 interface Dispatcher {
-    fun <S> dispatchAndWait(handler: NewTaskProxyHandler<*>): S
+    fun <S> dispatchAndWait(handler: TaskProxyHandler<*>): S
 
-    fun <S> dispatchAndWait(handler: NewWorkflowProxyHandler<*>): S
-
-    fun <S> dispatchAndWait(handler: ExistingWorkflowProxyHandler<*>): S
+    fun <S> dispatchAndWait(handler: WorkflowProxyHandler<*>): S
 
     fun dispatchAndWait(handler: SendChannelProxyHandler<*>)
+
+    fun checkMethodIsNotSuspend(method: Method) {
+        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(method.declaringClass.name, method.name)
+    }
 }

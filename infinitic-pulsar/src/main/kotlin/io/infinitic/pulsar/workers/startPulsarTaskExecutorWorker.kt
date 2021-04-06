@@ -25,14 +25,12 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.tasks.executors.SendToTaskExecutors
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.executor.transport.TaskExecutorInput
-import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
@@ -67,8 +65,7 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
     taskName: String,
     consumerCounter: Int,
     taskExecutorConsumer: Consumer<TaskExecutorEnvelope>,
-    taskExecutorOutput: TaskExecutorOutput,
-    sendToTaskExecutorDeadLetters: SendToTaskExecutors,
+    sendToTaskEngine: SendToTaskEngine,
     taskExecutorRegister: TaskExecutorRegister,
     instancesNumber: Int = 1
 ) = launch(dispatcher) {
@@ -81,8 +78,9 @@ fun CoroutineScope.startPulsarTaskExecutorWorker(
         startTaskExecutor(
             "$TASK_EXECUTOR_PROCESSING_COROUTINE_NAME-$taskName-$consumerCounter-$it",
             taskExecutorRegister,
-            TaskExecutorInput(taskExecutorChannel, taskExecutorResultsChannel),
-            taskExecutorOutput,
+            taskExecutorChannel,
+            taskExecutorResultsChannel,
+            sendToTaskEngine
         )
     }
 

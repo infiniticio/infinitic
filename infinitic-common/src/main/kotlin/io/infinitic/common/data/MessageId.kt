@@ -25,6 +25,8 @@
 
 package io.infinitic.common.data
 
+import io.infinitic.common.data.UUIDConversion.toByteArray
+import io.infinitic.common.data.UUIDConversion.toUUID
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -35,10 +37,16 @@ import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
 @Serializable(with = MessageIdSerializer::class)
-data class MessageId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+data class MessageId(override val id: UUID = UUID.randomUUID()) : Id(id) {
+    companion object {
+        fun fromByteArray(bytes: ByteArray) = MessageId(bytes.toUUID())
+    }
+
+    fun toByteArray() = id.toByteArray()
+}
 
 object MessageIdSerializer : KSerializer<MessageId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MessageId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: MessageId) { encoder.encodeString(value.id) }
-    override fun deserialize(decoder: Decoder) = MessageId(decoder.decodeString())
+    override fun serialize(encoder: Encoder, value: MessageId) { encoder.encodeString("${value.id}") }
+    override fun deserialize(decoder: Decoder) = MessageId(UUID.fromString(decoder.decodeString()))
 }

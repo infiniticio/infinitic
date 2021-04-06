@@ -25,18 +25,21 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.pulsar.config.WorkerConfig
-import io.infinitic.pulsar.config.cache.getKeyValueCache
-import io.infinitic.pulsar.config.data.Mode
-import io.infinitic.pulsar.config.loaders.loadConfigFromFile
-import io.infinitic.pulsar.config.loaders.loadConfigFromResource
-import io.infinitic.pulsar.config.storage.getKeyValueStorage
+import io.infinitic.common.storage.keySet.CachedLoggedKeySetStorage
+import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
+import io.infinitic.config.WorkerConfig
+import io.infinitic.config.cache.getKeySetCache
+import io.infinitic.config.cache.getKeyValueCache
+import io.infinitic.config.data.Mode
+import io.infinitic.config.loaders.loadConfigFromFile
+import io.infinitic.config.loaders.loadConfigFromResource
+import io.infinitic.config.storage.getKeySetStorage
+import io.infinitic.config.storage.getKeyValueStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.pulsar.workers.startPulsarMonitoringGlobalWorker
 import io.infinitic.pulsar.workers.startPulsarMonitoringPerNameWorker
+import io.infinitic.pulsar.workers.startPulsarTagEngineWorker
 import io.infinitic.pulsar.workers.startPulsarTaskEngineWorker
 import io.infinitic.pulsar.workers.startPulsarTaskExecutorWorker
 import io.infinitic.pulsar.workers.startPulsarWorkflowEngineWorker
@@ -102,9 +105,11 @@ class InfiniticWorker(
         val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
         val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, workerName)
 
-        startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+        startTagEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
         startTaskEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+
+        startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
         startMonitoringWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
@@ -113,29 +118,37 @@ class InfiniticWorker(
         println("Worker \"$workerName\" ready")
     }
 
-    private fun CoroutineScope.startWorkflowEngineWorkers(
+    private fun CoroutineScope.startTagEngineWorkers(
         consumerName: String,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
-        config.workflowEngine?.let {
+        config.tagEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<WorkflowState>(config)
+                // storage decorated by the cache
+                val keyValueStorage = CachedLoggedKeyValueStorage(
+                    it.stateCacheOrDefault.getKeyValueCache(config),
+                    it.stateStorage!!.getKeyValueStorage(config)
+                )
+                val keySetStorage = CachedLoggedKeySetStorage(
+                    it.stateCacheOrDefault.getKeySetCache(config),
+                    it.stateStorage!!.getKeySetStorage(config)
+                )
                 print(
-                    "Workflow engine".padEnd(25) + ": starting ${it.consumers} instances... " +
+                    "Tag engine".padEnd(25) + ": starting ${it.consumers} instances... " +
                         "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
                 )
                 repeat(it.consumersOrDefault) { counter ->
-                    logger.info("InfiniticWorker - starting workflow engine {}", counter)
-                    startPulsarWorkflowEngineWorker(
+                    logger.info("InfiniticWorker - starting tag engine {}", counter)
+                    startPulsarTagEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName, counter),
-                        pulsarOutputs.workflowEngineOutput,
-                        pulsarOutputs.sendToWorkflowEngineDeadLetters,
+                        pulsarConsumerFactory.newTagEngineConsumer(consumerName, counter),
+                        keySetStorage,
+                        pulsarOutputs.sendEventsToClient,
+                        pulsarOutputs.sendCommandsToTaskEngine,
+                        pulsarOutputs.sendCommandsToWorkflowEngine,
                         keyValueStorage,
-                        keyValueCache
                     )
                 }
                 println(" done")
@@ -151,8 +164,10 @@ class InfiniticWorker(
     ) {
         config.taskEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
-                val keyValueCache = it.stateCacheOrDefault.getKeyValueCache<TaskState>(config)
+                val keyValueStorage = CachedLoggedKeyValueStorage(
+                    it.stateCacheOrDefault.getKeyValueCache(config),
+                    it.stateStorage!!.getKeyValueStorage(config)
+                )
                 print(
                     "Task engine".padEnd(25) + ": starting ${it.consumers} instances... " +
                         "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
@@ -162,10 +177,47 @@ class InfiniticWorker(
                     startPulsarTaskEngineWorker(
                         counter,
                         pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
-                        pulsarOutputs.taskEngineOutput,
-                        pulsarOutputs.sendToTaskEngineDeadLetters,
                         keyValueStorage,
-                        keyValueCache
+                        pulsarOutputs.sendEventsToClient,
+                        pulsarOutputs.sendEventsToTagEngine,
+                        pulsarOutputs.sendEventsToTaskEngine,
+                        pulsarOutputs.sendEventsToWorkflowEngine,
+                        pulsarOutputs.sendToTaskExecutors,
+                        pulsarOutputs.sendToMetricsPerName
+                    )
+                }
+                println(" done")
+            }
+        }
+    }
+
+    private fun CoroutineScope.startWorkflowEngineWorkers(
+        consumerName: String,
+        config: WorkerConfig,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutputs: PulsarOutputs
+    ) {
+        config.workflowEngine?.let {
+            if (it.modeOrDefault == Mode.worker) {
+                // storage decorated by a cache and a logger
+                val storage = CachedLoggedKeyValueStorage(
+                    it.stateCacheOrDefault.getKeyValueCache(config),
+                    it.stateStorage!!.getKeyValueStorage(config)
+                )
+                print(
+                    "Workflow engine".padEnd(25) + ": starting ${it.consumers} instances... " +
+                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+                )
+                repeat(it.consumersOrDefault) { counter ->
+                    logger.info("InfiniticWorker - starting workflow engine {}", counter)
+                    startPulsarWorkflowEngineWorker(
+                        counter,
+                        pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName, counter),
+                        storage,
+                        pulsarOutputs.sendEventsToClient,
+                        pulsarOutputs.sendEventsToTagEngine,
+                        pulsarOutputs.sendCommandsToTaskEngine,
+                        pulsarOutputs.sendEventsToWorkflowEngine
                     )
                 }
                 println(" done")
@@ -181,25 +233,25 @@ class InfiniticWorker(
     ) {
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
-                val keyValueStorage = it.stateStorage!!.getKeyValueStorage(config)
+                // storage decorated by the cache
+                val storage = CachedLoggedKeyValueStorage(
+                    it.stateCacheOrDefault.getKeyValueCache(config),
+                    it.stateStorage!!.getKeyValueStorage(config)
+                )
                 repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting monitoring per name {}", counter)
                     startPulsarMonitoringPerNameWorker(
                         counter,
                         pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName, counter),
-                        pulsarOutputs.monitoringPerNameOutput,
-                        pulsarOutputs.sendToMonitoringPerNameDeadLetters,
-                        keyValueStorage,
-                        it.stateCacheOrDefault.getKeyValueCache(config)
+                        storage,
+                        pulsarOutputs.sendToMetricsGlobal
                     )
                 }
 
                 logger.info("InfiniticWorker - starting monitoring global")
                 startPulsarMonitoringGlobalWorker(
                     pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName),
-                    pulsarOutputs.sendToMonitoringGlobalDeadLetters,
-                    keyValueStorage,
-                    it.stateCacheOrDefault.getKeyValueCache(config)
+                    storage
                 )
             }
         }
@@ -226,8 +278,7 @@ class InfiniticWorker(
                         workflow.name,
                         it,
                         pulsarConsumerFactory.newWorkflowExecutorConsumer(consumerName, it, workflow.name),
-                        pulsarOutputs.taskExecutorOutput,
-                        pulsarOutputs.sendToTaskExecutorDeadLetters,
+                        pulsarOutputs.sendEventsToTaskEngine,
                         taskExecutorRegister,
                         workflow.concurrency
                     )
@@ -248,8 +299,7 @@ class InfiniticWorker(
                         task.name,
                         it,
                         pulsarConsumerFactory.newTaskExecutorConsumer(consumerName, it, task.name),
-                        pulsarOutputs.taskExecutorOutput,
-                        pulsarOutputs.sendToTaskExecutorDeadLetters,
+                        pulsarOutputs.sendEventsToTaskEngine,
                         taskExecutorRegister,
                         task.concurrency
                     )

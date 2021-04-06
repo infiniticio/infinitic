@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar.functions
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
@@ -57,8 +57,8 @@ class MonitoringGlobalPulsarFunctionTests : ShouldSpec({
             every { context.logger } returns mockk()
 
             // Mocking avro conversion
-            val envelope = mockk<MonitoringGlobalEnvelope>()
-            val msg = mockk<MonitoringGlobalMessage>()
+            val envelope = mockk<MetricsGlobalEnvelope>()
+            val msg = mockk<MetricsGlobalMessage>()
             every { envelope.message() } returns msg
 
             // Mocking Task Engine

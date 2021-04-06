@@ -29,6 +29,7 @@ import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
@@ -43,19 +44,13 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class WorkflowState(
     /*
-    Name of client that dispatched this workflow
+     clients synchronously waiting for the returned value
      */
-    val clientName: ClientName,
-
-    /*
-    Does the client synchronously waits for the output?
-     */
-    val clientWaiting: Boolean,
+    val clientWaiting: MutableSet<ClientName>,
 
     /*
     Id of last received message (used to ensure idempotency)
@@ -76,6 +71,11 @@ data class WorkflowState(
     Workflow's name (used wy worker to instantiate)
      */
     val workflowName: WorkflowName,
+
+    /*
+    Instance's tags defined when dispatched
+     */
+    val tags: Set<Tag>,
 
     /*
     Instance's options defined when dispatched
@@ -139,9 +139,7 @@ data class WorkflowState(
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
 }

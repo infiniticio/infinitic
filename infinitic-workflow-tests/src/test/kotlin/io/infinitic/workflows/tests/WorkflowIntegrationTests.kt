@@ -25,44 +25,37 @@
 
 package io.infinitic.workflows.tests
 
-import io.infinitic.cache.no.NoCache
 import io.infinitic.client.Client
-import io.infinitic.client.transport.ClientOutput
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.clients.messages.ClientResponseMessage
-import io.infinitic.common.clients.transport.SendToClientResponse
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.global.transport.SendToMonitoringGlobal
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.monitoring.perName.transport.SendToMonitoringPerName
+import io.infinitic.common.data.Name
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.storage.keySet.LoggedKeySetStorage
+import io.infinitic.common.storage.keyValue.LoggedKeyValueStorage
+import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.exceptions.SendToChannelFailed
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
+import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateKeyValueStorage
-import io.infinitic.monitoring.perName.engine.transport.MonitoringPerNameOutput
-import io.infinitic.storage.inMemory.InMemoryStorage
+import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.tags.engine.TagEngine
+import io.infinitic.tags.engine.storage.BinaryTagStateStorage
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
-import io.infinitic.tasks.engine.transport.TaskEngineOutput
+import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import io.infinitic.tasks.register
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.storage.events.NoWorkflowEventStorage
-import io.infinitic.workflows.engine.storage.states.WorkflowStateKeyValueStorage
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.tests.tasks.TaskAImpl
 import io.infinitic.workflows.tests.workflows.Obj1
@@ -71,7 +64,6 @@ import io.infinitic.workflows.tests.workflows.WorkflowA
 import io.infinitic.workflows.tests.workflows.WorkflowAImpl
 import io.infinitic.workflows.tests.workflows.WorkflowB
 import io.infinitic.workflows.tests.workflows.WorkflowBImpl
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -81,22 +73,29 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import java.time.Instant
+import java.util.UUID
 
 private var workflowOutput: Any? = null
-private val workflowStateStorage = WorkflowStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val taskStateStorage = TaskStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringPerNameStateStorage = MonitoringPerNameStateKeyValueStorage(InMemoryStorage(), NoCache())
-private val monitoringGlobalStateStorage = MonitoringGlobalStateKeyValueStorage(InMemoryStorage(), NoCache())
+val keyValueStorage = LoggedKeyValueStorage(InMemoryKeyValueStorage())
+val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
+private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
+private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
+private val workflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
+private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(keyValueStorage)
+private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(keyValueStorage)
 
-private lateinit var workflowEngine: WorkflowEngine
+private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
+private lateinit var workflowEngine: WorkflowEngine
 private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
 private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
 private lateinit var executor: TaskExecutor
 private lateinit var client: Client
 private lateinit var workflowA: WorkflowA
 private lateinit var workflowB: WorkflowB
+private lateinit var workflowATagged: WorkflowA
 
 class WorkflowIntegrationTests : StringSpec({
     var workflowId: WorkflowId
@@ -105,7 +104,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { empty() })
+            workflowId = WorkflowId(client.async(workflowA) { empty() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -117,7 +116,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { seq1() })
+            workflowId = WorkflowId(client.async(workflowA) { seq1() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -125,11 +124,35 @@ class WorkflowIntegrationTests : StringSpec({
         workflowOutput shouldBe "123"
     }
 
+    "Wait for synchronous Workflow" {
+        var result: String? = null
+        // run system
+        coroutineScope {
+            init()
+            result = workflowA.seq1()
+        }
+        // checks number of task processing
+        result shouldBe "123"
+    }
+
+    "Wait for asynchronous Workflow" {
+        var result: String? = null
+        // run system
+        coroutineScope {
+            init()
+            val deferred = client.async(workflowA) { seq1() }
+            workflowId = WorkflowId(deferred.id)
+            result = deferred.await()
+        }
+        // checks number of task processing
+        result shouldBe "123"
+    }
+
     "Sequential Workflow with an async task" {
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { seq2() })
+            workflowId = WorkflowId(client.async(workflowA) { seq2() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -141,7 +164,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { seq3() })
+            workflowId = WorkflowId(client.async(workflowA) { seq3() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -153,7 +176,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { seq4() })
+            workflowId = WorkflowId(client.async(workflowA) { seq4() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -165,7 +188,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { deferred1() })
+            workflowId = WorkflowId(client.async(workflowA) { deferred1() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -177,7 +200,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { or1() })
+            workflowId = WorkflowId(client.async(workflowA) { or1() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -189,7 +212,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { or2() })
+            workflowId = WorkflowId(client.async(workflowA) { or2() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -201,7 +224,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { or3() })
+            workflowId = WorkflowId(client.async(workflowA) { or3() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -213,7 +236,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { or4() })
+            workflowId = WorkflowId(client.async(workflowA) { or4() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -225,7 +248,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { and1() })
+            workflowId = WorkflowId(client.async(workflowA) { and1() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -237,7 +260,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { and2() })
+            workflowId = WorkflowId(client.async(workflowA) { and2() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -249,7 +272,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { and3() })
+            workflowId = WorkflowId(client.async(workflowA) { and3() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -261,7 +284,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { inline1() })
+            workflowId = WorkflowId(client.async(workflowA) { inline1() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -271,7 +294,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { inline2() })
+            workflowId = WorkflowId(client.async(workflowA) { inline2() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -281,7 +304,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { inline3() })
+            workflowId = WorkflowId(client.async(workflowA) { inline3() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldNotBe null
@@ -291,7 +314,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { child1() })
+            workflowId = WorkflowId(client.async(workflowA) { child1() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -303,7 +326,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { child2() })
+            workflowId = WorkflowId(client.async(workflowA) { child2() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -315,7 +338,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowB) { factorial(14) })
+            workflowId = WorkflowId(client.async(workflowB) { factorial(14) }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -327,7 +350,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop1() })
+            workflowId = WorkflowId(client.async(workflowA) { prop1() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -339,7 +362,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop2() })
+            workflowId = WorkflowId(client.async(workflowA) { prop2() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -351,7 +374,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop3() })
+            workflowId = WorkflowId(client.async(workflowA) { prop3() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -363,7 +386,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop4() })
+            workflowId = WorkflowId(client.async(workflowA) { prop4() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -375,7 +398,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop5() })
+            workflowId = WorkflowId(client.async(workflowA) { prop5() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -387,7 +410,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop6() })
+            workflowId = WorkflowId(client.async(workflowA) { prop6() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -399,7 +422,7 @@ class WorkflowIntegrationTests : StringSpec({
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop7() })
+            workflowId = WorkflowId(client.async(workflowA) { prop7() }.id)
         }
         // check that the w is terminated
         workflowStateStorage.getState(workflowId) shouldBe null
@@ -424,19 +447,47 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             result1 = workflowA.seq1()
-            result2 = workflowA.prop1()
+            result2 = client.newWorkflow<WorkflowA>().prop1()
         }
         result1 shouldBe "123"
         result2 shouldBe "ac"
     }
 
-    "Waiting for event" {
-        var id: String
+    "Waiting for event, sent after dispatched" {
+        var id: UUID
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel1() }
-            client.workflow<WorkflowA>(id).channelA.send("test")
+            id = client.async(workflowA) { channel1() }.id
+            workflowA.channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "test"
+    }
+
+    "Waiting for event, sent by id" {
+        var id: UUID
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowA) { channel1() }.id
+            client.getWorkflow<WorkflowA>(id).channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "test"
+    }
+
+    "Waiting for event, sent by tag" {
+        var id: UUID
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowATagged) { channel1() }.id
+            client.getWorkflow<WorkflowA>("foo").channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -445,12 +496,12 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for event, sent to the right channel" {
-        var id: String
+        var id: UUID
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel2() }
-            client.workflow<WorkflowA>(id).channelA.send("test")
+            id = client.async(workflowA) { channel2() }.id
+            client.getWorkflow<WorkflowA>(id).channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -459,12 +510,12 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for event but sent to the wrong channel" {
-        var id: String
+        var id: UUID
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel2() }
-            client.workflow<WorkflowA>(id).channelB.send("test")
+            id = client.async(workflowA) { channel2() }.id
+            client.getWorkflow<WorkflowA>(id).channelB.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -473,12 +524,12 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Sending event before waiting for it prevents catching" {
-        var id: String
+        var id: UUID
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel3() }
-            client.workflow<WorkflowA>(id).channelA.send("test")
+            id = client.async(workflowA) { channel3() }.id
+            client.getWorkflow<WorkflowA>(id).channelA.send("test")
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -486,25 +537,14 @@ class WorkflowIntegrationTests : StringSpec({
         workflowOutput!!::class.java.name shouldBe Instant::class.java.name
     }
 
-    "Sending event synchronously to unknown workflow should throw exception" {
-        // run system
-        coroutineScope {
-            init()
-            val id = client.async(workflowA) { channel3() }
-            shouldThrow<SendToChannelFailed> {
-                client.workflow<WorkflowA>("other$id").channelA.send("test")
-            }
-        }
-    }
-
     "Waiting for Obj event" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 42)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel4() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            id = client.async(workflowA) { channel4() }.id
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -513,16 +553,16 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for filtered event using jsonPath only" {
-        var id: String
+        var id: UUID
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel4bis() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj1a)
+            id = client.async(workflowA) { channel4bis() }.id
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1a)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1b)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1b)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -531,16 +571,16 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for filtered event using using jsonPath and criteria" {
-        var id: String
+        var id: UUID
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel4ter() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj1a)
+            id = client.async(workflowA) { channel4ter() }.id
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1a)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1b)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1b)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -549,16 +589,16 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for event of specific type" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel5() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            id = client.async(workflowA) { channel5() }.id
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -567,19 +607,19 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting event of specific type filtered using jsonPath only" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel5bis() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj3)
+            id = client.async(workflowA) { channel5bis() }.id
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj3)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -588,19 +628,19 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting event of specific type filtered using jsonPath and criteria" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel5ter() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj3)
+            id = client.async(workflowA) { channel5ter() }.id
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj3)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
@@ -609,150 +649,134 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for 2 events of specific types presented in wrong order" {
-        var id: String
+        var id: UUID
         val obj1 = Obj1("foo", 6)
         val obj2 = Obj2("bar", 7)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel6() }
-            client.workflow<WorkflowA>(id).channelObj.send(obj2)
+            id = client.async(workflowA) { channel6() }.id
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
             delay(50)
-            client.workflow<WorkflowA>(id).channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
         }
         // check that the w is terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
         workflowOutput shouldBe "foobar42"
     }
+
+    "Tag should be added and deleted after completion" {
+        var id: UUID
+        // run system
+        coroutineScope {
+            init()
+            id = client.async(workflowATagged) { channel1() }.id
+            // checks id has been added to tag storage
+            yield()
+            tagStateStorage.getIds(Tag("foo"), Name(WorkflowA::class.java.name)).contains(id) shouldBe true
+            tagStateStorage.getIds(Tag("bar"), Name(WorkflowA::class.java.name)).contains(id) shouldBe true
+            workflowATagged.channelA.send("test")
+        }
+        // check that the w is terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
+        // check output
+        workflowOutput shouldBe "test"
+        // checks id has been removed from tag storage
+        tagStateStorage.getIds(Tag("foo"), Name(WorkflowA::class.java.name)).contains(id) shouldBe false
+        tagStateStorage.getIds(Tag("bar"), Name(WorkflowA::class.java.name)).contains(id) shouldBe false
+    }
 })
 
-class InMemoryWorkflowEngineOutput(private val scope: CoroutineScope) : WorkflowEngineOutput {
-    override val sendToClientResponseFn: SendToClientResponse =
-        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
-
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
+fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
+    client.handle(msg)
 }
 
-class InMemoryTaskEngineOutput(private val scope: CoroutineScope) : TaskEngineOutput {
-    override val sendToClientResponseFn: SendToClientResponse =
-        { msg: ClientResponseMessage -> scope.sendToClientResponse(msg) }
+fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: MillisDuration) = launch {
+    if (after.long > 0) { delay(after.long) }
+    workflowEngine.handle(msg)
 
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-
-    override val sendToTaskExecutorsFn: SendToTaskExecutors =
-        { msg: TaskExecutorMessage -> scope.sendToWorkers(msg) }
-
-    override val sendToMonitoringPerNameFn: SendToMonitoringPerName =
-        { msg: MonitoringPerNameEngineMessage -> scope.sendToMonitoringPerName(msg) }
-}
-
-class InMemoryMonitoringPerNameOutput(private val scope: CoroutineScope) : MonitoringPerNameOutput {
-
-    override val sendToMonitoringGlobalFn: SendToMonitoringGlobal =
-        { msg: MonitoringGlobalMessage -> scope.sendToMonitoringGlobal(msg) }
-}
-
-class InMemoryTaskExecutorOutput(private val scope: CoroutineScope) : TaskExecutorOutput {
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-}
-
-class TestClientOutput(private val scope: CoroutineScope) : ClientOutput {
-    override val clientName = ClientName("client: testing")
-
-    override val sendToTaskEngineFn: SendToTaskEngine =
-        { msg: TaskEngineMessage, after: MillisDuration -> scope.sendToTaskEngine(msg, after) }
-
-    override val sendToWorkflowEngineFn: SendToWorkflowEngine =
-        { msg: WorkflowEngineMessage, after: MillisDuration -> scope.sendToWorkflowEngine(msg, after) }
-}
-
-fun CoroutineScope.sendToClientResponse(msg: ClientResponseMessage) {
-    launch {
-        client.handle(msg)
+    // defines output if reached
+    if (msg is WorkflowCompleted) {
+        workflowOutput = msg.workflowReturnValue.get()
     }
 }
 
-fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: MillisDuration) {
-    launch {
-        if (after.long > 0) { delay(after.long) }
-        workflowEngine.handle(msg)
-
-        // defines output if reached
-        if (msg is WorkflowCompleted) {
-            workflowOutput = msg.workflowReturnValue.get()
-        }
-    }
+fun CoroutineScope.sendToTagEngine(msg: TagEngineMessage) = launch {
+    tagEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) {
-    launch {
-        if (after.long > 0) { delay(after.long) }
-        taskEngine.handle(msg)
-    }
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) = launch {
+    if (after.long > 0) { delay(after.long) }
+    taskEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToMonitoringPerName(msg: MonitoringPerNameEngineMessage) {
-    launch {
-        monitoringPerNameEngine.handle(msg)
-    }
+fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch {
+    monitoringPerNameEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToMonitoringGlobal(msg: MonitoringGlobalMessage) {
-    launch {
-        monitoringGlobalEngine.handle(msg)
-    }
+fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) = launch {
+    monitoringGlobalEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) {
-    // without Dispatchers.IO we have some obscure race conditions when waiting in tasks
-    launch(Dispatchers.IO) {
-        executor.handle(msg)
-    }
+// without Dispatchers.IO we have some obscure race conditions when waiting in tasks
+fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) = launch(Dispatchers.IO) {
+    executor.handle(msg)
 }
 
 fun CoroutineScope.init() {
-    workflowStateStorage.flush()
-    taskStateStorage.flush()
-    monitoringPerNameStateStorage.flush()
-    monitoringGlobalStateStorage.flush()
+    keyValueStorage.flush()
+    keySetStorage.flush()
+
     workflowOutput = null
 
-    client = Client(TestClientOutput(this))
+    client = Client.with(
+        ClientName("client: testing"),
+        { sendToTagEngine(it) },
+        { msg, after -> sendToTaskEngine(msg, after) },
+        { msg, after -> sendToWorkflowEngine(msg, after) }
+    )
 
-    workflowA = client.workflow(WorkflowA::class.java)
-    workflowB = client.workflow(WorkflowB::class.java)
+    workflowA = client.newWorkflow(WorkflowA::class.java)
+    workflowATagged = client.newWorkflow(WorkflowA::class.java, setOf("foo", "bar"))
+    workflowB = client.newWorkflow(WorkflowB::class.java)
 
-    workflowEngine = WorkflowEngine(
-        workflowStateStorage,
-        NoWorkflowEventStorage(),
-        InMemoryWorkflowEngineOutput(this)
+    tagEngine = TagEngine(
+        tagStateStorage,
+        { sendToClientResponse(it) },
+        { msg, after -> sendToTaskEngine(msg, after) },
+        { msg, after -> sendToWorkflowEngine(msg, after) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        NoTaskEventStorage(),
-        InMemoryTaskEngineOutput(this)
+        { sendToClientResponse(it) },
+        { sendToTagEngine(it) },
+        { msg, after -> sendToTaskEngine(msg, after) },
+        { msg, after -> sendToWorkflowEngine(msg, after) },
+        { sendToWorkers(it) },
+        { sendToMonitoringPerName(it) }
+    )
+
+    workflowEngine = WorkflowEngine(
+        workflowStateStorage,
+        { sendToClientResponse(it) },
+        { sendToTagEngine(it) },
+        { msg, after -> sendToTaskEngine(msg, after) },
+        { msg, after -> sendToWorkflowEngine(msg, after) }
     )
 
     monitoringPerNameEngine = MonitoringPerNameEngine(
         monitoringPerNameStateStorage,
-        InMemoryMonitoringPerNameOutput(this)
+        { sendToMonitoringGlobal(it) }
     )
 
     monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
 
-    executor = TaskExecutor(InMemoryTaskExecutorOutput(this), TaskExecutorRegisterImpl())
+    executor = TaskExecutor(
+        { msg, after -> sendToTaskEngine(msg, after) },
+        TaskExecutorRegisterImpl()
+    )
     executor.register<TaskA> { TaskAImpl() }
     executor.register<WorkflowA> { WorkflowAImpl() }
     executor.register<WorkflowB> { WorkflowBImpl() }

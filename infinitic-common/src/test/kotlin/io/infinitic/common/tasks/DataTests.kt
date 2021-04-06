@@ -47,13 +47,13 @@ class DataTests : StringSpec({
     "TaskId should be stringify as id" {
         val taskId = TestFactory.random<TaskId>()
 
-        "$taskId" shouldBe taskId.id
+        "$taskId" shouldBe taskId.id.toString()
     }
 
     "TaskAttemptId should be stringify as id" {
         val taskAttemptId = TestFactory.random<TaskAttemptId>()
 
-        "$taskAttemptId" shouldBe taskAttemptId.id
+        "$taskAttemptId" shouldBe taskAttemptId.id.toString()
     }
 
     "MethodInput should be serialized as List<SerializedData>" {
@@ -97,12 +97,10 @@ class DataTests : StringSpec({
     }
 
     "TaskAttemptId should be serialized as String" {
-        val m = TaskAttemptId("qwerty")
-
+        val m = TaskAttemptId()
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
-
         val m2 = Json.decodeFromString<TaskAttemptId>(json)
+
         m2 shouldBe m
     }
 
@@ -127,20 +125,17 @@ class DataTests : StringSpec({
     }
 
     "TaskId should be serialized as String" {
-        val m = TaskId("qwerty")
-
+        val m = TaskId()
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
-
         val m2 = Json.decodeFromString<TaskId>(json)
+
         m2 shouldBe m
     }
 
     "TaskMeta should be serialized as Map<String, SerializedData>" {
-        val m = TaskMeta.from(mapOf("a" to 1))
+        val m = TaskMeta(mapOf("a" to "1".toByteArray()))
 
         val json = Json.encodeToString(m)
-        json shouldBe "{\"a\":${Json.encodeToString(SerializedData.from(1))}}"
 
         val m2 = Json.decodeFromString<TaskMeta>(json)
         m2 shouldBe m

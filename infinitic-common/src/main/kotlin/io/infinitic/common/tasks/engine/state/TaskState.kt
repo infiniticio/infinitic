@@ -31,6 +31,7 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskAttemptRetry
@@ -42,13 +43,12 @@ import io.infinitic.common.tasks.data.TaskRetry
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
-import java.nio.ByteBuffer
 
 @Serializable
 data class TaskState(
-    val clientName: ClientName,
-    val clientWaiting: Boolean,
+    val clientWaiting: Set<ClientName>,
     val lastMessageId: MessageId,
     val taskId: TaskId,
     val taskName: TaskName,
@@ -56,21 +56,22 @@ data class TaskState(
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val workflowId: WorkflowId?,
+    val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,
     val taskStatus: TaskStatus,
     var taskRetry: TaskRetry = TaskRetry(0),
     var taskAttemptId: TaskAttemptId,
     var taskAttemptRetry: TaskAttemptRetry = TaskAttemptRetry(0),
     var previousTaskAttemptError: TaskAttemptError? = null,
+    val tags: Set<Tag>,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
-        fun fromByteBuffer(bytes: ByteBuffer) = fromByteArray(bytes.array())
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
-    fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
+
     fun deepCopy() = fromByteArray(toByteArray())
 }

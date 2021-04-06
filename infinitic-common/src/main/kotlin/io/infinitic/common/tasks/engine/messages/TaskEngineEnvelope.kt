@@ -34,6 +34,7 @@ data class TaskEngineEnvelope(
     val taskId: TaskId,
     val type: TaskEngineMessageType,
     val dispatchTask: DispatchTask? = null,
+    val waitTask: WaitTask? = null,
     val retryTask: RetryTask? = null,
     val retryTaskAttempt: RetryTaskAttempt? = null,
     val cancelTask: CancelTask? = null,
@@ -47,6 +48,7 @@ data class TaskEngineEnvelope(
     init {
         val noNull = listOfNotNull(
             dispatchTask,
+            waitTask,
             retryTask,
             retryTaskAttempt,
             cancelTask,
@@ -69,6 +71,11 @@ data class TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.DISPATCH_TASK,
                 dispatchTask = msg
+            )
+            is WaitTask -> TaskEngineEnvelope(
+                msg.taskId,
+                TaskEngineMessageType.WAIT_TASK,
+                waitTask = msg
             )
             is RetryTask -> TaskEngineEnvelope(
                 msg.taskId,
@@ -122,6 +129,7 @@ data class TaskEngineEnvelope(
 
     fun message(): TaskEngineMessage = when (type) {
         TaskEngineMessageType.DISPATCH_TASK -> dispatchTask!!
+        TaskEngineMessageType.WAIT_TASK -> waitTask!!
         TaskEngineMessageType.RETRY_TASK -> retryTask!!
         TaskEngineMessageType.RETRY_TASK_ATTEMPT -> retryTaskAttempt!!
         TaskEngineMessageType.CANCEL_TASK -> cancelTask!!

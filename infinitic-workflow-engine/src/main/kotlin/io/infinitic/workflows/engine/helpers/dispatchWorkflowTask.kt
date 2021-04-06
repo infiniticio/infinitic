@@ -44,7 +44,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
 suspend fun dispatchWorkflowTask(
     workflowEngineOutput: WorkflowEngineOutput,
@@ -71,27 +71,24 @@ suspend fun dispatchWorkflowTask(
     val workflowTask = DispatchTask(
         clientName = ClientName("workflow engine"),
         clientWaiting = false,
-        taskId = TaskId("$workflowTaskId"),
+        taskId = TaskId(workflowTaskId.id),
         taskName = TaskName(WorkflowTask::class.java.name),
         methodName = MethodName(WorkflowTask.DEFAULT_METHOD),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
         methodParameters = MethodParameters.from(workflowTaskInput),
         workflowId = state.workflowId,
+        workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
+        tags = setOf(),
         taskOptions = TaskOptions(),
-        taskMeta = TaskMeta.from(mapOf(WorkflowTask.META_WORKFLOW_NAME to "${state.workflowName}"))
+        taskMeta = TaskMeta(mapOf(WorkflowTask.META_WORKFLOW_NAME to "${state.workflowName}".toByteArray()))
     )
 
     // dispatch workflow task
-    workflowEngineOutput.sendToTaskEngine(
-        state,
-        workflowTask,
-        MillisDuration(0)
-    )
+    workflowEngineOutput.sendToTaskEngine(workflowTask)
 
     // log event
     workflowEngineOutput.sendToWorkflowEngine(
-        state,
         WorkflowTaskDispatched(
             workflowTaskId = workflowTaskId,
             workflowId = state.workflowId,

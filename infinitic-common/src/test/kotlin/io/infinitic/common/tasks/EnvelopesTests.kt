@@ -27,10 +27,10 @@ package io.infinitic.common.tasks
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEngineMessage
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -53,13 +53,13 @@ class EnvelopesTests : StringSpec({
         }
     }
 
-    MonitoringPerNameEngineMessage::class.sealedSubclasses.map {
+    MetricsPerNameMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
         "MonitoringPerNameEnvelope(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-                val envelope = MonitoringPerNameEnvelope.from(msg)
-                val ser = MonitoringPerNameEnvelope.serializer()
+                val envelope = MetricsPerNameEnvelope.from(msg)
+                val ser = MetricsPerNameEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2
@@ -67,13 +67,13 @@ class EnvelopesTests : StringSpec({
         }
     }
 
-    MonitoringGlobalMessage::class.sealedSubclasses.map {
+    MetricsGlobalMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
         "MonitoringGlobalEnvelope(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-                val envelope = MonitoringGlobalEnvelope.from(msg)
-                val ser = MonitoringGlobalEnvelope.serializer()
+                val envelope = MetricsGlobalEnvelope.from(msg)
+                val ser = MetricsGlobalEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2

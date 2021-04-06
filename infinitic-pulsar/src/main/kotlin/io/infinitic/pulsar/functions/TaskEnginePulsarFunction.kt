@@ -26,13 +26,13 @@
 package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineCache
+import io.infinitic.cache.caffeine.CaffeineKeyValueCache
+import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import io.infinitic.pulsar.transport.PulsarOutputs
 import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.events.NoTaskEventStorage
-import io.infinitic.tasks.engine.storage.states.TaskStateKeyValueStorage
+import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -52,9 +52,23 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
         null
     }
 
-    internal fun getTaskEngine(context: Context) = TaskEngine(
-        TaskStateKeyValueStorage(context.keyValueStorage(), CaffeineCache(Caffeine(expireAfterAccess = 3600))),
-        NoTaskEventStorage(),
-        PulsarOutputs.from(context).taskEngineOutput
-    )
+    internal fun getTaskEngine(context: Context): TaskEngine {
+        val output = PulsarOutputs.from(context)
+
+        return TaskEngine(
+            BinaryTaskStateStorage(
+                // context storage decorated with logging and a 1h cache
+                CachedLoggedKeyValueStorage(
+                    CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
+                    context.keyValueStorage()
+                )
+            ),
+            output.sendEventsToClient,
+            output.sendEventsToTagEngine,
+            output.sendEventsToTaskEngine,
+            output.sendEventsToWorkflowEngine,
+            output.sendToTaskExecutors,
+            output.sendToMetricsPerName
+        )
+    }
 }

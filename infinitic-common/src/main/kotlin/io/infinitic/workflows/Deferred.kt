@@ -58,8 +58,6 @@ data class Deferred<T> (
     fun isCanceled() = status() == DeferredStatus.CANCELED
 
     fun isOngoing() = status() == DeferredStatus.ONGOING
-
-    fun isTerminated() = ! isOngoing()
 }
 
 fun or(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc or deferred }

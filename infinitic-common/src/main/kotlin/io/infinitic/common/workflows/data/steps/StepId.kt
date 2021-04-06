@@ -36,10 +36,10 @@ import kotlinx.serialization.encoding.Encoder
 import java.util.UUID
 
 @Serializable(with = StepIdIdSerializer::class)
-data class StepId(override val id: String = UUID.randomUUID().toString()) : Id(id)
+data class StepId(override val id: UUID = UUID.randomUUID()) : Id(id)
 
 object StepIdIdSerializer : KSerializer<StepId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("StepId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: StepId) { encoder.encodeString(value.id) }
-    override fun deserialize(decoder: Decoder) = StepId(decoder.decodeString())
+    override fun serialize(encoder: Encoder, value: StepId) { encoder.encodeString("${value.id}") }
+    override fun deserialize(decoder: Decoder) = StepId(UUID.fromString(decoder.decodeString()))
 }

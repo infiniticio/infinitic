@@ -26,12 +26,18 @@
 
 package io.infinitic.pulsar.admin
 
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.tags.messages.TagEngineEnvelope
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.schemas.getPostSchemaPayload
 import io.infinitic.pulsar.topics.MonitoringGlobalTopic
 import io.infinitic.pulsar.topics.MonitoringPerNameTopic
+import io.infinitic.pulsar.topics.TagEngineCommandsTopic
+import io.infinitic.pulsar.topics.TagEngineEventsTopic
+import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
+import io.infinitic.pulsar.topics.TaskEngineEventsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
 import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
@@ -54,15 +60,23 @@ suspend fun PulsarAdmin.setupInfinitic(tenant: String, namespace: String, allowe
 
     createNamespace(this, tenant, namespace)
 
+    createPartitionedTopic(this, tenant, namespace, TagEngineCommandsTopic.name)
+    createPartitionedTopic(this, tenant, namespace, TagEngineEventsTopic.name)
+    createPartitionedTopic(this, tenant, namespace, TaskEngineCommandsTopic.name)
+    createPartitionedTopic(this, tenant, namespace, TaskEngineEventsTopic.name)
     createPartitionedTopic(this, tenant, namespace, WorkflowEngineCommandsTopic.name)
     createPartitionedTopic(this, tenant, namespace, WorkflowEngineEventsTopic.name)
     createPartitionedTopic(this, tenant, namespace, MonitoringPerNameTopic.name)
     createPartitionedTopic(this, tenant, namespace, MonitoringGlobalTopic.name)
 
+    setSchema(this, tenant, namespace, TagEngineCommandsTopic.name, TagEngineEnvelope::class)
+    setSchema(this, tenant, namespace, TagEngineEventsTopic.name, TagEngineEnvelope::class)
+    setSchema(this, tenant, namespace, TaskEngineCommandsTopic.name, TaskEngineEnvelope::class)
+    setSchema(this, tenant, namespace, TaskEngineEventsTopic.name, TaskEngineEnvelope::class)
     setSchema(this, tenant, namespace, WorkflowEngineCommandsTopic.name, WorkflowEngineEnvelope::class)
     setSchema(this, tenant, namespace, WorkflowEngineEventsTopic.name, WorkflowEngineEnvelope::class)
-    setSchema(this, tenant, namespace, MonitoringPerNameTopic.name, MonitoringPerNameEnvelope::class)
-    setSchema(this, tenant, namespace, MonitoringGlobalTopic.name, MonitoringGlobalEnvelope::class)
+    setSchema(this, tenant, namespace, MonitoringPerNameTopic.name, MetricsPerNameEnvelope::class)
+    setSchema(this, tenant, namespace, MonitoringGlobalTopic.name, MetricsGlobalEnvelope::class)
 }
 
 private suspend fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<String>? = null): Set<String> {

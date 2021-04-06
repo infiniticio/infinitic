@@ -26,8 +26,8 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.client.Client
-import io.infinitic.common.clients.messages.ClientResponseEnvelope
-import io.infinitic.common.clients.messages.ClientResponseMessage
+import io.infinitic.common.clients.messages.ClientEnvelope
+import io.infinitic.common.clients.messages.ClientMessage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -46,13 +46,13 @@ const val CLIENT_RESPONSE_THREAD_NAME = "client-response"
 private val logger: Logger
     get() = LoggerFactory.getLogger(io.infinitic.pulsar.InfiniticClient::class.java)
 
-private fun logError(message: Message<ClientResponseEnvelope>, e: Exception) = logger.error(
+private fun logError(message: Message<ClientEnvelope>, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     message,
     e
 )
 
-private fun logError(message: ClientResponseMessage, e: Exception) = logger.error(
+private fun logError(message: ClientMessage, e: Exception) = logger.error(
     "client {} - exception on message {}:${System.getProperty("line.separator")}{}",
     message.clientName,
     message,
@@ -61,21 +61,21 @@ private fun logError(message: ClientResponseMessage, e: Exception) = logger.erro
 
 fun CoroutineScope.startClientResponseWorker(
     client: Client,
-    clientResponseConsumer: Consumer<ClientResponseEnvelope>
+    clientConsumer: Consumer<ClientEnvelope>
 ) = launch(CoroutineName(CLIENT_RESPONSE_THREAD_NAME)) {
 
     fun negativeAcknowledge(pulsarId: MessageId) =
-        clientResponseConsumer.negativeAcknowledge(pulsarId)
+        clientConsumer.negativeAcknowledge(pulsarId)
 
     suspend fun acknowledge(pulsarId: MessageId) =
-        clientResponseConsumer.acknowledgeAsync(pulsarId).await()
+        clientConsumer.acknowledgeAsync(pulsarId).await()
 
     while (isActive) {
         try {
-            val pulsarMessage = clientResponseConsumer.receiveAsync().await()
+            val pulsarMessage = clientConsumer.receiveAsync().await()
 
             val message = try {
-                ClientResponseEnvelope.fromByteArray(pulsarMessage.data).message()
+                ClientEnvelope.fromByteArray(pulsarMessage.data).message()
             } catch (e: Exception) {
                 logError(pulsarMessage, e)
                 negativeAcknowledge(pulsarMessage.messageId)

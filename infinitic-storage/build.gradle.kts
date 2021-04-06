@@ -27,6 +27,9 @@ dependencies {
     implementation("redis.clients:jedis:3.3.0")
 
     implementation(project(":infinitic-common"))
+    implementation(project(":infinitic-cache"))
+
+    testImplementation("com.github.kstyrc:embedded-redis:0.6")
 }
 
 apply("../publish.gradle.kts")

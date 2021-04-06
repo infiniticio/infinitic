@@ -31,6 +31,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
@@ -64,21 +65,28 @@ data class DispatchWorkflow(
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
+    val tags: Set<Tag>,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : WorkflowEngineMessage()
 
 @Serializable
+data class WaitWorkflow(
+    override val workflowId: WorkflowId,
+    val workflowName: WorkflowName,
+    val clientName: ClientName
+) : WorkflowEngineMessage()
+
+@Serializable
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
-    val clientName: ClientName?,
-    val workflowOutput: MethodReturnValue
+    val workflowName: WorkflowName,
+    val workflowReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()
 
 @Serializable
 data class SendToChannel(
     val clientName: ClientName,
-    val clientWaiting: Boolean,
     override val workflowId: WorkflowId,
     val workflowName: WorkflowName,
     val channelEventId: ChannelEventId,

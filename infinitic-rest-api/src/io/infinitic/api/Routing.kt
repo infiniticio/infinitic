@@ -28,8 +28,8 @@ package io.infinitic.api
 import io.infinitic.api.extensions.io.ktor.application.getPath
 import io.infinitic.api.support.BuildInfo
 import io.infinitic.api.task.repositories.TaskRepository
-import io.infinitic.common.monitoring.global.state.MonitoringGlobalState
-import io.infinitic.common.monitoring.perName.state.MonitoringPerNameState
+import io.infinitic.common.metrics.global.state.MetricsGlobalState
+import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.ktor.application.call
 import io.ktor.config.ApplicationConfig
 import io.ktor.features.NotFoundException
@@ -65,7 +65,7 @@ fun Routing.root() {
                 "infinitic-tasks-monitoring-global",
                 "monitoringGlobal.state"
             )?.let {
-                MonitoringGlobalState.fromByteArray(it.stringValue.toByteArray())
+                MetricsGlobalState.fromByteArray(it.stringValue.toByteArray())
             } ?: return@get
 
         val tasks = state.taskNames.map { object { val name = it } }
@@ -83,7 +83,7 @@ fun Routing.root() {
                     "infinitic-tasks-monitoring-per-name",
                     "monitoringPerName.state.$name"
                 ).let {
-                    MonitoringPerNameState.fromByteArray(
+                    MetricsPerNameState.fromByteArray(
                         it.stringValue.toByteArray()
                     )
                 }

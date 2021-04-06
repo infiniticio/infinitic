@@ -33,8 +33,8 @@ interface WorkflowB {
 }
 
 class WorkflowBImpl() : Workflow(), WorkflowB {
-    private val task = task<TaskA>()
-    private val workflow = workflow<WorkflowB>()
+    private val task = newTask<TaskA>()
+    private val workflow = newWorkflow<WorkflowB>()
 
     override fun concat(input: String): String {
         var str = input

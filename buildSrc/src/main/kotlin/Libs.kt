@@ -54,7 +54,7 @@ object Libs {
         private const val version = "2.12.2"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
-        const val module = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
+        const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
         const val jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$version"
     }
 
@@ -80,7 +80,7 @@ object Libs {
     }
 
     object Pulsar {
-        private const val version = "2.7.0"
+        private const val version = "2.7.1"
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"

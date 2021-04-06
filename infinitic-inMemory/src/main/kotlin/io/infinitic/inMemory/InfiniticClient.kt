@@ -27,50 +27,32 @@ package io.infinitic.inMemory
 
 import io.infinitic.client.Client
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.inMemory.transport.InMemoryClientOutput
+import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
-import io.infinitic.storage.inMemory.InMemoryStorage
 import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.engine.transport.TaskEngineMessageToProcess
-import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.workflows.engine.transport.WorkflowEngineMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
+import java.util.concurrent.Executors
 
-class InfiniticClient private constructor(
-    private val taskExecutorRegister: TaskExecutorRegister,
-    private val taskEngineCommandsChannel: Channel<TaskEngineMessageToProcess>,
-    private val workflowEngineCommandsChannel: Channel<WorkflowEngineMessageToProcess>,
-    private val logFn: (_: MessageToProcess<*>) -> Unit
-) : Client(InMemoryClientOutput(taskEngineCommandsChannel, workflowEngineCommandsChannel)), TaskExecutorRegister by taskExecutorRegister {
+fun Client.startInMemory(
+    taskExecutorRegister: TaskExecutorRegister,
+    logFn: (_: MessageToProcess<*>) -> Unit = { }
+) {
+    val threadPool = Executors.newCachedThreadPool()
+    val client = this
+    client.closeFn = { threadPool.shutdown() }
 
-    companion object {
-        @JvmStatic @JvmOverloads
-        fun build(logFn: (_: MessageToProcess<*>) -> Unit = { }): InfiniticClient {
-            val taskExecutorRegister = TaskExecutorRegisterImpl()
-            val taskEngineCommandsChannel = Channel<TaskEngineMessageToProcess>()
-            val workflowEngineCommandsChannel = Channel<WorkflowEngineMessageToProcess>()
+    val scope = CoroutineScope(Dispatchers.IO)
 
-            return InfiniticClient(
-                taskExecutorRegister,
-                taskEngineCommandsChannel,
-                workflowEngineCommandsChannel,
-                logFn
-            )
-        }
-    }
+    val inMemoryOutput = InMemoryOutput(scope)
 
-    init {
-        with(CoroutineScope(Dispatchers.IO)) {
-            startInMemory(
-                taskExecutorRegister,
-                InMemoryStorage(),
-                this@InfiniticClient,
-                taskEngineCommandsChannel,
-                workflowEngineCommandsChannel,
-                logFn
-            )
-        }
+    client.setOutput(
+        inMemoryOutput.sendCommandsToTagEngine,
+        inMemoryOutput.sendCommandsToTaskEngine,
+        inMemoryOutput.sendCommandsToWorkflowEngine
+    )
+
+    with(scope) {
+        startInMemory(taskExecutorRegister, client, inMemoryOutput, logFn)
     }
 }

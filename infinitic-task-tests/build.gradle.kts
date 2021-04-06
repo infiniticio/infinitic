@@ -25,7 +25,8 @@
 
 dependencies {
     testImplementation(project(":infinitic-common"))
-    testImplementation(project(":infinitic-monitoring-engines"))
+    testImplementation(project(":infinitic-metrics-engines"))
+    testImplementation(project(":infinitic-tag-engine"))
     testImplementation(project(":infinitic-task-engine"))
     testImplementation(project(":infinitic-client"))
     testImplementation(project(":infinitic-task-executor"))

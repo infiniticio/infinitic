@@ -58,7 +58,7 @@ class DataTests : StringSpec({
     "WorkflowId should be stringify as id" {
         val workflowId = TestFactory.random<WorkflowId>()
 
-        "$workflowId" shouldBe workflowId.id
+        "$workflowId" shouldBe workflowId.id.toString()
     }
 
     "CommandHash should be serialized as String" {
@@ -71,11 +71,10 @@ class DataTests : StringSpec({
     }
 
     "CommandId should be serialized as String" {
-        val m = CommandId("qwerty")
-
+        val m = CommandId()
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<CommandId>(json)
+
         m2 shouldBe m
     }
 
@@ -94,6 +93,7 @@ class DataTests : StringSpec({
 
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
+
         val m2 = Json.decodeFromString<CommandSimpleName>(json)
         m2 shouldBe m
     }
@@ -103,16 +103,16 @@ class DataTests : StringSpec({
 
         val json = Json.encodeToString(m)
         json shouldBe Json.encodeToString(SerializedData.from("qwerty"))
+
         val m2 = Json.decodeFromString<ChannelEvent>(json)
         m2 shouldBe m
     }
 
     "ChannelEventId should be serialized as String" {
-        val m = ChannelEventId("qwerty")
-
+        val m = ChannelEventId()
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<ChannelEventId>(json)
+
         m2 shouldBe m
     }
 
@@ -135,11 +135,10 @@ class DataTests : StringSpec({
     }
 
     "MethodRunId should be serialized as String" {
-        val m = MethodRunId("qwerty")
-
+        val m = MethodRunId()
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<MethodRunId>(json)
+
         m2 shouldBe m
     }
 
@@ -190,11 +189,10 @@ class DataTests : StringSpec({
     }
 
     "StepId should be serialized as String" {
-        val m = StepId("qwerty")
-
+        val m = StepId()
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<StepId>(json)
+
         m2 shouldBe m
     }
 
@@ -209,19 +207,17 @@ class DataTests : StringSpec({
     }
 
     "WorkflowId should be serialized as String" {
-        val m = WorkflowId("qwerty")
-
+        val m = WorkflowId()
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<WorkflowId>(json)
+
         m2 shouldBe m
     }
 
     "WorkflowMeta should be serialized as Map<String, SerializedData>" {
-        val m = WorkflowMeta(mapOf("a" to SerializedData.from(1)))
+        val m = WorkflowMeta(mapOf("a" to "1".toByteArray()))
 
         val json = Json.encodeToString(m)
-        json shouldBe "{\"a\":${Json.encodeToString(SerializedData.from(1))}}"
 
         val m2 = Json.decodeFromString<WorkflowMeta>(json)
         m2 shouldBe m
@@ -237,11 +233,10 @@ class DataTests : StringSpec({
     }
 
     "WorkflowTaskId should be serialized as String" {
-        val m = WorkflowTaskId("qwerty")
-
+        val m = WorkflowTaskId()
         val json = Json.encodeToString(m)
-        json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<WorkflowTaskId>(json)
+
         m2 shouldBe m
     }
 

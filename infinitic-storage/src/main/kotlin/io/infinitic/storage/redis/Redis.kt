@@ -31,7 +31,8 @@ data class Redis(
     @JvmField val host: String = Protocol.DEFAULT_HOST,
     @JvmField var port: Int = Protocol.DEFAULT_PORT,
     @JvmField var timeout: Int = Protocol.DEFAULT_TIMEOUT,
-    @JvmField var user: String,
-    @JvmField var password: String,
-    @JvmField var database: Int = Protocol.DEFAULT_DATABASE
+    @JvmField var user: String? = null,
+    @JvmField var password: String? = null,
+    @JvmField var database: Int = Protocol.DEFAULT_DATABASE,
+    @JvmField var ssl: Boolean = false
 )

@@ -25,31 +25,14 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.exceptions.MultipleMethodCalls
-import java.lang.Thread.currentThread
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
-import java.util.concurrent.ConcurrentHashMap
 
-open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandler {
-    // multiple threads can use a same MethodProxyHandler instance without mixing values
-    private val _dataMethodHash = ConcurrentHashMap<Thread, DataMethod>()
-
-    private val dataMethod: DataMethod
-        get() = _dataMethodHash.getOrPut(currentThread(), { DataMethod() })
-
-    var isSync: Boolean
-        get() = dataMethod.isSync
-        set(value) { dataMethod.isSync = value }
-
-    var method: Method?
-        get() = dataMethod.method
-        set(value) { dataMethod.method = value }
-
-    var args: Array<out Any>
-        get() = dataMethod.args
-        set(value) { dataMethod.args = value }
+open class MethodProxyHandler<T>(open val klass: Class<T>) : InvocationHandler {
+    var isSync: Boolean = true
+    var methods: MutableList<Method> = mutableListOf()
+    var args: MutableList<Array<out Any>> = mutableListOf()
 
     /*
      * invoke method is called when a method is applied to the proxy instance
@@ -57,12 +40,9 @@ open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandle
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         if (method.name == "toString") return klass.name
 
-        // invoke should called only once per ProxyHandler instance
-        if (this.method != null) throw MultipleMethodCalls(method.declaringClass.name, this.method?.name, method.name)
-
-        // method
-        this.method = method
-        this.args = args ?: arrayOf()
+        // store method and args
+        this.methods.add(method)
+        this.args.add(args ?: arrayOf())
 
         return getAsyncReturnValue(method)
     }
@@ -81,7 +61,9 @@ open class MethodProxyHandler<T>(private val klass: Class<T>) : InvocationHandle
      * Prepare for reuse
      */
     fun reset() {
-        _dataMethodHash.remove(currentThread())
+        isSync = true
+        methods = mutableListOf()
+        args = mutableListOf()
     }
 
     private fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {

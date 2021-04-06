@@ -35,6 +35,8 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.CancelTaskAttempt
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
@@ -47,7 +49,6 @@ import io.infinitic.tasks.executor.task.RetryDelayFailed
 import io.infinitic.tasks.executor.task.RetryDelayRetrieved
 import io.infinitic.tasks.executor.task.TaskAttemptContextImpl
 import io.infinitic.tasks.executor.task.TaskCommand
-import io.infinitic.tasks.executor.transport.TaskExecutorOutput
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
@@ -62,15 +63,18 @@ import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaField
 
 class TaskExecutor(
-    val taskExecutorOutput: TaskExecutorOutput,
+    sendToTaskEngine: SendToTaskEngine,
     val taskExecutorRegister: TaskExecutorRegister
 ) : TaskExecutorRegister by taskExecutorRegister {
+
+    private val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit) =
+        { msg: TaskEngineMessage -> sendToTaskEngine(msg, MillisDuration(0)) }
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskExecutorMessage) {
-        logger.debug("receiving {} (messageId {})", message, message.messageId)
+        logger.debug("receiving {}", message)
 
         when (message) {
             is ExecuteTaskAttempt -> executeTaskAttempt(message)
@@ -89,7 +93,7 @@ class TaskExecutor(
             taskRetry = message.taskRetry.int,
             taskAttemptRetry = message.taskAttemptRetry.int,
             lastTaskAttemptError = message.previousTaskAttemptError?.get() as Exception?,
-            taskMeta = message.taskMeta.get(),
+            taskMeta = message.taskMeta.map,
             taskOptions = message.taskOptions
         )
 
@@ -224,7 +228,7 @@ class TaskExecutor(
             taskAttemptRetry = message.taskAttemptRetry
         )
 
-        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptStarted, MillisDuration(0))
+        sendToTaskEngine(taskAttemptStarted)
     }
 
     private suspend fun sendTaskAttemptFailed(message: ExecuteTaskAttempt, error: Throwable?, delay: MillisDuration? = null) {
@@ -240,7 +244,7 @@ class TaskExecutor(
             taskAttemptError = TaskAttemptError.from(error)
         )
 
-        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptFailed, MillisDuration(0))
+        sendToTaskEngine(taskAttemptFailed)
     }
 
     private suspend fun sendTaskCompleted(message: ExecuteTaskAttempt, output: Any?) {
@@ -253,6 +257,6 @@ class TaskExecutor(
             taskReturnValue = MethodReturnValue.from(output)
         )
 
-        taskExecutorOutput.sendToTaskEngine(message.messageId, taskAttemptCompleted, MillisDuration(0))
+        sendToTaskEngine(taskAttemptCompleted)
     }
 }

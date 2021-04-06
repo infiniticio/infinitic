@@ -39,7 +39,6 @@ import java.lang.reflect.Method
 data class TaskName(override val name: String) : Name(name) {
     companion object {
         fun from(method: Method) = TaskName(method.declaringClass.name)
-        fun from(klass: Class<*>) = TaskName(klass.name)
     }
 }
 

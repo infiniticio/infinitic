@@ -94,8 +94,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override val channelA = channel<String>()
     override val channelB = channel<String>()
 
-    private val taskA = task<TaskA>()
-    private val workflowB = workflow<WorkflowB>()
+    private val taskA = newTask<TaskA>()
+    private val workflowB = newWorkflow<WorkflowB>()
     private var p1 = ""
 
     override fun empty() = "void"

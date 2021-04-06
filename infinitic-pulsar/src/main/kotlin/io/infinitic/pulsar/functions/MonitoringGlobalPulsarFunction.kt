@@ -26,18 +26,19 @@
 package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineCache
-import io.infinitic.common.monitoring.global.messages.MonitoringGlobalEnvelope
+import io.infinitic.cache.caffeine.CaffeineKeyValueCache
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateKeyValueStorage
+import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.pulsar.functions.storage.keyValueStorage
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class MonitoringGlobalPulsarFunction : Function<MonitoringGlobalEnvelope, Void> {
+class MonitoringGlobalPulsarFunction : Function<MetricsGlobalEnvelope, Void> {
 
-    override fun process(envelope: MonitoringGlobalEnvelope, context: Context?): Void? = runBlocking {
+    override fun process(envelope: MetricsGlobalEnvelope, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
@@ -51,6 +52,12 @@ class MonitoringGlobalPulsarFunction : Function<MonitoringGlobalEnvelope, Void> 
     }
 
     internal fun getMonitoringGlobalEngine(context: Context) = MonitoringGlobalEngine(
-        MonitoringGlobalStateKeyValueStorage(context.keyValueStorage(), CaffeineCache(Caffeine(expireAfterAccess = 3600)))
+        BinaryMonitoringGlobalStateStorage(
+            // context storage decorated with logging and a 1h cache
+            CachedLoggedKeyValueStorage(
+                CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
+                context.keyValueStorage()
+            )
+        )
     )
 }

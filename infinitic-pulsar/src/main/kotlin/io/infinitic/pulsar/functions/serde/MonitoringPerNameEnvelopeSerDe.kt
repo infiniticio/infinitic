@@ -25,12 +25,12 @@
 
 package io.infinitic.pulsar.functions.serde
 
-import io.infinitic.common.monitoring.perName.messages.MonitoringPerNameEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import org.apache.pulsar.functions.api.SerDe
 
-class MonitoringPerNameEnvelopeSerDe : SerDe<MonitoringPerNameEnvelope> {
+class MonitoringPerNameEnvelopeSerDe : SerDe<MetricsPerNameEnvelope> {
     override fun deserialize(input: ByteArray) =
-        MonitoringPerNameEnvelope.fromByteArray(input)
+        MetricsPerNameEnvelope.fromByteArray(input)
 
-    override fun serialize(input: MonitoringPerNameEnvelope) = input.toByteArray()
+    override fun serialize(input: MetricsPerNameEnvelope) = input.toByteArray()
 }

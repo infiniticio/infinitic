@@ -30,7 +30,7 @@ import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandCompleted
-import io.infinitic.workflows.engine.transport.WorkflowEngineOutput
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
 suspend fun taskCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
