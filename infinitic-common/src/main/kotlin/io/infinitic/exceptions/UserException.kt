@@ -286,7 +286,7 @@ data class UnknownMethodInSendChannel(
 )
 
 @Serializable
-data class UnknownTaskPerId(
+data class UnknownTask(
     val taskId: String,
     val taskName: String,
 ) : UserExceptionInClient(
@@ -295,7 +295,7 @@ data class UnknownTaskPerId(
 )
 
 @Serializable
-data class UnknownWorkflowPerId(
+data class UnknownWorkflow(
     val workflowId: String,
     val workflowName: String,
 ) : UserExceptionInClient(

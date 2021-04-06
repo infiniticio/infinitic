@@ -64,8 +64,8 @@ import io.infinitic.exceptions.MultipleMethodCalls
 import io.infinitic.exceptions.NoMethodCall
 import io.infinitic.exceptions.NoSendMethodCall
 import io.infinitic.exceptions.UnknownMethodInSendChannel
-import io.infinitic.exceptions.UnknownTaskPerId
-import io.infinitic.exceptions.UnknownWorkflowPerId
+import io.infinitic.exceptions.UnknownTask
+import io.infinitic.exceptions.UnknownWorkflow
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -172,7 +172,7 @@ internal class ClientDispatcher(
         @Suppress("UNCHECKED_CAST")
         return when (taskresult) {
             is TaskCompleted -> taskresult.taskReturnValue.get() as T
-            is UnknownTaskWaited -> throw UnknownTaskPerId(
+            is UnknownTaskWaited -> throw UnknownTask(
                 "${deferredTask.taskId}",
                 "${deferredTask.taskName}"
             )
@@ -265,7 +265,7 @@ internal class ClientDispatcher(
         @Suppress("UNCHECKED_CAST")
         return when (result) {
             is WorkflowCompleted -> result.workflowReturnValue.get() as T
-            is UnknownWorkflowWaited -> throw UnknownWorkflowPerId(
+            is UnknownWorkflowWaited -> throw UnknownWorkflow(
                 "${deferredWorkflow.workflowId}",
                 "${deferredWorkflow.workflowName}"
             )
