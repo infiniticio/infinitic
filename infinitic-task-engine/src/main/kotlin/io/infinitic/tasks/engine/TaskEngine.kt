@@ -44,11 +44,7 @@ import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.RetryTaskAttempt
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.engine.messages.TaskAttemptDispatched
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.engine.messages.TaskCanceled
-import io.infinitic.common.tasks.engine.messages.TaskCompleted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
@@ -85,15 +81,6 @@ class TaskEngine(
 
     suspend fun handle(message: TaskEngineMessage) {
         logger.debug("receiving {}", message)
-
-        // immediately discard messages useless messages
-        when (message) {
-            is TaskAttemptDispatched -> return
-            is TaskAttemptStarted -> return
-            is TaskCompleted -> return
-            is TaskCanceled -> return
-            else -> Unit
-        }
 
         // get current state
         val oldState = storage.getState(message.taskId)
@@ -140,7 +127,6 @@ class TaskEngine(
                 is CancelTask -> cancelTask(oldState, message)
                 is RetryTask -> retryTask(oldState, message)
                 is RetryTaskAttempt -> retryTaskAttempt(oldState, message.messageId)
-                is TaskAttemptStarted -> taskAttemptStarted(oldState, message)
                 is TaskAttemptFailed -> taskAttemptFailed(oldState, message)
                 is TaskAttemptCompleted -> taskAttemptCompleted(oldState, message)
                 is WaitTask -> waitTask(oldState, message)
@@ -207,15 +193,6 @@ class TaskEngine(
             )
         }
 
-        // log event
-        val taskCanceled = TaskCanceled(
-            taskId = newState.taskId,
-            taskName = newState.taskName,
-            taskReturnValue = message.taskReturnValue,
-            taskMeta = newState.taskMeta
-        )
-        sendToTaskEngine(taskCanceled, MillisDuration(0))
-
         // delete stored state
         terminate(newState)
 
@@ -261,16 +238,6 @@ class TaskEngine(
         )
         sendToTaskExecutors(rt)
 
-        // log events
-        val taskAttemptDispatched = TaskAttemptDispatched(
-            taskId = newState.taskId,
-            taskName = newState.taskName,
-            taskAttemptId = newState.taskAttemptId,
-            taskAttemptRetry = newState.taskAttemptRetry,
-            taskRetry = newState.taskRetry
-        )
-        sendToTaskEngine(taskAttemptDispatched, MillisDuration(0))
-
         return newState
     }
 
@@ -305,16 +272,6 @@ class TaskEngine(
         )
         sendToTaskExecutors(executeTaskAttempt)
 
-        // log event
-        val taskAttemptDispatched = TaskAttemptDispatched(
-            taskId = newState.taskId,
-            taskName = newState.taskName,
-            taskAttemptId = newState.taskAttemptId,
-            taskAttemptRetry = newState.taskAttemptRetry,
-            taskRetry = newState.taskRetry
-        )
-        sendToTaskEngine(taskAttemptDispatched, MillisDuration(0))
-
         return newState
     }
 
@@ -341,23 +298,7 @@ class TaskEngine(
         )
         sendToTaskExecutors(executeTaskAttempt)
 
-        // log event
-        val tar = TaskAttemptDispatched(
-            taskId = state.taskId,
-            taskName = state.taskName,
-            taskAttemptId = state.taskAttemptId,
-            taskRetry = state.taskRetry,
-            taskAttemptRetry = state.taskAttemptRetry
-        )
-        sendToTaskEngine(tar, MillisDuration(0))
-
         return state
-    }
-
-    private fun taskAttemptStarted(oldState: TaskState, message: TaskAttemptStarted): TaskState {
-        return oldState.copy(
-            lastMessageId = message.messageId
-        )
     }
 
     private suspend fun taskAttemptCompleted(oldState: TaskState, message: TaskAttemptCompleted): TaskState {
@@ -395,15 +336,6 @@ class TaskEngine(
                 )
             )
         }
-
-        // log event
-        val taskCompleted = TaskCompleted(
-            taskId = newState.taskId,
-            taskName = newState.taskName,
-            taskReturnValue = message.taskReturnValue,
-            taskMeta = newState.taskMeta
-        )
-        sendToTaskEngine(taskCompleted, MillisDuration(0))
 
         // delete stored state
         terminate(newState)

@@ -38,12 +38,8 @@ data class TaskEngineEnvelope(
     val retryTask: RetryTask? = null,
     val retryTaskAttempt: RetryTaskAttempt? = null,
     val cancelTask: CancelTask? = null,
-    val taskCanceled: TaskCanceled? = null,
-    val taskCompleted: TaskCompleted? = null,
-    val taskAttemptDispatched: TaskAttemptDispatched? = null,
     val taskAttemptCompleted: TaskAttemptCompleted? = null,
-    val taskAttemptFailed: TaskAttemptFailed? = null,
-    val taskAttemptStarted: TaskAttemptStarted? = null
+    val taskAttemptFailed: TaskAttemptFailed? = null
 ) {
     init {
         val noNull = listOfNotNull(
@@ -52,12 +48,8 @@ data class TaskEngineEnvelope(
             retryTask,
             retryTaskAttempt,
             cancelTask,
-            taskCanceled,
-            taskCompleted,
-            taskAttemptDispatched,
             taskAttemptCompleted,
-            taskAttemptFailed,
-            taskAttemptStarted
+            taskAttemptFailed
         )
 
         require(noNull.size == 1)
@@ -92,21 +84,6 @@ data class TaskEngineEnvelope(
                 TaskEngineMessageType.CANCEL_TASK,
                 cancelTask = msg
             )
-            is TaskCanceled -> TaskEngineEnvelope(
-                msg.taskId,
-                TaskEngineMessageType.TASK_CANCELED,
-                taskCanceled = msg
-            )
-            is TaskCompleted -> TaskEngineEnvelope(
-                msg.taskId,
-                TaskEngineMessageType.TASK_COMPLETED,
-                taskCompleted = msg
-            )
-            is TaskAttemptDispatched -> TaskEngineEnvelope(
-                msg.taskId,
-                TaskEngineMessageType.TASK_ATTEMPT_DISPATCHED,
-                taskAttemptDispatched = msg
-            )
             is TaskAttemptCompleted -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_ATTEMPT_COMPLETED,
@@ -116,11 +93,6 @@ data class TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_ATTEMPT_FAILED,
                 taskAttemptFailed = msg
-            )
-            is TaskAttemptStarted -> TaskEngineEnvelope(
-                msg.taskId,
-                TaskEngineMessageType.TASK_ATTEMPT_STARTED,
-                taskAttemptStarted = msg
             )
         }
 
@@ -133,12 +105,8 @@ data class TaskEngineEnvelope(
         TaskEngineMessageType.RETRY_TASK -> retryTask!!
         TaskEngineMessageType.RETRY_TASK_ATTEMPT -> retryTaskAttempt!!
         TaskEngineMessageType.CANCEL_TASK -> cancelTask!!
-        TaskEngineMessageType.TASK_CANCELED -> taskCanceled!!
-        TaskEngineMessageType.TASK_COMPLETED -> taskCompleted!!
-        TaskEngineMessageType.TASK_ATTEMPT_DISPATCHED -> taskAttemptDispatched!!
         TaskEngineMessageType.TASK_ATTEMPT_COMPLETED -> taskAttemptCompleted!!
         TaskEngineMessageType.TASK_ATTEMPT_FAILED -> taskAttemptFailed!!
-        TaskEngineMessageType.TASK_ATTEMPT_STARTED -> taskAttemptStarted!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

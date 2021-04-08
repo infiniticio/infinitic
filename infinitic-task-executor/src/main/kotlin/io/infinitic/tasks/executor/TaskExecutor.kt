@@ -34,7 +34,6 @@ import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.CancelTaskAttempt
@@ -96,9 +95,6 @@ class TaskExecutor(
             taskMeta = message.taskMeta.map,
             taskOptions = message.taskOptions
         )
-
-        // let engine know that we are processing the message
-        sendTaskStarted(message)
 
         // trying to instantiate the task
         val (task, method, parameters, options) = try {
@@ -217,18 +213,6 @@ class TaskExecutor(
                 RetryDelayHasWrongReturnType(task::class.java.name, method.genericReturnType.typeName, Float::class.javaObjectType.name)
             )
         }
-    }
-
-    private suspend fun sendTaskStarted(message: ExecuteTaskAttempt) {
-        val taskAttemptStarted = TaskAttemptStarted(
-            taskName = message.taskName,
-            taskId = message.taskId,
-            taskRetry = message.taskRetry,
-            taskAttemptId = message.taskAttemptId,
-            taskAttemptRetry = message.taskAttemptRetry
-        )
-
-        sendToTaskEngine(taskAttemptStarted)
     }
 
     private suspend fun sendTaskAttemptFailed(message: ExecuteTaskAttempt, error: Throwable?, delay: MillisDuration? = null) {
