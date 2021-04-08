@@ -43,7 +43,7 @@ import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-const val MONITORING_PER_NAME_THREAD_NAME = "monitoring-per-name"
+const val METRICS_PER_NAME_THREAD_NAME = "metrics-per-name"
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
@@ -61,14 +61,14 @@ private fun logError(message: MetricsPerNameMessage, e: Exception) = logger.erro
     e
 )
 
-fun CoroutineScope.startPulsarMonitoringPerNameWorker(
+fun CoroutineScope.startPulsarMetricsPerNameWorker(
     consumerCounter: Int,
     metricsPerNameConsumer: Consumer<MetricsPerNameEnvelope>,
     keyValueStorage: KeyValueStorage,
     sendToMetricsGlobal: SendToMetricsGlobal
-) = launch(singleThreadedContext("$MONITORING_PER_NAME_THREAD_NAME-$consumerCounter")) {
+) = launch(singleThreadedContext("$METRICS_PER_NAME_THREAD_NAME-$consumerCounter")) {
 
-    val monitoringPerNameEngine = MetricsPerNameEngine(
+    val metricsPerNameEngine = MetricsPerNameEngine(
         BinaryMetricsPerNameStateStorage(keyValueStorage),
         sendToMetricsGlobal
     )
@@ -93,7 +93,7 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
 
         message?.let {
             try {
-                monitoringPerNameEngine.handle(it)
+                metricsPerNameEngine.handle(it)
 
                 acknowledge(pulsarMessage.messageId)
             } catch (e: Exception) {

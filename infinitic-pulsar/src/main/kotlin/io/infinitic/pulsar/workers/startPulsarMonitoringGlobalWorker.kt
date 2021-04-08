@@ -43,9 +43,9 @@ import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-typealias PulsarMonitoringGlobalMessageToProcess = PulsarMessageToProcess<MetricsGlobalMessage>
+typealias PulsarMetricsGlobalMessageToProcess = PulsarMessageToProcess<MetricsGlobalMessage>
 
-const val MONITORING_GLOBAL_THREAD_NAME = "monitoring-global"
+const val METRICS_GLOBAL_THREAD_NAME = "metrics-global"
 
 private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
@@ -62,12 +62,12 @@ private fun logError(message: MetricsGlobalMessage, e: Exception) = logger.error
     e
 )
 
-fun CoroutineScope.startPulsarMonitoringGlobalWorker(
+fun CoroutineScope.startPulsarMetricsGlobalWorker(
     metricsGlobalConsumer: Consumer<MetricsGlobalEnvelope>,
     keyValueStorage: KeyValueStorage
-) = launch(singleThreadedContext(MONITORING_GLOBAL_THREAD_NAME)) {
+) = launch(singleThreadedContext(METRICS_GLOBAL_THREAD_NAME)) {
 
-    val monitoringGlobalEngine = MetricsGlobalEngine(
+    val metricsGlobalEngine = MetricsGlobalEngine(
         BinaryMetricsGlobalStateStorage(keyValueStorage)
     )
 
@@ -91,7 +91,7 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
 
         message?.let {
             try {
-                monitoringGlobalEngine.handle(it)
+                metricsGlobalEngine.handle(it)
 
                 acknowledge(pulsarMessage.messageId)
             } catch (e: Exception) {

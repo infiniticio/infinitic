@@ -57,12 +57,12 @@ class MetricsPerNameTests : ShouldSpec({
             coEvery { storage.getState(msg.taskName) } returns stateIn
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
 
-            val monitoringPerName = MetricsPerNameEngine(
+            val metricsPerName = MetricsPerNameEngine(
                 storage,
                 mockSendToMetricsGlobal()
             )
 
-            monitoringPerName.handle(msg)
+            metricsPerName.handle(msg)
 
             val stateOut = stateOutSlot.captured
             coVerifyAll {
@@ -86,10 +86,10 @@ class MetricsPerNameTests : ShouldSpec({
             coEvery { storage.getState(msg.taskName) } returns null
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
             val sendToMetricsGlobal = mockSendToMetricsGlobal()
-            val monitoringPerName = MetricsPerNameEngine(storage, sendToMetricsGlobal)
+            val metricsPerName = MetricsPerNameEngine(storage, sendToMetricsGlobal)
 
             // when
-            monitoringPerName.handle(msg)
+            metricsPerName.handle(msg)
             // then
             val stateOut = stateOutSlot.captured
             coVerifyAll {

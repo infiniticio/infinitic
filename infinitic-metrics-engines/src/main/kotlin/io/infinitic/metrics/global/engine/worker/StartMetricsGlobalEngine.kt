@@ -55,13 +55,13 @@ fun <T : MetricsGlobalMessageToProcess> CoroutineScope.startMetricsGlobalEngine(
     logChannel: SendChannel<T>
 ) = launch(CoroutineName(coroutineName)) {
 
-    val monitoringGlobalEngine = MetricsGlobalEngine(
+    val metricsGlobalEngine = MetricsGlobalEngine(
         metricsGlobalStateStorage
     )
 
     for (message in metricsGlobalChannel) {
         try {
-            message.returnValue = monitoringGlobalEngine.handle(message.message)
+            message.returnValue = metricsGlobalEngine.handle(message.message)
         } catch (e: Exception) {
             message.exception = e
             logError(message, e)

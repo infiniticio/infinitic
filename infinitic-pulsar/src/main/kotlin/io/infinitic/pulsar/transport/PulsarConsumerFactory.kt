@@ -34,8 +34,8 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.ClientResponseTopic
-import io.infinitic.pulsar.topics.MonitoringGlobalTopic
-import io.infinitic.pulsar.topics.MonitoringPerNameTopic
+import io.infinitic.pulsar.topics.MetricsGlobalTopic
+import io.infinitic.pulsar.topics.MetricsPerNameTopic
 import io.infinitic.pulsar.topics.TagEngineCommandsTopic
 import io.infinitic.pulsar.topics.TagEngineEventsTopic
 import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
@@ -65,8 +65,8 @@ class PulsarConsumerFactory(
         const val WORKFLOW_ENGINE_SUBSCRIPTION_NAME = "workflow-engine"
         const val TASK_EXECUTOR_SUBSCRIPTION = "task-executor"
         const val WORKFLOW_EXECUTOR_SUBSCRIPTION = "workflow-executor"
-        const val MONITORING_PER_NAME_SUBSCRIPTION = "monitoring-per-name"
-        const val MONITORING_GLOBAL_SUBSCRIPTION = "monitoring-global"
+        const val METRICS_PER_NAME_SUBSCRIPTION = "metrics-per-name"
+        const val METRICS_GLOBAL_SUBSCRIPTION = "metrics-global"
     }
 
     fun newClientResponseConsumer(clientName: String): Consumer<ClientEnvelope> =
@@ -165,30 +165,30 @@ class PulsarConsumerFactory(
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newMonitoringPerNameEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<MetricsPerNameEnvelope> =
+    fun newMetricsPerNameEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<MetricsPerNameEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MetricsPerNameEnvelope>()))
-            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name))
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsPerNameTopic.name))
             .also {
                 if (consumerName != null) {
                     it.consumerName("$consumerName-$consumerCounter")
                 }
             }
             .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
-            .subscriptionName(MONITORING_PER_NAME_SUBSCRIPTION)
+            .subscriptionName(METRICS_PER_NAME_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Key_Shared)
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newMonitoringGlobalEngineConsumer(consumerName: String?): Consumer<MetricsGlobalEnvelope> =
+    fun newMetricsGlobalEngineConsumer(consumerName: String?): Consumer<MetricsGlobalEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<MetricsGlobalEnvelope>()))
-            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name))
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsGlobalTopic.name))
             .also {
                 if (consumerName != null) {
                     it.consumerName(consumerName)
                 }
             }
             .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
-            .subscriptionName(MONITORING_GLOBAL_SUBSCRIPTION)
+            .subscriptionName(METRICS_GLOBAL_SUBSCRIPTION)
             .subscriptionType(SubscriptionType.Failover)
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()

@@ -58,14 +58,14 @@ fun <T : MetricsPerNameMessageToProcess> CoroutineScope.startMetricsPerNameEngin
     sendToMetricsGlobal: SendToMetricsGlobal
 ) = launch(CoroutineName(coroutineName)) {
 
-    val monitoringPerNameEngine = MetricsPerNameEngine(
+    val metricsPerNameEngine = MetricsPerNameEngine(
         metricsPerNameStateStorage,
         sendToMetricsGlobal
     )
 
     for (messageToProcess in metricsPerNameChannel) {
         try {
-            messageToProcess.returnValue = monitoringPerNameEngine.handle(messageToProcess.message)
+            messageToProcess.returnValue = metricsPerNameEngine.handle(messageToProcess.message)
         } catch (e: Exception) {
             messageToProcess.exception = e
             logError(messageToProcess, e)

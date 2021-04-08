@@ -25,9 +25,9 @@
 
 package io.infinitic.pulsar.functions
 
-import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
-import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
-import io.infinitic.metrics.global.engine.MetricsGlobalEngine
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.Runs
@@ -40,11 +40,11 @@ import io.mockk.spyk
 import io.mockk.unmockkAll
 import org.apache.pulsar.functions.api.Context
 
-class MonitoringGlobalPulsarFunctionTests : ShouldSpec({
-    context("MonitoringGlobalPulsarFunction.process") {
+class MetricsPerNamePulsarFunctionTests : ShouldSpec({
+    context("MetricsPerNamePulsarFunctionTests.process") {
 
         should("throw an exception if called with a null context") {
-            val function = MonitoringGlobalPulsarFunction()
+            val function = MetricsPerNamePulsarFunction()
 
             shouldThrow<NullPointerException> {
                 function.process(mockk(), null)
@@ -57,20 +57,20 @@ class MonitoringGlobalPulsarFunctionTests : ShouldSpec({
             every { context.logger } returns mockk()
 
             // Mocking avro conversion
-            val envelope = mockk<MetricsGlobalEnvelope>()
-            val msg = mockk<MetricsGlobalMessage>()
+            val envelope = mockk<MetricsPerNameEnvelope>()
+            val msg = mockk<MetricsPerNameMessage>()
             every { envelope.message() } returns msg
 
-            // Mocking Task Engine
-            val monitoringGlobal = mockk<MetricsGlobalEngine>()
-            val monitoringGlobalPulsarFunction = spyk<MonitoringGlobalPulsarFunction>()
-            every { monitoringGlobalPulsarFunction.getMonitoringGlobalEngine(context) } returns monitoringGlobal
-            coEvery { monitoringGlobal.handle(msg) } just Runs
+            // Mocking Monitoring Per Name
+            val metricsPerName = mockk<MetricsPerNameEngine>()
+            val metricsPerNamePulsarFunction = spyk<MetricsPerNamePulsarFunction>()
+            every { metricsPerNamePulsarFunction.getMetricsPerNameEngine(context) } returns metricsPerName
+            coEvery { metricsPerName.handle(msg) } just Runs
 
             // when
-            monitoringGlobalPulsarFunction.process(envelope, context)
+            metricsPerNamePulsarFunction.process(envelope, context)
             // then
-            coVerify(exactly = 1) { monitoringGlobal.handle(msg) }
+            coVerify(exactly = 1) { metricsPerName.handle(msg) }
             unmockkAll()
         }
     }

@@ -27,23 +27,22 @@ package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
-import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
-import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
+import io.infinitic.metrics.global.engine.MetricsGlobalEngine
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.pulsar.functions.storage.keyValueStorage
-import io.infinitic.pulsar.transport.PulsarOutputs
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
 
-class MonitoringPerNamePulsarFunction : Function<MetricsPerNameEnvelope, Void> {
+class MetricsGlobalPulsarFunction : Function<MetricsGlobalEnvelope, Void> {
 
-    override fun process(envelope: MetricsPerNameEnvelope, context: Context?): Void? = runBlocking {
+    override fun process(envelope: MetricsGlobalEnvelope, context: Context?): Void? = runBlocking {
         val ctx = context ?: throw NullPointerException("Null Context received")
 
         try {
-            getMonitoringPerNameEngine(ctx).handle(envelope.message())
+            getMetricsGlobalEngine(ctx).handle(envelope.message())
         } catch (e: Exception) {
             ctx.logger.error("Error:%s for message:%s", e, envelope)
             throw e
@@ -52,14 +51,13 @@ class MonitoringPerNamePulsarFunction : Function<MetricsPerNameEnvelope, Void> {
         null
     }
 
-    internal fun getMonitoringPerNameEngine(context: Context) = MetricsPerNameEngine(
-        BinaryMetricsPerNameStateStorage(
+    internal fun getMetricsGlobalEngine(context: Context) = MetricsGlobalEngine(
+        BinaryMetricsGlobalStateStorage(
             // context storage decorated with logging and a 1h cache
             CachedKeyValueStorage(
                 CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
                 context.keyValueStorage()
             )
-        ),
-        PulsarOutputs.from(context).sendToMetricsGlobal
+        )
     )
 }

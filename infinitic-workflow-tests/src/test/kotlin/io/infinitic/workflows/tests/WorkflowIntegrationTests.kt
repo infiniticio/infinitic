@@ -82,8 +82,8 @@ val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
 private val workflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
-private val monitoringPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
-private val monitoringGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
+private val metricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
+private val metricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
 private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
@@ -694,11 +694,11 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuratio
     taskEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch {
+fun CoroutineScope.sendToMetricsPerName(msg: MetricsPerNameMessage) = launch {
     metricsPerNameEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) = launch {
+fun CoroutineScope.sendToMetricsGlobal(msg: MetricsGlobalMessage) = launch {
     metricsGlobalEngine.handle(msg)
 }
 
@@ -736,7 +736,7 @@ fun CoroutineScope.init() {
         { msg, after -> sendToTaskEngine(msg, after) },
         { msg, after -> sendToWorkflowEngine(msg, after) },
         { sendToWorkers(it) },
-        { sendToMonitoringPerName(it) }
+        { sendToMetricsPerName(it) }
     )
 
     workflowEngine = WorkflowEngine(
@@ -748,11 +748,11 @@ fun CoroutineScope.init() {
     )
 
     metricsPerNameEngine = MetricsPerNameEngine(
-        monitoringPerNameStateStorage,
-        { sendToMonitoringGlobal(it) }
+        metricsPerNameStateStorage,
+        { sendToMetricsGlobal(it) }
     )
 
-    metricsGlobalEngine = MetricsGlobalEngine(monitoringGlobalStateStorage)
+    metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     executor = TaskExecutor(
         { msg, after -> sendToTaskEngine(msg, after) },

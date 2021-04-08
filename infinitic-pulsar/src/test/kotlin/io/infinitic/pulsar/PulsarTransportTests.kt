@@ -63,11 +63,11 @@ class PulsarTransportTests : StringSpec({
     }
 
     MetricsPerNameMessage::class.sealedSubclasses.forEach {
-        include(shouldBeAbleToSendMessageToMonitoringPerNameTopic(TestFactory.random(it)))
+        include(shouldBeAbleToSendMessageToMetricsPerNameTopic(TestFactory.random(it)))
     }
 
     MetricsGlobalMessage::class.sealedSubclasses.forEach {
-        include(shouldBeAbleToSendMessageToMonitoringGlobalTopic(TestFactory.random(it)))
+        include(shouldBeAbleToSendMessageToMetricsGlobalTopic(TestFactory.random(it)))
     }
 
     TaskExecutorMessage::class.sealedSubclasses.forEach {
@@ -137,8 +137,8 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
     }
 }
 
-private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MetricsPerNameMessage) = stringSpec {
-    "${msg::class.simpleName!!} can be send to MonitoringPerName topic " {
+private fun shouldBeAbleToSendMessageToMetricsPerNameTopic(msg: MetricsPerNameMessage) = stringSpec {
+    "${msg::class.simpleName!!} can be send to MetricsPerName topic " {
         // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<MetricsPerNameEnvelope>>()
@@ -154,7 +154,7 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MetricsPerNam
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/monitoring-per-name",
+                "persistent://tenant/namespace/metrics-per-name",
                 slotSchema.captured
             )
         }
@@ -168,8 +168,8 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MetricsPerNam
     }
 }
 
-private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MetricsGlobalMessage) = stringSpec {
-    "${msg::class.simpleName!!} can be send to MonitoringGlobal topic " {
+private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: MetricsGlobalMessage) = stringSpec {
+    "${msg::class.simpleName!!} can be send to MetricsGlobal topic " {
         // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<MetricsGlobalEnvelope>>()
@@ -185,7 +185,7 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MetricsGlobalM
         PulsarOutputs.from(context).sendToMetricsGlobal(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe "persistent://tenant/namespace/monitoring-global"
+        slotTopic.captured shouldBe "persistent://tenant/namespace/metrics-global"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MetricsGlobalEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(MetricsGlobalEnvelope.from(msg)) }
         verify(exactly = 1) { builder.sendAsync() }

@@ -119,7 +119,7 @@ fun CoroutineScope.startInMemory(
     }
 
     startMetricsPerNameEngine(
-        "in-memory-monitoring-per-name-engine",
+        "in-memory-metrics-per-name-engine",
         BinaryMetricsPerNameStateStorage(keyValueStorage),
         inMemoryOutput.metricsPerNameChannel,
         inMemoryOutput.logChannel,
@@ -127,7 +127,7 @@ fun CoroutineScope.startInMemory(
     )
 
     startMetricsGlobalEngine(
-        "in-memory-monitoring-global-engine",
+        "in-memory-metrics-global-engine",
         BinaryMetricsGlobalStateStorage(keyValueStorage),
         inMemoryOutput.metricsGlobalChannel,
         inMemoryOutput.logChannel

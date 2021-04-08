@@ -25,6 +25,6 @@
 
 package io.infinitic.pulsar.topics
 
-object MonitoringPerNameDeadLettersTopic {
-    const val name = "monitoring-per-name-dead-letters"
+object MetricsGlobalDeadLettersTopic {
+    const val name = "metrics-global-dead-letters"
 }

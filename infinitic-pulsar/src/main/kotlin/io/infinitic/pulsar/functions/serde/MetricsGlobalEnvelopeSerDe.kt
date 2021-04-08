@@ -23,8 +23,14 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.pulsar.functions.serde
 
-object MonitoringPerNameTopic {
-    const val name = "monitoring-per-name"
+import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import org.apache.pulsar.functions.api.SerDe
+
+class MetricsGlobalEnvelopeSerDe : SerDe<MetricsGlobalEnvelope> {
+    override fun deserialize(input: ByteArray) =
+        MetricsGlobalEnvelope.fromByteArray(input)
+
+    override fun serialize(input: MetricsGlobalEnvelope) = input.toByteArray()
 }

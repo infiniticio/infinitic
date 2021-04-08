@@ -53,10 +53,10 @@ import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
 import io.infinitic.pulsar.topics.ClientResponseTopic
-import io.infinitic.pulsar.topics.MonitoringGlobalDeadLettersTopic
-import io.infinitic.pulsar.topics.MonitoringGlobalTopic
-import io.infinitic.pulsar.topics.MonitoringPerNameDeadLettersTopic
-import io.infinitic.pulsar.topics.MonitoringPerNameTopic
+import io.infinitic.pulsar.topics.MetricsGlobalDeadLettersTopic
+import io.infinitic.pulsar.topics.MetricsGlobalTopic
+import io.infinitic.pulsar.topics.MetricsPerNameDeadLettersTopic
+import io.infinitic.pulsar.topics.MetricsPerNameTopic
 import io.infinitic.pulsar.topics.TagEngineCommandsTopic
 import io.infinitic.pulsar.topics.TagEngineDeadLettersTopic
 import io.infinitic.pulsar.topics.TagEngineEventsTopic
@@ -202,7 +202,7 @@ class PulsarOutputs(
     val sendToMetricsPerName: SendToMetricsPerName = { message: MetricsPerNameMessage ->
         logger.debug("sendToMonitoringPerName {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameTopic.name),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsPerNameTopic.name),
             MetricsPerNameEnvelope.from(message),
             "${message.taskName}",
             MillisDuration(0)
@@ -212,7 +212,7 @@ class PulsarOutputs(
     val sendToMetricsGlobal: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
         logger.debug("sendToMonitoringGlobal {}", message)
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalTopic.name),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsGlobalTopic.name),
             MetricsGlobalEnvelope.from(message),
             null,
             MillisDuration(0)
@@ -251,7 +251,7 @@ class PulsarOutputs(
 
     val sendToMetricsPerNameDeadLetters: SendToMetricsPerName = { message: MetricsPerNameMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringPerNameDeadLettersTopic.name),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsPerNameDeadLettersTopic.name),
             MetricsPerNameEnvelope.from(message),
             "${message.taskName}",
             MillisDuration(0)
@@ -261,7 +261,7 @@ class PulsarOutputs(
 
     val sendToMetricsGlobalDeadLetters: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MonitoringGlobalDeadLettersTopic.name),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsGlobalDeadLettersTopic.name),
             MetricsGlobalEnvelope.from(message),
             null,
             MillisDuration(0)

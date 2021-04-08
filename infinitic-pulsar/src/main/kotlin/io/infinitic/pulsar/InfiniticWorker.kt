@@ -37,8 +37,8 @@ import io.infinitic.config.storage.getKeySetStorage
 import io.infinitic.config.storage.getKeyValueStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutputs
-import io.infinitic.pulsar.workers.startPulsarMonitoringGlobalWorker
-import io.infinitic.pulsar.workers.startPulsarMonitoringPerNameWorker
+import io.infinitic.pulsar.workers.startPulsarMetricsGlobalWorker
+import io.infinitic.pulsar.workers.startPulsarMetricsPerNameWorker
 import io.infinitic.pulsar.workers.startPulsarTagEngineWorker
 import io.infinitic.pulsar.workers.startPulsarTaskEngineWorker
 import io.infinitic.pulsar.workers.startPulsarTaskExecutorWorker
@@ -111,7 +111,7 @@ class InfiniticWorker(
 
         startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        startMonitoringWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+        startMetricsWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
         startTaskExecutorWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
@@ -225,7 +225,7 @@ class InfiniticWorker(
         }
     }
 
-    private fun CoroutineScope.startMonitoringWorkers(
+    private fun CoroutineScope.startMetricsWorkers(
         consumerName: String,
         config: WorkerConfig,
         pulsarConsumerFactory: PulsarConsumerFactory,
@@ -239,18 +239,18 @@ class InfiniticWorker(
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
                 repeat(it.consumersOrDefault) { counter ->
-                    logger.info("InfiniticWorker - starting monitoring per name {}", counter)
-                    startPulsarMonitoringPerNameWorker(
+                    logger.info("InfiniticWorker - starting metrics per name {}", counter)
+                    startPulsarMetricsPerNameWorker(
                         counter,
-                        pulsarConsumerFactory.newMonitoringPerNameEngineConsumer(consumerName, counter),
+                        pulsarConsumerFactory.newMetricsPerNameEngineConsumer(consumerName, counter),
                         storage,
                         pulsarOutputs.sendToMetricsGlobal
                     )
                 }
 
-                logger.info("InfiniticWorker - starting monitoring global")
-                startPulsarMonitoringGlobalWorker(
-                    pulsarConsumerFactory.newMonitoringGlobalEngineConsumer(consumerName),
+                logger.info("InfiniticWorker - starting metrics global")
+                startPulsarMetricsGlobalWorker(
+                    pulsarConsumerFactory.newMetricsGlobalEngineConsumer(consumerName),
                     storage
                 )
             }

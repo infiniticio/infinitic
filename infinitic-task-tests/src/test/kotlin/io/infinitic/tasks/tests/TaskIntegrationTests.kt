@@ -73,8 +73,8 @@ val keyValueStorage = LoggedKeyValueStorage(InMemoryKeyValueStorage())
 val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
-private val monitoringPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
-private val monitoringGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
+private val metricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
+private val metricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
 private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
@@ -410,7 +410,7 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuratio
     taskEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch {
+fun CoroutineScope.sendToMetricsPerName(msg: MetricsPerNameMessage) = launch {
     metricsPerNameEngine.handle(msg)
 
     // catch status update
@@ -419,7 +419,7 @@ fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch 
     }
 }
 
-fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) = launch {
+fun CoroutineScope.sendToMetricsGlobal(msg: MetricsGlobalMessage) = launch {
     metricsGlobalEngine.handle(msg)
 }
 
@@ -457,15 +457,15 @@ fun CoroutineScope.init() {
         { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
         { _: WorkflowEngineMessage, _: MillisDuration -> },
         { msg: TaskExecutorMessage -> sendToWorkers(msg) },
-        { msg: MetricsPerNameMessage -> sendToMonitoringPerName(msg) }
+        { msg: MetricsPerNameMessage -> sendToMetricsPerName(msg) }
     )
 
     metricsPerNameEngine = MetricsPerNameEngine(
-        monitoringPerNameStateStorage,
-        { msg: MetricsGlobalMessage -> sendToMonitoringGlobal(msg) }
+        metricsPerNameStateStorage,
+        { msg: MetricsGlobalMessage -> sendToMetricsGlobal(msg) }
     )
 
-    metricsGlobalEngine = MetricsGlobalEngine(monitoringGlobalStateStorage)
+    metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     taskExecutor = TaskExecutor(
         { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },

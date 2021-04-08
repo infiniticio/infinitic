@@ -62,8 +62,8 @@ fun Routing.root() {
             pulsarAdmin.functions().getFunctionState(
                 config.property("infinitic.pulsar.tenant").getString(),
                 config.property("infinitic.pulsar.namespace").getString(),
-                "infinitic-tasks-monitoring-global",
-                "monitoringGlobal.state"
+                "infinitic-tasks-metrics-global",
+                "metricsGlobal.state"
             )?.let {
                 MetricsGlobalState.fromByteArray(it.stringValue.toByteArray())
             } ?: return@get
@@ -80,8 +80,8 @@ fun Routing.root() {
                 pulsarAdmin.functions().getFunctionState(
                     config.property("infinitic.pulsar.tenant").getString(),
                     config.property("infinitic.pulsar.namespace").getString(),
-                    "infinitic-tasks-monitoring-per-name",
-                    "monitoringPerName.state.$name"
+                    "infinitic-tasks-metrics-per-name",
+                    "metricsPerName.state.$name"
                 ).let {
                     MetricsPerNameState.fromByteArray(
                         it.stringValue.toByteArray()

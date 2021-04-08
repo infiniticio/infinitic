@@ -81,7 +81,7 @@ data class WorkerConfig(
     @JvmField val taskEngine: TaskEngine? = null,
 
     /*
-    Infinitic monitoring configuration
+    Infinitic metrics configuration
      */
     @JvmField val metrics: Metrics? = null,
 
@@ -135,7 +135,7 @@ data class WorkerConfig(
             // apply default, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, "monitoring.stateStorage")
+            checkStateStorage(it.stateStorage, "metrics.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
         }
 
