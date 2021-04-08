@@ -23,17 +23,17 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.global.engine
+package io.infinitic.metrics.global.engine
 
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.global.messages.TaskCreated
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
+import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class MonitoringGlobalEngine(
-    val storage: MonitoringGlobalStateStorage
+class MetricsGlobalEngine(
+    val storage: MetricsGlobalStateStorage
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)

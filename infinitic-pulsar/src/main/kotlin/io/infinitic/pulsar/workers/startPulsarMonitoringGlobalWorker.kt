@@ -29,8 +29,8 @@ import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
-import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
+import io.infinitic.metrics.global.engine.MetricsGlobalEngine
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineScope
@@ -67,8 +67,8 @@ fun CoroutineScope.startPulsarMonitoringGlobalWorker(
     keyValueStorage: KeyValueStorage
 ) = launch(singleThreadedContext(MONITORING_GLOBAL_THREAD_NAME)) {
 
-    val monitoringGlobalEngine = MonitoringGlobalEngine(
-        BinaryMonitoringGlobalStateStorage(keyValueStorage)
+    val monitoringGlobalEngine = MetricsGlobalEngine(
+        BinaryMetricsGlobalStateStorage(keyValueStorage)
     )
 
     fun negativeAcknowledge(pulsarId: MessageId) =

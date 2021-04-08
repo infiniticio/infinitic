@@ -27,7 +27,7 @@ package io.infinitic.pulsar.functions
 
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
-import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
+import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.Runs
@@ -62,7 +62,7 @@ class MonitoringPerNamePulsarFunctionTests : ShouldSpec({
             every { envelope.message() } returns msg
 
             // Mocking Monitoring Per Name
-            val monitoringPerName = mockk<MonitoringPerNameEngine>()
+            val monitoringPerName = mockk<MetricsPerNameEngine>()
             val monitoringPerNamePulsarFunction = spyk<MonitoringPerNamePulsarFunction>()
             every { monitoringPerNamePulsarFunction.getMonitoringPerNameEngine(context) } returns monitoringPerName
             coEvery { monitoringPerName.handle(msg) } just Runs

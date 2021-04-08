@@ -29,10 +29,10 @@ import io.infinitic.client.Client
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryOutput
-import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
-import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
-import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
-import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
+import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
+import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
+import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
@@ -118,18 +118,18 @@ fun CoroutineScope.startInMemory(
         )
     }
 
-    startMonitoringPerNameEngine(
+    startMetricsPerNameEngine(
         "in-memory-monitoring-per-name-engine",
-        BinaryMonitoringPerNameStateStorage(keyValueStorage),
-        inMemoryOutput.monitoringPerNameChannel,
+        BinaryMetricsPerNameStateStorage(keyValueStorage),
+        inMemoryOutput.metricsPerNameChannel,
         inMemoryOutput.logChannel,
         inMemoryOutput.sendToMetricsGlobal
     )
 
-    startMonitoringGlobalEngine(
+    startMetricsGlobalEngine(
         "in-memory-monitoring-global-engine",
-        BinaryMonitoringGlobalStateStorage(keyValueStorage),
-        inMemoryOutput.monitoringGlobalChannel,
+        BinaryMetricsGlobalStateStorage(keyValueStorage),
+        inMemoryOutput.metricsGlobalChannel,
         inMemoryOutput.logChannel
     )
 }

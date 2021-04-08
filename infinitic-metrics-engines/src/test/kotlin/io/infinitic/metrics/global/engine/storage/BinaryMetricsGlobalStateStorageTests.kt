@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.global.engine.storage
+package io.infinitic.metrics.global.engine.storage
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
@@ -36,48 +36,48 @@ import io.mockk.confirmVerified
 import io.mockk.mockk
 import io.mockk.slot
 
-class BinaryMonitoringGlobalStateStorageTests : ShouldSpec({
-    context("BinaryMonitoringGlobalStateStorage.getState") {
+class BinaryMetricsGlobalStateStorageTests : ShouldSpec({
+    context("BinaryMetricsGlobalStateStorage.getState") {
         should("return null when state does not exist") {
             // mocking
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getValue(any()) } returns null
             // given
-            val stateStorage = BinaryMonitoringGlobalStateStorage(storage)
+            val stateStorage = BinaryMetricsGlobalStateStorage(storage)
             // when
             val state = stateStorage.getState()
             // then
-            coVerify(exactly = 1) { storage.getValue("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.getValue("metricsGlobal.state") }
             confirmVerified(storage)
             state shouldBe null
         }
 
-        should("BinaryMonitoringGlobalStateStorage: return state when state exists") {
+        should("BinaryMetricsGlobalStateStorage: return state when state exists") {
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random(MetricsGlobalState::class)
             coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
             // given
-            val stateStorage = BinaryMonitoringGlobalStateStorage(storage)
+            val stateStorage = BinaryMetricsGlobalStateStorage(storage)
             // when
             val stateOut = stateStorage.getState()
             // then
-            coVerify(exactly = 1) { storage.getValue("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.getValue("metricsGlobal.state") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
     }
 
-    context("BinaryMonitoringGlobalStateStorage.updateState") {
+    context("BinaryMetricsGlobalStateStorage.updateState") {
         should("record state") {
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random(MetricsGlobalState::class)
             val binSlot = slot<ByteArray>()
 
-            coEvery { storage.putValue("monitoringGlobal.state", capture(binSlot)) } returns Unit
+            coEvery { storage.putValue("metricsGlobal.state", capture(binSlot)) } returns Unit
             // given
-            val stateStorage = BinaryMonitoringGlobalStateStorage(storage)
+            val stateStorage = BinaryMetricsGlobalStateStorage(storage)
             // when
             stateStorage.putState(stateIn)
             // then
@@ -86,17 +86,17 @@ class BinaryMonitoringGlobalStateStorageTests : ShouldSpec({
         }
     }
 
-    context("BinaryMonitoringGlobalStateStorage.deleteState") {
+    context("BinaryMetricsGlobalStateStorage.deleteState") {
         should("delete state") {
             // mocking
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.delValue(any()) } returns Unit
             // given
-            val stageStorage = BinaryMonitoringGlobalStateStorage(storage)
+            val stageStorage = BinaryMetricsGlobalStateStorage(storage)
             // when
             stageStorage.delState()
             // then
-            coVerify(exactly = 1) { storage.delValue("monitoringGlobal.state") }
+            coVerify(exactly = 1) { storage.delValue("metricsGlobal.state") }
             confirmVerified(storage)
         }
     }

@@ -23,22 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine.storage
+package io.infinitic.metrics.global.engine
 
-import io.infinitic.common.metrics.perName.state.MetricsPerNameState
-import io.infinitic.common.tasks.data.TaskName
-
-/**
- * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-interface MonitoringPerNameStateStorage {
-
-    suspend fun getState(taskName: TaskName): MetricsPerNameState?
-
-    suspend fun putState(taskName: TaskName, state: MetricsPerNameState)
-
-    suspend fun delState(taskName: TaskName)
+class MetricsGlobalTests {
+    // TODO Add tests for MonitoringGlobalEngine
 }

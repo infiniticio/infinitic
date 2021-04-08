@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine
+package io.infinitic.metrics.perName.engine
 
 import io.infinitic.common.metrics.global.messages.TaskCreated
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
@@ -31,12 +31,12 @@ import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
+import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class MonitoringPerNameEngine(
-    val storage: MonitoringPerNameStateStorage,
+class MetricsPerNameEngine(
+    val storage: MetricsPerNameStateStorage,
     val sendToMetricsGlobal: SendToMetricsGlobal
 ) {
     private val logger: Logger

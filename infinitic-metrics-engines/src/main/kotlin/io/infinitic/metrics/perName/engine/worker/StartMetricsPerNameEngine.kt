@@ -23,12 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.global.engine.worker
+package io.infinitic.metrics.perName.engine.worker
 
-import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
+import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
+import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.MonitoringGlobalStateStorage
+import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
+import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -38,35 +39,38 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 private val logger: Logger
-    get() = LoggerFactory.getLogger(MonitoringGlobalEngine::class.java)
+    get() = LoggerFactory.getLogger(MetricsPerNameEngine::class.java)
 
-typealias MonitoringGlobalMessageToProcess = MessageToProcess<MetricsGlobalMessage>
+typealias MetricsPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
-private fun logError(messageToProcess: MonitoringGlobalMessageToProcess, e: Exception) = logger.error(
-    "exception on message {}:${System.getProperty("line.separator")}{}",
+private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Exception) = logger.error(
+    "taskName {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    messageToProcess.message.taskName,
     messageToProcess.message,
     e
 )
 
-fun <T : MonitoringGlobalMessageToProcess> CoroutineScope.startMonitoringGlobalEngine(
+fun <T : MetricsPerNameMessageToProcess> CoroutineScope.startMetricsPerNameEngine(
     coroutineName: String,
-    monitoringGlobalStateStorage: MonitoringGlobalStateStorage,
-    monitoringGlobalChannel: ReceiveChannel<T>,
-    logChannel: SendChannel<T>
+    metricsPerNameStateStorage: MetricsPerNameStateStorage,
+    metricsPerNameChannel: ReceiveChannel<T>,
+    logChannel: SendChannel<T>,
+    sendToMetricsGlobal: SendToMetricsGlobal
 ) = launch(CoroutineName(coroutineName)) {
 
-    val monitoringGlobalEngine = MonitoringGlobalEngine(
-        monitoringGlobalStateStorage
+    val monitoringPerNameEngine = MetricsPerNameEngine(
+        metricsPerNameStateStorage,
+        sendToMetricsGlobal
     )
 
-    for (message in monitoringGlobalChannel) {
+    for (messageToProcess in metricsPerNameChannel) {
         try {
-            message.returnValue = monitoringGlobalEngine.handle(message.message)
+            messageToProcess.returnValue = monitoringPerNameEngine.handle(messageToProcess.message)
         } catch (e: Exception) {
-            message.exception = e
-            logError(message, e)
+            messageToProcess.exception = e
+            logError(messageToProcess, e)
         } finally {
-            logChannel.send(message)
+            logChannel.send(messageToProcess)
         }
     }
 }

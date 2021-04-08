@@ -231,7 +231,7 @@ class InfiniticWorker(
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutputs: PulsarOutputs
     ) {
-        config.monitoring?.let {
+        config.metrics?.let {
             if (it.mode == Mode.worker) {
                 // storage decorated by the cache
                 val storage = CachedKeyValueStorage(

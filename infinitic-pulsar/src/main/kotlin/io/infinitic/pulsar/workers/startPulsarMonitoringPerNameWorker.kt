@@ -30,8 +30,8 @@ import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.workers.singleThreadedContext
-import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
+import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
+import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.pulsar.InfiniticWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -68,8 +68,8 @@ fun CoroutineScope.startPulsarMonitoringPerNameWorker(
     sendToMetricsGlobal: SendToMetricsGlobal
 ) = launch(singleThreadedContext("$MONITORING_PER_NAME_THREAD_NAME-$consumerCounter")) {
 
-    val monitoringPerNameEngine = MonitoringPerNameEngine(
-        BinaryMonitoringPerNameStateStorage(keyValueStorage),
+    val monitoringPerNameEngine = MetricsPerNameEngine(
+        BinaryMetricsPerNameStateStorage(keyValueStorage),
         sendToMetricsGlobal
     )
 

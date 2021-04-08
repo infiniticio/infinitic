@@ -104,7 +104,7 @@ class WorkflowEngine(
 
         // check if this message has already been handled
         if (state.lastMessageId == message.messageId) {
-            warnDiscardingMessage(message, "as state already contains this messageId")
+            logDiscardingMessage(message, "as state already contains this messageId")
 
             return
         }
@@ -112,7 +112,7 @@ class WorkflowEngine(
         // check is this workflow has already been launched
         // (a DispatchWorkflow (child) can be dispatched twice if the engine is shutdown while processing a workflowTask)
         if (message is DispatchWorkflow) {
-            warnDiscardingMessage(message, "as workflow has already been launched")
+            logDiscardingMessage(message, "as workflow has already been launched")
 
             return
         }
@@ -120,7 +120,7 @@ class WorkflowEngine(
         // check is this workflowTask is the current one
         // (a workflowTask can be dispatched twice if the engine is shutdown while processing a workflowTask)
         if (message is WorkflowTaskCompleted && message.workflowTaskId != state.runningWorkflowTaskId) {
-            warnDiscardingMessage(message, "as workflowTask is not the current one")
+            logDiscardingMessage(message, "as workflowTask is not the current one")
 
             return
         }
@@ -128,8 +128,8 @@ class WorkflowEngine(
         // set current messageId
         state.lastMessageId = message.messageId
 
-        // if a workflow task is ongoing then buffer this message
-        // except for WorkflowTaskCompleted, and WaitWorkflow
+        // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
+        // except also for WaitWorkflow, as we want to handle it asap to avoid terminating the workflow before it
         if (state.runningWorkflowTaskId != null &&
             message !is WorkflowTaskCompleted &&
             message !is WaitWorkflow
@@ -158,8 +158,8 @@ class WorkflowEngine(
 
         // update state
         when (state.methodRuns.size) {
-            0 -> { // workflow is terminated
-
+            // workflow is terminated
+            0 -> {
                 // remove tags reference to this instance
                 state.tags.map {
                     output.sendToTagEngine(
@@ -181,10 +181,6 @@ class WorkflowEngine(
 
     private fun logDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
         logger.info("workflowId {} - discarding {}: {} (messageId {})", message.workflowId, reason, message, message.messageId)
-    }
-
-    private fun warnDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
-        logger.warn("workflowId {} - discarding {}: {} (messageId {})", message.workflowId, reason, message, message.messageId)
     }
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
@@ -214,7 +210,7 @@ class WorkflowEngine(
         TODO()
     }
 
-    private suspend fun waitWorkflow(state: WorkflowState, msg: WaitWorkflow) {
+    private fun waitWorkflow(state: WorkflowState, msg: WaitWorkflow) {
         state.clientWaiting.add(msg.clientName)
     }
 }

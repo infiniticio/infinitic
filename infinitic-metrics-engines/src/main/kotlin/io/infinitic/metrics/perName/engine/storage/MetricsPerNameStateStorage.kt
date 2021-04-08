@@ -23,35 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine.storage
+package io.infinitic.metrics.perName.engine.storage
 
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
 
 /**
- * This MonitoringPerNameStateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value storage.
+ * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
+ *
+ * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
+ * transformed before being stored. These details are left to the different implementations.
  */
-class BinaryMonitoringPerNameStateStorage(
-    private val storage: KeyValueStorage
-) : MonitoringPerNameStateStorage, Flushable by storage {
+interface MetricsPerNameStateStorage {
 
-    override suspend fun getState(taskName: TaskName): MetricsPerNameState? {
-        val key = getMonitoringPerNameStateKey(taskName)
-        return storage.getValue(key)
-            ?.let { MetricsPerNameState.fromByteArray(it) }
-    }
-    override suspend fun putState(taskName: TaskName, state: MetricsPerNameState) {
-        val key = getMonitoringPerNameStateKey(taskName)
-        storage.putValue(key, state.toByteArray())
-    }
+    suspend fun getState(taskName: TaskName): MetricsPerNameState?
 
-    override suspend fun delState(taskName: TaskName) {
-        val key = getMonitoringPerNameStateKey(taskName)
-        storage.delValue(key)
-    }
+    suspend fun putState(taskName: TaskName, state: MetricsPerNameState)
 
-    private fun getMonitoringPerNameStateKey(taskName: TaskName) = "monitoringPerName.state.$taskName"
+    suspend fun delState(taskName: TaskName)
 }

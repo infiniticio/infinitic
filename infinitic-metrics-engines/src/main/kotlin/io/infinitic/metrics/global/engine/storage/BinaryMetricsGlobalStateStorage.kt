@@ -23,21 +23,35 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.global.engine.storage
+package io.infinitic.metrics.global.engine.storage
 
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.storage.keyValue.KeyValueStorage
 
 /**
- * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
+ * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
+ * them in a persistent key value storage.
  */
-interface MonitoringGlobalStateStorage {
+class BinaryMetricsGlobalStateStorage(
+    private val storage: KeyValueStorage,
+) : MetricsGlobalStateStorage, Flushable by storage {
 
-    suspend fun getState(): MetricsGlobalState?
+    override suspend fun getState(): MetricsGlobalState? {
+        val key = getMetricsGlobalStateKey()
+        return storage.getValue(key)
+            ?.let { MetricsGlobalState.fromByteArray(it) }
+    }
 
-    suspend fun putState(newState: MetricsGlobalState)
+    override suspend fun putState(state: MetricsGlobalState) {
+        val key = getMetricsGlobalStateKey()
+        storage.putValue(key, state.toByteArray())
+    }
 
-    suspend fun delState()
+    override suspend fun delState() {
+        val key = getMetricsGlobalStateKey()
+        storage.delValue(key)
+    }
+
+    private fun getMetricsGlobalStateKey() = "metricsGlobal.state"
 }

@@ -27,7 +27,7 @@ package io.infinitic.pulsar.functions
 
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
-import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
+import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.Runs
@@ -62,7 +62,7 @@ class MonitoringGlobalPulsarFunctionTests : ShouldSpec({
             every { envelope.message() } returns msg
 
             // Mocking Task Engine
-            val monitoringGlobal = mockk<MonitoringGlobalEngine>()
+            val monitoringGlobal = mockk<MetricsGlobalEngine>()
             val monitoringGlobalPulsarFunction = spyk<MonitoringGlobalPulsarFunction>()
             every { monitoringGlobalPulsarFunction.getMonitoringGlobalEngine(context) } returns monitoringGlobal
             coEvery { monitoringGlobal.handle(msg) } just Runs

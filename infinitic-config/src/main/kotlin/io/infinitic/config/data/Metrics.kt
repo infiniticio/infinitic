@@ -28,7 +28,7 @@ package io.infinitic.config.data
 import io.infinitic.cache.StateCache
 import io.infinitic.storage.StateStorage
 
-data class Monitoring(
+data class Metrics(
     @JvmField var mode: Mode? = null,
     @JvmField val consumers: Int? = null,
     @JvmField var stateStorage: StateStorage? = null,

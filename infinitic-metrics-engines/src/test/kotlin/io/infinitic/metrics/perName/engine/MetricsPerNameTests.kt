@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine
+package io.infinitic.metrics.perName.engine
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.global.messages.TaskCreated
@@ -31,7 +31,7 @@ import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
-import io.infinitic.monitoring.perName.engine.storage.MonitoringPerNameStateStorage
+import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -41,10 +41,10 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 
-class MonitoringPerNameTests : ShouldSpec({
+class MetricsPerNameTests : ShouldSpec({
     context("TaskMetrics.handle") {
         should("should update TaskMetricsState when receiving TaskStatusUpdate message") {
-            val storage = mockk<MonitoringPerNameStateStorage>()
+            val storage = mockk<MetricsPerNameStateStorage>()
             val msg = TestFactory.random(
                 TaskStatusUpdated::class,
                 mapOf(
@@ -57,7 +57,7 @@ class MonitoringPerNameTests : ShouldSpec({
             coEvery { storage.getState(msg.taskName) } returns stateIn
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
 
-            val monitoringPerName = MonitoringPerNameEngine(
+            val monitoringPerName = MetricsPerNameEngine(
                 storage,
                 mockSendToMetricsGlobal()
             )
@@ -81,12 +81,12 @@ class MonitoringPerNameTests : ShouldSpec({
                     "newStatus" to TaskStatus.RUNNING_OK
                 )
             )
-            val storage = mockk<MonitoringPerNameStateStorage>()
+            val storage = mockk<MetricsPerNameStateStorage>()
             val stateOutSlot = slot<MetricsPerNameState>()
             coEvery { storage.getState(msg.taskName) } returns null
             coEvery { storage.putState(msg.taskName, capture(stateOutSlot)) } just runs
             val sendToMetricsGlobal = mockSendToMetricsGlobal()
-            val monitoringPerName = MonitoringPerNameEngine(storage, sendToMetricsGlobal)
+            val monitoringPerName = MetricsPerNameEngine(storage, sendToMetricsGlobal)
 
             // when
             monitoringPerName.handle(msg)

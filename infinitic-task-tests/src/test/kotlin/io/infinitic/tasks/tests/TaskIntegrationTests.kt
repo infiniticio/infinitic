@@ -42,10 +42,10 @@ import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
-import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
+import io.infinitic.metrics.global.engine.MetricsGlobalEngine
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
+import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
+import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
@@ -73,13 +73,13 @@ val keyValueStorage = LoggedKeyValueStorage(InMemoryKeyValueStorage())
 val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
-private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(keyValueStorage)
-private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(keyValueStorage)
+private val monitoringPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
+private val monitoringGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
 private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
-private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
-private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
+private lateinit var metricsPerNameEngine: MetricsPerNameEngine
+private lateinit var metricsGlobalEngine: MetricsGlobalEngine
 private lateinit var taskExecutor: TaskExecutor
 private lateinit var client: Client
 private lateinit var taskStub: TaskTest
@@ -411,7 +411,7 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuratio
 }
 
 fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch {
-    monitoringPerNameEngine.handle(msg)
+    metricsPerNameEngine.handle(msg)
 
     // catch status update
     if (msg is TaskStatusUpdated) {
@@ -420,7 +420,7 @@ fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch 
 }
 
 fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) = launch {
-    monitoringGlobalEngine.handle(msg)
+    metricsGlobalEngine.handle(msg)
 }
 
 fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) = launch {
@@ -460,12 +460,12 @@ fun CoroutineScope.init() {
         { msg: MetricsPerNameMessage -> sendToMonitoringPerName(msg) }
     )
 
-    monitoringPerNameEngine = MonitoringPerNameEngine(
+    metricsPerNameEngine = MetricsPerNameEngine(
         monitoringPerNameStateStorage,
         { msg: MetricsGlobalMessage -> sendToMonitoringGlobal(msg) }
     )
 
-    monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
+    metricsGlobalEngine = MetricsGlobalEngine(monitoringGlobalStateStorage)
 
     taskExecutor = TaskExecutor(
         { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },

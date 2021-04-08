@@ -40,10 +40,10 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
-import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
+import io.infinitic.metrics.global.engine.MetricsGlobalEngine
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
+import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
+import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
@@ -82,14 +82,14 @@ val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
 private val workflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
-private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(keyValueStorage)
-private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(keyValueStorage)
+private val monitoringPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
+private val monitoringGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
 private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
 private lateinit var workflowEngine: WorkflowEngine
-private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
-private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
+private lateinit var metricsPerNameEngine: MetricsPerNameEngine
+private lateinit var metricsGlobalEngine: MetricsGlobalEngine
 private lateinit var executor: TaskExecutor
 private lateinit var client: Client
 private lateinit var workflowA: WorkflowA
@@ -695,11 +695,11 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuratio
 }
 
 fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch {
-    monitoringPerNameEngine.handle(msg)
+    metricsPerNameEngine.handle(msg)
 }
 
 fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) = launch {
-    monitoringGlobalEngine.handle(msg)
+    metricsGlobalEngine.handle(msg)
 }
 
 // without Dispatchers.IO we have some obscure race conditions when waiting in tasks
@@ -747,12 +747,12 @@ fun CoroutineScope.init() {
         { msg, after -> sendToWorkflowEngine(msg, after) }
     )
 
-    monitoringPerNameEngine = MonitoringPerNameEngine(
+    metricsPerNameEngine = MetricsPerNameEngine(
         monitoringPerNameStateStorage,
         { sendToMonitoringGlobal(it) }
     )
 
-    monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
+    metricsGlobalEngine = MetricsGlobalEngine(monitoringGlobalStateStorage)
 
     executor = TaskExecutor(
         { msg, after -> sendToTaskEngine(msg, after) },

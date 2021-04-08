@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.monitoring.perName.engine.storage
+package io.infinitic.metrics.perName.engine.storage
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
@@ -39,8 +39,8 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 
-class BinaryMonitoringPerNameStateStorageTests : ShouldSpec({
-    context("BinaryMonitoringPerNameStateStorage.getState") {
+class BinaryMetricsPerNameStateStorageTests : ShouldSpec({
+    context("BinaryMetricsPerNameStateStorage.getState") {
 
         should("return null when state does not exist") {
             // given
@@ -48,10 +48,10 @@ class BinaryMonitoringPerNameStateStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getValue(any()) } returns null
             // when
-            val stateStorage = BinaryMonitoringPerNameStateStorage(storage)
+            val stateStorage = BinaryMetricsPerNameStateStorage(storage)
             val state = stateStorage.getState(taskName)
             // then
-            coVerify(exactly = 1) { storage.getValue("monitoringPerName.state.$taskName") }
+            coVerify(exactly = 1) { storage.getValue("metricsPerName.state.$taskName") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -62,25 +62,25 @@ class BinaryMonitoringPerNameStateStorageTests : ShouldSpec({
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
             // when
-            val stateStorage = BinaryMonitoringPerNameStateStorage(storage)
+            val stateStorage = BinaryMetricsPerNameStateStorage(storage)
             val stateOut = stateStorage.getState(stateIn.taskName)
             // then
-            coVerify(exactly = 1) { storage.getValue("monitoringPerName.state.${stateIn.taskName}") }
+            coVerify(exactly = 1) { storage.getValue("metricsPerName.state.${stateIn.taskName}") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
     }
 
-    context("BinaryMonitoringPerNameStateStorage.putState") {
+    context("BinaryMetricsPerNameStateStorage.putState") {
 
         should("update state") {
             // given
             val state = TestFactory.random<MetricsPerNameState>()
             val storage = mockk<KeyValueStorage>()
             val binSlot = slot<ByteArray>()
-            coEvery { storage.putValue("monitoringPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
+            coEvery { storage.putValue("metricsPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
             // when
-            val stateStorage = BinaryMonitoringPerNameStateStorage(storage)
+            val stateStorage = BinaryMetricsPerNameStateStorage(storage)
             stateStorage.putState(state.taskName, state)
             // then
             binSlot.isCaptured shouldBe true
@@ -88,17 +88,17 @@ class BinaryMonitoringPerNameStateStorageTests : ShouldSpec({
         }
     }
 
-    context("BinaryMonitoringPerNameStateStorage.delState") {
+    context("BinaryMetricsPerNameStateStorage.delState") {
         should("delete state") {
             // given
             val state = TestFactory.random(MetricsPerNameState::class)
             val storage = mockk<KeyValueStorage>()
             coEvery { storage.delValue(any()) } just runs
             // when
-            val stateStorage = BinaryMonitoringPerNameStateStorage(storage)
+            val stateStorage = BinaryMetricsPerNameStateStorage(storage)
             stateStorage.delState(state.taskName)
             // then
-            coVerify(exactly = 1) { storage.delValue("monitoringPerName.state.${state.taskName}") }
+            coVerify(exactly = 1) { storage.delValue("metricsPerName.state.${state.taskName}") }
             confirmVerified(storage)
         }
     }
