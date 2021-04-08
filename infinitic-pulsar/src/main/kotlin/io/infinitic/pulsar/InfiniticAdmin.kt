@@ -44,7 +44,7 @@ class InfiniticAdmin(
         Create InfiniticAdmin from an AdminConfig
          */
         @JvmStatic
-        fun fromConfig(config: io.infinitic.config.AdminConfig): InfiniticAdmin {
+        fun fromConfig(config: AdminConfig): InfiniticAdmin {
             // build PulsarAdmin from config
             val pulsarAdmin = PulsarAdmin
                 .builder()

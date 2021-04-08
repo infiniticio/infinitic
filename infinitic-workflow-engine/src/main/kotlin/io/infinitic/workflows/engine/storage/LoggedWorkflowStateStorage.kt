@@ -23,40 +23,39 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keySet
+package io.infinitic.workflows.engine.storage
 
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.engine.state.WorkflowState
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class CachedLoggedKeySetStorage(
-    cache: KeySetCache<ByteArray>,
-    storage: KeySetStorage
-) : KeySetStorage {
-
-    val cache = LoggedKeySetCache(cache)
-    val storage = LoggedKeySetStorage(storage)
+/**
+ * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
+ * them in a persistent key value storage.
+ */
+class LoggedWorkflowStateStorage(
+    private val storage: WorkflowStateStorage,
+) : WorkflowStateStorage, Flushable by storage {
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun getSet(key: String): Set<ByteArray> = cache.getSet(key)
-        ?: run {
-            logger.debug("key {} - getSet - absent from cache, get from storage", key)
-            storage.getSet(key)
-                .also { cache.setSet(key, it) }
-        }
+    override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
+        val workflowState = storage.getState(workflowId)
+        logger.debug("workflowId {} - getState {}", workflowId, workflowState)
 
-    override suspend fun addToSet(key: String, value: ByteArray) {
-        storage.addToSet(key, value)
-        cache.addToSet(key, value)
-    }
-    override suspend fun removeFromSet(key: String, value: ByteArray) {
-        cache.removeFromSet(key, value)
-        storage.removeFromSet(key, value)
+        return workflowState
     }
 
-    override fun flush() {
-        storage.flush()
-        cache.flush()
+    override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
+        logger.debug("workflowId {} - putState {}", workflowId, workflowState)
+        storage.putState(workflowId, workflowState)
+    }
+
+    override suspend fun delState(workflowId: WorkflowId) {
+        logger.debug("workflowId {} - delState", workflowId)
+        storage.delState(workflowId)
     }
 }

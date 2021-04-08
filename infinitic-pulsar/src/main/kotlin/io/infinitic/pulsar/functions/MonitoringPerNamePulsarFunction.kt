@@ -28,7 +28,7 @@ package io.infinitic.pulsar.functions
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
-import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
+import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
 import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
 import io.infinitic.pulsar.functions.storage.keyValueStorage
@@ -55,7 +55,7 @@ class MonitoringPerNamePulsarFunction : Function<MetricsPerNameEnvelope, Void> {
     internal fun getMonitoringPerNameEngine(context: Context) = MonitoringPerNameEngine(
         BinaryMonitoringPerNameStateStorage(
             // context storage decorated with logging and a 1h cache
-            CachedLoggedKeyValueStorage(
+            CachedKeyValueStorage(
                 CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
                 context.keyValueStorage()
             )

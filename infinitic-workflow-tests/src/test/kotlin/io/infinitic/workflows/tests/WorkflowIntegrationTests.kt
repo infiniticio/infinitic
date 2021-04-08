@@ -39,7 +39,6 @@ import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
@@ -58,6 +57,7 @@ import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tests.tasks.TaskA
 import io.infinitic.workflows.tests.tasks.TaskAImpl
+import io.infinitic.workflows.tests.workflows.Obj
 import io.infinitic.workflows.tests.workflows.Obj1
 import io.infinitic.workflows.tests.workflows.Obj2
 import io.infinitic.workflows.tests.workflows.WorkflowA
@@ -77,7 +77,6 @@ import kotlinx.coroutines.yield
 import java.time.Instant
 import java.util.UUID
 
-private var workflowOutput: Any? = null
 val keyValueStorage = LoggedKeyValueStorage(InMemoryKeyValueStorage())
 val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
@@ -98,34 +97,33 @@ private lateinit var workflowB: WorkflowB
 private lateinit var workflowATagged: WorkflowA
 
 class WorkflowIntegrationTests : StringSpec({
-    var workflowId: WorkflowId
 
     "empty Workflow" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { empty() }.id)
+            val deferred = client.async(workflowA) { empty() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "void"
+        result shouldBe "void"
     }
 
     "Simple Sequential Workflow" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { seq1() }.id)
+            val deferred = client.async(workflowA) { seq1() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "123"
+        result shouldBe "123"
     }
 
     "Wait for synchronous Workflow" {
-        var result: String? = null
+        var result: String
         // run system
         coroutineScope {
             init()
@@ -136,12 +134,11 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Wait for asynchronous Workflow" {
-        var result: String? = null
+        var result: String
         // run system
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { seq1() }
-            workflowId = WorkflowId(deferred.id)
             result = deferred.await()
         }
         // checks number of task processing
@@ -149,290 +146,293 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Sequential Workflow with an async task" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { seq2() }.id)
+            val deferred = client.async(workflowA) { seq2() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "23ba"
+        result shouldBe "23ba"
     }
 
     "Sequential Workflow with an async branch" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { seq3() }.id)
+            val deferred = client.async(workflowA) { seq3() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "23ba"
+        result shouldBe "23ba"
     }
 
     "Sequential Workflow with an async branch with 2 tasks" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { seq4() }.id)
+            val deferred = client.async(workflowA) { seq4() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "23bac"
+        result shouldBe "23bac"
     }
 
     "Test Deferred methods" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { deferred1() }.id)
+            val deferred = client.async(workflowA) { deferred1() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "truefalsefalsetrue"
+        result shouldBe "truefalsefalsetrue"
     }
 
     "Or step with 3 async tasks" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { or1() }.id)
+            val deferred = client.async(workflowA) { or1() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBeIn listOf("ba", "dc", "fe")
+        result shouldBeIn listOf("ba", "dc", "fe")
     }
 
     "Combined And/Or step with 3 async tasks" {
+        var result: Any
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { or2() }.id)
+            val deferred = client.async(workflowA) { or2() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBeIn listOf(listOf("ba", "dc"), "fe")
+        result shouldBeIn listOf(listOf("ba", "dc"), "fe")
     }
 
     "Or step with 3 async tasks through list" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { or3() }.id)
+            val deferred = client.async(workflowA) { or3() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBeIn listOf("ba", "dc", "fe")
+        result shouldBeIn listOf("ba", "dc", "fe")
     }
 
     "Or step with Status checking" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { or4() }.id)
+            val deferred = client.async(workflowA) { or4() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "baba"
+        result shouldBe "baba"
     }
 
     "And step with 3 async tasks" {
+        var result: List<String>
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { and1() }.id)
+            val deferred = client.async(workflowA) { and1() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe listOf("ba", "dc", "fe")
+        result shouldBe listOf("ba", "dc", "fe")
     }
 
     "And step with 3 async tasks through list" {
+        var result: List<String>
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { and2() }.id)
+            val deferred = client.async(workflowA) { and2() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe listOf("ba", "dc", "fe")
+        result shouldBe listOf("ba", "dc", "fe")
     }
 
     "And step with 3 async tasks through large list" {
+        var result: List<String>
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { and3() }.id)
+            val deferred = client.async(workflowA) { and3() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe MutableList(1_00) { "ba" }
+        result shouldBe MutableList(1_00) { "ba" }
     }
 
     "Inline task" {
+        var id: UUID
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { inline1() }.id)
+            id = client.async(workflowA) { inline1() }.id
         }
         // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
     }
 
     "Inline task with asynchronous task inside" {
+        var id: UUID
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { inline2() }.id)
+            id = client.async(workflowA) { inline2() }.id
         }
         // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
+        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
     }
 
     "Inline task with synchronous task inside" {
+        var id: UUID
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { inline3() }.id)
+            id = client.async(workflowA) { inline3() }.id
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldNotBe null
+        // check that the w is not terminated
+        workflowStateStorage.getState(WorkflowId(id)) shouldNotBe null
     }
 
     "Sequential Child Workflow" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { child1() }.id)
+            val deferred = client.async(workflowA) { child1() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "-abc-"
+        result shouldBe "-abc-"
     }
 
     "Asynchronous Child Workflow" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { child2() }.id)
+            val deferred = client.async(workflowA) { child2() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "21abc21"
+        result shouldBe "21abc21"
     }
 
     "Nested Child Workflow" {
+        var result: Long
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowB) { factorial(14) }.id)
+            val deferred = client.async(workflowB) { factorial(14) }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe 87178291200
+        result shouldBe 87178291200
     }
 
     "Check prop1" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop1() }.id)
+            val deferred = client.async(workflowA) { prop1() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "ac"
+        result shouldBe "ac"
     }
 
     "Check prop2" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop2() }.id)
+            val deferred = client.async(workflowA) { prop2() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "acbd"
+        result shouldBe "acbd"
     }
 
     "Check prop3" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop3() }.id)
+            val deferred = client.async(workflowA) { prop3() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "acbd"
+        result shouldBe "acbd"
     }
 
     "Check prop4" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop4() }.id)
+            val deferred = client.async(workflowA) { prop4() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "acd"
+        result shouldBe "acd"
     }
 
     "Check prop5" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop5() }.id)
+            val deferred = client.async(workflowA) { prop5() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "adbc"
+        result shouldBe "adbc"
     }
 
     "Check prop6" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop6() }.id)
+            val deferred = client.async(workflowA) { prop6() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "abab"
+        result shouldBe "abab"
     }
 
     "Check prop7" {
+        var result: String
         // run system
         coroutineScope {
             init()
-            workflowId = WorkflowId(client.async(workflowA) { prop7() }.id)
+            val deferred = client.async(workflowA) { prop7() }
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(workflowId) shouldBe null
         // checks number of task processing
-        workflowOutput shouldBe "acbd"
+        result shouldBe "acbd"
     }
 
     "Check prop6 sync" {
-        // run system
         var result: String
+        // run system
         coroutineScope {
             init()
             result = workflowA.prop6()
@@ -454,234 +454,222 @@ class WorkflowIntegrationTests : StringSpec({
     }
 
     "Waiting for event, sent after dispatched" {
-        var id: UUID
+        var result: String
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel1() }.id
+            val deferred = client.async(workflowA) { channel1() }
             workflowA.channelA.send("test")
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe "test"
+        result shouldBe "test"
     }
 
     "Waiting for event, sent by id" {
-        var id: UUID
+        var result: String
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel1() }.id
-            client.getWorkflow<WorkflowA>(id).channelA.send("test")
+            val deferred = client.async(workflowA) { channel1() }
+            client.getWorkflow<WorkflowA>(deferred.id).channelA.send("test")
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe "test"
+        result shouldBe "test"
     }
 
     "Waiting for event, sent by tag" {
-        var id: UUID
+        var result: String
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowATagged) { channel1() }.id
+            val deferred = client.async(workflowATagged) { channel1() }
             client.getWorkflow<WorkflowA>("foo").channelA.send("test")
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe "test"
+        result shouldBe "test"
     }
 
     "Waiting for event, sent to the right channel" {
-        var id: UUID
+        var result: Any
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel2() }.id
-            client.getWorkflow<WorkflowA>(id).channelA.send("test")
+            val deferred = client.async(workflowA) { channel2() }
+            client.getWorkflow<WorkflowA>(deferred.id).channelA.send("test")
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe "test"
+        result shouldBe "test"
     }
 
     "Waiting for event but sent to the wrong channel" {
-        var id: UUID
+        var result: Any
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel2() }.id
-            client.getWorkflow<WorkflowA>(id).channelB.send("test")
+            val deferred = client.async(workflowA) { channel2() }
+            client.getWorkflow<WorkflowA>(deferred.id).channelB.send("test")
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput!!::class.java.name shouldBe Instant::class.java.name
+        result::class.java.name shouldBe Instant::class.java.name
     }
 
     "Sending event before waiting for it prevents catching" {
-        var id: UUID
+        var result: Any
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel3() }.id
-            client.getWorkflow<WorkflowA>(id).channelA.send("test")
+            val deferred = client.async(workflowA) { channel3() }
+            client.getWorkflow<WorkflowA>(deferred.id).channelA.send("test")
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput!!::class.java.name shouldBe Instant::class.java.name
+        result::class.java.name shouldBe Instant::class.java.name
     }
 
     "Waiting for Obj event" {
-        var id: UUID
+        var result: Obj
         val obj1 = Obj1("foo", 42)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel4() }.id
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
+            val deferred = client.async(workflowA) { channel4() }
+            workflowA.channelObj.send(obj1)
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe obj1
+        result shouldBe obj1
     }
 
     "Waiting for filtered event using jsonPath only" {
-        var id: UUID
+        var result: Obj
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel4bis() }.id
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1a)
+            val deferred = client.async(workflowA) { channel4bis() }
+            workflowA.channelObj.send(obj1a)
             delay(50)
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1b)
+            workflowA.channelObj.send(obj1b)
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe obj1b
+        result shouldBe obj1b
     }
 
     "Waiting for filtered event using using jsonPath and criteria" {
-        var id: UUID
+        var result: Obj
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel4ter() }.id
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1a)
+            val deferred = client.async(workflowA) { channel4ter() }
+            workflowA.channelObj.send(obj1a)
             delay(50)
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1b)
+            workflowA.channelObj.send(obj1b)
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe obj1b
+        result shouldBe obj1b
     }
 
     "Waiting for event of specific type" {
-        var id: UUID
+        var result: Obj
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel5() }.id
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
+            val deferred = client.async(workflowA) { channel5() }
+            workflowA.channelObj.send(obj2)
             delay(50)
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
+            workflowA.channelObj.send(obj1)
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe obj1
+        result shouldBe obj1
     }
 
     "Waiting event of specific type filtered using jsonPath only" {
-        var id: UUID
+        var result: Obj
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel5bis() }.id
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj3)
+            val deferred = client.async(workflowA) { channel5bis() }
+            workflowA.channelObj.send(obj3)
             delay(50)
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
+            workflowA.channelObj.send(obj2)
             delay(50)
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
+            workflowA.channelObj.send(obj1)
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe obj1
+        result shouldBe obj1
     }
 
     "Waiting event of specific type filtered using jsonPath and criteria" {
-        var id: UUID
+        var result: Obj
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel5ter() }.id
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj3)
+            val deferred = client.async(workflowA) { channel5ter() }
+            client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj3)
             delay(50)
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
+            client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj2)
             delay(50)
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
+            client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj1)
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe obj1
+        result shouldBe obj1
     }
 
     "Waiting for 2 events of specific types presented in wrong order" {
-        var id: UUID
+        var result: String
         val obj1 = Obj1("foo", 6)
         val obj2 = Obj2("bar", 7)
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowA) { channel6() }.id
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj2)
+            val deferred = client.async(workflowA) { channel6() }
+            client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj2)
             delay(50)
-            client.getWorkflow<WorkflowA>(id).channelObj.send(obj1)
+            workflowA.channelObj.send(obj1)
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe "foobar42"
+        result shouldBe "foobar42"
     }
 
     "Tag should be added and deleted after completion" {
+        var result: String
         var id: UUID
         // run system
         coroutineScope {
             init()
-            id = client.async(workflowATagged) { channel1() }.id
+            val deferred = client.async(workflowATagged) { channel1() }
+            id = deferred.id
             // checks id has been added to tag storage
             yield()
             tagStateStorage.getIds(Tag("foo"), Name(WorkflowA::class.java.name)).contains(id) shouldBe true
             tagStateStorage.getIds(Tag("bar"), Name(WorkflowA::class.java.name)).contains(id) shouldBe true
             workflowATagged.channelA.send("test")
+            result = deferred.await()
         }
-        // check that the w is terminated
-        workflowStateStorage.getState(WorkflowId(id)) shouldBe null
         // check output
-        workflowOutput shouldBe "test"
+        result shouldBe "test"
         // checks id has been removed from tag storage
         tagStateStorage.getIds(Tag("foo"), Name(WorkflowA::class.java.name)).contains(id) shouldBe false
         tagStateStorage.getIds(Tag("bar"), Name(WorkflowA::class.java.name)).contains(id) shouldBe false
@@ -695,11 +683,6 @@ fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
 fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: MillisDuration) = launch {
     if (after.long > 0) { delay(after.long) }
     workflowEngine.handle(msg)
-
-    // defines output if reached
-    if (msg is WorkflowCompleted) {
-        workflowOutput = msg.workflowReturnValue.get()
-    }
 }
 
 fun CoroutineScope.sendToTagEngine(msg: TagEngineMessage) = launch {
@@ -727,8 +710,6 @@ fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) = launch(Dispatchers.
 fun CoroutineScope.init() {
     keyValueStorage.flush()
     keySetStorage.flush()
-
-    workflowOutput = null
 
     client = Client.with(
         ClientName("client: testing"),

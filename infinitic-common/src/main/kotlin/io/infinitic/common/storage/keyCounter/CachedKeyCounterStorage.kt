@@ -23,14 +23,33 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.storage
+package io.infinitic.common.storage.keyCounter
 
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.engine.state.WorkflowState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-interface WorkflowStateStorage : Flushable {
-    suspend fun getState(workflowId: WorkflowId): WorkflowState?
-    suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState)
-    suspend fun delState(workflowId: WorkflowId)
+class CachedKeyCounterStorage(
+    val cache: KeyCounterCache,
+    val storage: KeyCounterStorage
+) : KeyCounterStorage {
+
+    val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
+
+    override suspend fun getCounter(key: String) = cache.getCounter(key)
+        ?: run {
+            logger.debug("key {} - getCounter - absent from cache, get from storage", key)
+            storage.getCounter(key)
+                .also { cache.setCounter(key, it) }
+        }
+
+    override suspend fun incrCounter(key: String, amount: Long) {
+        cache.incrCounter(key, amount)
+        storage.incrCounter(key, amount)
+    }
+
+    override fun flush() {
+        storage.flush()
+        cache.flush()
+    }
 }

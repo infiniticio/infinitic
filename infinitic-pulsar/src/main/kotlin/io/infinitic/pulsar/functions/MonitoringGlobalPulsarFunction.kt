@@ -28,7 +28,7 @@ package io.infinitic.pulsar.functions
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
-import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
+import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
 import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
 import io.infinitic.pulsar.functions.storage.keyValueStorage
@@ -54,7 +54,7 @@ class MonitoringGlobalPulsarFunction : Function<MetricsGlobalEnvelope, Void> {
     internal fun getMonitoringGlobalEngine(context: Context) = MonitoringGlobalEngine(
         BinaryMonitoringGlobalStateStorage(
             // context storage decorated with logging and a 1h cache
-            CachedLoggedKeyValueStorage(
+            CachedKeyValueStorage(
                 CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
                 context.keyValueStorage()
             )

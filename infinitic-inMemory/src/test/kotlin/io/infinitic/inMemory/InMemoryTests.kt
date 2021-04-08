@@ -26,6 +26,7 @@
 package io.infinitic.inMemory
 
 import io.infinitic.client.Client
+import io.infinitic.client.deferred.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.inMemory.tasks.TaskA
 import io.infinitic.inMemory.tasks.TaskAImpl
@@ -66,7 +67,7 @@ internal class InMemoryTests : StringSpec({
     "waiting for simple asynchronous task" {
         val taskA = client.newTask<TaskA>()
 
-        val deferred = client.async(taskA) { await(200) }
+        val deferred: Deferred<Long> = client.async(taskA) { await(200) }
 
         deferred.await() shouldBe 200L
     }
@@ -85,5 +86,13 @@ internal class InMemoryTests : StringSpec({
         val deferred = client.async(workflowA) { prop2() }
 
         deferred.await() shouldBe "acbd"
+    }
+
+    "waiting for empty workflow" {
+        val workflowA = client.newWorkflow<WorkflowA>()
+
+        val deferred = client.async(workflowA) { empty() }
+
+        deferred.await() shouldBe "void"
     }
 })

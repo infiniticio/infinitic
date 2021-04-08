@@ -23,41 +23,37 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyValue
+package io.infinitic.common.storage.keySet
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-open class CachedLoggedKeyValueStorage(
-    cache: KeyValueCache<ByteArray>,
-    storage: KeyValueStorage
-) : KeyValueStorage {
+class CachedKeySetStorage(
+    val cache: KeySetCache<ByteArray>,
+    val storage: KeySetStorage
+) : KeySetStorage {
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    val storage = LoggedKeyValueStorage(storage)
-    val cache = LoggedKeyValueCache(cache)
-
-    override suspend fun getValue(key: String) = cache.getValue(key)
+    override suspend fun getSet(key: String): Set<ByteArray> = cache.getSet(key)
         ?: run {
-            logger.debug("key {} - getValue - absent from cache, get from storage", key)
-            storage.getValue(key)
-                ?.also { cache.putValue(key, it) }
+            logger.debug("key {} - getSet - absent from cache, get from storage", key)
+            storage.getSet(key)
+                .also { cache.setSet(key, it) }
         }
 
-    override suspend fun putValue(key: String, value: ByteArray) {
-        storage.putValue(key, value)
-        cache.putValue(key, value)
+    override suspend fun addToSet(key: String, value: ByteArray) {
+        storage.addToSet(key, value)
+        cache.addToSet(key, value)
     }
-
-    override suspend fun delValue(key: String) {
-        storage.delValue(key)
-        cache.delValue(key)
+    override suspend fun removeFromSet(key: String, value: ByteArray) {
+        cache.removeFromSet(key, value)
+        storage.removeFromSet(key, value)
     }
 
     override fun flush() {
-        cache.flush()
         storage.flush()
+        cache.flush()
     }
 }

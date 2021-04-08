@@ -39,14 +39,10 @@ data class WorkflowEngineEnvelope(
     val childWorkflowCanceled: ChildWorkflowCanceled? = null,
     val childWorkflowCompleted: ChildWorkflowCompleted? = null,
     val workflowTaskCompleted: WorkflowTaskCompleted? = null,
-    val workflowTaskDispatched: WorkflowTaskDispatched? = null,
     val timerCompleted: TimerCompleted? = null,
     val dispatchWorkflow: DispatchWorkflow? = null,
     val taskCanceled: TaskCanceled? = null,
-    val taskCompleted: TaskCompleted? = null,
-    val taskDispatched: TaskDispatched? = null,
-    val workflowCanceled: WorkflowCanceled? = null,
-    val workflowCompleted: WorkflowCompleted? = null
+    val taskCompleted: TaskCompleted? = null
 ) {
     init {
         val noNull = listOfNotNull(
@@ -56,14 +52,10 @@ data class WorkflowEngineEnvelope(
             childWorkflowCanceled,
             childWorkflowCompleted,
             workflowTaskCompleted,
-            workflowTaskDispatched,
             timerCompleted,
             dispatchWorkflow,
             taskCanceled,
-            taskCompleted,
-            taskDispatched,
-            workflowCanceled,
-            workflowCompleted
+            taskCompleted
         )
 
         require(noNull.size == 1) {
@@ -115,11 +107,6 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.WORKFLOW_TASK_COMPLETED,
                 workflowTaskCompleted = msg
             )
-            is WorkflowTaskDispatched -> WorkflowEngineEnvelope(
-                msg.workflowId,
-                WorkflowEngineMessageType.WORKFLOW_TASK_DISPATCHED,
-                workflowTaskDispatched = msg
-            )
             is TimerCompleted -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.TIMER_COMPLETED,
@@ -140,21 +127,6 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.TASK_COMPLETED,
                 taskCompleted = msg
             )
-            is TaskDispatched -> WorkflowEngineEnvelope(
-                msg.workflowId,
-                WorkflowEngineMessageType.TASK_DISPATCHED,
-                taskDispatched = msg
-            )
-            is WorkflowCanceled -> WorkflowEngineEnvelope(
-                msg.workflowId,
-                WorkflowEngineMessageType.WORKFLOW_CANCELED,
-                workflowCanceled = msg
-            )
-            is WorkflowCompleted -> WorkflowEngineEnvelope(
-                msg.workflowId,
-                WorkflowEngineMessageType.WORKFLOW_COMPLETED,
-                workflowCompleted = msg
-            )
         }
 
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
@@ -167,14 +139,10 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!
         WorkflowEngineMessageType.WORKFLOW_TASK_COMPLETED -> workflowTaskCompleted!!
-        WorkflowEngineMessageType.WORKFLOW_TASK_DISPATCHED -> workflowTaskDispatched!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
         WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow!!
         WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!
         WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted!!
-        WorkflowEngineMessageType.TASK_DISPATCHED -> taskDispatched!!
-        WorkflowEngineMessageType.WORKFLOW_CANCELED -> workflowCanceled!!
-        WorkflowEngineMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

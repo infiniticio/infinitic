@@ -23,36 +23,38 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyCounter
+package io.infinitic.common.storage.keyValue
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class CachedLoggedKeyCounterStorage(
-    cache: KeyCounterCache,
-    storage: KeyCounterStorage
-) : KeyCounterStorage {
-
-    val cache = LoggedKeyCounterCache(cache)
-    val storage = LoggedKeyCounterStorage(storage)
+open class CachedKeyValueStorage(
+    val cache: KeyValueCache<ByteArray>,
+    val storage: KeyValueStorage
+) : KeyValueStorage {
 
     val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun getCounter(key: String) = cache.getCounter(key)
+    override suspend fun getValue(key: String) = cache.getValue(key)
         ?: run {
-            logger.debug("key {} - getCounter - absent from cache, get from storage", key)
-            storage.getCounter(key)
-                .also { cache.setCounter(key, it) }
+            logger.debug("key {} - getValue - absent from cache, get from storage", key)
+            storage.getValue(key)
+                ?.also { cache.putValue(key, it) }
         }
 
-    override suspend fun incrCounter(key: String, amount: Long) {
-        cache.incrCounter(key, amount)
-        storage.incrCounter(key, amount)
+    override suspend fun putValue(key: String, value: ByteArray) {
+        storage.putValue(key, value)
+        cache.putValue(key, value)
+    }
+
+    override suspend fun delValue(key: String) {
+        storage.delValue(key)
+        cache.delValue(key)
     }
 
     override fun flush() {
-        storage.flush()
         cache.flush()
+        storage.flush()
     }
 }

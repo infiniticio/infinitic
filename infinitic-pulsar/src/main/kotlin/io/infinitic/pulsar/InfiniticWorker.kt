@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.common.storage.keySet.CachedLoggedKeySetStorage
-import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
+import io.infinitic.common.storage.keySet.CachedKeySetStorage
+import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.config.WorkerConfig
 import io.infinitic.config.cache.getKeySetCache
 import io.infinitic.config.cache.getKeyValueCache
@@ -127,11 +127,11 @@ class InfiniticWorker(
         config.tagEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
                 // storage decorated by the cache
-                val keyValueStorage = CachedLoggedKeyValueStorage(
+                val keyValueStorage = CachedKeyValueStorage(
                     it.stateCacheOrDefault.getKeyValueCache(config),
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
-                val keySetStorage = CachedLoggedKeySetStorage(
+                val keySetStorage = CachedKeySetStorage(
                     it.stateCacheOrDefault.getKeySetCache(config),
                     it.stateStorage!!.getKeySetStorage(config)
                 )
@@ -164,7 +164,7 @@ class InfiniticWorker(
     ) {
         config.taskEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
-                val keyValueStorage = CachedLoggedKeyValueStorage(
+                val keyValueStorage = CachedKeyValueStorage(
                     it.stateCacheOrDefault.getKeyValueCache(config),
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
@@ -200,7 +200,7 @@ class InfiniticWorker(
         config.workflowEngine?.let {
             if (it.modeOrDefault == Mode.worker) {
                 // storage decorated by a cache and a logger
-                val storage = CachedLoggedKeyValueStorage(
+                val storage = CachedKeyValueStorage(
                     it.stateCacheOrDefault.getKeyValueCache(config),
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
@@ -234,7 +234,7 @@ class InfiniticWorker(
         config.monitoring?.let {
             if (it.mode == Mode.worker) {
                 // storage decorated by the cache
-                val storage = CachedLoggedKeyValueStorage(
+                val storage = CachedKeyValueStorage(
                     it.stateCacheOrDefault.getKeyValueCache(config),
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
