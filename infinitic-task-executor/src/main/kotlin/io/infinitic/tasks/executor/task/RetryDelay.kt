@@ -25,8 +25,10 @@
 
 package io.infinitic.tasks.executor.task
 
+import java.time.Duration
+
 internal sealed class RetryDelay
 
-internal data class RetryDelayRetrieved(val value: Float?) : RetryDelay()
+internal data class RetryDelayRetrieved(val value: Duration?) : RetryDelay()
 
-internal data class RetryDelayFailed(val e: Throwable?) : RetryDelay()
+internal data class RetryDelayFailed(val error: Throwable) : RetryDelay()

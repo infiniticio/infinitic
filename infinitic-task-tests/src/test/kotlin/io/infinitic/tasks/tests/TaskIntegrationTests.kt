@@ -259,7 +259,6 @@ class TaskIntegrationTests : StringSpec({
             }
         }
         // run system
-        var id: UUID
         coroutineScope {
             init()
             val deferred = client.async(taskStub) { log() }
@@ -274,8 +273,8 @@ class TaskIntegrationTests : StringSpec({
         taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
-        // checks number of task processing
-        taskTest.log shouldBe "0000001"
+        // checks number of task processing (meta has been reinitialized at retry)
+        taskTest.log shouldBe "001"
     }
 
     "Task succeeds after manual retry using tag" {
@@ -471,5 +470,5 @@ fun CoroutineScope.init() {
         { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
         TaskExecutorRegisterImpl()
     )
-    taskExecutor.register(TaskTest::class.java.name) { taskTest }
+    taskExecutor.registerTask(TaskTest::class.java.name) { taskTest }
 }

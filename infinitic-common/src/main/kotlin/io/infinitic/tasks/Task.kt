@@ -23,20 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.executor.task
+package io.infinitic.tasks
 
-import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.tasks.TaskAttemptContext
-import io.infinitic.tasks.executor.TaskExecutor
+import java.time.Duration
+import kotlin.math.pow
 
-data class TaskAttemptContextImpl(
-    override val register: TaskExecutor,
-    override val taskId: String,
-    override val taskRetry: Int,
-    override val taskAttemptId: String,
-    override val taskAttemptRetry: Int,
-    override val lastTaskAttemptError: Exception?,
-    override var currentTaskAttemptError: Exception? = null,
-    override val taskMeta: Map<String, ByteArray>,
-    override val taskOptions: TaskOptions
-) : TaskAttemptContext
+@Suppress("unused")
+abstract class Task {
+    lateinit var context: TaskContext
+
+    // Exponential backoff retry strategy up to 12 attempts
+    open fun getDurationBeforeRetry(e: Exception): Duration? {
+        val n = context.retryIndex
+        return when {
+            n < 12 -> Duration.ofSeconds((5 * Math.random() * 2.0.pow(n)).toLong())
+            else -> null
+        }
+    }
+}

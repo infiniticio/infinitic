@@ -44,9 +44,9 @@ internal class InMemoryTests : StringSpec({
 
     beforeSpec {
         val taskExecutorRegister = TaskExecutorRegisterImpl().also {
-            it.register(TaskA::class.java.name) { TaskAImpl() }
-            it.register(WorkflowA::class.java.name) { WorkflowAImpl() }
-            it.register(WorkflowB::class.java.name) { WorkflowBImpl() }
+            it.registerTask(TaskA::class.java.name) { TaskAImpl() }
+            it.registerWorkflow(WorkflowA::class.java.name) { WorkflowAImpl() }
+            it.registerWorkflow(WorkflowB::class.java.name) { WorkflowBImpl() }
         }
 
         client.startInMemory(taskExecutorRegister)

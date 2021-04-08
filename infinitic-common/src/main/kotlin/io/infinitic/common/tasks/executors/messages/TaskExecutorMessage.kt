@@ -29,15 +29,14 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptRetry
+import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.data.TaskRetry
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -51,21 +50,13 @@ sealed class TaskExecutorMessage() {
 data class ExecuteTaskAttempt(
     override val taskName: TaskName,
     val taskId: TaskId,
-    val taskRetry: TaskRetry,
     val taskAttemptId: TaskAttemptId,
-    val taskAttemptRetry: TaskAttemptRetry,
-    val previousTaskAttemptError: TaskAttemptError?,
+    val taskRetrySequence: TaskRetrySequence,
+    val taskRetryIndex: TaskRetryIndex,
+    val lastTaskError: TaskError?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val taskOptions: TaskOptions,
-    override val taskMeta: TaskMeta
-) : TaskExecutorMessage()
-
-@Serializable
-data class CancelTaskAttempt(
-    override val taskName: TaskName,
-    val taskId: TaskId,
-    val taskReturnValue: MethodReturnValue,
     override val taskMeta: TaskMeta
 ) : TaskExecutorMessage()

@@ -52,7 +52,8 @@ import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.tasks.register
+import io.infinitic.tasks.registerTask
+import io.infinitic.tasks.registerWorkflow
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.tests.tasks.TaskA
@@ -758,7 +759,7 @@ fun CoroutineScope.init() {
         { msg, after -> sendToTaskEngine(msg, after) },
         TaskExecutorRegisterImpl()
     )
-    executor.register<TaskA> { TaskAImpl() }
-    executor.register<WorkflowA> { WorkflowAImpl() }
-    executor.register<WorkflowB> { WorkflowBImpl() }
+    executor.registerTask<TaskA> { TaskAImpl() }
+    executor.registerWorkflow<WorkflowA> { WorkflowAImpl() }
+    executor.registerWorkflow<WorkflowB> { WorkflowBImpl() }
 }

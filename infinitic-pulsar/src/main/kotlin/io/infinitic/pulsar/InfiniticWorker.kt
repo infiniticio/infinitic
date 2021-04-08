@@ -268,7 +268,7 @@ class InfiniticWorker(
 
         for (workflow in config.workflows) {
             if (workflow.modeOrDefault == Mode.worker) {
-                taskExecutorRegister.register(workflow.name) { workflow.instance }
+                taskExecutorRegister.registerWorkflow(workflow.name) { workflow.instance }
 
                 repeat(workflow.consumers) {
                     print("Workflow executor".padEnd(25) + ": starting ${workflow.concurrency} instances for ${workflow.name}...")
@@ -289,7 +289,7 @@ class InfiniticWorker(
 
         for (task in config.tasks) {
             if (task.modeOrDefault == Mode.worker) {
-                taskExecutorRegister.register(task.name) { task.instance }
+                taskExecutorRegister.registerTask(task.name) { task.instance }
 
                 repeat(task.consumers) {
                     print("Task executor".padEnd(25) + ": starting ${task.concurrency} instances for ${task.name}...")

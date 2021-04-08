@@ -31,6 +31,7 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.WaitTask
@@ -63,7 +64,8 @@ fun mockSendToTaskEngine(
                 TaskCompleted(
                     clientName = client.clientName,
                     taskId = msg.taskId,
-                    taskReturnValue = MethodReturnValue.from("success")
+                    taskReturnValue = MethodReturnValue.from("success"),
+                    taskMeta = TaskMeta()
                 )
             )
         }

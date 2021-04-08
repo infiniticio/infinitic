@@ -25,26 +25,24 @@
 
 package io.infinitic.common.tasks.data
 
-import io.infinitic.common.data.Data
-import io.infinitic.common.serDe.SerializedData
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = TaskAttemptErrorSerializer::class)
-data class TaskAttemptError(override val serializedData: SerializedData) : Data(serializedData) {
+@Serializable
+data class TaskError(
+    val name: String,
+    val message: String?,
+    val stacktrace: String,
+    val cause: TaskError? = null
+) {
     companion object {
-        fun from(data: Any?) = TaskAttemptError(SerializedData.from(data))
+        fun from(e: Throwable): TaskError = TaskError(
+            name = e::class.java.name,
+            message = e.message,
+            stacktrace = e.stackTraceToString(),
+            cause = run {
+                val cause = e.cause
+                if (cause == e || cause == null) null else from(cause)
+            }
+        )
     }
-}
-
-object TaskAttemptErrorSerializer : KSerializer<TaskAttemptError> {
-    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
-    override fun serialize(encoder: Encoder, value: TaskAttemptError) {
-        SerializedData.serializer().serialize(encoder, value.serializedData)
-    }
-    override fun deserialize(decoder: Decoder) =
-        TaskAttemptError(SerializedData.serializer().deserialize(decoder))
 }

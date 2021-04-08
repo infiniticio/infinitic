@@ -37,8 +37,8 @@ import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tags.messages.RemoveTaskTag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
-import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.engine.messages.CancelTask
@@ -156,15 +156,15 @@ internal class TaskEngineTests : StringSpec({
             taskId shouldBe msgIn.taskId
             taskName shouldBe msgIn.taskName
             methodParameters shouldBe msgIn.methodParameters
-            taskAttemptRetry.int shouldBe 0
-            taskAttemptRetry shouldBe TaskAttemptRetry(0)
+            taskRetryIndex.int shouldBe 0
+            taskRetryIndex shouldBe TaskRetryIndex(0)
         }
         with(state) {
             taskId shouldBe msgIn.taskId
             taskName shouldBe msgIn.taskName
             methodParameters shouldBe msgIn.methodParameters
             taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
-            taskAttemptRetry.int shouldBe 0
+            taskRetryIndex.int shouldBe 0
             taskMeta shouldBe msgIn.taskMeta
             taskStatus shouldBe TaskStatus.RUNNING_OK
         }
@@ -210,14 +210,14 @@ internal class TaskEngineTests : StringSpec({
         with(executeTaskAttempt) {
             taskId shouldBe stateIn.taskId
             taskAttemptId shouldNotBe stateIn.taskAttemptId
-            taskAttemptRetry.int shouldBe 0
+            taskRetryIndex.int shouldBe 0
             taskName shouldBe stateIn.taskName
             methodParameters shouldBe stateIn.methodParameters
         }
         with(executeTaskAttempt) {
             taskId shouldBe stateIn.taskId
             taskAttemptId shouldNotBe stateIn.taskAttemptId
-            taskAttemptRetry.int shouldBe 0
+            taskRetryIndex.int shouldBe 0
             taskName shouldBe stateIn.taskName
             methodParameters shouldBe stateIn.methodParameters
         }
@@ -226,7 +226,7 @@ internal class TaskEngineTests : StringSpec({
             taskName shouldBe stateIn.taskName
             methodParameters shouldBe stateIn.methodParameters
             taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
-            taskAttemptRetry shouldBe executeTaskAttempt.taskAttemptRetry
+            taskRetryIndex shouldBe executeTaskAttempt.taskRetryIndex
             taskStatus shouldBe TaskStatus.RUNNING_WARNING
         }
         with(taskStatusUpdated) {
@@ -289,7 +289,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry,
+                "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to null
             )
         )
@@ -325,7 +325,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry,
+                "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(42000)
             )
         )
@@ -348,7 +348,7 @@ internal class TaskEngineTests : StringSpec({
         with(retryTaskAttempt) {
             taskId shouldBe stateIn.taskId
             taskAttemptId shouldBe stateIn.taskAttemptId
-            taskAttemptRetry shouldBe stateIn.taskAttemptRetry
+            taskRetryIndex shouldBe stateIn.taskRetryIndex
         }
         retryTaskAttemptDelay shouldBe msgIn.taskAttemptDelayBeforeRetry
         with(taskStatusUpdated) {
@@ -370,7 +370,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry,
+                "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(0)
             )
         )
@@ -391,7 +391,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry,
+                "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(-42000)
             )
         )
@@ -412,7 +412,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry
+                "taskRetryIndex" to stateIn.taskRetryIndex
             )
         )
         // when
@@ -438,7 +438,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
     with(executeTaskAttempt) {
         taskId shouldBe stateIn.taskId
         taskAttemptId shouldBe stateIn.taskAttemptId
-        taskAttemptRetry shouldBe stateIn.taskAttemptRetry + 1
+        taskRetryIndex shouldBe stateIn.taskRetryIndex + 1
         taskName shouldBe stateIn.taskName
         methodParameters shouldBe stateIn.methodParameters
     }
@@ -447,7 +447,7 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
         taskName shouldBe stateIn.taskName
         methodParameters shouldBe stateIn.methodParameters
         taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
-        taskAttemptRetry shouldBe executeTaskAttempt.taskAttemptRetry
+        taskRetryIndex shouldBe executeTaskAttempt.taskRetryIndex
         taskStatus shouldBe TaskStatus.RUNNING_WARNING
     }
     with(taskStatusUpdated) {

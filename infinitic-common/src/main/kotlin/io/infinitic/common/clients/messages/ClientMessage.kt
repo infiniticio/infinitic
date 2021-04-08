@@ -29,6 +29,7 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
@@ -43,6 +44,7 @@ data class TaskCompleted(
     override val clientName: ClientName,
     val taskId: TaskId,
     val taskReturnValue: MethodReturnValue,
+    val taskMeta: TaskMeta
 ) : ClientMessage()
 
 @Serializable

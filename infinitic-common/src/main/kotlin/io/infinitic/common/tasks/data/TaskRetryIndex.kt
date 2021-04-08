@@ -33,17 +33,17 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = TaskAttemptRetrySerializer::class)
-data class TaskAttemptRetry(val int: Int = 0) : Comparable<TaskAttemptRetry> {
+@Serializable(with = TaskRetryIndexSerializer::class)
+data class TaskRetryIndex(val int: Int = 0) : Comparable<TaskRetryIndex> {
     override fun toString() = "$int"
 
-    override operator fun compareTo(other: TaskAttemptRetry): Int = this.int.compareTo(other.int)
+    override operator fun compareTo(other: TaskRetryIndex): Int = this.int.compareTo(other.int)
 }
 
-operator fun TaskAttemptRetry.plus(increment: Int) = TaskAttemptRetry(this.int + increment)
+operator fun TaskRetryIndex.plus(increment: Int) = TaskRetryIndex(this.int + increment)
 
-object TaskAttemptRetrySerializer : KSerializer<TaskAttemptRetry> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskAttemptRetry", PrimitiveKind.INT)
-    override fun serialize(encoder: Encoder, value: TaskAttemptRetry) { encoder.encodeInt(value.int) }
-    override fun deserialize(decoder: Decoder) = TaskAttemptRetry(decoder.decodeInt())
+object TaskRetryIndexSerializer : KSerializer<TaskRetryIndex> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskRetryIndex", PrimitiveKind.INT)
+    override fun serialize(encoder: Encoder, value: TaskRetryIndex) { encoder.encodeInt(value.int) }
+    override fun deserialize(decoder: Decoder) = TaskRetryIndex(decoder.decodeInt())
 }

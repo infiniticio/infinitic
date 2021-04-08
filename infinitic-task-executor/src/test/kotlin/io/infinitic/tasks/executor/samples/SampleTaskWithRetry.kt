@@ -25,28 +25,26 @@
 
 package io.infinitic.tasks.executor.samples
 
-import io.infinitic.tasks.executor.task.TaskAttemptContextImpl
+import io.infinitic.tasks.Task
+import java.time.Duration
 
-internal class SampleTaskWithRetry() {
-    lateinit var context: TaskAttemptContextImpl
-
+internal class SampleTaskWithRetry : Task() {
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 
-    fun getRetryDelay(): Float? = if (context.currentTaskAttemptError is IllegalStateException) 3F else 0F
+    override fun getDurationBeforeRetry(e: Exception): Duration? =
+        if (e is IllegalStateException) Duration.ofSeconds(3L) else null
 }
 
-internal class SampleTaskWithBadTypeRetry() {
-    lateinit var context: TaskAttemptContextImpl
-
+internal class SampleTaskWithBadTypeRetry : Task() {
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 
-    fun getRetryDelay(): Int? = 3
+    override fun getDurationBeforeRetry(e: Exception): Duration? =
+        Duration.ofSeconds(3L)
 }
 
-internal class SampleTaskWithBuggyRetry() {
-    lateinit var context: TaskAttemptContextImpl
-
+internal class SampleTaskWithBuggyRetry : Task() {
     fun handle(i: Int, j: String): String = if (i < 0) (i * j.toInt()).toString() else throw IllegalStateException()
 
-    fun getRetryDelay(): Float? = if (context.currentTaskAttemptError is IllegalStateException) throw IllegalArgumentException() else 3F
+    override fun getDurationBeforeRetry(e: Exception): Duration? =
+        if (e is IllegalStateException) throw IllegalArgumentException() else Duration.ofSeconds(3L)
 }

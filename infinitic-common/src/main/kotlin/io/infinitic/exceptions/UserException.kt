@@ -28,7 +28,6 @@ package io.infinitic.exceptions
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.serDe.SerializedDataType
 import io.infinitic.common.serDe.json.Json
-import io.infinitic.common.tasks.Constants
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.SendChannel
@@ -343,16 +342,6 @@ data class TooManyMethodsFoundWithParameterCount(
 ) : UserExceptionInTaskExecutor(
     msg = "Unable to decide which method \"$method\" with $parameterCount parameters to use in \"$klass\" class",
     help = ""
-)
-
-@Serializable
-data class RetryDelayHasWrongReturnType(
-    val klass: String,
-    val actualType: String,
-    val expectedType: String
-) : UserExceptionInTaskExecutor(
-    msg = "In \"$klass\" class, method ${Constants.DELAY_BEFORE_RETRY_METHOD} returns a $actualType, it must be a $expectedType",
-    help = "Please update your method definition to return a $expectedType (or null)"
 )
 
 @Serializable

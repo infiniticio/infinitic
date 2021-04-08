@@ -27,48 +27,43 @@ package io.infinitic.tasks.executor.register
 
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.exceptions.ClassNotFoundDuringInstantiation
-import io.infinitic.exceptions.TaskUsedAsWorkflow
-import io.infinitic.exceptions.WorkflowUsedAsTask
-import io.infinitic.tasks.InstanceFactory
+import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskExecutorRegister
+import io.infinitic.tasks.TaskFactory
+import io.infinitic.tasks.WorkflowFactory
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 
 class TaskExecutorRegisterImpl : TaskExecutorRegister {
-    // map taskName <> task factory
-    private val registeredFactories = mutableMapOf<String, InstanceFactory>()
+    // map task name <> task factory
+    private val registeredTasks = mutableMapOf<String, TaskFactory>()
+    // map workflow name <> workflow factory
+    private val registeredWorkflows = mutableMapOf<String, WorkflowFactory>()
 
     // WorkflowTask auto register
     init {
-        register(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
+        registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
     }
 
-    override fun register(name: String, factory: () -> Any) {
-        registeredFactories[name] = factory
+    override fun registerTask(name: String, factory: () -> Task) {
+        registeredTasks[name] = factory
     }
 
-    override fun unregister(name: String) {
-        registeredFactories.remove(name)
+    override fun registerWorkflow(name: String, factory: () -> Workflow) {
+        registeredWorkflows[name] = factory
     }
 
-    override fun getTaskInstance(name: String): Any {
-        val instance = getInstance(name)
-        if (instance is Workflow) throw WorkflowUsedAsTask(name, instance::class.qualifiedName!!)
-        else return instance
+    override fun unregisterTask(name: String) {
+        registeredTasks.remove(name)
     }
 
-    override fun getWorkflowInstance(name: String): Workflow {
-        val instance = getInstance(name)
-        if (instance !is Workflow) throw TaskUsedAsWorkflow(name, instance::class.qualifiedName!!)
-        else return instance
+    override fun unregisterWorkflow(name: String) {
+        registeredWorkflows.remove(name)
     }
 
-    override fun getTasks() =
-        registeredFactories
-            .map { (name, factory) -> name to factory() }
-            .filterNot { (_, instance) -> instance is Workflow }
-            .map { (name, _) -> name }
+    override fun getTaskInstance(name: String): Task =
+        registeredTasks[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 
-    private fun getInstance(name: String) =
-        registeredFactories[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
+    override fun getWorkflowInstance(name: String): Workflow =
+        registeredWorkflows[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
 }

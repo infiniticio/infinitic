@@ -33,13 +33,11 @@ import kotlinx.serialization.Serializable
 data class TaskExecutorEnvelope(
     val taskName: TaskName,
     val type: TaskExecutorMessageType,
-    val executeTask: ExecuteTaskAttempt? = null,
-    val cancelTask: CancelTaskAttempt? = null
+    val executeTask: ExecuteTaskAttempt? = null
 ) {
     init {
         val noNull = listOfNotNull(
-            executeTask,
-            cancelTask
+            executeTask
         )
 
         require(noNull.size == 1)
@@ -54,11 +52,6 @@ data class TaskExecutorEnvelope(
                 TaskExecutorMessageType.EXECUTE_TASK_ATTEMPT,
                 executeTask = msg
             )
-            is CancelTaskAttempt -> TaskExecutorEnvelope(
-                msg.taskName,
-                TaskExecutorMessageType.CANCEL_TASK_ATTEMPT,
-                cancelTask = msg
-            )
         }
 
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
@@ -66,7 +59,6 @@ data class TaskExecutorEnvelope(
 
     fun message(): TaskExecutorMessage = when (type) {
         TaskExecutorMessageType.EXECUTE_TASK_ATTEMPT -> executeTask!!
-        TaskExecutorMessageType.CANCEL_TASK_ATTEMPT -> cancelTask!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

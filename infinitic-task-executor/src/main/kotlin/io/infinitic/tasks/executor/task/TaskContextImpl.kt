@@ -23,18 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.tasks.executor.task
 
+import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.tasks.TaskContext
+import io.infinitic.tasks.executor.TaskExecutor
+import java.util.UUID
 
-interface TaskAttemptContext {
-    val register: TaskExecutorRegister
-    val taskId: String
-    val taskRetry: Int
-    val taskAttemptId: String
-    val taskAttemptRetry: Int
-    val lastTaskAttemptError: Exception?
-    var currentTaskAttemptError: Exception?
-    val taskMeta: Map<String, Any?>
-    val taskOptions: TaskOptions
-}
+data class TaskContextImpl(
+    override val register: TaskExecutor,
+    override val id: UUID,
+    override val attemptId: UUID,
+    override val retrySequence: Int,
+    override val retryIndex: Int,
+    override val lastError: TaskError?,
+    override val meta: MutableMap<String, ByteArray>,
+    override val options: TaskOptions
+) : TaskContext

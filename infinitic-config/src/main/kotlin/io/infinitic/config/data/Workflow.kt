@@ -25,7 +25,7 @@
 
 package io.infinitic.config.data
 
-import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.Workflow as WorkflowInstance
 
 data class Workflow(
     @JvmField val name: String,
@@ -36,8 +36,14 @@ data class Workflow(
     @JvmField var taskEngine: TaskEngine? = null,
     @JvmField var workflowEngine: WorkflowEngine? = null
 ) {
-    val instance: Any
-        get() = Class.forName(`class`).newInstance()
+    private lateinit var _instance: Any
+
+    val instance: WorkflowInstance
+        get() {
+            if (!this::_instance.isInitialized) _instance = Class.forName(`class`).getDeclaredConstructor().newInstance()
+
+            return _instance as WorkflowInstance
+        }
 
     val modeOrDefault: Mode
         get() = mode ?: Mode.worker
@@ -54,13 +60,14 @@ data class Workflow(
             require(try { instance; true } catch (e: ClassNotFoundException) { false }) {
                 "class $`class` is unknown (workflow $name)"
             }
+            require(try { instance; true } catch (e: ClassCastException) { false }) {
+                "class \"$it\" is not a workflow as it does not extend ${WorkflowInstance::class.java.name}"
+            }
             require(try { instance; true } catch (e: Exception) { false }) {
                 "class \"$it\" can not be instantiated using newInstance(). " +
                     "This class must be public and have an empty constructor"
             }
-            require(instance is Workflow) {
-                "class \"$it\" is not a workflow as it does not extend ${Workflow::class.java.name}"
-            }
+
             require(consumers >= 1) { "consumers MUST be strictly positive (workflow $name)" }
             require(concurrency >= 1) { "concurrency MUST be strictly positive (workflow $name)" }
         }

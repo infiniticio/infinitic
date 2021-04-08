@@ -25,6 +25,7 @@
 
 package io.infinitic.inMemory.tasks
 
+import io.infinitic.tasks.Task
 import kotlinx.coroutines.delay
 
 interface TaskA {
@@ -33,7 +34,7 @@ interface TaskA {
     fun await(delay: Long): Long
 }
 
-class TaskAImpl : TaskA {
+class TaskAImpl : Task(), TaskA {
     override fun concat(str1: String, str2: String) = str1 + str2
     override fun reverse(str: String) = str.reversed()
     override fun await(delay: Long): Long {

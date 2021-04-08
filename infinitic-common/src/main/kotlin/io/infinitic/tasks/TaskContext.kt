@@ -23,10 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks
+package io.infinitic.tasks
 
-class Constants {
-    companion object {
-        const val DELAY_BEFORE_RETRY_METHOD = "getRetryDelay"
-    }
+import io.infinitic.common.tasks.data.TaskError
+import io.infinitic.common.tasks.data.TaskOptions
+import java.util.UUID
+
+interface TaskContext {
+    val register: TaskExecutorRegister
+    val id: UUID
+    val attemptId: UUID
+    val retrySequence: Int
+    val retryIndex: Int
+    val lastError: TaskError?
+    val meta: MutableMap<String, ByteArray>
+    val options: TaskOptions
 }

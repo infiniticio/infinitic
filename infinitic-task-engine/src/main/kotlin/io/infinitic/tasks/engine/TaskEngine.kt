@@ -33,10 +33,11 @@ import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tags.messages.RemoveTaskTag
 import io.infinitic.common.tags.transport.SendToTagEngine
-import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptRetry
+import io.infinitic.common.tasks.data.TaskError
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.engine.messages.CancelTask
@@ -112,7 +113,7 @@ class TaskEngine(
             // discard TaskAttemptMessage other than TaskAttemptCompleted, if state has already evolved
             if (message is TaskAttemptMessage && message !is TaskAttemptCompleted) {
                 if ((oldState.taskAttemptId != message.taskAttemptId) ||
-                    (oldState.taskAttemptRetry != message.taskAttemptRetry)
+                    (oldState.taskRetryIndex != message.taskRetryIndex)
                 ) {
                     // is should happen only after a retry command
                     return logDiscardingMessage(message, "as more recent attempt exist")
@@ -186,9 +187,10 @@ class TaskEngine(
         newState.clientWaiting.map {
             sendToClient(
                 TaskCompletedInClient(
-                    it,
-                    newState.taskId,
-                    message.taskReturnValue
+                    clientName = it,
+                    taskId = newState.taskId,
+                    taskReturnValue = message.taskReturnValue,
+                    taskMeta = newState.taskMeta
                 )
             )
         }
@@ -224,15 +226,15 @@ class TaskEngine(
 
         // send task to workers
         val rt = ExecuteTaskAttempt(
-            taskId = newState.taskId,
-            taskRetry = newState.taskRetry,
-            taskAttemptId = newState.taskAttemptId,
-            taskAttemptRetry = newState.taskAttemptRetry,
             taskName = newState.taskName,
+            taskId = newState.taskId,
+            taskAttemptId = newState.taskAttemptId,
+            taskRetrySequence = newState.taskRetrySequence,
+            taskRetryIndex = newState.taskRetryIndex,
+            lastTaskError = null,
             methodName = newState.methodName,
-            methodParameters = newState.methodParameters,
             methodParameterTypes = newState.methodParameterTypes,
-            previousTaskAttemptError = null,
+            methodParameters = newState.methodParameters,
             taskOptions = newState.taskOptions,
             taskMeta = newState.taskMeta
         )
@@ -246,8 +248,8 @@ class TaskEngine(
             lastMessageId = message.messageId,
             taskStatus = TaskStatus.RUNNING_WARNING,
             taskAttemptId = TaskAttemptId(),
-            taskAttemptRetry = TaskAttemptRetry(0),
-            taskRetry = oldState.taskRetry + 1,
+            taskRetryIndex = TaskRetryIndex(0),
+            taskRetrySequence = oldState.taskRetrySequence + 1,
             taskName = message.taskName,
             methodName = message.methodName ?: oldState.methodName,
             methodParameters = message.methodParameters ?: oldState.methodParameters,
@@ -258,15 +260,15 @@ class TaskEngine(
 
         // send task to workers
         val executeTaskAttempt = ExecuteTaskAttempt(
+            taskName = newState.taskName,
             taskId = newState.taskId,
             taskAttemptId = newState.taskAttemptId,
-            taskAttemptRetry = newState.taskAttemptRetry,
-            taskRetry = newState.taskRetry,
-            taskName = newState.taskName,
+            taskRetrySequence = newState.taskRetrySequence,
+            taskRetryIndex = newState.taskRetryIndex,
+            lastTaskError = newState.lastTaskError,
             methodName = newState.methodName,
-            methodParameters = newState.methodParameters,
             methodParameterTypes = newState.methodParameterTypes,
-            previousTaskAttemptError = newState.previousTaskAttemptError,
+            methodParameters = newState.methodParameters,
             taskOptions = newState.taskOptions,
             taskMeta = newState.taskMeta
         )
@@ -275,36 +277,40 @@ class TaskEngine(
         return newState
     }
 
-    private suspend fun retryTaskAttempt(oldState: TaskState, messageId: MessageId): TaskState {
-        val state = oldState.copy(
+    private suspend fun retryTaskAttempt(
+        oldState: TaskState,
+        messageId: MessageId
+    ): TaskState {
+        val newState = oldState.copy(
             lastMessageId = messageId,
             taskStatus = TaskStatus.RUNNING_WARNING,
-            taskAttemptRetry = oldState.taskAttemptRetry + 1
+            taskRetryIndex = oldState.taskRetryIndex + 1
         )
 
         // send task to workers
         val executeTaskAttempt = ExecuteTaskAttempt(
-            taskId = state.taskId,
-            taskAttemptId = state.taskAttemptId,
-            taskAttemptRetry = state.taskAttemptRetry,
-            taskRetry = state.taskRetry,
-            taskName = state.taskName,
-            methodName = state.methodName,
-            methodParameterTypes = state.methodParameterTypes,
-            methodParameters = state.methodParameters,
-            previousTaskAttemptError = state.previousTaskAttemptError,
-            taskOptions = state.taskOptions,
-            taskMeta = state.taskMeta
+            taskName = newState.taskName,
+            taskId = newState.taskId,
+            taskAttemptId = newState.taskAttemptId,
+            taskRetrySequence = newState.taskRetrySequence,
+            taskRetryIndex = newState.taskRetryIndex,
+            lastTaskError = newState.lastTaskError,
+            methodName = newState.methodName,
+            methodParameterTypes = newState.methodParameterTypes,
+            methodParameters = newState.methodParameters,
+            taskOptions = newState.taskOptions,
+            taskMeta = newState.taskMeta
         )
         sendToTaskExecutors(executeTaskAttempt)
 
-        return state
+        return newState
     }
 
     private suspend fun taskAttemptCompleted(oldState: TaskState, message: TaskAttemptCompleted): TaskState {
         val newState = oldState.copy(
             lastMessageId = message.messageId,
-            taskStatus = TaskStatus.TERMINATED_COMPLETED
+            taskStatus = TaskStatus.TERMINATED_COMPLETED,
+            taskMeta = message.taskMeta
         )
 
         // if this task belongs to a workflow, send back the adhoc message
@@ -330,9 +336,10 @@ class TaskEngine(
         newState.clientWaiting.map {
             sendToClient(
                 TaskCompletedInClient(
-                    it,
-                    newState.taskId,
-                    message.taskReturnValue
+                    clientName = it,
+                    taskId = newState.taskId,
+                    taskReturnValue = message.taskReturnValue,
+                    taskMeta = newState.taskMeta
                 )
             )
         }
@@ -361,44 +368,48 @@ class TaskEngine(
 
     private suspend fun taskAttemptFailed(oldState: TaskState, msg: TaskAttemptFailed): TaskState {
         return delayRetryTaskAttempt(
-            oldState,
+            oldState = oldState,
             delay = msg.taskAttemptDelayBeforeRetry,
             error = msg.taskAttemptError,
-            msg.messageId
+            messageId = msg.messageId,
+            taskMeta = msg.taskMeta
         )
     }
 
     private suspend fun delayRetryTaskAttempt(
         oldState: TaskState,
         delay: MillisDuration?,
-        error: TaskAttemptError,
-        messageId: MessageId
+        error: TaskError,
+        messageId: MessageId,
+        taskMeta: TaskMeta
     ): TaskState {
         // no retry
         if (delay == null) return oldState.copy(
             lastMessageId = messageId,
             taskStatus = TaskStatus.RUNNING_ERROR,
-            previousTaskAttemptError = error
+            lastTaskError = error,
+            taskMeta = taskMeta
         )
         // immediate retry
         if (delay.long <= 0) return retryTaskAttempt(
-            oldState.copy(previousTaskAttemptError = error),
+            oldState.copy(lastTaskError = error, taskMeta = taskMeta),
             messageId
         )
         // delayed retry
         val newState = oldState.copy(
             lastMessageId = messageId,
             taskStatus = TaskStatus.RUNNING_WARNING,
-            previousTaskAttemptError = error
+            lastTaskError = error,
+            taskMeta = taskMeta
         )
 
         // schedule next attempt
         val retryTaskAttempt = RetryTaskAttempt(
             taskId = newState.taskId,
             taskName = newState.taskName,
-            taskRetry = newState.taskRetry,
             taskAttemptId = newState.taskAttemptId,
-            taskAttemptRetry = newState.taskAttemptRetry
+            taskRetrySequence = newState.taskRetrySequence,
+            taskRetryIndex = newState.taskRetryIndex
         )
         sendToTaskEngine(retryTaskAttempt, delay)
 

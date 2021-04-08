@@ -33,14 +33,14 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tags.data.Tag
-import io.infinitic.common.tasks.data.TaskAttemptError
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptRetry
+import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.data.TaskRetry
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.engine.messages.interfaces.FailingTaskAttemptMessage
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -103,8 +103,8 @@ data class RetryTaskAttempt(
     override val taskId: TaskId,
     override val taskName: TaskName,
     override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptRetry: TaskAttemptRetry,
-    override val taskRetry: TaskRetry
+    override val taskRetrySequence: TaskRetrySequence,
+    override val taskRetryIndex: TaskRetryIndex
 ) : TaskEngineMessage(), TaskAttemptMessage
 
 @Serializable
@@ -112,9 +112,10 @@ data class TaskAttemptCompleted(
     override val taskId: TaskId,
     override val taskName: TaskName,
     override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptRetry: TaskAttemptRetry,
-    override val taskRetry: TaskRetry,
-    val taskReturnValue: MethodReturnValue
+    override val taskRetrySequence: TaskRetrySequence,
+    override val taskRetryIndex: TaskRetryIndex,
+    val taskReturnValue: MethodReturnValue,
+    val taskMeta: TaskMeta
 ) : TaskEngineMessage(), TaskAttemptMessage
 
 @Serializable
@@ -122,8 +123,9 @@ data class TaskAttemptFailed(
     override val taskId: TaskId,
     override val taskName: TaskName,
     override val taskAttemptId: TaskAttemptId,
-    override val taskAttemptRetry: TaskAttemptRetry,
-    override val taskRetry: TaskRetry,
+    override val taskRetrySequence: TaskRetrySequence,
+    override val taskRetryIndex: TaskRetryIndex,
     override val taskAttemptDelayBeforeRetry: MillisDuration?,
-    val taskAttemptError: TaskAttemptError
+    val taskAttemptError: TaskError,
+    val taskMeta: TaskMeta
 ) : TaskEngineMessage(), FailingTaskAttemptMessage

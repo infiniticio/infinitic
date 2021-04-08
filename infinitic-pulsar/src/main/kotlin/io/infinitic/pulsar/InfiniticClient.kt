@@ -104,10 +104,10 @@ class InfiniticClient private constructor(
                 // register task and workflows register
                 val register = TaskExecutorRegisterImpl()
                 config.tasks.map {
-                    register.register(it.name) { it.instance }
+                    register.registerTask(it.name) { it.instance }
                 }
                 config.workflows.map {
-                    register.register(it.name) { it.instance }
+                    register.registerWorkflow(it.name) { it.instance }
                 }
 
                 val client = InfiniticClient(ClientName(config.name ?: "client: inMemory"))
