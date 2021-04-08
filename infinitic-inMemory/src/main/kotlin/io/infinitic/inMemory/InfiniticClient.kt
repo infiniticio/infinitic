@@ -31,7 +31,7 @@ import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.tasks.TaskExecutorRegister
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
 
 fun Client.startInMemory(
@@ -42,7 +42,7 @@ fun Client.startInMemory(
     val client = this
     client.closeFn = { threadPool.shutdown() }
 
-    val scope = CoroutineScope(Dispatchers.IO)
+    val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
 
     val inMemoryOutput = InMemoryOutput(scope)
 
