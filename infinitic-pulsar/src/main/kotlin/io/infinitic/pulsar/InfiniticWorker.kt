@@ -46,7 +46,6 @@ import io.infinitic.pulsar.workers.startPulsarWorkflowEngineWorker
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
@@ -96,26 +95,31 @@ class InfiniticWorker(
     /*
     Start workers
     */
-    fun start() = runBlocking {
-        logger.info("InfiniticWorker - starting with config {}", config)
+    fun start() {
+        val threadPool = Executors.newCachedThreadPool()
+        val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
 
-        val workerName = getPulsarName(pulsarClient, config.name)
-        val tenant = config.pulsar.tenant
-        val namespace = config.pulsar.namespace
-        val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
-        val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, workerName)
+        with(scope) {
+            logger.info("InfiniticWorker - starting with config {}", config)
 
-        startTagEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+            val workerName = getPulsarName(pulsarClient, config.name)
+            val tenant = config.pulsar.tenant
+            val namespace = config.pulsar.namespace
+            val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
+            val pulsarOutputs = PulsarOutputs.from(pulsarClient, tenant, namespace, workerName)
 
-        startTaskEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+            startTagEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+            startTaskEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        startMetricsWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+            startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        startTaskExecutorWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+            startMetricsWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
 
-        println("Worker \"$workerName\" ready")
+            startTaskExecutorWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+
+            println("Worker \"$workerName\" ready")
+        }
     }
 
     private fun CoroutineScope.startTagEngineWorkers(

@@ -88,11 +88,11 @@ internal class InMemoryTests : StringSpec({
         deferred.await() shouldBe "acbd"
     }
 
-    "waiting for empty workflow" {
-        val workflowA = client.newWorkflow<WorkflowA>()
-
-        val deferred = client.async(workflowA) { empty() }
-
-        deferred.await() shouldBe "void"
-    }
+//    "waiting for empty workflow" {
+//        val workflowA = client.newWorkflow<WorkflowA>()
+//
+//        val deferred = client.async(workflowA) { empty() }
+//
+//        deferred.await() shouldBe "void"
+//    }
 })
