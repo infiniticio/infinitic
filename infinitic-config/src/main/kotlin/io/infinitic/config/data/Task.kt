@@ -33,17 +33,10 @@ data class Task(
     @JvmField var mode: Mode? = null,
     @JvmField val consumers: Int = 1,
     @JvmField val concurrency: Int = 1,
-    @JvmField val shared: Boolean = true,
     @JvmField var taskEngine: TaskEngine? = null
 ) {
-    private lateinit var _instance: Any
-
     val instance: TaskInstance
-        get() {
-            if (! shared || ! this::_instance.isInitialized) _instance =
-                Class.forName(`class`).getDeclaredConstructor().newInstance()
-            return _instance as TaskInstance
-        }
+        get() = Class.forName(`class`).getDeclaredConstructor().newInstance() as TaskInstance
 
     val modeOrDefault: Mode
         get() = mode ?: Mode.worker

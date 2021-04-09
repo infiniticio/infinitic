@@ -36,14 +36,8 @@ data class Workflow(
     @JvmField var taskEngine: TaskEngine? = null,
     @JvmField var workflowEngine: WorkflowEngine? = null
 ) {
-    private lateinit var _instance: Any
-
     val instance: WorkflowInstance
-        get() {
-            if (!this::_instance.isInitialized) _instance = Class.forName(`class`).getDeclaredConstructor().newInstance()
-
-            return _instance as WorkflowInstance
-        }
+        get() = Class.forName(`class`).getDeclaredConstructor().newInstance() as WorkflowInstance
 
     val modeOrDefault: Mode
         get() = mode ?: Mode.worker

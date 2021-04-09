@@ -80,14 +80,9 @@ class PulsarConsumerFactory(
             .subscriptionType(SubscriptionType.Exclusive)
             .subscribe()
 
-    fun newTagEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<TagEngineEnvelope> =
+    fun newTagEngineCommandsConsumer(consumerName: String?, consumerCounter: Int): Consumer<TagEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TagEngineEnvelope>()))
-            .topics(
-                listOf(
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineEventsTopic.name),
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineCommandsTopic.name)
-                )
-            )
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineCommandsTopic.name))
             .also {
                 if (consumerName != null) {
                     it.consumerName("$consumerName-$consumerCounter")
@@ -99,14 +94,23 @@ class PulsarConsumerFactory(
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newTaskEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<TaskEngineEnvelope> =
+    fun newTagEngineEventsConsumer(consumerName: String?, consumerCounter: Int): Consumer<TagEngineEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TagEngineEnvelope>()))
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineEventsTopic.name))
+            .also {
+                if (consumerName != null) {
+                    it.consumerName("$consumerName-$consumerCounter")
+                }
+            }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
+            .subscriptionName(TAG_ENGINE_SUBSCRIPTION_NAME)
+            .subscriptionType(SubscriptionType.Key_Shared)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+            .subscribe()
+
+    fun newTaskEngineCommandsConsumer(consumerName: String?, consumerCounter: Int): Consumer<TaskEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
-            .topics(
-                listOf(
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name),
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name)
-                )
-            )
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name))
             .also {
                 if (consumerName != null) {
                     it.consumerName("$consumerName-$consumerCounter")
@@ -118,14 +122,37 @@ class PulsarConsumerFactory(
             .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             .subscribe()
 
-    fun newWorkflowEngineConsumer(consumerName: String?, consumerCounter: Int): Consumer<WorkflowEngineEnvelope> =
+    fun newTaskEngineEventsConsumer(consumerName: String?, consumerCounter: Int): Consumer<TaskEngineEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<TaskEngineEnvelope>()))
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name))
+            .also {
+                if (consumerName != null) {
+                    it.consumerName("$consumerName-$consumerCounter")
+                }
+            }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
+            .subscriptionName(TASK_ENGINE_SUBSCRIPTION_NAME)
+            .subscriptionType(SubscriptionType.Key_Shared)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+            .subscribe()
+
+    fun newWorkflowEngineCommandsConsumer(consumerName: String?, consumerCounter: Int): Consumer<WorkflowEngineEnvelope> =
         pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
-            .topics(
-                listOf(
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name),
-                    getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name)
-                )
-            )
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name))
+            .also {
+                if (consumerName != null) {
+                    it.consumerName("$consumerName-$consumerCounter")
+                }
+            }
+            .negativeAckRedeliveryDelay(10, TimeUnit.SECONDS)
+            .subscriptionName(WORKFLOW_ENGINE_SUBSCRIPTION_NAME)
+            .subscriptionType(SubscriptionType.Key_Shared)
+            .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+            .subscribe()
+
+    fun newWorkflowEngineEventsConsumer(consumerName: String?, consumerCounter: Int): Consumer<WorkflowEngineEnvelope> =
+        pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<WorkflowEngineEnvelope>()))
+            .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name))
             .also {
                 if (consumerName != null) {
                     it.consumerName("$consumerName-$consumerCounter")

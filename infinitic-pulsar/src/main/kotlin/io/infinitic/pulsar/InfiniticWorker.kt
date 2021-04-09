@@ -147,7 +147,8 @@ class InfiniticWorker(
                     logger.info("InfiniticWorker - starting tag engine {}", counter)
                     startPulsarTagEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTagEngineConsumer(consumerName, counter),
+                        commandsConsumer = pulsarConsumerFactory.newTagEngineCommandsConsumer(consumerName, counter),
+                        eventsConsumer = pulsarConsumerFactory.newTagEngineEventsConsumer(consumerName, counter),
                         keySetStorage,
                         pulsarOutputs.sendEventsToClient,
                         pulsarOutputs.sendCommandsToTaskEngine,
@@ -173,14 +174,15 @@ class InfiniticWorker(
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
                 print(
-                    "Task engine".padEnd(25) + ": starting ${it.consumers} instances... " +
+                    "Task engine".padEnd(25) + ": starting ${it.consumersOrDefault} instances... " +
                         "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
                 )
                 repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting task engine {}", counter)
                     startPulsarTaskEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newTaskEngineConsumer(consumerName, counter),
+                        commandsConsumer = pulsarConsumerFactory.newTaskEngineCommandsConsumer(consumerName, counter),
+                        eventsConsumer = pulsarConsumerFactory.newTaskEngineEventsConsumer(consumerName, counter),
                         keyValueStorage,
                         pulsarOutputs.sendEventsToClient,
                         pulsarOutputs.sendEventsToTagEngine,
@@ -209,14 +211,15 @@ class InfiniticWorker(
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
                 print(
-                    "Workflow engine".padEnd(25) + ": starting ${it.consumers} instances... " +
+                    "Workflow engine".padEnd(25) + ": starting ${it.consumersOrDefault} instances... " +
                         "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
                 )
                 repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting workflow engine {}", counter)
                     startPulsarWorkflowEngineWorker(
                         counter,
-                        pulsarConsumerFactory.newWorkflowEngineConsumer(consumerName, counter),
+                        commandsConsumer = pulsarConsumerFactory.newWorkflowEngineCommandsConsumer(consumerName, counter),
+                        eventsConsumer = pulsarConsumerFactory.newWorkflowEngineEventsConsumer(consumerName, counter),
                         storage,
                         pulsarOutputs.sendEventsToClient,
                         pulsarOutputs.sendEventsToTagEngine,
@@ -242,6 +245,10 @@ class InfiniticWorker(
                     it.stateCacheOrDefault.getKeyValueCache(config),
                     it.stateStorage!!.getKeyValueStorage(config)
                 )
+                print(
+                    "Metrics engine".padEnd(25) + ": starting ${it.consumersOrDefault} instances... " +
+                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+                )
                 repeat(it.consumersOrDefault) { counter ->
                     logger.info("InfiniticWorker - starting metrics per name {}", counter)
                     startPulsarMetricsPerNameWorker(
@@ -257,6 +264,7 @@ class InfiniticWorker(
                     pulsarConsumerFactory.newMetricsGlobalEngineConsumer(consumerName),
                     storage
                 )
+                println(" done")
             }
         }
     }

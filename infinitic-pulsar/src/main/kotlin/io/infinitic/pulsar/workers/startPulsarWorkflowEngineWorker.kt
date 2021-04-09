@@ -38,16 +38,16 @@ import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.yield
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.MessageId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
-typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<WorkflowEngineMessage>
 
 const val WORKFLOW_ENGINE_THREAD_NAME = "workflow-engine"
 
@@ -69,7 +69,8 @@ private fun logError(message: WorkflowEngineMessage, e: Exception) = logger.erro
 
 fun CoroutineScope.startPulsarWorkflowEngineWorker(
     consumerCounter: Int,
-    workflowEngineConsumer: Consumer<WorkflowEngineEnvelope>,
+    commandsConsumer: Consumer<WorkflowEngineEnvelope>,
+    eventsConsumer: Consumer<WorkflowEngineEnvelope>,
     keyValueStorage: KeyValueStorage,
     sendToClient: SendToClient,
     sendToTagEngine: SendToTagEngine,
@@ -85,32 +86,69 @@ fun CoroutineScope.startPulsarWorkflowEngineWorker(
         sendToWorkflowEngine
     )
 
-    fun negativeAcknowledge(pulsarId: MessageId) =
-        workflowEngineConsumer.negativeAcknowledge(pulsarId)
+    val eventChannel = Channel<PulsarMessageToProcess<WorkflowEngineMessage>>()
+    val commandChannel = Channel<PulsarMessageToProcess<WorkflowEngineMessage>>()
 
-    suspend fun acknowledge(pulsarId: MessageId) =
-        workflowEngineConsumer.acknowledgeAsync(pulsarId).await()
-
-    while (isActive) {
-        val pulsarMessage = workflowEngineConsumer.receiveAsync().await()
-
+    suspend fun pullConsumerSendToChannel(
+        consumer: Consumer<WorkflowEngineEnvelope>,
+        channel: Channel<PulsarMessageToProcess<WorkflowEngineMessage>>
+    ) {
+        val pulsarMessage = consumer.receiveAsync().await()
         val message = try {
             WorkflowEngineEnvelope.fromByteArray(pulsarMessage.data).message()
         } catch (e: Exception) {
             logError(pulsarMessage, e)
-            negativeAcknowledge(pulsarMessage.messageId)
+            consumer.negativeAcknowledge(pulsarMessage.messageId)
 
             null
         }
 
         message?.let {
-            try {
-                workflowEngine.handle(it)
+            channel.send(
+                PulsarMessageToProcess(
+                    message = it,
+                    pulsarId = pulsarMessage.messageId,
+                    redeliveryCount = pulsarMessage.redeliveryCount
+                )
+            )
+        }
+        yield()
+    }
 
-                acknowledge(pulsarMessage.messageId)
-            } catch (e: Exception) {
-                logError(message, e)
-                negativeAcknowledge(pulsarMessage.messageId)
+    suspend fun runEngine(
+        messageToProcess: PulsarMessageToProcess<WorkflowEngineMessage>,
+        consumer: Consumer<WorkflowEngineEnvelope>
+    ) {
+        try {
+            workflowEngine.handle(messageToProcess.message)
+            consumer.acknowledge(messageToProcess.pulsarId)
+        } catch (e: Exception) {
+            logError(messageToProcess.message, e)
+            consumer.negativeAcknowledge(messageToProcess.pulsarId)
+        }
+    }
+
+    // Key-shared consumer for events messages
+    launch {
+        while (isActive) {
+            pullConsumerSendToChannel(eventsConsumer, eventChannel)
+        }
+    }
+    // Key-shared consumer for commands messages
+    launch {
+        while (isActive) {
+            pullConsumerSendToChannel(commandsConsumer, commandChannel)
+        }
+    }
+
+    // This implementation gives a priority to messages coming from events
+    while (isActive) {
+        select<Unit> {
+            eventChannel.onReceive {
+                runEngine(it, eventsConsumer)
+            }
+            commandChannel.onReceive {
+                runEngine(it, commandsConsumer)
             }
         }
     }
