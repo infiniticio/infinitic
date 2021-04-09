@@ -46,6 +46,9 @@ import java.lang.reflect.InvocationTargetException
 import java.time.Duration
 
 class WorkflowTaskImpl : Task(), WorkflowTask {
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? = null
+
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name
         val workflow = context.register.getWorkflowInstance("${workflowTaskParameters.workflowName}")
@@ -96,8 +99,6 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             methodReturnValue
         )
     }
-
-    override fun getDurationBeforeRetry(e: Exception): Duration? = null
 
     private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes == null) {
         getMethodPerNameAndParameterCount(

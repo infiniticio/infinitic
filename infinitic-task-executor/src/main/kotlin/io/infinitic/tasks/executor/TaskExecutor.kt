@@ -156,9 +156,7 @@ class TaskExecutor(
                 sendTaskAttemptFailed(
                     msg,
                     cause,
-                    delay.value?.toSeconds()?.let {
-                        MillisDuration((1000F * it).toLong())
-                    },
+                    delay.value?.let { MillisDuration(it.toMillis()) },
                     TaskMeta(task.context.meta)
                 )
             }
