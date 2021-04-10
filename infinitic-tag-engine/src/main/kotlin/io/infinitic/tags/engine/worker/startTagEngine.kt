@@ -55,9 +55,10 @@ private fun logError(messageToProcess: TagEngineMessageToProcess, e: Exception) 
 fun <T : TagEngineMessageToProcess> CoroutineScope.startTagEngine(
     coroutineName: String,
     tagStateStorage: TagStateStorage,
-    tagEngineCommandsChannel: ReceiveChannel<T>,
-    tagEngineEventsChannel: ReceiveChannel<T>,
-    logChannel: SendChannel<T>,
+    eventsInputChannel: ReceiveChannel<T>,
+    eventsOutputChannel: SendChannel<T>,
+    commandsInputChannel: ReceiveChannel<T>,
+    commandsOutputChannel: SendChannel<T>,
     sendToClient: SendToClient,
     sendToTaskEngine: SendToTaskEngine,
     sendToWorkflowEngine: SendToWorkflowEngine
@@ -72,24 +73,24 @@ fun <T : TagEngineMessageToProcess> CoroutineScope.startTagEngine(
 
     while (true) {
         select<Unit> {
-            tagEngineEventsChannel.onReceive {
+            eventsInputChannel.onReceive {
                 try {
                     it.returnValue = tagEngine.handle(it.message)
                 } catch (e: Exception) {
-                    it.exception = e
+                    it.throwable = e
                     logError(it, e)
                 } finally {
-                    logChannel.send(it)
+                    eventsOutputChannel.send(it)
                 }
             }
-            tagEngineCommandsChannel.onReceive {
+            commandsInputChannel.onReceive {
                 try {
                     it.returnValue = tagEngine.handle(it.message)
                 } catch (e: Exception) {
-                    it.exception = e
+                    it.throwable = e
                     logError(it, e)
                 } finally {
-                    logChannel.send(it)
+                    commandsOutputChannel.send(it)
                 }
             }
         }

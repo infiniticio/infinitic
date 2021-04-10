@@ -27,6 +27,7 @@ package io.infinitic.common.clients.messages
 
 import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.messages.Envelope
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -37,7 +38,7 @@ data class ClientEnvelope(
     val unknownTaskWaited: UnknownTaskWaited? = null,
     val workflowCompleted: WorkflowCompleted? = null,
     val unknownWorkflowWaited: UnknownWorkflowWaited? = null
-) {
+) : Envelope<ClientMessage> {
     init {
         val noNull = listOfNotNull(
             taskCompleted,
@@ -78,7 +79,7 @@ data class ClientEnvelope(
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message(): ClientMessage = when (type) {
+    override fun message(): ClientMessage = when (type) {
         ClientMessageType.TASK_COMPLETED -> taskCompleted!!
         ClientMessageType.UNKNOWN_TASK_WAITED -> unknownTaskWaited!!
         ClientMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!

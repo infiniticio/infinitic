@@ -37,7 +37,6 @@ import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
@@ -60,9 +59,10 @@ private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Exception)
 fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     coroutineName: String,
     taskStateStorage: TaskStateStorage,
-    taskCommandsChannel: ReceiveChannel<T>,
-    taskEventsChannel: Channel<T>,
-    logChannel: SendChannel<T>,
+    eventsInputChannel: ReceiveChannel<T>,
+    eventsOutputChannel: SendChannel<T>,
+    commandsInputChannel: ReceiveChannel<T>,
+    commandsOutputChannel: SendChannel<T>,
     sendToClient: SendToClient,
     sendToTagEngine: SendToTagEngine,
     sendToTaskEngine: SendToTaskEngine,
@@ -83,24 +83,24 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
 
     while (true) {
         select<Unit> {
-            taskEventsChannel.onReceive {
+            eventsInputChannel.onReceive {
                 try {
                     it.returnValue = taskEngine.handle(it.message)
                 } catch (e: Exception) {
-                    it.exception = e
+                    it.throwable = e
                     logError(it, e)
                 } finally {
-                    logChannel.send(it)
+                    eventsOutputChannel.send(it)
                 }
             }
-            taskCommandsChannel.onReceive {
+            commandsInputChannel.onReceive {
                 try {
                     it.returnValue = taskEngine.handle(it.message)
                 } catch (e: Exception) {
-                    it.exception = e
+                    it.throwable = e
                     logError(it, e)
                 } finally {
-                    logChannel.send(it)
+                    commandsOutputChannel.send(it)
                 }
             }
         }

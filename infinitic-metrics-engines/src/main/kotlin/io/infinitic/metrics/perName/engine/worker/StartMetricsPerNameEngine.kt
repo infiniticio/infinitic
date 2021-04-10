@@ -53,8 +53,8 @@ private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Except
 fun <T : MetricsPerNameMessageToProcess> CoroutineScope.startMetricsPerNameEngine(
     coroutineName: String,
     metricsPerNameStateStorage: MetricsPerNameStateStorage,
-    metricsPerNameChannel: ReceiveChannel<T>,
-    logChannel: SendChannel<T>,
+    inputChannel: ReceiveChannel<T>,
+    outputChannel: SendChannel<T>,
     sendToMetricsGlobal: SendToMetricsGlobal
 ) = launch(CoroutineName(coroutineName)) {
 
@@ -63,14 +63,14 @@ fun <T : MetricsPerNameMessageToProcess> CoroutineScope.startMetricsPerNameEngin
         sendToMetricsGlobal
     )
 
-    for (messageToProcess in metricsPerNameChannel) {
+    for (messageToProcess in inputChannel) {
         try {
             messageToProcess.returnValue = metricsPerNameEngine.handle(messageToProcess.message)
         } catch (e: Exception) {
-            messageToProcess.exception = e
+            messageToProcess.throwable = e
             logError(messageToProcess, e)
         } finally {
-            logChannel.send(messageToProcess)
+            outputChannel.send(messageToProcess)
         }
     }
 }

@@ -26,6 +26,7 @@
 package io.infinitic.common.workflows.engine.messages
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
@@ -43,7 +44,7 @@ data class WorkflowEngineEnvelope(
     val dispatchWorkflow: DispatchWorkflow? = null,
     val taskCanceled: TaskCanceled? = null,
     val taskCompleted: TaskCompleted? = null
-) {
+) : Envelope<WorkflowEngineMessage> {
     init {
         val noNull = listOfNotNull(
             waitWorkflow,
@@ -132,7 +133,7 @@ data class WorkflowEngineEnvelope(
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message(): WorkflowEngineMessage = when (type) {
+    override fun message(): WorkflowEngineMessage = when (type) {
         WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow!!
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendToChannel!!

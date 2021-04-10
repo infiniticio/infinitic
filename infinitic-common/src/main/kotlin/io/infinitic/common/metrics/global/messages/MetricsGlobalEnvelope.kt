@@ -26,13 +26,14 @@
 package io.infinitic.common.metrics.global.messages
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.messages.Envelope
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class MetricsGlobalEnvelope(
     val type: MetricsGlobalMessageType,
     val taskCreated: TaskCreated? = null
-) {
+) : Envelope<MetricsGlobalMessage> {
     init {
         val noNull = listOfNotNull(
             taskCreated
@@ -53,7 +54,7 @@ data class MetricsGlobalEnvelope(
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message(): MetricsGlobalMessage = when (type) {
+    override fun message(): MetricsGlobalMessage = when (type) {
         MetricsGlobalMessageType.TASK_CREATED -> taskCreated!!
     }
 

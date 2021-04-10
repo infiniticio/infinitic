@@ -51,22 +51,22 @@ private fun logError(messageToProcess: MetricsGlobalMessageToProcess, e: Excepti
 fun <T : MetricsGlobalMessageToProcess> CoroutineScope.startMetricsGlobalEngine(
     coroutineName: String,
     metricsGlobalStateStorage: MetricsGlobalStateStorage,
-    metricsGlobalChannel: ReceiveChannel<T>,
-    logChannel: SendChannel<T>
+    inputChannel: ReceiveChannel<T>,
+    outputChannel: SendChannel<T>
 ) = launch(CoroutineName(coroutineName)) {
 
     val metricsGlobalEngine = MetricsGlobalEngine(
         metricsGlobalStateStorage
     )
 
-    for (message in metricsGlobalChannel) {
+    for (message in inputChannel) {
         try {
             message.returnValue = metricsGlobalEngine.handle(message.message)
         } catch (e: Exception) {
-            message.exception = e
+            message.throwable = e
             logError(message, e)
         } finally {
-            logChannel.send(message)
+            outputChannel.send(message)
         }
     }
 }

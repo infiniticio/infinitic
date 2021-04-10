@@ -26,77 +26,92 @@
 package io.infinitic.pulsar
 
 import io.infinitic.inMemory.transport.InMemoryMessageToProcess
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.yield
-import kotlin.concurrent.thread
+import java.util.concurrent.Executors
 import kotlin.random.Random
 
-fun main() = runBlocking {
+/**
+ * This code checks:
+ * - that a messages is pulled only when it can be handled
+ * - that events are processed before commands
+ * - that messages are processed more quickly if we add more concurrency
+ */
+fun main() {
+    val startTime = System.nanoTime()
+    val concurrency = 100
+    val eventsNb = 500
+    val commandsNb = 500
+    val waiting = 300L
+    var count = 0
 
-    val eventChannel: Channel<InMemoryMessageToProcess<String>> = Channel()
-    val commandChannel: Channel<InMemoryMessageToProcess<String>> = Channel()
-    val outChannel: Channel<InMemoryMessageToProcess<String>> = Channel()
+    val threadPool = Executors.newCachedThreadPool()
+    val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
 
-    // WORKER INSTANCES
-    repeat(10) {
-        thread {
-            runBlocking {
+    with(scope) {
+        val eventChannel: Channel<InMemoryMessageToProcess<String>> = Channel()
+        val commandChannel: Channel<InMemoryMessageToProcess<String>> = Channel()
+        val outChannel: Channel<InMemoryMessageToProcess<String>> = Channel()
+
+        // N threads for running engines
+        repeat(concurrency) {
+            launch {
                 while (isActive) {
                     select<Unit> {
                         eventChannel.onReceive {
                             println("    receiving: ${it.message}")
-                            val out = Random.nextLong(5000)
-                            Thread.sleep(out)
+                            val out = Random.nextLong(5)
+                            Thread.sleep(waiting)
                             it.returnValue = out
-                            println("    done: ${it.message}")
+                            println("    done: ${it.message} on thread ${Thread.currentThread().name}")
                             outChannel.send(it)
                         }
                         commandChannel.onReceive {
                             println("    receiving: ${it.message}")
-                            val out = Random.nextLong(5000)
-                            Thread.sleep(out)
+                            val out = Random.nextLong(5)
+                            Thread.sleep(waiting)
                             it.returnValue = out
-                            println("    done: ${it.message}")
+                            println("    done: ${it.message} on thread ${Thread.currentThread().name}")
                             outChannel.send(it)
                         }
                     }
                 }
             }
         }
-    }
 
-    thread {
-        runBlocking(Dispatchers.IO) {
-            // COMMAND CONSUMER
-            launch {
-                repeat(100) {
-                    val command = "command-$it"
-                    println("sending... $command")
-                    commandChannel.send(InMemoryMessageToProcess(command))
-                    yield()
-                }
+        // EVENT CONSUMER
+        launch {
+            repeat(eventsNb) {
+                val event = "event-$it"
+                println("sending... $event")
+                eventChannel.send(InMemoryMessageToProcess(event))
+                yield()
             }
-            // EVENT CONSUMER
-            launch {
-                repeat(100) {
-                    val event = "event-$it"
-                    println("sending... $event")
-                    eventChannel.send(InMemoryMessageToProcess(event))
-                    yield()
-                }
+        }
+        // COMMAND CONSUMER
+        launch {
+            repeat(commandsNb) {
+                val command = "command-$it"
+                println("sending... $command")
+                commandChannel.send(InMemoryMessageToProcess(command))
+                yield()
             }
-            // ACKNOWLEDGMENT
+        }
+        // ACKNOWLEDGMENT
+        launch {
             while (isActive) {
                 val msg = outChannel.receive()
-                println("    acknowledging: $msg")
+                println("    acknowledging: ${msg.message}")
+                count++
+                if (count == commandsNb + eventsNb) {
+                    println("Execution time in milliseconds: " + (System.nanoTime() - startTime) / 1000000)
+                }
             }
         }
     }
-
-    Unit
 }

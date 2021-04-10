@@ -23,28 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.config.data
+package io.infinitic.common.messages
 
-import io.infinitic.cache.StateCache
-import io.infinitic.config.merge.Mergeable
-import io.infinitic.storage.StateStorage
+interface Envelope<T> {
 
-data class TagEngine(
-    @JvmField var mode: Mode? = null,
-    @JvmField val concurrency: Int = 1,
-    @JvmField var stateStorage: StateStorage? = null,
-    @JvmField var stateCache: StateCache? = null
-) : Mergeable {
-    val modeOrDefault: Mode
-        get() = mode ?: Mode.worker
-
-    val concurrencyOrDefault: Int
-        get() = concurrency ?: 1
-
-    val stateCacheOrDefault: StateCache
-        get() = stateCache ?: StateCache.none
-
-    init {
-        require(concurrency >= 0) { "concurrency must be positive" }
-    }
+    fun message(): T
 }

@@ -32,7 +32,7 @@ import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
 import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.pulsar.functions.storage.keyValueStorage
-import io.infinitic.pulsar.transport.PulsarOutputs
+import io.infinitic.pulsar.transport.PulsarOutput
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.functions.api.Context
 import org.apache.pulsar.functions.api.Function
@@ -60,6 +60,6 @@ class MetricsPerNamePulsarFunction : Function<MetricsPerNameEnvelope, Void> {
                 context.keyValueStorage()
             )
         ),
-        PulsarOutputs.from(context).sendToMetricsGlobal
+        PulsarOutput.from(context).sendToMetricsGlobal
     )
 }

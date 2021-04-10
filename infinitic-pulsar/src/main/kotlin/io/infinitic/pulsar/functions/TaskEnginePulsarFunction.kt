@@ -30,7 +30,7 @@ import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
-import io.infinitic.pulsar.transport.PulsarOutputs
+import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import kotlinx.coroutines.runBlocking
@@ -53,7 +53,7 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
     }
 
     internal fun getTaskEngine(context: Context): TaskEngine {
-        val output = PulsarOutputs.from(context)
+        val output = PulsarOutput.from(context)
 
         return TaskEngine(
             BinaryTaskStateStorage(

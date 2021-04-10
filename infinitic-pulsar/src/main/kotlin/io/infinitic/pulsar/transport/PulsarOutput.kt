@@ -76,7 +76,7 @@ import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class PulsarOutputs(
+class PulsarOutput(
     private val pulsarMessageBuilder: PulsarMessageBuilder,
     private val pulsarTenant: String,
     private val pulsarNamespace: String
@@ -93,7 +93,7 @@ class PulsarOutputs(
             pulsarTenant: String,
             pulsarNamespace: String,
             name: String
-        ) = PulsarOutputs(
+        ) = PulsarOutput(
             PulsarMessageBuilderFromClient(pulsarClient, name),
             pulsarTenant,
             pulsarNamespace
@@ -102,7 +102,7 @@ class PulsarOutputs(
         /*
         Create a new PulsarTransport from a Pulsar Function Context
          */
-        fun from(context: Context) = PulsarOutputs(
+        fun from(context: Context) = PulsarOutput(
             PulsarMessageBuilderFromFunction(context),
             context.tenant,
             context.namespace

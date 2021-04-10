@@ -31,7 +31,6 @@ data class Workflow(
     @JvmField val name: String,
     @JvmField val `class`: String? = null,
     @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
     @JvmField val concurrency: Int = 1,
     @JvmField var taskEngine: TaskEngine? = null,
     @JvmField var workflowEngine: WorkflowEngine? = null
@@ -62,8 +61,7 @@ data class Workflow(
                     "This class must be public and have an empty constructor"
             }
 
-            require(consumers >= 1) { "consumers MUST be strictly positive (workflow $name)" }
-            require(concurrency >= 1) { "concurrency MUST be strictly positive (workflow $name)" }
+            require(concurrency >= 0) { "concurrency must be positive (workflow $name)" }
         }
     }
 }

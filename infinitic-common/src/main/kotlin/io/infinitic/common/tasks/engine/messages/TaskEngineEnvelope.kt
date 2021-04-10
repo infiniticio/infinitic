@@ -26,6 +26,7 @@
 package io.infinitic.common.tasks.engine.messages
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.tasks.data.TaskId
 import kotlinx.serialization.Serializable
 
@@ -40,7 +41,7 @@ data class TaskEngineEnvelope(
     val cancelTask: CancelTask? = null,
     val taskAttemptCompleted: TaskAttemptCompleted? = null,
     val taskAttemptFailed: TaskAttemptFailed? = null
-) {
+) : Envelope<TaskEngineMessage> {
     init {
         val noNull = listOfNotNull(
             dispatchTask,
@@ -99,7 +100,7 @@ data class TaskEngineEnvelope(
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message(): TaskEngineMessage = when (type) {
+    override fun message(): TaskEngineMessage = when (type) {
         TaskEngineMessageType.DISPATCH_TASK -> dispatchTask!!
         TaskEngineMessageType.WAIT_TASK -> waitTask!!
         TaskEngineMessageType.RETRY_TASK -> retryTask!!

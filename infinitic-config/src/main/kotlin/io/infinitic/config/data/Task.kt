@@ -31,7 +31,6 @@ data class Task(
     @JvmField val name: String,
     @JvmField val `class`: String? = null,
     @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
     @JvmField val concurrency: Int = 1,
     @JvmField var taskEngine: TaskEngine? = null
 ) {
@@ -61,8 +60,7 @@ data class Task(
                     "This class must be public and have an empty constructor"
             }
 
-            require(consumers >= 1) { "consumers MUST be strictly positive (task $name)" }
-            require(concurrency >= 1) { "concurrency MUST strictly be positive (task $name)" }
+            require(concurrency >= 0) { "concurrency must be positive (task $name)" }
         }
     }
 }

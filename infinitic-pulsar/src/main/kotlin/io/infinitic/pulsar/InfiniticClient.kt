@@ -33,7 +33,7 @@ import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.inMemory.startInMemory
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
-import io.infinitic.pulsar.transport.PulsarOutputs
+import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startClientResponseWorker
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import kotlinx.coroutines.runBlocking
@@ -61,7 +61,7 @@ class InfiniticClient private constructor(
             val infiniticClient = InfiniticClient(ClientName(clientName))
             infiniticClient.closeFn = { pulsarClient.close() }
 
-            val pulsarOutputs = PulsarOutputs.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName)
+            val pulsarOutputs = PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName)
             infiniticClient.setOutput(
                 pulsarOutputs.sendCommandsToTagEngine,
                 pulsarOutputs.sendCommandsToTaskEngine,

@@ -55,7 +55,7 @@ fun CoroutineScope.startClientWorker(
         try {
             client.handle(message.message)
         } catch (e: Exception) {
-            message.exception = e
+            message.throwable = e
             logError(message, e)
         } finally {
             logChannel.send(message)

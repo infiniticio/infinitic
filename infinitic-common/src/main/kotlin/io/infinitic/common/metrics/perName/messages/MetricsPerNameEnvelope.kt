@@ -26,6 +26,7 @@
 package io.infinitic.common.metrics.perName.messages
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 
@@ -34,7 +35,7 @@ data class MetricsPerNameEnvelope(
     val taskName: TaskName,
     val type: MetricsPerNameMessageType,
     val taskStatusUpdated: TaskStatusUpdated? = null
-) {
+) : Envelope<MetricsPerNameMessage> {
     init {
         val noNull = listOfNotNull(
             taskStatusUpdated
@@ -57,7 +58,7 @@ data class MetricsPerNameEnvelope(
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message(): MetricsPerNameMessage = when (type) {
+    override fun message(): MetricsPerNameMessage = when (type) {
         MetricsPerNameMessageType.TASK_STATUS_UPDATED -> taskStatusUpdated!!
     }
 
