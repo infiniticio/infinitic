@@ -27,18 +27,30 @@ package io.infinitic.metrics.global.engine.storage
 
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
 import io.infinitic.common.storage.Flushable
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-/**
- * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-interface MetricsGlobalStateStorage : Flushable {
+class LoggedMetricsGlobalStateStorage(
+    val storage: MetricsGlobalStateStorage
+) : MetricsGlobalStateStorage, Flushable by storage {
 
-    suspend fun getState(): MetricsGlobalState?
+    val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun putState(state: MetricsGlobalState)
+    override suspend fun getState(): MetricsGlobalState? {
+        val state = storage.getState()
+        logger.debug("getState {}", state)
 
-    suspend fun delState()
+        return state
+    }
+
+    override suspend fun putState(state: MetricsGlobalState) {
+        logger.debug("putState {}", state)
+        storage.putState(state)
+    }
+
+    override suspend fun delState() {
+        logger.debug("delState")
+        storage.delState()
+    }
 }

@@ -28,13 +28,16 @@ package io.infinitic.metrics.global.engine
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.global.messages.TaskCreated
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
+import io.infinitic.metrics.global.engine.storage.LoggedMetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class MetricsGlobalEngine(
-    val storage: MetricsGlobalStateStorage
+    storage: MetricsGlobalStateStorage
 ) {
+    private val storage = LoggedMetricsGlobalStateStorage(storage)
+
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 

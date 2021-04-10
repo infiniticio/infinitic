@@ -25,10 +25,10 @@
 
 package io.infinitic.metrics.perName.engine.storage
 
+import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.tasks.data.TaskName
 
 /**
  * This MonitoringPerNameStateStorage implementation converts state objects used by the engine to Avro objects, and saves
@@ -38,20 +38,20 @@ class BinaryMetricsPerNameStateStorage(
     private val storage: KeyValueStorage
 ) : MetricsPerNameStateStorage, Flushable by storage {
 
-    override suspend fun getState(taskName: TaskName): MetricsPerNameState? {
-        val key = getMetricsPerNameStateKey(taskName)
+    override suspend fun getState(name: Name): MetricsPerNameState? {
+        val key = getMetricsPerNameStateKey(name)
         return storage.getValue(key)
             ?.let { MetricsPerNameState.fromByteArray(it) }
     }
-    override suspend fun putState(taskName: TaskName, state: MetricsPerNameState) {
-        val key = getMetricsPerNameStateKey(taskName)
+    override suspend fun putState(name: Name, state: MetricsPerNameState) {
+        val key = getMetricsPerNameStateKey(name)
         storage.putValue(key, state.toByteArray())
     }
 
-    override suspend fun delState(taskName: TaskName) {
-        val key = getMetricsPerNameStateKey(taskName)
+    override suspend fun delState(name: Name) {
+        val key = getMetricsPerNameStateKey(name)
         storage.delValue(key)
     }
 
-    private fun getMetricsPerNameStateKey(taskName: TaskName) = "metricsPerName.state.$taskName"
+    private fun getMetricsPerNameStateKey(name: Name) = "metricsPerName.state.$name"
 }

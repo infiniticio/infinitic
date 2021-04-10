@@ -31,14 +31,17 @@ import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.metrics.perName.engine.storage.LoggedMetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class MetricsPerNameEngine(
-    val storage: MetricsPerNameStateStorage,
+    storage: MetricsPerNameStateStorage,
     val sendToMetricsGlobal: SendToMetricsGlobal
 ) {
+    val storage = LoggedMetricsPerNameStateStorage(storage)
+
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
 

@@ -59,6 +59,7 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.tasks.engine.storage.LoggedTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -66,7 +67,7 @@ import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClie
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine(
-    val storage: TaskStateStorage,
+    storage: TaskStateStorage,
     val sendToClient: SendToClient,
     val sendToTagEngine: SendToTagEngine,
     val sendToTaskEngine: SendToTaskEngine,
@@ -74,6 +75,8 @@ class TaskEngine(
     val sendToTaskExecutors: SendToTaskExecutors,
     val sendToMetricsPerName: SendToMetricsPerName
 ) {
+    private val storage = LoggedTaskStateStorage(storage)
+
     private val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit) =
         { msg: WorkflowEngineMessage -> sendToWorkflowEngine(msg, MillisDuration(0)) }
 

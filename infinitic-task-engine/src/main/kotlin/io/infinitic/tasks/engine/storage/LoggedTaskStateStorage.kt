@@ -23,22 +23,35 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.metrics.global.engine.storage
+package io.infinitic.tasks.engine.storage
 
-import io.infinitic.common.metrics.global.state.MetricsGlobalState
 import io.infinitic.common.storage.Flushable
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.engine.state.TaskState
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-/**
- * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-interface MetricsGlobalStateStorage : Flushable {
+class LoggedTaskStateStorage(
+    val storage: TaskStateStorage
+) : TaskStateStorage, Flushable by storage {
 
-    suspend fun getState(): MetricsGlobalState?
+    val logger: Logger
+        get() = LoggerFactory.getLogger(javaClass)
 
-    suspend fun putState(state: MetricsGlobalState)
+    override suspend fun getState(taskId: TaskId): TaskState? {
+        val taskState = storage.getState(taskId)
+        logger.debug("taskId {} - getState {}", taskId, taskState)
 
-    suspend fun delState()
+        return taskState
+    }
+
+    override suspend fun putState(taskId: TaskId, taskState: TaskState) {
+        logger.debug("taskId {} - putState {}", taskId, taskState)
+        storage.putState(taskId, taskState)
+    }
+
+    override suspend fun delState(taskId: TaskId) {
+        logger.debug("taskId {} - delState", taskId)
+        storage.delState(taskId)
+    }
 }

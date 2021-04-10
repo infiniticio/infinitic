@@ -25,8 +25,9 @@
 
 package io.infinitic.metrics.perName.engine.storage
 
+import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
-import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.storage.Flushable
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
@@ -34,11 +35,11 @@ import io.infinitic.common.tasks.data.TaskName
  * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
  * transformed before being stored. These details are left to the different implementations.
  */
-interface MetricsPerNameStateStorage {
+interface MetricsPerNameStateStorage : Flushable {
 
-    suspend fun getState(taskName: TaskName): MetricsPerNameState?
+    suspend fun getState(name: Name): MetricsPerNameState?
 
-    suspend fun putState(taskName: TaskName, state: MetricsPerNameState)
+    suspend fun putState(name: Name, state: MetricsPerNameState)
 
-    suspend fun delState(taskName: TaskName)
+    suspend fun delState(name: Name)
 }

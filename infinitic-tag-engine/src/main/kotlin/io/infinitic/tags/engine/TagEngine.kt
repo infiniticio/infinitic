@@ -46,16 +46,19 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.tags.engine.storage.LoggedTagStateStorage
 import io.infinitic.tags.engine.storage.TagStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class TagEngine(
-    val storage: TagStateStorage,
+    storage: TagStateStorage,
     private val sendToClient: SendToClient,
     sendToTaskEngine: SendToTaskEngine,
     sendToWorkflowEngine: SendToWorkflowEngine
 ) {
+    private val storage = LoggedTagStateStorage(storage)
+
     private val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit) =
         { msg: TaskEngineMessage -> sendToTaskEngine(msg, MillisDuration(0)) }
 
