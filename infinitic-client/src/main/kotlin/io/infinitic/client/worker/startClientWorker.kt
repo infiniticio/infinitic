@@ -44,21 +44,20 @@ private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = l
     e
 )
 
-fun CoroutineScope.startClientWorker(
-    coroutineName: String,
+fun <T : ClientMessageToProcess> CoroutineScope.startClientWorker(
     client: Client,
-    clientChannel: ReceiveChannel<ClientMessageToProcess>,
-    logChannel: SendChannel<ClientMessageToProcess>
-) = launch(CoroutineName(coroutineName)) {
+    inputChannel: ReceiveChannel<T>,
+    outputChannel: SendChannel<T>
+) = launch(CoroutineName("client: ${client.clientName}")) {
 
-    for (message in clientChannel) {
+    for (message in inputChannel) {
         try {
             client.handle(message.message)
         } catch (e: Exception) {
             message.throwable = e
             logError(message, e)
         } finally {
-            logChannel.send(message)
+            outputChannel.send(message)
         }
     }
 }

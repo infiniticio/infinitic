@@ -36,9 +36,9 @@ import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startClientResponseWorker
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import org.apache.pulsar.client.api.PulsarClient
-import kotlin.concurrent.thread
 
 @Suppress("unused")
 class InfiniticClient private constructor(
@@ -59,7 +59,6 @@ class InfiniticClient private constructor(
             // checks uniqueness if not null, provides a unique name if null
             val clientName = getPulsarName(pulsarClient, clientName)
             val infiniticClient = InfiniticClient(ClientName(clientName))
-            infiniticClient.closeFn = { pulsarClient.close() }
 
             val pulsarOutputs = PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName)
             infiniticClient.setOutput(
@@ -67,15 +66,18 @@ class InfiniticClient private constructor(
                 pulsarOutputs.sendCommandsToTaskEngine,
                 pulsarOutputs.sendCommandsToWorkflowEngine
             )
+            val job = with(CoroutineScope(Dispatchers.IO)) {
+                val clientResponseConsumer =
+                    PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
+                        .newClientResponseConsumer(clientName)
 
-            thread {
-                runBlocking {
-                    val clientResponseConsumer =
-                        PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
-                            .newClientResponseConsumer(clientName)
+                startClientResponseWorker(infiniticClient, clientResponseConsumer)
+            }
 
-                    startClientResponseWorker(infiniticClient, clientResponseConsumer)
-                }
+            // close consumer, then the pulsarClient
+            infiniticClient.closeFn = {
+                job.cancel()
+                pulsarClient.close()
             }
 
             return infiniticClient

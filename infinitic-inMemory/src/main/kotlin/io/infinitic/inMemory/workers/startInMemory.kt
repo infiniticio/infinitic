@@ -54,7 +54,7 @@ fun CoroutineScope.startInMemory(
     client: Client,
     output: InMemoryOutput,
     logFn: (_: MessageToProcess<*>) -> Unit
-) {
+) = launch {
     val keyValueStorage = InMemoryKeyValueStorage()
     val keySetStorage = InMemoryKeySetStorage()
 
@@ -65,10 +65,9 @@ fun CoroutineScope.startInMemory(
     }
 
     startClientWorker(
-        "in-memory-client",
         client,
-        output.clientEventsChannel,
-        output.logChannel,
+        inputChannel = output.clientEventsChannel,
+        outputChannel = output.logChannel,
     )
 
     startTagEngine(
