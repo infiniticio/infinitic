@@ -53,11 +53,7 @@ import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tasks.engine.storage.LoggedTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
@@ -170,19 +166,13 @@ class TaskEngine(
         // if this task belongs to a workflow, send back the TaskCompleted message
         newState.workflowId?.let {
             sendToWorkflowEngine(
-                when ("${newState.taskName}") {
-                    WorkflowTask::class.java.name -> WorkflowTaskCompleted(
-                        workflowId = it,
-                        workflowTaskId = WorkflowTaskId(newState.taskId.id),
-                        workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskReturnValue
-                    )
-                    else -> TaskCompletedInWorkflow(
-                        workflowId = it,
-                        methodRunId = newState.methodRunId!!,
-                        taskId = newState.taskId,
-                        taskReturnValue = message.taskReturnValue
-                    )
-                }
+                TaskCompletedInWorkflow(
+                    workflowId = it,
+                    methodRunId = newState.methodRunId!!,
+                    taskId = newState.taskId,
+                    taskName = newState.taskName,
+                    taskReturnValue = message.taskReturnValue
+                )
             )
         }
 
@@ -319,19 +309,13 @@ class TaskEngine(
         // if this task belongs to a workflow, send back the adhoc message
         newState.workflowId?.let {
             sendToWorkflowEngine(
-                when ("${newState.taskName}") {
-                    WorkflowTask::class.java.name -> WorkflowTaskCompleted(
-                        workflowId = it,
-                        workflowTaskId = WorkflowTaskId(newState.taskId.id),
-                        workflowTaskReturnValue = message.taskReturnValue.get() as WorkflowTaskReturnValue
-                    )
-                    else -> TaskCompletedInWorkflow(
-                        workflowId = it,
-                        methodRunId = newState.methodRunId!!,
-                        taskId = newState.taskId,
-                        taskReturnValue = message.taskReturnValue
-                    )
-                }
+                TaskCompletedInWorkflow(
+                    workflowId = it,
+                    methodRunId = newState.methodRunId!!,
+                    taskId = newState.taskId,
+                    taskName = newState.taskName,
+                    taskReturnValue = message.taskReturnValue
+                )
             )
         }
 

@@ -42,7 +42,6 @@ import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
@@ -50,7 +49,6 @@ import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.sendToChannel
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
-import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
@@ -119,7 +117,9 @@ class WorkflowEngine(
 
         // check is this workflowTask is the current one
         // (a workflowTask can be dispatched twice if the engine is shutdown while processing a workflowTask)
-        if (message is WorkflowTaskCompleted && message.workflowTaskId != state.runningWorkflowTaskId) {
+        if (message.isWorkflowTaskCompleted() &&
+            (message as TaskCompleted).taskId != state.runningWorkflowTaskId
+        ) {
             logDiscardingMessage(message, "as workflowTask is not the current one")
 
             return
@@ -131,7 +131,7 @@ class WorkflowEngine(
         // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
         // except also for WaitWorkflow, as we want to handle it asap to avoid terminating the workflow before it
         if (state.runningWorkflowTaskId != null &&
-            message !is WorkflowTaskCompleted &&
+            ! message.isWorkflowTaskCompleted() &&
             message !is WaitWorkflow
         ) {
             // buffer this message
@@ -188,7 +188,6 @@ class WorkflowEngine(
             is CancelWorkflow -> cancelWorkflow(state, message)
             is ChildWorkflowCanceled -> childWorkflowCanceled(state, message)
             is ChildWorkflowCompleted -> childWorkflowCompleted(output, state, message)
-            is WorkflowTaskCompleted -> workflowTaskCompleted(output, state, message)
             is TimerCompleted -> timerCompleted(output, state, message)
             is TaskCanceled -> taskCanceled(state, message)
             is TaskCompleted -> taskCompleted(output, state, message)

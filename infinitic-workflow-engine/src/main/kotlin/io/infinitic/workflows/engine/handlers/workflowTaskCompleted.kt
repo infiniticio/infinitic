@@ -50,12 +50,13 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.timers.TimerId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
-import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.workflows.engine.helpers.commandCompleted
@@ -69,12 +70,12 @@ import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskI
 suspend fun workflowTaskCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: WorkflowTaskCompleted
+    msg: TaskCompleted
 ) {
     // remove currentWorkflowTaskId
     state.runningWorkflowTaskId = null
 
-    val workflowTaskOutput = msg.workflowTaskReturnValue
+    val workflowTaskOutput = msg.taskReturnValue.get() as WorkflowTaskReturnValue
     val methodRun = getMethodRun(state, workflowTaskOutput.methodRunId)
 
     // properties updates

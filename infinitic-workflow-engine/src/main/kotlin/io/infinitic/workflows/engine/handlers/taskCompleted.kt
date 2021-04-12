@@ -37,11 +37,18 @@ suspend fun taskCompleted(
     state: WorkflowState,
     msg: TaskCompleted
 ) {
-    commandCompleted(
-        workflowEngineOutput,
-        state,
-        msg.methodRunId,
-        CommandId(msg.taskId),
-        CommandReturnValue(msg.taskReturnValue.serializedData)
-    )
+    when (msg.isWorkflowTaskCompleted()) {
+        true -> workflowTaskCompleted(
+            workflowEngineOutput,
+            state,
+            msg
+        )
+        false -> commandCompleted(
+            workflowEngineOutput,
+            state,
+            msg.methodRunId,
+            CommandId(msg.taskId),
+            CommandReturnValue(msg.taskReturnValue.serializedData)
+        )
+    }
 }

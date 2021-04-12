@@ -48,7 +48,7 @@ class PulsarMessageBuilderFromClient(
         getOrCreateProducer(topicName, schema).newMessage()
 
     @Suppress("UNCHECKED_CAST")
-    fun <O> getOrCreateProducer(topicName: String, schema: Schema<O>) = producers.computeIfAbsent(topicName) {
+    private fun <O> getOrCreateProducer(topicName: String, schema: Schema<O>) = producers.computeIfAbsent(topicName) {
         pulsarClient
             .newProducer(schema)
             .topic(topicName)

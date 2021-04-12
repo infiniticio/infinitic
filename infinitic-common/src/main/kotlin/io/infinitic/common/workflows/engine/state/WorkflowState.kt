@@ -30,13 +30,13 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -90,7 +90,7 @@ data class WorkflowState(
     /*
     Id of WorkflowTask currently running (max one at a time)
      */
-    var runningWorkflowTaskId: WorkflowTaskId? = null,
+    var runningWorkflowTaskId: TaskId? = null,
 
     /*
     Id of WorkflowTask currently running (max one at a time)
