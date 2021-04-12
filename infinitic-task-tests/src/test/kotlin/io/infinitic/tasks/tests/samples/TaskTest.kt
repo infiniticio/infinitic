@@ -25,9 +25,9 @@
 
 package io.infinitic.tasks.tests.samples
 
-import io.infinitic.tasks.executor.task.TaskAttemptContextImpl
+import io.infinitic.tasks.Task
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import java.time.Duration
 
 interface TaskTest {
     fun log(): String
@@ -36,22 +36,22 @@ interface TaskTest {
 
 class TaskException(val log: String) : Exception()
 
-class TaskTestImpl : TaskTest {
-    private lateinit var context: TaskAttemptContextImpl
+class TaskTestImpl : Task(), TaskTest {
     lateinit var behavior: (index: Int, retry: Int) -> Status
     var log = ""
 
     override fun log(): String {
-        val status = behavior(context.taskRetry, context.taskAttemptRetry)
+        val status = behavior(context.retrySequence, context.retryIndex)
 
-        log = context.lastTaskAttemptError?.let { (it as TaskException).log } ?: ""
+        log = context.meta["log"]?.let { String(it) } ?: ""
         log += when (status) {
             Status.SUCCESS -> "1"
             else -> "0"
         }
+        context.meta["log"] = log.encodeToByteArray()
 
         when (status) {
-            Status.TIMEOUT_WITH_RETRY, Status.TIMEOUT_WITHOUT_RETRY -> runBlocking { delay(1000) }
+            Status.TIMEOUT_WITH_RETRY, Status.TIMEOUT_WITHOUT_RETRY -> Thread.sleep(1000)
             Status.FAILED_WITH_RETRY, Status.FAILED_WITHOUT_RETRY -> throw TaskException(log)
             else -> Unit
         }
@@ -63,12 +63,11 @@ class TaskTestImpl : TaskTest {
         Thread.sleep(delay)
     }
 
-    fun getRetryDelay(): Float? {
-        return when (behavior(context.taskRetry, context.taskAttemptRetry)) {
-            Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> 0F
+    override fun getDurationBeforeRetry(e: Exception): Duration? =
+        when (behavior(context.retrySequence, context.retryIndex)) {
+            Status.FAILED_WITH_RETRY, Status.TIMEOUT_WITH_RETRY -> Duration.ofSeconds(0L)
             else -> null
         }
-    }
 }
 
 enum class Status {

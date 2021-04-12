@@ -33,15 +33,14 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
-import io.infinitic.common.tasks.data.TaskRetry
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
@@ -49,10 +48,8 @@ import io.infinitic.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.exceptions.NoMethodFoundWithParameterCount
 import io.infinitic.exceptions.NoMethodFoundWithParameterTypes
 import io.infinitic.exceptions.ProcessingTimeout
-import io.infinitic.exceptions.RetryDelayHasWrongReturnType
 import io.infinitic.exceptions.TooManyMethodsFoundWithParameterCount
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.tasks.executor.samples.SampleTaskWithBadTypeRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithBuggyRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithContext
 import io.infinitic.tasks.executor.samples.SampleTaskWithRetry
@@ -91,18 +88,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "other", input, types)
         // when
-        taskExecutor.register("foo") { TestingSampleTask() }
+        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1] shouldBe TaskAttemptCompleted(
+        slots.size shouldBe 1
+        slots[0] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
             taskName = msg.taskName,
             taskAttemptId = msg.taskAttemptId,
-            taskRetry = msg.taskRetry,
-            taskAttemptRetry = msg.taskAttemptRetry,
-            taskReturnValue = MethodReturnValue.from("9")
+            taskRetrySequence = msg.taskRetrySequence,
+            taskRetryIndex = msg.taskRetryIndex,
+            taskReturnValue = MethodReturnValue.from("9"),
+            taskMeta = msg.taskMeta
         )
     }
 
@@ -111,18 +108,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "other", input, null)
         // when
-        taskExecutor.register("foo") { TestingSampleTask() }
+        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1] shouldBe TaskAttemptCompleted(
+        slots.size shouldBe 1
+        slots[0] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
             taskName = msg.taskName,
             taskAttemptId = msg.taskAttemptId,
-            taskRetry = msg.taskRetry,
-            taskAttemptRetry = msg.taskAttemptRetry,
-            taskReturnValue = MethodReturnValue.from("12")
+            taskRetrySequence = msg.taskRetrySequence,
+            taskRetryIndex = msg.taskRetryIndex,
+            taskReturnValue = MethodReturnValue.from("12"),
+            taskMeta = msg.taskMeta
         )
     }
 
@@ -132,19 +129,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "unknown", input, types)
         // when
-        taskExecutor.unregister("foo")
+        taskExecutor.unregisterTask("foo")
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[1] as TaskAttemptFailed
+        slots.size shouldBe 1
+        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
+        val fail = slots[0] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetry shouldBe msg.taskRetry
-        fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
+        fail.taskRetrySequence shouldBe msg.taskRetrySequence
+        fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.get()!!::class.java.name shouldBe ClassNotFoundDuringInstantiation::class.java.name
+        fail.taskAttemptError.name shouldBe ClassNotFoundDuringInstantiation::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
@@ -153,19 +149,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "unknown", input, types)
         // when
-        taskExecutor.register("foo") { TestingSampleTask() }
+        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[1] as TaskAttemptFailed
+        slots.size shouldBe 1
+        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
+        val fail = slots[0] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetry shouldBe msg.taskRetry
-        fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
+        fail.taskRetrySequence shouldBe msg.taskRetrySequence
+        fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.get()!!::class.java.name shouldBe NoMethodFoundWithParameterTypes::class.java.name
+        fail.taskAttemptError.name shouldBe NoMethodFoundWithParameterTypes::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -173,19 +168,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "unknown", input, null)
         // when
-        taskExecutor.register("foo") { TestingSampleTask() }
+        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[1] as TaskAttemptFailed
+        slots.size shouldBe 1
+        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
+        val fail = slots[0] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetry shouldBe msg.taskRetry
-        fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
+        fail.taskRetrySequence shouldBe msg.taskRetrySequence
+        fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.get()!!::class.java.name shouldBe NoMethodFoundWithParameterCount::class.java.name
+        fail.taskAttemptError.name shouldBe NoMethodFoundWithParameterCount::class.java.name
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -193,19 +187,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "handle", input, null)
         // when
-        taskExecutor.register("foo") { TestingSampleTask() }
+        taskExecutor.registerTask("foo") { TestingSampleTask() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[1] as TaskAttemptFailed
+        slots.size shouldBe 1
+        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
+        val fail = slots[0] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetry shouldBe msg.taskRetry
-        fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
+        fail.taskRetrySequence shouldBe msg.taskRetrySequence
+        fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.get()!!::class.java.name shouldBe TooManyMethodsFoundWithParameterCount::class.java.name
+        fail.taskAttemptError.name shouldBe TooManyMethodsFoundWithParameterCount::class.java.name
     }
 
     "Should retry with correct exception" {
@@ -213,39 +206,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "handle", input, null)
         // when
-        taskExecutor.register("foo") { SampleTaskWithRetry() }
+        taskExecutor.registerTask("foo") { SampleTaskWithRetry() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[1] as TaskAttemptFailed
+        slots.size shouldBe 1
+        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
+        val fail = slots[0] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetry shouldBe msg.taskRetry
-        fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
+        fail.taskRetrySequence shouldBe msg.taskRetrySequence
+        fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe MillisDuration(3000)
-        fail.taskAttemptError.get()!!::class.java.name shouldBe IllegalStateException::class.java.name
-    }
-
-    "Should throw RetryDelayReturnTypeError when getRetryDelay has wrong return type" {
-        val input = arrayOf(2, "3")
-        // with
-        val msg = getExecuteTaskAttempt("foo", "handle", input, null)
-        // when
-        taskExecutor.register("foo") { SampleTaskWithBadTypeRetry() }
-        coroutineScope { taskExecutor.handle(msg) }
-        // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[1] as TaskAttemptFailed
-        fail.taskId shouldBe msg.taskId
-        fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetry shouldBe msg.taskRetry
-        fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
-        fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.get()!!::class.java.name shouldBe RetryDelayHasWrongReturnType::class.java.name
+        fail.taskAttemptError.name shouldBe IllegalStateException::class.java.name
     }
 
     "Should throw when getRetryDelay throw an exception" {
@@ -253,19 +225,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "handle", input, null)
         // when
-        taskExecutor.register("foo") { SampleTaskWithBuggyRetry() }
+        taskExecutor.registerTask("foo") { SampleTaskWithBuggyRetry() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[1] as TaskAttemptFailed
+        slots.size shouldBe 1
+        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
+        val fail = slots[0] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetry shouldBe msg.taskRetry
-        fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
+        fail.taskRetrySequence shouldBe msg.taskRetrySequence
+        fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.get()!!::class.java.name shouldBe IllegalArgumentException::class.java.name
+        fail.taskAttemptError.name shouldBe IllegalArgumentException::class.java.name
     }
 
     "Should be able to access context from task" {
@@ -273,18 +244,18 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "handle", input, null)
         // when
-        taskExecutor.register("foo") { SampleTaskWithContext() }
+        taskExecutor.registerTask("foo") { SampleTaskWithContext() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1] shouldBe TaskAttemptCompleted(
+        slots.size shouldBe 1
+        slots[0] shouldBe TaskAttemptCompleted(
             taskId = msg.taskId,
             taskName = msg.taskName,
             taskAttemptId = msg.taskAttemptId,
-            taskRetry = msg.taskRetry,
-            taskAttemptRetry = msg.taskAttemptRetry,
-            taskReturnValue = MethodReturnValue.from("72")
+            taskRetrySequence = msg.taskRetrySequence,
+            taskRetryIndex = msg.taskRetryIndex,
+            taskReturnValue = MethodReturnValue.from("72"),
+            taskMeta = msg.taskMeta
         )
     }
 
@@ -294,40 +265,31 @@ class TaskExecutorTests : StringSpec({
         // with
         val msg = getExecuteTaskAttempt("foo", "handle", input, types)
         // when
-        taskExecutor.register("foo") { SampleTaskWithTimeout() }
+        taskExecutor.registerTask("foo") { SampleTaskWithTimeout() }
         coroutineScope { taskExecutor.handle(msg) }
         // then
-        slots.size shouldBe 2
-        slots[0] shouldBe getTaskAttemptStarted(msg)
-        slots[1].shouldBeInstanceOf<TaskAttemptFailed>()
-        val fail = slots[1] as TaskAttemptFailed
+        slots.size shouldBe 1
+        slots[0].shouldBeInstanceOf<TaskAttemptFailed>()
+        val fail = slots[0] as TaskAttemptFailed
         fail.taskId shouldBe msg.taskId
         fail.taskAttemptId shouldBe msg.taskAttemptId
-        fail.taskRetry shouldBe msg.taskRetry
-        fail.taskAttemptRetry shouldBe msg.taskAttemptRetry
+        fail.taskRetrySequence shouldBe msg.taskRetrySequence
+        fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.get()!!::class.java.name shouldBe ProcessingTimeout::class.java.name
+        fail.taskAttemptError.name shouldBe ProcessingTimeout::class.java.name
     }
 })
 
 private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out Any?>, types: List<String>?) = ExecuteTaskAttempt(
+    taskName = TaskName(name),
     taskId = TaskId(),
     taskAttemptId = TaskAttemptId(),
-    taskRetry = TaskRetry(12),
-    taskAttemptRetry = TaskAttemptRetry(7),
-    taskName = TaskName(name),
+    taskRetrySequence = TaskRetrySequence(12),
+    taskRetryIndex = TaskRetryIndex(7),
+    lastTaskError = null,
     methodName = MethodName(method),
     methodParameterTypes = types?.let { MethodParameterTypes(it) },
     methodParameters = MethodParameters.from(*input),
-    previousTaskAttemptError = null,
     taskOptions = TaskOptions(runningTimeout = .2F),
     taskMeta = TaskMeta()
-)
-
-private fun getTaskAttemptStarted(msg: ExecuteTaskAttempt) = TaskAttemptStarted(
-    taskId = msg.taskId,
-    taskName = msg.taskName,
-    taskAttemptId = msg.taskAttemptId,
-    taskRetry = msg.taskRetry,
-    taskAttemptRetry = msg.taskAttemptRetry
 )

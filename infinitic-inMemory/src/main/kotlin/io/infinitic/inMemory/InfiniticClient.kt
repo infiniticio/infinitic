@@ -31,18 +31,19 @@ import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.tasks.TaskExecutorRegister
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
 
 fun Client.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     logFn: (_: MessageToProcess<*>) -> Unit = { }
-) {
+): Job {
     val threadPool = Executors.newCachedThreadPool()
     val client = this
     client.closeFn = { threadPool.shutdown() }
 
-    val scope = CoroutineScope(Dispatchers.IO)
+    val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
 
     val inMemoryOutput = InMemoryOutput(scope)
 
@@ -52,7 +53,7 @@ fun Client.startInMemory(
         inMemoryOutput.sendCommandsToWorkflowEngine
     )
 
-    with(scope) {
+    return with(scope) {
         startInMemory(taskExecutorRegister, client, inMemoryOutput, logFn)
     }
 }

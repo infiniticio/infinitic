@@ -42,10 +42,10 @@ import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.monitoring.global.engine.MonitoringGlobalEngine
-import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
-import io.infinitic.monitoring.perName.engine.MonitoringPerNameEngine
-import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
+import io.infinitic.metrics.global.engine.MetricsGlobalEngine
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
+import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
+import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.TagEngine
@@ -73,13 +73,13 @@ val keyValueStorage = LoggedKeyValueStorage(InMemoryKeyValueStorage())
 val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
 private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
-private val monitoringPerNameStateStorage = BinaryMonitoringPerNameStateStorage(keyValueStorage)
-private val monitoringGlobalStateStorage = BinaryMonitoringGlobalStateStorage(keyValueStorage)
+private val metricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
+private val metricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
 private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
-private lateinit var monitoringPerNameEngine: MonitoringPerNameEngine
-private lateinit var monitoringGlobalEngine: MonitoringGlobalEngine
+private lateinit var metricsPerNameEngine: MetricsPerNameEngine
+private lateinit var metricsGlobalEngine: MetricsGlobalEngine
 private lateinit var taskExecutor: TaskExecutor
 private lateinit var client: Client
 private lateinit var taskStub: TaskTest
@@ -259,7 +259,6 @@ class TaskIntegrationTests : StringSpec({
             }
         }
         // run system
-        var id: UUID
         coroutineScope {
             init()
             val deferred = client.async(taskStub) { log() }
@@ -274,8 +273,8 @@ class TaskIntegrationTests : StringSpec({
         taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
-        // checks number of task processing
-        taskTest.log shouldBe "0000001"
+        // checks number of task processing (meta has been reinitialized at retry)
+        taskTest.log shouldBe "001"
     }
 
     "Task succeeds after manual retry using tag" {
@@ -410,8 +409,8 @@ fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuratio
     taskEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch {
-    monitoringPerNameEngine.handle(msg)
+fun CoroutineScope.sendToMetricsPerName(msg: MetricsPerNameMessage) = launch {
+    metricsPerNameEngine.handle(msg)
 
     // catch status update
     if (msg is TaskStatusUpdated) {
@@ -419,8 +418,8 @@ fun CoroutineScope.sendToMonitoringPerName(msg: MetricsPerNameMessage) = launch 
     }
 }
 
-fun CoroutineScope.sendToMonitoringGlobal(msg: MetricsGlobalMessage) = launch {
-    monitoringGlobalEngine.handle(msg)
+fun CoroutineScope.sendToMetricsGlobal(msg: MetricsGlobalMessage) = launch {
+    metricsGlobalEngine.handle(msg)
 }
 
 fun CoroutineScope.sendToWorkers(msg: TaskExecutorMessage) = launch {
@@ -457,19 +456,19 @@ fun CoroutineScope.init() {
         { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
         { _: WorkflowEngineMessage, _: MillisDuration -> },
         { msg: TaskExecutorMessage -> sendToWorkers(msg) },
-        { msg: MetricsPerNameMessage -> sendToMonitoringPerName(msg) }
+        { msg: MetricsPerNameMessage -> sendToMetricsPerName(msg) }
     )
 
-    monitoringPerNameEngine = MonitoringPerNameEngine(
-        monitoringPerNameStateStorage,
-        { msg: MetricsGlobalMessage -> sendToMonitoringGlobal(msg) }
+    metricsPerNameEngine = MetricsPerNameEngine(
+        metricsPerNameStateStorage,
+        { msg: MetricsGlobalMessage -> sendToMetricsGlobal(msg) }
     )
 
-    monitoringGlobalEngine = MonitoringGlobalEngine(monitoringGlobalStateStorage)
+    metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     taskExecutor = TaskExecutor(
         { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
         TaskExecutorRegisterImpl()
     )
-    taskExecutor.register(TaskTest::class.java.name) { taskTest }
+    taskExecutor.registerTask(TaskTest::class.java.name) { taskTest }
 }

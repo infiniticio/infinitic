@@ -27,6 +27,7 @@ package io.infinitic.tags.engine.storage
 
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.Name
+import io.infinitic.common.storage.Flushable
 import io.infinitic.common.tags.data.Tag
 import java.util.UUID
 
@@ -36,7 +37,7 @@ import java.util.UUID
  * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
  * transformed before being stored. These details are left to the different implementations.
  */
-interface TagStateStorage {
+interface TagStateStorage : Flushable {
     suspend fun getLastMessageId(tag: Tag, name: Name): MessageId?
 
     suspend fun setLastMessageId(tag: Tag, name: Name, messageId: MessageId)

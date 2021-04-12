@@ -35,7 +35,6 @@ import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
@@ -58,9 +57,10 @@ private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Except
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     coroutineName: String,
     workflowStateStorage: WorkflowStateStorage,
-    workflowCommandsChannel: ReceiveChannel<T>,
-    workflowEventsChannel: Channel<T>,
-    logChannel: SendChannel<T>,
+    eventsInputChannel: ReceiveChannel<T>,
+    eventsOutputChannel: SendChannel<T>,
+    commandsInputChannel: ReceiveChannel<T>,
+    commandsOutputChannel: SendChannel<T>,
     sendEventsToClient: SendToClient,
     sendToTagEngine: SendToTagEngine,
     sendToTaskEngine: SendToTaskEngine,
@@ -77,24 +77,24 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
 
     while (true) {
         select<Unit> {
-            workflowEventsChannel.onReceive {
+            eventsInputChannel.onReceive {
                 try {
                     it.returnValue = workflowEngine.handle(it.message)
                 } catch (e: Exception) {
-                    it.exception = e
+                    it.throwable = e
                     logError(it, e)
                 } finally {
-                    logChannel.send(it)
+                    eventsOutputChannel.send(it)
                 }
             }
-            workflowCommandsChannel.onReceive {
+            commandsInputChannel.onReceive {
                 try {
                     it.returnValue = workflowEngine.handle(it.message)
                 } catch (e: Exception) {
-                    it.exception = e
+                    it.throwable = e
                     logError(it, e)
                 } finally {
-                    logChannel.send(it)
+                    commandsOutputChannel.send(it)
                 }
             }
         }

@@ -27,8 +27,8 @@ package io.infinitic.config
 
 import io.infinitic.cache.StateCache
 import io.infinitic.cache.caffeine.Caffeine
+import io.infinitic.config.data.Metrics
 import io.infinitic.config.data.Mode
-import io.infinitic.config.data.Monitoring
 import io.infinitic.config.data.Pulsar
 import io.infinitic.config.data.TagEngine
 import io.infinitic.config.data.Task
@@ -81,9 +81,9 @@ data class WorkerConfig(
     @JvmField val taskEngine: TaskEngine? = null,
 
     /*
-    Infinitic monitoring configuration
+    Infinitic metrics configuration
      */
-    @JvmField val monitoring: Monitoring? = null,
+    @JvmField val metrics: Metrics? = null,
 
     /*
     Tasks configuration
@@ -131,11 +131,11 @@ data class WorkerConfig(
             it.stateCache = it.stateCache ?: stateCache
         }
 
-        monitoring?.let {
+        metrics?.let {
             // apply default, if not set
             it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, "monitoring.stateStorage")
+            checkStateStorage(it.stateStorage, "metrics.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
         }
 

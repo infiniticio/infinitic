@@ -42,8 +42,8 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.monitoring.global.engine.worker.MonitoringGlobalMessageToProcess
-import io.infinitic.monitoring.perName.engine.worker.MonitoringPerNameMessageToProcess
+import io.infinitic.metrics.global.engine.worker.MetricsGlobalMessageToProcess
+import io.infinitic.metrics.perName.engine.worker.MetricsPerNameMessageToProcess
 import io.infinitic.tags.engine.worker.TagEngineMessageToProcess
 import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.worker.TaskExecutorMessageToProcess
@@ -66,8 +66,8 @@ class InMemoryOutput(
     val workflowCommandsChannel: Channel<WorkflowEngineMessageToProcess> = Channel(),
     val workflowEventsChannel: Channel<WorkflowEngineMessageToProcess> = Channel(),
     val executorChannel: Channel<TaskExecutorMessageToProcess> = Channel(),
-    val monitoringPerNameChannel: Channel<MonitoringPerNameMessageToProcess> = Channel(),
-    val monitoringGlobalChannel: Channel<MonitoringGlobalMessageToProcess> = Channel()
+    val metricsPerNameChannel: Channel<MetricsPerNameMessageToProcess> = Channel(),
+    val metricsGlobalChannel: Channel<MetricsGlobalMessageToProcess> = Channel()
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -130,11 +130,11 @@ class InMemoryOutput(
 
     val sendToMetricsPerName: SendToMetricsPerName = { message: MetricsPerNameMessage ->
         logger.debug("sendToMonitoringPerName {}", message)
-        monitoringPerNameChannel.send(InMemoryMessageToProcess(message))
+        metricsPerNameChannel.send(InMemoryMessageToProcess(message))
     }
 
     val sendToMetricsGlobal: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
         logger.debug("sendToMonitoringGlobal {}", message)
-        monitoringGlobalChannel.send(InMemoryMessageToProcess(message))
+        metricsGlobalChannel.send(InMemoryMessageToProcess(message))
     }
 }

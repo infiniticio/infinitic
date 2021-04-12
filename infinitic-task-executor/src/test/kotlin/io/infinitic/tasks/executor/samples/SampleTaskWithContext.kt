@@ -25,10 +25,8 @@
 
 package io.infinitic.tasks.executor.samples
 
-import io.infinitic.tasks.executor.task.TaskAttemptContextImpl
+import io.infinitic.tasks.Task
 
-internal class SampleTaskWithContext() {
-    private lateinit var context: TaskAttemptContextImpl
-
-    fun handle(i: Int, j: String) = (i * j.toInt() * context.taskRetry).toString()
+internal class SampleTaskWithContext : Task() {
+    fun handle(i: Int, j: String) = (i * j.toInt() * context.retrySequence).toString()
 }

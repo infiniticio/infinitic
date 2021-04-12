@@ -27,34 +27,45 @@ package io.infinitic.tasks
 
 import io.infinitic.workflows.Workflow
 
-typealias InstanceFactory = () -> Any
+typealias TaskFactory = () -> Task
+
+typealias WorkflowFactory = () -> Workflow
 
 interface TaskExecutorRegister {
 
     /**
-     * Register an instance factory for task or workflow name
+     * Register a task factory
      */
-    fun register(name: String, factory: InstanceFactory)
+    fun registerTask(name: String, factory: TaskFactory)
+
+    /**
+     * Register a workflow factory
+     */
+    fun registerWorkflow(name: String, factory: WorkflowFactory)
 
     /**
      * Unregister a given name (mostly used in tests)
      */
-    fun unregister(name: String)
+    fun unregisterTask(name: String)
+
+    /**
+     * Unregister a given name (mostly used in tests)
+     */
+    fun unregisterWorkflow(name: String)
 
     /**
      * Get task instance per name
      */
-    fun getTaskInstance(name: String): Any
+    fun getTaskInstance(name: String): Task
 
     /**
      * Get workflow instance per name
      */
     fun getWorkflowInstance(name: String): Workflow
-
-    /**
-     * Get list of all registered tasks
-     */
-    fun getTasks(): List<String>
 }
 
-inline fun <reified T> TaskExecutorRegister.register(noinline factory: InstanceFactory) = this.register(T::class.java.name, factory)
+inline fun <reified T> TaskExecutorRegister.registerTask(noinline factory: TaskFactory) =
+    this.registerTask(T::class.java.name, factory)
+
+inline fun <reified T> TaskExecutorRegister.registerWorkflow(noinline factory: WorkflowFactory) =
+    this.registerWorkflow(T::class.java.name, factory)

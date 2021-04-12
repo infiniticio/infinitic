@@ -39,14 +39,10 @@ import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
-import io.infinitic.common.workflows.engine.messages.TaskDispatched
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowCanceled
-import io.infinitic.common.workflows.engine.messages.WorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
-import io.infinitic.common.workflows.engine.messages.WorkflowTaskDispatched
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
@@ -56,11 +52,12 @@ import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import org.slf4j.LoggerFactory
 
 class WorkflowEngine(
-    val storage: WorkflowStateStorage,
+    storage: WorkflowStateStorage,
     sendEventsToClient: SendToClient,
     sendToTagEngine: SendToTagEngine,
     sendToTaskEngine: SendToTaskEngine,
@@ -75,17 +72,10 @@ class WorkflowEngine(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
+    val storage = LoggedWorkflowStateStorage(storage)
+
     suspend fun handle(message: WorkflowEngineMessage) {
         logger.debug("receiving {}", message)
-
-        // immediately discard irrelevant messages
-        when (message) {
-            is WorkflowTaskDispatched -> return
-            is TaskDispatched -> return
-            is WorkflowCanceled -> return
-            is WorkflowCompleted -> return
-            else -> Unit
-        }
 
         // get associated state
         var state = storage.getState(message.workflowId)
@@ -114,7 +104,7 @@ class WorkflowEngine(
 
         // check if this message has already been handled
         if (state.lastMessageId == message.messageId) {
-            warnDiscardingMessage(message, "as state already contains this messageId")
+            logDiscardingMessage(message, "as state already contains this messageId")
 
             return
         }
@@ -122,7 +112,7 @@ class WorkflowEngine(
         // check is this workflow has already been launched
         // (a DispatchWorkflow (child) can be dispatched twice if the engine is shutdown while processing a workflowTask)
         if (message is DispatchWorkflow) {
-            warnDiscardingMessage(message, "as workflow has already been launched")
+            logDiscardingMessage(message, "as workflow has already been launched")
 
             return
         }
@@ -130,7 +120,7 @@ class WorkflowEngine(
         // check is this workflowTask is the current one
         // (a workflowTask can be dispatched twice if the engine is shutdown while processing a workflowTask)
         if (message is WorkflowTaskCompleted && message.workflowTaskId != state.runningWorkflowTaskId) {
-            warnDiscardingMessage(message, "as workflowTask is not the current one")
+            logDiscardingMessage(message, "as workflowTask is not the current one")
 
             return
         }
@@ -138,8 +128,12 @@ class WorkflowEngine(
         // set current messageId
         state.lastMessageId = message.messageId
 
-        // if a workflow task is ongoing then buffer this message (except for WorkflowTaskCompleted)
-        if (state.runningWorkflowTaskId != null && message !is WorkflowTaskCompleted) {
+        // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
+        // except also for WaitWorkflow, as we want to handle it asap to avoid terminating the workflow before it
+        if (state.runningWorkflowTaskId != null &&
+            message !is WorkflowTaskCompleted &&
+            message !is WaitWorkflow
+        ) {
             // buffer this message
             state.bufferedMessages.add(message)
             // update state
@@ -164,8 +158,8 @@ class WorkflowEngine(
 
         // update state
         when (state.methodRuns.size) {
-            0 -> { // workflow is terminated
-
+            // workflow is terminated
+            0 -> {
                 // remove tags reference to this instance
                 state.tags.map {
                     output.sendToTagEngine(
@@ -187,10 +181,6 @@ class WorkflowEngine(
 
     private fun logDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
         logger.info("workflowId {} - discarding {}: {} (messageId {})", message.workflowId, reason, message, message.messageId)
-    }
-
-    private fun warnDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
-        logger.warn("workflowId {} - discarding {}: {} (messageId {})", message.workflowId, reason, message, message.messageId)
     }
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
@@ -220,7 +210,7 @@ class WorkflowEngine(
         TODO()
     }
 
-    private suspend fun waitWorkflow(state: WorkflowState, msg: WaitWorkflow) {
+    private fun waitWorkflow(state: WorkflowState, msg: WaitWorkflow) {
         state.clientWaiting.add(msg.clientName)
     }
 }

@@ -26,6 +26,7 @@
 package io.infinitic.common.tags.messages
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.messages.Envelope
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -40,7 +41,7 @@ data class TagEngineEnvelope(
     val removeWorkflowTag: RemoveWorkflowTag? = null,
     val sendToChannelPerTag: SendToChannelPerTag? = null,
     val cancelWorkflowPerTag: CancelWorkflowPerTag? = null
-) {
+) : Envelope<TagEngineMessage> {
     init {
         val noNull = listOfNotNull(
             addTaskTag,
@@ -105,7 +106,7 @@ data class TagEngineEnvelope(
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message() = when (type) {
+    override fun message() = when (type) {
         TagEngineMessageType.ADD_TASK_TAG -> addTaskTag!!
         TagEngineMessageType.REMOVE_TASK_TAG -> removeTaskTag!!
         TagEngineMessageType.ADD_WORKFLOW_TAG -> addWorkflowTag!!

@@ -30,6 +30,6 @@ import io.infinitic.common.workers.MessageToProcess
 data class InMemoryMessageToProcess<T> (
     override val message: T
 ) : MessageToProcess<T> {
-    override var exception: Exception? = null
+    override var throwable: Throwable? = null
     override var returnValue: Any? = null
 }

@@ -32,11 +32,11 @@ import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskAttemptRetry
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.data.TaskRetry
+import io.infinitic.common.tasks.data.TaskRetryIndex
+import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.decodeFromString
@@ -105,22 +105,22 @@ class DataTests : StringSpec({
     }
 
     "TaskRetry should be serialized as Int" {
-        val m = TaskRetry(42)
+        val m = TaskRetrySequence(42)
 
         val json = Json.encodeToString(m)
         json shouldBe "42"
 
-        val m2 = Json.decodeFromString<TaskRetry>(json)
+        val m2 = Json.decodeFromString<TaskRetrySequence>(json)
         m2 shouldBe m
     }
 
     "TaskAttemptRetry should be serialized as Int" {
-        val m = TaskAttemptRetry(42)
+        val m = TaskRetryIndex(42)
 
         val json = Json.encodeToString(m)
         json shouldBe "42"
 
-        val m2 = Json.decodeFromString<TaskAttemptRetry>(json)
+        val m2 = Json.decodeFromString<TaskRetryIndex>(json)
         m2 shouldBe m
     }
 

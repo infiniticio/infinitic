@@ -38,6 +38,7 @@ import io.infinitic.common.tags.messages.RemoveTaskTag
 import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.engine.messages.CancelTask
@@ -45,11 +46,7 @@ import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.RetryTaskAttempt
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
-import io.infinitic.common.tasks.engine.messages.TaskAttemptDispatched
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engine.messages.TaskAttemptStarted
-import io.infinitic.common.tasks.engine.messages.TaskCanceled
-import io.infinitic.common.tasks.engine.messages.TaskCompleted
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.state.TaskState
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
@@ -116,7 +113,6 @@ internal class TaskEngineTests : StringSpec({
             taskStateStorage.getState(msgIn.taskId)
             sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>(), MillisDuration(0))
             sendToClient(ofType<TaskCompletedInClient>())
-            sendToTaskEngine(ofType<TaskCanceled>(), MillisDuration(0))
             sendToTagEngine(ofType<RemoveTaskTag>())
             sendToTagEngine(ofType<RemoveTaskTag>())
             taskStateStorage.delState(msgIn.taskId)
@@ -124,14 +120,9 @@ internal class TaskEngineTests : StringSpec({
         }
         verifyAll()
 
-        val taskCanceled = captured(taskEngineMessage)!! as TaskCanceled
         val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
         val taskCompletedInClient = captured(clientMessage)!! as TaskCompletedInClient
 
-        with(taskCanceled) {
-            taskId shouldBe msgIn.taskId
-            taskMeta shouldBe stateIn.taskMeta
-        }
         with(taskStatusUpdated) {
             oldStatus shouldBe stateIn.taskStatus
             newStatus shouldBe TaskStatus.TERMINATED_CANCELED
@@ -152,14 +143,12 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
             sendToTaskExecutors(ofType<ExecuteTaskAttempt>())
-            sendToTaskEngine(ofType<TaskAttemptDispatched>(), MillisDuration(0))
             taskStateStorage.putState(msgIn.taskId, ofType<TaskState>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
         }
         verifyAll()
 
         val state = captured(taskState)!!
-        val taskAttemptDispatched = captured(taskEngineMessage)!! as TaskAttemptDispatched
         val executeTaskAttempt = captured(taskExecutorMessage)!! as ExecuteTaskAttempt
         val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
 
@@ -167,16 +156,15 @@ internal class TaskEngineTests : StringSpec({
             taskId shouldBe msgIn.taskId
             taskName shouldBe msgIn.taskName
             methodParameters shouldBe msgIn.methodParameters
-            taskAttemptRetry.int shouldBe 0
-            taskAttemptId shouldBe taskAttemptDispatched.taskAttemptId
-            taskAttemptRetry shouldBe taskAttemptDispatched.taskAttemptRetry
+            taskRetryIndex.int shouldBe 0
+            taskRetryIndex shouldBe TaskRetryIndex(0)
         }
         with(state) {
             taskId shouldBe msgIn.taskId
             taskName shouldBe msgIn.taskName
             methodParameters shouldBe msgIn.methodParameters
             taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
-            taskAttemptRetry.int shouldBe 0
+            taskRetryIndex.int shouldBe 0
             taskMeta shouldBe msgIn.taskMeta
             taskStatus shouldBe TaskStatus.RUNNING_OK
         }
@@ -210,57 +198,41 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
             sendToTaskExecutors(ofType<ExecuteTaskAttempt>())
-            sendToTaskEngine(ofType<TaskAttemptDispatched>(), MillisDuration(0))
             taskStateStorage.putState(msgIn.taskId, ofType<TaskState>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
         }
         verifyAll()
 
         val state = captured(taskState)!!
-        val taskAttemptDispatched = captured(taskEngineMessage)!! as TaskAttemptDispatched
         val executeTaskAttempt = captured(taskExecutorMessage)!! as ExecuteTaskAttempt
         val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
 
         with(executeTaskAttempt) {
             taskId shouldBe stateIn.taskId
             taskAttemptId shouldNotBe stateIn.taskAttemptId
-            taskAttemptRetry.int shouldBe 0
+            taskRetryIndex.int shouldBe 0
             taskName shouldBe stateIn.taskName
             methodParameters shouldBe stateIn.methodParameters
         }
         with(executeTaskAttempt) {
             taskId shouldBe stateIn.taskId
             taskAttemptId shouldNotBe stateIn.taskAttemptId
-            taskAttemptRetry.int shouldBe 0
+            taskRetryIndex.int shouldBe 0
             taskName shouldBe stateIn.taskName
             methodParameters shouldBe stateIn.methodParameters
-        }
-        with(taskAttemptDispatched) {
-            taskId shouldBe stateIn.taskId
-            taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
-            taskAttemptRetry.int shouldBe 0
         }
         with(state) {
             taskId shouldBe stateIn.taskId
             taskName shouldBe stateIn.taskName
             methodParameters shouldBe stateIn.methodParameters
             taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
-            taskAttemptRetry shouldBe executeTaskAttempt.taskAttemptRetry
+            taskRetryIndex shouldBe executeTaskAttempt.taskRetryIndex
             taskStatus shouldBe TaskStatus.RUNNING_WARNING
         }
         with(taskStatusUpdated) {
             oldStatus shouldBe stateIn.taskStatus
             newStatus shouldBe TaskStatus.RUNNING_WARNING
         }
-    }
-
-    "TaskAttemptStarted" {
-        // given
-        val stateIn = random<TaskState>()
-        val msgIn = random<TaskAttemptStarted>()
-        // when
-        getEngine(stateIn).handle(msgIn)
-        // then
     }
 
     "TaskAttemptCompleted" {
@@ -286,7 +258,6 @@ internal class TaskEngineTests : StringSpec({
             sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>(), MillisDuration(0))
             sendToClient(ofType<TaskCompletedInClient>())
             sendToClient(ofType<TaskCompletedInClient>())
-            sendToTaskEngine(ofType<TaskCompleted>(), MillisDuration(0))
             sendToTagEngine(ofType<RemoveTaskTag>())
             sendToTagEngine(ofType<RemoveTaskTag>())
             taskStateStorage.delState(msgIn.taskId)
@@ -295,18 +266,11 @@ internal class TaskEngineTests : StringSpec({
         verifyAll()
 
         val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
-        val taskCompleted = captured(taskEngineMessage)!! as TaskCompleted
         val taskCompletedInClient = captured(clientMessage)!! as TaskCompletedInClient
 
         with(taskStatusUpdated) {
             oldStatus shouldBe stateIn.taskStatus
             newStatus shouldBe TaskStatus.TERMINATED_COMPLETED
-        }
-        with(taskCompleted) {
-            taskReturnValue shouldBe msgIn.taskReturnValue
-            taskMeta shouldBe stateIn.taskMeta
-            taskId shouldBe stateIn.taskId
-            taskReturnValue shouldBe msgIn.taskReturnValue
         }
         with(taskCompletedInClient) {
             taskId shouldBe stateIn.taskId
@@ -325,7 +289,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry,
+                "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to null
             )
         )
@@ -361,7 +325,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry,
+                "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(42000)
             )
         )
@@ -384,7 +348,7 @@ internal class TaskEngineTests : StringSpec({
         with(retryTaskAttempt) {
             taskId shouldBe stateIn.taskId
             taskAttemptId shouldBe stateIn.taskAttemptId
-            taskAttemptRetry shouldBe stateIn.taskAttemptRetry
+            taskRetryIndex shouldBe stateIn.taskRetryIndex
         }
         retryTaskAttemptDelay shouldBe msgIn.taskAttemptDelayBeforeRetry
         with(taskStatusUpdated) {
@@ -406,7 +370,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry,
+                "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(0)
             )
         )
@@ -427,7 +391,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry,
+                "taskRetryIndex" to stateIn.taskRetryIndex,
                 "taskAttemptDelayBeforeRetry" to MillisDuration(-42000)
             )
         )
@@ -448,7 +412,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "taskId" to stateIn.taskId,
                 "taskAttemptId" to stateIn.taskAttemptId,
-                "taskAttemptRetry" to stateIn.taskAttemptRetry
+                "taskRetryIndex" to stateIn.taskRetryIndex
             )
         )
         // when
@@ -462,7 +426,6 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
     coVerifyOrder {
         taskStateStorage.getState(msgIn.taskId)
         sendToTaskExecutors(ofType<ExecuteTaskAttempt>())
-        sendToTaskEngine(ofType<TaskAttemptDispatched>(), MillisDuration(0))
         taskStateStorage.putState(msgIn.taskId, ofType())
         sendToMetricsPerName(ofType<TaskStatusUpdated>())
     }
@@ -471,26 +434,20 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
     val state = captured(taskState)!!
     val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
     val executeTaskAttempt = captured(taskExecutorMessage)!! as ExecuteTaskAttempt
-    val taskAttemptDispatched = captured(taskEngineMessage)!! as TaskAttemptDispatched
 
     with(executeTaskAttempt) {
         taskId shouldBe stateIn.taskId
         taskAttemptId shouldBe stateIn.taskAttemptId
-        taskAttemptRetry shouldBe stateIn.taskAttemptRetry + 1
+        taskRetryIndex shouldBe stateIn.taskRetryIndex + 1
         taskName shouldBe stateIn.taskName
         methodParameters shouldBe stateIn.methodParameters
-    }
-    with(taskAttemptDispatched) {
-        taskId shouldBe stateIn.taskId
-        taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
-        taskAttemptRetry shouldBe executeTaskAttempt.taskAttemptRetry
     }
     with(state) {
         taskId shouldBe stateIn.taskId
         taskName shouldBe stateIn.taskName
         methodParameters shouldBe stateIn.methodParameters
         taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
-        taskAttemptRetry shouldBe executeTaskAttempt.taskAttemptRetry
+        taskRetryIndex shouldBe executeTaskAttempt.taskRetryIndex
         taskStatus shouldBe TaskStatus.RUNNING_WARNING
     }
     with(taskStatusUpdated) {

@@ -29,10 +29,10 @@ import io.infinitic.client.Client
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryOutput
-import io.infinitic.monitoring.global.engine.storage.BinaryMonitoringGlobalStateStorage
-import io.infinitic.monitoring.global.engine.worker.startMonitoringGlobalEngine
-import io.infinitic.monitoring.perName.engine.storage.BinaryMonitoringPerNameStateStorage
-import io.infinitic.monitoring.perName.engine.worker.startMonitoringPerNameEngine
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
+import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
+import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
+import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
 import io.infinitic.tags.engine.storage.BinaryTagStateStorage
@@ -47,89 +47,91 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private const val N_WORKERS = 10
+private const val N_TASK_EXECUTORS = 10
 
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     client: Client,
-    inMemoryOutput: InMemoryOutput,
+    output: InMemoryOutput,
     logFn: (_: MessageToProcess<*>) -> Unit
-) {
+) = launch {
     val keyValueStorage = InMemoryKeyValueStorage()
     val keySetStorage = InMemoryKeySetStorage()
 
     launch(CoroutineName("logger")) {
-        for (messageToProcess in inMemoryOutput.logChannel) {
+        for (messageToProcess in output.logChannel) {
             logFn(messageToProcess)
         }
     }
 
     startClientWorker(
-        "in-memory-client",
         client,
-        inMemoryOutput.clientEventsChannel,
-        inMemoryOutput.logChannel,
+        inputChannel = output.clientEventsChannel,
+        outputChannel = output.logChannel,
     )
 
     startTagEngine(
         "in-memory-tag-engine",
         BinaryTagStateStorage(keyValueStorage, keySetStorage),
-        inMemoryOutput.tagCommandsChannel,
-        inMemoryOutput.tagEventsChannel,
-        inMemoryOutput.logChannel,
-        inMemoryOutput.sendEventsToClient,
-        inMemoryOutput.sendCommandsToTaskEngine,
-        inMemoryOutput.sendCommandsToWorkflowEngine
+        eventsInputChannel = output.tagEventsChannel,
+        eventsOutputChannel = output.logChannel,
+        commandsInputChannel = output.tagCommandsChannel,
+        commandsOutputChannel = output.logChannel,
+        output.sendEventsToClient,
+        output.sendCommandsToTaskEngine,
+        output.sendCommandsToWorkflowEngine
     )
 
     startTaskEngine(
         "in-memory-task-engine",
         BinaryTaskStateStorage(keyValueStorage),
-        inMemoryOutput.taskCommandsChannel,
-        inMemoryOutput.taskEventsChannel,
-        inMemoryOutput.logChannel,
-        inMemoryOutput.sendEventsToClient,
-        inMemoryOutput.sendEventsToTagEngine,
-        inMemoryOutput.sendEventsToTaskEngine,
-        inMemoryOutput.sendEventsToWorkflowEngine,
-        inMemoryOutput.sendToTaskExecutors,
-        inMemoryOutput.sendToMetricsPerName
+        eventsInputChannel = output.taskEventsChannel,
+        eventsOutputChannel = output.logChannel,
+        commandsInputChannel = output.taskCommandsChannel,
+        commandsOutputChannel = output.logChannel,
+        output.sendEventsToClient,
+        output.sendEventsToTagEngine,
+        output.sendEventsToTaskEngine,
+        output.sendEventsToWorkflowEngine,
+        output.sendToTaskExecutors,
+        output.sendToMetricsPerName
     )
 
     startWorkflowEngine(
         "in-memory-workflow-engine",
         BinaryWorkflowStateStorage(keyValueStorage),
-        inMemoryOutput.workflowCommandsChannel,
-        inMemoryOutput.workflowEventsChannel,
-        inMemoryOutput.logChannel,
-        inMemoryOutput.sendEventsToClient,
-        inMemoryOutput.sendEventsToTagEngine,
-        inMemoryOutput.sendCommandsToTaskEngine,
-        inMemoryOutput.sendEventsToWorkflowEngine
+        eventsInputChannel = output.workflowEventsChannel,
+        eventsOutputChannel = output.logChannel,
+        commandsInputChannel = output.workflowCommandsChannel,
+        commandsOutputChannel = output.logChannel,
+        output.sendEventsToClient,
+        output.sendEventsToTagEngine,
+        output.sendCommandsToTaskEngine,
+        output.sendEventsToWorkflowEngine
     )
 
-    repeat(N_WORKERS) {
+    repeat(N_TASK_EXECUTORS) {
         startTaskExecutor(
             "in-memory-task-executor-$it",
             taskExecutorRegister,
-            inMemoryOutput.executorChannel,
-            inMemoryOutput.logChannel,
-            inMemoryOutput.sendEventsToTaskEngine
+            inputChannel = output.executorChannel,
+            outputChannel = output.logChannel,
+            output.sendEventsToTaskEngine,
         )
     }
 
-    startMonitoringPerNameEngine(
-        "in-memory-monitoring-per-name-engine",
-        BinaryMonitoringPerNameStateStorage(keyValueStorage),
-        inMemoryOutput.monitoringPerNameChannel,
-        inMemoryOutput.logChannel,
-        inMemoryOutput.sendToMetricsGlobal
+    startMetricsPerNameEngine(
+        "in-memory-metrics-per-name-engine",
+        BinaryMetricsPerNameStateStorage(keyValueStorage),
+        inputChannel = output.metricsPerNameChannel,
+        outputChannel = output.logChannel,
+        output.sendToMetricsGlobal
     )
 
-    startMonitoringGlobalEngine(
-        "in-memory-monitoring-global-engine",
-        BinaryMonitoringGlobalStateStorage(keyValueStorage),
-        inMemoryOutput.monitoringGlobalChannel,
-        inMemoryOutput.logChannel
+    startMetricsGlobalEngine(
+        "in-memory-metrics-global-engine",
+        BinaryMetricsGlobalStateStorage(keyValueStorage),
+        inputChannel = output.metricsGlobalChannel,
+        outputChannel = output.logChannel
     )
 }

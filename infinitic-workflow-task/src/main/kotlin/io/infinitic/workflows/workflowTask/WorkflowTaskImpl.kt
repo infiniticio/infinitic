@@ -39,17 +39,19 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.exceptions.MultipleNamesForChannel
 import io.infinitic.exceptions.NonUniqueChannelFromChannelMethod
 import io.infinitic.exceptions.ParametersInChannelMethod
-import io.infinitic.tasks.TaskAttemptContext
+import io.infinitic.tasks.Task
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import java.lang.reflect.InvocationTargetException
+import java.time.Duration
 
-class WorkflowTaskImpl : WorkflowTask {
-    private lateinit var taskAttemptContext: TaskAttemptContext
+class WorkflowTaskImpl : Task(), WorkflowTask {
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? = null
 
     override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
         // get  instance workflow by name
-        val workflow = taskAttemptContext.register.getWorkflowInstance("${workflowTaskParameters.workflowName}")
+        val workflow = context.register.getWorkflowInstance("${workflowTaskParameters.workflowName}")
 
         // setProperties function
         val setProperties = {

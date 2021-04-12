@@ -31,8 +31,8 @@ import redis.embedded.RedisServer
 
 class RedisKeyCounterStorageTests : StringSpec({
 
-    val redisServer = RedisServer(6379)
-    val storage = RedisKeyCounterStorage.of(Redis("localhost", 6379))
+    val redisServer = RedisServer(6380)
+    val storage = RedisKeyCounterStorage.of(Redis("localhost", 6380))
 
     beforeSpec {
         redisServer.start()

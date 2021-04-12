@@ -25,14 +25,19 @@
 
 package io.infinitic.workflows.tests.tasks
 
+import io.infinitic.tasks.Task
+import java.time.Duration
+
 interface TaskA {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
     fun await(delay: Long)
 }
 
-class TaskAImpl : TaskA {
+class TaskAImpl : Task(), TaskA {
     override fun concat(str1: String, str2: String) = str1 + str2
     override fun reverse(str: String) = str.reversed()
     override fun await(delay: Long): Unit = Thread.sleep(delay)
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }

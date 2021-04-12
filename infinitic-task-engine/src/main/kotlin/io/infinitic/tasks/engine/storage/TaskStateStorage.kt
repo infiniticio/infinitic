@@ -25,14 +25,15 @@
 
 package io.infinitic.tasks.engine.storage
 
+import io.infinitic.common.storage.Flushable
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
 
 /**
  * TaskStateStorage implementations are responsible for storing the different state objects used by the engine.
  */
-interface TaskStateStorage {
+interface TaskStateStorage : Flushable {
     suspend fun getState(taskId: TaskId): TaskState?
-    suspend fun putState(taskId: TaskId, state: TaskState)
+    suspend fun putState(taskId: TaskId, taskState: TaskState)
     suspend fun delState(taskId: TaskId)
 }

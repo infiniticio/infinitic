@@ -26,6 +26,7 @@
 package io.infinitic.common.tasks.executors.messages
 
 import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 
@@ -33,13 +34,11 @@ import kotlinx.serialization.Serializable
 data class TaskExecutorEnvelope(
     val taskName: TaskName,
     val type: TaskExecutorMessageType,
-    val executeTask: ExecuteTaskAttempt? = null,
-    val cancelTask: CancelTaskAttempt? = null
-) {
+    val executeTask: ExecuteTaskAttempt? = null
+) : Envelope<TaskExecutorMessage> {
     init {
         val noNull = listOfNotNull(
-            executeTask,
-            cancelTask
+            executeTask
         )
 
         require(noNull.size == 1)
@@ -54,19 +53,13 @@ data class TaskExecutorEnvelope(
                 TaskExecutorMessageType.EXECUTE_TASK_ATTEMPT,
                 executeTask = msg
             )
-            is CancelTaskAttempt -> TaskExecutorEnvelope(
-                msg.taskName,
-                TaskExecutorMessageType.CANCEL_TASK_ATTEMPT,
-                cancelTask = msg
-            )
         }
 
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
     }
 
-    fun message(): TaskExecutorMessage = when (type) {
+    override fun message(): TaskExecutorMessage = when (type) {
         TaskExecutorMessageType.EXECUTE_TASK_ATTEMPT -> executeTask!!
-        TaskExecutorMessageType.CANCEL_TASK_ATTEMPT -> cancelTask!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

@@ -31,22 +31,17 @@ import io.infinitic.storage.StateStorage
 
 data class TaskEngine(
     @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int? = null,
+    @JvmField val concurrency: Int = 1,
     @JvmField var stateStorage: StateStorage? = null,
     @JvmField var stateCache: StateCache? = null
 ) : Mergeable {
     val modeOrDefault: Mode
         get() = mode ?: Mode.worker
 
-    val consumersOrDefault: Int
-        get() = consumers ?: 1
-
     val stateCacheOrDefault: StateCache
         get() = stateCache ?: StateCache.none
 
     init {
-        consumers?.let {
-            require(it >= 1) { "consumers MUST be positive" }
-        }
+        require(concurrency >= 0) { "concurrency must be positive" }
     }
 }

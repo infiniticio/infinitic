@@ -30,10 +30,6 @@ import io.infinitic.common.storage.keyValue.KeyValueStorage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
 
-/**
- * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
- * them in a persistent key value binary storage.
- */
 class BinaryTaskStateStorage(
     private val storage: KeyValueStorage
 ) : TaskStateStorage, Flushable by storage {
@@ -45,9 +41,9 @@ class BinaryTaskStateStorage(
             ?.let { TaskState.fromByteArray(it) }
     }
 
-    override suspend fun putState(taskId: TaskId, state: TaskState) {
+    override suspend fun putState(taskId: TaskId, taskState: TaskState) {
         val key = getTaskStateKey(taskId)
-        storage.putValue(key, state.toByteArray())
+        storage.putValue(key, taskState.toByteArray())
     }
 
     override suspend fun delState(taskId: TaskId) {

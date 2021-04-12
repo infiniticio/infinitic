@@ -26,6 +26,7 @@
 package io.infinitic.inMemory
 
 import io.infinitic.client.Client
+import io.infinitic.client.deferred.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.inMemory.tasks.TaskA
 import io.infinitic.inMemory.tasks.TaskAImpl
@@ -43,9 +44,9 @@ internal class InMemoryTests : StringSpec({
 
     beforeSpec {
         val taskExecutorRegister = TaskExecutorRegisterImpl().also {
-            it.register(TaskA::class.java.name) { TaskAImpl() }
-            it.register(WorkflowA::class.java.name) { WorkflowAImpl() }
-            it.register(WorkflowB::class.java.name) { WorkflowBImpl() }
+            it.registerTask(TaskA::class.java.name) { TaskAImpl() }
+            it.registerWorkflow(WorkflowA::class.java.name) { WorkflowAImpl() }
+            it.registerWorkflow(WorkflowB::class.java.name) { WorkflowBImpl() }
         }
 
         client.startInMemory(taskExecutorRegister)
@@ -66,7 +67,7 @@ internal class InMemoryTests : StringSpec({
     "waiting for simple asynchronous task" {
         val taskA = client.newTask<TaskA>()
 
-        val deferred = client.async(taskA) { await(200) }
+        val deferred: Deferred<Long> = client.async(taskA) { await(200) }
 
         deferred.await() shouldBe 200L
     }
@@ -86,4 +87,12 @@ internal class InMemoryTests : StringSpec({
 
         deferred.await() shouldBe "acbd"
     }
+
+//    "waiting for empty workflow" {
+//        val workflowA = client.newWorkflow<WorkflowA>()
+//
+//        val deferred = client.async(workflowA) { empty() }
+//
+//        deferred.await() shouldBe "void"
+//    }
 })

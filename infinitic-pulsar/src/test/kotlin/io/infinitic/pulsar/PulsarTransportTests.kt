@@ -38,7 +38,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.schemas.schemaDefinition
-import io.infinitic.pulsar.transport.PulsarOutputs
+import io.infinitic.pulsar.transport.PulsarOutput
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.spec.style.stringSpec
 import io.kotest.matchers.shouldBe
@@ -63,11 +63,11 @@ class PulsarTransportTests : StringSpec({
     }
 
     MetricsPerNameMessage::class.sealedSubclasses.forEach {
-        include(shouldBeAbleToSendMessageToMonitoringPerNameTopic(TestFactory.random(it)))
+        include(shouldBeAbleToSendMessageToMetricsPerNameTopic(TestFactory.random(it)))
     }
 
     MetricsGlobalMessage::class.sealedSubclasses.forEach {
-        include(shouldBeAbleToSendMessageToMonitoringGlobalTopic(TestFactory.random(it)))
+        include(shouldBeAbleToSendMessageToMetricsGlobalTopic(TestFactory.random(it)))
     }
 
     TaskExecutorMessage::class.sealedSubclasses.forEach {
@@ -88,7 +88,7 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).sendCommandsToWorkflowEngine(msg, MillisDuration(0))
+        PulsarOutput.from(context).sendCommandsToWorkflowEngine(msg, MillisDuration(0))
         // then
         verify {
             context.newOutputMessage(
@@ -119,7 +119,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).sendCommandsToTaskEngine(msg, MillisDuration(0))
+        PulsarOutput.from(context).sendCommandsToTaskEngine(msg, MillisDuration(0))
         // then
         verify {
             context.newOutputMessage(
@@ -137,8 +137,8 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
     }
 }
 
-private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MetricsPerNameMessage) = stringSpec {
-    "${msg::class.simpleName!!} can be send to MonitoringPerName topic " {
+private fun shouldBeAbleToSendMessageToMetricsPerNameTopic(msg: MetricsPerNameMessage) = stringSpec {
+    "${msg::class.simpleName!!} can be send to MetricsPerName topic " {
         // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<MetricsPerNameEnvelope>>()
@@ -150,11 +150,11 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MetricsPerNam
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).sendToMetricsPerName(msg)
+        PulsarOutput.from(context).sendToMetricsPerName(msg)
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/monitoring-per-name",
+                "persistent://tenant/namespace/metrics-per-name",
                 slotSchema.captured
             )
         }
@@ -168,8 +168,8 @@ private fun shouldBeAbleToSendMessageToMonitoringPerNameTopic(msg: MetricsPerNam
     }
 }
 
-private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MetricsGlobalMessage) = stringSpec {
-    "${msg::class.simpleName!!} can be send to MonitoringGlobal topic " {
+private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: MetricsGlobalMessage) = stringSpec {
+    "${msg::class.simpleName!!} can be send to MetricsGlobal topic " {
         // given
         val context = context()
         val builder = mockk<TypedMessageBuilder<MetricsGlobalEnvelope>>()
@@ -182,10 +182,10 @@ private fun shouldBeAbleToSendMessageToMonitoringGlobalTopic(msg: MetricsGlobalM
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).sendToMetricsGlobal(msg)
+        PulsarOutput.from(context).sendToMetricsGlobal(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe "persistent://tenant/namespace/monitoring-global"
+        slotTopic.captured shouldBe "persistent://tenant/namespace/metrics-global"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MetricsGlobalEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(MetricsGlobalEnvelope.from(msg)) }
         verify(exactly = 1) { builder.sendAsync() }
@@ -206,7 +206,7 @@ private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessag
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutputs.from(context).sendToTaskExecutors(msg)
+        PulsarOutput.from(context).sendToTaskExecutors(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
         slotTopic.captured shouldBe "persistent://tenant/namespace/task-executor: ${msg.taskName}"

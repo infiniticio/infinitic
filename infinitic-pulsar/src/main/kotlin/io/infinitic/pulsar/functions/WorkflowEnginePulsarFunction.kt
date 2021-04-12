@@ -27,10 +27,10 @@ package io.infinitic.pulsar.functions
 
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.common.storage.keyValue.CachedLoggedKeyValueStorage
+import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
-import io.infinitic.pulsar.transport.PulsarOutputs
+import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import kotlinx.coroutines.runBlocking
@@ -53,12 +53,12 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
     }
 
     internal fun getWorkflowEngine(context: Context): WorkflowEngine {
-        val output = PulsarOutputs.from(context)
+        val output = PulsarOutput.from(context)
 
         return WorkflowEngine(
             BinaryWorkflowStateStorage(
                 // context storage decorated with logging and a 1h cache
-                CachedLoggedKeyValueStorage(
+                CachedKeyValueStorage(
                     CaffeineKeyValueCache(Caffeine(expireAfterAccess = 3600)),
                     context.keyValueStorage()
                 )

@@ -25,23 +25,17 @@
 
 package io.infinitic.config.data
 
+import io.infinitic.tasks.Task as TaskInstance
+
 data class Task(
     @JvmField val name: String,
     @JvmField val `class`: String? = null,
     @JvmField var mode: Mode? = null,
-    @JvmField val consumers: Int = 1,
     @JvmField val concurrency: Int = 1,
-    @JvmField val shared: Boolean = true,
     @JvmField var taskEngine: TaskEngine? = null
 ) {
-    private lateinit var _instance: Any
-
-    val instance: Any
-        get() {
-            if (! shared) return Class.forName(`class`).newInstance()
-            if (! this::_instance.isInitialized) _instance = Class.forName(`class`).newInstance()
-            return _instance
-        }
+    val instance: TaskInstance
+        get() = Class.forName(`class`).getDeclaredConstructor().newInstance() as TaskInstance
 
     val modeOrDefault: Mode
         get() = mode ?: Mode.worker
@@ -58,12 +52,15 @@ data class Task(
             require(try { instance; true } catch (e: ClassNotFoundException) { false }) {
                 "class \"$it\" is unknown (task $name)"
             }
+            require(try { instance; true } catch (e: ClassCastException) { false }) {
+                "class \"$it\" is not a task as it does not extend ${TaskInstance::class.java.name}"
+            }
             require(try { instance; true } catch (e: Exception) { false }) {
                 "class \"$it\" can not be instantiated using newInstance(). " +
                     "This class must be public and have an empty constructor"
             }
-            require(consumers >= 1) { "consumers MUST be strictly positive (task $name)" }
-            require(concurrency >= 1) { "concurrency MUST strictly be positive (task $name)" }
+
+            require(concurrency >= 0) { "concurrency must be positive (task $name)" }
         }
     }
 }

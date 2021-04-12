@@ -28,9 +28,9 @@ package io.infinitic.tasks.executor.worker
 import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.common.workers.singleThreadedContext
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.TaskExecutor
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
@@ -43,7 +43,7 @@ private val logger: Logger
 
 typealias TaskExecutorMessageToProcess = MessageToProcess<TaskExecutorMessage>
 
-private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Throwable) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message,
     e
@@ -51,22 +51,21 @@ private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Exceptio
 
 fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     coroutineName: String,
-    taskExecutorRegister: TaskExecutorRegister,
-    taskExecutorChannel: ReceiveChannel<T>,
-    logChannel: SendChannel<T>,
-    sendToTaskEngine: SendToTaskEngine,
-) = launch(singleThreadedContext(coroutineName)) {
+    register: TaskExecutorRegister,
+    inputChannel: ReceiveChannel<T>,
+    outputChannel: SendChannel<T>,
+    sendToTaskEngine: SendToTaskEngine
+) = launch(CoroutineName(coroutineName)) {
+    val taskExecutor = TaskExecutor(sendToTaskEngine, register)
 
-    val taskExecutor = TaskExecutor(sendToTaskEngine, taskExecutorRegister)
-
-    for (message in taskExecutorChannel) {
+    for (message in inputChannel) {
         try {
             message.returnValue = taskExecutor.handle(message.message)
-        } catch (e: Exception) {
-            message.exception = e
+        } catch (e: Throwable) {
+            message.throwable = e
             logError(message, e)
         } finally {
-            logChannel.send(message)
+            outputChannel.send(message)
         }
     }
 }

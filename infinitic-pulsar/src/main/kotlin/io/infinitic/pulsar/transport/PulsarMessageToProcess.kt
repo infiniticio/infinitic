@@ -33,6 +33,6 @@ data class PulsarMessageToProcess<T> (
     val pulsarId: MessageId,
     val redeliveryCount: Int
 ) : MessageToProcess<T> {
-    override var exception: Exception? = null
+    override var throwable: Throwable? = null
     override var returnValue: Any? = null
 }

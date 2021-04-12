@@ -34,7 +34,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
  * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-open class BinaryWorkflowStateStorage(
+class BinaryWorkflowStateStorage(
     private val storage: KeyValueStorage,
 ) : WorkflowStateStorage, Flushable by storage {
 
