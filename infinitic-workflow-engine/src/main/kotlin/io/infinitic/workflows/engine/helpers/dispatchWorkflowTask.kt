@@ -68,7 +68,7 @@ suspend fun dispatchWorkflowTask(
         clientWaiting = false,
         taskId = TaskId(),
         taskName = TaskName(WorkflowTask::class.java.name),
-        methodName = MethodName(WorkflowTask.DEFAULT_METHOD),
+        methodName = MethodName(WorkflowTask::handle.name),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
         methodParameters = MethodParameters.from(workflowTaskInput),
         workflowId = state.workflowId,
