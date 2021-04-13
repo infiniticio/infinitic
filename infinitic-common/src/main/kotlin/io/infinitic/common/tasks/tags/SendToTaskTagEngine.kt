@@ -23,9 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.transport
+package io.infinitic.common.tasks.tags
 
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, MillisDuration) -> Unit
+typealias SendToTaskTagEngine = suspend (TaskTagEngineMessage) -> Unit

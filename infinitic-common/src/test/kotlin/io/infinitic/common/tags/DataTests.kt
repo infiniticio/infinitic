@@ -26,14 +26,21 @@
 package io.infinitic.common.tags
 
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class DataTests : StringSpec({
-    "Tag should be stringify as string" {
-        val tag = TestFactory.random<Tag>()
+    "TaskTak should be stringify as string" {
+        val taskTag = TestFactory.random<TaskTag>()
 
-        "$tag" shouldBe tag.tag
+        "$taskTag" shouldBe taskTag.tag
+    }
+
+    "WorkflowTag should be stringify as string" {
+        val workflowTag = TestFactory.random<WorkflowTag>()
+
+        "$workflowTag" shouldBe workflowTag.tag
     }
 })

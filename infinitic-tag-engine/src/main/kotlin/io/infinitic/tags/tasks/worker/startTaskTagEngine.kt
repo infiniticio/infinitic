@@ -23,18 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks.engine.worker
+package io.infinitic.tags.tasks.worker
 
-import io.infinitic.common.clients.transport.SendToClient
-import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.executors.SendToTaskExecutors
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.tasks.engine.TaskEngine
-import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.tags.tasks.TaskTagEngine
+import io.infinitic.tags.tasks.storage.TaskTagStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -45,47 +40,36 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 private val logger: Logger
-    get() = LoggerFactory.getLogger(TaskEngine::class.java)
+    get() = LoggerFactory.getLogger(TaskTagEngine::class.java)
 
-typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
+typealias TaskTagEngineMessageToProcess = MessageToProcess<TaskTagEngineMessage>
 
-private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Exception) = logger.error(
-    "taskId {} - exception on message {}:${System.getProperty("line.separator")}{}",
-    messageToProcess.message.taskId,
+private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Exception) = logger.error(
+    "exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message,
     e
 )
 
-fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
+fun <T : TaskTagEngineMessageToProcess> CoroutineScope.startTaskTagEngine(
     coroutineName: String,
-    taskStateStorage: TaskStateStorage,
+    taskTagStorage: TaskTagStorage,
     eventsInputChannel: ReceiveChannel<T>,
     eventsOutputChannel: SendChannel<T>,
     commandsInputChannel: ReceiveChannel<T>,
     commandsOutputChannel: SendChannel<T>,
-    sendToClient: SendToClient,
-    sendToTaskTagEngine: SendToTaskTagEngine,
     sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowEngine: SendToWorkflowEngine,
-    sendToTaskExecutors: SendToTaskExecutors,
-    sendToMetricsPerName: SendToMetricsPerName
 ) = launch(CoroutineName(coroutineName)) {
 
-    val taskEngine = TaskEngine(
-        taskStateStorage,
-        sendToClient,
-        sendToTaskTagEngine,
-        sendToTaskEngine,
-        sendToWorkflowEngine,
-        sendToTaskExecutors,
-        sendToMetricsPerName
+    val tagEngine = TaskTagEngine(
+        taskTagStorage,
+        sendToTaskEngine
     )
 
     while (true) {
         select<Unit> {
             eventsInputChannel.onReceive {
                 try {
-                    it.returnValue = taskEngine.handle(it.message)
+                    it.returnValue = tagEngine.handle(it.message)
                 } catch (e: Exception) {
                     it.throwable = e
                     logError(it, e)
@@ -95,7 +79,7 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
             }
             commandsInputChannel.onReceive {
                 try {
-                    it.returnValue = taskEngine.handle(it.message)
+                    it.returnValue = tagEngine.handle(it.message)
                 } catch (e: Exception) {
                     it.throwable = e
                     logError(it, e)

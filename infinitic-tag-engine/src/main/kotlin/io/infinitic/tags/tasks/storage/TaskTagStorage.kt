@@ -23,8 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.tags.tasks.storage
 
-object TagEngineCommandsTopic {
-    const val name = "tag-engine-commands"
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.storage.Flushable
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskTag
+
+/**
+ * TagStateStorage implementations are responsible for storing the different state objects used by the engine.
+ *
+ * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
+ * transformed before being stored. These details are left to the different implementations.
+ */
+interface TaskTagStorage : Flushable {
+    suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId?
+
+    suspend fun setLastMessageId(tag: TaskTag, taskName: TaskName, messageId: MessageId)
+
+    suspend fun getTaskIds(tag: TaskTag, taskName: TaskName): Set<TaskId>
+
+    suspend fun addTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId)
+
+    suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId)
 }

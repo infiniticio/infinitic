@@ -329,7 +329,7 @@ private suspend fun dispatchTask(
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
-        tags = command.tags,
+        taskTags = command.taskTags,
         taskMeta = command.taskMeta,
         taskOptions = command.taskOptions
     )
@@ -356,7 +356,7 @@ private suspend fun dispatchChildWorkflow(
         methodName = command.childMethodName,
         methodParameterTypes = command.childMethodParameterTypes,
         methodParameters = command.childMethodParameters,
-        tags = state.tags,
+        workflowTags = state.workflowTags,
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )

@@ -33,26 +33,28 @@ import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
-import io.infinitic.common.tags.data.Tag
-import io.infinitic.common.tags.messages.CancelTaskPerTag
-import io.infinitic.common.tags.messages.CancelWorkflowPerTag
-import io.infinitic.common.tags.messages.RetryTaskPerTag
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
+import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.exceptions.CanNotReuseWorkflowStub
 import io.infinitic.exceptions.CanNotUseNewTaskStub
 import io.infinitic.exceptions.CanNotUseNewWorkflowStub
@@ -77,32 +79,37 @@ open class Client(
     companion object {
         fun with(
             clientName: ClientName,
-            sendToTagEngine: SendToTagEngine,
+            sendToTaskTagEngine: SendToTaskTagEngine,
             sendToTaskEngine: SendToTaskEngine,
+            sendToWorkflowTagEngine: SendToWorkflowTagEngine,
             sendToWorkflowEngine: SendToWorkflowEngine
-        ) = Client(clientName).apply { setOutput(sendToTagEngine, sendToTaskEngine, sendToWorkflowEngine) }
+        ) = Client(clientName).apply { setOutput(sendToTaskTagEngine, sendToTaskEngine, sendToWorkflowTagEngine, sendToWorkflowEngine) }
     }
 
     private lateinit var dispatcher: ClientDispatcher
-    private lateinit var sendToTagEngine: SendToTagEngine
+    private lateinit var sendToTaskTagEngine: SendToTaskTagEngine
     private lateinit var sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit)
+    private lateinit var sendToWorkflowTagEngine: SendToWorkflowTagEngine
     private lateinit var sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
 
     fun close() = closeFn()
 
     fun setOutput(
-        sendToTagEngine: SendToTagEngine,
+        sendToTaskTagEngine: SendToTaskTagEngine,
         sendToTaskEngine: SendToTaskEngine,
+        sendToWorkflowTagEngine: SendToWorkflowTagEngine,
         sendToWorkflowEngine: SendToWorkflowEngine
     ) {
-        this.sendToTagEngine = sendToTagEngine
+        this.sendToTaskTagEngine = sendToTaskTagEngine
         this.sendToTaskEngine = { sendToTaskEngine(it, MillisDuration(0)) }
+        this.sendToWorkflowTagEngine = sendToWorkflowTagEngine
         this.sendToWorkflowEngine = { sendToWorkflowEngine(it, MillisDuration(0)) }
 
         this.dispatcher = ClientDispatcher(
             clientName,
-            this.sendToTagEngine,
+            this.sendToTaskTagEngine,
             this.sendToTaskEngine,
+            this.sendToWorkflowTagEngine,
             this.sendToWorkflowEngine
         )
     }
@@ -123,7 +130,7 @@ open class Client(
         meta: Map<String, ByteArray> = mapOf()
     ): T = TaskProxyHandler(
         klass = klass,
-        tags = tags.map { Tag(it) }.toSet(),
+        taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options ?: TaskOptions(),
         taskMeta = TaskMeta(meta)
     ) { dispatcher }.stub()
@@ -148,7 +155,7 @@ open class Client(
         meta: Map<String, ByteArray>? = null
     ): T = TaskProxyHandler(
         klass = klass,
-        tags = tags?.map { Tag(it) }?.toSet(),
+        taskTags = tags?.map { TaskTag(it) }?.toSet(),
         taskOptions = options,
         taskMeta = meta?.let { TaskMeta(it) },
         perTaskId = TaskId(id),
@@ -166,11 +173,11 @@ open class Client(
         meta: Map<String, ByteArray>? = null
     ): T = TaskProxyHandler(
         klass = klass,
-        tags = tags?.map { Tag(it) }?.toSet(),
+        taskTags = tags?.map { TaskTag(it) }?.toSet(),
         taskOptions = options,
         taskMeta = meta?.let { TaskMeta(it) },
         perTaskId = null,
-        perTag = Tag(tag)
+        perTag = TaskTag(tag)
     ) { dispatcher }.stub()
 
     /*
@@ -203,7 +210,7 @@ open class Client(
         meta: Map<String, ByteArray> = mapOf()
     ): T = WorkflowProxyHandler(
         klass = klass,
-        tags = tags.map { Tag(it) }.toSet(),
+        workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options ?: WorkflowOptions(),
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
@@ -230,7 +237,7 @@ open class Client(
         klass = klass,
         perTag = null,
         perWorkflowId = WorkflowId(id),
-        tags = tags?.map { Tag(it) }?.toSet(),
+        workflowTags = tags?.map { WorkflowTag(it) }?.toSet(),
         workflowOptions = options,
         workflowMeta = meta?.let { WorkflowMeta(it) }
     ) { dispatcher }.stub()
@@ -246,9 +253,9 @@ open class Client(
         meta: Map<String, ByteArray>? = null
     ): T = WorkflowProxyHandler(
         klass = klass,
-        perTag = Tag(tag),
+        perTag = WorkflowTag(tag),
         perWorkflowId = null,
-        tags = tags?.map { Tag(it) }?.toSet(),
+        workflowTags = tags?.map { WorkflowTag(it) }?.toSet(),
         workflowOptions = options,
         workflowMeta = meta?.let { WorkflowMeta(it) }
     ) { dispatcher }.stub()
@@ -331,11 +338,11 @@ open class Client(
         when (handler.perTaskId) {
             null -> {
                 val msg = CancelTaskPerTag(
-                    tag = handler.perTag!!,
-                    name = TaskName(handler.klass.name),
+                    taskTag = handler.perTag!!,
+                    taskName = TaskName(handler.klass.name),
                     taskReturnValue = MethodReturnValue.from(output)
                 )
-                GlobalScope.future { sendToTagEngine(msg) }.join()
+                GlobalScope.future { sendToTaskTagEngine(msg) }.join()
             }
             else -> {
                 val msg = CancelTask(
@@ -358,7 +365,7 @@ open class Client(
                 methodName = null,
                 methodParameterTypes = null,
                 methodParameters = null,
-                tags = handler.tags,
+                taskTags = handler.taskTags,
                 taskOptions = handler.taskOptions,
                 taskMeta = handler.taskMeta
             )
@@ -369,16 +376,16 @@ open class Client(
 
         if (handler.perTag != null) {
             val msg = RetryTaskPerTag(
-                tag = handler.perTag!!,
-                name = TaskName(handler.klass.name),
+                taskTag = handler.perTag!!,
+                taskName = TaskName(handler.klass.name),
                 methodName = null,
                 methodParameterTypes = null,
                 methodParameters = null,
-                tags = handler.tags,
+                taskTags = handler.taskTags,
                 taskOptions = handler.taskOptions,
                 taskMeta = handler.taskMeta
             )
-            GlobalScope.future { sendToTagEngine(msg) }.join()
+            GlobalScope.future { sendToTaskTagEngine(msg) }.join()
 
             return
         }
@@ -400,11 +407,11 @@ open class Client(
 
         if (handler.perTag != null) {
             val msg = CancelWorkflowPerTag(
-                tag = handler.perTag!!,
-                name = WorkflowName(handler.klass.name),
+                workflowTag = handler.perTag!!,
+                workflowName = WorkflowName(handler.klass.name),
                 workflowReturnValue = MethodReturnValue.from(output)
             )
-            GlobalScope.future { sendToTagEngine(msg) }.join()
+            GlobalScope.future { sendToWorkflowTagEngine(msg) }.join()
 
             return
         }

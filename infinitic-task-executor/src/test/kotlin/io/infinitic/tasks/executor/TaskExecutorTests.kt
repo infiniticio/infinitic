@@ -39,10 +39,10 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.exceptions.NoMethodFoundWithParameterCount

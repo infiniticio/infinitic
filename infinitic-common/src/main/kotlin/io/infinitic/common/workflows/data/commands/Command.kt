@@ -32,10 +32,10 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventFilter
 import io.infinitic.common.workflows.data.channels.ChannelEventType
@@ -43,6 +43,7 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import kotlinx.serialization.Serializable
 import java.lang.reflect.Method
 
@@ -61,7 +62,7 @@ data class DispatchTask(
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes,
     val methodParameters: MethodParameters,
-    val tags: Set<Tag>,
+    val taskTags: Set<TaskTag>,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions
 ) : Command() {
@@ -69,7 +70,7 @@ data class DispatchTask(
         fun from(
             method: Method,
             args: Array<out Any>,
-            tags: Set<Tag>,
+            taskTags: Set<TaskTag>,
             taskMeta: TaskMeta,
             taskOptions: TaskOptions
         ) = DispatchTask(
@@ -77,7 +78,7 @@ data class DispatchTask(
             methodParameters = MethodParameters.from(method, args),
             methodParameterTypes = MethodParameterTypes.from(method),
             methodName = MethodName.from(method),
-            tags = tags,
+            taskTags = taskTags,
             taskMeta = taskMeta,
             taskOptions = taskOptions
         )
@@ -90,7 +91,7 @@ data class DispatchChildWorkflow(
     val childMethodName: MethodName,
     val childMethodParameterTypes: MethodParameterTypes,
     val childMethodParameters: MethodParameters,
-    val tags: Set<Tag>,
+    val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : Command() {
@@ -98,7 +99,7 @@ data class DispatchChildWorkflow(
         fun from(
             method: Method,
             args: Array<out Any>,
-            tags: Set<Tag>,
+            workflowTags: Set<WorkflowTag>,
             workflowMeta: WorkflowMeta,
             workflowOptions: WorkflowOptions
         ) = DispatchChildWorkflow(
@@ -106,7 +107,7 @@ data class DispatchChildWorkflow(
             childMethodName = MethodName.from(method),
             childMethodParameterTypes = MethodParameterTypes.from(method),
             childMethodParameters = MethodParameters.from(method, args),
-            tags = tags,
+            workflowTags = workflowTags,
             workflowMeta = workflowMeta,
             workflowOptions = workflowOptions
         )

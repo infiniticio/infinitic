@@ -35,8 +35,10 @@ import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStor
 import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.engine.storage.BinaryTagStateStorage
-import io.infinitic.tags.engine.worker.startTagEngine
+import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
+import io.infinitic.tags.tasks.worker.startTaskTagEngine
+import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
+import io.infinitic.tags.workflows.worker.startWorkflowTagEngine
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.engine.worker.startTaskEngine
@@ -70,16 +72,14 @@ fun CoroutineScope.startInMemory(
         outputChannel = output.logChannel,
     )
 
-    startTagEngine(
-        "in-memory-tag-engine",
-        BinaryTagStateStorage(keyValueStorage, keySetStorage),
-        eventsInputChannel = output.tagEventsChannel,
+    startTaskTagEngine(
+        "in-memory-task-tag-engine",
+        BinaryTaskTagStorage(keyValueStorage, keySetStorage),
+        eventsInputChannel = output.taskTagEventsChannel,
         eventsOutputChannel = output.logChannel,
-        commandsInputChannel = output.tagCommandsChannel,
+        commandsInputChannel = output.taskTagCommandsChannel,
         commandsOutputChannel = output.logChannel,
-        output.sendEventsToClient,
-        output.sendCommandsToTaskEngine,
-        output.sendCommandsToWorkflowEngine
+        output.sendCommandsToTaskEngine
     )
 
     startTaskEngine(
@@ -90,11 +90,21 @@ fun CoroutineScope.startInMemory(
         commandsInputChannel = output.taskCommandsChannel,
         commandsOutputChannel = output.logChannel,
         output.sendEventsToClient,
-        output.sendEventsToTagEngine,
+        output.sendEventsToTaskTagEngine,
         output.sendEventsToTaskEngine,
         output.sendEventsToWorkflowEngine,
         output.sendToTaskExecutors,
         output.sendToMetricsPerName
+    )
+
+    startWorkflowTagEngine(
+        "in-memory-workflow-tag-engine",
+        BinaryWorkflowTagStorage(keyValueStorage, keySetStorage),
+        eventsInputChannel = output.workflowTagEventsChannel,
+        eventsOutputChannel = output.logChannel,
+        commandsInputChannel = output.workflowTagCommandsChannel,
+        commandsOutputChannel = output.logChannel,
+        output.sendCommandsToWorkflowEngine
     )
 
     startWorkflowEngine(
@@ -105,7 +115,7 @@ fun CoroutineScope.startInMemory(
         commandsInputChannel = output.workflowCommandsChannel,
         commandsOutputChannel = output.logChannel,
         output.sendEventsToClient,
-        output.sendEventsToTagEngine,
+        output.sendEventsToWorkflowTagEngine,
         output.sendCommandsToTaskEngine,
         output.sendEventsToWorkflowEngine
     )

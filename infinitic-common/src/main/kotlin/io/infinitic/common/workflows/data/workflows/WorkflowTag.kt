@@ -23,9 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tags.data
+package io.infinitic.common.workflows.data.workflows
 
-import io.infinitic.common.data.Id
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -33,21 +32,14 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.util.UUID
 
-@Serializable(with = TagSerializer::class)
-data class Tag(val tag: String) {
+@Serializable(with = WorkflowTagSerializer::class)
+data class WorkflowTag(val tag: String) {
     override fun toString() = tag
-
-    companion object {
-        fun of(id: Id) = Tag("id:$id")
-
-        fun of(id: UUID) = Tag("id:$id")
-    }
 }
 
-object TagSerializer : KSerializer<Tag> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Tag", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: Tag) { encoder.encodeString(value.tag) }
-    override fun deserialize(decoder: Decoder) = Tag(decoder.decodeString())
+object WorkflowTagSerializer : KSerializer<WorkflowTag> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("WorkflowTag", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: WorkflowTag) { encoder.encodeString(value.tag) }
+    override fun deserialize(decoder: Decoder) = WorkflowTag(decoder.decodeString())
 }

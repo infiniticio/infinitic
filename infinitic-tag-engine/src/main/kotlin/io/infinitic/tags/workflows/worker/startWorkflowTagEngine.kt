@@ -23,15 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tags.engine.worker
+package io.infinitic.tags.workflows.worker
 
-import io.infinitic.common.clients.transport.SendToClient
-import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
-import io.infinitic.tags.engine.TagEngine
-import io.infinitic.tags.engine.storage.TagStateStorage
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.tags.workflows.WorkflowTagEngine
+import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -42,32 +40,28 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 private val logger: Logger
-    get() = LoggerFactory.getLogger(TagEngine::class.java)
+    get() = LoggerFactory.getLogger(WorkflowTagEngine::class.java)
 
-typealias TagEngineMessageToProcess = MessageToProcess<TagEngineMessage>
+typealias WorkflowTagEngineMessageToProcess = MessageToProcess<WorkflowTagEngineMessage>
 
-private fun logError(messageToProcess: TagEngineMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Exception) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message,
     e
 )
 
-fun <T : TagEngineMessageToProcess> CoroutineScope.startTagEngine(
+fun <T : WorkflowTagEngineMessageToProcess> CoroutineScope.startWorkflowTagEngine(
     coroutineName: String,
-    tagStateStorage: TagStateStorage,
+    workflowTagStorage: WorkflowTagStorage,
     eventsInputChannel: ReceiveChannel<T>,
     eventsOutputChannel: SendChannel<T>,
     commandsInputChannel: ReceiveChannel<T>,
     commandsOutputChannel: SendChannel<T>,
-    sendToClient: SendToClient,
-    sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowEngine: SendToWorkflowEngine
+    sendToWorkflowEngine: SendToWorkflowEngine,
 ) = launch(CoroutineName(coroutineName)) {
 
-    val tagEngine = TagEngine(
-        tagStateStorage,
-        sendToClient,
-        sendToTaskEngine,
+    val tagEngine = WorkflowTagEngine(
+        workflowTagStorage,
         sendToWorkflowEngine
     )
 

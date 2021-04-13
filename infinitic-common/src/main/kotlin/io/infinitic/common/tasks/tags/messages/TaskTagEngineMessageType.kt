@@ -23,8 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.topics
+package io.infinitic.common.tasks.tags.messages
 
-object TagEngineDeadLettersTopic {
-    const val name = "tag-engine-dead-letters"
+enum class TaskTagEngineMessageType {
+    ADD_TASK_TAG,
+    REMOVE_TASK_TAG,
+    CANCEL_TASK_PER_TAG,
+    RETRY_TASK_PER_TAG
 }

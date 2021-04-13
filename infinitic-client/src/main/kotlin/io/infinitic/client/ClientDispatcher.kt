@@ -40,15 +40,13 @@ import io.infinitic.common.proxies.Dispatcher
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
-import io.infinitic.common.tags.messages.AddTaskTag
-import io.infinitic.common.tags.messages.AddWorkflowTag
-import io.infinitic.common.tags.messages.SendToChannelPerTag
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.WaitTask
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.messages.AddTaskTag
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelEventType
@@ -59,6 +57,9 @@ import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
+import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.exceptions.ChannelUsedOnNewWorkflow
 import io.infinitic.exceptions.MultipleMethodCalls
 import io.infinitic.exceptions.NoMethodCall
@@ -76,8 +77,9 @@ import kotlin.reflect.full.isSubclassOf
 
 internal class ClientDispatcher(
     val clientName: ClientName,
-    val sendToTagEngine: SendToTagEngine,
+    val sendToTaskTagEngine: SendToTaskTagEngine,
     val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit),
+    val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
 ) : Dispatcher {
     // could be replay = 0
@@ -108,10 +110,10 @@ internal class ClientDispatcher(
         val isSync = handler.isSync
 
         // add provided tags for this id
-        val addTaskTags = handler.tags!!.map {
+        val addTaskTags = handler.taskTags!!.map {
             AddTaskTag(
-                tag = it,
-                name = taskName,
+                taskTag = it,
+                taskName = taskName,
                 taskId = taskId
             )
         }
@@ -128,14 +130,14 @@ internal class ClientDispatcher(
             workflowId = null,
             workflowName = null,
             methodRunId = null,
-            tags = handler.tags!!,
+            taskTags = handler.taskTags!!,
             taskOptions = handler.taskOptions!!,
             taskMeta = handler.taskMeta!!
         )
 
         // send messages
         GlobalScope.future {
-            addTaskTags.map { sendToTagEngine(it) }
+            addTaskTags.map { sendToTaskTagEngine(it) }
             sendToTaskEngine(dispatchTask)
         }.join()
 
@@ -203,10 +205,10 @@ internal class ClientDispatcher(
         val isSync = handler.isSync
 
         // add provided tags
-        val addWorkflowTags = handler.tags!!.map {
+        val addWorkflowTags = handler.workflowTags!!.map {
             AddWorkflowTag(
-                tag = it,
-                name = workflowName,
+                workflowTag = it,
+                workflowName = workflowName,
                 workflowId = workflowId
             )
         }
@@ -222,14 +224,14 @@ internal class ClientDispatcher(
             methodParameters = MethodParameters.from(method, args),
             parentWorkflowId = null,
             parentMethodRunId = null,
-            tags = handler.tags!!,
+            workflowTags = handler.workflowTags!!,
             workflowMeta = handler.workflowMeta!!,
             workflowOptions = handler.workflowOptions!!
         )
 
         // send messages
         GlobalScope.future {
-            addWorkflowTags.map { sendToTagEngine(it) }
+            addWorkflowTags.map { sendToWorkflowTagEngine(it) }
             sendToWorkflowEngine(dispatchWorkflow)
         }.join()
 
@@ -310,8 +312,8 @@ internal class ClientDispatcher(
 
         if (handler.perTag != null) {
             val msg = SendToChannelPerTag(
-                tag = handler.perTag!!,
-                name = handler.workflowName,
+                workflowTag = handler.perTag!!,
+                workflowName = handler.workflowName,
                 clientName = clientName,
                 clientWaiting = handler.isSync,
                 channelEventId = ChannelEventId(),
@@ -320,7 +322,7 @@ internal class ClientDispatcher(
                 channelEventTypes = ChannelEventType.allFrom(event::class.java)
             )
 
-            GlobalScope.future { sendToTagEngine(msg) }.join()
+            GlobalScope.future { sendToWorkflowTagEngine(msg) }.join()
 
             return
         }

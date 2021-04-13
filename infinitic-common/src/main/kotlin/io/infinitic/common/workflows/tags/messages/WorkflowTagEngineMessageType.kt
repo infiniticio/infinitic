@@ -23,13 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tags.messages
+package io.infinitic.common.workflows.tags.messages
 
-enum class TagEngineMessageType {
-    ADD_TASK_TAG,
-    REMOVE_TASK_TAG,
-    CANCEL_TASK_PER_TAG,
-    RETRY_TASK_PER_TAG,
+enum class WorkflowTagEngineMessageType {
     ADD_WORKFLOW_TAG,
     REMOVE_WORKFLOW_TAG,
     CANCEL_WORKFLOW_PER_TAG,

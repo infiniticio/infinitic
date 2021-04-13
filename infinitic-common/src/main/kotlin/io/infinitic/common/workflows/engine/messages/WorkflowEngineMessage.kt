@@ -31,7 +31,6 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.channels.ChannelEvent
@@ -45,6 +44,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -67,7 +67,7 @@ data class DispatchWorkflow(
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
-    val tags: Set<Tag>,
+    val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
 ) : WorkflowEngineMessage()

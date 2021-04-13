@@ -23,59 +23,66 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tags.engine.storage
+package io.infinitic.tags.workflows.storage
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.Name
 import io.infinitic.common.data.UUIDConversion.toByteArray
 import io.infinitic.common.data.UUIDConversion.toUUID
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetStorage
 import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.common.tags.data.Tag
-import java.util.UUID
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import org.jetbrains.annotations.TestOnly
 
 /**
  * This StateStorage implementation converts state objects used by the engine to Avro objects, and saves
  * them in a persistent key value storage.
  */
-class BinaryTagStateStorage(
+class BinaryWorkflowTagStorage(
     private val keyValueStorage: KeyValueStorage,
     private val keySetStorage: KeySetStorage,
-) : TagStateStorage, Flushable {
+) : WorkflowTagStorage, Flushable {
 
-    override suspend fun getLastMessageId(tag: Tag, name: Name): MessageId? {
-        val key = getTagMessageIdKey(tag, name)
+    override suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId? {
+        val key = getTagMessageIdKey(tag, workflowName)
 
         return keyValueStorage.getValue(key)
             ?.let { MessageId.fromByteArray(it) }
     }
 
-    override suspend fun setLastMessageId(tag: Tag, name: Name, messageId: MessageId) {
-        val key = getTagMessageIdKey(tag, name)
+    override suspend fun setLastMessageId(tag: WorkflowTag, workflowName: WorkflowName, messageId: MessageId) {
+        val key = getTagMessageIdKey(tag, workflowName)
         keyValueStorage.putValue(key, messageId.toByteArray())
     }
 
-    override suspend fun getIds(tag: Tag, name: Name): Set<UUID> {
-        val key = getTagSetIdsKey(tag, name)
-        return keySetStorage.getSet(key)
-            .map { it.toUUID() }.toSet()
+    override suspend fun getWorkflowIds(tag: WorkflowTag, workflowName: WorkflowName): Set<WorkflowId> {
+        val key = getTagSetIdsKey(tag, workflowName)
+        return keySetStorage
+            .getSet(key)
+            .map { WorkflowId(it.toUUID()) }
+            .toSet()
     }
 
-    override suspend fun addId(tag: Tag, name: Name, id: UUID) {
-        val key = getTagSetIdsKey(tag, name)
-        keySetStorage.addToSet(key, id.toByteArray())
+    override suspend fun addWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
+        val key = getTagSetIdsKey(tag, workflowName)
+        keySetStorage.addToSet(key, workflowId.id.toByteArray())
     }
 
-    override suspend fun removeId(tag: Tag, name: Name, id: UUID) {
-        val key = getTagSetIdsKey(tag, name)
-        keySetStorage.removeFromSet(key, id.toByteArray())
+    override suspend fun removeWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
+        val key = getTagSetIdsKey(tag, workflowName)
+        keySetStorage.removeFromSet(key, workflowId.id.toByteArray())
     }
 
-    private fun getTagMessageIdKey(tag: Tag, name: Name) = "name:$name|tag:$tag|messageId"
+    private fun getTagMessageIdKey(tag: WorkflowTag, workflowName: WorkflowName) = "workflow:$workflowName|tag:$tag|messageId"
 
-    private fun getTagSetIdsKey(tag: Tag, name: Name) = "name:$name|tag:$tag|setIds"
+    private fun getTagSetIdsKey(tag: WorkflowTag, workflowName: WorkflowName) = "workflow:$workflowName|tag:$tag|setIds"
 
+    /**
+     * Flush storage (testing purpose)
+     */
+    @TestOnly
     override fun flush() {
         keyValueStorage.flush()
         keySetStorage.flush()

@@ -26,13 +26,13 @@
 package io.infinitic.workflows.engine.output
 
 import io.infinitic.common.clients.transport.SendToClient
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 
 data class WorkflowEngineOutput(
     val sendEventsToClient: SendToClient,
-    val sendToTagEngine: SendToTagEngine,
+    val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit),
     val sendToWorkflowEngine: SendToWorkflowEngine
 )

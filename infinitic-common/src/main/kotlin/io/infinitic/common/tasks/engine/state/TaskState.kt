@@ -31,7 +31,6 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskId
@@ -41,6 +40,7 @@ import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -63,7 +63,7 @@ data class TaskState(
     var taskAttemptId: TaskAttemptId,
     var taskRetryIndex: TaskRetryIndex = TaskRetryIndex(0),
     var lastTaskError: TaskError? = null,
-    val tags: Set<Tag>,
+    val taskTags: Set<TaskTag>,
     val taskOptions: TaskOptions,
     val taskMeta: TaskMeta
 ) {

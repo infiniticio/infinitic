@@ -25,19 +25,19 @@
 
 package io.infinitic.common.proxies
 
-import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskTag
 import java.lang.reflect.Method
 
 class TaskProxyHandler<T : Any>(
     override val klass: Class<T>,
-    val tags: Set<Tag>?,
+    val taskTags: Set<TaskTag>?,
     val taskOptions: TaskOptions?,
     val taskMeta: TaskMeta?,
     var perTaskId: TaskId? = null,
-    var perTag: Tag? = null,
+    var perTag: TaskTag? = null,
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
 

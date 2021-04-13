@@ -33,14 +33,13 @@ import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
-import io.infinitic.common.tags.data.Tag
-import io.infinitic.common.tags.messages.RemoveTaskTag
-import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.data.plus
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
@@ -49,12 +48,13 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -77,7 +77,7 @@ private lateinit var taskStateStorage: TaskStateStorage
 
 private lateinit var taskState: CapturingSlot<TaskState>
 private lateinit var clientMessage: CapturingSlot<ClientMessage>
-private lateinit var tagEngineMessage: CapturingSlot<TagEngineMessage>
+private lateinit var tagEngineMessage: CapturingSlot<TaskTagEngineMessage>
 private lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
 private lateinit var taskEngineDelay: CapturingSlot<MillisDuration>
 private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
@@ -98,7 +98,7 @@ internal class TaskEngineTests : StringSpec({
         val stateIn = random<TaskState>(
             mapOf(
                 "taskStatus" to TaskStatus.RUNNING_OK,
-                "tags" to setOf(Tag("foo"), Tag("bar"))
+                "tags" to setOf(TaskTag("foo"), TaskTag("bar"))
             )
         )
         val msgIn = random<CancelTask>(
@@ -241,7 +241,7 @@ internal class TaskEngineTests : StringSpec({
             mapOf(
                 "clientWaiting" to mutableSetOf(ClientName("foo"), ClientName("bar")),
                 "taskStatus" to TaskStatus.RUNNING_OK,
-                "tags" to setOf(Tag("foo"), Tag("bar"))
+                "tags" to setOf(TaskTag("foo"), TaskTag("bar"))
             )
         )
         val msgIn = random<TaskAttemptCompleted>(
@@ -477,7 +477,7 @@ private fun mockSendToMetricsPerName(slot: CapturingSlot<MetricsPerNameMessage>)
     return mock
 }
 
-private fun mockSendToTagEngine(slots: CapturingSlot<TagEngineMessage>): SendToTagEngine {
+private fun mockSendToTagEngine(slots: CapturingSlot<TaskTagEngineMessage>): SendToTagEngine {
     val mock = mockk<SendToTagEngine>()
     coEvery { mock(capture(slots)) } just Runs
     return mock

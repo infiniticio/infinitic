@@ -27,12 +27,13 @@ package io.infinitic.workflows
 
 import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
-import io.infinitic.common.tags.data.Tag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import java.time.Duration
 import java.time.Instant
 
@@ -55,7 +56,7 @@ abstract class Workflow {
         meta: Map<String, ByteArray> = mapOf()
     ): T = TaskProxyHandler(
         klass = klass,
-        tags = tags.map { Tag(it) }.toSet(),
+        taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options,
         taskMeta = TaskMeta(meta)
     ) { context }.stub()
@@ -79,7 +80,7 @@ abstract class Workflow {
         meta: Map<String, ByteArray> = mapOf()
     ): T = WorkflowProxyHandler(
         klass = klass,
-        tags = tags.map { Tag(it) }.toSet(),
+        workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options,
         workflowMeta = WorkflowMeta(meta)
     ) { context }.stub()

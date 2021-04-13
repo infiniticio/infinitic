@@ -23,38 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.tags.workflows.storage
 
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.storage.Flushable
 import io.infinitic.common.workflows.data.workflows.WorkflowId
-import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import java.lang.reflect.Method
 
-class WorkflowProxyHandler<T : Any>(
-    override val klass: Class<T>,
-    val workflowTags: Set<WorkflowTag>?,
-    val workflowOptions: WorkflowOptions?,
-    val workflowMeta: WorkflowMeta?,
-    var perWorkflowId: WorkflowId? = null,
-    var perTag: WorkflowTag? = null,
-    private val dispatcherFn: () -> Dispatcher
-) : MethodProxyHandler<T>(klass) {
+/**
+ * TagStateStorage implementations are responsible for storing the different state objects used by the engine.
+ *
+ * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
+ * transformed before being stored. These details are left to the different implementations.
+ */
+interface WorkflowTagStorage : Flushable {
+    suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId?
 
-    init {
-        require(perWorkflowId == null || perTag == null)
-    }
+    suspend fun setLastMessageId(tag: WorkflowTag, workflowName: WorkflowName, messageId: MessageId)
 
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        val any = super.invoke(proxy, method, args)
+    suspend fun getWorkflowIds(tag: WorkflowTag, workflowName: WorkflowName): Set<WorkflowId>
 
-        if (method.name == "toString") return any
+    suspend fun addWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId)
 
-        return when (isSync) {
-            true -> dispatcherFn().dispatchAndWait(this)
-            false -> any
-        }
-    }
-
-    fun isNew() = perWorkflowId == null && perTag == null
+    suspend fun removeWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId)
 }

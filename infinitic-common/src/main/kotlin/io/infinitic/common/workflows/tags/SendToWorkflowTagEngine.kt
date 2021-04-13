@@ -23,8 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tags.transport
+package io.infinitic.common.workflows.tags
 
-import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 
-typealias SendToTagEngine = suspend (TagEngineMessage) -> Unit
+typealias SendToWorkflowTagEngine = suspend (WorkflowTagEngineMessage) -> Unit

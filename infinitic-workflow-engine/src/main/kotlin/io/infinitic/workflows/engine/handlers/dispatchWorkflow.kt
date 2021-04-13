@@ -53,7 +53,7 @@ suspend fun dispatchWorkflow(
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,
-        tags = message.tags,
+        workflowTags = message.workflowTags,
         workflowOptions = message.workflowOptions,
         workflowMeta = message.workflowMeta,
         methodRuns = mutableListOf(methodRun)

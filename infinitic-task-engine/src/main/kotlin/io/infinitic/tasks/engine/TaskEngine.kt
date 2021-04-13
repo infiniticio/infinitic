@@ -31,8 +31,6 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
-import io.infinitic.common.tags.messages.RemoveTaskTag
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskMeta
@@ -40,6 +38,7 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
@@ -50,11 +49,12 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.tasks.engine.state.TaskState
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
 import io.infinitic.tasks.engine.storage.LoggedTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import org.slf4j.Logger
@@ -65,7 +65,7 @@ import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskComple
 class TaskEngine(
     storage: TaskStateStorage,
     val sendToClient: SendToClient,
-    val sendToTagEngine: SendToTagEngine,
+    val sendToTaskTagEngine: SendToTaskTagEngine,
     val sendToTaskEngine: SendToTaskEngine,
     sendToWorkflowEngine: SendToWorkflowEngine,
     val sendToTaskExecutors: SendToTaskExecutors,
@@ -212,7 +212,7 @@ class TaskEngine(
             methodRunId = message.methodRunId,
             taskAttemptId = TaskAttemptId(),
             taskStatus = TaskStatus.RUNNING_OK,
-            tags = message.tags,
+            taskTags = message.taskTags,
             taskOptions = message.taskOptions,
             taskMeta = message.taskMeta
         )
@@ -339,11 +339,11 @@ class TaskEngine(
 
     private suspend fun terminate(state: TaskState) {
         // remove tags reference to this instance
-        state.tags.map {
-            sendToTagEngine(
+        state.taskTags.map {
+            sendToTaskTagEngine(
                 RemoveTaskTag(
-                    tag = it,
-                    name = state.taskName,
+                    taskTag = it,
+                    taskName = state.taskName,
                     taskId = state.taskId,
                 )
             )

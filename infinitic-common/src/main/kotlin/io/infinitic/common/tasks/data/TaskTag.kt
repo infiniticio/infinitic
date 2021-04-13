@@ -23,28 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tags.engine.storage
+package io.infinitic.common.tasks.data
 
-import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.Name
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.tags.data.Tag
-import java.util.UUID
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-/**
- * TagStateStorage implementations are responsible for storing the different state objects used by the engine.
- *
- * No assumptions are made on whether the storage should be persistent or not, nor how the data should be
- * transformed before being stored. These details are left to the different implementations.
- */
-interface TagStateStorage : Flushable {
-    suspend fun getLastMessageId(tag: Tag, name: Name): MessageId?
+@Serializable(with = TaskTagSerializer::class)
+data class TaskTag(val tag: String) {
+    override fun toString() = tag
+}
 
-    suspend fun setLastMessageId(tag: Tag, name: Name, messageId: MessageId)
-
-    suspend fun getIds(tag: Tag, name: Name): Set<UUID>
-
-    suspend fun addId(tag: Tag, name: Name, id: UUID)
-
-    suspend fun removeId(tag: Tag, name: Name, id: UUID)
+object TaskTagSerializer : KSerializer<TaskTag> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskTag", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TaskTag) { encoder.encodeString(value.tag) }
+    override fun deserialize(decoder: Decoder) = TaskTag(decoder.decodeString())
 }

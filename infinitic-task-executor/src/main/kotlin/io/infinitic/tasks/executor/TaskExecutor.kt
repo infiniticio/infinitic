@@ -31,10 +31,10 @@ import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
 import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.exceptions.ProcessingTimeout
