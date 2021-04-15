@@ -312,7 +312,6 @@ class InfiniticWorker(
         pulsarOutput: PulsarOutput
     ) {
         println("- task executor".padEnd(25) + ": (instances: ${task.concurrency})")
-        logger.info("InfiniticWorker - starting {} task executor for {}", task.concurrency, task.name)
         taskExecutorRegister.registerTask(task.name) { task.instance }
         startPulsarTaskExecutors(
             taskName,
@@ -333,7 +332,6 @@ class InfiniticWorker(
         pulsarOutput: PulsarOutput
     ) {
         println("- workflow executor".padEnd(25) + ": (instances: ${workflow.concurrency})")
-        logger.info("InfiniticWorker - starting {} workflow executors for {}", workflow.concurrency, workflow.name)
         taskExecutorRegister.registerWorkflow(workflow.name) { workflow.instance }
         startPulsarTaskExecutors(
             workflowName,
@@ -357,7 +355,6 @@ class InfiniticWorker(
                 ", storage: ${metrics.stateStorage}".padEnd(20) +
                 ", cache: ${metrics.stateCacheOrDefault})".padEnd(20)
         )
-        logger.info("InfiniticWorker - starting metrics engine for {}", taskName)
         startPulsarMetricsPerNameEngines(
             taskName,
             consumerName,

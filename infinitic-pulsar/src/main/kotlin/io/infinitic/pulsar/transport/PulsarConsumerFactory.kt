@@ -40,6 +40,7 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
+import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
 class PulsarConsumerFactory(
@@ -47,6 +48,7 @@ class PulsarConsumerFactory(
     private val pulsarTenant: String,
     private val pulsarNamespace: String
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     companion object {
         const val CLIENT_RESPONSE_SUBSCRIPTION = "client-response"
@@ -130,14 +132,19 @@ class PulsarConsumerFactory(
         subscriptionType: SubscriptionType,
         subscriptionName: String,
         earliest: Boolean = true
-    ): Consumer<T> = pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<T>()))
-        .topic(getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic))
-        .consumerName(consumerName)
-        .negativeAckRedeliveryDelay(30, TimeUnit.SECONDS)
-        .subscriptionName(subscriptionName)
-        .subscriptionType(subscriptionType)
-        .also {
-            if (earliest) it.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
-        }
-        .subscribe()
+    ): Consumer<T> {
+        val fullTopic = getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic)
+        logger.info("Topic $fullTopic: creating consumer $consumerName of type ${T::class}")
+
+        return pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<T>()))
+            .topic(fullTopic)
+            .consumerName(consumerName)
+            .negativeAckRedeliveryDelay(30, TimeUnit.SECONDS)
+            .subscriptionName(subscriptionName)
+            .subscriptionType(subscriptionType)
+            .also {
+                if (earliest) it.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+            }
+            .subscribe()
+    }
 }

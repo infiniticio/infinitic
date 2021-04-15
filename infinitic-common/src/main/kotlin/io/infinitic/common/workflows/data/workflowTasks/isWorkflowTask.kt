@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.workflowTasks
 
-interface WorkflowTask {
-    fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue
-}
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+
+fun TaskEngineMessage.isWorkflowTask() = this.taskName == TaskName(WorkflowTask::class.java.name)

@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.topics.TopicType
@@ -67,7 +67,7 @@ fun CoroutineScope.startPulsarWorkflowEngines(
             commandsOutputChannel = commandsOutputChannel,
             output.sendToClient(),
             output.sendToWorkflowTagEngine(TopicType.EVENTS),
-            sendToTaskEngine = { msg, after -> if (msg is WorkflowTask) workflowTaskEngine(msg, after) else taskEngine(msg, after) },
+            sendToTaskEngine = { msg, after -> if (msg.isWorkflowTask()) workflowTaskEngine(msg, after) else taskEngine(msg, after) },
             output.sendToWorkflowEngine(TopicType.EVENTS)
         )
 
