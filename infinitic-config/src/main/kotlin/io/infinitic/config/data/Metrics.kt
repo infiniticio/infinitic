@@ -29,18 +29,9 @@ import io.infinitic.cache.StateCache
 import io.infinitic.storage.StateStorage
 
 data class Metrics(
-    @JvmField var mode: Mode? = null,
-    @JvmField val concurrency: Int = 1,
     @JvmField var stateStorage: StateStorage? = null,
     @JvmField var stateCache: StateCache? = null
 ) {
-    val modeOrDefault: Mode
-        get() = mode ?: Mode.worker
-
     val stateCacheOrDefault: StateCache
         get() = stateCache ?: StateCache.none
-
-    init {
-        require(concurrency >= 0) { "consumers must be positive" }
-    }
 }

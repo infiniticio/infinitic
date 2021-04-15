@@ -29,6 +29,7 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskId
@@ -40,16 +41,18 @@ import io.infinitic.common.tasks.data.TaskRetrySequence
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class TaskExecutorMessage() {
+sealed class TaskExecutorMessage : Message {
     val messageId = MessageId()
+    abstract val taskId: TaskId
     abstract val taskName: TaskName
-    abstract val taskMeta: TaskMeta
+
+    override fun envelope() = TaskExecutorEnvelope.from(this)
 }
 
 @Serializable
 data class ExecuteTaskAttempt(
+    override val taskId: TaskId,
     override val taskName: TaskName,
-    val taskId: TaskId,
     val taskAttemptId: TaskAttemptId,
     val taskRetrySequence: TaskRetrySequence,
     val taskRetryIndex: TaskRetryIndex,
@@ -58,5 +61,5 @@ data class ExecuteTaskAttempt(
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val taskOptions: TaskOptions,
-    override val taskMeta: TaskMeta
+    val taskMeta: TaskMeta
 ) : TaskExecutorMessage()

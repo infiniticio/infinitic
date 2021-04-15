@@ -28,7 +28,6 @@ package io.infinitic.config
 import io.infinitic.cache.StateCache
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.config.data.Metrics
-import io.infinitic.config.data.Mode
 import io.infinitic.config.data.Pulsar
 import io.infinitic.config.data.TagEngine
 import io.infinitic.config.data.Task
@@ -46,11 +45,6 @@ data class WorkerConfig(
     @JvmField val name: String? = null,
 
     /*
-    Default running mode
-     */
-    @JvmField var mode: Mode = Mode.worker,
-
-    /*
     Default state storage
      */
     @JvmField var stateStorage: StateStorage? = null,
@@ -66,22 +60,22 @@ data class WorkerConfig(
     @JvmField val pulsar: Pulsar,
 
     /*
-    Infinitic workflow engine configuration
+    Default workflow engine configuration
      */
     @JvmField val workflowEngine: WorkflowEngine? = null,
 
     /*
-    Infinitic tag engine configuration
+    Default tag engine configuration
      */
     @JvmField val tagEngine: TagEngine? = null,
 
     /*
-    Infinitic task engine configuration
+    Default task engine configuration
      */
     @JvmField val taskEngine: TaskEngine? = null,
 
     /*
-    Infinitic metrics configuration
+    Default metrics configuration
      */
     @JvmField val metrics: Metrics? = null,
 
@@ -109,7 +103,6 @@ data class WorkerConfig(
     init {
         tagEngine?.let {
             // apply default, if not set
-            it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "tagEngine.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
@@ -117,7 +110,6 @@ data class WorkerConfig(
 
         taskEngine?.let {
             // apply default, if not set
-            it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "taskEngine.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
@@ -125,7 +117,6 @@ data class WorkerConfig(
 
         workflowEngine?.let {
             // apply default, if not set
-            it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "workflowEngine.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
@@ -133,7 +124,6 @@ data class WorkerConfig(
 
         metrics?.let {
             // apply default, if not set
-            it.mode = it.mode ?: mode
             it.stateStorage = it.stateStorage ?: stateStorage
             checkStateStorage(it.stateStorage, "metrics.stateStorage")
             it.stateCache = it.stateCache ?: stateCache
@@ -141,7 +131,10 @@ data class WorkerConfig(
 
         // apply default, if not set
         tasks.map {
-            it.mode = it.mode ?: mode
+            it.tagEngine = when (it.tagEngine) {
+                null -> tagEngine
+                else -> it.tagEngine!! merge tagEngine
+            }
             it.taskEngine = when (it.taskEngine) {
                 null -> taskEngine
                 else -> it.taskEngine!! merge taskEngine
@@ -149,7 +142,10 @@ data class WorkerConfig(
         }
 
         workflows.map {
-            it.mode = it.mode ?: mode
+            it.tagEngine = when (it.tagEngine) {
+                null -> tagEngine
+                else -> it.tagEngine!! merge tagEngine
+            }
             it.taskEngine = when (it.taskEngine) {
                 null -> taskEngine
                 else -> it.taskEngine!! merge taskEngine

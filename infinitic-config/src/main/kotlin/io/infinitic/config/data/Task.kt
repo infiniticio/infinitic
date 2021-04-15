@@ -30,22 +30,17 @@ import io.infinitic.tasks.Task as TaskInstance
 data class Task(
     @JvmField val name: String,
     @JvmField val `class`: String? = null,
-    @JvmField var mode: Mode? = null,
     @JvmField val concurrency: Int = 1,
-    @JvmField var taskEngine: TaskEngine? = null
+    @JvmField var tagEngine: TagEngine? = null,
+    @JvmField var taskEngine: TaskEngine? = null,
+    @JvmField var metrics: Metrics? = null
 ) {
     val instance: TaskInstance
         get() = Class.forName(`class`).getDeclaredConstructor().newInstance() as TaskInstance
 
-    val modeOrDefault: Mode
-        get() = mode ?: Mode.worker
-
     init {
-        require(name.isNotEmpty()) { "name can NOT be empty" }
-        require(`class` != null || taskEngine != null) {
-            "executor and engine not defined for $name, " +
-                "you should have at least \"class\" or \"taskEngine\" defined"
-        }
+        require(name.isNotEmpty()) { "name can not be empty" }
+
         `class`?.let {
             require(`class`.isNotEmpty()) { "class empty for task $name" }
 
@@ -56,7 +51,7 @@ data class Task(
                 "class \"$it\" is not a task as it does not extend ${TaskInstance::class.java.name}"
             }
             require(try { instance; true } catch (e: Exception) { false }) {
-                "class \"$it\" can not be instantiated using newInstance(). " +
+                "class \"$it\" can not be instantiated using .getDeclaredConstructor().newInstance(). " +
                     "This class must be public and have an empty constructor"
             }
 

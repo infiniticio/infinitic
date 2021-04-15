@@ -28,6 +28,7 @@ package io.infinitic.common.workflows.tags.messages
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.messages.Message
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelEventType
@@ -38,10 +39,12 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class WorkflowTagEngineMessage {
+sealed class WorkflowTagEngineMessage : Message {
     val messageId = MessageId()
     abstract val workflowTag: WorkflowTag
     abstract val workflowName: WorkflowName
+
+    override fun envelope() = WorkflowTagEngineEnvelope.from(this)
 }
 
 @Serializable

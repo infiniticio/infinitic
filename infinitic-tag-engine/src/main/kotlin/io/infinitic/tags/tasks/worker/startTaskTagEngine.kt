@@ -44,7 +44,7 @@ private val logger: Logger
 
 typealias TaskTagEngineMessageToProcess = MessageToProcess<TaskTagEngineMessage>
 
-private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Throwable) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message,
     e
@@ -70,7 +70,7 @@ fun <T : TaskTagEngineMessageToProcess> CoroutineScope.startTaskTagEngine(
             eventsInputChannel.onReceive {
                 try {
                     it.returnValue = tagEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {
@@ -80,7 +80,7 @@ fun <T : TaskTagEngineMessageToProcess> CoroutineScope.startTaskTagEngine(
             commandsInputChannel.onReceive {
                 try {
                     it.returnValue = tagEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {

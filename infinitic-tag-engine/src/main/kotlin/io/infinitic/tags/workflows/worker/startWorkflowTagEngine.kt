@@ -44,7 +44,7 @@ private val logger: Logger
 
 typealias WorkflowTagEngineMessageToProcess = MessageToProcess<WorkflowTagEngineMessage>
 
-private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Throwable) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message,
     e
@@ -70,7 +70,7 @@ fun <T : WorkflowTagEngineMessageToProcess> CoroutineScope.startWorkflowTagEngin
             eventsInputChannel.onReceive {
                 try {
                     it.returnValue = tagEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {
@@ -80,7 +80,7 @@ fun <T : WorkflowTagEngineMessageToProcess> CoroutineScope.startWorkflowTagEngin
             commandsInputChannel.onReceive {
                 try {
                     it.returnValue = tagEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {

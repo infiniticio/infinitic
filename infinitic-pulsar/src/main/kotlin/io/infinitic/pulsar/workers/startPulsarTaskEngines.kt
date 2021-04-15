@@ -25,7 +25,10 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.data.Name
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
+import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.taskEngineTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -37,6 +40,7 @@ import kotlinx.coroutines.channels.Channel
 typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMessage>
 
 fun CoroutineScope.startPulsarTaskEngines(
+    name: Name,
     consumerName: String,
     concurrency: Int,
     storage: TaskStateStorage,
@@ -57,17 +61,24 @@ fun CoroutineScope.startPulsarTaskEngines(
             eventsOutputChannel = eventsOutputChannel,
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
-            output.sendEventsToClient,
-            output.sendEventsToTagEngine,
-            output.sendEventsToTaskEngine,
-            output.sendEventsToWorkflowEngine,
-            output.sendToTaskExecutors,
-            output.sendToMetricsPerName
+            output.sendToClient(),
+            output.sendToTaskTagEngine(TopicType.EVENTS),
+            output.sendToTaskEngine(TopicType.EVENTS, name),
+            output.sendToWorkflowEngine(TopicType.EVENTS),
+            output.sendToTaskExecutors(name),
+            output.sendToMetricsPerName()
         )
 
         // Pulsar consumers
-        val eventsConsumer = consumerFactory.newTaskEngineEventsConsumer(consumerName, it)
-        val commandsConsumer = consumerFactory.newTaskEngineCommandsConsumer(consumerName, it)
+        val eventsConsumer = consumerFactory.newTaskEngineConsumer(
+            consumerName = "$consumerName-$it",
+            topic = taskEngineTopic(TopicType.EVENTS, name)
+        )
+
+        val commandsConsumer = consumerFactory.newTaskEngineConsumer(
+            consumerName = "$consumerName-$it",
+            topic = taskEngineTopic(TopicType.COMMANDS, name)
+        )
 
         // coroutine pulling pulsar events messages
         pullMessages(eventsConsumer, eventsInputChannel)

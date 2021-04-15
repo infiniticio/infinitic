@@ -28,15 +28,18 @@ package io.infinitic.common.clients.messages
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class ClientMessage() {
+sealed class ClientMessage : Message {
     val messageId: MessageId = MessageId()
     abstract val clientName: ClientName
+
+    override fun envelope() = ClientEnvelope.from(this)
 }
 
 @Serializable

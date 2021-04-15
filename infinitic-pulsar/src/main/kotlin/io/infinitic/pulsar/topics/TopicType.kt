@@ -25,6 +25,8 @@
 
 package io.infinitic.pulsar.topics
 
-object MetricsGlobalTopic {
-    const val name = "metrics-global"
+enum class TopicType {
+    COMMANDS,
+    EVENTS,
+    DEAD_LETTERS
 }

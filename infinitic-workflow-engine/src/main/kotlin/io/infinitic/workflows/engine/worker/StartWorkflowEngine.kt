@@ -47,7 +47,7 @@ private val logger: Logger
 
 typealias WorkflowEngineMessageToProcess = MessageToProcess<WorkflowEngineMessage>
 
-private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwable) = logger.error(
     "workflowId {} - exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message.workflowId,
     messageToProcess.message,
@@ -80,7 +80,7 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
             eventsInputChannel.onReceive {
                 try {
                     it.returnValue = workflowEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {
@@ -90,7 +90,7 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
             commandsInputChannel.onReceive {
                 try {
                     it.returnValue = workflowEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {

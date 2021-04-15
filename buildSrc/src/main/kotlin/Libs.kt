@@ -33,7 +33,6 @@ object Libs {
 
     object Kotlin {
         const val reflect = "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
-        const val stdlib = "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     }
 
     object Coroutines {

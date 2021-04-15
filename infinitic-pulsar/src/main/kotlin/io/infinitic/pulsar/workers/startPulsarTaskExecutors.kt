@@ -25,23 +25,27 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.data.Name
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.taskExecutorTopic
+import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import org.apache.pulsar.client.api.Consumer
 
 typealias PulsarTaskExecutorMessageToProcess = PulsarMessageToProcess<TaskExecutorMessage>
 
 fun CoroutineScope.startPulsarTaskExecutors(
+    name: Name,
     concurrency: Int,
+    consumerName: String,
     taskExecutorRegister: TaskExecutorRegister,
-    consumer: Consumer<TaskExecutorEnvelope>,
-    sendToTaskEngine: SendToTaskEngine
+    consumerFactory: PulsarConsumerFactory,
+    output: PulsarOutput
 ) {
     val inputChannel = Channel<PulsarTaskExecutorMessageToProcess>()
     val outputChannel = Channel<PulsarTaskExecutorMessageToProcess>()
@@ -53,9 +57,15 @@ fun CoroutineScope.startPulsarTaskExecutors(
             taskExecutorRegister,
             inputChannel,
             outputChannel,
-            sendToTaskEngine
+            output.sendToTaskEngine(TopicType.EVENTS, name)
         )
     }
+
+    // Pulsar consumer
+    val consumer = consumerFactory.newTaskExecutorConsumer(
+        consumerName = consumerName,
+        topic = taskExecutorTopic(name)
+    )
 
     // coroutine pulling pulsar commands messages
     pullMessages(consumer, inputChannel)

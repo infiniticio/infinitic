@@ -168,6 +168,7 @@ class TaskEngine(
             sendToWorkflowEngine(
                 TaskCompletedInWorkflow(
                     workflowId = it,
+                    workflowName = newState.workflowName!!,
                     methodRunId = newState.methodRunId!!,
                     taskId = newState.taskId,
                     taskName = newState.taskName,
@@ -311,6 +312,7 @@ class TaskEngine(
             sendToWorkflowEngine(
                 TaskCompletedInWorkflow(
                     workflowId = it,
+                    workflowName = newState.workflowName!!,
                     methodRunId = newState.methodRunId!!,
                     taskId = newState.taskId,
                     taskName = newState.taskName,

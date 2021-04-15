@@ -143,6 +143,7 @@ suspend fun workflowTaskCompleted(
             workflowEngineOutput.sendToWorkflowEngine(
                 ChildWorkflowCompleted(
                     workflowId = it,
+                    workflowName = state.workflowName,
                     methodRunId = methodRun.parentMethodRunId!!,
                     childWorkflowId = state.workflowId,
                     childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!
@@ -260,6 +261,7 @@ private suspend fun startDurationTimer(
 
     val msg = TimerCompleted(
         workflowId = state.workflowId,
+        workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
         timerId = TimerId(newCommand.commandId.id)
     )
@@ -281,6 +283,7 @@ private suspend fun startInstantTimer(
 
     val msg = TimerCompleted(
         workflowId = state.workflowId,
+        workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
         timerId = TimerId(newCommand.commandId.id)
     )

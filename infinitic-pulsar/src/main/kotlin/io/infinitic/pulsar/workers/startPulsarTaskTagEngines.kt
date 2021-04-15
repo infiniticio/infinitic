@@ -25,46 +25,54 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.taskTagEngineTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
-import io.infinitic.tags.engine.storage.TagStateStorage
-import io.infinitic.tags.engine.worker.startTagEngine
+import io.infinitic.tags.tasks.storage.TaskTagStorage
+import io.infinitic.tags.tasks.worker.startTaskTagEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 
-typealias PulsarTagEngineMessageToProcess = PulsarMessageToProcess<TagEngineMessage>
+typealias PulsarTaskTagEngineMessageToProcess = PulsarMessageToProcess<TaskTagEngineMessage>
 
-fun CoroutineScope.startPulsarTagEngines(
+fun CoroutineScope.startPulsarTaskTagEngines(
+    taskName: TaskName,
     consumerName: String,
     concurrency: Int,
-    storage: TagStateStorage,
+    storage: TaskTagStorage,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {
     repeat(concurrency) {
 
-        val eventsInputChannel = Channel<PulsarTagEngineMessageToProcess>()
-        val eventsOutputChannel = Channel<PulsarTagEngineMessageToProcess>()
-        val commandsInputChannel = Channel<PulsarTagEngineMessageToProcess>()
-        val commandsOutputChannel = Channel<PulsarTagEngineMessageToProcess>()
+        val eventsInputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
+        val eventsOutputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
+        val commandsInputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
+        val commandsOutputChannel = Channel<PulsarTaskTagEngineMessageToProcess>()
 
-        startTagEngine(
-            "tag-engine-$it",
+        startTaskTagEngine(
+            "task-tag-engine-$it",
             storage,
             eventsInputChannel = eventsInputChannel,
             eventsOutputChannel = eventsOutputChannel,
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
-            output.sendEventsToClient,
-            output.sendCommandsToTaskEngine,
-            output.sendCommandsToWorkflowEngine
+            output.sendToTaskEngine(TopicType.COMMANDS, taskName)
         )
 
         // Pulsar consumers
-        val eventsConsumer = consumerFactory.newTagEngineEventsConsumer(consumerName, it)
-        val commandsConsumer = consumerFactory.newTagEngineCommandsConsumer(consumerName, it)
+        val eventsConsumer = consumerFactory.newTaskTagEngineConsumer(
+            consumerName = "$consumerName-$it",
+            topic = taskTagEngineTopic(TopicType.EVENTS, taskName)
+        )
+        val commandsConsumer = consumerFactory.newTaskTagEngineConsumer(
+            consumerName = "$consumerName-$it",
+            topic = taskTagEngineTopic(TopicType.COMMANDS, taskName)
+        )
 
         // coroutine pulling pulsar events messages
         pullMessages(eventsConsumer, eventsInputChannel)

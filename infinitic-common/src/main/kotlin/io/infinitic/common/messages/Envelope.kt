@@ -26,6 +26,5 @@
 package io.infinitic.common.messages
 
 interface Envelope<T> {
-
     fun message(): T
 }

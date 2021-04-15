@@ -30,13 +30,10 @@ import io.infinitic.config.merge.Mergeable
 import io.infinitic.storage.StateStorage
 
 data class WorkflowEngine(
-    @JvmField var mode: Mode? = null,
     @JvmField val concurrency: Int = 1,
     @JvmField var stateStorage: StateStorage? = null,
     @JvmField var stateCache: StateCache? = null
 ) : Mergeable {
-    val modeOrDefault: Mode
-        get() = mode ?: Mode.worker
 
     val stateCacheOrDefault: StateCache
         get() = stateCache ?: StateCache.none

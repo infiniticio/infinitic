@@ -32,6 +32,8 @@ import io.infinitic.config.data.Transport
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.inMemory.startInMemory
+import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.clientTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startClientResponseWorker
@@ -62,14 +64,15 @@ class InfiniticClient private constructor(
 
             val pulsarOutputs = PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName)
             infiniticClient.setOutput(
-                pulsarOutputs.sendCommandsToTagEngine,
-                pulsarOutputs.sendCommandsToTaskEngine,
-                pulsarOutputs.sendCommandsToWorkflowEngine
+                sendToTaskTagEngine = pulsarOutputs.sendToTaskTagEngine(TopicType.COMMANDS),
+                sendToTaskEngine = pulsarOutputs.sendToTaskEngine(TopicType.COMMANDS),
+                sendToWorkflowTagEngine = pulsarOutputs.sendToWorkflowTagEngine(TopicType.COMMANDS),
+                sendToWorkflowEngine = pulsarOutputs.sendToWorkflowEngine(TopicType.COMMANDS)
             )
             val job = with(CoroutineScope(Dispatchers.IO)) {
                 val clientResponseConsumer =
                     PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
-                        .newClientResponseConsumer(clientName)
+                        .newClientResponseConsumer(clientName, clientTopic(ClientName(clientName)))
 
                 startClientResponseWorker(infiniticClient, clientResponseConsumer)
             }

@@ -30,6 +30,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
@@ -38,10 +39,12 @@ import io.infinitic.common.tasks.data.TaskTag
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class TaskTagEngineMessage {
+sealed class TaskTagEngineMessage : Message {
     val messageId = MessageId()
     abstract val taskTag: TaskTag
     abstract val taskName: TaskName
+
+    override fun envelope() = TaskTagEngineEnvelope.from(this)
 }
 
 @Serializable

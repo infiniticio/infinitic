@@ -23,9 +23,8 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.config.data
+package io.infinitic.common.messages
 
-@Suppress("EnumEntryName")
-enum class Mode {
-    worker
+interface Message {
+    fun envelope(): Envelope<out Message>
 }

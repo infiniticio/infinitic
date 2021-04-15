@@ -26,6 +26,7 @@
 package io.infinitic.pulsar.messageBuilders
 
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.messages.Envelope
 import io.infinitic.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Schema
@@ -37,7 +38,7 @@ interface PulsarMessageBuilder {
     fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O>
 }
 
-suspend inline fun <reified T : Any> PulsarMessageBuilder.sendPulsarMessage(
+suspend inline fun <reified T : Envelope<*>> PulsarMessageBuilder.sendPulsarMessage(
     topic: String,
     msg: T,
     key: String?,

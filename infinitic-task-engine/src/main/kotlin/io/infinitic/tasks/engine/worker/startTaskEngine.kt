@@ -49,7 +49,7 @@ private val logger: Logger
 
 typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 
-private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable) = logger.error(
     "taskId {} - exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message.taskId,
     messageToProcess.message,
@@ -86,7 +86,7 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
             eventsInputChannel.onReceive {
                 try {
                     it.returnValue = taskEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {
@@ -96,7 +96,7 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
             commandsInputChannel.onReceive {
                 try {
                     it.returnValue = taskEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {

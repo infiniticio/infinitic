@@ -30,6 +30,7 @@ import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
+import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
@@ -63,12 +64,12 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
                     context.keyValueStorage()
                 )
             ),
-            output.sendEventsToClient,
-            output.sendEventsToTagEngine,
-            output.sendEventsToTaskEngine,
-            output.sendEventsToWorkflowEngine,
-            output.sendToTaskExecutors,
-            output.sendToMetricsPerName
+            output.sendToClient(),
+            output.sendToTaskTagEngine(TopicType.EVENTS),
+            output.sendToTaskEngine(TopicType.EVENTS),
+            output.sendToWorkflowEngine(TopicType.EVENTS),
+            output.sendToTaskExecutors(),
+            output.sendToMetricsPerName()
         )
     }
 }

@@ -25,52 +25,38 @@
 
 package io.infinitic.pulsar.transport
 
-import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
+import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
-import io.infinitic.common.tags.messages.TagEngineEnvelope
-import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tags.transport.SendToTagEngine
-import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
-import io.infinitic.pulsar.topics.ClientResponseTopic
-import io.infinitic.pulsar.topics.MetricsGlobalDeadLettersTopic
-import io.infinitic.pulsar.topics.MetricsGlobalTopic
-import io.infinitic.pulsar.topics.MetricsPerNameDeadLettersTopic
-import io.infinitic.pulsar.topics.MetricsPerNameTopic
-import io.infinitic.pulsar.topics.TagEngineCommandsTopic
-import io.infinitic.pulsar.topics.TagEngineDeadLettersTopic
-import io.infinitic.pulsar.topics.TagEngineEventsTopic
-import io.infinitic.pulsar.topics.TaskEngineCommandsTopic
-import io.infinitic.pulsar.topics.TaskEngineDeadLettersTopic
-import io.infinitic.pulsar.topics.TaskEngineEventsTopic
-import io.infinitic.pulsar.topics.TaskExecutorDeadLettersTopic
-import io.infinitic.pulsar.topics.TaskExecutorTopic
-import io.infinitic.pulsar.topics.WorkflowEngineCommandsTopic
-import io.infinitic.pulsar.topics.WorkflowEngineDeadLettersTopic
-import io.infinitic.pulsar.topics.WorkflowEngineEventsTopic
-import io.infinitic.pulsar.topics.WorkflowExecutorDeadLettersTopic
-import io.infinitic.pulsar.topics.WorkflowExecutorTopic
+import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.clientTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
+import io.infinitic.pulsar.topics.globalMetricsTopic
+import io.infinitic.pulsar.topics.taskEngineTopic
+import io.infinitic.pulsar.topics.taskExecutorTopic
+import io.infinitic.pulsar.topics.taskMetricsTopic
+import io.infinitic.pulsar.topics.taskTagEngineTopic
+import io.infinitic.pulsar.topics.workflowEngineTopic
+import io.infinitic.pulsar.topics.workflowTagEngineTopic
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
@@ -109,180 +95,94 @@ class PulsarOutput(
         )
     }
 
-    val sendEventsToClient: SendToClient = { message: ClientMessage ->
-        logger.debug("sendEventsToClient {}", message)
-        val clientName = "${message.clientName}"
+    fun sendToClient(): SendToClient = { message: ClientMessage ->
+        val topic = clientTopic(message.clientName)
+        logger.debug("sendToClient {} (topic: {})", message, topic)
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, ClientResponseTopic.name(clientName)),
-            ClientEnvelope.from(message),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic),
+            message.envelope(),
             null,
             MillisDuration(0)
         )
     }
 
-    val sendCommandsToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
-        logger.debug("sendCommandsToWorkflowEngine {}", message)
+    fun sendToTaskTagEngine(topicType: TopicType): SendToTaskTagEngine = { message: TaskTagEngineMessage ->
+        val topic = taskTagEngineTopic(topicType, message.taskName)
+        logger.debug("sendToTaskTagEngine {} (topic: {})", message, topic)
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineCommandsTopic.name),
-            WorkflowEngineEnvelope.from(message),
-            "${message.workflowId}",
-            after
-        )
-    }
-
-    val sendEventsToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
-        logger.debug("sendEventsToWorkflowEngine {}", message)
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineEventsTopic.name),
-            WorkflowEngineEnvelope.from(message),
-            "${message.workflowId}",
-            after
-        )
-    }
-
-    val sendCommandsToTagEngine: SendToTagEngine = { message: TagEngineMessage ->
-        logger.debug("sendCommandsToTagEngine {}", message)
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineCommandsTopic.name),
-            TagEngineEnvelope.from(message),
-            "${message.tag}",
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic),
+            message.envelope(),
+            "${message.taskTag}",
             MillisDuration(0)
         )
     }
 
-    val sendEventsToTagEngine: SendToTagEngine = { message: TagEngineMessage ->
-        logger.debug("sendEventsToTagEngine {}", message)
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineEventsTopic.name),
-            TagEngineEnvelope.from(message),
-            "${message.tag}",
-            MillisDuration(0)
-        )
-    }
-
-    val sendCommandsToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
-        logger.debug("sendCommandsToTaskEngine {}", message)
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineCommandsTopic.name),
-            TaskEngineEnvelope.from(message),
-            "${message.taskId}",
-            after
-        )
-    }
-
-    val sendEventsToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
-        logger.debug("sendEventsToTaskEngine {}", message)
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineEventsTopic.name),
-            TaskEngineEnvelope.from(message),
-            "${message.taskId}",
-            after
-        )
-    }
-
-    val sendToTaskExecutors: SendToTaskExecutors = { message: TaskExecutorMessage ->
-        logger.debug("sendToTaskExecutors {}", message)
-        val taskName = "${message.taskName}"
-        val isWorkflowTask = (taskName == WorkflowTask::class.java.name)
-        val (key, topicName) = if (isWorkflowTask) {
-            val workflowName = String(message.taskMeta[WorkflowTask.META_WORKFLOW_NAME]!!)
-            listOf(workflowName, WorkflowExecutorTopic.name(workflowName))
-        } else {
-            listOf(taskName, TaskExecutorTopic.name(taskName))
+    fun sendToTaskEngine(topicType: TopicType, name: Name? = null): SendToTaskEngine =
+        { message: TaskEngineMessage, after: MillisDuration ->
+            val topic = taskEngineTopic(topicType, name ?: message.taskName)
+            logger.debug("sendToTaskEngine {} (topic: {})", message, topic)
+            pulsarMessageBuilder.sendPulsarMessage(
+                getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic),
+                message.envelope(),
+                "${message.taskId}",
+                after
+            )
         }
 
+    fun sendToWorkflowTagEngine(topicType: TopicType): SendToWorkflowTagEngine =
+        { message: WorkflowTagEngineMessage ->
+            val topic = workflowTagEngineTopic(topicType, message.workflowName)
+            logger.debug("sendToWorkflowTagEngine {} (topic: {})", message, topic)
+            pulsarMessageBuilder.sendPulsarMessage(
+                getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic),
+                message.envelope(),
+                "${message.workflowTag}",
+                MillisDuration(0)
+            )
+        }
+
+    fun sendToWorkflowEngine(topicType: TopicType): SendToWorkflowEngine =
+        { message: WorkflowEngineMessage, after: MillisDuration ->
+            val topic = workflowEngineTopic(topicType, message.workflowName)
+            logger.debug("sendToWorkflowEngine {} (topic: {})", message, topic)
+            pulsarMessageBuilder.sendPulsarMessage(
+                getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic),
+                message.envelope(),
+                "${message.workflowId}",
+                after
+            )
+        }
+
+    fun sendToTaskExecutors(name: Name? = null): SendToTaskExecutors = { message: TaskExecutorMessage ->
+        val topic = taskExecutorTopic(name ?: message.taskName)
+        logger.debug("sendToTaskExecutors {} (topic: {})", message, topic)
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topicName),
-            TaskExecutorEnvelope.from(message),
-            key,
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic),
+            message.envelope(),
+            "${message.taskId}",
             MillisDuration(0)
         )
     }
 
-    val sendToMetricsPerName: SendToMetricsPerName = { message: MetricsPerNameMessage ->
-        logger.debug("sendToMonitoringPerName {}", message)
+    fun sendToMetricsPerName(): SendToMetricsPerName = { message: MetricsPerNameMessage ->
+        val topic = taskMetricsTopic(message.taskName)
+        logger.debug("sendToMetricsPerName {} (topic: {})", message, topic)
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsPerNameTopic.name),
-            MetricsPerNameEnvelope.from(message),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic),
+            message.envelope(),
             "${message.taskName}",
             MillisDuration(0)
         )
     }
 
-    val sendToMetricsGlobal: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
-        logger.debug("sendToMonitoringGlobal {}", message)
+    fun sendToMetricsGlobal(): SendToMetricsGlobal = { message: MetricsGlobalMessage ->
+        val topic = globalMetricsTopic()
+        logger.debug("sendToMetricsGlobal {} (topic: {})", message, topic)
         pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsGlobalTopic.name),
-            MetricsGlobalEnvelope.from(message),
+            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic),
+            message.envelope(),
             null,
             MillisDuration(0)
         )
-    }
-
-    val sendToTagEngineDeadLetters: SendToTagEngine = { message: TagEngineMessage ->
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TagEngineDeadLettersTopic.name),
-            TagEngineEnvelope.from(message),
-            "${message.tag}",
-            MillisDuration(0)
-        )
-        logger.debug("taskId {} - sendToTagEngineDeadLetters {}", message.tag, message)
-    }
-
-    val sendToTaskEngineDeadLetters: SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, TaskEngineDeadLettersTopic.name),
-            TaskEngineEnvelope.from(message),
-            "${message.taskId}",
-            after
-        )
-        logger.debug("taskId {} - sendToTaskEngineDeadLetters {}", message.taskId, message)
-    }
-
-    val sendToWorkflowEngineDeadLetters: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, WorkflowEngineDeadLettersTopic.name),
-            WorkflowEngineEnvelope.from(message),
-            "${message.workflowId}",
-            after
-        )
-        logger.debug("workflowId {} - sendToWorkflowEngineDeadLetters {}", message.workflowId, message)
-    }
-
-    val sendToMetricsPerNameDeadLetters: SendToMetricsPerName = { message: MetricsPerNameMessage ->
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsPerNameDeadLettersTopic.name),
-            MetricsPerNameEnvelope.from(message),
-            "${message.taskName}",
-            MillisDuration(0)
-        )
-        logger.debug("taskName {} - sendToMonitoringPerNameDeadLetters {}", message.taskName, message)
-    }
-
-    val sendToMetricsGlobalDeadLetters: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, MetricsGlobalDeadLettersTopic.name),
-            MetricsGlobalEnvelope.from(message),
-            null,
-            MillisDuration(0)
-        )
-        logger.debug("sendToMonitoringGlobalDeadLetters {}", message)
-    }
-
-    val sendToTaskExecutorDeadLetters: SendToTaskExecutors = { message: TaskExecutorMessage ->
-        val taskName = "${message.taskName}"
-        val topicName = if (taskName == WorkflowTask::class.java.name) {
-            WorkflowExecutorDeadLettersTopic.name(String(message.taskMeta[WorkflowTask.META_WORKFLOW_NAME]!!))
-        } else {
-            TaskExecutorDeadLettersTopic.name(taskName)
-        }
-
-        pulsarMessageBuilder.sendPulsarMessage(
-            getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topicName),
-            message,
-            null,
-            MillisDuration(0)
-        )
-        logger.debug("taskName {} - sendToTaskExecutorDeadLetters {}", message.taskName, message)
     }
 }

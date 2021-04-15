@@ -30,6 +30,7 @@ import io.infinitic.cache.caffeine.CaffeineKeyValueCache
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.functions.storage.keyValueStorage
+import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
@@ -63,10 +64,10 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
                     context.keyValueStorage()
                 )
             ),
-            output.sendEventsToClient,
-            output.sendEventsToTagEngine,
-            output.sendCommandsToTaskEngine,
-            output.sendEventsToWorkflowEngine
+            output.sendToClient(),
+            output.sendToWorkflowTagEngine(TopicType.EVENTS),
+            output.sendToTaskEngine(TopicType.COMMANDS),
+            output.sendToWorkflowEngine(TopicType.EVENTS)
         )
     }
 }

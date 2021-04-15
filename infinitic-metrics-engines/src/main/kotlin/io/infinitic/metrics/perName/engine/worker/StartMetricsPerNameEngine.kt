@@ -43,7 +43,7 @@ private val logger: Logger
 
 typealias MetricsPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
-private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwable) = logger.error(
     "taskName {} - exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message.taskName,
     messageToProcess.message,
@@ -66,7 +66,7 @@ fun <T : MetricsPerNameMessageToProcess> CoroutineScope.startMetricsPerNameEngin
     for (messageToProcess in inputChannel) {
         try {
             messageToProcess.returnValue = metricsPerNameEngine.handle(messageToProcess.message)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             messageToProcess.throwable = e
             logError(messageToProcess, e)
         } finally {
