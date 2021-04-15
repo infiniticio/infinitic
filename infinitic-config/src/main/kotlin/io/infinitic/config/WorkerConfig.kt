@@ -139,6 +139,10 @@ data class WorkerConfig(
                 null -> taskEngine
                 else -> it.taskEngine!! merge taskEngine
             }
+            it.metrics = when (it.metrics) {
+                null -> metrics
+                else -> it.metrics!! merge metrics
+            }
         }
 
         workflows.map {
