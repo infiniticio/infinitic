@@ -25,16 +25,29 @@
 
 package io.infinitic.pulsar.transport
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientEnvelope
+import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
 import io.infinitic.pulsar.schemas.schemaDefinition
+import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.clientTopic
 import io.infinitic.pulsar.topics.getPersistentTopicFullName
+import io.infinitic.pulsar.topics.globalMetricsTopic
+import io.infinitic.pulsar.topics.taskEngineTopic
+import io.infinitic.pulsar.topics.taskExecutorTopic
+import io.infinitic.pulsar.topics.taskMetricsTopic
+import io.infinitic.pulsar.topics.taskTagEngineTopic
+import io.infinitic.pulsar.topics.workflowEngineTopic
+import io.infinitic.pulsar.topics.tagEngineTopic
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
@@ -54,74 +67,82 @@ class PulsarConsumerFactory(
         const val CLIENT_RESPONSE_SUBSCRIPTION = "client-response"
         const val TASK_TAG_ENGINE_SUBSCRIPTION = "task-tag-engine"
         const val TASK_ENGINE_SUBSCRIPTION = "task-engine"
+        const val WORKFLOW_TASK_ENGINE_SUBSCRIPTION = "workflow-task-engine"
         const val WORKFLOW_TAG_ENGINE_SUBSCRIPTION = "workflow-tag-engine"
         const val WORKFLOW_ENGINE_SUBSCRIPTION = "workflow-engine"
         const val TASK_EXECUTOR_SUBSCRIPTION = "task-executor"
+        const val WORKFLOW_EXECUTOR_SUBSCRIPTION = "workflow-executor"
         const val METRICS_PER_NAME_SUBSCRIPTION = "metrics-per-name"
         const val METRICS_GLOBAL_SUBSCRIPTION = "metrics-global"
     }
 
-    fun newClientResponseConsumer(consumerName: String, topic: String) =
+    fun newClientResponseConsumer(consumerName: String, clientName: ClientName) =
         newConsumer<ClientEnvelope>(
             consumerName = consumerName,
-            topic = topic,
+            topic = clientTopic(clientName),
             subscriptionType = SubscriptionType.Exclusive,
             subscriptionName = CLIENT_RESPONSE_SUBSCRIPTION,
             earliest = false
         )
 
-    fun newTaskTagEngineConsumer(consumerName: String, topic: String) =
+    fun newTaskTagEngineConsumer(consumerName: String, topicType: TopicType, taskName: TaskName) =
         newConsumer<TaskTagEngineEnvelope>(
             consumerName = consumerName,
-            topic = topic,
+            topic = taskTagEngineTopic(topicType, taskName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = TASK_TAG_ENGINE_SUBSCRIPTION
         )
 
-    fun newTaskEngineConsumer(consumerName: String, topic: String) =
+    fun newTaskEngineConsumer(consumerName: String, topicType: TopicType, name: Name) =
         newConsumer<TaskEngineEnvelope>(
             consumerName = consumerName,
-            topic = topic,
+            topic = taskEngineTopic(topicType, name),
             subscriptionType = SubscriptionType.Key_Shared,
-            subscriptionName = TASK_ENGINE_SUBSCRIPTION
+            subscriptionName = when (isWorkflow(name)) {
+                true -> WORKFLOW_TASK_ENGINE_SUBSCRIPTION
+                false -> TASK_ENGINE_SUBSCRIPTION
+            }
         )
 
-    fun newWorkflowTagEngineConsumer(consumerName: String, topic: String) =
+    fun newWorkflowTagEngineConsumer(consumerName: String, topicType: TopicType, workflowName: WorkflowName) =
         newConsumer<WorkflowTagEngineEnvelope>(
             consumerName = consumerName,
-            topic = topic,
+            topic = tagEngineTopic(topicType, workflowName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = WORKFLOW_TAG_ENGINE_SUBSCRIPTION
         )
 
-    fun newWorkflowEngineConsumer(consumerName: String, topic: String) =
+    fun newWorkflowEngineConsumer(consumerName: String, topicType: TopicType, workflowName: WorkflowName) =
         newConsumer<WorkflowEngineEnvelope>(
             consumerName = consumerName,
-            topic = topic,
+            topic = workflowEngineTopic(topicType, workflowName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = WORKFLOW_ENGINE_SUBSCRIPTION
         )
 
-    fun newTaskExecutorConsumer(consumerName: String, topic: String) =
+    fun newExecutorConsumer(consumerName: String, name: Name) =
         newConsumer<TaskExecutorEnvelope>(
             consumerName = consumerName,
-            topic = topic,
+            topic = taskExecutorTopic(name),
             subscriptionType = SubscriptionType.Shared,
-            subscriptionName = TASK_EXECUTOR_SUBSCRIPTION
+            subscriptionName = when (isWorkflow(name)) {
+                true -> WORKFLOW_EXECUTOR_SUBSCRIPTION
+                false -> TASK_EXECUTOR_SUBSCRIPTION
+            }
         )
 
-    fun newMetricsPerNameEngineConsumer(consumerName: String, topic: String) =
+    fun newMetricsPerNameEngineConsumer(consumerName: String, taskName: TaskName) =
         newConsumer<MetricsPerNameEnvelope>(
             consumerName = consumerName,
-            topic = topic,
+            topic = taskMetricsTopic(taskName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = METRICS_PER_NAME_SUBSCRIPTION
         )
 
-    fun newMetricsGlobalEngineConsumer(consumerName: String, topic: String) =
+    fun newMetricsGlobalEngineConsumer(consumerName: String) =
         newConsumer<MetricsGlobalEnvelope>(
             consumerName = consumerName,
-            topic = topic,
+            topic = globalMetricsTopic(),
             subscriptionType = SubscriptionType.Failover,
             subscriptionName = METRICS_GLOBAL_SUBSCRIPTION
         )
@@ -146,5 +167,11 @@ class PulsarConsumerFactory(
                 if (earliest) it.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             }
             .subscribe()
+    }
+
+    private fun isWorkflow(name: Name) = when (name) {
+        is WorkflowName -> true
+        is TaskName -> false
+        else -> throw RuntimeException("Unexpected name type ${name::class.java.name} for $name")
     }
 }

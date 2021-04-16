@@ -28,7 +28,6 @@ package io.infinitic.pulsar.workers
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
-import io.infinitic.pulsar.topics.globalMetricsTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineScope
@@ -52,7 +51,7 @@ fun CoroutineScope.startPulsarMetricsGlobalEngine(
         outputChannel = outputChannel
     )
 
-    val consumer = consumerFactory.newMetricsGlobalEngineConsumer(consumerName, globalMetricsTopic())
+    val consumer = consumerFactory.newMetricsGlobalEngineConsumer(consumerName)
 
     // coroutine pulling pulsar messages
     pullMessages(consumer, inputChannel)

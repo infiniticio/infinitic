@@ -47,7 +47,7 @@ private const val tag = "tag"
 
 fun clientTopic(clientName: ClientName) = "$client: $clientName"
 
-fun workflowTagEngineTopic(type: TopicType, workflowName: WorkflowName) = when (type) {
+fun tagEngineTopic(type: TopicType, workflowName: WorkflowName) = when (type) {
     TopicType.COMMANDS -> "$workflow-$tag-$engine-$commands: $workflowName"
     TopicType.EVENTS -> "$workflow-$tag-$engine-$events: $workflowName"
     TopicType.DEAD_LETTERS -> "$workflow-$tag-$engine-$deadLetters: $workflowName"

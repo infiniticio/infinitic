@@ -29,7 +29,6 @@ import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.workflowEngineTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -59,7 +58,7 @@ fun CoroutineScope.startPulsarWorkflowEngines(
         val workflowTaskEngine = output.sendToTaskEngine(TopicType.COMMANDS, workflowName)
 
         startWorkflowEngine(
-            "workflow-engine-$it",
+            "workflow-engine:$it",
             storage,
             eventsInputChannel = eventsInputChannel,
             eventsOutputChannel = eventsOutputChannel,
@@ -73,12 +72,14 @@ fun CoroutineScope.startPulsarWorkflowEngines(
 
         // Pulsar consumers
         val eventsConsumer = consumerFactory.newWorkflowEngineConsumer(
-            consumerName = "$consumerName-$it",
-            topic = workflowEngineTopic(TopicType.EVENTS, workflowName)
+            consumerName = "$consumerName:$it",
+            topicType = TopicType.EVENTS,
+            workflowName = workflowName
         )
         val commandsConsumer = consumerFactory.newWorkflowEngineConsumer(
-            consumerName = "$consumerName-$it",
-            topic = workflowEngineTopic(TopicType.COMMANDS, workflowName)
+            consumerName = "$consumerName:$it",
+            topicType = TopicType.COMMANDS,
+            workflowName = workflowName
         )
 
         // coroutine pulling pulsar events messages

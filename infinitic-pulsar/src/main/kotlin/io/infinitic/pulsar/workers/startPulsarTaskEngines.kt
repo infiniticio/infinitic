@@ -28,7 +28,6 @@ package io.infinitic.pulsar.workers
 import io.infinitic.common.data.Name
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.taskEngineTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -55,7 +54,7 @@ fun CoroutineScope.startPulsarTaskEngines(
         val commandsOutputChannel = Channel<PulsarTaskEngineMessageToProcess>()
 
         startTaskEngine(
-            "task-engine-$it",
+            "task-engine:$it",
             storage,
             eventsInputChannel = eventsInputChannel,
             eventsOutputChannel = eventsOutputChannel,
@@ -71,13 +70,15 @@ fun CoroutineScope.startPulsarTaskEngines(
 
         // Pulsar consumers
         val eventsConsumer = consumerFactory.newTaskEngineConsumer(
-            consumerName = "$consumerName-$it",
-            topic = taskEngineTopic(TopicType.EVENTS, name)
+            consumerName = "$consumerName:$it",
+            topicType = TopicType.EVENTS,
+            name = name
         )
 
         val commandsConsumer = consumerFactory.newTaskEngineConsumer(
-            consumerName = "$consumerName-$it",
-            topic = taskEngineTopic(TopicType.COMMANDS, name)
+            consumerName = "$consumerName:$it",
+            topicType = TopicType.COMMANDS,
+            name = name
         )
 
         // coroutine pulling pulsar events messages

@@ -25,12 +25,22 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.config.AdminConfig
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.admin.setupInfinitic
+import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.getPersistentTopicFullName
+import io.infinitic.pulsar.topics.taskEngineTopic
+import io.infinitic.pulsar.topics.taskExecutorTopic
+import io.infinitic.pulsar.topics.taskTagEngineTopic
+import io.infinitic.pulsar.topics.workflowEngineTopic
+import io.infinitic.pulsar.topics.tagEngineTopic
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class InfiniticAdmin(
@@ -78,4 +88,129 @@ class InfiniticAdmin(
     fun setupPulsar() = runBlocking { pulsarAdmin.setupInfinitic(tenant, namespace, allowedClusters) }
 
     fun close() = pulsarAdmin.close()
+
+    fun printTopicStats() {
+        // get list of all topics
+        val topics = pulsarAdmin.topics().getPartitionedTopicList("$tenant/$namespace")
+
+        val leftAlignFormat = "| %-20s | %-8s | %11d | %10d | %10f | %7d |%n"
+        val line = "+----------------------+----------+-------------+------------+------------+---------+%n"
+        val title = "| Subscription         | Type     | NbConsumers | MsgBacklog | MsgRateOut | Unacked |%n"
+
+        // print workflows stats
+        val workflows = mutableListOf<String>()
+        val wPrefix = getPersistentTopicFullName(
+            tenant,
+            namespace,
+            workflowEngineTopic(TopicType.COMMANDS, WorkflowName(""))
+        )
+        topics.map { if (it.startsWith(wPrefix)) workflows.add(it.removePrefix(wPrefix)) }
+
+        workflows.forEach {
+            println("Workflow: $it")
+
+            System.out.format(line)
+            System.out.format(title)
+            System.out.format(line)
+
+            // workflow engine commands
+            var topic = getPersistentTopicFullName(tenant, namespace, workflowEngineTopic(TopicType.COMMANDS, WorkflowName(it)))
+            var stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("commands", stats, leftAlignFormat)
+
+            // workflow engine events
+            topic = getPersistentTopicFullName(tenant, namespace, workflowEngineTopic(TopicType.EVENTS, WorkflowName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("events", stats, leftAlignFormat)
+
+            // tag workflow engine commands
+            topic = getPersistentTopicFullName(tenant, namespace, tagEngineTopic(TopicType.COMMANDS, WorkflowName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("commands", stats, leftAlignFormat)
+
+            // tag workflow engine events
+            topic = getPersistentTopicFullName(tenant, namespace, tagEngineTopic(TopicType.EVENTS, WorkflowName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("events", stats, leftAlignFormat)
+
+            // workflow tasks engine commands
+            topic = getPersistentTopicFullName(tenant, namespace, taskEngineTopic(TopicType.COMMANDS, WorkflowName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("commands", stats, leftAlignFormat)
+
+            // workflow tasks engine events
+            topic = getPersistentTopicFullName(tenant, namespace, taskEngineTopic(TopicType.EVENTS, WorkflowName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("events", stats, leftAlignFormat)
+
+            // workflow executors
+            topic = getPersistentTopicFullName(tenant, namespace, taskExecutorTopic(WorkflowName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("", stats, leftAlignFormat)
+
+            System.out.format(line)
+            println("")
+        }
+
+        // print tasks stats
+        val tasks = mutableListOf<String>()
+        val taskPrefix = getPersistentTopicFullName(
+            tenant,
+            namespace,
+            taskEngineTopic(TopicType.COMMANDS, TaskName(""))
+        )
+        topics.map {
+            if (it.startsWith(taskPrefix)) tasks.add(it.removePrefix(taskPrefix))
+        }
+
+        tasks.forEach {
+            println("Task: $it")
+
+            System.out.format(line)
+            System.out.format(title)
+            System.out.format(line)
+
+            // task engine commands
+            var topic = getPersistentTopicFullName(tenant, namespace, taskEngineTopic(TopicType.COMMANDS, TaskName(it)))
+            var stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("commands", stats, leftAlignFormat)
+
+            // task engine events
+            topic = getPersistentTopicFullName(tenant, namespace, taskEngineTopic(TopicType.EVENTS, TaskName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("events", stats, leftAlignFormat)
+
+            // tag task engine commands
+            topic = getPersistentTopicFullName(tenant, namespace, taskTagEngineTopic(TopicType.COMMANDS, TaskName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("commands", stats, leftAlignFormat)
+
+            // tag task engine events
+            topic = getPersistentTopicFullName(tenant, namespace, taskTagEngineTopic(TopicType.EVENTS, TaskName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("events", stats, leftAlignFormat)
+
+            // task executors
+            topic = getPersistentTopicFullName(tenant, namespace, taskExecutorTopic(TaskName(it)))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("", stats, leftAlignFormat)
+
+            System.out.format(line)
+            println("")
+        }
+    }
+
+    private fun displayStatsLine(title: String, stats: PartitionedTopicStats, format: String) {
+        stats.subscriptions.map {
+            System.out.format(
+                format,
+                it.key,
+                title,
+                it.value.consumers.size,
+                it.value.msgBacklog,
+                it.value.msgRateOut,
+                it.value.unackedMessages
+            )
+        }
+    }
 }

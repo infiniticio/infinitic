@@ -30,7 +30,6 @@ import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
-import io.infinitic.pulsar.topics.taskMetricsTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineScope
@@ -59,7 +58,7 @@ fun CoroutineScope.startPulsarMetricsPerNameEngines(
     // Pulsar consumer
     val consumer = consumerFactory.newMetricsPerNameEngineConsumer(
         consumerName = consumerName,
-        topic = taskMetricsTopic(taskName)
+        taskName = taskName
     )
 
     // coroutine pulling pulsar messages

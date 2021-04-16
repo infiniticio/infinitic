@@ -56,7 +56,7 @@ import io.infinitic.pulsar.topics.taskExecutorTopic
 import io.infinitic.pulsar.topics.taskMetricsTopic
 import io.infinitic.pulsar.topics.taskTagEngineTopic
 import io.infinitic.pulsar.topics.workflowEngineTopic
-import io.infinitic.pulsar.topics.workflowTagEngineTopic
+import io.infinitic.pulsar.topics.tagEngineTopic
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
@@ -148,7 +148,7 @@ class PulsarOutput(
             val topic = getPersistentTopicFullName(
                 pulsarTenant,
                 pulsarNamespace,
-                workflowTagEngineTopic(topicType, message.workflowName)
+                tagEngineTopic(topicType, message.workflowName)
             )
             logger.debug("topic: {}, sendToWorkflowTagEngine: {}", topic, message)
             pulsarMessageBuilder.sendPulsarMessage(

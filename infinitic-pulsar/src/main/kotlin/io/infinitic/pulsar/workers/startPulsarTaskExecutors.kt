@@ -28,7 +28,6 @@ package io.infinitic.pulsar.workers
 import io.infinitic.common.data.Name
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.taskExecutorTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -53,7 +52,7 @@ fun CoroutineScope.startPulsarTaskExecutors(
     // launch n=concurrency coroutines running task executors
     repeat(concurrency) {
         startTaskExecutor(
-            "pulsar-task-executor-$it",
+            "pulsar-task-executor:$it",
             taskExecutorRegister,
             inputChannel,
             outputChannel,
@@ -62,9 +61,9 @@ fun CoroutineScope.startPulsarTaskExecutors(
     }
 
     // Pulsar consumer
-    val consumer = consumerFactory.newTaskExecutorConsumer(
+    val consumer = consumerFactory.newExecutorConsumer(
         consumerName = consumerName,
-        topic = taskExecutorTopic(name)
+        name = name
     )
 
     // coroutine pulling pulsar commands messages

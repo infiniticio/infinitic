@@ -352,7 +352,7 @@ class InfiniticWorker(
     ) {
         println(
             "- metrics engine".padEnd(25) + ": (" +
-                ", storage: ${metrics.stateStorage}".padEnd(20) +
+                "storage: ${metrics.stateStorage}".padEnd(20) +
                 ", cache: ${metrics.stateCacheOrDefault})".padEnd(20)
         )
         startPulsarMetricsPerNameEngines(
