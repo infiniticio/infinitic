@@ -131,8 +131,11 @@ class InfiniticAdmin(
         val line = "+----------------------+----------+-------------+------------+------------+---------+%n"
         val title = "| Subscription         | Type     | NbConsumers | MsgBacklog | MsgRateOut | Unacked |%n"
 
+        println("WORKFLOWS")
+        println()
+
         workflows.forEach {
-            println("Workflow: $it")
+            println(it)
 
             System.out.format(line)
             System.out.format(title)
@@ -178,8 +181,11 @@ class InfiniticAdmin(
         }
 
         // print tasks stats
+        println("TASKS")
+        println()
+
         tasks.forEach {
-            println("Task: $it")
+            println(it)
 
             System.out.format(line)
             System.out.format(title)
@@ -207,6 +213,11 @@ class InfiniticAdmin(
 
             // task executors
             topic = topicNamer.executorTopic(TaskName(it))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("", stats, leftAlignFormat)
+
+            // task metrics
+            topic = topicNamer.metricsTopic(TaskName(it))
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
             displayStatsLine("", stats, leftAlignFormat)
 

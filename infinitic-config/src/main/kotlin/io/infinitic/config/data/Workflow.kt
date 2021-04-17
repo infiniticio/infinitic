@@ -31,9 +31,9 @@ data class Workflow(
     @JvmField val name: String,
     @JvmField val `class`: String? = null,
     @JvmField val concurrency: Int = 1,
-    @JvmField var tagEngine: TagEngine? = null,
-    @JvmField var taskEngine: TaskEngine? = null,
-    @JvmField var workflowEngine: WorkflowEngine? = null
+    @JvmField var tagEngine: TagEngine? = TagEngine().apply { default = true },
+    @JvmField var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
+    @JvmField var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true }
 ) {
     val instance: WorkflowInstance
         get() = Class.forName(`class`).getDeclaredConstructor().newInstance() as WorkflowInstance

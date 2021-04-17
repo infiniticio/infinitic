@@ -34,7 +34,6 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
 import org.slf4j.Logger
@@ -73,7 +72,6 @@ fun <E : Envelope<M>, M> CoroutineScope.pullMessages(
                 )
             )
         }
-        yield()
     }
 }
 

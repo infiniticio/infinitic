@@ -37,6 +37,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import org.slf4j.Logger
@@ -75,7 +76,7 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
         sendToWorkflowEngine
     )
 
-    while (true) {
+    while (isActive) {
         select<Unit> {
             eventsInputChannel.onReceive {
                 try {

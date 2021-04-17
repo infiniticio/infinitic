@@ -30,13 +30,11 @@ import io.infinitic.config.merge.Mergeable
 import io.infinitic.storage.StateStorage
 
 data class WorkflowEngine(
-    @JvmField val concurrency: Int = 1,
+    @JvmField var concurrency: Int = 1,
     @JvmField var stateStorage: StateStorage? = null,
     @JvmField var stateCache: StateCache? = null
 ) : Mergeable {
-
-    val stateCacheOrDefault: StateCache
-        get() = stateCache ?: StateCache.none
+    var default: Boolean = false
 
     init {
         require(concurrency >= 0) { "concurrency must be positive" }

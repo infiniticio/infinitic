@@ -89,6 +89,7 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
 
     if (!existingNamespaces.contains(fullNamespace)) {
         val policies = Policies().apply {
+
             // enable message deduplication
             deduplicationEnabled = true
             // all new topics (especially tasks and workflows) are partitioned
@@ -97,12 +98,12 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
                 TopicType.PARTITIONED.toString(),
                 1
             )
-            // default retention : 14j || 1Gb
+            // default retention : 7j || 1Gb - msg is kept 7 days after acknowledgement (up to 1 Gb)
             retention_policies = RetentionPolicies(
-                60 * 24 * 14,
+                60 * 24 * 7,
                 1024
             )
-            // default ttl : 14j
+            // default ttl : 14j - after 14 days a message is automatically acknowledged
             message_ttl_in_seconds = 3600 * 24 * 14
             // schema are mandatory for producers/consumers
             schema_validation_enforced = true

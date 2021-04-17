@@ -43,9 +43,11 @@ import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.config.storage.getKeySetStorage
 import io.infinitic.config.storage.getKeyValueStorage
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
+import io.infinitic.pulsar.workers.startPulsarMetricsGlobalEngine
 import io.infinitic.pulsar.workers.startPulsarMetricsPerNameEngines
 import io.infinitic.pulsar.workers.startPulsarTaskEngines
 import io.infinitic.pulsar.workers.startPulsarTaskExecutors
@@ -60,6 +62,7 @@ import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.PulsarClient
 import org.slf4j.LoggerFactory
@@ -102,19 +105,26 @@ class InfiniticWorker(
             fromConfig(loadConfigFromFile(files.toList()))
     }
 
-    /*
-    Close worker
-    */
+    /**
+     * Close worker
+     */
     fun close() = pulsarClient.close()
 
-    /*
-    Start worker
-    */
+    /**
+     * Start worker
+     */
     fun start() {
-        with(CoroutineScope(Executors.newCachedThreadPool().asCoroutineDispatcher())) {
-            logger.info("InfiniticWorker - starting with config {}", config)
+        val threadPool = Executors.newCachedThreadPool()
+        val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
 
-            start(pulsarClient, config)
+        scope.launch {
+            try {
+                coroutineScope { start(pulsarClient, config) }
+            } finally {
+                // Make sure the pulsar client is killed in case of exception - if not other key-shared subscriptions will all be blocked
+                close()
+                threadPool.shutdown()
+            }
         }
     }
 
@@ -135,6 +145,11 @@ class InfiniticWorker(
             val workflowName = WorkflowName(workflow.name)
             println("Workflow $workflowName:")
 
+            // starting task executors running workflows tasks
+            workflow.`class`?.let {
+                startWorkflowTaskExecutors(workflowName, workerName, workflow, taskExecutorRegister, pulsarConsumerFactory, pulsarOutput)
+            }
+
             // starting engines managing tags of workflows
             workflow.tagEngine?.let {
                 startWorkflowTagEngines(workflowName, workerName, it, pulsarConsumerFactory, pulsarOutput)
@@ -149,16 +164,17 @@ class InfiniticWorker(
             workflow.workflowEngine?.let {
                 startWorkflowEngines(workflowName, workerName, it, pulsarConsumerFactory, pulsarOutput)
             }
-
-            // starting task executors running workflows tasks
-            workflow.`class`?.let {
-                startWorkflowTaskExecutors(workflowName, workerName, workflow, taskExecutorRegister, pulsarConsumerFactory, pulsarOutput)
-            }
+            println()
         }
 
         for (task in config.tasks) {
             val taskName = TaskName(task.name)
             println("Task $taskName:")
+
+            // starting task executors running tasks
+            task.`class`?.let {
+                startTaskExecutors(taskName, workerName, task, taskExecutorRegister, pulsarConsumerFactory, pulsarOutput)
+            }
 
             // starting engines managing tags of tasks
             task.tagEngine?.let {
@@ -170,14 +186,10 @@ class InfiniticWorker(
                 startTaskEngines(taskName, workerName, it, pulsarConsumerFactory, pulsarOutput)
             }
 
-            // starting task executors running tasks
-            task.`class`?.let {
-                startTaskExecutors(taskName, workerName, task, taskExecutorRegister, pulsarConsumerFactory, pulsarOutput)
-            }
-
             task.metrics?.let {
-                startMetricsPerNameEngines(taskName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+                startMetricsPerNameEngine(taskName, workerName, it, pulsarConsumerFactory, pulsarOutput)
             }
+            println()
         }
 
         println("Worker \"$workerName\" ready")
@@ -192,21 +204,22 @@ class InfiniticWorker(
     ) {
         println(
             "- tag engine".padEnd(25) + ": (" +
-                "instances: ${tagEngine.concurrencyOrDefault} ".padEnd(15) +
-                ", storage: ${tagEngine.stateStorage}".padEnd(20) +
-                ", cache: ${tagEngine.stateCacheOrDefault})".padEnd(20)
+                "storage: ${tagEngine.stateStorage}" +
+                ", cache: ${tagEngine.stateCache}" +
+                ", instances: ${tagEngine.concurrency})"
+
         )
         startPulsarTaskTagEngines(
             taskName,
             consumerName,
-            tagEngine.concurrencyOrDefault,
+            tagEngine.concurrency,
             BinaryTaskTagStorage(
                 CachedKeyValueStorage(
-                    tagEngine.stateCacheOrDefault.getKeyValueCache(config),
+                    tagEngine.stateCache!!.getKeyValueCache(config),
                     tagEngine.stateStorage!!.getKeyValueStorage(config)
                 ),
                 CachedKeySetStorage(
-                    tagEngine.stateCacheOrDefault.getKeySetCache(config),
+                    tagEngine.stateCache!!.getKeySetCache(config),
                     tagEngine.stateStorage!!.getKeySetStorage(config)
                 )
             ),
@@ -224,9 +237,9 @@ class InfiniticWorker(
     ) {
         println(
             "- task engine".padEnd(25) + ": (" +
-                "instances: ${taskEngine.concurrency} ".padEnd(15) +
-                ", storage: ${taskEngine.stateStorage}".padEnd(20) +
-                ", cache: ${taskEngine.stateCacheOrDefault})".padEnd(20)
+                "storage: ${taskEngine.stateStorage}" +
+                ", cache: ${taskEngine.stateCache}" +
+                ", instances: ${taskEngine.concurrency})"
         )
         startPulsarTaskEngines(
             name,
@@ -234,7 +247,7 @@ class InfiniticWorker(
             taskEngine.concurrency,
             BinaryTaskStateStorage(
                 CachedKeyValueStorage(
-                    taskEngine.stateCacheOrDefault.getKeyValueCache(config),
+                    taskEngine.stateCache!!.getKeyValueCache(config),
                     taskEngine.stateStorage!!.getKeyValueStorage(config)
                 )
             ),
@@ -252,21 +265,22 @@ class InfiniticWorker(
     ) {
         println(
             "- tag engine".padEnd(25) + ": (" +
-                "instances: ${tagEngine.concurrencyOrDefault} ".padEnd(15) +
-                ", storage: ${tagEngine.stateStorage}".padEnd(20) +
-                ", cache: ${tagEngine.stateCacheOrDefault})".padEnd(20)
+                "storage: ${tagEngine.stateStorage}" +
+                ", cache: ${tagEngine.stateCache}" +
+                ", instances: ${tagEngine.concurrency})"
+
         )
         startPulsarWorkflowTagEngines(
             workflowName,
             consumerName,
-            tagEngine.concurrencyOrDefault,
+            tagEngine.concurrency,
             BinaryWorkflowTagStorage(
                 CachedKeyValueStorage(
-                    tagEngine.stateCacheOrDefault.getKeyValueCache(config),
+                    tagEngine.stateCache!!.getKeyValueCache(config),
                     tagEngine.stateStorage!!.getKeyValueStorage(config)
                 ),
                 CachedKeySetStorage(
-                    tagEngine.stateCacheOrDefault.getKeySetCache(config),
+                    tagEngine.stateCache!!.getKeySetCache(config),
                     tagEngine.stateStorage!!.getKeySetStorage(config)
                 )
             ),
@@ -284,9 +298,10 @@ class InfiniticWorker(
     ) {
         println(
             "- workflow engine".padEnd(25) + ": (" +
-                "instances: ${workflowEngine.concurrency} ".padEnd(15) +
-                ", storage: ${workflowEngine.stateStorage}".padEnd(20) +
-                ", cache: ${workflowEngine.stateCacheOrDefault})".padEnd(20)
+                "storage: ${workflowEngine.stateStorage}" +
+                ", cache: ${workflowEngine.stateCache}" +
+                ", instances: ${workflowEngine.concurrency})"
+
         )
         startPulsarWorkflowEngines(
             workflowName,
@@ -294,7 +309,7 @@ class InfiniticWorker(
             workflowEngine.concurrency,
             BinaryWorkflowStateStorage(
                 CachedKeyValueStorage(
-                    workflowEngine.stateCacheOrDefault.getKeyValueCache(config),
+                    workflowEngine.stateCache!!.getKeyValueCache(config),
                     workflowEngine.stateStorage!!.getKeyValueStorage(config)
                 )
             ),
@@ -343,7 +358,7 @@ class InfiniticWorker(
         )
     }
 
-    private fun CoroutineScope.startMetricsPerNameEngines(
+    private fun CoroutineScope.startMetricsPerNameEngine(
         taskName: TaskName,
         consumerName: String,
         metrics: Metrics,
@@ -352,8 +367,9 @@ class InfiniticWorker(
     ) {
         println(
             "- metrics engine".padEnd(25) + ": (" +
-                "storage: ${metrics.stateStorage}".padEnd(20) +
-                ", cache: ${metrics.stateCacheOrDefault})".padEnd(20)
+                "storage: ${metrics.stateStorage}" +
+
+                ", cache: ${metrics.stateCacheOrDefault})"
         )
         startPulsarMetricsPerNameEngines(
             taskName,
@@ -365,18 +381,18 @@ class InfiniticWorker(
                     metrics.stateStorage!!.getKeyValueStorage(config)
                 )
             ),
-            {}
+            pulsarOutput
         )
-//        logger.info("InfiniticWorker - starting metrics global engine")
-//        startPulsarMetricsGlobalEngine(
-//            consumerName,
-//            pulsarConsumerFactory,
-//            BinaryMetricsGlobalStateStorage(
-//                CachedKeyValueStorage(
-//                    metrics.stateCacheOrDefault.getKeyValueCache(config),
-//                    metrics.stateStorage!!.getKeyValueStorage(config)
-//                )
-//            )
-//        )
+
+        startPulsarMetricsGlobalEngine(
+            consumerName,
+            pulsarConsumerFactory,
+            BinaryMetricsGlobalStateStorage(
+                CachedKeyValueStorage(
+                    metrics.stateCacheOrDefault.getKeyValueCache(config),
+                    metrics.stateStorage!!.getKeyValueStorage(config)
+                )
+            )
+        )
     }
 }

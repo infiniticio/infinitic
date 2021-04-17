@@ -25,13 +25,13 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import io.infinitic.pulsar.transport.PulsarOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 
@@ -42,7 +42,7 @@ fun CoroutineScope.startPulsarMetricsPerNameEngines(
     consumerName: String,
     consumerFactory: PulsarConsumerFactory,
     storage: MetricsPerNameStateStorage,
-    sendToMetricsGlobal: SendToMetricsGlobal
+    pulsarOutput: PulsarOutput
 ) {
     val inputChannel = Channel<PulsarMetricsPerNameMessageToProcess>()
     val outputChannel = Channel<PulsarMetricsPerNameMessageToProcess>()
@@ -52,7 +52,7 @@ fun CoroutineScope.startPulsarMetricsPerNameEngines(
         storage,
         inputChannel = inputChannel,
         outputChannel = outputChannel,
-        sendToMetricsGlobal
+        pulsarOutput.sendToMetricsGlobal()
     )
 
     // Pulsar consumer

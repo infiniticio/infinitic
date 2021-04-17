@@ -31,9 +31,9 @@ data class Task(
     @JvmField val name: String,
     @JvmField val `class`: String? = null,
     @JvmField val concurrency: Int = 1,
-    @JvmField var tagEngine: TagEngine? = null,
-    @JvmField var taskEngine: TaskEngine? = null,
-    @JvmField var metrics: Metrics? = null
+    @JvmField var tagEngine: TagEngine? = TagEngine().apply { default = true },
+    @JvmField var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
+    @JvmField var metrics: Metrics? = Metrics()
 ) {
     val instance: TaskInstance
         get() = Class.forName(`class`).getDeclaredConstructor().newInstance() as TaskInstance

@@ -27,14 +27,9 @@ package io.infinitic.config
 
 import io.infinitic.cache.StateCache
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.config.data.Metrics
 import io.infinitic.config.data.Pulsar
-import io.infinitic.config.data.TagEngine
 import io.infinitic.config.data.Task
-import io.infinitic.config.data.TaskEngine
 import io.infinitic.config.data.Workflow
-import io.infinitic.config.data.WorkflowEngine
-import io.infinitic.config.merge.merge
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.redis.Redis
 
@@ -52,32 +47,12 @@ data class WorkerConfig(
     /*
     Default state cache
      */
-    @JvmField var stateCache: StateCache? = null,
+    @JvmField var stateCache: StateCache = StateCache.caffeine,
 
     /*
     Pulsar configuration
      */
     @JvmField val pulsar: Pulsar,
-
-    /*
-    Default workflow engine configuration
-     */
-    @JvmField val workflowEngine: WorkflowEngine? = null,
-
-    /*
-    Default tag engine configuration
-     */
-    @JvmField val tagEngine: TagEngine? = null,
-
-    /*
-    Default task engine configuration
-     */
-    @JvmField val taskEngine: TaskEngine? = null,
-
-    /*
-    Default metrics configuration
-     */
-    @JvmField val metrics: Metrics? = null,
 
     /*
     Tasks configuration
@@ -101,62 +76,45 @@ data class WorkerConfig(
 
 ) {
     init {
-        tagEngine?.let {
-            // apply default, if not set
-            it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, "tagEngine.stateStorage")
-            it.stateCache = it.stateCache ?: stateCache
-        }
-
-        taskEngine?.let {
-            // apply default, if not set
-            it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, "taskEngine.stateStorage")
-            it.stateCache = it.stateCache ?: stateCache
-        }
-
-        workflowEngine?.let {
-            // apply default, if not set
-            it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, "workflowEngine.stateStorage")
-            it.stateCache = it.stateCache ?: stateCache
-        }
-
-        metrics?.let {
-            // apply default, if not set
-            it.stateStorage = it.stateStorage ?: stateStorage
-            checkStateStorage(it.stateStorage, "metrics.stateStorage")
-            it.stateCache = it.stateCache ?: stateCache
-        }
-
         // apply default, if not set
-        tasks.map {
-            it.tagEngine = when (it.tagEngine) {
-                null -> tagEngine
-                else -> it.tagEngine!! merge tagEngine
+        tasks.map { task ->
+            task.tagEngine?.let {
+                it.stateStorage = it.stateStorage ?: stateStorage
+                checkStateStorage(it.stateStorage, "tasks.${task.name}.tagEngine.stateStorage")
+                it.stateCache = it.stateCache ?: stateCache
+                if (it.default) it.concurrency = task.concurrency
             }
-            it.taskEngine = when (it.taskEngine) {
-                null -> taskEngine
-                else -> it.taskEngine!! merge taskEngine
+            task.taskEngine?.let {
+                it.stateStorage = it.stateStorage ?: stateStorage
+                checkStateStorage(it.stateStorage, "tasks.${task.name}.taskEngine.stateStorage")
+                it.stateCache = it.stateCache ?: stateCache
+                if (it.default) it.concurrency = task.concurrency
             }
-            it.metrics = when (it.metrics) {
-                null -> metrics
-                else -> it.metrics!! merge metrics
+            task.metrics?.let {
+                it.stateStorage = it.stateStorage ?: stateStorage
+                checkStateStorage(it.stateStorage, "tasks.${task.name}.metrics.stateStorage")
+                it.stateCache = it.stateCache ?: stateCache
             }
         }
 
-        workflows.map {
-            it.tagEngine = when (it.tagEngine) {
-                null -> tagEngine
-                else -> it.tagEngine!! merge tagEngine
+        workflows.map { workflow ->
+            workflow.tagEngine?.let {
+                it.stateStorage = it.stateStorage ?: stateStorage
+                checkStateStorage(it.stateStorage, "workflows.${workflow.name}.tagEngine.stateStorage")
+                it.stateCache = it.stateCache ?: stateCache
+                if (it.default) it.concurrency = workflow.concurrency
             }
-            it.taskEngine = when (it.taskEngine) {
-                null -> taskEngine
-                else -> it.taskEngine!! merge taskEngine
+            workflow.taskEngine?.let {
+                it.stateStorage = it.stateStorage ?: stateStorage
+                checkStateStorage(it.stateStorage, "workflows.${workflow.name}.taskEngine.stateStorage")
+                it.stateCache = it.stateCache ?: stateCache
+                if (it.default) it.concurrency = workflow.concurrency
             }
-            it.workflowEngine = when (it.workflowEngine) {
-                null -> workflowEngine
-                else -> it.workflowEngine!! merge workflowEngine
+            workflow.workflowEngine?.let {
+                it.stateStorage = it.stateStorage ?: stateStorage
+                checkStateStorage(it.stateStorage, "workflows.${workflow.name}.workflowEngine.stateStorage")
+                it.stateCache = it.stateCache ?: stateCache
+                if (it.default) it.concurrency = workflow.concurrency
             }
         }
     }
