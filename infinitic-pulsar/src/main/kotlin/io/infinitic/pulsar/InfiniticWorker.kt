@@ -121,8 +121,9 @@ class InfiniticWorker(
             try {
                 coroutineScope { start(pulsarClient, config) }
             } finally {
-                // Make sure the pulsar client is killed in case of exception - if not other key-shared subscriptions will all be blocked
+                // must close Pulsar client to avoid other key-shared subscriptions to be blocked
                 close()
+                // closing the worker is important for devops
                 threadPool.shutdown()
             }
         }
@@ -368,7 +369,6 @@ class InfiniticWorker(
         println(
             "- metrics engine".padEnd(25) + ": (" +
                 "storage: ${metrics.stateStorage}" +
-
                 ", cache: ${metrics.stateCacheOrDefault})"
         )
         startPulsarMetricsPerNameEngines(

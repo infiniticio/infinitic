@@ -127,9 +127,9 @@ class InfiniticAdmin(
      */
     fun printTopicStats() {
         // get list of all topics
-        val leftAlignFormat = "| %-20s | %-8s | %11d | %10d | %10f | %7d |%n"
-        val line = "+----------------------+----------+-------------+------------+------------+---------+%n"
-        val title = "| Subscription         | Type     | NbConsumers | MsgBacklog | MsgRateOut | Unacked |%n"
+        val leftAlignFormat = "| %-20s | %-8s | %11d | %10d | %10f |%n"
+        val line = "+----------------------+----------+-------------+------------+------------+%n"
+        val title = "| Subscription         | Type     | NbConsumers | MsgBacklog | MsgRateOut |%n"
 
         println("WORKFLOWS")
         println()
@@ -234,8 +234,7 @@ class InfiniticAdmin(
                 title,
                 it.value.consumers.size,
                 it.value.msgBacklog,
-                it.value.msgRateOut,
-                it.value.unackedMessages
+                it.value.msgRateOut
             )
         }
     }

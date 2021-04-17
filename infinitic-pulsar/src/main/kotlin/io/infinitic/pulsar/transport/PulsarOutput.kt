@@ -155,7 +155,7 @@ class PulsarOutput(
         pulsarMessageBuilder.sendPulsarMessage(
             topic,
             message.envelope(),
-            "${message.taskId}",
+            null,
             MillisDuration(0)
         )
     }
@@ -166,7 +166,7 @@ class PulsarOutput(
         pulsarMessageBuilder.sendPulsarMessage(
             topic,
             message.envelope(),
-            "${message.taskName}",
+            null,
             MillisDuration(0)
         )
     }
