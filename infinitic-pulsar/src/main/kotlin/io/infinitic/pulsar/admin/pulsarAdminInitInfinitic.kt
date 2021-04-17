@@ -27,7 +27,6 @@
 package io.infinitic.pulsar.admin
 
 import io.infinitic.pulsar.schemas.getPostSchemaPayload
-import io.infinitic.pulsar.topics.getPersistentTopicFullName
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
@@ -46,24 +45,6 @@ suspend fun PulsarAdmin.setupInfinitic(tenant: String, namespace: String, allowe
     createTenant(this, tenant, getAllowedClusters(this, allowedClusters))
 
     createNamespace(this, tenant, namespace)
-
-//    createPartitionedTopic(this, tenant, namespace, TagEngineCommandsTopic.name)
-//    createPartitionedTopic(this, tenant, namespace, TagEngineEventsTopic.name)
-//    createPartitionedTopic(this, tenant, namespace, TaskEngineCommandsTopic.name)
-//    createPartitionedTopic(this, tenant, namespace, TaskEngineEventsTopic.name)
-//    createPartitionedTopic(this, tenant, namespace, WorkflowEngineCommandsTopic.name)
-//    createPartitionedTopic(this, tenant, namespace, WorkflowEngineEventsTopic.name)
-//    createPartitionedTopic(this, tenant, namespace, MetricsPerNameTopic.name)
-//    createPartitionedTopic(this, tenant, namespace, MetricsGlobalTopic.name)
-//
-//    setSchema(this, tenant, namespace, TagEngineCommandsTopic.name, TagEngineEnvelope::class)
-//    setSchema(this, tenant, namespace, TagEngineEventsTopic.name, TagEngineEnvelope::class)
-//    setSchema(this, tenant, namespace, TaskEngineCommandsTopic.name, TaskEngineEnvelope::class)
-//    setSchema(this, tenant, namespace, TaskEngineEventsTopic.name, TaskEngineEnvelope::class)
-//    setSchema(this, tenant, namespace, WorkflowEngineCommandsTopic.name, WorkflowEngineEnvelope::class)
-//    setSchema(this, tenant, namespace, WorkflowEngineEventsTopic.name, WorkflowEngineEnvelope::class)
-//    setSchema(this, tenant, namespace, MetricsPerNameTopic.name, MetricsPerNameEnvelope::class)
-//    setSchema(this, tenant, namespace, MetricsGlobalTopic.name, MetricsGlobalEnvelope::class)
 }
 
 private suspend fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<String>? = null): Set<String> {
@@ -135,24 +116,21 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
     }
 }
 
-private suspend fun createPartitionedTopic(admin: PulsarAdmin, tenant: String, namespace: String, topic: String) {
+private suspend fun createPartitionedTopic(admin: PulsarAdmin, topic: String) {
     // create topic as partitioned topic with one partition
-    val topicFullName = getPersistentTopicFullName(tenant, namespace, topic)
-
     try {
-        logger.info("Creating partitioned topic {}", topicFullName)
-        admin.topics().createPartitionedTopicAsync(topicFullName, 1).await()
+        logger.info("Creating partitioned topic {}", topic)
+        admin.topics().createPartitionedTopicAsync(topic, 1).await()
     } catch (e: PulsarAdminException.ConflictException) {
-        logger.info("Topic {} already exist", topicFullName)
+        logger.info("Topic {} already exist", topic)
         // the topic already exists
     }
 }
 
-private suspend fun <T : Any> setSchema(admin: PulsarAdmin, tenant: String, namespace: String, topic: String, klass: KClass<T>) {
-    val fullNameTopic = getPersistentTopicFullName(tenant, namespace, topic)
+private suspend fun <T : Any> setSchema(admin: PulsarAdmin, topic: String, klass: KClass<T>) {
     val schema = getPostSchemaPayload(klass)
-    logger.info("Uploading topic {} with schema {}", fullNameTopic, schema)
-    admin.schemas().createSchemaAsync(fullNameTopic, schema).await()
+    logger.info("Uploading topic {} with schema {}", topic, schema)
+    admin.schemas().createSchemaAsync(topic, schema).await()
 }
 
 private fun getFullNamespace(tenantName: String, namespace: String) =

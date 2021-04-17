@@ -47,16 +47,8 @@ import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
+import io.infinitic.pulsar.topics.TopicNamer
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.clientTopic
-import io.infinitic.pulsar.topics.getPersistentTopicFullName
-import io.infinitic.pulsar.topics.globalMetricsTopic
-import io.infinitic.pulsar.topics.taskEngineTopic
-import io.infinitic.pulsar.topics.taskExecutorTopic
-import io.infinitic.pulsar.topics.taskMetricsTopic
-import io.infinitic.pulsar.topics.taskTagEngineTopic
-import io.infinitic.pulsar.topics.workflowEngineTopic
-import io.infinitic.pulsar.topics.tagEngineTopic
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
 import org.slf4j.Logger
@@ -64,11 +56,13 @@ import org.slf4j.LoggerFactory
 
 class PulsarOutput(
     private val pulsarMessageBuilder: PulsarMessageBuilder,
-    private val pulsarTenant: String,
-    private val pulsarNamespace: String
+    pulsarTenant: String,
+    pulsarNamespace: String
 ) {
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
+
+    private val topics = TopicNamer(pulsarTenant, pulsarNamespace)
 
     companion object {
         /*
@@ -97,11 +91,7 @@ class PulsarOutput(
 
     fun sendToClient(): SendToClient =
         { message: ClientMessage ->
-            val topic = getPersistentTopicFullName(
-                pulsarTenant,
-                pulsarNamespace,
-                clientTopic(message.clientName)
-            )
+            val topic = topics.clientTopic(message.clientName)
             logger.debug("topic: {}, sendToClient: {}", topic, message)
             pulsarMessageBuilder.sendPulsarMessage(
                 topic,
@@ -113,11 +103,7 @@ class PulsarOutput(
 
     fun sendToTaskTagEngine(topicType: TopicType): SendToTaskTagEngine =
         { message: TaskTagEngineMessage ->
-            val topic = getPersistentTopicFullName(
-                pulsarTenant,
-                pulsarNamespace,
-                taskTagEngineTopic(topicType, message.taskName)
-            )
+            val topic = topics.tagEngineTopic(topicType, message.taskName)
             logger.debug("topic: {}, sendToTaskTagEngine: {}", topic, message)
             pulsarMessageBuilder.sendPulsarMessage(
                 topic,
@@ -129,11 +115,7 @@ class PulsarOutput(
 
     fun sendToTaskEngine(topicType: TopicType, name: Name? = null): SendToTaskEngine =
         { message: TaskEngineMessage, after: MillisDuration ->
-            val topic = getPersistentTopicFullName(
-                pulsarTenant,
-                pulsarNamespace,
-                taskEngineTopic(topicType, name ?: message.taskName)
-            )
+            val topic = topics.taskEngineTopic(topicType, name ?: message.taskName)
             logger.debug("topic: {}, sendToTaskEngine: {}", topic, message)
             pulsarMessageBuilder.sendPulsarMessage(
                 topic,
@@ -145,11 +127,7 @@ class PulsarOutput(
 
     fun sendToWorkflowTagEngine(topicType: TopicType): SendToWorkflowTagEngine =
         { message: WorkflowTagEngineMessage ->
-            val topic = getPersistentTopicFullName(
-                pulsarTenant,
-                pulsarNamespace,
-                tagEngineTopic(topicType, message.workflowName)
-            )
+            val topic = topics.tagEngineTopic(topicType, message.workflowName)
             logger.debug("topic: {}, sendToWorkflowTagEngine: {}", topic, message)
             pulsarMessageBuilder.sendPulsarMessage(
                 topic,
@@ -161,11 +139,7 @@ class PulsarOutput(
 
     fun sendToWorkflowEngine(topicType: TopicType): SendToWorkflowEngine =
         { message: WorkflowEngineMessage, after: MillisDuration ->
-            val topic = getPersistentTopicFullName(
-                pulsarTenant,
-                pulsarNamespace,
-                workflowEngineTopic(topicType, message.workflowName)
-            )
+            val topic = topics.workflowEngineTopic(topicType, message.workflowName)
             logger.debug("topic: {}, sendToWorkflowEngine: {}", topic, message)
             pulsarMessageBuilder.sendPulsarMessage(
                 topic,
@@ -176,11 +150,7 @@ class PulsarOutput(
         }
 
     fun sendToTaskExecutors(name: Name? = null): SendToTaskExecutors = { message: TaskExecutorMessage ->
-        val topic = getPersistentTopicFullName(
-            pulsarTenant,
-            pulsarNamespace,
-            taskExecutorTopic(name ?: message.taskName)
-        )
+        val topic = topics.executorTopic(name ?: message.taskName)
         logger.debug("topic: {}, sendToTaskExecutors: {}", topic, message)
         pulsarMessageBuilder.sendPulsarMessage(
             topic,
@@ -191,11 +161,7 @@ class PulsarOutput(
     }
 
     fun sendToMetricsPerName(): SendToMetricsPerName = { message: MetricsPerNameMessage ->
-        val topic = getPersistentTopicFullName(
-            pulsarTenant,
-            pulsarNamespace,
-            taskMetricsTopic(message.taskName)
-        )
+        val topic = topics.metricsTopic(message.taskName)
         logger.debug("topic: {}, sendToMetricsPerName: {}", topic, message)
         pulsarMessageBuilder.sendPulsarMessage(
             topic,
@@ -206,11 +172,7 @@ class PulsarOutput(
     }
 
     fun sendToMetricsGlobal(): SendToMetricsGlobal = { message: MetricsGlobalMessage ->
-        val topic = getPersistentTopicFullName(
-            pulsarTenant,
-            pulsarNamespace,
-            globalMetricsTopic()
-        )
+        val topic = topics.globalMetricsTopic()
         logger.debug("topic: {}, sendToMetricsGlobal: {}", topic, message)
         pulsarMessageBuilder.sendPulsarMessage(
             topic,

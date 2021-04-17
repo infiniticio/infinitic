@@ -38,30 +38,25 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
 import io.infinitic.pulsar.schemas.schemaDefinition
+import io.infinitic.pulsar.topics.TopicNamer
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.clientTopic
-import io.infinitic.pulsar.topics.getPersistentTopicFullName
-import io.infinitic.pulsar.topics.globalMetricsTopic
-import io.infinitic.pulsar.topics.taskEngineTopic
-import io.infinitic.pulsar.topics.taskExecutorTopic
-import io.infinitic.pulsar.topics.taskMetricsTopic
-import io.infinitic.pulsar.topics.taskTagEngineTopic
-import io.infinitic.pulsar.topics.workflowEngineTopic
-import io.infinitic.pulsar.topics.tagEngineTopic
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 import java.util.concurrent.TimeUnit
 
 class PulsarConsumerFactory(
     private val pulsarClient: PulsarClient,
-    private val pulsarTenant: String,
-    private val pulsarNamespace: String
+    pulsarTenant: String,
+    pulsarNamespace: String
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    private val topics = TopicNamer(pulsarTenant, pulsarNamespace)
 
     companion object {
         const val CLIENT_RESPONSE_SUBSCRIPTION = "client-response"
@@ -79,7 +74,7 @@ class PulsarConsumerFactory(
     fun newClientResponseConsumer(consumerName: String, clientName: ClientName) =
         newConsumer<ClientEnvelope>(
             consumerName = consumerName,
-            topic = clientTopic(clientName),
+            topic = topics.clientTopic(clientName),
             subscriptionType = SubscriptionType.Exclusive,
             subscriptionName = CLIENT_RESPONSE_SUBSCRIPTION,
             earliest = false
@@ -88,7 +83,7 @@ class PulsarConsumerFactory(
     fun newTaskTagEngineConsumer(consumerName: String, topicType: TopicType, taskName: TaskName) =
         newConsumer<TaskTagEngineEnvelope>(
             consumerName = consumerName,
-            topic = taskTagEngineTopic(topicType, taskName),
+            topic = topics.tagEngineTopic(topicType, taskName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = TASK_TAG_ENGINE_SUBSCRIPTION
         )
@@ -96,18 +91,19 @@ class PulsarConsumerFactory(
     fun newTaskEngineConsumer(consumerName: String, topicType: TopicType, name: Name) =
         newConsumer<TaskEngineEnvelope>(
             consumerName = consumerName,
-            topic = taskEngineTopic(topicType, name),
+            topic = topics.taskEngineTopic(topicType, name),
             subscriptionType = SubscriptionType.Key_Shared,
-            subscriptionName = when (isWorkflow(name)) {
-                true -> WORKFLOW_TASK_ENGINE_SUBSCRIPTION
-                false -> TASK_ENGINE_SUBSCRIPTION
+            subscriptionName = when (name) {
+                is WorkflowName -> WORKFLOW_TASK_ENGINE_SUBSCRIPTION
+                is TaskName -> TASK_ENGINE_SUBSCRIPTION
+                else -> throw RuntimeException("Unexpected Name type ${name::class} for $name")
             }
         )
 
     fun newWorkflowTagEngineConsumer(consumerName: String, topicType: TopicType, workflowName: WorkflowName) =
         newConsumer<WorkflowTagEngineEnvelope>(
             consumerName = consumerName,
-            topic = tagEngineTopic(topicType, workflowName),
+            topic = topics.tagEngineTopic(topicType, workflowName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = WORKFLOW_TAG_ENGINE_SUBSCRIPTION
         )
@@ -115,7 +111,7 @@ class PulsarConsumerFactory(
     fun newWorkflowEngineConsumer(consumerName: String, topicType: TopicType, workflowName: WorkflowName) =
         newConsumer<WorkflowEngineEnvelope>(
             consumerName = consumerName,
-            topic = workflowEngineTopic(topicType, workflowName),
+            topic = topics.workflowEngineTopic(topicType, workflowName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = WORKFLOW_ENGINE_SUBSCRIPTION
         )
@@ -123,18 +119,19 @@ class PulsarConsumerFactory(
     fun newExecutorConsumer(consumerName: String, name: Name) =
         newConsumer<TaskExecutorEnvelope>(
             consumerName = consumerName,
-            topic = taskExecutorTopic(name),
+            topic = topics.executorTopic(name),
             subscriptionType = SubscriptionType.Shared,
-            subscriptionName = when (isWorkflow(name)) {
-                true -> WORKFLOW_EXECUTOR_SUBSCRIPTION
-                false -> TASK_EXECUTOR_SUBSCRIPTION
+            subscriptionName = when (name) {
+                is WorkflowName -> WORKFLOW_EXECUTOR_SUBSCRIPTION
+                is TaskName -> TASK_EXECUTOR_SUBSCRIPTION
+                else -> throw RuntimeException("Unexpected Name type ${name::class} for $name")
             }
         )
 
     fun newMetricsPerNameEngineConsumer(consumerName: String, taskName: TaskName) =
         newConsumer<MetricsPerNameEnvelope>(
             consumerName = consumerName,
-            topic = taskMetricsTopic(taskName),
+            topic = topics.metricsTopic(taskName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = METRICS_PER_NAME_SUBSCRIPTION
         )
@@ -142,7 +139,7 @@ class PulsarConsumerFactory(
     fun newMetricsGlobalEngineConsumer(consumerName: String) =
         newConsumer<MetricsGlobalEnvelope>(
             consumerName = consumerName,
-            topic = globalMetricsTopic(),
+            topic = topics.globalMetricsTopic(),
             subscriptionType = SubscriptionType.Failover,
             subscriptionName = METRICS_GLOBAL_SUBSCRIPTION
         )
@@ -154,11 +151,10 @@ class PulsarConsumerFactory(
         subscriptionName: String,
         earliest: Boolean = true
     ): Consumer<T> {
-        val fullTopic = getPersistentTopicFullName(pulsarTenant, pulsarNamespace, topic)
-        logger.info("Topic $fullTopic: creating consumer $consumerName of type ${T::class}")
+        logger.info("Topic $topic: creating consumer $consumerName of type ${T::class}")
 
         return pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<T>()))
-            .topic(fullTopic)
+            .topic(topic)
             .consumerName(consumerName)
             .negativeAckRedeliveryDelay(30, TimeUnit.SECONDS)
             .subscriptionName(subscriptionName)
@@ -167,11 +163,5 @@ class PulsarConsumerFactory(
                 if (earliest) it.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             }
             .subscribe()
-    }
-
-    private fun isWorkflow(name: Name) = when (name) {
-        is WorkflowName -> true
-        is TaskName -> false
-        else -> throw RuntimeException("Unexpected name type ${name::class.java.name} for $name")
     }
 }
