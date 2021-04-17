@@ -77,6 +77,7 @@ class PulsarConsumerFactory(
             topic = topics.clientTopic(clientName),
             subscriptionType = SubscriptionType.Exclusive,
             subscriptionName = CLIENT_RESPONSE_SUBSCRIPTION,
+            ackTimeout = 10,
             earliest = false
         )
 
@@ -85,7 +86,8 @@ class PulsarConsumerFactory(
             consumerName = consumerName,
             topic = topics.tagEngineTopic(topicType, taskName),
             subscriptionType = SubscriptionType.Key_Shared,
-            subscriptionName = TASK_TAG_ENGINE_SUBSCRIPTION
+            subscriptionName = TASK_TAG_ENGINE_SUBSCRIPTION,
+            ackTimeout = 60
         )
 
     fun newTaskEngineConsumer(consumerName: String, topicType: TopicType, name: Name) =
@@ -97,7 +99,8 @@ class PulsarConsumerFactory(
                 is WorkflowName -> WORKFLOW_TASK_ENGINE_SUBSCRIPTION
                 is TaskName -> TASK_ENGINE_SUBSCRIPTION
                 else -> throw RuntimeException("Unexpected Name type ${name::class} for $name")
-            }
+            },
+            ackTimeout = 60
         )
 
     fun newWorkflowTagEngineConsumer(consumerName: String, topicType: TopicType, workflowName: WorkflowName) =
@@ -105,7 +108,8 @@ class PulsarConsumerFactory(
             consumerName = consumerName,
             topic = topics.tagEngineTopic(topicType, workflowName),
             subscriptionType = SubscriptionType.Key_Shared,
-            subscriptionName = WORKFLOW_TAG_ENGINE_SUBSCRIPTION
+            subscriptionName = WORKFLOW_TAG_ENGINE_SUBSCRIPTION,
+            ackTimeout = 60
         )
 
     fun newWorkflowEngineConsumer(consumerName: String, topicType: TopicType, workflowName: WorkflowName) =
@@ -113,7 +117,8 @@ class PulsarConsumerFactory(
             consumerName = consumerName,
             topic = topics.workflowEngineTopic(topicType, workflowName),
             subscriptionType = SubscriptionType.Key_Shared,
-            subscriptionName = WORKFLOW_ENGINE_SUBSCRIPTION
+            subscriptionName = WORKFLOW_ENGINE_SUBSCRIPTION,
+            ackTimeout = 60
         )
 
     fun newExecutorConsumer(consumerName: String, name: Name) =
@@ -125,6 +130,11 @@ class PulsarConsumerFactory(
                 is WorkflowName -> WORKFLOW_EXECUTOR_SUBSCRIPTION
                 is TaskName -> TASK_EXECUTOR_SUBSCRIPTION
                 else -> throw RuntimeException("Unexpected Name type ${name::class} for $name")
+            },
+            ackTimeout = when (name) {
+                is WorkflowName -> 60
+                is TaskName -> null
+                else -> throw RuntimeException("Unexpected Name type ${name::class} for $name")
             }
         )
 
@@ -132,8 +142,9 @@ class PulsarConsumerFactory(
         newConsumer<MetricsPerNameEnvelope>(
             consumerName = consumerName,
             topic = topics.metricsTopic(taskName),
-            subscriptionType = SubscriptionType.Key_Shared,
-            subscriptionName = METRICS_PER_NAME_SUBSCRIPTION
+            subscriptionType = SubscriptionType.Failover,
+            subscriptionName = METRICS_PER_NAME_SUBSCRIPTION,
+            ackTimeout = 60
         )
 
     fun newMetricsGlobalEngineConsumer(consumerName: String) =
@@ -141,7 +152,8 @@ class PulsarConsumerFactory(
             consumerName = consumerName,
             topic = topics.globalMetricsTopic(),
             subscriptionType = SubscriptionType.Failover,
-            subscriptionName = METRICS_GLOBAL_SUBSCRIPTION
+            subscriptionName = METRICS_GLOBAL_SUBSCRIPTION,
+            ackTimeout = 60
         )
 
     private inline fun <reified T : Any> newConsumer(
@@ -149,6 +161,7 @@ class PulsarConsumerFactory(
         topic: String,
         subscriptionType: SubscriptionType,
         subscriptionName: String,
+        ackTimeout: Long? = null,
         earliest: Boolean = true
     ): Consumer<T> {
         logger.info("Topic $topic: creating consumer $consumerName of type ${T::class}")
@@ -160,6 +173,7 @@ class PulsarConsumerFactory(
             .subscriptionName(subscriptionName)
             .subscriptionType(subscriptionType)
             .also {
+                if (ackTimeout != null) it.ackTimeout(ackTimeout, TimeUnit.SECONDS)
                 if (earliest) it.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
             }
             .subscribe()
