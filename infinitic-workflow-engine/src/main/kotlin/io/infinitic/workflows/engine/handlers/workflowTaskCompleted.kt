@@ -147,8 +147,7 @@ suspend fun workflowTaskCompleted(
                     methodRunId = methodRun.parentMethodRunId!!,
                     childWorkflowId = state.workflowId,
                     childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!
-                ),
-                MillisDuration(0)
+                )
             )
         }
     }
@@ -268,7 +267,7 @@ private suspend fun startDurationTimer(
 
     val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
 
-    workflowEngineOutput.sendToWorkflowEngine(msg, command.duration - diff)
+    workflowEngineOutput.sendToWorkflowEngineAfter(msg, command.duration - diff)
 
     addPastCommand(methodRun, newCommand)
 }
@@ -288,7 +287,7 @@ private suspend fun startInstantTimer(
         timerId = TimerId(newCommand.commandId.id)
     )
 
-    workflowEngineOutput.sendToWorkflowEngine(msg, command.instant - MillisInstant.now())
+    workflowEngineOutput.sendToWorkflowEngineAfter(msg, command.instant - MillisInstant.now())
 
     addPastCommand(methodRun, newCommand)
 }
@@ -363,7 +362,7 @@ private suspend fun dispatchChildWorkflow(
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )
-    workflowEngineOutput.sendToWorkflowEngine(msg, MillisDuration(0))
+    workflowEngineOutput.sendToWorkflowEngine(msg)
 
     addPastCommand(methodRun, newCommand)
 }

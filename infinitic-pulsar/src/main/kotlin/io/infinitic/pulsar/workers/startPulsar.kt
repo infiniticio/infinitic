@@ -54,6 +54,7 @@ fun <E : Envelope<M>, M> CoroutineScope.pullMessages(
 ) = launch {
     while (isActive) {
         val pulsarMessage = consumer.receiveAsync().await()
+
         val message = try {
             pulsarMessage.value.message()
         } catch (e: Throwable) {

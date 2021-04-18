@@ -681,7 +681,11 @@ fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
     client.handle(msg)
 }
 
-fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: MillisDuration) = launch {
+fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage) = launch {
+    workflowEngine.handle(msg)
+}
+
+fun CoroutineScope.sendToWorkflowEngineAfter(msg: WorkflowEngineMessage, after: MillisDuration) = launch {
     if (after.long > 0) { delay(after.long) }
     workflowEngine.handle(msg)
 }
@@ -690,7 +694,11 @@ fun CoroutineScope.sendToWorkflowTagEngine(msg: WorkflowTagEngineMessage) = laun
     workflowTagEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) = launch {
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage) = launch {
+    taskEngine.handle(msg)
+}
+
+fun CoroutineScope.sendToTaskEngineAfter(msg: TaskEngineMessage, after: MillisDuration) = launch {
     if (after.long > 0) { delay(after.long) }
     taskEngine.handle(msg)
 }
@@ -715,9 +723,9 @@ fun CoroutineScope.init() {
     client = Client.with(
         ClientName("client: testing"),
         { },
-        { msg, after -> sendToTaskEngine(msg, after) },
+        { sendToTaskEngine(it) },
         { sendToWorkflowTagEngine(it) },
-        { msg, after -> sendToWorkflowEngine(msg, after) }
+        { sendToWorkflowEngine(it) }
     )
 
     workflowA = client.newWorkflow(WorkflowA::class.java)
@@ -726,15 +734,16 @@ fun CoroutineScope.init() {
 
     workflowTagEngine = WorkflowTagEngine(
         workflowTagStorage,
-        { msg, after -> sendToWorkflowEngine(msg, after) }
+        { sendToWorkflowEngine(it) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
         { sendToClientResponse(it) },
         { },
-        { msg, after -> sendToTaskEngine(msg, after) },
-        { msg, after -> sendToWorkflowEngine(msg, after) },
+        { sendToTaskEngine(it) },
+        { msg, after -> sendToTaskEngineAfter(msg, after) },
+        { sendToWorkflowEngine(it) },
         { sendToWorkers(it) },
         { sendToMetricsPerName(it) }
     )
@@ -743,8 +752,9 @@ fun CoroutineScope.init() {
         workflowStateStorage,
         { sendToClientResponse(it) },
         { sendToWorkflowTagEngine(it) },
-        { msg, after -> sendToTaskEngine(msg, after) },
-        { msg, after -> sendToWorkflowEngine(msg, after) }
+        { sendToTaskEngine(it) },
+        { sendToWorkflowEngine(it) },
+        { msg, after -> sendToWorkflowEngineAfter(msg, after) }
     )
 
     metricsPerNameEngine = MetricsPerNameEngine(
@@ -755,7 +765,7 @@ fun CoroutineScope.init() {
     metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     executor = TaskExecutor(
-        { msg, after -> sendToTaskEngine(msg, after) },
+        { sendToTaskEngine(it) },
         TaskExecutorRegisterImpl()
     )
     executor.registerTask<TaskA> { TaskAImpl() }

@@ -25,7 +25,6 @@
 
 package io.infinitic.common.workflows.engine
 
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage, MillisDuration) -> Unit
+typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage) -> Unit

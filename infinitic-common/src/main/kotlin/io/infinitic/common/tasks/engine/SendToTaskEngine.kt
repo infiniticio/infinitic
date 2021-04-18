@@ -25,7 +25,6 @@
 
 package io.infinitic.common.tasks.engine
 
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 
-typealias SendToTaskEngine = suspend (TaskEngineMessage, MillisDuration) -> Unit
+typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit

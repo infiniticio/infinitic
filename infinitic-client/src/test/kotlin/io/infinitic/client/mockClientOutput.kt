@@ -27,7 +27,6 @@ package io.infinitic.client
 
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -65,7 +64,7 @@ fun mockSendToTaskEngine(
     message: CapturingSlot<TaskEngineMessage>
 ): SendToTaskEngine {
     val mock = mockk<SendToTaskEngine>()
-    coEvery { mock(capture(message), MillisDuration(0)) } coAnswers {
+    coEvery { mock(capture(message)) } coAnswers {
         val msg = message.captured
         if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
             client.handle(
@@ -87,7 +86,7 @@ fun mockSendToWorkflowEngine(
     message: CapturingSlot<WorkflowEngineMessage>
 ): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(message), MillisDuration(0)) } coAnswers {
+    coEvery { mock(capture(message)) } coAnswers {
         val msg = message.captured
         if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
             client.handle(

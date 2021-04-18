@@ -26,7 +26,6 @@
 package io.infinitic.tags.workflows
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -92,8 +91,8 @@ internal class WorkflowTagEngineTests : StringSpec({
         coVerifySequence {
             workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            sendToWorkflowEngine(ofType<CancelWorkflow>(), MillisDuration(0))
-            sendToWorkflowEngine(ofType<CancelWorkflow>(), MillisDuration(0))
+            sendToWorkflowEngine(ofType<CancelWorkflow>())
+            sendToWorkflowEngine(ofType<CancelWorkflow>())
             workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
@@ -115,8 +114,8 @@ internal class WorkflowTagEngineTests : StringSpec({
         coVerifySequence {
             workflowTagStorage.getLastMessageId(msgIn.workflowTag, msgIn.workflowName)
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            sendToWorkflowEngine(ofType<SendToChannel>(), MillisDuration(0))
-            sendToWorkflowEngine(ofType<SendToChannel>(), MillisDuration(0))
+            sendToWorkflowEngine(ofType<SendToChannel>())
+            sendToWorkflowEngine(ofType<SendToChannel>())
             workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
         }
         verifyAll()
@@ -140,7 +139,7 @@ private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
 
 private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(slot), MillisDuration(0)) } just Runs
+    coEvery { mock(capture(slot)) } just Runs
     return mock
 }
 

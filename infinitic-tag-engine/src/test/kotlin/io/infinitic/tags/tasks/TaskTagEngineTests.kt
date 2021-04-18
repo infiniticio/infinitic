@@ -28,7 +28,6 @@ package io.infinitic.tags.tasks
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
@@ -126,8 +125,8 @@ internal class TaskTagEngineTests : StringSpec({
         coVerifySequence {
             tagStateStorage.getLastMessageId(msgIn.taskTag, msgIn.taskName)
             tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.taskName)
-            sendToTaskEngine(ofType<RetryTask>(), MillisDuration(0))
-            sendToTaskEngine(ofType<RetryTask>(), MillisDuration(0))
+            sendToTaskEngine(ofType<RetryTask>())
+            sendToTaskEngine(ofType<RetryTask>())
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
         }
         verifyAll()
@@ -149,8 +148,8 @@ internal class TaskTagEngineTests : StringSpec({
         coVerifySequence {
             tagStateStorage.getLastMessageId(msgIn.taskTag, msgIn.taskName)
             tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.taskName)
-            sendToTaskEngine(ofType<CancelTask>(), MillisDuration(0))
-            sendToTaskEngine(ofType<CancelTask>(), MillisDuration(0))
+            sendToTaskEngine(ofType<CancelTask>())
+            sendToTaskEngine(ofType<CancelTask>())
             tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
         }
         verifyAll()
@@ -174,13 +173,13 @@ private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
 
 private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>): SendToTaskEngine {
     val mock = mockk<SendToTaskEngine>()
-    coEvery { mock(capture(slots), MillisDuration(0)) } just Runs
+    coEvery { mock(capture(slots)) } just Runs
     return mock
 }
 
 private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(slot), MillisDuration(0)) } just Runs
+    coEvery { mock(capture(slot)) } just Runs
     return mock
 }
 

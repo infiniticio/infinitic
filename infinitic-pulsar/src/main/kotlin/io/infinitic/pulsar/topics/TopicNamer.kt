@@ -46,6 +46,7 @@ class TopicNamer(private val tenantName: String, private val namespace: String) 
 
     private val engine = "engine"
     private val tag = "tag"
+    private val delay = "delay"
 
     fun clientTopic(clientName: ClientName) = "$client: $clientName"
 
@@ -79,6 +80,12 @@ class TopicNamer(private val tenantName: String, private val namespace: String) 
                 TopicType.DEAD_LETTERS -> "$prefix-$engine-$deadLetters: $name"
             }
         )
+    }
+
+    fun delayEngineTopic(name: Name): String {
+        val prefix = if (isWorkflow(name)) workflow else task
+
+        return getPersistentTopicFullName("$prefix-$delay-$engine: $name")
     }
 
     fun executorTopic(name: Name): String {

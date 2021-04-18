@@ -39,6 +39,7 @@ import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
@@ -87,6 +88,7 @@ private lateinit var metricsPerNameMessage: CapturingSlot<MetricsPerNameMessage>
 private lateinit var sendToClient: SendToClient
 private lateinit var sendToTaskTagEngine: SendToTaskTagEngine
 private lateinit var sendToTaskEngine: SendToTaskEngine
+private lateinit var sendToTaskEngineAfter: SendToTaskEngineAfter
 private lateinit var sendToWorkflowEngine: SendToWorkflowEngine
 private lateinit var sendToTaskExecutors: SendToTaskExecutors
 private lateinit var sendToMetricsPerName: SendToMetricsPerName
@@ -111,7 +113,7 @@ internal class TaskEngineTests : StringSpec({
         // then
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
-            sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>(), MillisDuration(0))
+            sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>())
             sendToClient(ofType<TaskCompletedInClient>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
@@ -255,7 +257,7 @@ internal class TaskEngineTests : StringSpec({
 
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
-            sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>(), MillisDuration(0))
+            sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>())
             sendToClient(ofType<TaskCompletedInClient>())
             sendToClient(ofType<TaskCompletedInClient>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
@@ -303,7 +305,6 @@ internal class TaskEngineTests : StringSpec({
         }
         verifyAll()
 
-        val state = captured(taskState)!!
         val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
 
         with(taskStatusUpdated) {
@@ -334,13 +335,12 @@ internal class TaskEngineTests : StringSpec({
         // then
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
-            sendToTaskEngine(ofType<RetryTaskAttempt>(), ofType<MillisDuration>())
+            sendToTaskEngineAfter(ofType<RetryTaskAttempt>(), ofType())
             taskStateStorage.putState(msgIn.taskId, ofType())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
         }
         verifyAll()
 
-        val state = captured(taskState)!!
         val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
         val retryTaskAttempt = captured(taskEngineMessage)!! as RetryTaskAttempt
         val retryTaskAttemptDelay = captured(taskEngineDelay)!!
@@ -483,15 +483,21 @@ private fun mockSendToTagEngine(slots: CapturingSlot<TaskTagEngineMessage>): Sen
     return mock
 }
 
-private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>, delays: CapturingSlot<MillisDuration>): SendToTaskEngine {
+private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>): SendToTaskEngine {
     val mock = mockk<SendToTaskEngine>()
+    coEvery { mock(capture(slots)) } just Runs
+    return mock
+}
+
+private fun mockSendToTaskEngineAfter(slots: CapturingSlot<TaskEngineMessage>, delays: CapturingSlot<MillisDuration>): SendToTaskEngineAfter {
+    val mock = mockk<SendToTaskEngineAfter>()
     coEvery { mock(capture(slots), capture(delays)) } just Runs
     return mock
 }
 
 private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(slot), MillisDuration(0)) } just Runs
+    coEvery { mock(capture(slot)) } just Runs
     return mock
 }
 
@@ -518,7 +524,8 @@ private fun getEngine(state: TaskState?): TaskEngine {
 
     sendToClient = mockSendToClient(clientMessage)
     sendToTaskTagEngine = mockSendToTagEngine(tagEngineMessage)
-    sendToTaskEngine = mockSendToTaskEngine(taskEngineMessage, taskEngineDelay)
+    sendToTaskEngine = mockSendToTaskEngine(taskEngineMessage)
+    sendToTaskEngineAfter = mockSendToTaskEngineAfter(taskEngineMessage, taskEngineDelay)
     sendToWorkflowEngine = mockSendToWorkflowEngine(workflowEngineMessage)
     sendToTaskExecutors = mockSendToTaskExecutors(taskExecutorMessage)
     sendToMetricsPerName = mockSendToMetricsPerName(metricsPerNameMessage)
@@ -528,6 +535,7 @@ private fun getEngine(state: TaskState?): TaskEngine {
         sendToClient,
         sendToTaskTagEngine,
         sendToTaskEngine,
+        sendToTaskEngineAfter,
         sendToWorkflowEngine,
         sendToTaskExecutors,
         sendToMetricsPerName

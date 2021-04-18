@@ -61,9 +61,11 @@ class PulsarConsumerFactory(
     companion object {
         const val CLIENT_RESPONSE_SUBSCRIPTION = "client-response"
         const val TASK_TAG_ENGINE_SUBSCRIPTION = "task-tag-engine"
+        const val TASK_DELAY_ENGINE_SUBSCRIPTION = "task-delay-engine"
         const val TASK_ENGINE_SUBSCRIPTION = "task-engine"
         const val WORKFLOW_TASK_ENGINE_SUBSCRIPTION = "workflow-task-engine"
         const val WORKFLOW_TAG_ENGINE_SUBSCRIPTION = "workflow-tag-engine"
+        const val WORKFLOW_DELAY_ENGINE_SUBSCRIPTION = "workflow-delay-engine"
         const val WORKFLOW_ENGINE_SUBSCRIPTION = "workflow-engine"
         const val TASK_EXECUTOR_SUBSCRIPTION = "task-executor"
         const val WORKFLOW_EXECUTOR_SUBSCRIPTION = "workflow-executor"
@@ -103,6 +105,15 @@ class PulsarConsumerFactory(
             ackTimeout = 60
         )
 
+    fun newTaskDelayEngineConsumer(consumerName: String, taskName: TaskName) =
+        newConsumer<TaskEngineEnvelope>(
+            consumerName = consumerName,
+            topic = topics.delayEngineTopic(taskName),
+            subscriptionType = SubscriptionType.Shared,
+            subscriptionName = TASK_DELAY_ENGINE_SUBSCRIPTION,
+            ackTimeout = 60
+        )
+
     fun newWorkflowTagEngineConsumer(consumerName: String, topicType: TopicType, workflowName: WorkflowName) =
         newConsumer<WorkflowTagEngineEnvelope>(
             consumerName = consumerName,
@@ -118,6 +129,15 @@ class PulsarConsumerFactory(
             topic = topics.workflowEngineTopic(topicType, workflowName),
             subscriptionType = SubscriptionType.Key_Shared,
             subscriptionName = WORKFLOW_ENGINE_SUBSCRIPTION,
+            ackTimeout = 60
+        )
+
+    fun newWorkflowDelayEngineConsumer(consumerName: String, workflowName: WorkflowName) =
+        newConsumer<WorkflowEngineEnvelope>(
+            consumerName = consumerName,
+            topic = topics.delayEngineTopic(workflowName),
+            subscriptionType = SubscriptionType.Shared,
+            subscriptionName = WORKFLOW_DELAY_ENGINE_SUBSCRIPTION,
             ackTimeout = 60
         )
 

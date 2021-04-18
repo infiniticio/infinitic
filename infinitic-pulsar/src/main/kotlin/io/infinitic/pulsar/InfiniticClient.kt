@@ -58,20 +58,20 @@ class InfiniticClient private constructor(
             clientName: String? = null
         ): InfiniticClient {
             // checks uniqueness if not null, provides a unique name if null
-            val clientName = getPulsarName(pulsarClient, clientName)
-            val infiniticClient = InfiniticClient(ClientName(clientName))
+            val producerName = getProducerName(pulsarClient, clientName)
+            val infiniticClient = InfiniticClient(ClientName(producerName))
 
-            val pulsarOutputs = PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, clientName)
+            val pulsarOutputs = PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
             infiniticClient.setOutput(
-                sendToTaskTagEngine = pulsarOutputs.sendToTaskTagEngine(TopicType.COMMANDS),
-                sendToTaskEngine = pulsarOutputs.sendToTaskEngine(TopicType.COMMANDS),
-                sendToWorkflowTagEngine = pulsarOutputs.sendToWorkflowTagEngine(TopicType.COMMANDS),
-                sendToWorkflowEngine = pulsarOutputs.sendToWorkflowEngine(TopicType.COMMANDS)
+                sendToTaskTagEngine = pulsarOutputs.sendToTaskTagEngine(TopicType.COMMANDS, true),
+                sendToTaskEngine = pulsarOutputs.sendToTaskEngine(TopicType.COMMANDS, null, true),
+                sendToWorkflowTagEngine = pulsarOutputs.sendToWorkflowTagEngine(TopicType.COMMANDS, true),
+                sendToWorkflowEngine = pulsarOutputs.sendToWorkflowEngine(TopicType.COMMANDS, true)
             )
             val job = with(CoroutineScope(Dispatchers.IO)) {
                 val clientResponseConsumer =
                     PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
-                        .newClientResponseConsumer(clientName, ClientName(clientName))
+                        .newClientResponseConsumer(producerName, ClientName(producerName))
 
                 startClientResponseWorker(infiniticClient, clientResponseConsumer)
             }

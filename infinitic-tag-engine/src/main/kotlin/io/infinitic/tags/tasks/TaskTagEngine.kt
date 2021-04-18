@@ -25,11 +25,9 @@
 
 package io.infinitic.tags.tasks
 
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.tags.messages.AddTaskTag
 import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
 import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
@@ -42,12 +40,9 @@ import org.slf4j.LoggerFactory
 
 class TaskTagEngine(
     storage: TaskTagStorage,
-    sendToTaskEngine: SendToTaskEngine
+    val sendToTaskEngine: SendToTaskEngine
 ) {
     private val storage = LoggedTaskTagStorage(storage)
-
-    private val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit) =
-        { msg: TaskEngineMessage -> sendToTaskEngine(msg, MillisDuration(0)) }
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)

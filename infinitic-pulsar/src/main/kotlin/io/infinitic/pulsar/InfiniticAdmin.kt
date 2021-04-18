@@ -127,9 +127,9 @@ class InfiniticAdmin(
      */
     fun printTopicStats() {
         // get list of all topics
-        val leftAlignFormat = "| %-20s | %-8s | %11d | %10d | %10f |%n"
-        val line = "+----------------------+----------+-------------+------------+------------+%n"
-        val title = "| Subscription         | Type     | NbConsumers | MsgBacklog | MsgRateOut |%n"
+        val leftAlignFormat = "| %-22s | %-8s | %11d | %10d | %10f |%n"
+        val line = "+------------------------+----------+-------------+------------+------------+%n"
+        val title = "| Subscription           | Type     | NbConsumers | MsgBacklog | MsgRateOut |%n"
 
         println("WORKFLOWS")
         println()
@@ -150,6 +150,11 @@ class InfiniticAdmin(
             topic = topicNamer.workflowEngineTopic(TopicType.EVENTS, WorkflowName(it))
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
             displayStatsLine("events", stats, leftAlignFormat)
+
+            // workflow delay engine
+            topic = topicNamer.delayEngineTopic(WorkflowName(it))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("", stats, leftAlignFormat)
 
             // tag workflow engine commands
             topic = topicNamer.tagEngineTopic(TopicType.COMMANDS, WorkflowName(it))
@@ -201,6 +206,11 @@ class InfiniticAdmin(
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
             displayStatsLine("events", stats, leftAlignFormat)
 
+            // task delays engine
+            topic = topicNamer.delayEngineTopic(TaskName(it))
+            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+            displayStatsLine("events", stats, leftAlignFormat)
+
             // tag task engine commands
             topic = topicNamer.tagEngineTopic(TopicType.COMMANDS, TaskName(it))
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
@@ -234,7 +244,7 @@ class InfiniticAdmin(
                 title,
                 it.value.consumers.size,
                 it.value.msgBacklog,
-                it.value.msgRateOut
+                it.value.msgRateOut,
             )
         }
     }

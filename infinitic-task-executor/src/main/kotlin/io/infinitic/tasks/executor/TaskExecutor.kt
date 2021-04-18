@@ -34,7 +34,6 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.exceptions.ProcessingTimeout
@@ -59,12 +58,9 @@ import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaField
 
 class TaskExecutor(
-    sendToTaskEngine: SendToTaskEngine,
+    val sendToTaskEngine: SendToTaskEngine,
     val taskExecutorRegister: TaskExecutorRegister
 ) : TaskExecutorRegister by taskExecutorRegister {
-
-    private val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit) =
-        { msg: TaskEngineMessage -> sendToTaskEngine(msg, MillisDuration(0)) }
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)

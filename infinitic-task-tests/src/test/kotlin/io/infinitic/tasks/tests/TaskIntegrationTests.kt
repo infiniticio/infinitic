@@ -23,6 +23,8 @@
  * Licensor: infinitic.io
  */
 
+@file:Suppress("MoveLambdaOutsideParentheses")
+
 package io.infinitic.tasks.tests
 
 import io.infinitic.client.Client
@@ -41,8 +43,6 @@ import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -66,7 +66,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
-import java.util.UUID
 
 private var taskStatus: TaskStatus? = null
 private val taskTest = TaskTestImpl()
@@ -108,7 +107,7 @@ class TaskIntegrationTests : StringSpec({
     }
 
     "Synchronous execution succeeds at first try" {
-        var result: String? = null
+        var result: String?
         // task will succeed
         taskTest.behavior = { _, _ -> Status.SUCCESS }
         // run system
@@ -156,13 +155,12 @@ class TaskIntegrationTests : StringSpec({
     }
 
     "Task succeeds synchronously at 4th try" {
-        var result: String? = null
         // task will succeed only at the 4th try
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
         coroutineScope {
             init()
-            result = taskStub.log()
+            taskStub.log()
         }
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
@@ -171,7 +169,6 @@ class TaskIntegrationTests : StringSpec({
     }
 
     "Task succeeds asynchronously at 4th try" {
-        var result: String? = null
         // task will succeed only at the 4th try
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
@@ -230,7 +227,6 @@ class TaskIntegrationTests : StringSpec({
             }
         }
         // run system
-        var id: UUID
         coroutineScope {
             init()
             val deferred = client.async(taskStub) { log() }
@@ -310,7 +306,6 @@ class TaskIntegrationTests : StringSpec({
         // task will fail and retry
         taskTest.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
         // run system
-        var id: UUID
         coroutineScope {
             init()
             val deferred = client.async(taskStub) { log() }
@@ -403,7 +398,11 @@ fun CoroutineScope.sendToTaskTagEngine(msg: TaskTagEngineMessage) = launch {
     taskTagEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) = launch {
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage) = launch {
+    taskEngine.handle(msg)
+}
+
+fun CoroutineScope.sendToTaskEngineAfter(msg: TaskEngineMessage, after: MillisDuration) = launch {
     if (after.long > 0) {
         delay(after.long)
     }
@@ -434,10 +433,10 @@ fun CoroutineScope.init() {
 
     client = Client.with(
         ClientName("client: InMemory"),
-        { msg: TaskTagEngineMessage -> sendToTaskTagEngine(msg) },
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-        { _: WorkflowTagEngineMessage -> },
-        { _: WorkflowEngineMessage, _: MillisDuration -> }
+        { sendToTaskTagEngine(it) },
+        { sendToTaskEngine(it) },
+        { },
+        { }
     )
 
     taskStub = client.newTask(TaskTest::class.java)
@@ -446,15 +445,16 @@ fun CoroutineScope.init() {
 
     taskTagEngine = TaskTagEngine(
         taskTagStorage,
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) }
+        { sendToTaskEngine(it) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
         { msg: ClientMessage -> sendToClientResponse(msg) },
         { msg: TaskTagEngineMessage -> sendToTaskTagEngine(msg) },
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-        { _: WorkflowEngineMessage, _: MillisDuration -> },
+        { sendToTaskEngine(it) },
+        { msg, after -> sendToTaskEngineAfter(msg, after) },
+        { },
         { msg: TaskExecutorMessage -> sendToWorkers(msg) },
         { msg: MetricsPerNameMessage -> sendToMetricsPerName(msg) }
     )
@@ -467,7 +467,7 @@ fun CoroutineScope.init() {
     metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     taskExecutor = TaskExecutor(
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+        { sendToTaskEngine(it) },
         TaskExecutorRegisterImpl()
     )
     taskExecutor.registerTask(TaskTest::class.java.name) { taskTest }

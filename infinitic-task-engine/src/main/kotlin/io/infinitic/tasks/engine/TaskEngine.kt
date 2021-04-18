@@ -39,6 +39,7 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
 import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
@@ -54,7 +55,6 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.tasks.engine.storage.LoggedTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import org.slf4j.Logger
@@ -67,14 +67,12 @@ class TaskEngine(
     val sendToClient: SendToClient,
     val sendToTaskTagEngine: SendToTaskTagEngine,
     val sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowEngine: SendToWorkflowEngine,
+    val sendToTaskEngineAfter: SendToTaskEngineAfter,
+    val sendToWorkflowEngine: SendToWorkflowEngine,
     val sendToTaskExecutors: SendToTaskExecutors,
     val sendToMetricsPerName: SendToMetricsPerName
 ) {
     private val storage = LoggedTaskStateStorage(storage)
-
-    private val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit) =
-        { msg: WorkflowEngineMessage -> sendToWorkflowEngine(msg, MillisDuration(0)) }
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -400,7 +398,7 @@ class TaskEngine(
             taskRetrySequence = newState.taskRetrySequence,
             taskRetryIndex = newState.taskRetryIndex
         )
-        sendToTaskEngine(retryTaskAttempt, delay)
+        sendToTaskEngineAfter(retryTaskAttempt, delay)
 
         return newState
     }

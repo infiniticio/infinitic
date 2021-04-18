@@ -27,10 +27,9 @@ package io.infinitic.workflows.engine
 
 import io.infinitic.common.clients.messages.UnknownWorkflowWaited
 import io.infinitic.common.clients.transport.SendToClient
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
@@ -59,13 +58,15 @@ class WorkflowEngine(
     sendEventsToClient: SendToClient,
     sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowEngine: SendToWorkflowEngine
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
     private val output = WorkflowEngineOutput(
         sendEventsToClient,
         sendToWorkflowTagEngine,
-        { msg: TaskEngineMessage -> sendToTaskEngine(msg, MillisDuration(0)) },
-        sendToWorkflowEngine
+        sendToTaskEngine,
+        sendToWorkflowEngine,
+        sendToWorkflowEngineAfter
     )
 
     private val logger = LoggerFactory.getLogger(javaClass)

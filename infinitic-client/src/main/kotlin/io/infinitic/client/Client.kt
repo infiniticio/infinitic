@@ -28,7 +28,6 @@ package io.infinitic.client
 import io.infinitic.client.deferred.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
@@ -41,7 +40,6 @@ import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
 import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
@@ -52,7 +50,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.exceptions.CanNotReuseWorkflowStub
@@ -88,9 +85,9 @@ open class Client(
 
     private lateinit var dispatcher: ClientDispatcher
     private lateinit var sendToTaskTagEngine: SendToTaskTagEngine
-    private lateinit var sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit)
+    private lateinit var sendToTaskEngine: SendToTaskEngine
     private lateinit var sendToWorkflowTagEngine: SendToWorkflowTagEngine
-    private lateinit var sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
+    private lateinit var sendToWorkflowEngine: SendToWorkflowEngine
 
     fun close() = closeFn()
 
@@ -101,11 +98,11 @@ open class Client(
         sendToWorkflowEngine: SendToWorkflowEngine
     ) {
         this.sendToTaskTagEngine = sendToTaskTagEngine
-        this.sendToTaskEngine = { sendToTaskEngine(it, MillisDuration(0)) }
+        this.sendToTaskEngine = sendToTaskEngine
         this.sendToWorkflowTagEngine = sendToWorkflowTagEngine
-        this.sendToWorkflowEngine = { sendToWorkflowEngine(it, MillisDuration(0)) }
+        this.sendToWorkflowEngine = sendToWorkflowEngine
 
-        this.dispatcher = ClientDispatcher(
+        dispatcher = ClientDispatcher(
             clientName,
             this.sendToTaskTagEngine,
             this.sendToTaskEngine,

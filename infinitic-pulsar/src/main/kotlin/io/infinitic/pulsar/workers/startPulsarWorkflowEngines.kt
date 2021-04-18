@@ -66,8 +66,9 @@ fun CoroutineScope.startPulsarWorkflowEngines(
             commandsOutputChannel = commandsOutputChannel,
             output.sendToClient(),
             output.sendToWorkflowTagEngine(TopicType.EVENTS),
-            sendToTaskEngine = { msg, after -> if (msg.isWorkflowTask()) workflowTaskEngine(msg, after) else taskEngine(msg, after) },
-            output.sendToWorkflowEngine(TopicType.EVENTS)
+            sendToTaskEngine = { if (it.isWorkflowTask()) workflowTaskEngine(it) else taskEngine(it) },
+            output.sendToWorkflowEngine(TopicType.EVENTS),
+            output.sendToWorkflowEngineAfter()
         )
 
         // Pulsar consumers

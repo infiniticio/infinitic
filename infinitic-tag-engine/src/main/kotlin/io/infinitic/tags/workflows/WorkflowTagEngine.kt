@@ -25,11 +25,9 @@
 
 package io.infinitic.tags.workflows
 
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
@@ -42,12 +40,9 @@ import org.slf4j.LoggerFactory
 
 class WorkflowTagEngine(
     storage: WorkflowTagStorage,
-    sendToWorkflowEngine: SendToWorkflowEngine
+    val sendToWorkflowEngine: SendToWorkflowEngine
 ) {
     private val storage = LoggedWorkflowTagStorage(storage)
-
-    private val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit) =
-        { msg: WorkflowEngineMessage -> sendToWorkflowEngine(msg, MillisDuration(0)) }
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)

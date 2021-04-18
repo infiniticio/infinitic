@@ -23,40 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.storage.inMemory
+package io.infinitic.common.workflows.engine
 
-import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 
-class InMemoryKeyCounterStorageTests : StringSpec({
-
-    val storage = InMemoryKeyCounterStorage()
-
-    beforeTest {
-        storage.incrCounter("foo", 42)
-    }
-
-    afterTest {
-        storage.flush()
-    }
-
-    "getCounter should return 0 on unknown key" {
-        storage.getCounter("unknown") shouldBe 0
-    }
-
-    "getCounter should return value on known key" {
-        storage.getCounter("foo") shouldBe 42
-    }
-
-    "incrCounter on unknown key should incr value from 0" {
-        storage.incrCounter("unknown", 42)
-
-        storage.getCounter("unknown") shouldBe 42
-    }
-
-    "incrCounter on known key should incr value from current" {
-        storage.incrCounter("foo", -7)
-
-        storage.getCounter("foo") shouldBe 35
-    }
-})
+typealias SendToWorkflowEngineAfter = suspend (WorkflowEngineMessage, MillisDuration) -> Unit

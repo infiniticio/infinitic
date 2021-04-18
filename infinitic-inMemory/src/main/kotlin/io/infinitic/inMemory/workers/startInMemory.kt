@@ -92,6 +92,7 @@ fun CoroutineScope.startInMemory(
         output.sendEventsToClient,
         output.sendEventsToTaskTagEngine,
         output.sendEventsToTaskEngine,
+        output.sendToTaskEngineAfter,
         output.sendEventsToWorkflowEngine,
         output.sendToTaskExecutors,
         output.sendToMetricsPerName
@@ -117,7 +118,8 @@ fun CoroutineScope.startInMemory(
         output.sendEventsToClient,
         output.sendEventsToWorkflowTagEngine,
         output.sendCommandsToTaskEngine,
-        output.sendEventsToWorkflowEngine
+        output.sendEventsToWorkflowEngine,
+        output.sendToWorkflowEngineAfter
     )
 
     repeat(N_TASK_EXECUTORS) {

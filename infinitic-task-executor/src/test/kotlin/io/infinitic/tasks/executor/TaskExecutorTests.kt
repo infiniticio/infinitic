@@ -66,8 +66,7 @@ import kotlinx.coroutines.coroutineScope
 
 fun mockSendToTaskEngine(slots: MutableList<TaskEngineMessage>): SendToTaskEngine {
     val sendToTaskEngine = mockk<SendToTaskEngine>()
-
-    coEvery { sendToTaskEngine(capture(slots), any()) } just Runs
+    coEvery { sendToTaskEngine(capture(slots)) } just Runs
 
     return sendToTaskEngine
 }

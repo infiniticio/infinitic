@@ -49,9 +49,11 @@ import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startPulsarMetricsGlobalEngine
 import io.infinitic.pulsar.workers.startPulsarMetricsPerNameEngines
+import io.infinitic.pulsar.workers.startPulsarTaskDelayEngines
 import io.infinitic.pulsar.workers.startPulsarTaskEngines
 import io.infinitic.pulsar.workers.startPulsarTaskExecutors
 import io.infinitic.pulsar.workers.startPulsarTaskTagEngines
+import io.infinitic.pulsar.workers.startPulsarWorkflowDelayEngines
 import io.infinitic.pulsar.workers.startPulsarWorkflowEngines
 import io.infinitic.pulsar.workers.startPulsarWorkflowTagEngines
 import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
@@ -134,7 +136,7 @@ class InfiniticWorker(
         config: WorkerConfig
     ) = launch {
 
-        val workerName = getPulsarName(pulsarClient, config.name)
+        val workerName = getProducerName(pulsarClient, config.name)
         val tenant = config.pulsar.tenant
         val namespace = config.pulsar.namespace
         val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
@@ -164,7 +166,9 @@ class InfiniticWorker(
             // starting engines managing workflows
             workflow.workflowEngine?.let {
                 startWorkflowEngines(workflowName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+                startPulsarWorkflowDelayEngines(workflowName, workerName, it.concurrency, pulsarConsumerFactory, pulsarOutput)
             }
+
             println()
         }
 
@@ -185,6 +189,7 @@ class InfiniticWorker(
             // starting engines managing tasks
             task.taskEngine?.let {
                 startTaskEngines(taskName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+                startPulsarTaskDelayEngines(taskName, workerName, it.concurrency, pulsarConsumerFactory, pulsarOutput)
             }
 
             task.metrics?.let {

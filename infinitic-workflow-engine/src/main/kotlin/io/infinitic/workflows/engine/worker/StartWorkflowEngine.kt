@@ -29,6 +29,7 @@ import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.workflows.engine.WorkflowEngine
@@ -65,7 +66,8 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     sendEventsToClient: SendToClient,
     sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowEngine: SendToWorkflowEngine
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) = launch(CoroutineName(coroutineName)) {
 
     val workflowEngine = WorkflowEngine(
@@ -73,7 +75,8 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
         sendEventsToClient,
         sendToWorkflowTagEngine,
         sendToTaskEngine,
-        sendToWorkflowEngine
+        sendToWorkflowEngine,
+        sendToWorkflowEngineAfter
     )
 
     while (isActive) {
