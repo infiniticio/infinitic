@@ -111,9 +111,9 @@ class InMemoryOutput(
 
     val sendToTaskEngineAfter: SendToTaskEngineAfter = { message, after ->
         logger.debug("sendToTaskEngineAfter {}", message)
-        delay(after.long)
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
+            delay(after.long)
             taskEventsChannel.send(InMemoryMessageToProcess(message))
         }
     }
@@ -146,9 +146,9 @@ class InMemoryOutput(
 
     val sendToWorkflowEngineAfter: SendToWorkflowEngineAfter = { message, after ->
         logger.debug("sendToWorkflowEngineAfter {}", message)
-        delay(after.long)
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
+            delay(after.long)
             workflowEventsChannel.send(InMemoryMessageToProcess(message))
         }
     }

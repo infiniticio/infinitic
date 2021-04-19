@@ -26,7 +26,7 @@
 package io.infinitic.inMemory
 
 import io.infinitic.client.Client
-import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.tasks.TaskExecutorRegister
@@ -35,26 +35,35 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
 
-fun Client.startInMemory(
+class InfiniticClient(
     taskExecutorRegister: TaskExecutorRegister,
-    logFn: (_: MessageToProcess<*>) -> Unit = { }
-): Job {
-    val threadPool = Executors.newCachedThreadPool()
-    val client = this
-    client.closeFn = { threadPool.shutdown() }
+    val name: String? = null
+) : Client() {
 
-    val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
+    private val job: Job
 
-    val inMemoryOutput = InMemoryOutput(scope)
+    override val clientName: ClientName = ClientName(name ?: "client: inMemory")
 
-    client.setOutput(
-        inMemoryOutput.sendCommandsToTaskTagEngine,
-        inMemoryOutput.sendCommandsToTaskEngine,
-        inMemoryOutput.sendCommandsToWorkflowTagEngine,
-        inMemoryOutput.sendCommandsToWorkflowEngine
-    )
+    private val threadPool = Executors.newCachedThreadPool()
 
-    return with(scope) {
-        startInMemory(taskExecutorRegister, client, inMemoryOutput, logFn)
+    private val scope = CoroutineScope(threadPool.asCoroutineDispatcher() + Job())
+
+    private val inMemoryOutput = InMemoryOutput(scope)
+
+    override val sendToTaskTagEngine = inMemoryOutput.sendCommandsToTaskTagEngine
+
+    override val sendToTaskEngine = inMemoryOutput.sendCommandsToTaskEngine
+
+    override val sendToWorkflowTagEngine = inMemoryOutput.sendCommandsToWorkflowTagEngine
+
+    override val sendToWorkflowEngine = inMemoryOutput.sendCommandsToWorkflowEngine
+
+    override fun close() {
+        job.cancel()
+        threadPool.shutdown()
+    }
+
+    init {
+        job = scope.startInMemory(taskExecutorRegister, this, inMemoryOutput) { }
     }
 }

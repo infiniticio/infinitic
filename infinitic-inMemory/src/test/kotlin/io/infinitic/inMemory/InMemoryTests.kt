@@ -25,9 +25,7 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.client.Client
 import io.infinitic.client.deferred.Deferred
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.inMemory.tasks.TaskA
 import io.infinitic.inMemory.tasks.TaskAImpl
 import io.infinitic.inMemory.workflows.WorkflowA
@@ -38,19 +36,15 @@ import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-val client = Client(ClientName("client: inMemory"))
+private val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
+    registerTask(TaskA::class.java.name) { TaskAImpl() }
+    registerWorkflow(WorkflowA::class.java.name) { WorkflowAImpl() }
+    registerWorkflow(WorkflowB::class.java.name) { WorkflowBImpl() }
+}
+
+val client = InfiniticClient(taskExecutorRegister, "client: inMemory")
 
 internal class InMemoryTests : StringSpec({
-
-    beforeSpec {
-        val taskExecutorRegister = TaskExecutorRegisterImpl().also {
-            it.registerTask(TaskA::class.java.name) { TaskAImpl() }
-            it.registerWorkflow(WorkflowA::class.java.name) { WorkflowAImpl() }
-            it.registerWorkflow(WorkflowB::class.java.name) { WorkflowBImpl() }
-        }
-
-        client.startInMemory(taskExecutorRegister)
-    }
 
     afterSpec {
         client.close()

@@ -33,12 +33,16 @@ import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.storage.keySet.LoggedKeySetStorage
 import io.infinitic.common.storage.keyValue.LoggedKeyValueStorage
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
@@ -720,13 +724,18 @@ fun CoroutineScope.init() {
     keyValueStorage.flush()
     keySetStorage.flush()
 
-    client = Client.with(
-        ClientName("client: testing"),
-        { },
-        { sendToTaskEngine(it) },
-        { sendToWorkflowTagEngine(it) },
-        { sendToWorkflowEngine(it) }
-    )
+    val scope = this
+
+    class ClientTest : Client() {
+        override val clientName = ClientName("clientTest")
+        override val sendToTaskTagEngine: SendToTaskTagEngine = { }
+        override val sendToTaskEngine: SendToTaskEngine = { scope.sendToTaskEngine(it) }
+        override val sendToWorkflowTagEngine: SendToWorkflowTagEngine = { scope.sendToWorkflowTagEngine(it) }
+        override val sendToWorkflowEngine: SendToWorkflowEngine = { scope.sendToWorkflowEngine(it) }
+        override fun close() {}
+    }
+
+    client = ClientTest()
 
     workflowA = client.newWorkflow(WorkflowA::class.java)
     workflowATagged = client.newWorkflow(WorkflowA::class.java, setOf("foo", "bar"))
