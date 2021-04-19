@@ -26,10 +26,5 @@
 package io.infinitic.common.workflows.data.workflowTasks
 
 interface WorkflowTask {
-    companion object {
-        const val DEFAULT_METHOD = "handle"
-        const val META_WORKFLOW_NAME = "workflowName"
-    }
-
     fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue
 }

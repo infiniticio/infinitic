@@ -28,23 +28,24 @@ package io.infinitic.inMemory.transport
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.transport.ClientMessageToProcess
 import io.infinitic.common.clients.transport.SendToClient
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
-import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tags.transport.SendToTagEngine
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.metrics.global.engine.worker.MetricsGlobalMessageToProcess
 import io.infinitic.metrics.perName.engine.worker.MetricsPerNameMessageToProcess
-import io.infinitic.tags.engine.worker.TagEngineMessageToProcess
+import io.infinitic.tags.tasks.worker.TaskTagEngineMessageToProcess
+import io.infinitic.tags.workflows.worker.WorkflowTagEngineMessageToProcess
 import io.infinitic.tasks.engine.worker.TaskEngineMessageToProcess
 import io.infinitic.tasks.executor.worker.TaskExecutorMessageToProcess
 import io.infinitic.workflows.engine.worker.WorkflowEngineMessageToProcess
@@ -59,10 +60,12 @@ class InMemoryOutput(
     private val scope: CoroutineScope,
     val logChannel: Channel<MessageToProcess<Any>> = Channel(),
     val clientEventsChannel: Channel<ClientMessageToProcess> = Channel(),
-    val tagCommandsChannel: Channel<TagEngineMessageToProcess> = Channel(),
-    val tagEventsChannel: Channel<TagEngineMessageToProcess> = Channel(),
+    val taskTagCommandsChannel: Channel<TaskTagEngineMessageToProcess> = Channel(),
+    val taskTagEventsChannel: Channel<TaskTagEngineMessageToProcess> = Channel(),
     val taskCommandsChannel: Channel<TaskEngineMessageToProcess> = Channel(),
     val taskEventsChannel: Channel<TaskEngineMessageToProcess> = Channel(),
+    val workflowTagCommandsChannel: Channel<WorkflowTagEngineMessageToProcess> = Channel(),
+    val workflowTagEventsChannel: Channel<WorkflowTagEngineMessageToProcess> = Channel(),
     val workflowCommandsChannel: Channel<WorkflowEngineMessageToProcess> = Channel(),
     val workflowEventsChannel: Channel<WorkflowEngineMessageToProcess> = Channel(),
     val executorChannel: Channel<TaskExecutorMessageToProcess> = Channel(),
@@ -80,27 +83,34 @@ class InMemoryOutput(
         }
     }
 
-    val sendCommandsToTagEngine: SendToTagEngine = { message: TagEngineMessage ->
-        logger.debug("sendCommandsToTagEngine {}", message)
-        tagCommandsChannel.send(InMemoryMessageToProcess(message))
+    val sendCommandsToTaskTagEngine: SendToTaskTagEngine = { message: TaskTagEngineMessage ->
+        logger.debug("sendCommandsToTaskTagEngine {}", message)
+        taskTagCommandsChannel.send(InMemoryMessageToProcess(message))
     }
 
-    val sendEventsToTagEngine: SendToTagEngine = { message: TagEngineMessage ->
-        logger.debug("sendEventsToTagEngine {}", message)
+    val sendEventsToTaskTagEngine: SendToTaskTagEngine = { message: TaskTagEngineMessage ->
+        logger.debug("sendEventsToTaskTagEngine {}", message)
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
-            tagEventsChannel.send(InMemoryMessageToProcess(message))
+            taskTagEventsChannel.send(InMemoryMessageToProcess(message))
         }
     }
 
-    val sendCommandsToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
+    val sendCommandsToTaskEngine: SendToTaskEngine = { message ->
         logger.debug("sendCommandsToTaskEngine {}", message)
-        delay(after.long)
         taskCommandsChannel.send(InMemoryMessageToProcess(message))
     }
 
-    val sendEventsToTaskEngine: SendToTaskEngine = { message: TaskEngineMessage, after: MillisDuration ->
+    val sendEventsToTaskEngine: SendToTaskEngine = { message ->
         logger.debug("sendEventsToTaskEngine {}", message)
+        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+        scope.launch {
+            taskEventsChannel.send(InMemoryMessageToProcess(message))
+        }
+    }
+
+    val sendToTaskEngineAfter: SendToTaskEngineAfter = { message, after ->
+        logger.debug("sendToTaskEngineAfter {}", message)
         delay(after.long)
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
@@ -108,14 +118,34 @@ class InMemoryOutput(
         }
     }
 
-    val sendCommandsToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
+    val sendCommandsToWorkflowTagEngine: SendToWorkflowTagEngine = { message ->
+        logger.debug("sendCommandsToWorkflowTagEngine {}", message)
+        workflowTagCommandsChannel.send(InMemoryMessageToProcess(message))
+    }
+
+    val sendEventsToWorkflowTagEngine: SendToWorkflowTagEngine = { message ->
+        logger.debug("sendEventsToWorkflowTagEngine {}", message)
+        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+        scope.launch {
+            workflowTagEventsChannel.send(InMemoryMessageToProcess(message))
+        }
+    }
+
+    val sendCommandsToWorkflowEngine: SendToWorkflowEngine = { message ->
         logger.debug("sendCommandsToWorkflowEngine {}", message)
-        delay(after.long)
         workflowCommandsChannel.send(InMemoryMessageToProcess(message))
     }
 
-    val sendEventsToWorkflowEngine: SendToWorkflowEngine = { message: WorkflowEngineMessage, after: MillisDuration ->
+    val sendEventsToWorkflowEngine: SendToWorkflowEngine = { message ->
         logger.debug("sendEventsToWorkflowEngine {}", message)
+        // As it's a back loop, we trigger it asynchronously to avoid deadlocks
+        scope.launch {
+            workflowEventsChannel.send(InMemoryMessageToProcess(message))
+        }
+    }
+
+    val sendToWorkflowEngineAfter: SendToWorkflowEngineAfter = { message, after ->
+        logger.debug("sendToWorkflowEngineAfter {}", message)
         delay(after.long)
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {

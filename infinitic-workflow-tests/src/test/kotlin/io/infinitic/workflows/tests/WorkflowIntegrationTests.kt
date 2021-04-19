@@ -29,25 +29,25 @@ import io.infinitic.client.Client
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.storage.keySet.LoggedKeySetStorage
 import io.infinitic.common.storage.keyValue.LoggedKeyValueStorage
-import io.infinitic.common.tags.data.Tag
-import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
 import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.engine.TagEngine
-import io.infinitic.tags.engine.storage.BinaryTagStateStorage
+import io.infinitic.tags.workflows.WorkflowTagEngine
+import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
@@ -80,14 +80,14 @@ import java.util.UUID
 
 val keyValueStorage = LoggedKeyValueStorage(InMemoryKeyValueStorage())
 val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
-private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
+private val workflowTagStorage = BinaryWorkflowTagStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
 private val workflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
 private val metricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
 private val metricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
-private lateinit var tagEngine: TagEngine
 private lateinit var taskEngine: TaskEngine
+private lateinit var workflowTagEngine: WorkflowTagEngine
 private lateinit var workflowEngine: WorkflowEngine
 private lateinit var metricsPerNameEngine: MetricsPerNameEngine
 private lateinit var metricsGlobalEngine: MetricsGlobalEngine
@@ -664,16 +664,16 @@ class WorkflowIntegrationTests : StringSpec({
             id = deferred.id
             // checks id has been added to tag storage
             yield()
-            tagStateStorage.getIds(Tag("foo"), Name(WorkflowA::class.java.name)).contains(id) shouldBe true
-            tagStateStorage.getIds(Tag("bar"), Name(WorkflowA::class.java.name)).contains(id) shouldBe true
+            workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe true
+            workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe true
             workflowATagged.channelA.send("test")
             result = deferred.await()
         }
         // check output
         result shouldBe "test"
         // checks id has been removed from tag storage
-        tagStateStorage.getIds(Tag("foo"), Name(WorkflowA::class.java.name)).contains(id) shouldBe false
-        tagStateStorage.getIds(Tag("bar"), Name(WorkflowA::class.java.name)).contains(id) shouldBe false
+        workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe false
+        workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe false
     }
 })
 
@@ -681,16 +681,24 @@ fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
     client.handle(msg)
 }
 
-fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage, after: MillisDuration) = launch {
+fun CoroutineScope.sendToWorkflowEngine(msg: WorkflowEngineMessage) = launch {
+    workflowEngine.handle(msg)
+}
+
+fun CoroutineScope.sendToWorkflowEngineAfter(msg: WorkflowEngineMessage, after: MillisDuration) = launch {
     if (after.long > 0) { delay(after.long) }
     workflowEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToTagEngine(msg: TagEngineMessage) = launch {
-    tagEngine.handle(msg)
+fun CoroutineScope.sendToWorkflowTagEngine(msg: WorkflowTagEngineMessage) = launch {
+    workflowTagEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) = launch {
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage) = launch {
+    taskEngine.handle(msg)
+}
+
+fun CoroutineScope.sendToTaskEngineAfter(msg: TaskEngineMessage, after: MillisDuration) = launch {
     if (after.long > 0) { delay(after.long) }
     taskEngine.handle(msg)
 }
@@ -714,28 +722,28 @@ fun CoroutineScope.init() {
 
     client = Client.with(
         ClientName("client: testing"),
-        { sendToTagEngine(it) },
-        { msg, after -> sendToTaskEngine(msg, after) },
-        { msg, after -> sendToWorkflowEngine(msg, after) }
+        { },
+        { sendToTaskEngine(it) },
+        { sendToWorkflowTagEngine(it) },
+        { sendToWorkflowEngine(it) }
     )
 
     workflowA = client.newWorkflow(WorkflowA::class.java)
     workflowATagged = client.newWorkflow(WorkflowA::class.java, setOf("foo", "bar"))
     workflowB = client.newWorkflow(WorkflowB::class.java)
 
-    tagEngine = TagEngine(
-        tagStateStorage,
-        { sendToClientResponse(it) },
-        { msg, after -> sendToTaskEngine(msg, after) },
-        { msg, after -> sendToWorkflowEngine(msg, after) }
+    workflowTagEngine = WorkflowTagEngine(
+        workflowTagStorage,
+        { sendToWorkflowEngine(it) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
         { sendToClientResponse(it) },
-        { sendToTagEngine(it) },
-        { msg, after -> sendToTaskEngine(msg, after) },
-        { msg, after -> sendToWorkflowEngine(msg, after) },
+        { },
+        { sendToTaskEngine(it) },
+        { msg, after -> sendToTaskEngineAfter(msg, after) },
+        { sendToWorkflowEngine(it) },
         { sendToWorkers(it) },
         { sendToMetricsPerName(it) }
     )
@@ -743,9 +751,10 @@ fun CoroutineScope.init() {
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
         { sendToClientResponse(it) },
-        { sendToTagEngine(it) },
-        { msg, after -> sendToTaskEngine(msg, after) },
-        { msg, after -> sendToWorkflowEngine(msg, after) }
+        { sendToWorkflowTagEngine(it) },
+        { sendToTaskEngine(it) },
+        { sendToWorkflowEngine(it) },
+        { msg, after -> sendToWorkflowEngineAfter(msg, after) }
     )
 
     metricsPerNameEngine = MetricsPerNameEngine(
@@ -756,7 +765,7 @@ fun CoroutineScope.init() {
     metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     executor = TaskExecutor(
-        { msg, after -> sendToTaskEngine(msg, after) },
+        { sendToTaskEngine(it) },
         TaskExecutorRegisterImpl()
     )
     executor.registerTask<TaskA> { TaskAImpl() }

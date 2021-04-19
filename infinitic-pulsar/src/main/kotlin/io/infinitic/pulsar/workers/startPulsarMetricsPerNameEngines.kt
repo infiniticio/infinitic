@@ -25,44 +25,45 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
+import io.infinitic.pulsar.transport.PulsarOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 
 typealias PulsarMetricsPerNameMessageToProcess = PulsarMessageToProcess<MetricsPerNameMessage>
 
 fun CoroutineScope.startPulsarMetricsPerNameEngines(
-    concurrency: Int,
+    taskName: TaskName,
     consumerName: String,
     consumerFactory: PulsarConsumerFactory,
     storage: MetricsPerNameStateStorage,
-    sendToMetricsGlobal: SendToMetricsGlobal
+    pulsarOutput: PulsarOutput
 ) {
-    repeat(concurrency) {
+    val inputChannel = Channel<PulsarMetricsPerNameMessageToProcess>()
+    val outputChannel = Channel<PulsarMetricsPerNameMessageToProcess>()
 
-        val inputChannel = Channel<PulsarMetricsPerNameMessageToProcess>()
-        val outputChannel = Channel<PulsarMetricsPerNameMessageToProcess>()
+    startMetricsPerNameEngine(
+        "metrics-per-name",
+        storage,
+        inputChannel = inputChannel,
+        outputChannel = outputChannel,
+        pulsarOutput.sendToMetricsGlobal()
+    )
 
-        startMetricsPerNameEngine(
-            "metrics-per-name-$it",
-            storage,
-            inputChannel = inputChannel,
-            outputChannel = outputChannel,
-            sendToMetricsGlobal
-        )
+    // Pulsar consumer
+    val consumer = consumerFactory.newMetricsPerNameEngineConsumer(
+        consumerName = consumerName,
+        taskName = taskName
+    )
 
-        // Pulsar consumer
-        val consumer = consumerFactory.newMetricsPerNameEngineConsumer(consumerName, it)
+    // coroutine pulling pulsar messages
+    pullMessages(consumer, inputChannel)
 
-        // coroutine pulling pulsar messages
-        pullMessages(consumer, inputChannel)
-
-        // coroutine acknowledging pulsar messages
-        acknowledgeMessages(consumer, outputChannel)
-    }
+    // coroutine acknowledging pulsar messages
+    acknowledgeMessages(consumer, outputChannel)
 }

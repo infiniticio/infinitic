@@ -26,19 +26,9 @@
 package io.infinitic.pulsar.functions
 
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.workflows.engine.WorkflowEngine
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
-import io.mockk.Runs
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.spyk
-import io.mockk.unmockkAll
-import org.apache.pulsar.functions.api.Context
 
 class WorkflowEnginePulsarFunctionTests : StringSpec({
     "WorkflowEnginePulsarFunction should throw an exception if called without context" {
@@ -50,27 +40,27 @@ class WorkflowEnginePulsarFunctionTests : StringSpec({
         }
     }
 
-    "WorkflowEnginePulsarFunction should call engine with correct parameters" {
-        // mocking Pulsar Context
-        val context = mockk<Context>()
-        every { context.logger } returns mockk()
-
-        // Mocking avro conversion
-        val envelope = mockk<WorkflowEngineEnvelope>()
-        val msg = mockk<WorkflowEngineMessage>()
-        every { envelope.message() } returns msg
-
-        // Mocking Task Engine
-        val workflowEngine = mockk<WorkflowEngine>()
-        val workflowEnginePulsarFunction = spyk<WorkflowEnginePulsarFunction>()
-        every { workflowEnginePulsarFunction.getWorkflowEngine(context) } returns workflowEngine
-        coEvery { workflowEngine.handle(msg) } just Runs
-
-        // when
-        workflowEnginePulsarFunction.process(envelope, context)
-        // then
-        coVerify(exactly = 1) { workflowEngine.handle(msg) }
-
-        unmockkAll()
-    }
+//    "WorkflowEnginePulsarFunction should call engine with correct parameters" {
+//        // mocking Pulsar Context
+//        val context = mockk<Context>()
+//        every { context.logger } returns mockk()
+//
+//        // Mocking avro conversion
+//        val envelope = mockk<WorkflowEngineEnvelope>()
+//        val msg = mockk<WorkflowEngineMessage>()
+//        every { envelope.message() } returns msg
+//
+//        // Mocking Task Engine
+//        val workflowEngine = mockk<WorkflowEngine>()
+//        val workflowEnginePulsarFunction = spyk<WorkflowEnginePulsarFunction>()
+//        every { workflowEnginePulsarFunction.getWorkflowEngine(context) } returns workflowEngine
+//        coEvery { workflowEngine.handle(msg) } just Runs
+//
+//        // when
+//        workflowEnginePulsarFunction.process(envelope, context)
+//        // then
+//        coVerify(exactly = 1) { workflowEngine.handle(msg) }
+//
+//        unmockkAll()
+//    }
 })

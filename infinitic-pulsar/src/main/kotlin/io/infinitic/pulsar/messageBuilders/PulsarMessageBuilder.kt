@@ -26,33 +26,40 @@
 package io.infinitic.pulsar.messageBuilders
 
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.messages.Envelope
 import io.infinitic.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.future.await
+import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 interface PulsarMessageBuilder {
     fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O>
 }
 
-suspend inline fun <reified T : Any> PulsarMessageBuilder.sendPulsarMessage(
+inline fun <reified T : Envelope<*>> PulsarMessageBuilder.sendPulsarMessageAsync(
     topic: String,
     msg: T,
     key: String?,
     after: MillisDuration
-) {
-    this
-        .newMessage(topic, AvroSchema.of(schemaDefinition<T>()))
-        .value(msg)
-        .also {
-            if (key != null) {
-                it.key(key)
-            }
-            if (after.long > 0) {
-                it.deliverAfter(after.long, TimeUnit.MILLISECONDS)
-            }
+): CompletableFuture<MessageId> = newMessage(topic, AvroSchema.of(schemaDefinition<T>()))
+    .value(msg)
+    .also {
+        if (key != null) {
+            it.key(key)
         }
-        .sendAsync().await()
-}
+        if (after.long > 0) {
+            it.deliverAfter(after.long, TimeUnit.MILLISECONDS)
+        }
+    }
+    .sendAsync()
+
+suspend inline fun <reified T : Envelope<*>> PulsarMessageBuilder.sendPulsarMessage(
+    topic: String,
+    msg: T,
+    key: String?,
+    after: MillisDuration
+): MessageId = sendPulsarMessageAsync(topic, msg, key, after).await()

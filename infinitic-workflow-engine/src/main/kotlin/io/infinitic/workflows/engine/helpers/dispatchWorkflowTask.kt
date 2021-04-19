@@ -38,7 +38,6 @@ import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -64,27 +63,25 @@ suspend fun dispatchWorkflowTask(
     )
 
     // defines workflow task
-    val workflowTaskId = WorkflowTaskId()
-
     val workflowTask = DispatchTask(
         clientName = ClientName("workflow engine"),
         clientWaiting = false,
-        taskId = TaskId(workflowTaskId.id),
+        taskId = TaskId(),
         taskName = TaskName(WorkflowTask::class.java.name),
-        methodName = MethodName(WorkflowTask.DEFAULT_METHOD),
+        methodName = MethodName(WorkflowTask::handle.name),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
         methodParameters = MethodParameters.from(workflowTaskInput),
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
-        tags = setOf(),
+        taskTags = setOf(),
         taskOptions = TaskOptions(),
-        taskMeta = TaskMeta(mapOf(WorkflowTask.META_WORKFLOW_NAME to "${state.workflowName}".toByteArray()))
+        taskMeta = TaskMeta()
     )
 
     // dispatch workflow task
     workflowEngineOutput.sendToTaskEngine(workflowTask)
 
-    state.runningWorkflowTaskId = workflowTaskId
+    state.runningWorkflowTaskId = workflowTask.taskId
     state.runningWorkflowTaskInstant = MillisInstant.now()
 }

@@ -27,27 +27,34 @@ package io.infinitic.client
 
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.WorkflowCompleted
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.tags.messages.TagEngineMessage
-import io.infinitic.common.tags.transport.SendToTagEngine
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.WaitTask
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
 
-fun mockSendToTagEngine(slots: MutableList<TagEngineMessage>): SendToTagEngine {
-    val mock = mockk<SendToTagEngine>()
+fun mockSendToTaskTagEngine(slots: MutableList<TaskTagEngineMessage>): SendToTaskTagEngine {
+    val mock = mockk<SendToTaskTagEngine>()
+    coEvery { mock(capture(slots)) } just Runs
+    return mock
+}
+
+fun mockSendToWorkflowTagEngine(slots: MutableList<WorkflowTagEngineMessage>): SendToWorkflowTagEngine {
+    val mock = mockk<SendToWorkflowTagEngine>()
     coEvery { mock(capture(slots)) } just Runs
     return mock
 }
@@ -57,7 +64,7 @@ fun mockSendToTaskEngine(
     message: CapturingSlot<TaskEngineMessage>
 ): SendToTaskEngine {
     val mock = mockk<SendToTaskEngine>()
-    coEvery { mock(capture(message), MillisDuration(0)) } coAnswers {
+    coEvery { mock(capture(message)) } coAnswers {
         val msg = message.captured
         if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
             client.handle(
@@ -79,7 +86,7 @@ fun mockSendToWorkflowEngine(
     message: CapturingSlot<WorkflowEngineMessage>
 ): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(message), MillisDuration(0)) } coAnswers {
+    coEvery { mock(capture(message)) } coAnswers {
         val msg = message.captured
         if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
             client.handle(

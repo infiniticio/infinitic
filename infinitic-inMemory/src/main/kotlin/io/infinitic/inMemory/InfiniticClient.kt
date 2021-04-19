@@ -48,8 +48,9 @@ fun Client.startInMemory(
     val inMemoryOutput = InMemoryOutput(scope)
 
     client.setOutput(
-        inMemoryOutput.sendCommandsToTagEngine,
+        inMemoryOutput.sendCommandsToTaskTagEngine,
         inMemoryOutput.sendCommandsToTaskEngine,
+        inMemoryOutput.sendCommandsToWorkflowTagEngine,
         inMemoryOutput.sendCommandsToWorkflowEngine
     )
 

@@ -27,18 +27,20 @@ package io.infinitic.tasks.engine.worker
 
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
-import io.infinitic.common.tags.transport.SendToTagEngine
+import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import org.slf4j.Logger
@@ -49,7 +51,7 @@ private val logger: Logger
 
 typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 
-private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable) = logger.error(
     "taskId {} - exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message.taskId,
     messageToProcess.message,
@@ -64,8 +66,9 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     commandsInputChannel: ReceiveChannel<T>,
     commandsOutputChannel: SendChannel<T>,
     sendToClient: SendToClient,
-    sendToTagEngine: SendToTagEngine,
+    sendToTaskTagEngine: SendToTaskTagEngine,
     sendToTaskEngine: SendToTaskEngine,
+    sendToTaskEngineAfter: SendToTaskEngineAfter,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToTaskExecutors: SendToTaskExecutors,
     sendToMetricsPerName: SendToMetricsPerName
@@ -74,19 +77,20 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     val taskEngine = TaskEngine(
         taskStateStorage,
         sendToClient,
-        sendToTagEngine,
+        sendToTaskTagEngine,
         sendToTaskEngine,
+        sendToTaskEngineAfter,
         sendToWorkflowEngine,
         sendToTaskExecutors,
         sendToMetricsPerName
     )
 
-    while (true) {
+    while (isActive) {
         select<Unit> {
             eventsInputChannel.onReceive {
                 try {
                     it.returnValue = taskEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {
@@ -96,7 +100,7 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
             commandsInputChannel.onReceive {
                 try {
                     it.returnValue = taskEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {

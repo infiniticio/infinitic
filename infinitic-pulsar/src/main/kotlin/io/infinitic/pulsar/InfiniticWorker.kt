@@ -25,12 +25,20 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.common.data.Name
 import io.infinitic.common.storage.keySet.CachedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.config.WorkerConfig
 import io.infinitic.config.cache.getKeySetCache
 import io.infinitic.config.cache.getKeyValueCache
-import io.infinitic.config.data.Mode
+import io.infinitic.config.data.Metrics
+import io.infinitic.config.data.TagEngine
+import io.infinitic.config.data.Task
+import io.infinitic.config.data.TaskEngine
+import io.infinitic.config.data.Workflow
+import io.infinitic.config.data.WorkflowEngine
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.config.storage.getKeySetStorage
@@ -41,16 +49,22 @@ import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startPulsarMetricsGlobalEngine
 import io.infinitic.pulsar.workers.startPulsarMetricsPerNameEngines
-import io.infinitic.pulsar.workers.startPulsarTagEngines
+import io.infinitic.pulsar.workers.startPulsarTaskDelayEngines
 import io.infinitic.pulsar.workers.startPulsarTaskEngines
 import io.infinitic.pulsar.workers.startPulsarTaskExecutors
+import io.infinitic.pulsar.workers.startPulsarTaskTagEngines
+import io.infinitic.pulsar.workers.startPulsarWorkflowDelayEngines
 import io.infinitic.pulsar.workers.startPulsarWorkflowEngines
-import io.infinitic.tags.engine.storage.BinaryTagStateStorage
+import io.infinitic.pulsar.workers.startPulsarWorkflowTagEngines
+import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
+import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
+import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.PulsarClient
 import org.slf4j.LoggerFactory
@@ -93,19 +107,27 @@ class InfiniticWorker(
             fromConfig(loadConfigFromFile(files.toList()))
     }
 
-    /*
-    Close worker
-    */
+    /**
+     * Close worker
+     */
     fun close() = pulsarClient.close()
 
-    /*
-    Start worker
-    */
+    /**
+     * Start worker
+     */
     fun start() {
-        with(CoroutineScope(Executors.newCachedThreadPool().asCoroutineDispatcher())) {
-            logger.info("InfiniticWorker - starting with config {}", config)
+        val threadPool = Executors.newCachedThreadPool()
+        val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
 
-            start(pulsarClient, config)
+        scope.launch {
+            try {
+                coroutineScope { start(pulsarClient, config) }
+            } finally {
+                // must close Pulsar client to avoid other key-shared subscriptions to be blocked
+                close()
+                // closing the worker is important for devops
+                threadPool.shutdown()
+            }
         }
     }
 
@@ -114,186 +136,268 @@ class InfiniticWorker(
         config: WorkerConfig
     ) = launch {
 
-        val workerName = getPulsarName(pulsarClient, config.name)
+        val workerName = getProducerName(pulsarClient, config.name)
         val tenant = config.pulsar.tenant
         val namespace = config.pulsar.namespace
         val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
-        val pulsarOutputs = PulsarOutput.from(pulsarClient, tenant, namespace, workerName)
+        val pulsarOutput = PulsarOutput.from(pulsarClient, tenant, namespace, workerName)
 
-        startTagEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+        val taskExecutorRegister = TaskExecutorRegisterImpl()
 
-        startTaskEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+        for (workflow in config.workflows) {
+            val workflowName = WorkflowName(workflow.name)
+            println("Workflow $workflowName:")
 
-        startWorkflowEngineWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+            // starting task executors running workflows tasks
+            workflow.`class`?.let {
+                startWorkflowTaskExecutors(workflowName, workerName, workflow, taskExecutorRegister, pulsarConsumerFactory, pulsarOutput)
+            }
 
-        startMetricsWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+            // starting engines managing tags of workflows
+            workflow.tagEngine?.let {
+                startWorkflowTagEngines(workflowName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+            }
 
-        startTaskExecutorWorkers(workerName, config, pulsarConsumerFactory, pulsarOutputs)
+            // starting engines managing workflowTasks
+            workflow.taskEngine?.let {
+                startTaskEngines(workflowName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+            }
+
+            // starting engines managing workflows
+            workflow.workflowEngine?.let {
+                startWorkflowEngines(workflowName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+                startPulsarWorkflowDelayEngines(workflowName, workerName, it.concurrency, pulsarConsumerFactory, pulsarOutput)
+            }
+
+            println()
+        }
+
+        for (task in config.tasks) {
+            val taskName = TaskName(task.name)
+            println("Task $taskName:")
+
+            // starting task executors running tasks
+            task.`class`?.let {
+                startTaskExecutors(taskName, workerName, task, taskExecutorRegister, pulsarConsumerFactory, pulsarOutput)
+            }
+
+            // starting engines managing tags of tasks
+            task.tagEngine?.let {
+                startTaskTagEngines(taskName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+            }
+
+            // starting engines managing tasks
+            task.taskEngine?.let {
+                startTaskEngines(taskName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+                startPulsarTaskDelayEngines(taskName, workerName, it.concurrency, pulsarConsumerFactory, pulsarOutput)
+            }
+
+            task.metrics?.let {
+                startMetricsPerNameEngine(taskName, workerName, it, pulsarConsumerFactory, pulsarOutput)
+            }
+            println()
+        }
 
         println("Worker \"$workerName\" ready")
     }
 
-    private fun CoroutineScope.startTagEngineWorkers(
+    private fun CoroutineScope.startTaskTagEngines(
+        taskName: TaskName,
         consumerName: String,
-        config: WorkerConfig,
+        tagEngine: TagEngine,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutput: PulsarOutput
     ) {
-        config.tagEngine?.let {
-            if (it.modeOrDefault == Mode.worker) {
-                println(
-                    "Tag engine".padEnd(25) + ": ${it.concurrencyOrDefault} instances " +
-                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+        println(
+            "- tag engine".padEnd(25) + ": (" +
+                "storage: ${tagEngine.stateStorage}" +
+                ", cache: ${tagEngine.stateCache}" +
+                ", instances: ${tagEngine.concurrency})"
+
+        )
+        startPulsarTaskTagEngines(
+            taskName,
+            consumerName,
+            tagEngine.concurrency,
+            BinaryTaskTagStorage(
+                CachedKeyValueStorage(
+                    tagEngine.stateCache!!.getKeyValueCache(config),
+                    tagEngine.stateStorage!!.getKeyValueStorage(config)
+                ),
+                CachedKeySetStorage(
+                    tagEngine.stateCache!!.getKeySetCache(config),
+                    tagEngine.stateStorage!!.getKeySetStorage(config)
                 )
-                startPulsarTagEngines(
-                    consumerName,
-                    it.concurrencyOrDefault,
-                    BinaryTagStateStorage(
-                        CachedKeyValueStorage(
-                            it.stateCacheOrDefault.getKeyValueCache(config),
-                            it.stateStorage!!.getKeyValueStorage(config)
-                        ),
-                        CachedKeySetStorage(
-                            it.stateCacheOrDefault.getKeySetCache(config),
-                            it.stateStorage!!.getKeySetStorage(config)
-                        )
-                    ),
-                    pulsarConsumerFactory,
-                    pulsarOutput
-                )
-            }
-        }
+            ),
+            pulsarConsumerFactory,
+            pulsarOutput
+        )
     }
 
-    private fun CoroutineScope.startTaskEngineWorkers(
+    private fun CoroutineScope.startTaskEngines(
+        name: Name,
         consumerName: String,
-        config: WorkerConfig,
+        taskEngine: TaskEngine,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutput: PulsarOutput
     ) {
-        config.taskEngine?.let {
-            if (it.modeOrDefault == Mode.worker) {
-                println(
-                    "Task engine".padEnd(25) + ": ${it.concurrency} instances " +
-                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+        println(
+            "- task engine".padEnd(25) + ": (" +
+                "storage: ${taskEngine.stateStorage}" +
+                ", cache: ${taskEngine.stateCache}" +
+                ", instances: ${taskEngine.concurrency})"
+        )
+        startPulsarTaskEngines(
+            name,
+            consumerName,
+            taskEngine.concurrency,
+            BinaryTaskStateStorage(
+                CachedKeyValueStorage(
+                    taskEngine.stateCache!!.getKeyValueCache(config),
+                    taskEngine.stateStorage!!.getKeyValueStorage(config)
                 )
-                startPulsarTaskEngines(
-                    consumerName,
-                    it.concurrency,
-                    BinaryTaskStateStorage(
-                        CachedKeyValueStorage(
-                            it.stateCacheOrDefault.getKeyValueCache(config),
-                            it.stateStorage!!.getKeyValueStorage(config)
-                        )
-                    ),
-                    pulsarConsumerFactory,
-                    pulsarOutput
-                )
-            }
-        }
+            ),
+            pulsarConsumerFactory,
+            pulsarOutput
+        )
     }
 
-    private fun CoroutineScope.startWorkflowEngineWorkers(
+    private fun CoroutineScope.startWorkflowTagEngines(
+        workflowName: WorkflowName,
         consumerName: String,
-        config: WorkerConfig,
+        tagEngine: TagEngine,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutput: PulsarOutput
     ) {
-        config.workflowEngine?.let {
-            if (it.modeOrDefault == Mode.worker) {
-                println(
-                    "Workflow engine".padEnd(25) + ": ${it.concurrency} instances " +
-                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+        println(
+            "- tag engine".padEnd(25) + ": (" +
+                "storage: ${tagEngine.stateStorage}" +
+                ", cache: ${tagEngine.stateCache}" +
+                ", instances: ${tagEngine.concurrency})"
+
+        )
+        startPulsarWorkflowTagEngines(
+            workflowName,
+            consumerName,
+            tagEngine.concurrency,
+            BinaryWorkflowTagStorage(
+                CachedKeyValueStorage(
+                    tagEngine.stateCache!!.getKeyValueCache(config),
+                    tagEngine.stateStorage!!.getKeyValueStorage(config)
+                ),
+                CachedKeySetStorage(
+                    tagEngine.stateCache!!.getKeySetCache(config),
+                    tagEngine.stateStorage!!.getKeySetStorage(config)
                 )
-                startPulsarWorkflowEngines(
-                    consumerName,
-                    it.concurrency,
-                    BinaryWorkflowStateStorage(
-                        CachedKeyValueStorage(
-                            it.stateCacheOrDefault.getKeyValueCache(config),
-                            it.stateStorage!!.getKeyValueStorage(config)
-                        )
-                    ),
-                    pulsarConsumerFactory,
-                    pulsarOutput
-                )
-            }
-        }
+            ),
+            pulsarConsumerFactory,
+            pulsarOutput
+        )
     }
 
-    private fun CoroutineScope.startMetricsWorkers(
+    private fun CoroutineScope.startWorkflowEngines(
+        workflowName: WorkflowName,
         consumerName: String,
-        config: WorkerConfig,
+        workflowEngine: WorkflowEngine,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutput: PulsarOutput
     ) {
-        config.metrics?.let {
-            if (it.modeOrDefault == Mode.worker) {
-                println(
-                    "Metrics engine".padEnd(25) + ": ${it.concurrency} instances " +
-                        "(storage: ${it.stateStorage}, cache:${it.stateCacheOrDefault})"
+        println(
+            "- workflow engine".padEnd(25) + ": (" +
+                "storage: ${workflowEngine.stateStorage}" +
+                ", cache: ${workflowEngine.stateCache}" +
+                ", instances: ${workflowEngine.concurrency})"
+
+        )
+        startPulsarWorkflowEngines(
+            workflowName,
+            consumerName,
+            workflowEngine.concurrency,
+            BinaryWorkflowStateStorage(
+                CachedKeyValueStorage(
+                    workflowEngine.stateCache!!.getKeyValueCache(config),
+                    workflowEngine.stateStorage!!.getKeyValueStorage(config)
                 )
-                logger.info("InfiniticWorker - starting {} metrics per name engines", it.concurrency)
-                startPulsarMetricsPerNameEngines(
-                    it.concurrency,
-                    consumerName,
-                    pulsarConsumerFactory,
-                    BinaryMetricsPerNameStateStorage(
-                        CachedKeyValueStorage(
-                            it.stateCacheOrDefault.getKeyValueCache(config),
-                            it.stateStorage!!.getKeyValueStorage(config)
-                        )
-                    ),
-                    pulsarOutput.sendToMetricsGlobal
-                )
-                logger.info("InfiniticWorker - starting metrics global engine")
-                startPulsarMetricsGlobalEngine(
-                    pulsarConsumerFactory.newMetricsGlobalEngineConsumer(consumerName),
-                    BinaryMetricsGlobalStateStorage(
-                        CachedKeyValueStorage(
-                            it.stateCacheOrDefault.getKeyValueCache(config),
-                            it.stateStorage!!.getKeyValueStorage(config)
-                        )
-                    )
-                )
-            }
-        }
+            ),
+            pulsarConsumerFactory,
+            pulsarOutput
+        )
     }
 
-    private fun CoroutineScope.startTaskExecutorWorkers(
+    private fun CoroutineScope.startTaskExecutors(
+        taskName: TaskName,
         consumerName: String,
-        config: WorkerConfig,
+        task: Task,
+        taskExecutorRegister: TaskExecutorRegister,
         pulsarConsumerFactory: PulsarConsumerFactory,
         pulsarOutput: PulsarOutput
     ) {
-        val taskExecutorRegister = TaskExecutorRegisterImpl()
+        println("- task executor".padEnd(25) + ": (instances: ${task.concurrency})")
+        taskExecutorRegister.registerTask(task.name) { task.instance }
+        startPulsarTaskExecutors(
+            taskName,
+            task.concurrency,
+            consumerName,
+            taskExecutorRegister,
+            pulsarConsumerFactory,
+            pulsarOutput
+        )
+    }
 
-        for (workflow in config.workflows) {
-            if (workflow.modeOrDefault == Mode.worker) {
-                taskExecutorRegister.registerWorkflow(workflow.name) { workflow.instance }
-                println("Workflow executor".padEnd(25) + ": ${workflow.concurrency} instances (${workflow.name})")
-                logger.info("InfiniticWorker - starting {} workflow executors for {}", workflow.concurrency, workflow.name)
-                startPulsarTaskExecutors(
-                    workflow.concurrency,
-                    taskExecutorRegister,
-                    pulsarConsumerFactory.newWorkflowExecutorConsumer(consumerName, workflow.name),
-                    pulsarOutput.sendEventsToTaskEngine
-                )
-            }
-        }
+    private fun CoroutineScope.startWorkflowTaskExecutors(
+        workflowName: WorkflowName,
+        consumerName: String,
+        workflow: Workflow,
+        taskExecutorRegister: TaskExecutorRegister,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutput: PulsarOutput
+    ) {
+        println("- workflow executor".padEnd(25) + ": (instances: ${workflow.concurrency})")
+        taskExecutorRegister.registerWorkflow(workflow.name) { workflow.instance }
+        startPulsarTaskExecutors(
+            workflowName,
+            workflow.concurrency,
+            consumerName,
+            taskExecutorRegister,
+            pulsarConsumerFactory,
+            pulsarOutput
+        )
+    }
 
-        for (task in config.tasks) {
-            if (task.modeOrDefault == Mode.worker) {
-                taskExecutorRegister.registerTask(task.name) { task.instance }
-                println("Task executor".padEnd(25) + ": ${task.concurrency} instances (${task.name})")
-                logger.info("InfiniticWorker - starting {} task executor for {}", task.concurrency, task.name)
-                startPulsarTaskExecutors(
-                    task.concurrency,
-                    taskExecutorRegister,
-                    pulsarConsumerFactory.newTaskExecutorConsumer(consumerName, task.name),
-                    pulsarOutput.sendEventsToTaskEngine
+    private fun CoroutineScope.startMetricsPerNameEngine(
+        taskName: TaskName,
+        consumerName: String,
+        metrics: Metrics,
+        pulsarConsumerFactory: PulsarConsumerFactory,
+        pulsarOutput: PulsarOutput
+    ) {
+        println(
+            "- metrics engine".padEnd(25) + ": (" +
+                "storage: ${metrics.stateStorage}" +
+                ", cache: ${metrics.stateCacheOrDefault})"
+        )
+        startPulsarMetricsPerNameEngines(
+            taskName,
+            consumerName,
+            pulsarConsumerFactory,
+            BinaryMetricsPerNameStateStorage(
+                CachedKeyValueStorage(
+                    metrics.stateCacheOrDefault.getKeyValueCache(config),
+                    metrics.stateStorage!!.getKeyValueStorage(config)
                 )
-            }
-        }
+            ),
+            pulsarOutput
+        )
+
+        startPulsarMetricsGlobalEngine(
+            consumerName,
+            pulsarConsumerFactory,
+            BinaryMetricsGlobalStateStorage(
+                CachedKeyValueStorage(
+                    metrics.stateCacheOrDefault.getKeyValueCache(config),
+                    metrics.stateStorage!!.getKeyValueStorage(config)
+                )
+            )
+        )
     }
 }

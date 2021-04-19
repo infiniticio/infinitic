@@ -27,11 +27,9 @@ package io.infinitic.workflows.engine
 
 import io.infinitic.common.clients.messages.UnknownWorkflowWaited
 import io.infinitic.common.clients.transport.SendToClient
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.tags.messages.RemoveWorkflowTag
-import io.infinitic.common.tags.transport.SendToTagEngine
-import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
@@ -42,15 +40,14 @@ import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowTaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.sendToChannel
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
-import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
@@ -59,15 +56,17 @@ import org.slf4j.LoggerFactory
 class WorkflowEngine(
     storage: WorkflowStateStorage,
     sendEventsToClient: SendToClient,
-    sendToTagEngine: SendToTagEngine,
+    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowEngine: SendToWorkflowEngine
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
     private val output = WorkflowEngineOutput(
         sendEventsToClient,
-        sendToTagEngine,
-        { msg: TaskEngineMessage -> sendToTaskEngine(msg, MillisDuration(0)) },
-        sendToWorkflowEngine
+        sendToWorkflowTagEngine,
+        sendToTaskEngine,
+        sendToWorkflowEngine,
+        sendToWorkflowEngineAfter
     )
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -119,7 +118,9 @@ class WorkflowEngine(
 
         // check is this workflowTask is the current one
         // (a workflowTask can be dispatched twice if the engine is shutdown while processing a workflowTask)
-        if (message is WorkflowTaskCompleted && message.workflowTaskId != state.runningWorkflowTaskId) {
+        if (message.isWorkflowTaskCompleted() &&
+            (message as TaskCompleted).taskId != state.runningWorkflowTaskId
+        ) {
             logDiscardingMessage(message, "as workflowTask is not the current one")
 
             return
@@ -131,7 +132,7 @@ class WorkflowEngine(
         // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
         // except also for WaitWorkflow, as we want to handle it asap to avoid terminating the workflow before it
         if (state.runningWorkflowTaskId != null &&
-            message !is WorkflowTaskCompleted &&
+            ! message.isWorkflowTaskCompleted() &&
             message !is WaitWorkflow
         ) {
             // buffer this message
@@ -161,11 +162,11 @@ class WorkflowEngine(
             // workflow is terminated
             0 -> {
                 // remove tags reference to this instance
-                state.tags.map {
-                    output.sendToTagEngine(
+                state.workflowTags.map {
+                    output.sendToWorkflowTagEngine(
                         RemoveWorkflowTag(
-                            tag = it,
-                            name = state.workflowName,
+                            workflowTag = it,
+                            workflowName = state.workflowName,
                             workflowId = state.workflowId,
                         )
                     )
@@ -188,7 +189,6 @@ class WorkflowEngine(
             is CancelWorkflow -> cancelWorkflow(state, message)
             is ChildWorkflowCanceled -> childWorkflowCanceled(state, message)
             is ChildWorkflowCompleted -> childWorkflowCompleted(output, state, message)
-            is WorkflowTaskCompleted -> workflowTaskCompleted(output, state, message)
             is TimerCompleted -> timerCompleted(output, state, message)
             is TaskCanceled -> taskCanceled(state, message)
             is TaskCompleted -> taskCompleted(output, state, message)

@@ -27,11 +27,9 @@ package io.infinitic.storage.inMemory
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import redis.embedded.RedisServer
 
 class InMemoryKeyCounterStorageTests : StringSpec({
 
-    val redisServer = RedisServer(6379)
     val storage = InMemoryKeyCounterStorage()
 
     beforeTest {

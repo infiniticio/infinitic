@@ -39,10 +39,10 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.exceptions.ClassNotFoundDuringInstantiation
 import io.infinitic.exceptions.NoMethodFoundWithParameterCount
@@ -66,8 +66,7 @@ import kotlinx.coroutines.coroutineScope
 
 fun mockSendToTaskEngine(slots: MutableList<TaskEngineMessage>): SendToTaskEngine {
     val sendToTaskEngine = mockk<SendToTaskEngine>()
-
-    coEvery { sendToTaskEngine(capture(slots), any()) } just Runs
+    coEvery { sendToTaskEngine(capture(slots)) } just Runs
 
     return sendToTaskEngine
 }

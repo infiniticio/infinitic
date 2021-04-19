@@ -31,7 +31,7 @@ import io.infinitic.cache.no.NoCache
 import io.infinitic.common.storage.keyValue.KeyValueCache
 import io.infinitic.config.WorkerConfig
 
-fun <T> StateCache.getKeyValueCache(workerConfig: io.infinitic.config.WorkerConfig): KeyValueCache<T> = when (this) {
+fun <T> StateCache.getKeyValueCache(workerConfig: WorkerConfig): KeyValueCache<T> = when (this) {
     StateCache.none -> NoCache()
     StateCache.caffeine -> CaffeineKeyValueCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
 }

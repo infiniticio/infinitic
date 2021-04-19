@@ -32,7 +32,7 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.tags.data.Tag
+import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskId
@@ -41,6 +41,7 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.messages.interfaces.FailingTaskAttemptMessage
 import io.infinitic.common.tasks.engine.messages.interfaces.TaskAttemptMessage
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
@@ -49,10 +50,12 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class TaskEngineMessage() {
+sealed class TaskEngineMessage : Message {
     val messageId = MessageId()
     abstract val taskId: TaskId
     abstract val taskName: TaskName
+
+    override fun envelope() = TaskEngineEnvelope.from(this)
 }
 
 @Serializable
@@ -67,7 +70,7 @@ data class DispatchTask(
     val workflowId: WorkflowId?,
     val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,
-    val tags: Set<Tag>,
+    val taskTags: Set<TaskTag>,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions
 ) : TaskEngineMessage()
@@ -86,7 +89,7 @@ data class RetryTask(
     val methodName: MethodName?,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters?,
-    val tags: Set<Tag>?,
+    val taskTags: Set<TaskTag>?,
     val taskMeta: TaskMeta?,
     val taskOptions: TaskOptions?
 ) : TaskEngineMessage()

@@ -42,7 +42,7 @@ private val logger: Logger
 
 typealias MetricsGlobalMessageToProcess = MessageToProcess<MetricsGlobalMessage>
 
-private fun logError(messageToProcess: MetricsGlobalMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: MetricsGlobalMessageToProcess, e: Throwable) = logger.error(
     "exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message,
     e
@@ -62,7 +62,7 @@ fun <T : MetricsGlobalMessageToProcess> CoroutineScope.startMetricsGlobalEngine(
     for (message in inputChannel) {
         try {
             message.returnValue = metricsGlobalEngine.handle(message.message)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             message.throwable = e
             logError(message, e)
         } finally {

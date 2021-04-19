@@ -44,6 +44,8 @@ dependencies {
     implementation(project(":infinitic-task-executor"))
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-inMemory"))
+
+    testImplementation(Libs.Kotlin.reflect)
 }
 
 apply("../publish.gradle.kts")

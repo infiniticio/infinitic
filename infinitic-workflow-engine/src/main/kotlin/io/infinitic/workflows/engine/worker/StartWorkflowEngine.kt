@@ -26,17 +26,19 @@
 package io.infinitic.workflows.engine.worker
 
 import io.infinitic.common.clients.transport.SendToClient
-import io.infinitic.common.tags.transport.SendToTagEngine
-import io.infinitic.common.tasks.engine.transport.SendToTaskEngine
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.transport.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import org.slf4j.Logger
@@ -47,7 +49,7 @@ private val logger: Logger
 
 typealias WorkflowEngineMessageToProcess = MessageToProcess<WorkflowEngineMessage>
 
-private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Exception) = logger.error(
+private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwable) = logger.error(
     "workflowId {} - exception on message {}:${System.getProperty("line.separator")}{}",
     messageToProcess.message.workflowId,
     messageToProcess.message,
@@ -62,25 +64,27 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     commandsInputChannel: ReceiveChannel<T>,
     commandsOutputChannel: SendChannel<T>,
     sendEventsToClient: SendToClient,
-    sendToTagEngine: SendToTagEngine,
+    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     sendToTaskEngine: SendToTaskEngine,
-    sendToWorkflowEngine: SendToWorkflowEngine
+    sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) = launch(CoroutineName(coroutineName)) {
 
     val workflowEngine = WorkflowEngine(
         workflowStateStorage,
         sendEventsToClient,
-        sendToTagEngine,
+        sendToWorkflowTagEngine,
         sendToTaskEngine,
-        sendToWorkflowEngine
+        sendToWorkflowEngine,
+        sendToWorkflowEngineAfter
     )
 
-    while (true) {
+    while (isActive) {
         select<Unit> {
             eventsInputChannel.onReceive {
                 try {
                     it.returnValue = workflowEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {
@@ -90,7 +94,7 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
             commandsInputChannel.onReceive {
                 try {
                     it.returnValue = workflowEngine.handle(it.message)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     it.throwable = e
                     logError(it, e)
                 } finally {

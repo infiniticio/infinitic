@@ -48,6 +48,9 @@ class RedisKeyCounterStorage(
     override suspend fun incrCounter(key: String, amount: Long) =
         pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
 
+    fun test(key: String, amount: Long) =
+        pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
+
     @TestOnly
     override fun flush() {
         pool.resource.use { it.flushDB() }

@@ -27,20 +27,36 @@ package io.infinitic.common.tags
 
 import com.github.avrokotlin.avro4k.Avro
 import io.infinitic.common.fixtures.TestFactory
-import io.infinitic.common.tags.messages.TagEngineEnvelope
-import io.infinitic.common.tags.messages.TagEngineMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 class EnvelopesTests : StringSpec({
-    TagEngineMessage::class.sealedSubclasses.map {
+    TaskTagEngineMessage::class.sealedSubclasses.map {
         val msg = TestFactory.random(it)
 
-        "TagEngineMessage(${msg::class.simpleName}) should be avro-convertible" {
+        "TaskTagEngineMessage(${msg::class.simpleName}) should be avro-convertible" {
             shouldNotThrowAny {
-                val envelope = TagEngineEnvelope.from(msg)
-                val ser = TagEngineEnvelope.serializer()
+                val envelope = TaskTagEngineEnvelope.from(msg)
+                val ser = TaskTagEngineEnvelope.serializer()
+                val byteArray = Avro.default.encodeToByteArray(ser, envelope)
+                val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
+                envelope shouldBe envelope2
+            }
+        }
+    }
+
+    WorkflowTagEngineMessage::class.sealedSubclasses.map {
+        val msg = TestFactory.random(it)
+
+        "WorkflowTagEngineMessage(${msg::class.simpleName}) should be avro-convertible" {
+            shouldNotThrowAny {
+                val envelope = WorkflowTagEngineEnvelope.from(msg)
+                val ser = WorkflowTagEngineEnvelope.serializer()
                 val byteArray = Avro.default.encodeToByteArray(ser, envelope)
                 val envelope2 = Avro.default.decodeFromByteArray(ser, byteArray)
                 envelope shouldBe envelope2

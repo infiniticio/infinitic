@@ -43,7 +43,6 @@ import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.StepHash
 import io.infinitic.common.workflows.data.steps.StepId
 import io.infinitic.common.workflows.data.steps.StepOutput
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -229,14 +228,6 @@ class DataTests : StringSpec({
         val json = Json.encodeToString(m)
         json shouldBe "\"qwerty\""
         val m2 = Json.decodeFromString<WorkflowName>(json)
-        m2 shouldBe m
-    }
-
-    "WorkflowTaskId should be serialized as String" {
-        val m = WorkflowTaskId()
-        val json = Json.encodeToString(m)
-        val m2 = Json.decodeFromString<WorkflowTaskId>(json)
-
         m2 shouldBe m
     }
 

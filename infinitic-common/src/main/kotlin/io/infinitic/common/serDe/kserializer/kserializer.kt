@@ -28,10 +28,11 @@ package io.infinitic.common.serDe.kserializer
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
-import io.infinitic.common.tags.messages.TagEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
 import kotlinx.serialization.KSerializer
 import java.lang.reflect.Modifier.isStatic
 import kotlin.reflect.KClass
@@ -64,10 +65,11 @@ fun getKSerializerOrNull(klass: Class<*>): KSerializer<*>? {
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     ClientEnvelope::class -> ClientEnvelope.serializer()
-    TagEngineEnvelope::class -> TagEngineEnvelope.serializer()
+    TaskTagEngineEnvelope::class -> TaskTagEngineEnvelope.serializer()
     TaskEngineEnvelope::class -> TaskEngineEnvelope.serializer()
     TaskExecutorEnvelope::class -> TaskExecutorEnvelope.serializer()
     WorkflowEngineEnvelope::class -> WorkflowEngineEnvelope.serializer()
+    WorkflowTagEngineEnvelope::class -> WorkflowTagEngineEnvelope.serializer()
     MetricsPerNameEnvelope::class -> MetricsPerNameEnvelope.serializer()
     MetricsGlobalEnvelope::class -> MetricsGlobalEnvelope.serializer()
     else -> throw RuntimeException("This should not happen: applying kserializer with ${klass.qualifiedName}")

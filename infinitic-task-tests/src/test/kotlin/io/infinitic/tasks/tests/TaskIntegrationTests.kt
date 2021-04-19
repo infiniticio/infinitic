@@ -23,33 +23,34 @@
  * Licensor: infinitic.io
  */
 
+@file:Suppress("MoveLambdaOutsideParentheses")
+
 package io.infinitic.tasks.tests
 
 import io.infinitic.client.Client
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.storage.keySet.LoggedKeySetStorage
 import io.infinitic.common.storage.keyValue.LoggedKeyValueStorage
-import io.infinitic.common.tags.data.Tag
-import io.infinitic.common.tags.messages.TagEngineMessage
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
 import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.engine.TagEngine
-import io.infinitic.tags.engine.storage.BinaryTagStateStorage
+import io.infinitic.tags.tasks.TaskTagEngine
+import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
 import io.infinitic.tasks.engine.TaskEngine
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.executor.TaskExecutor
@@ -65,18 +66,17 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
-import java.util.UUID
 
 private var taskStatus: TaskStatus? = null
 private val taskTest = TaskTestImpl()
 val keyValueStorage = LoggedKeyValueStorage(InMemoryKeyValueStorage())
 val keySetStorage = LoggedKeySetStorage(InMemoryKeySetStorage())
-private val tagStateStorage = BinaryTagStateStorage(keyValueStorage, keySetStorage)
+private val taskTagStorage = BinaryTaskTagStorage(keyValueStorage, keySetStorage)
 private val taskStateStorage = BinaryTaskStateStorage(keyValueStorage)
 private val metricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
 private val metricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
-private lateinit var tagEngine: TagEngine
+private lateinit var taskTagEngine: TaskTagEngine
 private lateinit var taskEngine: TaskEngine
 private lateinit var metricsPerNameEngine: MetricsPerNameEngine
 private lateinit var metricsGlobalEngine: MetricsGlobalEngine
@@ -107,7 +107,7 @@ class TaskIntegrationTests : StringSpec({
     }
 
     "Synchronous execution succeeds at first try" {
-        var result: String? = null
+        var result: String?
         // task will succeed
         taskTest.behavior = { _, _ -> Status.SUCCESS }
         // run system
@@ -155,13 +155,12 @@ class TaskIntegrationTests : StringSpec({
     }
 
     "Task succeeds synchronously at 4th try" {
-        var result: String? = null
         // task will succeed only at the 4th try
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
         coroutineScope {
             init()
-            result = taskStub.log()
+            taskStub.log()
         }
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
@@ -170,7 +169,6 @@ class TaskIntegrationTests : StringSpec({
     }
 
     "Task succeeds asynchronously at 4th try" {
-        var result: String? = null
         // task will succeed only at the 4th try
         taskTest.behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
         // run system
@@ -229,7 +227,6 @@ class TaskIntegrationTests : StringSpec({
             }
         }
         // run system
-        var id: UUID
         coroutineScope {
             init()
             val deferred = client.async(taskStub) { log() }
@@ -309,7 +306,6 @@ class TaskIntegrationTests : StringSpec({
         // task will fail and retry
         taskTest.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
         // run system
-        var id: UUID
         coroutineScope {
             init()
             val deferred = client.async(taskStub) { log() }
@@ -357,16 +353,16 @@ class TaskIntegrationTests : StringSpec({
             taskId = TaskId(deferred.id)
             yield()
             // checks taskId has been added to tag storage
-            tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
-            tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
+            taskTagStorage.getTaskIds(TaskTag("foo"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe true
+            taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe true
         }
         // check that task is terminated
         taskStateStorage.getState(taskId) shouldBe null
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks taskId has been removed from tag storage
-        tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
-        tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
+        taskTagStorage.getTaskIds(TaskTag("foo"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
+        taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
     }
 
     "Tag should be added then deleted after cancellation" {
@@ -380,8 +376,8 @@ class TaskIntegrationTests : StringSpec({
 
             yield()
             // checks taskId has been added to tag storage
-            tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
-            tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe true
+            taskTagStorage.getTaskIds(TaskTag("foo"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe true
+            taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe true
             client.cancel(taskStub2Tag)
         }
         // check that task is terminated
@@ -389,8 +385,8 @@ class TaskIntegrationTests : StringSpec({
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_CANCELED
         // checks taskId has been removed from tag storage
-        tagStateStorage.getIds(Tag("foo"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
-        tagStateStorage.getIds(Tag("bar"), Name(TaskTest::class.java.name)).contains(taskId.id) shouldBe false
+        taskTagStorage.getTaskIds(TaskTag("foo"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
+        taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
     }
 })
 
@@ -398,11 +394,15 @@ fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
     client.handle(msg)
 }
 
-fun CoroutineScope.sendToTagEngine(msg: TagEngineMessage) = launch {
-    tagEngine.handle(msg)
+fun CoroutineScope.sendToTaskTagEngine(msg: TaskTagEngineMessage) = launch {
+    taskTagEngine.handle(msg)
 }
 
-fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage, after: MillisDuration) = launch {
+fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage) = launch {
+    taskEngine.handle(msg)
+}
+
+fun CoroutineScope.sendToTaskEngineAfter(msg: TaskEngineMessage, after: MillisDuration) = launch {
     if (after.long > 0) {
         delay(after.long)
     }
@@ -433,28 +433,28 @@ fun CoroutineScope.init() {
 
     client = Client.with(
         ClientName("client: InMemory"),
-        { msg: TagEngineMessage -> sendToTagEngine(msg) },
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-        { _: WorkflowEngineMessage, _: MillisDuration -> }
+        { sendToTaskTagEngine(it) },
+        { sendToTaskEngine(it) },
+        { },
+        { }
     )
 
     taskStub = client.newTask(TaskTest::class.java)
     taskStub1Tag = client.newTask(TaskTest::class.java, tags = setOf("foo"))
     taskStub2Tag = client.newTask(TaskTest::class.java, tags = setOf("foo", "bar"))
 
-    tagEngine = TagEngine(
-        tagStateStorage,
-        { msg: ClientMessage -> sendToClientResponse(msg) },
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-        { _: WorkflowEngineMessage, _: MillisDuration -> }
+    taskTagEngine = TaskTagEngine(
+        taskTagStorage,
+        { sendToTaskEngine(it) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
         { msg: ClientMessage -> sendToClientResponse(msg) },
-        { msg: TagEngineMessage -> sendToTagEngine(msg) },
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
-        { _: WorkflowEngineMessage, _: MillisDuration -> },
+        { msg: TaskTagEngineMessage -> sendToTaskTagEngine(msg) },
+        { sendToTaskEngine(it) },
+        { msg, after -> sendToTaskEngineAfter(msg, after) },
+        { },
         { msg: TaskExecutorMessage -> sendToWorkers(msg) },
         { msg: MetricsPerNameMessage -> sendToMetricsPerName(msg) }
     )
@@ -467,7 +467,7 @@ fun CoroutineScope.init() {
     metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     taskExecutor = TaskExecutor(
-        { msg: TaskEngineMessage, after: MillisDuration -> sendToTaskEngine(msg, after) },
+        { sendToTaskEngine(it) },
         TaskExecutorRegisterImpl()
     )
     taskExecutor.registerTask(TaskTest::class.java.name) { taskTest }

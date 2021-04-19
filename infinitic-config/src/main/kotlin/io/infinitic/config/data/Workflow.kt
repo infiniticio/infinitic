@@ -30,23 +30,17 @@ import io.infinitic.workflows.Workflow as WorkflowInstance
 data class Workflow(
     @JvmField val name: String,
     @JvmField val `class`: String? = null,
-    @JvmField var mode: Mode? = null,
     @JvmField val concurrency: Int = 1,
-    @JvmField var taskEngine: TaskEngine? = null,
-    @JvmField var workflowEngine: WorkflowEngine? = null
+    @JvmField var tagEngine: TagEngine? = TagEngine().apply { default = true },
+    @JvmField var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
+    @JvmField var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true }
 ) {
     val instance: WorkflowInstance
         get() = Class.forName(`class`).getDeclaredConstructor().newInstance() as WorkflowInstance
 
-    val modeOrDefault: Mode
-        get() = mode ?: Mode.worker
-
     init {
-        require(name.isNotEmpty()) { "name can NOT be empty" }
-        require(`class` != null || workflowEngine != null) {
-            "executor and engine not defined for $name, " +
-                "you should have at least \"class\" or \"workflowEngine\" defined"
-        }
+        require(name.isNotEmpty()) { "name can not be empty" }
+
         `class`?.let {
             require(`class`.isNotEmpty()) { "class empty for workflow $name" }
 
@@ -57,7 +51,7 @@ data class Workflow(
                 "class \"$it\" is not a workflow as it does not extend ${WorkflowInstance::class.java.name}"
             }
             require(try { instance; true } catch (e: Exception) { false }) {
-                "class \"$it\" can not be instantiated using newInstance(). " +
+                "class \"$it\" can not be instantiated using .getDeclaredConstructor().newInstance(). " +
                     "This class must be public and have an empty constructor"
             }
 

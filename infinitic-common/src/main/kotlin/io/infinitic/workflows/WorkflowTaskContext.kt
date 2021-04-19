@@ -34,6 +34,7 @@ import java.time.Duration
 import java.time.Instant
 
 interface WorkflowTaskContext : Dispatcher {
+
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
 
     fun <T> async(branch: () -> T): Deferred<T>
