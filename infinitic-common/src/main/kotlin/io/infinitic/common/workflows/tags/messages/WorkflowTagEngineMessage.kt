@@ -27,7 +27,6 @@ package io.infinitic.common.workflows.tags.messages
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.messages.Message
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
@@ -62,8 +61,7 @@ data class SendToChannelPerTag(
 @Serializable
 data class CancelWorkflowPerTag(
     override val workflowTag: WorkflowTag,
-    override val workflowName: WorkflowName,
-    val workflowReturnValue: MethodReturnValue
+    override val workflowName: WorkflowName
 ) : WorkflowTagEngineMessage()
 
 @Serializable

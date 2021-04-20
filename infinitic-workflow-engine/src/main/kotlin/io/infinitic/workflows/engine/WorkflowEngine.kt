@@ -25,7 +25,7 @@
 
 package io.infinitic.workflows.engine
 
-import io.infinitic.common.clients.messages.UnknownWorkflowWaited
+import io.infinitic.common.clients.messages.UnknownWorkflow
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -47,7 +47,6 @@ import io.infinitic.workflows.engine.handlers.childWorkflowCanceled
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.sendToChannel
-import io.infinitic.workflows.engine.handlers.taskCanceled
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -91,7 +90,7 @@ class WorkflowEngine(
             }
             if (message is WaitWorkflow) {
                 output.sendEventsToClient(
-                    UnknownWorkflowWaited(
+                    UnknownWorkflow(
                         message.clientName,
                         message.workflowId
                     )
@@ -199,6 +198,10 @@ class WorkflowEngine(
             is TaskCompleted -> taskCompleted(output, state, message)
             else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
         }
+    }
+
+    private suspend fun taskCanceled(workflowEngineOutput: WorkflowEngineOutput, state: WorkflowState, msg: TaskCanceled) {
+        TODO()
     }
 
     private suspend fun cancelWorkflow(state: WorkflowState, msg: CancelWorkflow) {

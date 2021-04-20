@@ -31,6 +31,7 @@ import kotlinx.serialization.Serializable
 enum class WorkflowEngineMessageType {
     WAIT_WORKFLOW,
     CANCEL_WORKFLOW,
+    COMPLETE_WORKFLOW,
     EMIT_TO_CHANNEL,
     CHILD_WORKFLOW_CANCELED,
     CHILD_WORKFLOW_COMPLETED,

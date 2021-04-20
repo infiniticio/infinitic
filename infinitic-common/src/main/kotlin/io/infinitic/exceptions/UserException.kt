@@ -294,12 +294,30 @@ data class UnknownTask(
 )
 
 @Serializable
+data class CanceledTask(
+    val taskId: String,
+    val taskName: String,
+) : UserExceptionInClient(
+    msg = "task $taskId ($taskName) has been canceled",
+    help = ""
+)
+
+@Serializable
 data class UnknownWorkflow(
     val workflowId: String,
-    val workflowName: String,
+    val workflowName: String
 ) : UserExceptionInClient(
     msg = "Failed to  wait for workflow $workflowId completion ($workflowName)",
     help = "This workflow instance is probably already completed"
+)
+
+@Serializable
+data class CanceledWorkflow(
+    val workflowId: String,
+    val workflowName: String
+) : UserExceptionInClient(
+    msg = "workflow $workflowId ($workflowName) has been canceled",
+    help = ""
 )
 
 /***********************

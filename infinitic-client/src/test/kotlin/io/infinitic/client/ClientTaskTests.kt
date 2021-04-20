@@ -33,7 +33,6 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -98,7 +97,7 @@ class ClientTaskTests : StringSpec({
         }
 
         shouldThrow<NotAStub> {
-            client.cancel("") { }
+            client.cancel("")
         }
     }
 
@@ -446,8 +445,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
             taskId = TaskId(id),
-            taskName = TaskName(FakeTask::class.java.name),
-            taskReturnValue = MethodReturnValue.from(null)
+            taskName = TaskName(FakeTask::class.java.name)
         )
     }
 
@@ -456,13 +454,12 @@ class ClientTaskTests : StringSpec({
         // when
         val id = UUID.randomUUID()
         val fakeTask = client.getTask<FakeTask>(id)
-        client.cancel(fakeTask, output)
+        client.cancel(fakeTask)
         // then
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
             taskId = TaskId(id),
-            taskName = TaskName(FakeTask::class.java.name),
-            taskReturnValue = MethodReturnValue.from(output)
+            taskName = TaskName(FakeTask::class.java.name)
         )
     }
 
@@ -474,8 +471,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe CancelTaskPerTag(
             taskTag = TaskTag("foo"),
-            taskName = TaskName(FakeTask::class.java.name),
-            taskReturnValue = MethodReturnValue.from(null)
+            taskName = TaskName(FakeTask::class.java.name)
         )
         taskSlot.isCaptured shouldBe false
     }
@@ -484,13 +480,12 @@ class ClientTaskTests : StringSpec({
         val output = TestFactory.random<String>()
         // when
         val fakeTask = client.getTask<FakeTask>("foo")
-        client.cancel(fakeTask, output)
+        client.cancel(fakeTask)
         // then
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe CancelTaskPerTag(
             taskTag = TaskTag("foo"),
-            taskName = TaskName(FakeTask::class.java.name),
-            taskReturnValue = MethodReturnValue.from(output)
+            taskName = TaskName(FakeTask::class.java.name)
         )
         taskSlot.isCaptured shouldBe false
     }
@@ -505,8 +500,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe CancelTask(
             taskId = TaskId(deferred.id),
-            taskName = TaskName(FakeTask::class.java.name),
-            taskReturnValue = MethodReturnValue.from(null)
+            taskName = TaskName(FakeTask::class.java.name)
         )
     }
 

@@ -114,8 +114,7 @@ class TaskTagEngine(
             false -> ids.forEach {
                 val cancelTask = CancelTask(
                     taskId = it,
-                    taskName = message.taskName,
-                    taskReturnValue = message.taskReturnValue
+                    taskName = message.taskName
                 )
                 scope.launch { sendToTaskEngine(cancelTask) }
             }

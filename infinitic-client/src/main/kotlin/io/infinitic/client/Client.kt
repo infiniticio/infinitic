@@ -28,7 +28,6 @@ package io.infinitic.client
 import io.infinitic.client.deferred.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
@@ -284,12 +283,12 @@ abstract class Client {
     /*
      *  Cancel a task or a workflow
      */
-    fun <T : Any> cancel(proxy: T, returnValue: Any? = null) {
+    fun <T : Any> cancel(proxy: T) {
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "cancel")
 
         when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> cancel(handler, returnValue)
-            is WorkflowProxyHandler<*> -> cancel(handler, returnValue)
+            is TaskProxyHandler<*> -> cancelTask(handler)
+            is WorkflowProxyHandler<*> -> cancelWorkflow(handler)
             is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "cancel")
             else -> throw RuntimeException()
         }
@@ -303,37 +302,35 @@ abstract class Client {
         if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "retry")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> retry(handler)
-            is WorkflowProxyHandler<*> -> retry(handler)
+            is TaskProxyHandler<*> -> retryTask(handler)
+            is WorkflowProxyHandler<*> -> retryWorkflow(handler)
             is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "retry")
             else -> throw RuntimeException()
         }
     }
 
-    private fun <T : Any> cancel(handler: TaskProxyHandler<T>, output: Any?) {
+    private fun <T : Any> cancelTask(handler: TaskProxyHandler<T>) {
         if (handler.isNew()) throw CanNotUseNewTaskStub(handler.klass.name, "cancel")
 
         when (handler.perTaskId) {
             null -> {
                 val msg = CancelTaskPerTag(
                     taskTag = handler.perTag!!,
-                    taskName = TaskName(handler.klass.name),
-                    taskReturnValue = MethodReturnValue.from(output)
+                    taskName = TaskName(handler.klass.name)
                 )
                 GlobalScope.future { sendToTaskTagEngine(msg) }.join()
             }
             else -> {
                 val msg = CancelTask(
                     taskId = handler.perTaskId!!,
-                    taskName = TaskName(handler.klass.name),
-                    taskReturnValue = MethodReturnValue.from(output)
+                    taskName = TaskName(handler.klass.name)
                 )
                 GlobalScope.future { sendToTaskEngine(msg) }.join()
             }
         }
     }
 
-    private fun <T : Any> retry(handler: TaskProxyHandler<T>) {
+    private fun <T : Any> retryTask(handler: TaskProxyHandler<T>) {
         if (handler.isNew()) throw CanNotUseNewTaskStub(handler.klass.name, "retry")
 
         if (handler.perTaskId != null) {
@@ -369,14 +366,13 @@ abstract class Client {
         }
     }
 
-    private fun <T : Any> cancel(handler: WorkflowProxyHandler<T>, output: Any?) {
+    private fun <T : Any> cancelWorkflow(handler: WorkflowProxyHandler<T>) {
         if (handler.isNew()) throw CanNotUseNewWorkflowStub(handler.klass.name, "retry")
 
         if (handler.perWorkflowId != null) {
             val msg = CancelWorkflow(
                 workflowId = handler.perWorkflowId!!,
-                workflowName = WorkflowName(handler.klass.name),
-                workflowReturnValue = MethodReturnValue.from(output)
+                workflowName = WorkflowName(handler.klass.name)
             )
             GlobalScope.future { sendToWorkflowEngine(msg) }.join()
 
@@ -386,8 +382,7 @@ abstract class Client {
         if (handler.perTag != null) {
             val msg = CancelWorkflowPerTag(
                 workflowTag = handler.perTag!!,
-                workflowName = WorkflowName(handler.klass.name),
-                workflowReturnValue = MethodReturnValue.from(output)
+                workflowName = WorkflowName(handler.klass.name)
             )
             GlobalScope.future { sendToWorkflowTagEngine(msg) }.join()
 
@@ -395,7 +390,7 @@ abstract class Client {
         }
     }
 
-    private fun <T : Any> retry(handler: WorkflowProxyHandler<T>) {
+    private fun <T : Any> retryWorkflow(handler: WorkflowProxyHandler<T>) {
         if (handler.isNew()) throw CanNotUseNewWorkflowStub(handler.klass.name, "retry")
 
         TODO("Not yet implemented")

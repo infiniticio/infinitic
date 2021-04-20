@@ -85,6 +85,12 @@ data class WaitWorkflow(
 @Serializable
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
+    override val workflowName: WorkflowName
+) : WorkflowEngineMessage()
+
+@Serializable
+data class CompleteWorkflow(
+    override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
     val workflowReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()
@@ -132,8 +138,7 @@ data class TaskCanceled(
     override val workflowName: WorkflowName,
     val methodRunId: MethodRunId,
     val taskId: TaskId,
-    val taskName: TaskName,
-    val taskReturnValue: MethodReturnValue
+    val taskName: TaskName
 ) : WorkflowEngineMessage()
 
 @Serializable

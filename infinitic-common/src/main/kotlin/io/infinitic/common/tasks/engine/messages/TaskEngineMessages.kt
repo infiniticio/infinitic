@@ -97,6 +97,12 @@ data class RetryTask(
 @Serializable
 data class CancelTask(
     override val taskId: TaskId,
+    override val taskName: TaskName
+) : TaskEngineMessage()
+
+@Serializable
+data class CompleteTask(
+    override val taskId: TaskId,
     override val taskName: TaskName,
     val taskReturnValue: MethodReturnValue
 ) : TaskEngineMessage()

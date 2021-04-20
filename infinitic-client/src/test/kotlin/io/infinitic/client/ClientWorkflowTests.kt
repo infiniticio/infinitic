@@ -32,7 +32,6 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
@@ -448,23 +447,7 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
             workflowId = WorkflowId(id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(null)
-        )
-    }
-
-    "Should be able to cancel workflow per id with output" {
-        val output = TestFactory.random<String>()
-        // when
-        val id = UUID.randomUUID()
-        val fakeWorkflow = client.getWorkflow<FakeWorkflow>(id)
-        client.cancel(fakeWorkflow, output)
-        // then
-        workflowTagSlots.size shouldBe 0
-        workflowSlot.captured shouldBe CancelWorkflow(
-            workflowId = WorkflowId(id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(output)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
     }
 
@@ -476,8 +459,7 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
             workflowTag = WorkflowTag("foo"),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(null)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
         workflowSlot.isCaptured shouldBe false
     }
@@ -486,13 +468,12 @@ class ClientWorkflowTests : StringSpec({
         val output = TestFactory.random<String>()
         // when
         val fakeWorkflow = client.getWorkflow<FakeWorkflow>("foo")
-        client.cancel(fakeWorkflow, output)
+        client.cancel(fakeWorkflow)
         // then
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
             workflowTag = WorkflowTag("foo"),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(output)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
         workflowSlot.isCaptured shouldBe false
     }
@@ -507,8 +488,7 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
             workflowId = WorkflowId(deferred.id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(null)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
     }
 })

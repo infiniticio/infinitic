@@ -69,7 +69,9 @@ import io.mockk.confirmVerified
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import io.infinitic.common.clients.messages.TaskCanceled as TaskCanceledInClient
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClient
+import io.infinitic.common.workflows.engine.messages.TaskCanceled as TaskCanceledInWorkflow
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) slot.captured else null
@@ -103,18 +105,14 @@ internal class TaskEngineTests : StringSpec({
                 "taskTags" to setOf(TaskTag("foo"), TaskTag("bar"))
             )
         )
-        val msgIn = random<CancelTask>(
-            mapOf(
-                "taskId" to stateIn.taskId
-            )
-        )
+        val msgIn = random<CancelTask>(mapOf("taskId" to stateIn.taskId))
         // when
         getEngine(stateIn).handle(msgIn)
         // then
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
-            sendToWorkflowEngine(ofType<TaskCompletedInWorkflow>())
-            sendToClient(ofType<TaskCompletedInClient>())
+            sendToWorkflowEngine(ofType<TaskCanceledInWorkflow>())
+            sendToClient(ofType<TaskCanceledInClient>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
@@ -123,15 +121,14 @@ internal class TaskEngineTests : StringSpec({
         verifyAll()
 
         val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
-        val taskCompletedInClient = captured(clientMessage)!! as TaskCompletedInClient
+        val taskCanceledInClient = captured(clientMessage)!! as TaskCanceledInClient
 
         with(taskStatusUpdated) {
             oldStatus shouldBe stateIn.taskStatus
             newStatus shouldBe TaskStatus.TERMINATED_CANCELED
         }
-        with(taskCompletedInClient) {
+        with(taskCanceledInClient) {
             taskId shouldBe stateIn.taskId
-            taskReturnValue shouldBe msgIn.taskReturnValue
         }
     }
 

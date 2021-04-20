@@ -36,6 +36,7 @@ data class WorkflowEngineEnvelope(
     val type: WorkflowEngineMessageType,
     val waitWorkflow: WaitWorkflow? = null,
     val cancelWorkflow: CancelWorkflow? = null,
+    val completeWorkflow: CompleteWorkflow? = null,
     val sendToChannel: SendToChannel? = null,
     val childWorkflowCanceled: ChildWorkflowCanceled? = null,
     val childWorkflowCompleted: ChildWorkflowCompleted? = null,
@@ -48,6 +49,7 @@ data class WorkflowEngineEnvelope(
         val noNull = listOfNotNull(
             waitWorkflow,
             cancelWorkflow,
+            completeWorkflow,
             sendToChannel,
             childWorkflowCanceled,
             childWorkflowCompleted,
@@ -85,6 +87,11 @@ data class WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CANCEL_WORKFLOW,
                 cancelWorkflow = msg
+            )
+            is CompleteWorkflow -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.COMPLETE_WORKFLOW,
+                completeWorkflow = msg
             )
             is SendToChannel -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -129,6 +136,7 @@ data class WorkflowEngineEnvelope(
     override fun message(): WorkflowEngineMessage = when (type) {
         WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow!!
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
+        WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
         WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendToChannel!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!

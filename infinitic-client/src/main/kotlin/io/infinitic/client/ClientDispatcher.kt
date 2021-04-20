@@ -29,9 +29,11 @@ import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.deferred.DeferredWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.clients.messages.TaskCanceled
 import io.infinitic.common.clients.messages.TaskCompleted
-import io.infinitic.common.clients.messages.UnknownTaskWaited
-import io.infinitic.common.clients.messages.UnknownWorkflowWaited
+import io.infinitic.common.clients.messages.UnknownTask
+import io.infinitic.common.clients.messages.UnknownWorkflow
+import io.infinitic.common.clients.messages.WorkflowCanceled
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -60,13 +62,13 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
+import io.infinitic.exceptions.CanceledTask
+import io.infinitic.exceptions.CanceledWorkflow
 import io.infinitic.exceptions.ChannelUsedOnNewWorkflow
 import io.infinitic.exceptions.MultipleMethodCalls
 import io.infinitic.exceptions.NoMethodCall
 import io.infinitic.exceptions.NoSendMethodCall
 import io.infinitic.exceptions.UnknownMethodInSendChannel
-import io.infinitic.exceptions.UnknownTask
-import io.infinitic.exceptions.UnknownWorkflow
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -74,6 +76,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
 import kotlin.reflect.full.isSubclassOf
+import io.infinitic.exceptions.UnknownTask as UnknownTaskException
+import io.infinitic.exceptions.UnknownWorkflow as UnknownWorkflowException
 
 internal class ClientDispatcher(
     val clientName: ClientName,
@@ -167,14 +171,19 @@ internal class ClientDispatcher(
         val taskresult = runBlocking {
             responseFlow.first {
                 (it is TaskCompleted && it.taskId == deferredTask.taskId) ||
-                    (it is UnknownTaskWaited && it.taskId == deferredTask.taskId)
+                    (it is TaskCanceled && it.taskId == deferredTask.taskId) ||
+                    (it is UnknownTask && it.taskId == deferredTask.taskId)
             }
         }
 
         @Suppress("UNCHECKED_CAST")
         return when (taskresult) {
             is TaskCompleted -> taskresult.taskReturnValue.get() as T
-            is UnknownTaskWaited -> throw UnknownTask(
+            is TaskCanceled -> throw CanceledTask(
+                "${deferredTask.taskId}",
+                "${deferredTask.taskName}"
+            )
+            is UnknownTask -> throw UnknownTaskException(
                 "${deferredTask.taskId}",
                 "${deferredTask.taskName}"
             )
@@ -260,14 +269,19 @@ internal class ClientDispatcher(
         val result = runBlocking {
             responseFlow.first {
                 (it is WorkflowCompleted && it.workflowId == deferredWorkflow.workflowId) ||
-                    (it is UnknownWorkflowWaited && it.workflowId == deferredWorkflow.workflowId)
+                    (it is WorkflowCanceled && it.workflowId == deferredWorkflow.workflowId) ||
+                    (it is UnknownWorkflow && it.workflowId == deferredWorkflow.workflowId)
             }
         }
 
         @Suppress("UNCHECKED_CAST")
         return when (result) {
             is WorkflowCompleted -> result.workflowReturnValue.get() as T
-            is UnknownWorkflowWaited -> throw UnknownWorkflow(
+            is WorkflowCanceled -> throw CanceledWorkflow(
+                "${deferredWorkflow.workflowId}",
+                "${deferredWorkflow.workflowName}"
+            )
+            is UnknownWorkflow -> throw UnknownWorkflowException(
                 "${deferredWorkflow.workflowId}",
                 "${deferredWorkflow.workflowName}"
             )

@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.engine
 
-import io.infinitic.common.clients.messages.UnknownTaskWaited
+import io.infinitic.common.clients.messages.UnknownTask
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
@@ -58,7 +58,9 @@ import io.infinitic.tasks.engine.storage.LoggedTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import io.infinitic.common.clients.messages.TaskCanceled as TaskCanceledInClient
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClient
+import io.infinitic.common.workflows.engine.messages.TaskCanceled as TaskCanceledInWorkflow
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
 class TaskEngine(
@@ -86,7 +88,7 @@ class TaskEngine(
             if (message !is DispatchTask) {
                 if (message is WaitTask) {
                     sendToClient(
-                        UnknownTaskWaited(
+                        UnknownTask(
                             message.clientName,
                             message.taskId
                         )
@@ -164,13 +166,12 @@ class TaskEngine(
         // if this task belongs to a workflow, send back the TaskCompleted message
         newState.workflowId?.let {
             sendToWorkflowEngine(
-                TaskCompletedInWorkflow(
+                TaskCanceledInWorkflow(
                     workflowId = it,
                     workflowName = newState.workflowName!!,
                     methodRunId = newState.methodRunId!!,
                     taskId = newState.taskId,
-                    taskName = newState.taskName,
-                    taskReturnValue = message.taskReturnValue
+                    taskName = newState.taskName
                 )
             )
         }
@@ -178,10 +179,9 @@ class TaskEngine(
         // if some clients wait for it, send TaskCompleted output back to them
         newState.clientWaiting.map {
             sendToClient(
-                TaskCompletedInClient(
+                TaskCanceledInClient(
                     clientName = it,
                     taskId = newState.taskId,
-                    taskReturnValue = message.taskReturnValue,
                     taskMeta = newState.taskMeta
                 )
             )
