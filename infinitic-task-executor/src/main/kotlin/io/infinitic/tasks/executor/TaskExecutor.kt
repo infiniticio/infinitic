@@ -39,8 +39,8 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.exceptions.ProcessingTimeout
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.executor.task.BurationBeforeRetryRetrieved
 import io.infinitic.tasks.executor.task.DurationBeforeRetryFailed
+import io.infinitic.tasks.executor.task.DurationBeforeRetryRetrieved
 import io.infinitic.tasks.executor.task.TaskCommand
 import io.infinitic.tasks.executor.task.TaskContextImpl
 import kotlinx.coroutines.TimeoutCancellationException
@@ -133,7 +133,7 @@ class TaskExecutor(
         cause: Exception
     ) {
         when (val delay = getDurationBeforeRetry(task, cause)) {
-            is BurationBeforeRetryRetrieved -> {
+            is DurationBeforeRetryRetrieved -> {
                 // returning the original cause
                 sendTaskAttemptFailed(
                     msg,
@@ -168,7 +168,7 @@ class TaskExecutor(
     }
 
     private fun getDurationBeforeRetry(task: Task, cause: Exception) = try {
-        BurationBeforeRetryRetrieved(task.getDurationBeforeRetry(cause))
+        DurationBeforeRetryRetrieved(task.getDurationBeforeRetry(cause))
     } catch (e: Throwable) {
         logger.error("taskId {} - error when executing getDurationBeforeRetry method {}", task.context.id, e)
         DurationBeforeRetryFailed(e)
