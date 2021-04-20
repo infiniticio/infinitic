@@ -64,19 +64,22 @@ import io.mockk.slot
 import kotlinx.coroutines.coroutineScope
 import java.util.UUID
 
-class ClientTaskTests : StringSpec({
-    val taskTagSlots = mutableListOf<TaskTagEngineMessage>()
-    val taskSlot = slot<TaskEngineMessage>()
-    val workflowTagSlots = mutableListOf<WorkflowTagEngineMessage>()
-    val workflowSlot = slot<WorkflowEngineMessage>()
-    val client = Client(ClientName("clientTest"))
+private val taskTagSlots = mutableListOf<TaskTagEngineMessage>()
+private val taskSlot = slot<TaskEngineMessage>()
+private val workflowTagSlots = mutableListOf<WorkflowTagEngineMessage>()
+private val workflowSlot = slot<WorkflowEngineMessage>()
 
-    client.setOutput(
-        mockSendToTaskTagEngine(taskTagSlots),
-        mockSendToTaskEngine(client, taskSlot),
-        mockSendToWorkflowTagEngine(workflowTagSlots),
-        mockSendToWorkflowEngine(client, workflowSlot)
-    )
+class ClientTask : Client() {
+    override val clientName = ClientName("clientTest")
+    override val sendToTaskTagEngine = mockSendToTaskTagEngine(taskTagSlots)
+    override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot)
+    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(workflowTagSlots)
+    override val sendToWorkflowEngine = mockSendToWorkflowEngine(this, workflowSlot)
+    override fun close() {}
+}
+
+class ClientTaskTests : StringSpec({
+    val client = ClientTask()
 
     beforeTest {
         taskTagSlots.clear()

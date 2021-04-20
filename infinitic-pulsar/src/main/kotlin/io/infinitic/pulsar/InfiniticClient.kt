@@ -31,7 +31,6 @@ import io.infinitic.config.ClientConfig
 import io.infinitic.config.data.Transport
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
-import io.infinitic.inMemory.startInMemory
 import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -39,98 +38,96 @@ import io.infinitic.pulsar.workers.startClientResponseWorker
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import org.apache.pulsar.client.api.PulsarClient
+import io.infinitic.inMemory.InfiniticClient as InMemoryClient
 
-@Suppress("unused")
-class InfiniticClient private constructor(
-    clientName: ClientName
-) : Client(clientName) {
+@Suppress("unused", "MemberVisibilityCanBePrivate", "CanBeParameter")
+class InfiniticClient @JvmOverloads constructor(
+    @JvmField val pulsarClient: PulsarClient,
+    @JvmField val pulsarTenant: String,
+    @JvmField val pulsarNamespace: String,
+    name: String? = null
+) : Client() {
+
+    private var job: Job
+
+    private val producerName = getProducerName(pulsarClient, name)
+
+    override val clientName = ClientName(producerName)
+
+    private val pulsarOutputs =
+        PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
+
+    override val sendToTaskTagEngine =
+        pulsarOutputs.sendToTaskTagEngine(TopicType.COMMANDS, true)
+
+    override val sendToTaskEngine =
+        pulsarOutputs.sendToTaskEngine(TopicType.COMMANDS, null, true)
+
+    override val sendToWorkflowTagEngine =
+        pulsarOutputs.sendToWorkflowTagEngine(TopicType.COMMANDS, true)
+
+    override val sendToWorkflowEngine =
+        pulsarOutputs.sendToWorkflowEngine(TopicType.COMMANDS, true)
+
+    override fun close() {
+        job.cancel()
+        pulsarClient.close()
+    }
+
+    init {
+        val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
+            .newClientResponseConsumer(producerName, ClientName(producerName))
+
+        job = CoroutineScope(Dispatchers.IO + Job()).startClientResponseWorker(this, clientResponseConsumer)
+    }
 
     companion object {
-        /*
-        Create InfiniticClient
-        */
-        @JvmStatic @JvmOverloads
-        fun from(
-            pulsarClient: PulsarClient,
-            pulsarTenant: String,
-            pulsarNamespace: String,
-            clientName: String? = null
-        ): InfiniticClient {
-            // checks uniqueness if not null, provides a unique name if null
-            val producerName = getProducerName(pulsarClient, clientName)
-            val infiniticClient = InfiniticClient(ClientName(producerName))
-
-            val pulsarOutputs = PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
-            infiniticClient.setOutput(
-                sendToTaskTagEngine = pulsarOutputs.sendToTaskTagEngine(TopicType.COMMANDS, true),
-                sendToTaskEngine = pulsarOutputs.sendToTaskEngine(TopicType.COMMANDS, null, true),
-                sendToWorkflowTagEngine = pulsarOutputs.sendToWorkflowTagEngine(TopicType.COMMANDS, true),
-                sendToWorkflowEngine = pulsarOutputs.sendToWorkflowEngine(TopicType.COMMANDS, true)
-            )
-            val job = with(CoroutineScope(Dispatchers.IO)) {
-                val clientResponseConsumer =
-                    PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
-                        .newClientResponseConsumer(producerName, ClientName(producerName))
-
-                startClientResponseWorker(infiniticClient, clientResponseConsumer)
-            }
-
-            // close consumer, then the pulsarClient
-            infiniticClient.closeFn = {
-                job.cancel()
-                pulsarClient.close()
-            }
-
-            return infiniticClient
-        }
-
-        /*
-        Create InfiniticClient from a ClientConfig instance
-        */
+        /**
+         * Create Client from a custom PulsarClient and a ClientConfig instance
+         */
         @JvmStatic
-        fun fromConfig(config: ClientConfig): InfiniticClient = when (config.transport) {
-            Transport.pulsar -> {
-                val pulsarClient = PulsarClient
-                    .builder()
-                    .serviceUrl(config.pulsar!!.serviceUrl)
-                    .build()
-
-                from(
-                    pulsarClient,
-                    config.pulsar!!.tenant,
-                    config.pulsar!!.namespace,
-                    config.name
-                )
-            }
+        fun from(pulsarClient: PulsarClient, clientConfig: ClientConfig): Client = when (clientConfig.transport) {
+            Transport.pulsar -> InfiniticClient(
+                pulsarClient,
+                clientConfig.pulsar!!.tenant,
+                clientConfig.pulsar!!.namespace,
+                clientConfig.name
+            )
 
             Transport.inMemory -> {
-                // register task and workflows register
                 val register = TaskExecutorRegisterImpl()
-                config.tasks.map {
-                    register.registerTask(it.name) { it.instance }
-                }
-                config.workflows.map {
-                    register.registerWorkflow(it.name) { it.instance }
-                }
+                clientConfig.tasks.map { register.registerTask(it.name) { it.instance } }
+                clientConfig.workflows.map { register.registerWorkflow(it.name) { it.instance } }
 
-                val client = InfiniticClient(ClientName(config.name ?: "client: inMemory"))
-                client.startInMemory(register)
-
-                client
+                InMemoryClient(register, clientConfig.name)
             }
         }
 
-        /*
-       Create InfiniticClient from a ClientConfig loaded from a resource
-        */
+        /**
+         * Create Client from a ClientConfig instance
+         */
+        @JvmStatic
+        fun fromConfig(clientConfig: ClientConfig): Client {
+            val pulsarClient = PulsarClient
+                .builder()
+                .serviceUrl(clientConfig.pulsar!!.serviceUrl)
+                .build()
+
+            return from(pulsarClient, clientConfig)
+        }
+
+        /**
+         * Create Client from ClientConfig resources
+         */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
             fromConfig(loadConfigFromResource(resources.toList()))
 
-        /*
-       Create InfiniticClient from a ClientConfig loaded from a file
-        */
+        /**
+         * Create Client from ClientConfig files
+         */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
             fromConfig(loadConfigFromFile(files.toList()))

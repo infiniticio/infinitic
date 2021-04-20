@@ -38,7 +38,8 @@ import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-class InfiniticAdmin(
+
+class InfiniticAdmin @JvmOverloads constructor(
     @JvmField val pulsarAdmin: PulsarAdmin,
     @JvmField val tenant: String,
     @JvmField val namespace: String,
@@ -47,36 +48,42 @@ class InfiniticAdmin(
     private val topicNamer = TopicNamer(tenant, namespace)
 
     companion object {
-        /*
-        Create InfiniticAdmin from an AdminConfig
+        /**
+         * Create InfiniticAdmin from a custom PulsarAdmin and an AdminConfig instance
          */
         @JvmStatic
-        fun fromConfig(config: AdminConfig): InfiniticAdmin {
+        fun from(pulsarAdmin: PulsarAdmin, adminConfig: AdminConfig) = InfiniticAdmin(
+            pulsarAdmin,
+            adminConfig.pulsar.tenant,
+            adminConfig.pulsar.namespace,
+            adminConfig.pulsar.allowedClusters
+        )
+
+        /**
+         * Create InfiniticAdmin from an AdminConfig instance
+         */
+        @JvmStatic
+        fun fromConfig(adminConfig: AdminConfig): InfiniticAdmin {
             // build PulsarAdmin from config
             val pulsarAdmin = PulsarAdmin
                 .builder()
-                .serviceHttpUrl(config.pulsar.serviceHttpUrl)
+                .serviceHttpUrl(adminConfig.pulsar.serviceHttpUrl)
                 .allowTlsInsecureConnection(true)
                 .build()
 
-            return InfiniticAdmin(
-                pulsarAdmin,
-                config.pulsar.tenant,
-                config.pulsar.namespace,
-                config.pulsar.allowedClusters
-            )
+            return from(pulsarAdmin, adminConfig)
         }
 
-        /*
-        Create InfiniticAdmin from an AdminConfig loaded from a resource
+        /**
+         * Create InfiniticAdmin from AdminConfig resources
          */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
             fromConfig(loadConfigFromResource(resources.toList()))
 
-        /*
-       Create InfiniticAdmin from an AdminConfig loaded from a file
-        */
+        /**
+         * Create InfiniticAdmin from AdminConfig files
+         */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
             fromConfig(loadConfigFromFile(files.toList()))

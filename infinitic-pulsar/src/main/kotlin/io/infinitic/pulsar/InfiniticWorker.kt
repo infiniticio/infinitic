@@ -71,37 +71,43 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-class InfiniticWorker(
+class InfiniticWorker private constructor(
     @JvmField val pulsarClient: PulsarClient,
-    @JvmField val config: WorkerConfig
+    @JvmField val workerConfig: WorkerConfig
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     companion object {
-        /*
-        Create InfiniticWorker from a WorkerConfig
-        */
+        /**
+         * Create InfiniticWorker from a custom PulsarClient and a WorkerConfig instance
+         */
         @JvmStatic
-        fun fromConfig(config: WorkerConfig): InfiniticWorker {
+        fun from(pulsarClient: PulsarClient, workerConfig: WorkerConfig) = InfiniticWorker(pulsarClient, workerConfig)
+
+        /**
+         * Create InfiniticWorker from a WorkerConfig
+         */
+        @JvmStatic
+        fun fromConfig(workerConfig: WorkerConfig): InfiniticWorker {
             // build Pulsar client from config
             val pulsarClient: PulsarClient = PulsarClient
                 .builder()
-                .serviceUrl(config.pulsar.serviceUrl)
+                .serviceUrl(workerConfig.pulsar.serviceUrl)
                 .build()
 
-            return InfiniticWorker(pulsarClient, config)
+            return InfiniticWorker(pulsarClient, workerConfig)
         }
 
-        /*
-        Create InfiniticWorker from a WorkerConfig loaded from a resource
-        */
+        /**
+         * Create InfiniticWorker from WorkerConfig resources
+         */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
             fromConfig(loadConfigFromResource(resources.toList()))
 
-        /*
-        Create InfiniticWorker from a WorkerConfig loaded from a file
-        */
+        /**
+         * Create InfiniticWorker from WorkerConfig files
+         */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
             fromConfig(loadConfigFromFile(files.toList()))
@@ -121,7 +127,7 @@ class InfiniticWorker(
 
         scope.launch {
             try {
-                coroutineScope { start(pulsarClient, config) }
+                coroutineScope { start(pulsarClient, workerConfig) }
             } finally {
                 // must close Pulsar client to avoid other key-shared subscriptions to be blocked
                 close()
@@ -221,12 +227,12 @@ class InfiniticWorker(
             tagEngine.concurrency,
             BinaryTaskTagStorage(
                 CachedKeyValueStorage(
-                    tagEngine.stateCache!!.getKeyValueCache(config),
-                    tagEngine.stateStorage!!.getKeyValueStorage(config)
+                    tagEngine.stateCache!!.getKeyValueCache(workerConfig),
+                    tagEngine.stateStorage!!.getKeyValueStorage(workerConfig)
                 ),
                 CachedKeySetStorage(
-                    tagEngine.stateCache!!.getKeySetCache(config),
-                    tagEngine.stateStorage!!.getKeySetStorage(config)
+                    tagEngine.stateCache!!.getKeySetCache(workerConfig),
+                    tagEngine.stateStorage!!.getKeySetStorage(workerConfig)
                 )
             ),
             pulsarConsumerFactory,
@@ -253,8 +259,8 @@ class InfiniticWorker(
             taskEngine.concurrency,
             BinaryTaskStateStorage(
                 CachedKeyValueStorage(
-                    taskEngine.stateCache!!.getKeyValueCache(config),
-                    taskEngine.stateStorage!!.getKeyValueStorage(config)
+                    taskEngine.stateCache!!.getKeyValueCache(workerConfig),
+                    taskEngine.stateStorage!!.getKeyValueStorage(workerConfig)
                 )
             ),
             pulsarConsumerFactory,
@@ -282,12 +288,12 @@ class InfiniticWorker(
             tagEngine.concurrency,
             BinaryWorkflowTagStorage(
                 CachedKeyValueStorage(
-                    tagEngine.stateCache!!.getKeyValueCache(config),
-                    tagEngine.stateStorage!!.getKeyValueStorage(config)
+                    tagEngine.stateCache!!.getKeyValueCache(workerConfig),
+                    tagEngine.stateStorage!!.getKeyValueStorage(workerConfig)
                 ),
                 CachedKeySetStorage(
-                    tagEngine.stateCache!!.getKeySetCache(config),
-                    tagEngine.stateStorage!!.getKeySetStorage(config)
+                    tagEngine.stateCache!!.getKeySetCache(workerConfig),
+                    tagEngine.stateStorage!!.getKeySetStorage(workerConfig)
                 )
             ),
             pulsarConsumerFactory,
@@ -315,8 +321,8 @@ class InfiniticWorker(
             workflowEngine.concurrency,
             BinaryWorkflowStateStorage(
                 CachedKeyValueStorage(
-                    workflowEngine.stateCache!!.getKeyValueCache(config),
-                    workflowEngine.stateStorage!!.getKeyValueStorage(config)
+                    workflowEngine.stateCache!!.getKeyValueCache(workerConfig),
+                    workflowEngine.stateStorage!!.getKeyValueStorage(workerConfig)
                 )
             ),
             pulsarConsumerFactory,
@@ -382,8 +388,8 @@ class InfiniticWorker(
             pulsarConsumerFactory,
             BinaryMetricsPerNameStateStorage(
                 CachedKeyValueStorage(
-                    metrics.stateCacheOrDefault.getKeyValueCache(config),
-                    metrics.stateStorage!!.getKeyValueStorage(config)
+                    metrics.stateCacheOrDefault.getKeyValueCache(workerConfig),
+                    metrics.stateStorage!!.getKeyValueStorage(workerConfig)
                 )
             ),
             pulsarOutput
@@ -394,8 +400,8 @@ class InfiniticWorker(
             pulsarConsumerFactory,
             BinaryMetricsGlobalStateStorage(
                 CachedKeyValueStorage(
-                    metrics.stateCacheOrDefault.getKeyValueCache(config),
-                    metrics.stateStorage!!.getKeyValueStorage(config)
+                    metrics.stateCacheOrDefault.getKeyValueCache(workerConfig),
+                    metrics.stateStorage!!.getKeyValueStorage(workerConfig)
                 )
             )
         )

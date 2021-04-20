@@ -47,12 +47,12 @@ data class ClientConfig(
     @JvmField val pulsar: Pulsar? = null,
 
     /*
-    Tasks configuration (Used only inMemory)
+    Tasks configuration (Used only with transport: inMemory)
      */
     @JvmField val tasks: List<Task> = listOf(),
 
     /*
-    Workflows configuration (Used only inMemory)
+    Workflows configuration (Used only with transport: inMemory)
      */
     @JvmField val workflows: List<Workflow> = listOf(),
 

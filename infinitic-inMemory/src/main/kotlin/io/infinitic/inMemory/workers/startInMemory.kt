@@ -49,8 +49,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private const val N_TASK_EXECUTORS = 10
-
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     client: Client,
@@ -122,15 +120,13 @@ fun CoroutineScope.startInMemory(
         output.sendToWorkflowEngineAfter
     )
 
-    repeat(N_TASK_EXECUTORS) {
-        startTaskExecutor(
-            "in-memory-task-executor-$it",
-            taskExecutorRegister,
-            inputChannel = output.executorChannel,
-            outputChannel = output.logChannel,
-            output.sendEventsToTaskEngine,
-        )
-    }
+    startTaskExecutor(
+        "in-memory-task-executor",
+        taskExecutorRegister,
+        inputChannel = output.executorChannel,
+        outputChannel = output.logChannel,
+        output.sendEventsToTaskEngine,
+    )
 
     startMetricsPerNameEngine(
         "in-memory-metrics-per-name-engine",

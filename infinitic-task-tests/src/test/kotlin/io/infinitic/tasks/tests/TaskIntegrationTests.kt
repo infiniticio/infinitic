@@ -40,9 +40,13 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -431,13 +435,18 @@ fun CoroutineScope.init() {
     keySetStorage.flush()
     taskStatus = null
 
-    client = Client.with(
-        ClientName("client: InMemory"),
-        { sendToTaskTagEngine(it) },
-        { sendToTaskEngine(it) },
-        { },
-        { }
-    )
+    val scope = this
+
+    class ClientTest : Client() {
+        override val clientName = ClientName("clientTest")
+        override val sendToTaskTagEngine: SendToTaskTagEngine = { scope.sendToTaskTagEngine(it) }
+        override val sendToTaskEngine: SendToTaskEngine = { scope.sendToTaskEngine(it) }
+        override val sendToWorkflowTagEngine: SendToWorkflowTagEngine = {}
+        override val sendToWorkflowEngine: SendToWorkflowEngine = {}
+        override fun close() {}
+    }
+
+    client = ClientTest()
 
     taskStub = client.newTask(TaskTest::class.java)
     taskStub1Tag = client.newTask(TaskTest::class.java, tags = setOf("foo"))

@@ -65,51 +65,32 @@ import java.lang.reflect.Proxy
 import java.util.UUID
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-open class Client(
-    open val clientName: ClientName
-) {
-    var closeFn: () -> Unit = {}
+abstract class Client {
+    abstract val clientName: ClientName
+    protected abstract val sendToTaskTagEngine: SendToTaskTagEngine
+    protected abstract val sendToTaskEngine: SendToTaskEngine
+    protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
+    protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
+
+    private var _dispatcher: ClientDispatcher? = null
+
+    private val dispatcher: ClientDispatcher
+        get() = _dispatcher ?: run {
+            _dispatcher = ClientDispatcher(
+                clientName,
+                sendToTaskTagEngine,
+                sendToTaskEngine,
+                sendToWorkflowTagEngine,
+                sendToWorkflowEngine
+            )
+
+            _dispatcher!!
+        }
+
+    abstract fun close()
 
     private val logger: Logger
         get() = LoggerFactory.getLogger(javaClass)
-
-    companion object {
-        fun with(
-            clientName: ClientName,
-            sendToTaskTagEngine: SendToTaskTagEngine,
-            sendToTaskEngine: SendToTaskEngine,
-            sendToWorkflowTagEngine: SendToWorkflowTagEngine,
-            sendToWorkflowEngine: SendToWorkflowEngine
-        ) = Client(clientName).apply { setOutput(sendToTaskTagEngine, sendToTaskEngine, sendToWorkflowTagEngine, sendToWorkflowEngine) }
-    }
-
-    private lateinit var dispatcher: ClientDispatcher
-    private lateinit var sendToTaskTagEngine: SendToTaskTagEngine
-    private lateinit var sendToTaskEngine: SendToTaskEngine
-    private lateinit var sendToWorkflowTagEngine: SendToWorkflowTagEngine
-    private lateinit var sendToWorkflowEngine: SendToWorkflowEngine
-
-    fun close() = closeFn()
-
-    fun setOutput(
-        sendToTaskTagEngine: SendToTaskTagEngine,
-        sendToTaskEngine: SendToTaskEngine,
-        sendToWorkflowTagEngine: SendToWorkflowTagEngine,
-        sendToWorkflowEngine: SendToWorkflowEngine
-    ) {
-        this.sendToTaskTagEngine = sendToTaskTagEngine
-        this.sendToTaskEngine = sendToTaskEngine
-        this.sendToWorkflowTagEngine = sendToWorkflowTagEngine
-        this.sendToWorkflowEngine = sendToWorkflowEngine
-
-        dispatcher = ClientDispatcher(
-            clientName,
-            this.sendToTaskTagEngine,
-            this.sendToTaskEngine,
-            this.sendToWorkflowTagEngine,
-            this.sendToWorkflowEngine
-        )
-    }
 
     suspend fun handle(message: ClientMessage) {
         logger.debug("receiving {}", message)
