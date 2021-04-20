@@ -39,7 +39,7 @@ import java.time.Instant
 
 @Suppress("unused")
 abstract class Workflow {
-    lateinit var context: WorkflowTaskContext
+    lateinit var context: WorkflowContext
 
     /*
      *  Create a channel

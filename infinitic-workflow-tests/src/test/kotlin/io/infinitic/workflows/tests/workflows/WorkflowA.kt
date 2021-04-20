@@ -26,6 +26,7 @@
 package io.infinitic.workflows.tests.workflows
 
 import com.jayway.jsonpath.Criteria.where
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
@@ -36,6 +37,7 @@ import io.infinitic.workflows.tests.tasks.TaskA
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.UUID
 
 sealed class Obj
 @Serializable
@@ -51,6 +53,9 @@ interface WorkflowA {
     val channelB: SendChannel<String>
 
     fun empty(): String
+    fun context1(): UUID
+    fun context2(): Set<String>
+    fun context3(): WorkflowMeta
     fun seq1(): String
     fun seq2(): String
     fun seq3(): String
@@ -99,6 +104,12 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     private var p1 = ""
 
     override fun empty() = "void"
+
+    override fun context1(): UUID = context.id
+
+    override fun context2(): Set<String> = context.tags
+
+    override fun context3() = WorkflowMeta(context.meta)
 
     override fun seq1(): String {
         var str = ""

@@ -26,6 +26,7 @@
 package io.infinitic.workflows.tests
 
 import io.infinitic.client.Client
+import io.infinitic.client.deferred.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -38,6 +39,7 @@ import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -113,6 +115,43 @@ class WorkflowIntegrationTests : StringSpec({
         }
         // checks number of task processing
         result shouldBe "void"
+    }
+
+    "get id from context" {
+        var result: UUID
+        var deferred: Deferred<UUID>
+        // run system
+        coroutineScope {
+            init()
+            deferred = client.async(workflowA) { context1() }
+            result = deferred.await()
+        }
+        result shouldBe deferred.id
+    }
+
+    "get tags from context" {
+        var result: Set<String>
+        var deferred: Deferred<Set<String>>
+        // run system
+        coroutineScope {
+            init()
+            deferred = client.async(workflowATagged) { context2() }
+            result = deferred.await()
+        }
+        result shouldBe setOf("foo", "bar")
+    }
+
+    "get meta from context" {
+        var result: WorkflowMeta
+        // run system
+        coroutineScope {
+            init()
+            val workflowAMeta = client.newWorkflow(WorkflowA::class.java, meta = mapOf("foo" to "bar".toByteArray()))
+            val deferred = client.async(workflowAMeta) { context3() }
+            result = deferred.await()
+            println(result)
+        }
+        result shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
     }
 
     "Simple Sequential Workflow" {
@@ -739,6 +778,7 @@ fun CoroutineScope.init() {
 
     workflowA = client.newWorkflow(WorkflowA::class.java)
     workflowATagged = client.newWorkflow(WorkflowA::class.java, setOf("foo", "bar"))
+
     workflowB = client.newWorkflow(WorkflowB::class.java)
 
     workflowTagEngine = WorkflowTagEngine(
