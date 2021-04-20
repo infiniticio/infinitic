@@ -213,12 +213,13 @@ class DataTests : StringSpec({
         m2 shouldBe m
     }
 
-    "WorkflowMeta should be serialized as Map<String, SerializedData>" {
+    "WorkflowMeta should be serializable" {
         val m = WorkflowMeta(mapOf("a" to "1".toByteArray()))
 
         val json = Json.encodeToString(m)
 
         val m2 = Json.decodeFromString<WorkflowMeta>(json)
+
         m2 shouldBe m
     }
 

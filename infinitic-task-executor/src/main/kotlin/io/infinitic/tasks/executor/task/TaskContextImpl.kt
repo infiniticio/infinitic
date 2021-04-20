@@ -34,6 +34,8 @@ import java.util.UUID
 data class TaskContextImpl(
     override val register: TaskExecutor,
     override val id: UUID,
+    override val workflowId: UUID?,
+    override val workflowName: String?,
     override val attemptId: UUID,
     override val retrySequence: Int,
     override val retryIndex: Int,

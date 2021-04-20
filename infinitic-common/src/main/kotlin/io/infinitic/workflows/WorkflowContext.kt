@@ -32,8 +32,15 @@ import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
-interface WorkflowTaskContext : Dispatcher {
+interface WorkflowContext : Dispatcher {
+
+    val id: UUID
+
+    val tags: Set<String>
+
+    val meta: Map<String, ByteArray>
 
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
 

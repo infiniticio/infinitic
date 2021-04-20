@@ -72,17 +72,30 @@ import io.infinitic.exceptions.ShouldNotWaitInsideInlinedTask
 import io.infinitic.exceptions.WorkflowUpdatedWhileRunning
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
-import io.infinitic.workflows.WorkflowTaskContext
+import io.infinitic.workflows.WorkflowContext
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
+import java.util.UUID
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
-internal class WorkflowTaskContextImpl(
+internal class WorkflowContextImpl(
     private val workflowTaskParameters: WorkflowTaskParameters,
     private val setProperties: (Map<PropertyHash, PropertyValue>, Map<PropertyName, PropertyHash>) -> Unit
-) : WorkflowTaskContext {
+) : WorkflowContext {
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    // internal workflow id
+    override val id: UUID
+        get() = workflowTaskParameters.workflowId.id
+
+    // workflow tags provided at launch
+    override val tags: Set<String>
+        get() = workflowTaskParameters.workflowTags.map { it.tag }.toSet()
+
+    // workflow meta provided at launch
+    override val meta: Map<String, ByteArray>
+        get() = workflowTaskParameters.workflowMeta.map
 
     // position in the current method processing
     private var methodRunIndex = MethodRunIndex()

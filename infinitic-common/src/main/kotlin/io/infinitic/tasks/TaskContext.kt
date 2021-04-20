@@ -32,6 +32,8 @@ import java.util.UUID
 interface TaskContext {
     val register: TaskExecutorRegister
     val id: UUID
+    val workflowId: UUID?
+    val workflowName: String?
     val attemptId: UUID
     val retrySequence: Int
     val retryIndex: Int

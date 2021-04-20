@@ -68,7 +68,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         )
 
         // set context
-        workflow.context = WorkflowTaskContextImpl(workflowTaskParameters, setProperties)
+        workflow.context = WorkflowContextImpl(workflowTaskParameters, setProperties)
 
         // initialize name of channels for this workflow, based on the methods that provide them
         setChannelNames(workflow)
@@ -93,8 +93,8 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         return WorkflowTaskReturnValue(
             workflowTaskParameters.workflowId,
             workflowTaskParameters.methodRun.methodRunId,
-            (workflow.context as WorkflowTaskContextImpl).newCommands,
-            (workflow.context as WorkflowTaskContextImpl).newSteps,
+            (workflow.context as WorkflowContextImpl).newCommands,
+            (workflow.context as WorkflowContextImpl).newSteps,
             properties,
             methodReturnValue
         )
