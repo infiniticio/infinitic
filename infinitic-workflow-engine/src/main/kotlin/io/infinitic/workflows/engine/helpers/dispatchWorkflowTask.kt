@@ -43,7 +43,7 @@ import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
-suspend fun dispatchWorkflowTask(
+internal suspend fun dispatchWorkflowTask(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,

@@ -39,8 +39,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MethodRun(
-    val methodRunId: MethodRunId = MethodRunId(),
-    val isMain: Boolean,
+    val methodRunId: MethodRunId,
     val parentWorkflowId: WorkflowId? = null,
     val parentMethodRunId: MethodRunId? = null,
     val methodName: MethodName,

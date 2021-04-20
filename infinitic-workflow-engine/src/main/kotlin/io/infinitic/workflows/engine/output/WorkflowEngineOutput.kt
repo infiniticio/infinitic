@@ -31,7 +31,7 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 
-data class WorkflowEngineOutput(
+internal data class WorkflowEngineOutput(
     val sendEventsToClient: SendToClient,
     val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     val sendToTaskEngine: SendToTaskEngine,

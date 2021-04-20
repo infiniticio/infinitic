@@ -43,9 +43,11 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
+import io.infinitic.workflows.engine.handlers.childWorkflowCanceled
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.sendToChannel
+import io.infinitic.workflows.engine.handlers.taskCanceled
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -188,26 +190,18 @@ class WorkflowEngine(
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
         when (message) {
             is CancelWorkflow -> cancelWorkflow(state, message)
-            is ChildWorkflowCanceled -> childWorkflowCanceled(state, message)
-            is ChildWorkflowCompleted -> childWorkflowCompleted(output, state, message)
-            is TimerCompleted -> timerCompleted(output, state, message)
-            is TaskCanceled -> taskCanceled(state, message)
-            is TaskCompleted -> taskCompleted(output, state, message)
             is SendToChannel -> sendToChannel(output, state, message)
             is WaitWorkflow -> waitWorkflow(state, message)
+            is ChildWorkflowCanceled -> childWorkflowCanceled(output, state, message)
+            is ChildWorkflowCompleted -> childWorkflowCompleted(output, state, message)
+            is TimerCompleted -> timerCompleted(output, state, message)
+            is TaskCanceled -> taskCanceled(output, state, message)
+            is TaskCompleted -> taskCompleted(output, state, message)
             else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
         }
     }
 
     private suspend fun cancelWorkflow(state: WorkflowState, msg: CancelWorkflow) {
-        TODO()
-    }
-
-    private suspend fun childWorkflowCanceled(state: WorkflowState, msg: ChildWorkflowCanceled) {
-        TODO()
-    }
-
-    private suspend fun taskCanceled(state: WorkflowState, msg: TaskCanceled) {
         TODO()
     }
 

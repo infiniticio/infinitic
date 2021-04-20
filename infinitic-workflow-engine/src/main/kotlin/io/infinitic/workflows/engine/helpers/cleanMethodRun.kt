@@ -30,7 +30,7 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.engine.state.WorkflowState
 
-fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
+internal fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
     // if everything is completed in methodRun then filter state
     // (non-blocking waiting for events or for timer do not prevent cleaning)
     if (methodRun.methodReturnValue != null &&
@@ -52,7 +52,7 @@ fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
     }
 }
 
-private fun removeUnusedPropertyHash(state: WorkflowState) {
+internal fun removeUnusedPropertyHash(state: WorkflowState) {
     // get set of all hashes still in use
     val propertyHashes = mutableSetOf<PropertyHash>()
 

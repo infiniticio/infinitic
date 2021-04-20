@@ -67,7 +67,7 @@ import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowCompletedInClient
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
-suspend fun workflowTaskCompleted(
+internal suspend fun workflowTaskCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: TaskCompleted
@@ -125,7 +125,7 @@ suspend fun workflowTaskCompleted(
         methodRun.methodReturnValue = workflowTaskOutput.methodReturnValue
 
         // if this is the main method, it means the workflow is completed
-        if (methodRun.isMain) {
+        if (methodRun.methodRunId.id == state.workflowId.id) {
             // send output back to waiting clients
             state.clientWaiting.map {
                 workflowEngineOutput.sendEventsToClient(

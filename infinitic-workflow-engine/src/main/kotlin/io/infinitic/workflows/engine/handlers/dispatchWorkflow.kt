@@ -26,17 +26,18 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
-suspend fun dispatchWorkflow(
+internal suspend fun dispatchWorkflow(
     workflowEngineOutput: WorkflowEngineOutput,
     message: DispatchWorkflow
 ): WorkflowState {
     val methodRun = MethodRun(
-        isMain = true,
+        methodRunId = MethodRunId(message.workflowId.id),
         parentWorkflowId = message.parentWorkflowId,
         parentMethodRunId = message.parentMethodRunId,
         methodName = message.methodName,

@@ -104,6 +104,7 @@ data class SendToChannel(
 data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
+    val methodRunId: MethodRunId,
     val childWorkflowId: WorkflowId,
     val childWorkflowReturnValue: MethodReturnValue
 ) : WorkflowEngineMessage()

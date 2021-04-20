@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
 
-suspend fun sendToChannel(
+internal suspend fun sendToChannel(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: SendToChannel

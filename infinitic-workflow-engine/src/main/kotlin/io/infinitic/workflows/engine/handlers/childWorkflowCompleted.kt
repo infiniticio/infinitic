@@ -32,7 +32,7 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
-suspend fun childWorkflowCompleted(
+internal suspend fun childWorkflowCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: ChildWorkflowCompleted
