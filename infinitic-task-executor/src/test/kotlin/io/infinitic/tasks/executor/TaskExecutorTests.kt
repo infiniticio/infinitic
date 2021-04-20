@@ -282,6 +282,8 @@ class TaskExecutorTests : StringSpec({
 private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out Any?>, types: List<String>?) = ExecuteTaskAttempt(
     taskName = TaskName(name),
     taskId = TaskId(),
+    workflowId = null,
+    workflowName = null,
     taskAttemptId = TaskAttemptId(),
     taskRetrySequence = TaskRetrySequence(12),
     taskRetryIndex = TaskRetryIndex(7),

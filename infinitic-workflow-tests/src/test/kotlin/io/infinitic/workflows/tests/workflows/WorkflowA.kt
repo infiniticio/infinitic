@@ -56,6 +56,8 @@ interface WorkflowA {
     fun context1(): UUID
     fun context2(): Set<String>
     fun context3(): WorkflowMeta
+    fun context4(): UUID?
+    fun context5(): String?
     fun seq1(): String
     fun seq2(): String
     fun seq3(): String
@@ -110,6 +112,10 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun context2(): Set<String> = context.tags
 
     override fun context3() = WorkflowMeta(context.meta)
+
+    override fun context4() = taskA.workflowId()
+
+    override fun context5() = taskA.workflowName()
 
     override fun seq1(): String {
         var str = ""

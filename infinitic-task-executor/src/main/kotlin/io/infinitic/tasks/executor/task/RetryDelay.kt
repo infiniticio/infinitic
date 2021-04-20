@@ -29,6 +29,6 @@ import java.time.Duration
 
 internal sealed class RetryDelay
 
-internal data class RetryDelayRetrieved(val value: Duration?) : RetryDelay()
+internal data class BurationBeforeRetryRetrieved(val value: Duration?) : RetryDelay()
 
-internal data class RetryDelayFailed(val error: Throwable) : RetryDelay()
+internal data class DurationBeforeRetryFailed(val error: Throwable) : RetryDelay()

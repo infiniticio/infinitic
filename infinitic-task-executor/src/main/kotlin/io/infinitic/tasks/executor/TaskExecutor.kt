@@ -38,10 +38,9 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.exceptions.ProcessingTimeout
 import io.infinitic.tasks.Task
-import io.infinitic.tasks.TaskContext
 import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.executor.task.RetryDelayFailed
-import io.infinitic.tasks.executor.task.RetryDelayRetrieved
+import io.infinitic.tasks.executor.task.BurationBeforeRetryRetrieved
+import io.infinitic.tasks.executor.task.DurationBeforeRetryFailed
 import io.infinitic.tasks.executor.task.TaskCommand
 import io.infinitic.tasks.executor.task.TaskContextImpl
 import kotlinx.coroutines.TimeoutCancellationException
@@ -52,10 +51,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.starProjectedType
-import kotlin.reflect.jvm.javaField
 
 class TaskExecutor(
     val sendToTaskEngine: SendToTaskEngine,
@@ -77,6 +72,8 @@ class TaskExecutor(
         val taskContext = TaskContextImpl(
             register = this,
             id = message.taskId.id,
+            workflowId = message.workflowId?.id,
+            workflowName = message.workflowName?.name,
             attemptId = message.taskAttemptId.id,
             retrySequence = message.taskRetrySequence.int,
             retryIndex = message.taskRetryIndex.int,
@@ -130,24 +127,13 @@ class TaskExecutor(
         output
     }
 
-    private fun setTaskContext(task: Any, context: TaskContext) {
-        task::class.memberProperties.find {
-            it.returnType.isSubtypeOf(TaskContext::class.starProjectedType)
-        }?.javaField?.apply {
-            isAccessible = true
-            set(task, context)
-            // IMPORTANT: visibility must NOT be set back to initial value
-            // visibility being static it would lead to race conditions
-        }
-    }
-
     private suspend fun failTaskWithRetry(
         task: Task,
         msg: ExecuteTaskAttempt,
         cause: Exception
     ) {
-        when (val delay = getDelayBeforeRetry(task, cause)) {
-            is RetryDelayRetrieved -> {
+        when (val delay = getDurationBeforeRetry(task, cause)) {
+            is BurationBeforeRetryRetrieved -> {
                 // returning the original cause
                 sendTaskAttemptFailed(
                     msg,
@@ -156,7 +142,7 @@ class TaskExecutor(
                     TaskMeta(task.context.meta)
                 )
             }
-            is RetryDelayFailed -> {
+            is DurationBeforeRetryFailed -> {
                 // no retry
                 sendTaskAttemptFailed(
                     msg,
@@ -181,11 +167,11 @@ class TaskExecutor(
         return TaskCommand(task, method, msg.methodParameters.get(), msg.taskOptions)
     }
 
-    private fun getDelayBeforeRetry(task: Task, cause: Exception) = try {
-        RetryDelayRetrieved(task.getDurationBeforeRetry(cause))
+    private fun getDurationBeforeRetry(task: Task, cause: Exception) = try {
+        BurationBeforeRetryRetrieved(task.getDurationBeforeRetry(cause))
     } catch (e: Throwable) {
         logger.error("taskId {} - error when executing getDurationBeforeRetry method {}", task.context.id, e)
-        RetryDelayFailed(e)
+        DurationBeforeRetryFailed(e)
     }
 
     private suspend fun sendTaskAttemptFailed(

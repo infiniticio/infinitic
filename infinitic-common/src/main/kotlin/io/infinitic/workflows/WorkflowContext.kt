@@ -37,9 +37,7 @@ import java.util.UUID
 interface WorkflowContext : Dispatcher {
 
     val id: UUID
-
     val tags: Set<String>
-
     val meta: Map<String, ByteArray>
 
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>

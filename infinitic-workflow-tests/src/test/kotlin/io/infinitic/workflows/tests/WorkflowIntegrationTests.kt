@@ -149,9 +149,31 @@ class WorkflowIntegrationTests : StringSpec({
             val workflowAMeta = client.newWorkflow(WorkflowA::class.java, meta = mapOf("foo" to "bar".toByteArray()))
             val deferred = client.async(workflowAMeta) { context3() }
             result = deferred.await()
-            println(result)
         }
         result shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
+    }
+
+    "get workflow id from task context" {
+        var result: UUID?
+        var deferred: Deferred<UUID?>
+        // run system
+        coroutineScope {
+            init()
+            deferred = client.async(workflowA) { context4() }
+            result = deferred.await()
+        }
+        result shouldBe deferred.id
+    }
+
+    "get workflow name from task context" {
+        var result: String?
+        // run system
+        coroutineScope {
+            init()
+            val deferred = client.async(workflowA) { context5() }
+            result = deferred.await()
+        }
+        result shouldBe WorkflowA::class.java.name
     }
 
     "Simple Sequential Workflow" {

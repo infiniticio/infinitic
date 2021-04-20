@@ -93,6 +93,23 @@ private lateinit var taskStub2Tag: TaskTest
 class TaskIntegrationTests : StringSpec({
     var taskId: TaskId
 
+    "Context provides workflowId" {
+        // task will succeed
+        taskTest.behavior = { _, _ -> Status.SUCCESS }
+        // run system
+        coroutineScope {
+            init()
+            val deferred = client.async(taskStub) { log() }
+            taskId = TaskId(deferred.id)
+        }
+        // check that task is terminated
+        taskStateStorage.getState(taskId) shouldBe null
+        // check that task is completed
+        taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
+        // checks number of task processing
+        taskTest.log shouldBe "1"
+    }
+
     "Task succeeds at first try" {
         // task will succeed
         taskTest.behavior = { _, _ -> Status.SUCCESS }

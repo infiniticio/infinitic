@@ -220,6 +220,8 @@ class TaskEngine(
         val rt = ExecuteTaskAttempt(
             taskName = newState.taskName,
             taskId = newState.taskId,
+            workflowId = newState.workflowId,
+            workflowName = newState.workflowName,
             taskAttemptId = newState.taskAttemptId,
             taskRetrySequence = newState.taskRetrySequence,
             taskRetryIndex = newState.taskRetryIndex,
@@ -254,6 +256,8 @@ class TaskEngine(
         val executeTaskAttempt = ExecuteTaskAttempt(
             taskName = newState.taskName,
             taskId = newState.taskId,
+            workflowId = newState.workflowId,
+            workflowName = newState.workflowName,
             taskAttemptId = newState.taskAttemptId,
             taskRetrySequence = newState.taskRetrySequence,
             taskRetryIndex = newState.taskRetryIndex,
@@ -283,6 +287,8 @@ class TaskEngine(
         val executeTaskAttempt = ExecuteTaskAttempt(
             taskName = newState.taskName,
             taskId = newState.taskId,
+            workflowId = newState.workflowId,
+            workflowName = newState.workflowName,
             taskAttemptId = newState.taskAttemptId,
             taskRetrySequence = newState.taskRetrySequence,
             taskRetryIndex = newState.taskRetryIndex,

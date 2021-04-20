@@ -38,6 +38,8 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -53,6 +55,8 @@ sealed class TaskExecutorMessage : Message {
 data class ExecuteTaskAttempt(
     override val taskId: TaskId,
     override val taskName: TaskName,
+    val workflowId: WorkflowId?,
+    val workflowName: WorkflowName?,
     val taskAttemptId: TaskAttemptId,
     val taskRetrySequence: TaskRetrySequence,
     val taskRetryIndex: TaskRetryIndex,
