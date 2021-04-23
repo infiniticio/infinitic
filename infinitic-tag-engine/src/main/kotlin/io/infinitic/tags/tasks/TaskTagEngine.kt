@@ -35,6 +35,9 @@ import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.tags.tasks.storage.LoggedTaskTagStorage
 import io.infinitic.tags.tasks.storage.TaskTagStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -42,6 +45,7 @@ class TaskTagEngine(
     storage: TaskTagStorage,
     val sendToTaskEngine: SendToTaskEngine
 ) {
+    private lateinit var scope: CoroutineScope
     private val storage = LoggedTaskTagStorage(storage)
 
     private val logger: Logger
@@ -50,11 +54,16 @@ class TaskTagEngine(
     suspend fun handle(message: TaskTagEngineMessage) {
         logger.debug("receiving {}", message)
 
-        when (message) {
-            is AddTaskTag -> addTaskTag(message)
-            is RemoveTaskTag -> removeTaskTag(message)
-            is CancelTaskPerTag -> cancelTaskPerTag(message)
-            is RetryTaskPerTag -> retryTaskPerTag(message)
+        // coroutineScope let us send messages in parallel
+        // it can be important as we can have a lot of them
+        coroutineScope {
+            scope = this
+            when (message) {
+                is AddTaskTag -> addTaskTag(message)
+                is RemoveTaskTag -> removeTaskTag(message)
+                is CancelTaskPerTag -> cancelTaskPerTag(message)
+                is RetryTaskPerTag -> retryTaskPerTag(message)
+            }
         }
 
         storage.setLastMessageId(message.taskTag, message.taskName, message.messageId)
@@ -88,7 +97,7 @@ class TaskTagEngine(
                     taskMeta = message.taskMeta,
                     taskOptions = message.taskOptions
                 )
-                sendToTaskEngine(retryTask)
+                scope.launch { sendToTaskEngine(retryTask) }
             }
         }
     }
@@ -108,7 +117,7 @@ class TaskTagEngine(
                     taskName = message.taskName,
                     taskReturnValue = message.taskReturnValue
                 )
-                sendToTaskEngine(cancelTask)
+                scope.launch { sendToTaskEngine(cancelTask) }
             }
         }
     }

@@ -29,8 +29,8 @@ import io.infinitic.common.messages.Envelope
 import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -50,7 +50,7 @@ private fun <S> logError(message: Message<S>, e: Throwable) = logger.error(
 
 fun <E : Envelope<M>, M> CoroutineScope.pullMessages(
     consumer: Consumer<E>,
-    channel: Channel<PulsarMessageToProcess<M>>
+    channel: SendChannel<PulsarMessageToProcess<M>>
 ) = launch {
     while (isActive) {
         val pulsarMessage = consumer.receiveAsync().await()

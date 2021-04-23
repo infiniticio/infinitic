@@ -117,8 +117,8 @@ internal class TaskEngineTests : StringSpec({
             sendToClient(ofType<TaskCompletedInClient>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
-            taskStateStorage.delState(msgIn.taskId)
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
+            taskStateStorage.delState(msgIn.taskId)
         }
         verifyAll()
 
@@ -145,8 +145,8 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
             sendToTaskExecutors(ofType<ExecuteTaskAttempt>())
-            taskStateStorage.putState(msgIn.taskId, ofType<TaskState>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
+            taskStateStorage.putState(msgIn.taskId, ofType<TaskState>())
         }
         verifyAll()
 
@@ -200,8 +200,8 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
             sendToTaskExecutors(ofType<ExecuteTaskAttempt>())
-            taskStateStorage.putState(msgIn.taskId, ofType<TaskState>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
+            taskStateStorage.putState(msgIn.taskId, ofType<TaskState>())
         }
         verifyAll()
 
@@ -262,8 +262,8 @@ internal class TaskEngineTests : StringSpec({
             sendToClient(ofType<TaskCompletedInClient>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
-            taskStateStorage.delState(msgIn.taskId)
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
+            taskStateStorage.delState(msgIn.taskId)
         }
         verifyAll()
 
@@ -300,8 +300,8 @@ internal class TaskEngineTests : StringSpec({
         // then
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
-            taskStateStorage.putState(msgIn.taskId, ofType())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
+            taskStateStorage.putState(msgIn.taskId, ofType())
         }
         verifyAll()
 
@@ -336,8 +336,8 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
             sendToTaskEngineAfter(ofType<RetryTaskAttempt>(), ofType())
-            taskStateStorage.putState(msgIn.taskId, ofType())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
+            taskStateStorage.putState(msgIn.taskId, ofType())
         }
         verifyAll()
 
@@ -426,8 +426,8 @@ private fun checkShouldRetryTaskAttempt(msgIn: TaskEngineMessage, stateIn: TaskS
     coVerifyOrder {
         taskStateStorage.getState(msgIn.taskId)
         sendToTaskExecutors(ofType<ExecuteTaskAttempt>())
-        taskStateStorage.putState(msgIn.taskId, ofType())
         sendToMetricsPerName(ofType<TaskStatusUpdated>())
+        taskStateStorage.putState(msgIn.taskId, ofType())
     }
     verifyAll()
 
