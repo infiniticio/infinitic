@@ -534,7 +534,6 @@ private fun getEngine(state: TaskState?): TaskEngine {
         taskStateStorage,
         sendToClient,
         sendToTaskTagEngine,
-        sendToTaskEngine,
         sendToTaskEngineAfter,
         sendToWorkflowEngine,
         sendToTaskExecutors,

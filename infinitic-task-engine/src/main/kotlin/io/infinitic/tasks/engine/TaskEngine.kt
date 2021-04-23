@@ -38,7 +38,6 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
-import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
@@ -66,7 +65,6 @@ class TaskEngine(
     storage: TaskStateStorage,
     val sendToClient: SendToClient,
     val sendToTaskTagEngine: SendToTaskTagEngine,
-    val sendToTaskEngine: SendToTaskEngine,
     val sendToTaskEngineAfter: SendToTaskEngineAfter,
     val sendToWorkflowEngine: SendToWorkflowEngine,
     val sendToTaskExecutors: SendToTaskExecutors,

@@ -812,7 +812,6 @@ fun CoroutineScope.init() {
         taskStateStorage,
         { sendToClientResponse(it) },
         { },
-        { sendToTaskEngine(it) },
         { msg, after -> sendToTaskEngineAfter(msg, after) },
         { sendToWorkflowEngine(it) },
         { sendToWorkers(it) },

@@ -31,7 +31,7 @@ import java.time.Duration
 
 interface TaskTest {
     fun log(): String
-    fun await(delay: Long)
+    fun await(delay: Long): Long
 }
 
 class TaskException(val log: String) : Exception()
@@ -59,8 +59,10 @@ class TaskTestImpl : Task(), TaskTest {
         return log
     }
 
-    override fun await(delay: Long) {
+    override fun await(delay: Long): Long {
         Thread.sleep(delay)
+
+        return delay
     }
 
     override fun getDurationBeforeRetry(e: Exception): Duration? =
