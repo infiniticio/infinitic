@@ -175,13 +175,14 @@ class WorkflowEngine(
                 storage.delState(message.workflowId)
             }
             else -> {
+                // update workflow state
                 storage.putState(message.workflowId, state)
             }
         }
     }
 
     private fun logDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
-        logger.info("workflowId {} - discarding {}: {} (messageId {})", message.workflowId, reason, message, message.messageId)
+        logger.info("workflowId {} - discarding {}: {}", message.workflowId, reason, message)
     }
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {

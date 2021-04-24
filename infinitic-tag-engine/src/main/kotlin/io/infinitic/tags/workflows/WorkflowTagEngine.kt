@@ -35,6 +35,9 @@ import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.tags.workflows.storage.LoggedWorkflowTagStorage
 import io.infinitic.tags.workflows.storage.WorkflowTagStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -42,6 +45,7 @@ class WorkflowTagEngine(
     storage: WorkflowTagStorage,
     val sendToWorkflowEngine: SendToWorkflowEngine
 ) {
+    private lateinit var scope: CoroutineScope
     private val storage = LoggedWorkflowTagStorage(storage)
 
     private val logger: Logger
@@ -50,11 +54,16 @@ class WorkflowTagEngine(
     suspend fun handle(message: WorkflowTagEngineMessage) {
         logger.debug("receiving {}", message)
 
-        when (message) {
-            is AddWorkflowTag -> addWorkflowTag(message)
-            is RemoveWorkflowTag -> removeWorkflowTag(message)
-            is CancelWorkflowPerTag -> cancelWorkflowPerTag(message)
-            is SendToChannelPerTag -> sendToChannelPerTag(message)
+        // coroutineScope let us send messages in parallel
+        // it can be important as we can have a lot of them
+        coroutineScope {
+            scope = this
+            when (message) {
+                is AddWorkflowTag -> addWorkflowTag(message)
+                is RemoveWorkflowTag -> removeWorkflowTag(message)
+                is CancelWorkflowPerTag -> cancelWorkflowPerTag(message)
+                is SendToChannelPerTag -> sendToChannelPerTag(message)
+            }
         }
 
         storage.setLastMessageId(message.workflowTag, message.workflowName, message.messageId)
@@ -75,7 +84,7 @@ class WorkflowTagEngine(
                     workflowName = message.workflowName,
                     workflowReturnValue = message.workflowReturnValue
                 )
-                sendToWorkflowEngine(cancelWorkflow)
+                scope.launch { sendToWorkflowEngine(cancelWorkflow) }
             }
         }
     }
@@ -97,7 +106,7 @@ class WorkflowTagEngine(
                     channelEvent = message.channelEvent,
                     channelEventTypes = message.channelEventTypes
                 )
-                sendToWorkflowEngine(sendToChannel)
+                scope.launch { sendToWorkflowEngine(sendToChannel) }
             }
         }
     }

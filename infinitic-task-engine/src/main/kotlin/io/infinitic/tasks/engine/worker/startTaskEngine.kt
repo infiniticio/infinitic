@@ -78,7 +78,6 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
         taskStateStorage,
         sendToClient,
         sendToTaskTagEngine,
-        sendToTaskEngine,
         sendToTaskEngineAfter,
         sendToWorkflowEngine,
         sendToTaskExecutors,

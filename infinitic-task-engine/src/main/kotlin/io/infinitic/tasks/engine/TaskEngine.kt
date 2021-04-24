@@ -38,7 +38,6 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.common.tasks.data.plus
-import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.DispatchTask
@@ -66,7 +65,6 @@ class TaskEngine(
     storage: TaskStateStorage,
     val sendToClient: SendToClient,
     val sendToTaskTagEngine: SendToTaskTagEngine,
-    val sendToTaskEngine: SendToTaskEngine,
     val sendToTaskEngineAfter: SendToTaskEngineAfter,
     val sendToWorkflowEngine: SendToWorkflowEngine,
     val sendToTaskExecutors: SendToTaskExecutors,
@@ -131,11 +129,6 @@ class TaskEngine(
                 else -> throw RuntimeException("Unknown TaskEngineMessage: $message")
             }
 
-        // Update stored state if needed and existing
-        if (newState != oldState && !newState.taskStatus.isTerminated) {
-            storage.putState(message.taskId, newState)
-        }
-
         // Send TaskStatusUpdated if needed
         if (oldState?.taskStatus != newState.taskStatus) {
             val taskStatusUpdated = TaskStatusUpdated(
@@ -146,6 +139,13 @@ class TaskEngine(
             )
 
             sendToMetricsPerName(taskStatusUpdated)
+        }
+
+        // Update stored state
+        if (newState.taskStatus.isTerminated) {
+            storage.delState(message.taskId)
+        } else if (newState != oldState) {
+            storage.putState(message.taskId, newState)
         }
     }
 
@@ -175,7 +175,7 @@ class TaskEngine(
             )
         }
 
-        // if this task comes from a client, send TaskCompleted output back to it
+        // if some clients wait for it, send TaskCompleted output back to them
         newState.clientWaiting.map {
             sendToClient(
                 TaskCompletedInClient(
@@ -188,7 +188,7 @@ class TaskEngine(
         }
 
         // delete stored state
-        terminate(newState)
+        removeTags(newState)
 
         return newState
     }
@@ -337,13 +337,12 @@ class TaskEngine(
             )
         }
 
-        // delete stored state
-        terminate(newState)
+        removeTags(newState)
 
         return newState
     }
 
-    private suspend fun terminate(state: TaskState) {
+    private suspend fun removeTags(state: TaskState) {
         // remove tags reference to this instance
         state.taskTags.map {
             sendToTaskTagEngine(
@@ -354,9 +353,6 @@ class TaskEngine(
                 )
             )
         }
-
-        // delete stored state
-        storage.delState(state.taskId)
     }
 
     private suspend fun taskAttemptFailed(oldState: TaskState, msg: TaskAttemptFailed): TaskState {
