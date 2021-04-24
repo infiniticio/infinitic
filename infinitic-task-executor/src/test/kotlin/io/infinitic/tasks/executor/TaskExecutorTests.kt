@@ -44,11 +44,11 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
-import io.infinitic.exceptions.ClassNotFoundDuringInstantiation
-import io.infinitic.exceptions.NoMethodFoundWithParameterCount
-import io.infinitic.exceptions.NoMethodFoundWithParameterTypes
-import io.infinitic.exceptions.ProcessingTimeout
-import io.infinitic.exceptions.TooManyMethodsFoundWithParameterCount
+import io.infinitic.exceptions.tasks.ClassNotFoundDuringInstantiation
+import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCount
+import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypes
+import io.infinitic.exceptions.tasks.ProcessingTimeout
+import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCount
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.samples.SampleTaskWithBuggyRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithContext

@@ -51,14 +51,13 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
-import io.infinitic.exceptions.CanNotReuseWorkflowStub
-import io.infinitic.exceptions.CanNotUseNewTaskStub
-import io.infinitic.exceptions.CanNotUseNewWorkflowStub
-import io.infinitic.exceptions.IncorrectExistingStub
-import io.infinitic.exceptions.NotAStub
+import io.infinitic.exceptions.clients.CanNotReuseWorkflowStub
+import io.infinitic.exceptions.clients.CanNotUseNewTaskStub
+import io.infinitic.exceptions.clients.CanNotUseNewWorkflowStub
+import io.infinitic.exceptions.clients.IncorrectExistingStub
+import io.infinitic.exceptions.clients.NotAStub
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 import java.util.UUID
@@ -70,6 +69,10 @@ abstract class Client {
     protected abstract val sendToTaskEngine: SendToTaskEngine
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
     protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
+
+    abstract fun close()
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     private var _dispatcher: ClientDispatcher? = null
 
@@ -85,11 +88,6 @@ abstract class Client {
 
             _dispatcher!!
         }
-
-    abstract fun close()
-
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: ClientMessage) {
         logger.debug("receiving {}", message)

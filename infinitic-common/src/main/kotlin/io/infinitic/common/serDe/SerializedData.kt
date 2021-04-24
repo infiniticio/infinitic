@@ -27,12 +27,12 @@ package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.kserializer.getKSerializerOrNull
-import io.infinitic.exceptions.ClassNotFoundDuringDeserialization
-import io.infinitic.exceptions.ExceptionDuringJsonDeserialization
-import io.infinitic.exceptions.ExceptionDuringKotlinDeserialization
-import io.infinitic.exceptions.MissingMetaJavaClassDuringDeserialization
-import io.infinitic.exceptions.SerializerNotFoundDuringDeserialization
-import io.infinitic.exceptions.TryingToRetrieveJsonFromNonJsonData
+import io.infinitic.exceptions.serialization.ClassNotFoundDuringDeserialization
+import io.infinitic.exceptions.serialization.ExceptionDuringJsonDeserialization
+import io.infinitic.exceptions.serialization.ExceptionDuringKotlinDeserialization
+import io.infinitic.exceptions.serialization.MissingMetaJavaClassDuringDeserialization
+import io.infinitic.exceptions.serialization.SerializerNotFoundDuringDeserialization
+import io.infinitic.exceptions.serialization.TryingToRetrieveJsonFromNonJsonData
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException

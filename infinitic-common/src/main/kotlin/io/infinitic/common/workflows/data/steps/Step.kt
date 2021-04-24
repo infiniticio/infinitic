@@ -75,7 +75,7 @@ sealed class Step {
             }
             is CommandStatusCanceled -> with(commandStatus as CommandStatusCanceled) {
                 when (index >= this.cancellationWorkflowTaskIndex) {
-                    true -> StepStatusCanceled(StepOutput.from(this.returnValue.get()), this.cancellationWorkflowTaskIndex)
+                    true -> StepStatusCanceled(this.cancellationWorkflowTaskIndex)
                     false -> StepStatusOngoing
                 }
             }
@@ -98,24 +98,21 @@ sealed class Step {
             val statuses = steps.map { it.stepStatusAtWorkflowTaskIndex(index) }
             if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing
 
-            val results = statuses.map {
-                when (it) {
-                    is StepStatusOngoing -> throw Exception("This should not happen")
-                    is StepStatusCompleted -> it.completionResult
-                    is StepStatusCanceled -> it.cancellationResult
-                }
-            }
-            val maxIndex = statuses.map {
+            val maxIndex = statuses.maxOf {
                 when (it) {
                     is StepStatusOngoing -> WorkflowTaskIndex(MIN_VALUE)
                     is StepStatusCompleted -> it.completionWorkflowTaskIndex
                     is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
                 }
-            }.maxOrNull()!!
+            }
 
-            if (statuses.all { it is StepStatusCompleted }) return StepStatusCompleted(StepOutput.from(results.map { it.get() }), maxIndex)
+            if (statuses.all { it is StepStatusCompleted }) {
+                val results = statuses.map { (it as StepStatusCompleted).completionResult.get() }
 
-            return StepStatusCanceled(StepOutput.from(results.map { it.get() }), maxIndex)
+                return StepStatusCompleted(StepOutput.from(results), maxIndex)
+            }
+
+            return StepStatusCanceled(maxIndex)
         }
     }
 
@@ -142,7 +139,7 @@ sealed class Step {
             return when (minStep) {
                 is StepStatusOngoing -> throw RuntimeException("This should not happen")
                 is StepStatusCompleted -> StepStatusCompleted(minStep.completionResult, minStep.completionWorkflowTaskIndex)
-                is StepStatusCanceled -> StepStatusCanceled(minStep.cancellationResult, minStep.cancellationWorkflowTaskIndex)
+                is StepStatusCanceled -> StepStatusCanceled(minStep.cancellationWorkflowTaskIndex)
             }
         }
     }

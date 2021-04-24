@@ -59,7 +59,7 @@ import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
-import io.infinitic.workflows.engine.helpers.commandCompleted
+import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.helpers.getMethodRun
 import io.infinitic.workflows.engine.helpers.getPastCommand
@@ -127,7 +127,7 @@ internal suspend fun workflowTaskCompleted(
         // if this is the main method, it means the workflow is completed
         if (methodRun.methodRunId.id == state.workflowId.id) {
             // send output back to waiting clients
-            state.clientWaiting.map {
+            state.waitingClients.map {
                 workflowEngineOutput.sendEventsToClient(
                     WorkflowCompletedInClient(
                         clientName = it,
@@ -224,7 +224,7 @@ private suspend fun endAsync(
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
     }
 
-    commandCompleted(
+    commandTerminated(
         workflowEngineOutput,
         state,
         methodRun.methodRunId,
@@ -353,6 +353,7 @@ private suspend fun dispatchChildWorkflow(
         clientWaiting = false,
         workflowId = WorkflowId(newCommand.commandId.id),
         parentWorkflowId = state.workflowId,
+        parentWorkflowName = state.workflowName,
         parentMethodRunId = methodRun.methodRunId,
         workflowName = command.childWorkflowName,
         methodName = command.childMethodName,

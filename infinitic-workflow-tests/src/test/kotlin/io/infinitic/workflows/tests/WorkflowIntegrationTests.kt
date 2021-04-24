@@ -46,6 +46,7 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.exceptions.clients.CanceledWorkflow
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -71,6 +72,7 @@ import io.infinitic.workflows.tests.workflows.WorkflowA
 import io.infinitic.workflows.tests.workflows.WorkflowAImpl
 import io.infinitic.workflows.tests.workflows.WorkflowB
 import io.infinitic.workflows.tests.workflows.WorkflowBImpl
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -739,6 +741,40 @@ class WorkflowIntegrationTests : StringSpec({
         // checks id has been removed from tag storage
         workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe false
         workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe false
+    }
+
+    "Canceling async workflow" {
+        var deferred: Deferred<String>
+        // run system
+        coroutineScope {
+            init()
+            deferred = client.async(workflowA) { channel1() }
+            client.cancel(workflowA)
+        }
+        // check output
+        workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
+    }
+
+    "Canceling sync workflow" {
+        // run system
+        coroutineScope {
+            init()
+            launch { client.cancel(workflowA) }
+            shouldThrow<CanceledWorkflow> { workflowA.channel1() }
+        }
+    }
+
+    "Canceling sync workflow with deferred" {
+        var deferred: Deferred<String>
+        // run system
+        coroutineScope {
+            init()
+            deferred = client.async(workflowA) { channel1() }
+            launch { client.cancel(workflowA) }
+            shouldThrow<CanceledWorkflow> { deferred.await() }
+        }
+        // check output
+        workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
     }
 })
 

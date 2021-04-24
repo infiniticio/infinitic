@@ -44,6 +44,5 @@ data class CommandStatusCompleted(
 
 @Serializable
 data class CommandStatusCanceled(
-    val returnValue: CommandReturnValue,
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()

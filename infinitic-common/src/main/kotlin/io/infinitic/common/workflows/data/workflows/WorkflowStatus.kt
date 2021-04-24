@@ -23,20 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.common.workflows.data.workflows
 
-import io.infinitic.exceptions.clients.SuspendMethodNotSupported
-import java.lang.reflect.Method
-import kotlin.reflect.jvm.kotlinFunction
+import kotlinx.serialization.Serializable
 
-interface Dispatcher {
-    fun <S> dispatchAndWait(handler: TaskProxyHandler<*>): S
-
-    fun <S> dispatchAndWait(handler: WorkflowProxyHandler<*>): S
-
-    fun dispatchAndWait(handler: SendChannelProxyHandler<*>)
-
-    fun checkMethodIsNotSuspend(method: Method) {
-        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(method.declaringClass.name, method.name)
-    }
+@Serializable
+enum class WorkflowStatus {
+    ALIVE,
+    CANCELED,
+    TERMINATED
 }

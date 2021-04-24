@@ -66,6 +66,7 @@ data class DispatchWorkflow(
     val clientName: ClientName,
     val clientWaiting: Boolean,
     var parentWorkflowId: WorkflowId?,
+    var parentWorkflowName: WorkflowName?,
     var parentMethodRunId: MethodRunId?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
@@ -111,8 +112,7 @@ data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
     val methodRunId: MethodRunId,
-    val childWorkflowId: WorkflowId,
-    val childWorkflowReturnValue: MethodReturnValue
+    val childWorkflowId: WorkflowId
 ) : WorkflowEngineMessage()
 
 @Serializable

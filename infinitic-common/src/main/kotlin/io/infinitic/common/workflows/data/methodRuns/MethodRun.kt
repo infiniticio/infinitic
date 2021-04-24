@@ -35,13 +35,15 @@ import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class MethodRun(
     val methodRunId: MethodRunId,
-    val parentWorkflowId: WorkflowId? = null,
-    val parentMethodRunId: MethodRunId? = null,
+    val parentWorkflowId: WorkflowId?,
+    val parentWorkflowName: WorkflowName?,
+    val parentMethodRunId: MethodRunId?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,

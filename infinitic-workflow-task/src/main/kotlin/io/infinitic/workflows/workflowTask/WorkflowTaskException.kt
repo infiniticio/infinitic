@@ -27,8 +27,8 @@ package io.infinitic.workflows.workflowTask
 
 internal sealed class WorkflowTaskException : RuntimeException()
 
-internal class NewStepException() : WorkflowTaskException()
+internal object NewStepException : WorkflowTaskException()
 
-internal class KnownStepException : WorkflowTaskException()
+internal object KnownStepException : WorkflowTaskException()
 
-internal class AsyncCompletedException : WorkflowTaskException()
+internal object AsyncCompletedException : WorkflowTaskException()

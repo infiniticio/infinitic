@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.executor.samples
 
-import io.infinitic.exceptions.ProcessingTimeout
+import io.infinitic.exceptions.tasks.ProcessingTimeout
 import io.infinitic.tasks.Task
 import java.time.Duration
 

@@ -65,11 +65,12 @@ import io.infinitic.common.workflows.data.steps.StepStatusCanceled
 import io.infinitic.common.workflows.data.steps.StepStatusCompleted
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.exceptions.MultipleMethodCallsAtAsync
-import io.infinitic.exceptions.NoMethodCallAtAsync
-import io.infinitic.exceptions.ShouldNotUseAsyncFunctionInsideInlinedTask
-import io.infinitic.exceptions.ShouldNotWaitInsideInlinedTask
-import io.infinitic.exceptions.WorkflowUpdatedWhileRunning
+import io.infinitic.exceptions.workflowTasks.MultipleMethodCallsAtAsync
+import io.infinitic.exceptions.workflowTasks.NoMethodCallAtAsync
+import io.infinitic.exceptions.workflowTasks.ShouldNotUseAsyncFunctionInsideInlinedTask
+import io.infinitic.exceptions.workflowTasks.ShouldNotWaitInsideInlinedTask
+import io.infinitic.exceptions.workflowTasks.WorkflowUpdatedWhileRunning
+import io.infinitic.exceptions.workflows.DeferredCancellationException
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowContext
@@ -182,7 +183,7 @@ internal class WorkflowContextImpl(
             )
 
             // async is completed
-            throw AsyncCompletedException()
+            throw AsyncCompletedException
         }
 
         // returns a Deferred linked to pastCommand
@@ -233,7 +234,7 @@ internal class WorkflowContextImpl(
         } else {
             @Suppress("UNCHECKED_CAST")
             return when (val status = pastCommand.commandStatus) {
-                is CommandStatusOngoing -> throw RuntimeException("This should not happen: uncompleted inline task")
+                is CommandStatusOngoing -> throw RuntimeException("This should not happen: ongoing inline task")
                 is CommandStatusCanceled -> throw RuntimeException("This should not happen: canceled inline task")
                 is CommandStatusCompleted -> status.returnValue.get() as S
             }
@@ -243,6 +244,7 @@ internal class WorkflowContextImpl(
     /*
      * Deferred await()
      */
+    @Suppress("UNCHECKED_CAST")
     override fun <T> await(deferred: Deferred<T>): T {
         // increment position
         positionNext()
@@ -254,38 +256,42 @@ internal class WorkflowContextImpl(
         )
         val pastStep = getSimilarPastStep(newStep)
 
-        // if this is really a new step, we check its status based on current workflow message index
         if (pastStep == null) {
+            // it can be a new step (eg. a logical combination of previous deferred)
             deferred.stepStatus = newStep.step.stepStatusAtWorkflowTaskIndex(workflowTaskIndex)
-            // if this deferred is still ongoing,
-            if (deferred.stepStatus is StepStatusOngoing) {
-                // we add a new step
-                newSteps.add(newStep)
-                // and stop here
-                throw NewStepException()
+
+            return when (deferred.stepStatus) {
+                is StepStatusOngoing -> {
+                    // we add a new step
+                    newSteps.add(newStep)
+                    // and stop here
+                    throw NewStepException
+                }
+                is StepStatusCanceled -> throw DeferredCancellationException
+                is StepStatusCompleted -> (deferred.stepStatus as StepStatusCompleted).completionResult.get() as T
             }
-            // if this deferred is already terminated, we continue
-            return result(deferred)
         }
 
-        // set status
-        deferred.stepStatus = pastStep.stepStatus
-
-        // throw KnownStepException if ongoing else else update message index
-        workflowTaskIndex = when (val stepStatus = deferred.stepStatus) {
-            is StepStatusOngoing -> throw KnownStepException()
-            is StepStatusCompleted -> stepStatus.completionWorkflowTaskIndex
-            is StepStatusCanceled -> stepStatus.cancellationWorkflowTaskIndex
+        val stepStatus = when (val stepStatus = pastStep.stepStatus) {
+            is StepStatusOngoing -> throw KnownStepException
+            is StepStatusCanceled -> throw DeferredCancellationException
+            is StepStatusCompleted -> stepStatus
         }
 
-        // update workflow instance properties
+        // update deferred status (StepStatusCompleted)
+        deferred.stepStatus = stepStatus
+
+        // workflowTaskIndex is now the one where this deferred was completed
+        workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
+
+        // instance properties are now as when this deferred was completed
         setProperties(
             workflowTaskParameters.workflowPropertiesHashValue,
             pastStep.propertiesNameHashAtTermination!!
         )
 
-        // continue
-        return result(deferred)
+        // return deferred value
+        return stepStatus.completionResult.get() as T
     }
 
     /*
@@ -425,16 +431,6 @@ internal class WorkflowContextImpl(
             ),
             CommandSimpleName("${CommandType.SENT_TO_CHANNEL}")
         )
-    }
-
-    /*
-     * Get return value from Deferred
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> result(deferred: Deferred<T>): T = when (val status = deferred.stepStatus) {
-        is StepStatusOngoing -> throw RuntimeException("This should not happen: reaching result of an ongoing deferred")
-        is StepStatusCompleted -> status.completionResult.get() as T
-        is StepStatusCanceled -> status.cancellationResult.get() as T
     }
 
     /*

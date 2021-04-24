@@ -27,7 +27,7 @@ package io.infinitic.common.data
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.exceptions.ErrorDuringJsonSerializationOfParameter
+import io.infinitic.exceptions.serialization.ErrorDuringJsonSerializationOfParameter
 import java.lang.reflect.Method
 
 abstract class Parameters(open vararg val serializedDataArray: SerializedData) {

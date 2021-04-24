@@ -29,7 +29,7 @@ import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.helpers.commandCompleted
+import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import org.slf4j.LoggerFactory
 
@@ -48,7 +48,7 @@ internal suspend fun sendToChannel(
         ?.also {
             state.receivingChannels.remove(it)
 
-            commandCompleted(
+            commandTerminated(
                 workflowEngineOutput,
                 state,
                 it.methodRunId,

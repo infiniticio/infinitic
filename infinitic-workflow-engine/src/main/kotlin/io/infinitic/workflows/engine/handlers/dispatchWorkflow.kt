@@ -27,6 +27,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
@@ -39,6 +40,7 @@ internal suspend fun dispatchWorkflow(
     val methodRun = MethodRun(
         methodRunId = MethodRunId(message.workflowId.id),
         parentWorkflowId = message.parentWorkflowId,
+        parentWorkflowName = message.parentWorkflowName,
         parentMethodRunId = message.parentMethodRunId,
         methodName = message.methodName,
         methodParameterTypes = message.methodParameterTypes,
@@ -47,7 +49,8 @@ internal suspend fun dispatchWorkflow(
     )
 
     val state = WorkflowState(
-        clientWaiting = when (message.clientWaiting) {
+        workflowStatus = WorkflowStatus.ALIVE,
+        waitingClients = when (message.clientWaiting) {
             true -> mutableSetOf(message.clientName)
             false -> mutableSetOf()
         },

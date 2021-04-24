@@ -23,20 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.proxies
+package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.exceptions.clients.SuspendMethodNotSupported
-import java.lang.reflect.Method
-import kotlin.reflect.jvm.kotlinFunction
+import io.infinitic.common.workflows.data.workflows.WorkflowStatus
+import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
-interface Dispatcher {
-    fun <S> dispatchAndWait(handler: TaskProxyHandler<*>): S
+internal suspend fun cancelWorkflow(
+    workflowEngineOutput: WorkflowEngineOutput,
+    state: WorkflowState
+) {
+    state.workflowStatus = WorkflowStatus.CANCELED
 
-    fun <S> dispatchAndWait(handler: WorkflowProxyHandler<*>): S
-
-    fun dispatchAndWait(handler: SendChannelProxyHandler<*>)
-
-    fun checkMethodIsNotSuspend(method: Method) {
-        if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupported(method.declaringClass.name, method.name)
+    // tell parents
+    state.methodRuns.forEach {
+        if (it.parentWorkflowId != null) {
+            val childWorkflowCanceled = ChildWorkflowCanceled(
+                workflowId = it.parentWorkflowId!!,
+                workflowName = it.parentWorkflowName!!,
+                methodRunId = it.parentMethodRunId!!,
+                childWorkflowId = state.workflowId
+            )
+            workflowEngineOutput.sendToWorkflowEngine(childWorkflowCanceled)
+        }
     }
 }

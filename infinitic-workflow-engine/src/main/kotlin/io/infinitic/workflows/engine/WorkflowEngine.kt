@@ -26,8 +26,10 @@
 package io.infinitic.workflows.engine
 
 import io.infinitic.common.clients.messages.UnknownWorkflow
+import io.infinitic.common.clients.messages.WorkflowCanceled
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
@@ -43,6 +45,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
+import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.childWorkflowCanceled
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
@@ -62,6 +65,10 @@ class WorkflowEngine(
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    private val storage = LoggedWorkflowStateStorage(storage)
+
     private val output = WorkflowEngineOutput(
         sendEventsToClient,
         sendToWorkflowTagEngine,
@@ -70,43 +77,43 @@ class WorkflowEngine(
         sendToWorkflowEngineAfter
     )
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-
-    val storage = LoggedWorkflowStateStorage(storage)
-
     suspend fun handle(message: WorkflowEngineMessage) {
+        val state = process(message) ?: return
+
+        when (state.workflowStatus) {
+            WorkflowStatus.ALIVE -> storage.putState(message.workflowId, state)
+            WorkflowStatus.CANCELED,
+            WorkflowStatus.TERMINATED -> storage.delState(message.workflowId)
+        }
+    }
+
+    private suspend fun process(message: WorkflowEngineMessage): WorkflowState? {
         logger.debug("receiving {}", message)
 
         // get associated state
-        var state = storage.getState(message.workflowId)
+        val state = storage.getState(message.workflowId)
 
         // if no state (newly created workflow or terminated workflow)
         if (state == null) {
             if (message is DispatchWorkflow) {
-                state = dispatchWorkflow(output, message)
-                storage.putState(message.workflowId, state)
-
-                return
+                return dispatchWorkflow(output, message)
             }
+
             if (message is WaitWorkflow) {
-                output.sendEventsToClient(
-                    UnknownWorkflow(
-                        message.clientName,
-                        message.workflowId
-                    )
-                )
+                val unknownWorkflow = UnknownWorkflow(message.clientName, message.workflowId)
+                output.sendEventsToClient(unknownWorkflow)
             }
             // discard all other messages if workflow is already terminated
             logDiscardingMessage(message, "for having null state")
 
-            return
+            return null
         }
 
         // check if this message has already been handled
         if (state.lastMessageId == message.messageId) {
             logDiscardingMessage(message, "as state already contains this messageId")
 
-            return
+            return null
         }
 
         // check is this workflow has already been launched
@@ -114,7 +121,7 @@ class WorkflowEngine(
         if (message is DispatchWorkflow) {
             logDiscardingMessage(message, "as workflow has already been launched")
 
-            return
+            return null
         }
 
         // check is this workflowTask is the current one
@@ -124,7 +131,7 @@ class WorkflowEngine(
         ) {
             logDiscardingMessage(message, "as workflowTask is not the current one")
 
-            return
+            return null
         }
 
         // set current messageId
@@ -138,10 +145,8 @@ class WorkflowEngine(
         ) {
             // buffer this message
             state.bufferedMessages.add(message)
-            // update state
-            storage.putState(message.workflowId, state)
 
-            return
+            return state
         }
 
         // process this message
@@ -149,8 +154,8 @@ class WorkflowEngine(
 
         // process all buffered messages
         while (
+            state.workflowStatus == WorkflowStatus.ALIVE &&
             state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
-            state.methodRuns.size > 0 && // if workflow is not terminated
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
             val bufferedMsg = state.bufferedMessages.removeAt(0)
@@ -158,28 +163,7 @@ class WorkflowEngine(
             processMessage(state, bufferedMsg)
         }
 
-        // update state
-        when (state.methodRuns.size) {
-            // workflow is terminated
-            0 -> {
-                // remove tags reference to this instance
-                state.workflowTags.map {
-                    output.sendToWorkflowTagEngine(
-                        RemoveWorkflowTag(
-                            workflowTag = it,
-                            workflowName = state.workflowName,
-                            workflowId = state.workflowId,
-                        )
-                    )
-                }
-                // delete workflow state
-                storage.delState(message.workflowId)
-            }
-            else -> {
-                // update workflow state
-                storage.putState(message.workflowId, state)
-            }
-        }
+        return state
     }
 
     private fun logDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
@@ -188,7 +172,7 @@ class WorkflowEngine(
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
         when (message) {
-            is CancelWorkflow -> cancelWorkflow(state, message)
+            is CancelWorkflow -> cancelWorkflow(output, state)
             is SendToChannel -> sendToChannel(output, state, message)
             is WaitWorkflow -> waitWorkflow(state, message)
             is ChildWorkflowCanceled -> childWorkflowCanceled(output, state, message)
@@ -198,17 +182,46 @@ class WorkflowEngine(
             is TaskCompleted -> taskCompleted(output, state, message)
             else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
         }
+
+        // workflow is terminated if all methodRuns have been deleted
+        if (state.methodRuns.size == 0) {
+            state.workflowStatus = WorkflowStatus.TERMINATED
+        }
+
+        when (state.workflowStatus) {
+            WorkflowStatus.ALIVE -> Unit
+            WorkflowStatus.TERMINATED -> removeTags(output, state)
+            WorkflowStatus.CANCELED -> {
+                // send cancellation info to waiting clients
+                state.waitingClients.map {
+                    val workflowCanceled = WorkflowCanceled(
+                        clientName = it,
+                        workflowId = state.workflowId,
+                    )
+                    output.sendEventsToClient(workflowCanceled)
+                }
+                // remove tags reference to this instance
+                removeTags(output, state)
+            }
+        }
+    }
+
+    private suspend fun removeTags(output: WorkflowEngineOutput, state: WorkflowState) {
+        state.workflowTags.map {
+            val removeWorkflowTag = RemoveWorkflowTag(
+                workflowTag = it,
+                workflowName = state.workflowName,
+                workflowId = state.workflowId,
+            )
+            output.sendToWorkflowTagEngine(removeWorkflowTag)
+        }
     }
 
     private suspend fun taskCanceled(workflowEngineOutput: WorkflowEngineOutput, state: WorkflowState, msg: TaskCanceled) {
         TODO()
     }
 
-    private suspend fun cancelWorkflow(state: WorkflowState, msg: CancelWorkflow) {
-        TODO()
-    }
-
     private fun waitWorkflow(state: WorkflowState, msg: WaitWorkflow) {
-        state.clientWaiting.add(msg.clientName)
+        state.waitingClients.add(msg.clientName)
     }
 }

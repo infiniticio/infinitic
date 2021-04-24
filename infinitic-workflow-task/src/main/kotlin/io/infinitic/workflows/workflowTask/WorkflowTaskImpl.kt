@@ -36,9 +36,9 @@ import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.exceptions.MultipleNamesForChannel
-import io.infinitic.exceptions.NonUniqueChannelFromChannelMethod
-import io.infinitic.exceptions.ParametersInChannelMethod
+import io.infinitic.exceptions.workflowTasks.MultipleNamesForChannel
+import io.infinitic.exceptions.workflowTasks.NonUniqueChannelFromChannelMethod
+import io.infinitic.exceptions.workflowTasks.ParametersInChannelMethod
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow

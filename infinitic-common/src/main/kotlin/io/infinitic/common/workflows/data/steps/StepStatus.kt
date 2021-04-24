@@ -45,6 +45,5 @@ data class StepStatusCompleted(
 
 @Serializable
 data class StepStatusCanceled(
-    val cancellationResult: StepOutput,
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
 ) : StepStatus()

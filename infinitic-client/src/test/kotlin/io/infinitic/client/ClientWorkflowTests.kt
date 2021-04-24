@@ -51,11 +51,11 @@ import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.exceptions.CanNotReuseWorkflowStub
-import io.infinitic.exceptions.CanNotUseNewWorkflowStub
-import io.infinitic.exceptions.MultipleMethodCalls
-import io.infinitic.exceptions.NoMethodCall
-import io.infinitic.exceptions.SuspendMethodNotSupported
+import io.infinitic.exceptions.clients.CanNotReuseWorkflowStub
+import io.infinitic.exceptions.clients.CanNotUseNewWorkflowStub
+import io.infinitic.exceptions.clients.MultipleMethodCalls
+import io.infinitic.exceptions.clients.NoMethodCall
+import io.infinitic.exceptions.clients.SuspendMethodNotSupported
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -151,6 +151,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -173,6 +174,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -201,6 +203,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = options,
@@ -234,6 +237,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(WorkflowTag("foo"), WorkflowTag("bar")),
             workflowOptions = WorkflowOptions(),
@@ -257,6 +261,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
             methodParameters = MethodParameters.from(0),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -280,6 +285,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodParameters = MethodParameters.from("a"),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -303,6 +309,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodParameters = MethodParameters.from(0, "a"),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -328,6 +335,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             methodParameters = MethodParameters.from(klass),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -355,6 +363,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodParameters = MethodParameters.from(0, "a"),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
