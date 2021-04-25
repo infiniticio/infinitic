@@ -94,7 +94,7 @@ data class SerializedData(
      * @return deserialized value
      */
     fun deserialize(): Any? {
-        val klassName = getClassName() ?: throw MissingMetaJavaClassException(this)
+        val klassName = getClassName() ?: throw MissingMetaJavaClassException
 
         val klass = try {
             Class.forName(klassName)
