@@ -36,9 +36,9 @@ import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
-import io.infinitic.exceptions.workflowTasks.MultipleNamesForChannel
-import io.infinitic.exceptions.workflowTasks.NonUniqueChannelFromChannelMethod
-import io.infinitic.exceptions.workflowTasks.ParametersInChannelMethod
+import io.infinitic.exceptions.workflowTasks.MultipleNamesForChannelException
+import io.infinitic.exceptions.workflowTasks.NonUniqueChannelFromChannelMethodException
+import io.infinitic.exceptions.workflowTasks.ParametersInChannelMethodException
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
@@ -120,19 +120,19 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             .map {
                 // channel must not have parameters
                 if (it.parameterCount > 0) {
-                    throw ParametersInChannelMethod(workflow::class.java.name, it.name)
+                    throw ParametersInChannelMethodException(workflow::class.java.name, it.name)
                 }
                 // channel must be created only once per method
                 it.isAccessible = true
                 val channel = it.invoke(workflow)
                 val channelBis = it.invoke(workflow)
                 if (channel !== channelBis) {
-                    throw NonUniqueChannelFromChannelMethod(workflow::class.java.name, it.name)
+                    throw NonUniqueChannelFromChannelMethodException(workflow::class.java.name, it.name)
                 }
                 // this channel must not have a name already
                 channel as ChannelImpl<*>
                 if (channel.isNameInitialized()) {
-                    throw MultipleNamesForChannel(workflow::class.java.name, it.name, channel.name)
+                    throw MultipleNamesForChannelException(workflow::class.java.name, it.name, channel.name)
                 }
                 // set channel name
                 channel.name = it.name

@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.executor.samples
 
-import io.infinitic.exceptions.tasks.ProcessingTimeout
+import io.infinitic.exceptions.tasks.ProcessingTimeoutException
 import io.infinitic.tasks.Task
 import java.time.Duration
 
@@ -37,5 +37,5 @@ internal class SampleTaskWithTimeout() : Task() {
     }
 
     override fun getDurationBeforeRetry(e: Exception): Duration? =
-        if (e is ProcessingTimeout) null else Duration.ofSeconds(3L)
+        if (e is ProcessingTimeoutException) null else Duration.ofSeconds(3L)
 }

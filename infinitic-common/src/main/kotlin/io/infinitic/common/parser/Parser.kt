@@ -25,10 +25,10 @@
 
 package io.infinitic.common.parser
 
-import io.infinitic.exceptions.tasks.ClassNotFoundDuringInstantiation
-import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCount
-import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypes
-import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCount
+import io.infinitic.exceptions.tasks.ClassNotFoundException
+import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
+import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
+import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
 import java.lang.reflect.Method
 
 fun getClassForName(name: String): Class<out Any> = when (name) {
@@ -43,8 +43,8 @@ fun getClassForName(name: String): Class<out Any> = when (name) {
     else ->
         try {
             Class.forName(name)
-        } catch (e: ClassNotFoundException) {
-            throw ClassNotFoundDuringInstantiation(name)
+        } catch (e: java.lang.ClassNotFoundException) {
+            throw ClassNotFoundException(name)
         }
 }
 
@@ -54,15 +54,15 @@ fun getMethodPerNameAndParameterTypes(obj: Any, methodName: String, parameterTyp
     try {
         return obj::class.java.getMethod(methodName, *parameterClasses)
     } catch (e: NoSuchMethodException) {
-        throw NoMethodFoundWithParameterTypes(obj::class.java.name, methodName, parameterClasses.map { it.name })
+        throw NoMethodFoundWithParameterTypesException(obj::class.java.name, methodName, parameterClasses.map { it.name })
     }
 }
 
 // TODO: currently methods with varargs parameters are not supported
 fun getMethodPerNameAndParameterCount(obj: Any, methodName: String, parameterCount: Int): Method {
     val methods = obj::class.javaObjectType.methods.filter { it.name == methodName && it.parameterCount == parameterCount }
-    if (methods.isEmpty()) throw NoMethodFoundWithParameterCount(obj::class.java.name, methodName, parameterCount)
-    if (methods.size > 1) throw TooManyMethodsFoundWithParameterCount(obj::class.java.name, methodName, parameterCount)
+    if (methods.isEmpty()) throw NoMethodFoundWithParameterCountException(obj::class.java.name, methodName, parameterCount)
+    if (methods.size > 1) throw TooManyMethodsFoundWithParameterCountException(obj::class.java.name, methodName, parameterCount)
 
     return methods[0]
 }

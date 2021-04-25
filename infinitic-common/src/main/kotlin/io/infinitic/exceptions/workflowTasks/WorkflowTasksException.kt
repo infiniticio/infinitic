@@ -33,12 +33,10 @@ import kotlinx.serialization.Serializable
 sealed class WorkflowTaskException(
     val msg: String,
     val help: String
-) : UserException() {
-    override val message = "$msg.\n$help"
-}
+) : UserException("$msg.\n$help")
 
 @Serializable
-data class WorkflowUpdatedWhileRunning(
+data class WorkflowUpdatedWhileRunningException(
     val workflow: String,
     val method: String,
     val position: String
@@ -48,7 +46,7 @@ data class WorkflowUpdatedWhileRunning(
 )
 
 @Serializable
-data class NoMethodCallAtAsync(
+data class NoMethodCallAtAsyncException(
     val klass: String
 ) : WorkflowTaskException(
     msg = "You must use a method of \"$klass\" when using \"async\" method",
@@ -56,7 +54,7 @@ data class NoMethodCallAtAsync(
 )
 
 @Serializable
-data class MultipleMethodCallsAtAsync(
+data class MultipleMethodCallsAtAsyncException(
     val klass: String,
     val method1: String?,
     val method2: String
@@ -66,7 +64,7 @@ data class MultipleMethodCallsAtAsync(
 )
 
 @Serializable
-data class ShouldNotWaitInsideInlinedTask(
+data class ShouldNotWaitInsideInlinedTaskException(
     val method: String
 ) : WorkflowTaskException(
     msg = "You must not suspend computations inside an inlined task",
@@ -74,7 +72,7 @@ data class ShouldNotWaitInsideInlinedTask(
 )
 
 @Serializable
-data class ShouldNotUseAsyncFunctionInsideInlinedTask(
+data class ShouldNotUseAsyncFunctionInsideInlinedTaskException(
     val method: String
 ) : WorkflowTaskException(
     msg = "You must not suspend computations inside an inlined task",
@@ -82,7 +80,7 @@ data class ShouldNotUseAsyncFunctionInsideInlinedTask(
 )
 
 @Serializable
-data class ParametersInChannelMethod(
+data class ParametersInChannelMethodException(
     val workflow: String,
     val method: String
 ) : WorkflowTaskException(
@@ -91,7 +89,7 @@ data class ParametersInChannelMethod(
 )
 
 @Serializable
-data class NonUniqueChannelFromChannelMethod(
+data class NonUniqueChannelFromChannelMethodException(
     val workflow: String,
     val method: String
 ) : WorkflowTaskException(
@@ -100,7 +98,7 @@ data class NonUniqueChannelFromChannelMethod(
 )
 
 @Serializable
-data class MultipleNamesForChannel(
+data class MultipleNamesForChannelException(
     val workflow: String,
     val method: String,
     val otherMethod: String
@@ -110,7 +108,7 @@ data class MultipleNamesForChannel(
 )
 
 @Serializable
-object NameNotInitializedInChannel : WorkflowTaskException(
+object NameNotInitializedInChannelException : WorkflowTaskException(
     msg = "A ${Channel::class.simpleName} is used without name",
     help = "Make sure to have a method that returns this channel."
 )

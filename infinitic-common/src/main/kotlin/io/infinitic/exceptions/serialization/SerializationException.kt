@@ -35,12 +35,10 @@ import kotlinx.serialization.Serializable
 sealed class SerializationException(
     val msg: String,
     val help: String
-) : UserException() {
-    override val message = "$msg.\n$help"
-}
+) : UserException("$msg.\n$help")
 
 @Serializable
-data class MissingMetaJavaClassDuringDeserialization(
+data class MissingMetaJavaClassException(
     val data: SerializedData
 ) : SerializationException(
     msg = "Trying to deserialize data without explicitly providing java class in \"${SerializedData.META_JAVA_CLASS}\" meta value",
@@ -50,7 +48,7 @@ data class MissingMetaJavaClassDuringDeserialization(
 )
 
 @Serializable
-data class ClassNotFoundDuringDeserialization(
+data class ClassNotFoundException(
     val name: String
 ) : SerializationException(
     msg = "Trying to deserialize data into \"$name\$ but this class is unknown",
@@ -58,7 +56,7 @@ data class ClassNotFoundDuringDeserialization(
 )
 
 @Serializable
-data class TryingToRetrieveJsonFromNonJsonData(
+data class WrongSerializationTypeException(
     val name: String?,
     val type: SerializedDataType
 ) : SerializationException(
@@ -67,7 +65,7 @@ data class TryingToRetrieveJsonFromNonJsonData(
 )
 
 @Serializable
-data class SerializerNotFoundDuringDeserialization(
+data class SerializerNotFoundException(
     val name: String
 ) : SerializationException(
     msg = "Trying to deserialize data into \"$name\$ but this class has no serializer",
@@ -75,7 +73,7 @@ data class SerializerNotFoundDuringDeserialization(
 )
 
 @Serializable
-data class ExceptionDuringKotlinDeserialization(
+data class KotlinDeserializationException(
     val name: String,
     val causeString: String
 ) : SerializationException(
@@ -84,7 +82,7 @@ data class ExceptionDuringKotlinDeserialization(
 )
 
 @Serializable
-data class ExceptionDuringJsonDeserialization(
+data class JsonDeserializationException(
     val name: String,
     val causeString: String
 ) : SerializationException(
@@ -93,7 +91,7 @@ data class ExceptionDuringJsonDeserialization(
 )
 
 @Serializable
-data class ErrorDuringJsonSerializationOfParameter(
+data class ParameterSerializationException(
     val parameterName: String,
     val parameterType: String,
     val methodName: String,

@@ -46,7 +46,7 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.exceptions.clients.CanceledWorkflow
+import io.infinitic.exceptions.clients.CanceledWorkflowException
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -105,7 +105,7 @@ private lateinit var workflowA: WorkflowA
 private lateinit var workflowB: WorkflowB
 private lateinit var workflowATagged: WorkflowA
 
-class WorkflowIntegrationTests : StringSpec({
+class WorkflowTests : StringSpec({
 
     "empty Workflow" {
         var result: String
@@ -760,7 +760,7 @@ class WorkflowIntegrationTests : StringSpec({
         coroutineScope {
             init()
             launch { client.cancel(workflowA) }
-            shouldThrow<CanceledWorkflow> { workflowA.channel1() }
+            shouldThrow<CanceledWorkflowException> { workflowA.channel1() }
         }
     }
 
@@ -771,7 +771,7 @@ class WorkflowIntegrationTests : StringSpec({
             init()
             deferred = client.async(workflowA) { channel1() }
             launch { client.cancel(workflowA) }
-            shouldThrow<CanceledWorkflow> { deferred.await() }
+            shouldThrow<CanceledWorkflowException> { deferred.await() }
         }
         // check output
         workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null

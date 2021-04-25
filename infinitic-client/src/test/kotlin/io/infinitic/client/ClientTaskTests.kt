@@ -49,12 +49,11 @@ import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.exceptions.clients.CanNotReuseTaskStub
-import io.infinitic.exceptions.clients.CanNotUseNewTaskStub
-import io.infinitic.exceptions.clients.MultipleMethodCalls
-import io.infinitic.exceptions.clients.NoMethodCall
-import io.infinitic.exceptions.clients.NotAStub
-import io.infinitic.exceptions.clients.SuspendMethodNotSupported
+import io.infinitic.exceptions.clients.CanNotApplyOnNewTaskStubException
+import io.infinitic.exceptions.clients.MultipleMethodCallsException
+import io.infinitic.exceptions.clients.NoMethodCallException
+import io.infinitic.exceptions.clients.NotAStubException
+import io.infinitic.exceptions.clients.SuspendMethodNotSupportedException
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -88,15 +87,15 @@ class ClientTaskTests : StringSpec({
     }
 
     "Should throw when not using a stub" {
-        shouldThrow<NotAStub> {
+        shouldThrow<NotAStubException> {
             client.async("") { }
         }
 
-        shouldThrow<NotAStub> {
+        shouldThrow<NotAStubException> {
             client.retry("")
         }
 
-        shouldThrow<NotAStub> {
+        shouldThrow<NotAStubException> {
             client.cancel("")
         }
     }
@@ -104,7 +103,7 @@ class ClientTaskTests : StringSpec({
     "Should not throw when re-using a stub" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        shouldNotThrow<CanNotReuseTaskStub> {
+        shouldNotThrow<Throwable> {
             client.async(fakeTask) { m1() }
             client.async(fakeTask) { m1() }
         }
@@ -113,7 +112,7 @@ class ClientTaskTests : StringSpec({
     "Should throw when calling 2 methods" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        shouldThrow<MultipleMethodCalls> {
+        shouldThrow<MultipleMethodCallsException> {
             client.async(fakeTask) { m1(); m1() }
         }
     }
@@ -121,7 +120,7 @@ class ClientTaskTests : StringSpec({
     "Should throw when not calling any method" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        shouldThrow<NoMethodCall> {
+        shouldThrow<NoMethodCallException> {
             client.async(fakeTask) { }
         }
     }
@@ -129,7 +128,7 @@ class ClientTaskTests : StringSpec({
     "Should throw when retrying new stub" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        shouldThrow<CanNotUseNewTaskStub> {
+        shouldThrow<CanNotApplyOnNewTaskStubException> {
             client.retry(fakeTask)
         }
     }
@@ -137,7 +136,7 @@ class ClientTaskTests : StringSpec({
     "Should throw when canceling new stub" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        shouldThrow<CanNotUseNewTaskStub> {
+        shouldThrow<CanNotApplyOnNewTaskStubException> {
             client.cancel(fakeTask)
         }
     }
@@ -145,7 +144,7 @@ class ClientTaskTests : StringSpec({
     "Should throw when using a suspend method" {
         // when
         val fakeTask = client.newTask<FakeTask>()
-        shouldThrow<SuspendMethodNotSupported> {
+        shouldThrow<SuspendMethodNotSupportedException> {
             fakeTask.suspendedMethod()
         }
     }

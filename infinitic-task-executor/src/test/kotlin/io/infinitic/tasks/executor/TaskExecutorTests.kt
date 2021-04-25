@@ -44,11 +44,11 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
-import io.infinitic.exceptions.tasks.ClassNotFoundDuringInstantiation
-import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCount
-import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypes
-import io.infinitic.exceptions.tasks.ProcessingTimeout
-import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCount
+import io.infinitic.exceptions.tasks.ClassNotFoundException
+import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
+import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
+import io.infinitic.exceptions.tasks.ProcessingTimeoutException
+import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.tasks.executor.samples.SampleTaskWithBuggyRetry
 import io.infinitic.tasks.executor.samples.SampleTaskWithContext
@@ -139,7 +139,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe ClassNotFoundDuringInstantiation::class.java.name
+        fail.taskAttemptError.name shouldBe ClassNotFoundException::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
@@ -159,7 +159,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe NoMethodFoundWithParameterTypes::class.java.name
+        fail.taskAttemptError.name shouldBe NoMethodFoundWithParameterTypesException::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -178,7 +178,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe NoMethodFoundWithParameterCount::class.java.name
+        fail.taskAttemptError.name shouldBe NoMethodFoundWithParameterCountException::class.java.name
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -197,7 +197,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe TooManyMethodsFoundWithParameterCount::class.java.name
+        fail.taskAttemptError.name shouldBe TooManyMethodsFoundWithParameterCountException::class.java.name
     }
 
     "Should retry with correct exception" {
@@ -275,7 +275,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe ProcessingTimeout::class.java.name
+        fail.taskAttemptError.name shouldBe ProcessingTimeoutException::class.java.name
     }
 })
 

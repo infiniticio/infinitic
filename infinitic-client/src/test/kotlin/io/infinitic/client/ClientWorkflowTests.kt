@@ -51,11 +51,11 @@ import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.exceptions.clients.CanNotReuseWorkflowStub
-import io.infinitic.exceptions.clients.CanNotUseNewWorkflowStub
-import io.infinitic.exceptions.clients.MultipleMethodCalls
-import io.infinitic.exceptions.clients.NoMethodCall
-import io.infinitic.exceptions.clients.SuspendMethodNotSupported
+import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
+import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
+import io.infinitic.exceptions.clients.MultipleMethodCallsException
+import io.infinitic.exceptions.clients.NoMethodCallException
+import io.infinitic.exceptions.clients.SuspendMethodNotSupportedException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -90,7 +90,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when re-using a stub" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<CanNotReuseWorkflowStub> {
+        shouldThrow<CanNotReuseWorkflowStubException> {
             client.async(fakeWorkflow) { m1() }
             client.async(fakeWorkflow) { m1() }
         }
@@ -99,7 +99,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when calling 2 methods" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<MultipleMethodCalls> {
+        shouldThrow<MultipleMethodCallsException> {
             client.async(fakeWorkflow) { m1(); m1() }
         }
     }
@@ -107,7 +107,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when not calling any method" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<NoMethodCall> {
+        shouldThrow<NoMethodCallException> {
             client.async(fakeWorkflow) { }
         }
     }
@@ -115,7 +115,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when retrying new stub" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<CanNotUseNewWorkflowStub> {
+        shouldThrow<CanNotApplyOnNewWorkflowStubException> {
             client.retry(fakeWorkflow)
         }
     }
@@ -123,7 +123,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when canceling new stub" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<CanNotUseNewWorkflowStub> {
+        shouldThrow<CanNotApplyOnNewWorkflowStubException> {
             client.cancel(fakeWorkflow)
         }
     }
@@ -131,7 +131,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when using a suspend method" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<SuspendMethodNotSupported> {
+        shouldThrow<SuspendMethodNotSupportedException> {
             fakeWorkflow.suspendedMethod()
         }
     }

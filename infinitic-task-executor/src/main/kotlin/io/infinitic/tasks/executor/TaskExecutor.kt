@@ -36,7 +36,7 @@ import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
 import io.infinitic.common.tasks.engine.messages.TaskAttemptFailed
 import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.exceptions.tasks.ProcessingTimeout
+import io.infinitic.exceptions.tasks.ProcessingTimeoutException
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.task.DurationBeforeRetryFailed
@@ -112,7 +112,7 @@ class TaskExecutor(
                 sendTaskAttemptFailed(message, cause ?: e, null, TaskMeta(task.context.meta))
             }
         } catch (e: TimeoutCancellationException) {
-            val cause = ProcessingTimeout(task.javaClass.name, options.runningTimeout!!)
+            val cause = ProcessingTimeoutException(task.javaClass.name, options.runningTimeout!!)
             // returning a timeout
             failTaskWithRetry(task, message, cause)
         } catch (e: Throwable) {

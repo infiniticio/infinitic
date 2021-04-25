@@ -51,11 +51,11 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
-import io.infinitic.exceptions.clients.CanNotReuseWorkflowStub
-import io.infinitic.exceptions.clients.CanNotUseNewTaskStub
-import io.infinitic.exceptions.clients.CanNotUseNewWorkflowStub
-import io.infinitic.exceptions.clients.IncorrectExistingStub
-import io.infinitic.exceptions.clients.NotAStub
+import io.infinitic.exceptions.clients.CanNotApplyOnNewTaskStubException
+import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
+import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
+import io.infinitic.exceptions.clients.IncorrectExistingStubException
+import io.infinitic.exceptions.clients.NotAStubException
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
 import org.slf4j.LoggerFactory
@@ -259,7 +259,7 @@ abstract class Client {
      *  Asynchronously process a task or a workflow
      */
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
-        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "async")
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "async")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
             is TaskProxyHandler<*> -> {
@@ -269,7 +269,7 @@ abstract class Client {
                 dispatcher.dispatch(handler)
             }
             is WorkflowProxyHandler<*> -> {
-                if (! handler.isNew()) throw CanNotReuseWorkflowStub(handler.klass.name)
+                if (! handler.isNew()) throw CanNotReuseWorkflowStubException(handler.klass.name)
                 handler.isSync = false
                 proxy.method()
                 dispatcher.dispatch(handler)
@@ -282,12 +282,12 @@ abstract class Client {
      *  Cancel a task or a workflow
      */
     fun <T : Any> cancel(proxy: T) {
-        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "cancel")
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "cancel")
 
         when (val handler = Proxy.getInvocationHandler(proxy)) {
             is TaskProxyHandler<*> -> cancelTask(handler)
             is WorkflowProxyHandler<*> -> cancelWorkflow(handler)
-            is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "cancel")
+            is SendChannelProxyHandler<*> -> throw IncorrectExistingStubException(handler.klass.name, "cancel")
             else -> throw RuntimeException()
         }
     }
@@ -297,18 +297,18 @@ abstract class Client {
      * when a non-null parameter is provided, it will supersede current one
      */
     fun <T : Any> retry(proxy: T) {
-        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "retry")
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
             is TaskProxyHandler<*> -> retryTask(handler)
             is WorkflowProxyHandler<*> -> retryWorkflow(handler)
-            is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "retry")
+            is SendChannelProxyHandler<*> -> throw IncorrectExistingStubException(handler.klass.name, "retry")
             else -> throw RuntimeException()
         }
     }
 
     private fun <T : Any> cancelTask(handler: TaskProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotUseNewTaskStub(handler.klass.name, "cancel")
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "cancel")
 
         when (handler.perTaskId) {
             null -> {
@@ -329,7 +329,7 @@ abstract class Client {
     }
 
     private fun <T : Any> retryTask(handler: TaskProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotUseNewTaskStub(handler.klass.name, "retry")
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "retry")
 
         if (handler.perTaskId != null) {
             val msg = RetryTask(
@@ -365,7 +365,7 @@ abstract class Client {
     }
 
     private fun <T : Any> cancelWorkflow(handler: WorkflowProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotUseNewWorkflowStub(handler.klass.name, "retry")
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
 
         if (handler.perWorkflowId != null) {
             val msg = CancelWorkflow(
@@ -389,7 +389,7 @@ abstract class Client {
     }
 
     private fun <T : Any> retryWorkflow(handler: WorkflowProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotUseNewWorkflowStub(handler.klass.name, "retry")
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
 
         TODO("Not yet implemented")
     }

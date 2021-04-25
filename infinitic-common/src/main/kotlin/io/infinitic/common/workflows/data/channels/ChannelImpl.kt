@@ -26,7 +26,7 @@
 package io.infinitic.common.workflows.data.channels
 
 import com.jayway.jsonpath.Criteria
-import io.infinitic.exceptions.workflowTasks.NameNotInitializedInChannel
+import io.infinitic.exceptions.workflowTasks.NameNotInitializedInChannelException
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.WorkflowContext
@@ -40,7 +40,7 @@ class ChannelImpl<T : Any>(
 
     fun getNameOrThrow() = when (isNameInitialized()) {
         true -> name
-        else -> throw NameNotInitializedInChannel
+        else -> throw NameNotInitializedInChannelException
     }
 
     override fun send(event: T) =

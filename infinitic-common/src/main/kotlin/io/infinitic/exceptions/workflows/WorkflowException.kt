@@ -32,9 +32,7 @@ import kotlinx.serialization.Serializable
 sealed class WorkflowException(
     val msg: String,
     val help: String
-) : UserException() {
-    override val message = "$msg.\n$help"
-}
+) : UserException("$msg.\n$help")
 
 @Serializable
 object DeferredCancellationException : WorkflowException(

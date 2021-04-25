@@ -33,12 +33,10 @@ import kotlinx.serialization.Serializable
 sealed class ClientException(
     val msg: String,
     val help: String
-) : UserException() {
-    override val message = "$msg.\n$help"
-}
+) : UserException("$msg.\n$help")
 
 @Serializable
-data class NotAStub(
+data class NotAStubException(
     val name: String,
     val async: String
 ) : ClientException(
@@ -47,32 +45,24 @@ data class NotAStub(
 )
 
 @Serializable
-data class IncorrectExistingStub(
+data class IncorrectExistingStubException(
     val name: String,
     val action: String
 ) : ClientException(
     msg = "The first parameter of the client.$action(.) function should be the stub of an existing task or workflow",
-    help = "Make sure to provide the stub returned by client.getTask($name, id) or client.getWorkflow($name, id)function, with an id."
+    help = "Make sure to provide the stub returned by client.getTask or client.getWorkflow functions"
 )
 
 @Serializable
-data class CanNotReuseTaskStub(
-    val name: String,
-) : ClientException(
-    msg = "You can not reuse a task stub ($name) already dispatched",
-    help = "Please create a new stub using `newTask()` for each task dispatch`"
-)
-
-@Serializable
-data class CanNotReuseWorkflowStub(
-    val name: String,
+data class CanNotReuseWorkflowStubException(
+    val name: String
 ) : ClientException(
     msg = "You can not reuse a workflow stub ($name) already dispatched",
     help = "Please create a new stub using `newWorkflow()` for each workflow dispatch`"
 )
 
 @Serializable
-data class CanNotUseNewTaskStub(
+data class CanNotApplyOnNewTaskStubException(
     val name: String,
     val action: String
 ) : ClientException(
@@ -81,7 +71,7 @@ data class CanNotUseNewTaskStub(
 )
 
 @Serializable
-data class CanNotUseNewWorkflowStub(
+data class CanNotApplyOnNewWorkflowStubException(
     val name: String,
     val action: String
 ) : ClientException(
@@ -90,7 +80,7 @@ data class CanNotUseNewWorkflowStub(
 )
 
 @Serializable
-data class SuspendMethodNotSupported(
+data class SuspendMethodNotSupportedException(
     val klass: String,
     val method: String
 ) : ClientException(
@@ -99,7 +89,7 @@ data class SuspendMethodNotSupported(
 )
 
 @Serializable
-data class NoMethodCall(
+data class NoMethodCallException(
     val klass: String
 ) : ClientException(
     msg = "The method to call for your task or workflow is missing",
@@ -107,7 +97,7 @@ data class NoMethodCall(
 )
 
 @Serializable
-data class NoSendMethodCall(
+data class NoSendMethodCallException(
     val klass: String,
     val channel: String
 ) : ClientException(
@@ -116,9 +106,9 @@ data class NoSendMethodCall(
 )
 
 @Serializable
-data class MultipleMethodCalls(
+data class MultipleMethodCallsException(
     val klass: String,
-    val method1: String?,
+    val method1: String,
     val method2: String
 ) : ClientException(
     msg = "Only one method of \"$klass\" can be dispatched at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
@@ -126,7 +116,7 @@ data class MultipleMethodCalls(
 )
 
 @Serializable
-data class ChannelUsedOnNewWorkflow(
+data class ChannelUsedOnNewWorkflowException(
     val workflow: String
 ) : ClientException(
     msg = "Channels can only be used for an existing instance of $workflow workflow",
@@ -134,7 +124,7 @@ data class ChannelUsedOnNewWorkflow(
 )
 
 @Serializable
-data class UnknownMethodInSendChannel(
+data class UnknownMethodInSendChannelException(
     val workflow: String,
     val channel: String,
     val method: String
@@ -144,7 +134,7 @@ data class UnknownMethodInSendChannel(
 )
 
 @Serializable
-data class UnknownTask(
+data class UnknownTaskException(
     val taskId: String,
     val taskName: String,
 ) : ClientException(
@@ -153,7 +143,7 @@ data class UnknownTask(
 )
 
 @Serializable
-data class CanceledTask(
+data class CanceledTaskException(
     val taskId: String,
     val taskName: String,
 ) : ClientException(
@@ -162,7 +152,7 @@ data class CanceledTask(
 )
 
 @Serializable
-data class UnknownWorkflow(
+data class UnknownWorkflowException(
     val workflowId: String,
     val workflowName: String
 ) : ClientException(
@@ -171,7 +161,7 @@ data class UnknownWorkflow(
 )
 
 @Serializable
-data class CanceledWorkflow(
+data class CanceledWorkflowException(
     val workflowId: String,
     val workflowName: String
 ) : ClientException(

@@ -33,12 +33,10 @@ import kotlinx.serialization.Serializable
 sealed class TaskException(
     val msg: String,
     val help: String
-) : UserException() {
-    override val message = "$msg.\n$help"
-}
+) : UserException("$msg.\n$help")
 
 @Serializable
-data class ClassNotFoundDuringInstantiation(
+data class ClassNotFoundException(
     val name: String
 ) : TaskException(
     msg = "Impossible to find a Class associated to $name",
@@ -46,7 +44,7 @@ data class ClassNotFoundDuringInstantiation(
 )
 
 @Serializable
-data class NoMethodFoundWithParameterTypes(
+data class NoMethodFoundWithParameterTypesException(
     val klass: String,
     val method: String,
     val parameterTypes: List<String>
@@ -56,7 +54,7 @@ data class NoMethodFoundWithParameterTypes(
 )
 
 @Serializable
-data class NoMethodFoundWithParameterCount(
+data class NoMethodFoundWithParameterCountException(
     val klass: String,
     val method: String,
     val parameterCount: Int
@@ -66,7 +64,7 @@ data class NoMethodFoundWithParameterCount(
 )
 
 @Serializable
-data class TooManyMethodsFoundWithParameterCount(
+data class TooManyMethodsFoundWithParameterCountException(
     val klass: String,
     val method: String,
     val parameterCount: Int
@@ -76,7 +74,7 @@ data class TooManyMethodsFoundWithParameterCount(
 )
 
 @Serializable
-data class ProcessingTimeout(
+data class ProcessingTimeoutException(
     val klass: String,
     val delay: Float
 ) : TaskException(

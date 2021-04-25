@@ -65,11 +65,11 @@ import io.infinitic.common.workflows.data.steps.StepStatusCanceled
 import io.infinitic.common.workflows.data.steps.StepStatusCompleted
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.exceptions.workflowTasks.MultipleMethodCallsAtAsync
-import io.infinitic.exceptions.workflowTasks.NoMethodCallAtAsync
-import io.infinitic.exceptions.workflowTasks.ShouldNotUseAsyncFunctionInsideInlinedTask
-import io.infinitic.exceptions.workflowTasks.ShouldNotWaitInsideInlinedTask
-import io.infinitic.exceptions.workflowTasks.WorkflowUpdatedWhileRunning
+import io.infinitic.exceptions.workflowTasks.MultipleMethodCallsAtAsyncException
+import io.infinitic.exceptions.workflowTasks.NoMethodCallAtAsyncException
+import io.infinitic.exceptions.workflowTasks.ShouldNotUseAsyncFunctionInsideInlinedTaskException
+import io.infinitic.exceptions.workflowTasks.ShouldNotWaitInsideInlinedTaskException
+import io.infinitic.exceptions.workflowTasks.WorkflowUpdatedWhileRunningException
 import io.infinitic.exceptions.workflows.DeferredCancellationException
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
@@ -214,8 +214,8 @@ internal class WorkflowContextImpl(
             // run inline task
             val commandOutput = try { CommandReturnValue.from(task()) } catch (e: Exception) {
                 when (e) {
-                    is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTask(workflowTaskParameters.getFullMethodName())
-                    is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTask(workflowTaskParameters.getFullMethodName())
+                    is NewStepException, is KnownStepException -> throw ShouldNotWaitInsideInlinedTaskException(workflowTaskParameters.getFullMethodName())
+                    is AsyncCompletedException -> throw ShouldNotUseAsyncFunctionInsideInlinedTaskException(workflowTaskParameters.getFullMethodName())
                     else -> throw e
                 }
             }
@@ -308,9 +308,9 @@ internal class WorkflowContextImpl(
      */
     override fun <S> dispatchTask(handler: TaskProxyHandler<*>): Deferred<S> {
         val method = when (handler.methods.size) {
-            0 -> throw NoMethodCallAtAsync(handler.klass.name)
+            0 -> throw NoMethodCallAtAsyncException(handler.klass.name)
             1 -> handler.methods[0]
-            else -> throw MultipleMethodCallsAtAsync(
+            else -> throw MultipleMethodCallsAtAsyncException(
                 handler.klass.name,
                 handler.methods.first().name,
                 handler.methods.last().name
@@ -336,9 +336,9 @@ internal class WorkflowContextImpl(
      */
     override fun <S> dispatchWorkflow(handler: WorkflowProxyHandler<*>): Deferred<S> {
         val method = when (handler.methods.size) {
-            0 -> throw NoMethodCallAtAsync(handler.klass.name)
+            0 -> throw NoMethodCallAtAsyncException(handler.klass.name)
             1 -> handler.methods[0]
-            else -> throw MultipleMethodCallsAtAsync(
+            else -> throw MultipleMethodCallsAtAsyncException(
                 handler.klass.name,
                 handler.methods.first().name,
                 handler.methods.last().name
@@ -488,7 +488,7 @@ internal class WorkflowContextImpl(
             logger.error("pastCommand =  {}", pastCommand)
             logger.error("newCommand =  {}", newCommand)
             logger.error("workflowChangeCheckMode =  {}", workflowTaskParameters.workflowOptions.workflowChangeCheckMode)
-            throw WorkflowUpdatedWhileRunning(
+            throw WorkflowUpdatedWhileRunningException(
                 workflowTaskParameters.workflowName.name,
                 "${workflowTaskParameters.methodRun.methodName}",
                 "${methodRunIndex.methodPosition}"
@@ -507,7 +507,7 @@ internal class WorkflowContextImpl(
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
             logger.error("pastStep =  {}", pastStep)
             logger.error("newStep =  {}", newStep)
-            throw WorkflowUpdatedWhileRunning(
+            throw WorkflowUpdatedWhileRunningException(
                 workflowTaskParameters.workflowName.name,
                 "${workflowTaskParameters.methodRun.methodName}",
                 "${methodRunIndex.methodPosition}"
