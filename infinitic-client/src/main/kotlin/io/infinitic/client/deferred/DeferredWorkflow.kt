@@ -26,6 +26,7 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.ClientDispatcher
+import io.infinitic.clients.Deferred
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import java.util.UUID

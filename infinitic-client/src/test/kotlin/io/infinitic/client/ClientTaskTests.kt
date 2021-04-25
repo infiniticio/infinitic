@@ -25,10 +25,12 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.deferred.Deferred
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
+import io.infinitic.clients.Deferred
+import io.infinitic.clients.getTask
+import io.infinitic.clients.newTask
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -449,7 +451,6 @@ class ClientTaskTests : StringSpec({
     }
 
     "Should be able to cancel task per id with output" {
-        val output = TestFactory.random<String>()
         // when
         val id = UUID.randomUUID()
         val fakeTask = client.getTask<FakeTask>(id)
@@ -476,7 +477,6 @@ class ClientTaskTests : StringSpec({
     }
 
     "Should be able to cancel task per tag with output" {
-        val output = TestFactory.random<String>()
         // when
         val fakeTask = client.getTask<FakeTask>("foo")
         client.cancel(fakeTask)

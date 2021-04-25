@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.executor
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
@@ -53,8 +54,9 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
 class TaskExecutor(
-    val sendToTaskEngine: SendToTaskEngine,
-    val taskExecutorRegister: TaskExecutorRegister
+    private val taskExecutorRegister: TaskExecutorRegister,
+    private val sendToTaskEngine: SendToTaskEngine,
+    private val clientFactory: () -> InfiniticClient
 ) : TaskExecutorRegister by taskExecutorRegister {
 
     private val logger: Logger
@@ -79,7 +81,8 @@ class TaskExecutor(
             retryIndex = message.taskRetryIndex.int,
             lastError = message.lastTaskError,
             meta = message.taskMeta.map.toMutableMap(),
-            options = message.taskOptions
+            options = message.taskOptions,
+            clientFactory
         )
 
         // trying to instantiate the task

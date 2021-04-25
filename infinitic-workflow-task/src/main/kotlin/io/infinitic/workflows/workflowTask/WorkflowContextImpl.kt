@@ -70,7 +70,7 @@ import io.infinitic.exceptions.workflowTasks.NoMethodCallAtAsyncException
 import io.infinitic.exceptions.workflowTasks.ShouldNotUseAsyncFunctionInsideInlinedTaskException
 import io.infinitic.exceptions.workflowTasks.ShouldNotWaitInsideInlinedTaskException
 import io.infinitic.exceptions.workflowTasks.WorkflowUpdatedWhileRunningException
-import io.infinitic.exceptions.workflows.DeferredCancellationException
+import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowContext
@@ -267,14 +267,14 @@ internal class WorkflowContextImpl(
                     // and stop here
                     throw NewStepException
                 }
-                is StepStatusCanceled -> throw DeferredCancellationException
+                is StepStatusCanceled -> throw CanceledDeferredException
                 is StepStatusCompleted -> (deferred.stepStatus as StepStatusCompleted).completionResult.get() as T
             }
         }
 
         val stepStatus = when (val stepStatus = pastStep.stepStatus) {
             is StepStatusOngoing -> throw KnownStepException
-            is StepStatusCanceled -> throw DeferredCancellationException
+            is StepStatusCanceled -> throw CanceledDeferredException
             is StepStatusCompleted -> stepStatus
         }
 

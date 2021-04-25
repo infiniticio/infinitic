@@ -28,6 +28,7 @@ package io.infinitic.inMemory.workers
 import io.infinitic.client.Client
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.workers.MessageToProcess
+import io.infinitic.inMemory.InfiniticClient
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
@@ -120,12 +121,14 @@ fun CoroutineScope.startInMemory(
         output.sendToWorkflowEngineAfter
     )
 
+    @Suppress("MoveLambdaOutsideParentheses")
     startTaskExecutor(
         "in-memory-task-executor",
         taskExecutorRegister,
         inputChannel = output.executorChannel,
         outputChannel = output.logChannel,
         output.sendEventsToTaskEngine,
+        { InfiniticClient(taskExecutorRegister) }
     )
 
     startMetricsPerNameEngine(

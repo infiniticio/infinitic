@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.executor.task
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.tasks.TaskContext
@@ -41,5 +42,15 @@ data class TaskContextImpl(
     override val retryIndex: Int,
     override val lastError: TaskError?,
     override val meta: MutableMap<String, ByteArray>,
-    override val options: TaskOptions
-) : TaskContext
+    override val options: TaskOptions,
+    private val clientFactory: () -> InfiniticClient
+) : TaskContext {
+    private var _client: InfiniticClient? = null
+
+    override val client: InfiniticClient
+        get() = _client ?: run {
+            val client = clientFactory()
+            _client = client
+            return client
+        }
+}

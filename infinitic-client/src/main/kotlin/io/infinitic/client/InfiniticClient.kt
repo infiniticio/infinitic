@@ -23,16 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.exceptions.workflows
+package io.infinitic.client
 
-import io.infinitic.exceptions.UserException
+import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 
-sealed class WorkflowException(
-    msg: String,
-    help: String
-) : UserException("$msg.\n$help")
-
-object CanceledDeferredException : WorkflowException(
-    msg = "You are trying to wait for the result of a Deferred that was canceled",
-    help = "You should kill this instance, or try / catch this exception"
-)
+class InfiniticClient(
+    override val clientName: ClientName,
+    override val sendToTaskTagEngine: SendToTaskTagEngine,
+    override val sendToTaskEngine: SendToTaskEngine,
+    override val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
+    override val sendToWorkflowEngine: SendToWorkflowEngine,
+    val closeFn: () -> Unit
+) : Client() {
+    override fun close() { closeFn() }
+}

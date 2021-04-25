@@ -25,7 +25,9 @@
 
 package io.infinitic.workflows.tests.tasks
 
+import io.infinitic.clients.getWorkflow
 import io.infinitic.tasks.Task
+import io.infinitic.workflows.tests.workflows.WorkflowA
 import java.time.Duration
 import java.util.UUID
 
@@ -35,6 +37,7 @@ interface TaskA {
     fun await(delay: Long)
     fun workflowId(): UUID?
     fun workflowName(): String?
+    fun cancelWorkflowA(id: UUID)
 }
 
 class TaskAImpl : Task(), TaskA {
@@ -43,6 +46,10 @@ class TaskAImpl : Task(), TaskA {
     override fun await(delay: Long): Unit = Thread.sleep(delay)
     override fun workflowId() = context.workflowId
     override fun workflowName() = context.workflowName
+    override fun cancelWorkflowA(id: UUID) {
+        val w = context.client.getWorkflow<WorkflowA>(id)
+        context.client.cancel(w)
+    }
 
     override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }

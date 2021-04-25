@@ -25,6 +25,7 @@
 
 package io.infinitic.tasks.executor.worker
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.workers.MessageToProcess
@@ -54,9 +55,10 @@ fun <T : TaskExecutorMessageToProcess> CoroutineScope.startTaskExecutor(
     register: TaskExecutorRegister,
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>,
-    sendToTaskEngine: SendToTaskEngine
+    sendToTaskEngine: SendToTaskEngine,
+    clientFactory: () -> InfiniticClient
 ) = launch(CoroutineName(coroutineName)) {
-    val taskExecutor = TaskExecutor(sendToTaskEngine, register)
+    val taskExecutor = TaskExecutor(register, sendToTaskEngine, clientFactory)
 
     for (message in inputChannel) {
         try {

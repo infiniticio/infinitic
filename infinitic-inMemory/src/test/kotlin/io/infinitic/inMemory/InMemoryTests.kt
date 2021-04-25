@@ -25,7 +25,9 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.client.deferred.Deferred
+import io.infinitic.clients.Deferred
+import io.infinitic.clients.newTask
+import io.infinitic.clients.newWorkflow
 import io.infinitic.inMemory.tasks.TaskA
 import io.infinitic.inMemory.tasks.TaskAImpl
 import io.infinitic.inMemory.workflows.WorkflowA

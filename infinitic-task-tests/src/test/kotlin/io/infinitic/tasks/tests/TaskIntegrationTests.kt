@@ -28,6 +28,7 @@
 package io.infinitic.tasks.tests
 
 import io.infinitic.client.Client
+import io.infinitic.clients.getTask
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -475,8 +476,10 @@ fun CoroutineScope.init() {
     metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     taskExecutor = TaskExecutor(
+        TaskExecutorRegisterImpl(),
         { sendToTaskEngine(it) },
-        TaskExecutorRegisterImpl()
+        { client }
     )
+
     taskExecutor.registerTask(TaskTest::class.java.name) { taskTest }
 }

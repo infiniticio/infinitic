@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.deferred
+package io.infinitic.clients
 
 import java.util.UUID
 

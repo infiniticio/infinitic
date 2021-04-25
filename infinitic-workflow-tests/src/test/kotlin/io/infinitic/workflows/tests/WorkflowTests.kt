@@ -26,7 +26,9 @@
 package io.infinitic.workflows.tests
 
 import io.infinitic.client.Client
-import io.infinitic.client.deferred.Deferred
+import io.infinitic.clients.Deferred
+import io.infinitic.clients.getWorkflow
+import io.infinitic.clients.newWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -47,6 +49,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.exceptions.clients.CanceledWorkflowException
+import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -410,7 +413,7 @@ class WorkflowTests : StringSpec({
             val deferred = client.async(workflowB) { factorial(14) }
             result = deferred.await()
         }
-        // checks number of task processing
+        // checks 14!
         result shouldBe 87178291200
     }
 
@@ -776,6 +779,16 @@ class WorkflowTests : StringSpec({
         // check output
         workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
     }
+
+    "Canceling child workflow should throw exception" {
+        // run system
+        coroutineScope {
+            init()
+            shouldThrow<CanceledDeferredException> {
+                workflowB.cancelChild()
+            }
+        }
+    }
 })
 
 fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
@@ -871,8 +884,9 @@ fun CoroutineScope.init() {
     metricsGlobalEngine = MetricsGlobalEngine(metricsGlobalStateStorage)
 
     executor = TaskExecutor(
+        TaskExecutorRegisterImpl(),
         { sendToTaskEngine(it) },
-        TaskExecutorRegisterImpl()
+        { client }
     )
     executor.registerTask<TaskA> { TaskAImpl() }
     executor.registerWorkflow<WorkflowA> { WorkflowAImpl() }

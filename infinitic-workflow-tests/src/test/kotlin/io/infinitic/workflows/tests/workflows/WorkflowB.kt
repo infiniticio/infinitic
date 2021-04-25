@@ -31,11 +31,13 @@ import io.infinitic.workflows.tests.tasks.TaskA
 interface WorkflowB {
     fun concat(input: String): String
     fun factorial(n: Long): Long
+    fun cancelChild(): String
 }
 
-class WorkflowBImpl() : Workflow(), WorkflowB {
+class WorkflowBImpl : Workflow(), WorkflowB {
     private val task = newTask<TaskA>()
     private val workflow = newWorkflow<WorkflowB>()
+    private val workflowA = newWorkflow<WorkflowA>()
 
     override fun concat(input: String): String {
         var str = input
@@ -44,7 +46,14 @@ class WorkflowBImpl() : Workflow(), WorkflowB {
         str = task.concat(str, "b")
         str = task.concat(str, "c")
 
-        return str // should be "${input}123"
+        return str // should be "${input}abc"
+    }
+
+    override fun cancelChild(): String {
+        val def = async(workflowA) { channel1() }
+        task.cancelWorkflowA(def.id!!)
+
+        return def.await()
     }
 
     override fun factorial(n: Long) = when {

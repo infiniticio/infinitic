@@ -27,6 +27,7 @@
 
 package io.infinitic.tasks.executor
 
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -74,7 +75,8 @@ fun mockSendToTaskEngine(slots: MutableList<TaskEngineMessage>): SendToTaskEngin
 class TaskExecutorTests : StringSpec({
     val slots = mutableListOf<TaskEngineMessage>()
     val taskExecutorRegister = TaskExecutorRegisterImpl()
-    val taskExecutor = TaskExecutor(mockSendToTaskEngine(slots), taskExecutorRegister)
+    val mockClientFactory = mockk<()-> InfiniticClient>()
+    val taskExecutor = TaskExecutor(taskExecutorRegister, mockSendToTaskEngine(slots), mockClientFactory)
 
     // ensure slots are emptied between each test
     beforeTest {

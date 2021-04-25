@@ -25,7 +25,7 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.deferred.Deferred
+import io.infinitic.clients.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.proxies.SendChannelProxyHandler
@@ -61,16 +61,15 @@ import kotlinx.coroutines.future.future
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 import java.util.UUID
+import io.infinitic.clients.InfiniticClient as InfiniticClientInterface
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-abstract class Client {
+abstract class Client : InfiniticClientInterface {
     abstract val clientName: ClientName
     protected abstract val sendToTaskTagEngine: SendToTaskTagEngine
     protected abstract val sendToTaskEngine: SendToTaskEngine
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
     protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
-
-    abstract fun close()
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -98,11 +97,11 @@ abstract class Client {
     /*
      * Create stub for a new task
      */
-    @JvmOverloads fun <T : Any> newTask(
+    override fun <T : Any> newTask(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
+        tags: Set<String>,
+        options: TaskOptions?,
+        meta: Map<String, ByteArray>
     ): T = TaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
@@ -111,28 +110,13 @@ abstract class Client {
     ) { dispatcher }.stub()
 
     /*
-     * (Kotlin) Create stub for a new task
-     */
-    inline fun <reified T : Any> newTask(
-        tags: Set<String> = setOf(),
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = newTask(T::class.java, tags, options, meta)
-
-    /*
      * Create stub for an existing task targeted per id
      */
-    @JvmOverloads fun <T : Any> getTask(
+    override fun <T : Any> getTask(
         klass: Class<out T>,
-        id: UUID,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
+        id: UUID
     ): T = TaskProxyHandler(
         klass = klass,
-        taskTags = tags?.map { TaskTag(it) }?.toSet(),
-        taskOptions = options,
-        taskMeta = meta?.let { TaskMeta(it) },
         perTaskId = TaskId(id),
         perTag = null
     ) { dispatcher }.stub()
@@ -140,49 +124,23 @@ abstract class Client {
     /*
      * Create stub for an existing task targeted per tag
      */
-    @JvmOverloads fun <T : Any> getTask(
+    override fun <T : Any> getTask(
         klass: Class<out T>,
-        tag: String,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
+        tag: String
     ): T = TaskProxyHandler(
         klass = klass,
-        taskTags = tags?.map { TaskTag(it) }?.toSet(),
-        taskOptions = options,
-        taskMeta = meta?.let { TaskMeta(it) },
         perTaskId = null,
         perTag = TaskTag(tag)
     ) { dispatcher }.stub()
 
     /*
-     * (Kotlin) Create stub for an existing task targeted per id
-     */
-    inline fun <reified T : Any> getTask(
-        id: UUID,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): T = getTask(T::class.java, id, tags, options, meta)
-
-    /*
-     * (Kotlin) Create stub for an existing task targeted per tag
-     */
-    inline fun <reified T : Any> getTask(
-        tag: String,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): T = getTask(T::class.java, tag, tags, options, meta)
-
-    /*
      * Create stub for a new workflow
      */
-    @JvmOverloads fun <T : Any> newWorkflow(
+    override fun <T : Any> newWorkflow(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
+        tags: Set<String>,
+        options: WorkflowOptions?,
+        meta: Map<String, ByteArray>
     ): T = WorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
@@ -191,74 +149,33 @@ abstract class Client {
     ) { dispatcher }.stub()
 
     /*
-     * (Kotlin) Create stub for a new workflow
-     */
-    inline fun <reified T : Any> newWorkflow(
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = newWorkflow(T::class.java, tags, options, meta)
-
-    /*
      * Create stub for an existing workflow per id
      */
-    @JvmOverloads fun <T : Any> getWorkflow(
+    override fun <T : Any> getWorkflow(
         klass: Class<out T>,
-        id: UUID,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray>? = null
+        id: UUID
     ): T = WorkflowProxyHandler(
         klass = klass,
         perTag = null,
-        perWorkflowId = WorkflowId(id),
-        workflowTags = tags?.map { WorkflowTag(it) }?.toSet(),
-        workflowOptions = options,
-        workflowMeta = meta?.let { WorkflowMeta(it) }
+        perWorkflowId = WorkflowId(id)
     ) { dispatcher }.stub()
 
     /*
      * Create stub for an existing workflow per tag
      */
-    @JvmOverloads fun <T : Any> getWorkflow(
+    override fun <T : Any> getWorkflow(
         klass: Class<out T>,
-        tag: String,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray>? = null
+        tag: String
     ): T = WorkflowProxyHandler(
         klass = klass,
         perTag = WorkflowTag(tag),
-        perWorkflowId = null,
-        workflowTags = tags?.map { WorkflowTag(it) }?.toSet(),
-        workflowOptions = options,
-        workflowMeta = meta?.let { WorkflowMeta(it) }
+        perWorkflowId = null
     ) { dispatcher }.stub()
-
-    /*
-     * (kotlin) Create stub for an existing workflow per id
-     */
-    inline fun <reified T : Any> getWorkflow(
-        id: UUID,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = getWorkflow(T::class.java, id, tags, options, meta)
-
-    /*
-     * (kotlin) Create stub for an existing workflow per tag
-     */
-    inline fun <reified T : Any> getWorkflow(
-        tag: String,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = getWorkflow(T::class.java, tag, tags, options, meta)
 
     /*
      *  Asynchronously process a task or a workflow
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
+    override fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "async")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -282,7 +199,7 @@ abstract class Client {
     /*
      *  Cancel a task or a workflow
      */
-    fun <T : Any> cancel(proxy: T) {
+    override fun <T : Any> cancel(proxy: T) {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "cancel")
 
         when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -297,7 +214,7 @@ abstract class Client {
      * Retry a task or a workflowTask
      * when a non-null parameter is provided, it will supersede current one
      */
-    fun <T : Any> retry(proxy: T) {
+    override fun <T : Any> retry(proxy: T) {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {

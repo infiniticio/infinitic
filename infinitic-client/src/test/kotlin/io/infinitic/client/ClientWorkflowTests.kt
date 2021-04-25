@@ -28,6 +28,8 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
+import io.infinitic.clients.getWorkflow
+import io.infinitic.clients.newWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -474,7 +476,6 @@ class ClientWorkflowTests : StringSpec({
     }
 
     "Should be able to cancel workflow per tag with output" {
-        val output = TestFactory.random<String>()
         // when
         val fakeWorkflow = client.getWorkflow<FakeWorkflow>("foo")
         client.cancel(fakeWorkflow)
