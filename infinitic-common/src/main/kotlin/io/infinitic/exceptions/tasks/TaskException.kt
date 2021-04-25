@@ -27,56 +27,49 @@ package io.infinitic.exceptions.tasks
 
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.exceptions.UserException
-import kotlinx.serialization.Serializable
 
-@Serializable
 sealed class TaskException(
-    val msg: String,
-    val help: String
+    msg: String,
+    help: String
 ) : UserException("$msg.\n$help")
 
-@Serializable
-data class ClassNotFoundException(
-    val name: String
+class ClassNotFoundException(
+    name: String
 ) : TaskException(
     msg = "Impossible to find a Class associated to $name",
     help = "Use \"register\" method to provide an instance that will be used associated to $name"
 )
 
-@Serializable
-data class NoMethodFoundWithParameterTypesException(
-    val klass: String,
-    val method: String,
-    val parameterTypes: List<String>
+class NoMethodFoundWithParameterTypesException(
+    klass: String,
+    method: String,
+    parameterTypes: List<String>
 ) : TaskException(
     msg = "No method \"$method(${ parameterTypes.joinToString() })\" found in \"$klass\" class",
     help = "Make sure parameter types are consistent with your method definition"
 )
 
-@Serializable
-data class NoMethodFoundWithParameterCountException(
-    val klass: String,
-    val method: String,
-    val parameterCount: Int
+class NoMethodFoundWithParameterCountException(
+    klass: String,
+    method: String,
+    parameterCount: Int
 ) : TaskException(
     msg = "No method \"$method\" with $parameterCount parameters found in \"$klass\" class",
     help = ""
 )
 
-@Serializable
-data class TooManyMethodsFoundWithParameterCountException(
-    val klass: String,
-    val method: String,
-    val parameterCount: Int
+class TooManyMethodsFoundWithParameterCountException(
+    klass: String,
+    method: String,
+    parameterCount: Int
 ) : TaskException(
     msg = "Unable to decide which method \"$method\" with $parameterCount parameters to use in \"$klass\" class",
     help = ""
 )
 
-@Serializable
-data class ProcessingTimeoutException(
-    val klass: String,
-    val delay: Float
+class ProcessingTimeoutException(
+    klass: String,
+    delay: Float
 ) : TaskException(
     msg = "The processing of task \"$klass\" took more than $delay seconds",
     help = "You can increase (or remove entirely) this constraint in the options ${TaskOptions::javaClass.name}"

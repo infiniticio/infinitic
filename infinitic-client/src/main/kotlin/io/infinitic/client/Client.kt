@@ -51,10 +51,10 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
+import io.infinitic.exceptions.clients.CanNotApplyOnChannelException
 import io.infinitic.exceptions.clients.CanNotApplyOnNewTaskStubException
 import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
 import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
-import io.infinitic.exceptions.clients.IncorrectExistingStubException
 import io.infinitic.exceptions.clients.NotAStubException
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.future
@@ -274,7 +274,8 @@ abstract class Client {
                 proxy.method()
                 dispatcher.dispatch(handler)
             }
-            else -> throw RuntimeException()
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
         }
     }
 
@@ -287,8 +288,8 @@ abstract class Client {
         when (val handler = Proxy.getInvocationHandler(proxy)) {
             is TaskProxyHandler<*> -> cancelTask(handler)
             is WorkflowProxyHandler<*> -> cancelWorkflow(handler)
-            is SendChannelProxyHandler<*> -> throw IncorrectExistingStubException(handler.klass.name, "cancel")
-            else -> throw RuntimeException()
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
         }
     }
 
@@ -302,8 +303,8 @@ abstract class Client {
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
             is TaskProxyHandler<*> -> retryTask(handler)
             is WorkflowProxyHandler<*> -> retryWorkflow(handler)
-            is SendChannelProxyHandler<*> -> throw IncorrectExistingStubException(handler.klass.name, "retry")
-            else -> throw RuntimeException()
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("retry")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
         }
     }
 

@@ -27,87 +27,76 @@ package io.infinitic.exceptions.workflowTasks
 
 import io.infinitic.exceptions.UserException
 import io.infinitic.workflows.Channel
-import kotlinx.serialization.Serializable
 
-@Serializable
 sealed class WorkflowTaskException(
-    val msg: String,
-    val help: String
+    msg: String,
+    help: String
 ) : UserException("$msg.\n$help")
 
-@Serializable
-data class WorkflowUpdatedWhileRunningException(
-    val workflow: String,
-    val method: String,
-    val position: String
+class WorkflowUpdatedWhileRunningException(
+    workflow: String,
+    method: String,
+    position: String
 ) : WorkflowTaskException(
     msg = "Workflow \"$workflow\" has been updated since its launch (detected at position $position in $method)",
     help = "You can either kill this instance or restore the workflow definition to be able to resume it"
 )
 
-@Serializable
-data class NoMethodCallAtAsyncException(
-    val klass: String
+class NoMethodCallAtAsyncException(
+    klass: String
 ) : WorkflowTaskException(
     msg = "You must use a method of \"$klass\" when using \"async\" method",
     help = "Make sure to call exactly one method of \"$klass\" within the curly braces - example: async(foo) { bar(*args) }"
 )
 
-@Serializable
-data class MultipleMethodCallsAtAsyncException(
-    val klass: String,
-    val method1: String?,
-    val method2: String
+class MultipleMethodCallsAtAsyncException(
+    klass: String,
+    method1: String?,
+    method2: String
 ) : WorkflowTaskException(
     msg = "Only one method of \"$klass\" can be called at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
     help = "Make sure you call only one method of \"$klass\" - multiple calls in the provided lambda is forbidden"
 )
 
-@Serializable
-data class ShouldNotWaitInsideInlinedTaskException(
-    val method: String
+class ShouldNotWaitInsideInlinedTaskException(
+    method: String
 ) : WorkflowTaskException(
     msg = "You must not suspend computations inside an inlined task",
     help = "In $method, make sure you do not wait for task or child workflow completion inside `task { ... }`"
 )
 
-@Serializable
-data class ShouldNotUseAsyncFunctionInsideInlinedTaskException(
-    val method: String
+class ShouldNotUseAsyncFunctionInsideInlinedTaskException(
+    method: String
 ) : WorkflowTaskException(
     msg = "You must not suspend computations inside an inlined task",
     help = "In $method, make sure you do not use `async { ... }` function inside `task { ... }`"
 )
 
-@Serializable
-data class ParametersInChannelMethodException(
-    val workflow: String,
-    val method: String
+class ParametersInChannelMethodException(
+    workflow: String,
+    method: String
 ) : WorkflowTaskException(
     msg = "in workflow $workflow, method $method returning a ${Channel::class.simpleName} should NOT have any parameter",
     help = ""
 )
 
-@Serializable
-data class NonUniqueChannelFromChannelMethodException(
-    val workflow: String,
-    val method: String
+class NonUniqueChannelFromChannelMethodException(
+    workflow: String,
+    method: String
 ) : WorkflowTaskException(
     msg = "in workflow $workflow, method $method should return the same ${Channel::class.simpleName} instance when called multiple times",
     help = ""
 )
 
-@Serializable
-data class MultipleNamesForChannelException(
-    val workflow: String,
-    val method: String,
-    val otherMethod: String
+class MultipleNamesForChannelException(
+    workflow: String,
+    method: String,
+    otherMethod: String
 ) : WorkflowTaskException(
     msg = "in workflow $workflow, method $method return a ${Channel::class.simpleName} instance already associated with name $otherMethod",
     help = "Make sure to not have multiple methods returning the same channel"
 )
 
-@Serializable
 object NameNotInitializedInChannelException : WorkflowTaskException(
     msg = "A ${Channel::class.simpleName} is used without name",
     help = "Make sure to have a method that returns this channel."

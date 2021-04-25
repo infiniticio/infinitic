@@ -26,15 +26,12 @@
 package io.infinitic.exceptions.workflows
 
 import io.infinitic.exceptions.UserException
-import kotlinx.serialization.Serializable
 
-@Serializable
 sealed class WorkflowException(
-    val msg: String,
-    val help: String
+    msg: String,
+    help: String
 ) : UserException("$msg.\n$help")
 
-@Serializable
 object DeferredCancellationException : WorkflowException(
     msg = "You are trying to wait for the result of a Deferred that was canceled",
     help = "You should kill this instance, or try / catch this exception"
