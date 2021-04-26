@@ -65,6 +65,12 @@ data class CancelWorkflowPerTag(
 ) : WorkflowTagEngineMessage()
 
 @Serializable
+data class RetryWorkflowTaskPerTag(
+    override val workflowTag: WorkflowTag,
+    override val workflowName: WorkflowName
+) : WorkflowTagEngineMessage()
+
+@Serializable
 data class AddWorkflowTag(
     override val workflowTag: WorkflowTag,
     override val workflowName: WorkflowName,

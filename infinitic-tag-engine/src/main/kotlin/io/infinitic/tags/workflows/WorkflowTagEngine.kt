@@ -27,10 +27,12 @@ package io.infinitic.tags.workflows
 
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
 import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
+import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.tags.workflows.storage.LoggedWorkflowTagStorage
@@ -58,15 +60,35 @@ class WorkflowTagEngine(
         // it can be important as we can have a lot of them
         coroutineScope {
             scope = this
-            when (message) {
+            val o = when (message) {
                 is AddWorkflowTag -> addWorkflowTag(message)
                 is RemoveWorkflowTag -> removeWorkflowTag(message)
-                is CancelWorkflowPerTag -> cancelWorkflowPerTag(message)
                 is SendToChannelPerTag -> sendToChannelPerTag(message)
+                is CancelWorkflowPerTag -> cancelWorkflowPerTag(message)
+                is RetryWorkflowTaskPerTag -> retryWorkflowTaskPerTag(message)
             }
         }
 
         storage.setLastMessageId(message.workflowTag, message.workflowName, message.messageId)
+    }
+
+    private suspend fun retryWorkflowTaskPerTag(message: RetryWorkflowTaskPerTag) {
+        // is not an idempotent action
+        if (hasMessageAlreadyBeenHandled(message)) return
+
+        val ids = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+        when (ids.isEmpty()) {
+            true -> {
+                discardTagWithoutIds(message)
+            }
+            false -> ids.forEach {
+                val retryWorkflowTask = RetryWorkflowTask(
+                    workflowId = it,
+                    workflowName = message.workflowName
+                )
+                scope.launch { sendToWorkflowEngine(retryWorkflowTask) }
+            }
+        }
     }
 
     private suspend fun cancelWorkflowPerTag(message: CancelWorkflowPerTag) {

@@ -85,13 +85,7 @@ data class WaitTask(
 @Serializable
 data class RetryTask(
     override val taskId: TaskId,
-    override val taskName: TaskName,
-    val methodName: MethodName?,
-    val methodParameterTypes: MethodParameterTypes?,
-    val methodParameters: MethodParameters?,
-    val taskTags: Set<TaskTag>?,
-    val taskMeta: TaskMeta?,
-    val taskOptions: TaskOptions?
+    override val taskName: TaskName
 ) : TaskEngineMessage()
 
 @Serializable

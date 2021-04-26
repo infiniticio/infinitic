@@ -23,23 +23,24 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.engine.messages
+package io.infinitic.workflows.engine.handlers
 
-import kotlinx.serialization.Serializable
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
-@Serializable
-enum class WorkflowEngineMessageType {
-    WAIT_WORKFLOW,
-    CANCEL_WORKFLOW,
-    RETRY_WORKFLOW_TASK,
-    COMPLETE_WORKFLOW,
-    EMIT_TO_CHANNEL,
-    CHILD_WORKFLOW_FAILED,
-    CHILD_WORKFLOW_CANCELED,
-    CHILD_WORKFLOW_COMPLETED,
-    TIMER_COMPLETED,
-    DISPATCH_WORKFLOW,
-    TASK_FAILED,
-    TASK_CANCELED,
-    TASK_COMPLETED
+internal suspend fun retryWorkflowTask(
+    output: WorkflowEngineOutput,
+    state: WorkflowState
+) {
+    if (state.runningWorkflowTaskId != null) return
+
+    val methodRun = state.getRunningMethodRun()
+
+    dispatchWorkflowTask(
+        output,
+        state,
+        methodRun,
+        state.runningMethodRunPosition!!
+    )
 }

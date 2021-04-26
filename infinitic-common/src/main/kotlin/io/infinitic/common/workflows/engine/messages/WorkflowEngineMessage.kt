@@ -92,6 +92,12 @@ data class CancelWorkflow(
 ) : WorkflowEngineMessage()
 
 @Serializable
+data class RetryWorkflowTask(
+    override val workflowId: WorkflowId,
+    override val workflowName: WorkflowName
+) : WorkflowEngineMessage()
+
+@Serializable
 data class CompleteWorkflow(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,

@@ -89,13 +89,7 @@ class TaskTagEngine(
             false -> ids.forEach {
                 val retryTask = RetryTask(
                     taskId = it,
-                    taskName = message.taskName,
-                    methodName = message.methodName,
-                    methodParameterTypes = message.methodParameterTypes,
-                    methodParameters = message.methodParameters,
-                    taskTags = message.taskTags,
-                    taskMeta = message.taskMeta,
-                    taskOptions = message.taskOptions
+                    taskName = message.taskName
                 )
                 scope.launch { sendToTaskEngine(retryTask) }
             }

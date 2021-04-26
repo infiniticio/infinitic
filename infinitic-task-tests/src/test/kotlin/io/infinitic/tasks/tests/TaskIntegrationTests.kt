@@ -276,7 +276,7 @@ class TaskIntegrationTests : StringSpec({
         // check that task is completed
         taskStatus shouldBe TaskStatus.TERMINATED_COMPLETED
         // checks number of task processing (meta has been reinitialized at retry)
-        taskTest.log shouldBe "001"
+        taskTest.log shouldBe "0000001"
     }
 
     "Task succeeds after manual retry using tag" {

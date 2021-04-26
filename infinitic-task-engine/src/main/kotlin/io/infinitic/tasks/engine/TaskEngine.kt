@@ -238,13 +238,7 @@ class TaskEngine(
             taskStatus = TaskStatus.RUNNING_WARNING,
             taskAttemptId = TaskAttemptId(),
             taskRetryIndex = TaskRetryIndex(0),
-            taskRetrySequence = oldState.taskRetrySequence + 1,
-            taskName = message.taskName,
-            methodName = message.methodName ?: oldState.methodName,
-            methodParameters = message.methodParameters ?: oldState.methodParameters,
-            methodParameterTypes = message.methodParameterTypes ?: oldState.methodParameterTypes,
-            taskOptions = message.taskOptions ?: oldState.taskOptions,
-            taskMeta = message.taskMeta ?: oldState.taskMeta
+            taskRetrySequence = oldState.taskRetrySequence + 1
         )
 
         // send task to workers

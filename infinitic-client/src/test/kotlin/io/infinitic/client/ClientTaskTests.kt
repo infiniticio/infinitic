@@ -512,13 +512,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe RetryTask(
             taskId = TaskId(id),
-            taskName = TaskName(FakeTask::class.java.name),
-            methodName = null,
-            methodParameterTypes = null,
-            methodParameters = null,
-            taskTags = null,
-            taskOptions = null,
-            taskMeta = null
+            taskName = TaskName(FakeTask::class.java.name)
         )
     }
 
@@ -530,13 +524,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots.size shouldBe 1
         taskTagSlots[0] shouldBe RetryTaskPerTag(
             taskTag = TaskTag("foo"),
-            taskName = TaskName(FakeTask::class.java.name),
-            methodName = null,
-            methodParameterTypes = null,
-            methodParameters = null,
-            taskTags = null,
-            taskOptions = null,
-            taskMeta = null
+            taskName = TaskName(FakeTask::class.java.name)
         )
         taskSlot.isCaptured shouldBe false
     }
@@ -551,13 +539,7 @@ class ClientTaskTests : StringSpec({
         taskTagSlots.size shouldBe 0
         taskSlot.captured shouldBe RetryTask(
             taskId = TaskId(deferred.id),
-            taskName = TaskName(FakeTask::class.java.name),
-            methodName = null,
-            methodParameterTypes = null,
-            methodParameters = null,
-            taskTags = setOf(),
-            taskOptions = TaskOptions(),
-            taskMeta = TaskMeta()
+            taskName = TaskName(FakeTask::class.java.name)
         )
     }
 })

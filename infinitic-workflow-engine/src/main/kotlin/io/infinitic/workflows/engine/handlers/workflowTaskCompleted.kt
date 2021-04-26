@@ -75,9 +75,6 @@ internal suspend fun workflowTaskCompleted(
 ) {
     val workflowTaskOutput = msg.taskReturnValue.get() as WorkflowTaskReturnValue
 
-    // remove currentWorkflowTaskId
-    state.runningWorkflowTaskId = null
-
     // retrieve current methodRun
     val methodRun = state.getRunningMethodRun()
 

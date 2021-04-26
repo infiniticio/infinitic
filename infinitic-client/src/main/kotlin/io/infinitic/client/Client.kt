@@ -49,8 +49,10 @@ import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
+import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
 import io.infinitic.exceptions.clients.CanNotApplyOnChannelException
 import io.infinitic.exceptions.clients.CanNotApplyOnNewTaskStubException
 import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
@@ -94,7 +96,7 @@ abstract class Client : InfiniticClientInterface {
         dispatcher.handle(message)
     }
 
-    /*
+    /**
      * Create stub for a new task
      */
     override fun <T : Any> newTask(
@@ -109,7 +111,7 @@ abstract class Client : InfiniticClientInterface {
         taskMeta = TaskMeta(meta)
     ) { dispatcher }.stub()
 
-    /*
+    /**
      * Create stub for an existing task targeted per id
      */
     override fun <T : Any> getTask(
@@ -121,7 +123,7 @@ abstract class Client : InfiniticClientInterface {
         perTag = null
     ) { dispatcher }.stub()
 
-    /*
+    /**
      * Create stub for an existing task targeted per tag
      */
     override fun <T : Any> getTask(
@@ -133,7 +135,7 @@ abstract class Client : InfiniticClientInterface {
         perTag = TaskTag(tag)
     ) { dispatcher }.stub()
 
-    /*
+    /**
      * Create stub for a new workflow
      */
     override fun <T : Any> newWorkflow(
@@ -148,7 +150,7 @@ abstract class Client : InfiniticClientInterface {
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
 
-    /*
+    /**
      * Create stub for an existing workflow per id
      */
     override fun <T : Any> getWorkflow(
@@ -160,7 +162,7 @@ abstract class Client : InfiniticClientInterface {
         perWorkflowId = WorkflowId(id)
     ) { dispatcher }.stub()
 
-    /*
+    /**
      * Create stub for an existing workflow per tag
      */
     override fun <T : Any> getWorkflow(
@@ -172,7 +174,7 @@ abstract class Client : InfiniticClientInterface {
         perWorkflowId = null
     ) { dispatcher }.stub()
 
-    /*
+    /**
      *  Asynchronously process a task or a workflow
      */
     override fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
@@ -196,8 +198,8 @@ abstract class Client : InfiniticClientInterface {
         }
     }
 
-    /*
-     *  Cancel a task or a workflow
+    /**
+     *  Cancel a task or a workflow from a stub
      */
     override fun <T : Any> cancel(proxy: T) {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "cancel")
@@ -210,9 +212,22 @@ abstract class Client : InfiniticClientInterface {
         }
     }
 
-    /*
-     * Retry a task or a workflowTask
-     * when a non-null parameter is provided, it will supersede current one
+    /**
+     *  Complete a task or a workflow from a stub
+     */
+    override fun <T : Any> complete(proxy: T, value: Any) {
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "complete")
+
+        when (val handler = Proxy.getInvocationHandler(proxy)) {
+            is TaskProxyHandler<*> -> TODO("Not yet implemented")
+            is WorkflowProxyHandler<*> -> TODO("Not yet implemented")
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("complete")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+        }
+    }
+
+    /**
+     * Retry a task or a workflowTask from a stub
      */
     override fun <T : Any> retry(proxy: T) {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
@@ -252,13 +267,7 @@ abstract class Client : InfiniticClientInterface {
         if (handler.perTaskId != null) {
             val msg = RetryTask(
                 taskId = handler.perTaskId!!,
-                taskName = TaskName(handler.klass.name),
-                methodName = null,
-                methodParameterTypes = null,
-                methodParameters = null,
-                taskTags = handler.taskTags,
-                taskOptions = handler.taskOptions,
-                taskMeta = handler.taskMeta
+                taskName = TaskName(handler.klass.name)
             )
             GlobalScope.future { sendToTaskEngine(msg) }.join()
 
@@ -268,13 +277,7 @@ abstract class Client : InfiniticClientInterface {
         if (handler.perTag != null) {
             val msg = RetryTaskPerTag(
                 taskTag = handler.perTag!!,
-                taskName = TaskName(handler.klass.name),
-                methodName = null,
-                methodParameterTypes = null,
-                methodParameters = null,
-                taskTags = handler.taskTags,
-                taskOptions = handler.taskOptions,
-                taskMeta = handler.taskMeta
+                taskName = TaskName(handler.klass.name)
             )
             GlobalScope.future { sendToTaskTagEngine(msg) }.join()
 
@@ -309,6 +312,24 @@ abstract class Client : InfiniticClientInterface {
     private fun <T : Any> retryWorkflow(handler: WorkflowProxyHandler<T>) {
         if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
 
-        TODO("Not yet implemented")
+        if (handler.perWorkflowId != null) {
+            val msg = RetryWorkflowTask(
+                workflowId = handler.perWorkflowId!!,
+                workflowName = WorkflowName(handler.klass.name)
+            )
+            GlobalScope.future { sendToWorkflowEngine(msg) }.join()
+
+            return
+        }
+
+        if (handler.perTag != null) {
+            val msg = RetryWorkflowTaskPerTag(
+                workflowTag = handler.perTag!!,
+                workflowName = WorkflowName(handler.klass.name)
+            )
+            GlobalScope.future { sendToWorkflowTagEngine(msg) }.join()
+
+            return
+        }
     }
 }

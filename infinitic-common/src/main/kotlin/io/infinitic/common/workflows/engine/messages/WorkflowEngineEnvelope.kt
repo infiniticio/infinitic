@@ -36,6 +36,7 @@ data class WorkflowEngineEnvelope(
     val type: WorkflowEngineMessageType,
     val waitWorkflow: WaitWorkflow? = null,
     val cancelWorkflow: CancelWorkflow? = null,
+    val retryWorkflowTask: RetryWorkflowTask? = null,
     val completeWorkflow: CompleteWorkflow? = null,
     val sendToChannel: SendToChannel? = null,
     val childWorkflowFailed: ChildWorkflowFailed? = null,
@@ -51,6 +52,7 @@ data class WorkflowEngineEnvelope(
         val noNull = listOfNotNull(
             waitWorkflow,
             cancelWorkflow,
+            retryWorkflowTask,
             completeWorkflow,
             sendToChannel,
             childWorkflowFailed,
@@ -91,6 +93,11 @@ data class WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CANCEL_WORKFLOW,
                 cancelWorkflow = msg
+            )
+            is RetryWorkflowTask -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
+                retryWorkflowTask = msg
             )
             is CompleteWorkflow -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -150,6 +157,7 @@ data class WorkflowEngineEnvelope(
     override fun message(): WorkflowEngineMessage = when (type) {
         WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow!!
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
+        WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask!!
         WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
         WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendToChannel!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childWorkflowFailed!!

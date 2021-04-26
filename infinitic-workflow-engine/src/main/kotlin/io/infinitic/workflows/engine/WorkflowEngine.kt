@@ -37,7 +37,9 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
+import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
@@ -53,6 +55,7 @@ import io.infinitic.workflows.engine.handlers.childWorkflowCanceled
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
 import io.infinitic.workflows.engine.handlers.childWorkflowFailed
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
+import io.infinitic.workflows.engine.handlers.retryWorkflowTask
 import io.infinitic.workflows.engine.handlers.sendToChannel
 import io.infinitic.workflows.engine.handlers.taskCanceled
 import io.infinitic.workflows.engine.handlers.taskCompleted
@@ -62,6 +65,7 @@ import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 
 class WorkflowEngine(
     storage: WorkflowStateStorage,
@@ -178,7 +182,9 @@ class WorkflowEngine(
     }
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
-        when (message) {
+        if (message.isWorkflowTask()) state.runningWorkflowTaskId = null
+
+        val o = when (message) {
             is CancelWorkflow -> cancelWorkflow(output, state)
             is SendToChannel -> sendToChannel(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)
@@ -189,7 +195,9 @@ class WorkflowEngine(
             is TaskFailed -> taskFailed(output, state, message)
             is TaskCanceled -> taskCanceled(output, state, message)
             is TaskCompleted -> taskCompleted(output, state, message)
-            else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
+            is CompleteWorkflow -> TODO()
+            is DispatchWorkflow -> throw RuntimeException("DispatchWorkflow should not reach this point")
+            is RetryWorkflowTask -> retryWorkflowTask(output, state)
         }
 
         // workflow is terminated if all methodRuns have been deleted

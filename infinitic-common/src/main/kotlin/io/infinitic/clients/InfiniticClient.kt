@@ -123,6 +123,47 @@ interface InfiniticClient {
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
 
     /**
+     *  Complete a task or a workflow from a stub
+     */
+    fun <T : Any> complete(proxy: T, value: Any)
+
+    /**
+     *  Complete a task by id
+     */
+    fun <T : Any> completeTask(
+        klass: Class<out T>,
+        id: UUID,
+        value: Any
+    ) = complete(getTask(klass, id), value)
+
+    /**
+     *  Complete a task by tag
+     */
+    fun <T : Any> completeTask(
+        klass: Class<out T>,
+        tag: String,
+        value: Any
+    ) = complete(getTask(klass, tag), value)
+
+    /**
+     *  Complete a workflow by id
+     */
+    fun <T : Any> completeWorkflow(
+        klass: Class<out T>,
+        id: UUID,
+        value: Any
+    ) = complete(getWorkflow(klass, id), value)
+
+    /**
+     *  Complete a workflow by tag
+     */
+    fun <T : Any> completeWorkflow(
+        klass: Class<out T>,
+        tag: String,
+        value: Any
+    ) = complete(getWorkflow(klass, tag), value)
+
+    /**
      *  Cancel a task or a workflow from a stub
      */
     fun <T : Any> cancel(proxy: T)
@@ -270,6 +311,38 @@ inline fun <reified T : Any> InfiniticClient.cancelWorkflow(
 inline fun <reified T : Any> InfiniticClient.cancelWorkflow(
     tag: String
 ) = cancelWorkflow(T::class.java, tag)
+
+/**
+ * (kotlin) Complete task by id
+ */
+inline fun <reified T : Any> InfiniticClient.completeTask(
+    id: UUID,
+    value: Any
+) = completeTask(T::class.java, id, value)
+
+/**
+ * (kotlin) Complete task by tag
+ */
+inline fun <reified T : Any> InfiniticClient.completeTask(
+    tag: String,
+    value: Any
+) = completeTask(T::class.java, tag, value)
+
+/**
+ * (kotlin) Complete workflow by id
+ */
+inline fun <reified T : Any> InfiniticClient.completeWorkflow(
+    id: UUID,
+    value: Any
+) = completeWorkflow(T::class.java, id, value)
+
+/**
+ * (kotlin) Complete workflow by tag
+ */
+inline fun <reified T : Any> InfiniticClient.completeWorkflow(
+    tag: String,
+    value: Any
+) = completeWorkflow(T::class.java, tag, value)
 
 /**
  * (kotlin) Retry task by id
