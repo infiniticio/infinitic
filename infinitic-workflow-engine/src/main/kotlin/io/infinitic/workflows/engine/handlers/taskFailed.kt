@@ -26,28 +26,27 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
-import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
-import io.infinitic.common.workflows.engine.messages.TaskCompleted
+import io.infinitic.common.workflows.data.commands.CommandStatusOngoingFailure
+import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
-internal suspend fun taskCompleted(
+internal suspend fun taskFailed(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TaskCompleted
+    msg: TaskFailed
 ) {
 
     when (msg.isWorkflowTask()) {
-        true -> workflowTaskCompleted(
+        true -> workflowTaskFailed(
             workflowEngineOutput,
             state,
             msg
         )
         false -> {
-            val commandStatus = CommandStatusCompleted(
-                CommandReturnValue(msg.taskReturnValue.serializedData),
+            val commandStatus = CommandStatusOngoingFailure(
+                msg.error,
                 state.workflowTaskIndex
             )
 

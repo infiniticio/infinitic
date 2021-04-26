@@ -62,7 +62,6 @@ fun CoroutineScope.startPulsarTaskEngines(
             commandsOutputChannel = commandsOutputChannel,
             output.sendToClient(),
             output.sendToTaskTagEngine(TopicType.EVENTS),
-            output.sendToTaskEngine(TopicType.EVENTS, name),
             output.sendToTaskEngineAfter(name),
             output.sendToWorkflowEngine(TopicType.EVENTS),
             output.sendToTaskExecutors(name),

@@ -23,26 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.workflows.engine.handlers
 
-import kotlinx.serialization.Serializable
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandStatusOngoingFailure
+import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.helpers.commandTerminated
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
-@Serializable
-data class TaskError(
-    val name: String,
-    val message: String?,
-    val stacktrace: String,
-    val cause: TaskError? = null
+internal suspend fun childWorkflowFailed(
+    workflowEngineOutput: WorkflowEngineOutput,
+    state: WorkflowState,
+    msg: ChildWorkflowFailed
 ) {
-    companion object {
-        fun from(e: Throwable): TaskError = TaskError(
-            name = e::class.java.name,
-            message = e.message,
-            stacktrace = e.stackTraceToString(),
-            cause = run {
-                val cause = e.cause
-                if (cause == e || cause == null) null else from(cause)
-            }
-        )
-    }
+    val commandStatus = CommandStatusOngoingFailure(msg.childWorkflowError, state.workflowTaskIndex)
+
+    commandTerminated(
+        workflowEngineOutput,
+        state,
+        msg.methodRunId,
+        CommandId(msg.childWorkflowId),
+        commandStatus
+    )
 }

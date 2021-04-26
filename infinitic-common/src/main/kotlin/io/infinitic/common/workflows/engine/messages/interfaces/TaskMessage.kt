@@ -23,28 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.steps
+package io.infinitic.common.workflows.engine.messages.interfaces
 
-import io.infinitic.common.data.Data
-import io.infinitic.common.serDe.SerializedData
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskName
 
-@Serializable(with = StepOutputSerializer::class)
-data class StepOutput(override val serializedData: SerializedData) : Data(serializedData) {
-    companion object {
-        fun from(data: Any?) = StepOutput(SerializedData.from(data))
-    }
-}
-
-object StepOutputSerializer : KSerializer<StepOutput> {
-    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
-    override fun serialize(encoder: Encoder, value: StepOutput) {
-        SerializedData.serializer().serialize(encoder, value.serializedData)
-    }
-    override fun deserialize(decoder: Decoder) =
-        StepOutput(SerializedData.serializer().deserialize(decoder))
+interface TaskMessage {
+    val taskId: TaskId
+    val taskName: TaskName
 }

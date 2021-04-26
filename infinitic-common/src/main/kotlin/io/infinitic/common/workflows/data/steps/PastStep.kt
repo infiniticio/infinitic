@@ -43,7 +43,9 @@ data class PastStep(
     var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
     @JsonIgnore
-    fun isTerminated() = stepStatus is StepStatusCompleted || stepStatus is StepStatusCanceled
+    fun isTerminated() = stepStatus is StepStatusCompleted ||
+        stepStatus is StepStatusCanceled ||
+        stepStatus is StepStatusFailed
 
     fun isTerminatedBy(pastCommand: PastCommand): Boolean {
         // returns false if already terminated
@@ -52,7 +54,7 @@ data class PastStep(
         step.update(pastCommand.commandId, pastCommand.commandStatus)
         stepStatus = step.stepStatus()
         // returns true only if newly terminated
-        return isTerminated()
+        return isTerminated() || stepStatus is StepStatusOngoingFailure
     }
 
     fun isSimilarTo(newStep: NewStep) = newStep.stepHash == stepHash

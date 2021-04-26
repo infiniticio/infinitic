@@ -23,23 +23,27 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.exceptions.deferred
 
-import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.tasks.data.Error
-import io.infinitic.common.tasks.data.TaskOptions
-import java.util.UUID
+import io.infinitic.exceptions.UserException
 
-interface TaskContext {
-    val register: TaskExecutorRegister
-    val client: InfiniticClient
-    val id: UUID
-    val workflowId: UUID?
-    val workflowName: String?
-    val attemptId: UUID
-    val retrySequence: Int
-    val retryIndex: Int
-    val lastError: Error?
-    val meta: MutableMap<String, ByteArray>
-    val options: TaskOptions
-}
+sealed class DeferredException(
+    msg: String,
+    help: String
+) : UserException("$msg.\n$help")
+
+object CancellationException : DeferredException(
+    msg = "Waiting for a canceled deferred",
+    help = "You should kill this workflow, or try / catch this exception in the workflow"
+)
+
+class FailureException(val error: Error) : DeferredException(
+    msg = "Waiting for a failed deferred: $error",
+    help = "You should retry it, or try / catch this exception in the workflow"
+)
+
+object TimeoutException : DeferredException(
+    msg = "Waiting for a timed-out deferred",
+    help = "You should retry it, or try / catch this exception in the workflow"
+)

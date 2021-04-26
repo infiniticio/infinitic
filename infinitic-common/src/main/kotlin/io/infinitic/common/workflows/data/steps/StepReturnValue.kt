@@ -23,35 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.commands
+package io.infinitic.common.workflows.data.steps
 
-import io.infinitic.common.tasks.data.Error
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.common.data.Data
+import io.infinitic.common.serDe.SerializedData
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-@Serializable
-sealed class CommandStatus {
-    fun isTerminated() = this is CommandStatusCompleted || this is CommandStatusCanceled
+@Serializable(with = StepOutputSerializer::class)
+data class StepReturnValue(override val serializedData: SerializedData) : Data(serializedData) {
+    companion object {
+        fun from(data: Any?) = StepReturnValue(SerializedData.from(data))
+    }
 }
 
-@Serializable
-object CommandStatusOngoing : CommandStatus() {
-    override fun equals(other: Any?) = javaClass == other?.javaClass
+object StepOutputSerializer : KSerializer<StepReturnValue> {
+    override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
+    override fun serialize(encoder: Encoder, value: StepReturnValue) {
+        SerializedData.serializer().serialize(encoder, value.serializedData)
+    }
+    override fun deserialize(decoder: Decoder) =
+        StepReturnValue(SerializedData.serializer().deserialize(decoder))
 }
-
-@Serializable
-data class CommandStatusCompleted(
-    val returnValue: CommandReturnValue,
-    val completionWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()
-
-@Serializable
-data class CommandStatusCanceled(
-    val cancellationWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()
-
-@Serializable
-data class CommandStatusOngoingFailure(
-    val error: Error,
-    val failureWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()

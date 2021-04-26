@@ -38,6 +38,7 @@ data class WorkflowEngineEnvelope(
     val cancelWorkflow: CancelWorkflow? = null,
     val completeWorkflow: CompleteWorkflow? = null,
     val sendToChannel: SendToChannel? = null,
+    val childWorkflowFailed: ChildWorkflowFailed? = null,
     val childWorkflowCanceled: ChildWorkflowCanceled? = null,
     val childWorkflowCompleted: ChildWorkflowCompleted? = null,
     val timerCompleted: TimerCompleted? = null,
@@ -52,6 +53,7 @@ data class WorkflowEngineEnvelope(
             cancelWorkflow,
             completeWorkflow,
             sendToChannel,
+            childWorkflowFailed,
             childWorkflowCanceled,
             childWorkflowCompleted,
             timerCompleted,
@@ -100,6 +102,11 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.EMIT_TO_CHANNEL,
                 sendToChannel = msg
             )
+            is ChildWorkflowFailed -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED,
+                childWorkflowFailed = msg
+            )
             is ChildWorkflowCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED,
@@ -145,6 +152,7 @@ data class WorkflowEngineEnvelope(
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
         WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
         WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendToChannel!!
+        WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childWorkflowFailed!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!

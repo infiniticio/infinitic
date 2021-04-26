@@ -30,7 +30,7 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.common.tasks.data.TaskError
+import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
@@ -79,7 +79,7 @@ class TaskExecutor(
             attemptId = message.taskAttemptId.id,
             retrySequence = message.taskRetrySequence.int,
             retryIndex = message.taskRetryIndex.int,
-            lastError = message.lastTaskError,
+            lastError = message.lastError,
             meta = message.taskMeta.map.toMutableMap(),
             options = message.taskOptions,
             clientFactory
@@ -193,7 +193,7 @@ class TaskExecutor(
             taskRetrySequence = message.taskRetrySequence,
             taskRetryIndex = message.taskRetryIndex,
             taskAttemptDelayBeforeRetry = delay,
-            taskAttemptError = TaskError.from(error),
+            taskAttemptError = Error.from(error),
             taskMeta = taskMeta
         )
 

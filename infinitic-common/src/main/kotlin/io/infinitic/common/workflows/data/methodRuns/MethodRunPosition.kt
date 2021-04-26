@@ -35,7 +35,13 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = MethodRunPositionSerializer::class)
 data class MethodRunPosition(val position: String) {
+    companion object {
+        const val POSITION_SEPARATOR = "."
+    }
+
     override fun toString() = position
+
+    fun isOnMainPath() = ! position.contains(POSITION_SEPARATOR)
 }
 
 object MethodRunPositionSerializer : KSerializer<MethodRunPosition> {

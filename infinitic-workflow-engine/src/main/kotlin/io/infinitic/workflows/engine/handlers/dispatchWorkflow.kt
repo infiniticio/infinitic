@@ -39,6 +39,10 @@ internal suspend fun dispatchWorkflow(
 ): WorkflowState {
     val methodRun = MethodRun(
         methodRunId = MethodRunId(message.workflowId.id),
+        waitingClients = when (message.clientWaiting) {
+            true -> mutableSetOf(message.clientName)
+            false -> mutableSetOf()
+        },
         parentWorkflowId = message.parentWorkflowId,
         parentWorkflowName = message.parentWorkflowName,
         parentMethodRunId = message.parentMethodRunId,
@@ -50,10 +54,6 @@ internal suspend fun dispatchWorkflow(
 
     val state = WorkflowState(
         workflowStatus = WorkflowStatus.ALIVE,
-        waitingClients = when (message.clientWaiting) {
-            true -> mutableSetOf(message.clientName)
-            false -> mutableSetOf()
-        },
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,

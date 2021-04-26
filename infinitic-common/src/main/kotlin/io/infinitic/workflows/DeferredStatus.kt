@@ -29,4 +29,5 @@ enum class DeferredStatus {
     ONGOING,
     COMPLETED,
     CANCELED,
+    FAILED
 }

@@ -33,8 +33,8 @@ import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
@@ -135,6 +135,6 @@ data class TaskAttemptFailed(
     override val taskRetrySequence: TaskRetrySequence,
     override val taskRetryIndex: TaskRetryIndex,
     override val taskAttemptDelayBeforeRetry: MillisDuration?,
-    val taskAttemptError: TaskError,
+    val taskAttemptError: Error,
     val taskMeta: TaskMeta
 ) : TaskEngineMessage(), FailingTaskAttemptMessage

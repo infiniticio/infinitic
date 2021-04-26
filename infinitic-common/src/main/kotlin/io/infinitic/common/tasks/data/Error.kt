@@ -23,16 +23,26 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.exceptions.workflows
+package io.infinitic.common.tasks.data
 
-import io.infinitic.exceptions.UserException
+import kotlinx.serialization.Serializable
 
-sealed class WorkflowException(
-    msg: String,
-    help: String
-) : UserException("$msg.\n$help")
-
-object CanceledDeferredException : WorkflowException(
-    msg = "You are trying to wait for the result of a Deferred that was canceled",
-    help = "You should kill this instance, or try / catch this exception"
-)
+@Serializable
+data class Error(
+    val errorName: String,
+    val errorMessage: String?,
+    val errorStacktrace: String,
+    val errorCause: Error? = null
+) {
+    companion object {
+        fun from(e: Throwable): Error = Error(
+            errorName = e::class.java.name,
+            errorMessage = e.message,
+            errorStacktrace = e.stackTraceToString(),
+            errorCause = run {
+                val cause = e.cause
+                if (cause == e || cause == null) null else from(cause)
+            }
+        )
+    }
+}

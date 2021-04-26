@@ -72,6 +72,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.infinitic.common.clients.messages.TaskCanceled as TaskCanceledInClient
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClient
+import io.infinitic.common.clients.messages.TaskFailed as TaskFailedInClient
 import io.infinitic.common.workflows.engine.messages.TaskCanceled as TaskCanceledInWorkflow
 import io.infinitic.common.workflows.engine.messages.TaskCompleted as TaskCompletedInWorkflow
 
@@ -239,7 +240,7 @@ internal class TaskEngineTests : StringSpec({
         // given
         val stateIn = random<TaskState>(
             mapOf(
-                "clientWaiting" to mutableSetOf(ClientName("foo"), ClientName("bar")),
+                "waitingClients" to mutableSetOf(ClientName("foo"), ClientName("bar")),
                 "taskStatus" to TaskStatus.RUNNING_OK,
                 "taskTags" to setOf(TaskTag("foo"), TaskTag("bar"))
             )
@@ -282,6 +283,7 @@ internal class TaskEngineTests : StringSpec({
         // given
         val stateIn = random<TaskState>(
             mapOf(
+                "waitingClients" to mutableSetOf(ClientName("foo"), ClientName("bar")),
                 "taskStatus" to TaskStatus.RUNNING_OK
             )
         )
@@ -299,6 +301,8 @@ internal class TaskEngineTests : StringSpec({
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
             sendToWorkflowEngine(ofType<TaskFailed>())
+            sendToClient(ofType<TaskFailedInClient>())
+            sendToClient(ofType<TaskFailedInClient>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
             taskStateStorage.putState(msgIn.taskId, ofType())
         }

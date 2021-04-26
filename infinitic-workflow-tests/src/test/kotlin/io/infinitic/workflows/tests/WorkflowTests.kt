@@ -49,6 +49,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.exceptions.clients.CanceledWorkflowException
+import io.infinitic.exceptions.clients.FailedWorkflowException
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -111,7 +112,7 @@ class WorkflowTests : StringSpec({
 
     "empty Workflow" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { empty() }
@@ -124,7 +125,7 @@ class WorkflowTests : StringSpec({
     "get id from context" {
         var result: UUID
         var deferred: Deferred<UUID>
-        // run system
+        // run
         coroutineScope {
             init()
             deferred = client.async(workflowA) { context1() }
@@ -136,7 +137,7 @@ class WorkflowTests : StringSpec({
     "get tags from context" {
         var result: Set<String>
         var deferred: Deferred<Set<String>>
-        // run system
+        // run
         coroutineScope {
             init()
             deferred = client.async(workflowATagged) { context2() }
@@ -147,7 +148,7 @@ class WorkflowTests : StringSpec({
 
     "get meta from context" {
         var result: WorkflowMeta
-        // run system
+        // run
         coroutineScope {
             init()
             val workflowAMeta = client.newWorkflow(WorkflowA::class.java, meta = mapOf("foo" to "bar".toByteArray()))
@@ -160,7 +161,7 @@ class WorkflowTests : StringSpec({
     "get workflow id from task context" {
         var result: UUID?
         var deferred: Deferred<UUID?>
-        // run system
+        // run
         coroutineScope {
             init()
             deferred = client.async(workflowA) { context4() }
@@ -171,7 +172,7 @@ class WorkflowTests : StringSpec({
 
     "get workflow name from task context" {
         var result: String?
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { context5() }
@@ -182,7 +183,7 @@ class WorkflowTests : StringSpec({
 
     "Simple Sequential Workflow" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { seq1() }
@@ -194,7 +195,7 @@ class WorkflowTests : StringSpec({
 
     "Wait for synchronous Workflow" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             result = workflowA.seq1()
@@ -205,7 +206,7 @@ class WorkflowTests : StringSpec({
 
     "Wait for asynchronous Workflow" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { seq1() }
@@ -217,7 +218,7 @@ class WorkflowTests : StringSpec({
 
     "Sequential Workflow with an async task" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { seq2() }
@@ -229,7 +230,7 @@ class WorkflowTests : StringSpec({
 
     "Sequential Workflow with an async branch" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { seq3() }
@@ -241,7 +242,7 @@ class WorkflowTests : StringSpec({
 
     "Sequential Workflow with an async branch with 2 tasks" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { seq4() }
@@ -253,7 +254,7 @@ class WorkflowTests : StringSpec({
 
     "Test Deferred methods" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { deferred1() }
@@ -265,7 +266,7 @@ class WorkflowTests : StringSpec({
 
     "Or step with 3 async tasks" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { or1() }
@@ -277,7 +278,7 @@ class WorkflowTests : StringSpec({
 
     "Combined And/Or step with 3 async tasks" {
         var result: Any
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { or2() }
@@ -289,7 +290,7 @@ class WorkflowTests : StringSpec({
 
     "Or step with 3 async tasks through list" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { or3() }
@@ -301,7 +302,7 @@ class WorkflowTests : StringSpec({
 
     "Or step with Status checking" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { or4() }
@@ -313,7 +314,7 @@ class WorkflowTests : StringSpec({
 
     "And step with 3 async tasks" {
         var result: List<String>
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { and1() }
@@ -325,7 +326,7 @@ class WorkflowTests : StringSpec({
 
     "And step with 3 async tasks through list" {
         var result: List<String>
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { and2() }
@@ -337,7 +338,7 @@ class WorkflowTests : StringSpec({
 
     "And step with 3 async tasks through large list" {
         var result: List<String>
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { and3() }
@@ -349,7 +350,7 @@ class WorkflowTests : StringSpec({
 
     "Inline task" {
         var id: UUID
-        // run system
+        // run
         coroutineScope {
             init()
             id = client.async(workflowA) { inline1() }.id
@@ -360,7 +361,7 @@ class WorkflowTests : StringSpec({
 
     "Inline task with asynchronous task inside" {
         var id: UUID
-        // run system
+        // run
         coroutineScope {
             init()
             id = client.async(workflowA) { inline2() }.id
@@ -371,18 +372,18 @@ class WorkflowTests : StringSpec({
 
     "Inline task with synchronous task inside" {
         var id: UUID
-        // run system
+        // run
         coroutineScope {
             init()
             id = client.async(workflowA) { inline3() }.id
         }
-        // check that the w is not terminated
+        // check that the w is NOT terminated
         workflowStateStorage.getState(WorkflowId(id)) shouldNotBe null
     }
 
     "Sequential Child Workflow" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { child1() }
@@ -394,7 +395,7 @@ class WorkflowTests : StringSpec({
 
     "Asynchronous Child Workflow" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { child2() }
@@ -406,7 +407,7 @@ class WorkflowTests : StringSpec({
 
     "Nested Child Workflow" {
         var result: Long
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowB) { factorial(14) }
@@ -418,7 +419,7 @@ class WorkflowTests : StringSpec({
 
     "Check prop1" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { prop1() }
@@ -430,7 +431,7 @@ class WorkflowTests : StringSpec({
 
     "Check prop2" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { prop2() }
@@ -442,7 +443,7 @@ class WorkflowTests : StringSpec({
 
     "Check prop3" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { prop3() }
@@ -454,7 +455,7 @@ class WorkflowTests : StringSpec({
 
     "Check prop4" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { prop4() }
@@ -466,7 +467,7 @@ class WorkflowTests : StringSpec({
 
     "Check prop5" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { prop5() }
@@ -478,7 +479,7 @@ class WorkflowTests : StringSpec({
 
     "Check prop6" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { prop6() }
@@ -490,7 +491,7 @@ class WorkflowTests : StringSpec({
 
     "Check prop7" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { prop7() }
@@ -502,7 +503,7 @@ class WorkflowTests : StringSpec({
 
     "Check prop6 sync" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             result = workflowA.prop6()
@@ -511,7 +512,7 @@ class WorkflowTests : StringSpec({
     }
 
     "Check multiple sync" {
-        // run system
+        // run
         var result1: String
         var result2: String
         coroutineScope {
@@ -525,7 +526,7 @@ class WorkflowTests : StringSpec({
 
     "Waiting for event, sent after dispatched" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel1() }
@@ -538,7 +539,7 @@ class WorkflowTests : StringSpec({
 
     "Waiting for event, sent by id" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel1() }
@@ -551,7 +552,7 @@ class WorkflowTests : StringSpec({
 
     "Waiting for event, sent by tag" {
         var result: String
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowATagged) { channel1() }
@@ -564,7 +565,7 @@ class WorkflowTests : StringSpec({
 
     "Waiting for event, sent to the right channel" {
         var result: Any
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel2() }
@@ -577,7 +578,7 @@ class WorkflowTests : StringSpec({
 
     "Waiting for event but sent to the wrong channel" {
         var result: Any
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel2() }
@@ -590,7 +591,7 @@ class WorkflowTests : StringSpec({
 
     "Sending event before waiting for it prevents catching" {
         var result: Any
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel3() }
@@ -604,7 +605,7 @@ class WorkflowTests : StringSpec({
     "Waiting for Obj event" {
         var result: Obj
         val obj1 = Obj1("foo", 42)
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel4() }
@@ -619,7 +620,7 @@ class WorkflowTests : StringSpec({
         var result: Obj
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel4bis() }
@@ -636,7 +637,7 @@ class WorkflowTests : StringSpec({
         var result: Obj
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel4ter() }
@@ -653,7 +654,7 @@ class WorkflowTests : StringSpec({
         var result: Obj
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel5() }
@@ -671,7 +672,7 @@ class WorkflowTests : StringSpec({
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel5bis() }
@@ -691,7 +692,7 @@ class WorkflowTests : StringSpec({
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel5ter() }
@@ -710,7 +711,7 @@ class WorkflowTests : StringSpec({
         var result: String
         val obj1 = Obj1("foo", 6)
         val obj2 = Obj2("bar", 7)
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowA) { channel6() }
@@ -726,7 +727,7 @@ class WorkflowTests : StringSpec({
     "Tag should be added and deleted after completion" {
         var result: String
         var id: UUID
-        // run system
+        // run
         coroutineScope {
             init()
             val deferred = client.async(workflowATagged) { channel1() }
@@ -747,7 +748,7 @@ class WorkflowTests : StringSpec({
 
     "Canceling async workflow" {
         var deferred: Deferred<String>
-        // run system
+        // run
         coroutineScope {
             init()
             deferred = client.async(workflowA) { channel1() }
@@ -758,7 +759,7 @@ class WorkflowTests : StringSpec({
     }
 
     "Canceling sync workflow" {
-        // run system
+        // run
         coroutineScope {
             init()
             launch { client.cancel(workflowA) }
@@ -768,7 +769,7 @@ class WorkflowTests : StringSpec({
 
     "Canceling sync workflow with deferred" {
         var deferred: Deferred<String>
-        // run system
+        // run
         coroutineScope {
             init()
             deferred = client.async(workflowA) { channel1() }
@@ -779,15 +780,27 @@ class WorkflowTests : StringSpec({
         workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
     }
 
-//    "Canceling child workflow should throw exception" {
-//        // run system
-//        coroutineScope {
-//            init()
-//            shouldThrow<CanceledDeferredException> {
-//                workflowB.cancelChild()
-//            }
-//        }
-//    }
+    "try/catch a failing task" {
+        var result: String
+        // run
+        coroutineScope {
+            init()
+            result = workflowA.failing1()
+        }
+        result shouldBe "ko"
+    }
+
+    "Canceling child workflow should throw exception" {
+        val e: Exception
+        // run
+        coroutineScope {
+            init()
+            e = shouldThrow<FailedWorkflowException> {
+                workflowB.cancelChild()
+            }
+        }
+        println(e)
+    }
 })
 
 fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {

@@ -23,23 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tasks
+package io.infinitic.common.clients.messages.interfaces
 
-import io.infinitic.clients.InfiniticClient
-import io.infinitic.common.tasks.data.Error
-import io.infinitic.common.tasks.data.TaskOptions
-import java.util.UUID
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 
-interface TaskContext {
-    val register: TaskExecutorRegister
-    val client: InfiniticClient
-    val id: UUID
-    val workflowId: UUID?
-    val workflowName: String?
-    val attemptId: UUID
-    val retrySequence: Int
-    val retryIndex: Int
-    val lastError: Error?
-    val meta: MutableMap<String, ByteArray>
-    val options: TaskOptions
+interface WorkflowMessage {
+    val workflowId: WorkflowId
 }

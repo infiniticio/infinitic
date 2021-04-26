@@ -26,13 +26,14 @@
 package io.infinitic.common.workflows.engine.state
 
 import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -49,14 +50,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class WorkflowState(
     /**
-     * Workflow's mode
+     * Workflow's status
      */
     var workflowStatus: WorkflowStatus,
-
-    /**
-     * clients synchronously waiting for the returned value
-     */
-    val waitingClients: MutableSet<ClientName>,
 
     /**
      * Id of last handled message (used to ensure idempotency)
@@ -89,12 +85,22 @@ data class WorkflowState(
     val workflowMeta: WorkflowMeta,
 
     /**
-     * Id of WorkflowTask currently running (max one at a time)
+     * Id of WorkflowTask currently running
      */
     var runningWorkflowTaskId: TaskId? = null,
 
     /**
-     * Id of WorkflowTask currently running (max one at a time)
+     * MethodRunId of WorkflowTask currently running
+     */
+    var runningMethodRunId: MethodRunId? = null,
+
+    /**
+     * Position of the step that triggered WorkflowTask currently running
+     */
+    var runningMethodRunPosition: MethodRunPosition? = null,
+
+    /**
+     * Instant when WorkflowTask currently running was triggered
      */
     var runningWorkflowTaskInstant: MillisInstant? = null,
 
@@ -143,4 +149,6 @@ data class WorkflowState(
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
+
+    fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
 }

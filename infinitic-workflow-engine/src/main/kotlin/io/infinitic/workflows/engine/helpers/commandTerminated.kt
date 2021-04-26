@@ -27,7 +27,6 @@ package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -43,8 +42,8 @@ internal suspend fun commandTerminated(
     val methodRun = getMethodRun(state, methodRunId)
     val pastCommand = getPastCommand(methodRun, commandId)
 
-    // do nothing if this command is not ongoing (could have been canceled)
-    if (pastCommand.commandStatus !is CommandStatusOngoing) return
+    // do nothing if this command is already terminated (canceled or completed, failed is considered transient)
+    if (pastCommand.commandStatus.isTerminated()) return
 
     // update command status
     pastCommand.commandStatus = commandStatus

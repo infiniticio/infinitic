@@ -31,7 +31,7 @@ import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.tasks.data.TaskError
+import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -90,12 +90,12 @@ object TestFactory {
                 val sub = MetricsGlobalMessage::class.sealedSubclasses.shuffled().first()
                 MetricsGlobalEnvelope.from(random(sub))
             }
-            .randomize(TaskError::class.java) {
-                TaskError(
-                    name = random(),
-                    stacktrace = random(),
-                    message = random(),
-                    cause = null
+            .randomize(Error::class.java) {
+                Error(
+                    errorName = random(),
+                    errorStacktrace = random(),
+                    errorMessage = random(),
+                    errorCause = null
                 )
             }
 

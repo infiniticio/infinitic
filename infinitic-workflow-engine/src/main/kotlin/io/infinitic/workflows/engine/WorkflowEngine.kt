@@ -26,6 +26,7 @@
 package io.infinitic.workflows.engine
 
 import io.infinitic.common.clients.messages.UnknownWorkflow
+import io.infinitic.common.clients.messages.WorkflowAlreadyCompleted
 import io.infinitic.common.clients.messages.WorkflowCanceled
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
@@ -35,6 +36,7 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
+import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
@@ -49,9 +51,12 @@ import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.childWorkflowCanceled
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
+import io.infinitic.workflows.engine.handlers.childWorkflowFailed
 import io.infinitic.workflows.engine.handlers.dispatchWorkflow
 import io.infinitic.workflows.engine.handlers.sendToChannel
+import io.infinitic.workflows.engine.handlers.taskCanceled
 import io.infinitic.workflows.engine.handlers.taskCompleted
+import io.infinitic.workflows.engine.handlers.taskFailed
 import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
@@ -127,8 +132,9 @@ class WorkflowEngine(
 
         // check is this workflowTask is the current one
         // (a workflowTask can be dispatched twice if the engine is shutdown while processing a workflowTask)
-        if (message.isWorkflowTaskCompleted() &&
-            (message as TaskCompleted).taskId != state.runningWorkflowTaskId
+        if (message.isWorkflowTask() &&
+            message is TaskCompleted &&
+            message.taskId != state.runningWorkflowTaskId
         ) {
             logDiscardingMessage(message, "as workflowTask is not the current one")
 
@@ -141,8 +147,8 @@ class WorkflowEngine(
         // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
         // except also for WaitWorkflow, as we want to handle it asap to avoid terminating the workflow before it
         if (state.runningWorkflowTaskId != null &&
-            ! message.isWorkflowTaskCompleted() &&
-            message !is WaitWorkflow
+            message !is WaitWorkflow &&
+            ! message.isWorkflowTask()
         ) {
             // buffer this message
             state.bufferedMessages.add(message)
@@ -175,7 +181,8 @@ class WorkflowEngine(
         when (message) {
             is CancelWorkflow -> cancelWorkflow(output, state)
             is SendToChannel -> sendToChannel(output, state, message)
-            is WaitWorkflow -> waitWorkflow(state, message)
+            is WaitWorkflow -> waitWorkflow(output, state, message)
+            is ChildWorkflowFailed -> childWorkflowFailed(output, state, message)
             is ChildWorkflowCanceled -> childWorkflowCanceled(output, state, message)
             is ChildWorkflowCompleted -> childWorkflowCompleted(output, state, message)
             is TimerCompleted -> timerCompleted(output, state, message)
@@ -198,15 +205,17 @@ class WorkflowEngine(
             }
             WorkflowStatus.CANCELED -> {
                 // send cancellation info to waiting clients
-                state.waitingClients.map {
-                    val workflowCanceled = WorkflowCanceled(
-                        clientName = it,
-                        workflowId = state.workflowId,
-                    )
-                    output.sendEventsToClient(workflowCanceled)
+                state.methodRuns.forEach { methodRun ->
+                    methodRun.waitingClients.forEach {
+                        val workflowCanceled = WorkflowCanceled(
+                            clientName = it,
+                            workflowId = state.workflowId,
+                        )
+                        output.sendEventsToClient(workflowCanceled)
+                    }
+                    // remove tags reference to this instance
+                    removeTags(output, state)
                 }
-                // remove tags reference to this instance
-                removeTags(output, state)
             }
         }
     }
@@ -222,15 +231,13 @@ class WorkflowEngine(
         }
     }
 
-    private suspend fun taskFailed(workflowEngineOutput: WorkflowEngineOutput, state: WorkflowState, msg: TaskFailed) {
-//        TODO()
-    }
-
-    private suspend fun taskCanceled(workflowEngineOutput: WorkflowEngineOutput, state: WorkflowState, msg: TaskCanceled) {
-//        TODO()
-    }
-
-    private fun waitWorkflow(state: WorkflowState, msg: WaitWorkflow) {
-        state.waitingClients.add(msg.clientName)
+    private suspend fun waitWorkflow(output: WorkflowEngineOutput, state: WorkflowState, msg: WaitWorkflow) {
+        when (val main = state.methodRuns.find { it.methodRunId.id == msg.workflowId.id }) {
+            null -> {
+                val workflowAlreadyCompleted = WorkflowAlreadyCompleted(msg.clientName, msg.workflowId)
+                output.sendEventsToClient(workflowAlreadyCompleted)
+            }
+            else -> main.waitingClients.add(msg.clientName)
+        }
     }
 }

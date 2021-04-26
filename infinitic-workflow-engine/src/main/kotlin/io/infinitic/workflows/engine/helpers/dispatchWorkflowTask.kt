@@ -47,7 +47,7 @@ internal suspend fun dispatchWorkflowTask(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,
-    branchPosition: MethodRunPosition = MethodRunPosition("")
+    methodRunPosition: MethodRunPosition = MethodRunPosition("")
 ) {
     state.workflowTaskIndex = state.workflowTaskIndex + 1
 
@@ -61,7 +61,7 @@ internal suspend fun dispatchWorkflowTask(
         workflowPropertiesHashValue = state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
         workflowTaskIndex = state.workflowTaskIndex,
         methodRun = methodRun,
-        targetPosition = branchPosition
+        targetPosition = methodRunPosition
     )
 
     // defines workflow task
@@ -84,6 +84,10 @@ internal suspend fun dispatchWorkflowTask(
     // dispatch workflow task
     workflowEngineOutput.sendToTaskEngine(workflowTask)
 
-    state.runningWorkflowTaskId = workflowTask.taskId
-    state.runningWorkflowTaskInstant = MillisInstant.now()
+    with(state) {
+        runningWorkflowTaskId = workflowTask.taskId
+        runningWorkflowTaskInstant = MillisInstant.now()
+        runningMethodRunId = methodRun.methodRunId
+        runningMethodRunPosition = methodRunPosition
+    }
 }

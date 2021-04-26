@@ -30,8 +30,8 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.messages.Message
+import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
@@ -60,7 +60,7 @@ data class ExecuteTaskAttempt(
     val taskAttemptId: TaskAttemptId,
     val taskRetrySequence: TaskRetrySequence,
     val taskRetryIndex: TaskRetryIndex,
-    val lastTaskError: TaskError?,
+    val lastError: Error?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,

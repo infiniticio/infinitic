@@ -31,20 +31,20 @@ import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandStatusCanceled
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
+import io.infinitic.common.workflows.data.commands.CommandStatusOngoingFailure
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 import kotlin.Int.Companion.MAX_VALUE
-import kotlin.Int.Companion.MIN_VALUE
 
 @Serializable
 sealed class Step {
-    fun isTerminated() = isTerminatedAtWorkflowTaskIndex(WorkflowTaskIndex(MAX_VALUE))
-    fun stepStatus() = stepStatusAtWorkflowTaskIndex(WorkflowTaskIndex(MAX_VALUE))
+    fun isTerminated() = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
+    fun stepStatus() = stepStatusAt(WorkflowTaskIndex(MAX_VALUE))
 
-    abstract fun isTerminatedAtWorkflowTaskIndex(index: WorkflowTaskIndex): Boolean
-    abstract fun stepStatusAtWorkflowTaskIndex(index: WorkflowTaskIndex): StepStatus
+    abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
+    abstract fun stepStatusAt(index: WorkflowTaskIndex): StepStatus
 
     /*
      * hash function is defined to exclude commandStatus and provide a hopefully unique hash linked to the structure of the step
@@ -59,25 +59,27 @@ sealed class Step {
 
         override fun hash() = StepHash(SerializedData.from(commandId).hash())
 
-        override fun isTerminatedAtWorkflowTaskIndex(index: WorkflowTaskIndex) = when (stepStatusAtWorkflowTaskIndex(index)) {
-            is StepStatusCanceled -> true
-            is StepStatusCompleted -> true
+        override fun isTerminatedAt(index: WorkflowTaskIndex) = when (stepStatusAt(index)) {
             is StepStatusOngoing -> false
+            is StepStatusOngoingFailure -> true
+            is StepStatusCompleted -> true
+            is StepStatusCanceled -> true
+            is StepStatusFailed -> thisShouldNotHappen()
         }
 
-        override fun stepStatusAtWorkflowTaskIndex(index: WorkflowTaskIndex) = when (commandStatus) {
+        override fun stepStatusAt(index: WorkflowTaskIndex) = when (val status = commandStatus) {
             is CommandStatusOngoing -> StepStatusOngoing
-            is CommandStatusCompleted -> with(commandStatus as CommandStatusCompleted) {
-                when (index >= this.completionWorkflowTaskIndex) {
-                    true -> StepStatusCompleted(StepOutput.from(this.returnValue.get()), this.completionWorkflowTaskIndex)
-                    false -> StepStatusOngoing
-                }
+            is CommandStatusCompleted -> when (index >= status.completionWorkflowTaskIndex) {
+                true -> StepStatusCompleted(StepReturnValue.from(status.returnValue.get()), status.completionWorkflowTaskIndex)
+                false -> StepStatusOngoing
             }
-            is CommandStatusCanceled -> with(commandStatus as CommandStatusCanceled) {
-                when (index >= this.cancellationWorkflowTaskIndex) {
-                    true -> StepStatusCanceled(this.cancellationWorkflowTaskIndex)
-                    false -> StepStatusOngoing
-                }
+            is CommandStatusCanceled -> when (index >= status.cancellationWorkflowTaskIndex) {
+                true -> StepStatusCanceled(status.cancellationWorkflowTaskIndex)
+                false -> StepStatusOngoing
+            }
+            is CommandStatusOngoingFailure -> when (index >= status.failureWorkflowTaskIndex) {
+                true -> StepStatusOngoingFailure(status.error, status.failureWorkflowTaskIndex)
+                false -> StepStatusOngoing
             }
         }
 
@@ -92,27 +94,36 @@ sealed class Step {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        override fun isTerminatedAtWorkflowTaskIndex(index: WorkflowTaskIndex) = this.steps.all { s -> s.isTerminatedAtWorkflowTaskIndex(index) }
+        override fun isTerminatedAt(index: WorkflowTaskIndex) =
+            this.steps.all { it.isTerminatedAt(index) }
 
-        override fun stepStatusAtWorkflowTaskIndex(index: WorkflowTaskIndex): StepStatus {
-            val statuses = steps.map { it.stepStatusAtWorkflowTaskIndex(index) }
+        override fun stepStatusAt(index: WorkflowTaskIndex): StepStatus {
+            val statuses = steps.map { it.stepStatusAt(index) }
+
+            // if at least one step is canceled or ongoingFailure, then And(...steps) is the first of them
+            val firstTerminated = statuses
+                .filter { it is StepStatusOngoingFailure && it is StepStatusCanceled }
+                .minByOrNull {
+                    when (it) {
+                        is StepStatusOngoingFailure -> it.failureWorkflowTaskIndex
+                        is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
+                        is StepStatusCompleted, is StepStatusFailed, is StepStatusOngoing -> thisShouldNotHappen()
+                    }
+                }
+            if (firstTerminated != null) return firstTerminated
+
+            // if at least one step is ongoing, then And(...steps) is ongoing
             if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing
 
-            val maxIndex = statuses.maxOf {
-                when (it) {
-                    is StepStatusOngoing -> WorkflowTaskIndex(MIN_VALUE)
-                    is StepStatusCompleted -> it.completionWorkflowTaskIndex
-                    is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
-                }
-            }
-
+            // if all steps are completed, then And(...steps) is completed
             if (statuses.all { it is StepStatusCompleted }) {
-                val results = statuses.map { (it as StepStatusCompleted).completionResult.get() }
+                val maxIndex = statuses.maxOf { (it as StepStatusCompleted).completionWorkflowTaskIndex }
+                val results = statuses.map { (it as StepStatusCompleted).returnValue.get() }
 
-                return StepStatusCompleted(StepOutput.from(results), maxIndex)
+                return StepStatusCompleted(StepReturnValue.from(results), maxIndex)
             }
 
-            return StepStatusCanceled(maxIndex)
+            thisShouldNotHappen()
         }
     }
 
@@ -121,26 +132,32 @@ sealed class Step {
 
         override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
 
-        override fun isTerminatedAtWorkflowTaskIndex(index: WorkflowTaskIndex) = this.steps.any { s -> s.isTerminatedAtWorkflowTaskIndex(index) }
+        override fun isTerminatedAt(index: WorkflowTaskIndex) =
+            this.steps.any { it.isTerminatedAt(index) }
 
-        override fun stepStatusAtWorkflowTaskIndex(index: WorkflowTaskIndex): StepStatus {
-            val statuses = steps.map { it.stepStatusAtWorkflowTaskIndex(index) }
-            // if all steps are ongoing then returns StepStatusOngoing
-            if (statuses.all { it is StepStatusOngoing }) return StepStatusOngoing
-            // find first step not ongoing
-            val minStep = statuses.minByOrNull {
+        override fun stepStatusAt(index: WorkflowTaskIndex): StepStatus {
+            val statuses = steps.map { it.stepStatusAt(index) }
+
+            // if at least one step is completed, then Or(...steps) is the first completed
+            val firstCompleted = statuses
+                .filterIsInstance<StepStatusCompleted>()
+                .minByOrNull { it.completionWorkflowTaskIndex }
+            if (firstCompleted != null) return firstCompleted
+
+            // if at least one step is ongoing, then Or(...steps) is ongoing
+            if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing
+
+            // all steps are neither completed, neither ongoing => canceled, failed based on last one
+            val lastTerminated = statuses.maxByOrNull {
                 when (it) {
-                    is StepStatusOngoing -> WorkflowTaskIndex(MAX_VALUE)
-                    is StepStatusCompleted -> it.completionWorkflowTaskIndex
+                    is StepStatusOngoingFailure -> it.failureWorkflowTaskIndex
                     is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
+                    is StepStatusCompleted, is StepStatusFailed, is StepStatusOngoing -> thisShouldNotHappen()
                 }
-            }!!
-
-            return when (minStep) {
-                is StepStatusOngoing -> throw RuntimeException("This should not happen")
-                is StepStatusCompleted -> StepStatusCompleted(minStep.completionResult, minStep.completionWorkflowTaskIndex)
-                is StepStatusCanceled -> StepStatusCanceled(minStep.cancellationWorkflowTaskIndex)
             }
+            if (lastTerminated != null) return lastTerminated
+
+            thisShouldNotHappen()
         }
     }
 
@@ -150,8 +167,8 @@ sealed class Step {
     fun update(commandId: CommandId, commandStatus: CommandStatus): Step {
         when (this) {
             is Id -> if (this.commandId == commandId) this.commandStatus = commandStatus
-            is And -> this.steps = this.steps.map { s -> s.update(commandId, commandStatus) }
-            is Or -> this.steps = this.steps.map { s -> s.update(commandId, commandStatus) }
+            is And -> steps = steps.map { it.update(commandId, commandStatus) }
+            is Or -> steps = steps.map { it.update(commandId, commandStatus) }
         }
         return this.resolveOr().compose()
     }
@@ -159,13 +176,11 @@ sealed class Step {
     private fun resolveOr(): Step {
         when (this) {
             is Id -> Unit
-            is And -> this.steps = this.steps.map { s -> s.resolveOr() }
-            is Or ->
-                this.steps =
-                    if (this.isTerminated())
-                        listOf(this.steps.first { s -> s.isTerminated() }.resolveOr())
-                    else
-                        this.steps.map { s -> s.resolveOr() }
+            is And -> steps = steps.map { it.resolveOr() }
+            is Or -> steps = when (isTerminated()) {
+                true -> listOf(steps.first { it.isTerminated() }.resolveOr())
+                false -> steps.map { s -> s.resolveOr() }
+            }
         }
         return this
     }
@@ -173,8 +188,8 @@ sealed class Step {
     private fun compose(): Step {
         when (this) {
             is Id -> Unit
-            is And -> while (this.steps.any { s -> s is And || (s is Or && s.steps.count() == 1) }) {
-                this.steps = this.steps.fold(mutableListOf<Step>()) { l, s ->
+            is And -> while (steps.any { it is And || (it is Or && it.steps.count() == 1) }) {
+                steps = steps.fold(mutableListOf()) { l, s ->
                     return@fold when (s) {
                         is Id -> { l.add(s); l }
                         is And -> { l.addAll(s.steps); l }
@@ -182,8 +197,8 @@ sealed class Step {
                     }
                 }
             }
-            is Or -> while (this.steps.any { s -> s is Or || (s is And && s.steps.count() == 1) }) {
-                this.steps = this.steps.fold(mutableListOf<Step>()) { l, s ->
+            is Or -> while (steps.any { it is Or || (it is And && it.steps.count() == 1) }) {
+                steps = steps.fold(mutableListOf()) { l, s ->
                     return@fold when (s) {
                         is Id -> { l.add(s); l }
                         is And -> { if (s.steps.count() == 1) l.addAll(s.steps) else l.add(s); l }
@@ -194,4 +209,6 @@ sealed class Step {
         }
         return this
     }
+
+    protected fun thisShouldNotHappen(): Nothing = throw RuntimeException("this should not happen")
 }

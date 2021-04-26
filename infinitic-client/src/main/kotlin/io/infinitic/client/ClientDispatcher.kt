@@ -31,10 +31,15 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskCanceled
 import io.infinitic.common.clients.messages.TaskCompleted
+import io.infinitic.common.clients.messages.TaskFailed
 import io.infinitic.common.clients.messages.UnknownTask
 import io.infinitic.common.clients.messages.UnknownWorkflow
+import io.infinitic.common.clients.messages.WorkflowAlreadyCompleted
 import io.infinitic.common.clients.messages.WorkflowCanceled
 import io.infinitic.common.clients.messages.WorkflowCompleted
+import io.infinitic.common.clients.messages.WorkflowFailed
+import io.infinitic.common.clients.messages.interfaces.TaskMessage
+import io.infinitic.common.clients.messages.interfaces.WorkflowMessage
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -62,9 +67,12 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
+import io.infinitic.exceptions.clients.AlreadyCompletedWorkflowException
 import io.infinitic.exceptions.clients.CanceledTaskException
 import io.infinitic.exceptions.clients.CanceledWorkflowException
 import io.infinitic.exceptions.clients.ChannelUsedOnNewWorkflowException
+import io.infinitic.exceptions.clients.FailedTaskException
+import io.infinitic.exceptions.clients.FailedWorkflowException
 import io.infinitic.exceptions.clients.MultipleMethodCallsException
 import io.infinitic.exceptions.clients.NoMethodCallException
 import io.infinitic.exceptions.clients.NoSendMethodCallException
@@ -168,26 +176,29 @@ internal class ClientDispatcher(
         }
 
         // wait for result
-        val taskresult = runBlocking {
+        val taskResult = runBlocking {
             responseFlow.first {
-                (it is TaskCompleted && it.taskId == deferredTask.taskId) ||
-                    (it is TaskCanceled && it.taskId == deferredTask.taskId) ||
-                    (it is UnknownTask && it.taskId == deferredTask.taskId)
+                it is TaskMessage && it.taskId == deferredTask.taskId
             }
         }
 
         @Suppress("UNCHECKED_CAST")
-        return when (taskresult) {
-            is TaskCompleted -> taskresult.taskReturnValue.get() as T
+        return when (taskResult) {
+            is TaskCompleted -> taskResult.taskReturnValue.get() as T
             is TaskCanceled -> throw CanceledTaskException(
                 "${deferredTask.taskId}",
                 "${deferredTask.taskName}"
+            )
+            is TaskFailed -> throw FailedTaskException(
+                "${deferredTask.taskId}",
+                "${deferredTask.taskName}",
+                taskResult.error.errorStacktrace
             )
             is UnknownTask -> throw UnknownTaskException(
                 "${deferredTask.taskId}",
                 "${deferredTask.taskName}"
             )
-            else -> throw RuntimeException("This should not happen")
+            else -> throw RuntimeException("Unexpected ${taskResult::class}")
         }
     }
 
@@ -267,26 +278,33 @@ internal class ClientDispatcher(
         }
 
         // wait for result
-        val result = runBlocking {
+        val workflowResult = runBlocking {
             responseFlow.first {
-                (it is WorkflowCompleted && it.workflowId == deferredWorkflow.workflowId) ||
-                    (it is WorkflowCanceled && it.workflowId == deferredWorkflow.workflowId) ||
-                    (it is UnknownWorkflow && it.workflowId == deferredWorkflow.workflowId)
+                (it is WorkflowMessage && it.workflowId == deferredWorkflow.workflowId)
             }
         }
 
         @Suppress("UNCHECKED_CAST")
-        return when (result) {
-            is WorkflowCompleted -> result.workflowReturnValue.get() as T
+        return when (workflowResult) {
+            is WorkflowCompleted -> workflowResult.workflowReturnValue.get() as T
             is WorkflowCanceled -> throw CanceledWorkflowException(
                 "${deferredWorkflow.workflowId}",
                 "${deferredWorkflow.workflowName}"
+            )
+            is WorkflowFailed -> throw FailedWorkflowException(
+                "${deferredWorkflow.workflowId}",
+                "${deferredWorkflow.workflowName}",
+                workflowResult.error.errorStacktrace
             )
             is UnknownWorkflow -> throw UnknownWorkflowException(
                 "${deferredWorkflow.workflowId}",
                 "${deferredWorkflow.workflowName}"
             )
-            else -> throw RuntimeException("This should not happen")
+            is WorkflowAlreadyCompleted -> throw AlreadyCompletedWorkflowException(
+                "${deferredWorkflow.workflowId}",
+                "${deferredWorkflow.workflowName}"
+            )
+            else -> throw RuntimeException("Unexpected ${workflowResult::class}")
         }
     }
 

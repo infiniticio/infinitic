@@ -141,7 +141,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe ClassNotFoundException::class.java.name
+        fail.taskAttemptError.errorName shouldBe ClassNotFoundException::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterTypes when trying to process an unknown method" {
@@ -161,7 +161,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe NoMethodFoundWithParameterTypesException::class.java.name
+        fail.taskAttemptError.errorName shouldBe NoMethodFoundWithParameterTypesException::class.java.name
     }
 
     "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -180,7 +180,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe NoMethodFoundWithParameterCountException::class.java.name
+        fail.taskAttemptError.errorName shouldBe NoMethodFoundWithParameterCountException::class.java.name
     }
 
     "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
@@ -199,7 +199,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe TooManyMethodsFoundWithParameterCountException::class.java.name
+        fail.taskAttemptError.errorName shouldBe TooManyMethodsFoundWithParameterCountException::class.java.name
     }
 
     "Should retry with correct exception" {
@@ -218,7 +218,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe MillisDuration(3000)
-        fail.taskAttemptError.name shouldBe IllegalStateException::class.java.name
+        fail.taskAttemptError.errorName shouldBe IllegalStateException::class.java.name
     }
 
     "Should throw when getRetryDelay throw an exception" {
@@ -237,7 +237,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe IllegalArgumentException::class.java.name
+        fail.taskAttemptError.errorName shouldBe IllegalArgumentException::class.java.name
     }
 
     "Should be able to access context from task" {
@@ -277,7 +277,7 @@ class TaskExecutorTests : StringSpec({
         fail.taskRetrySequence shouldBe msg.taskRetrySequence
         fail.taskRetryIndex shouldBe msg.taskRetryIndex
         fail.taskAttemptDelayBeforeRetry shouldBe null
-        fail.taskAttemptError.name shouldBe ProcessingTimeoutException::class.java.name
+        fail.taskAttemptError.errorName shouldBe ProcessingTimeoutException::class.java.name
     }
 })
 
@@ -289,7 +289,7 @@ private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out
     taskAttemptId = TaskAttemptId(),
     taskRetrySequence = TaskRetrySequence(12),
     taskRetryIndex = TaskRetryIndex(7),
-    lastTaskError = null,
+    lastError = null,
     methodName = MethodName(method),
     methodParameterTypes = types?.let { MethodParameterTypes(it) },
     methodParameters = MethodParameters.from(*input),

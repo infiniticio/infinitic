@@ -36,19 +36,25 @@ data class ClientEnvelope(
     val type: ClientMessageType,
     val taskCompleted: TaskCompleted? = null,
     val taskCanceled: TaskCanceled? = null,
+    val taskFailed: TaskFailed? = null,
     val unknownTask: UnknownTask? = null,
     val workflowCompleted: WorkflowCompleted? = null,
     val workflowCanceled: WorkflowCanceled? = null,
-    val unknownWorkflow: UnknownWorkflow? = null
+    val workflowFailed: WorkflowFailed? = null,
+    val unknownWorkflow: UnknownWorkflow? = null,
+    val workflowAlreadyCompleted: WorkflowAlreadyCompleted? = null
 ) : Envelope<ClientMessage> {
     init {
         val noNull = listOfNotNull(
             taskCompleted,
             taskCanceled,
+            taskFailed,
             unknownTask,
             workflowCompleted,
             workflowCanceled,
-            unknownWorkflow
+            workflowFailed,
+            unknownWorkflow,
+            workflowAlreadyCompleted
         )
 
         require(noNull.size == 1)
@@ -68,6 +74,11 @@ data class ClientEnvelope(
                 ClientMessageType.TASK_CANCELED,
                 taskCanceled = msg
             )
+            is TaskFailed -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.TASK_FAILED,
+                taskFailed = msg
+            )
             is UnknownTask -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.UNKNOWN_TASK,
@@ -83,10 +94,20 @@ data class ClientEnvelope(
                 ClientMessageType.WORKFLOW_CANCELED,
                 workflowCanceled = msg
             )
+            is WorkflowFailed -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.WORKFLOW_FAILED,
+                workflowFailed = msg
+            )
             is UnknownWorkflow -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.UNKNOWN_WORKFLOW,
                 unknownWorkflow = msg
+            )
+            is WorkflowAlreadyCompleted -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.WORKFLOW_ALREADY_COMPLETED,
+                workflowAlreadyCompleted = msg
             )
         }
 
@@ -94,12 +115,15 @@ data class ClientEnvelope(
     }
 
     override fun message(): ClientMessage = when (type) {
+        ClientMessageType.UNKNOWN_TASK -> unknownTask!!
         ClientMessageType.TASK_COMPLETED -> taskCompleted!!
         ClientMessageType.TASK_CANCELED -> taskCanceled!!
-        ClientMessageType.UNKNOWN_TASK -> unknownTask!!
+        ClientMessageType.TASK_FAILED -> taskFailed!!
         ClientMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
         ClientMessageType.WORKFLOW_CANCELED -> workflowCanceled!!
+        ClientMessageType.WORKFLOW_FAILED -> workflowFailed!!
         ClientMessageType.UNKNOWN_WORKFLOW -> unknownWorkflow!!
+        ClientMessageType.WORKFLOW_ALREADY_COMPLETED -> workflowAlreadyCompleted!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

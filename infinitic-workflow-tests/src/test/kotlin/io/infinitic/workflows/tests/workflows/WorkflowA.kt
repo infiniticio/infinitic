@@ -27,6 +27,7 @@ package io.infinitic.workflows.tests.workflows
 
 import com.jayway.jsonpath.Criteria.where
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.exceptions.deferred.FailureException
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
@@ -94,6 +95,7 @@ interface WorkflowA {
     fun channel6(): String
     fun channel6bis(): String
     fun channel6ter(): String
+    fun failing1(): String
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -476,5 +478,12 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         val obj1 = deferred1.await()
         val obj2 = deferred2.await()
         return obj1.foo + obj2.foo + obj1.bar * obj2.bar
+    }
+
+    override fun failing1() = try {
+        taskA.failing()
+        "ok"
+    } catch (e: FailureException) {
+        taskA.reverse("ok")
     }
 }

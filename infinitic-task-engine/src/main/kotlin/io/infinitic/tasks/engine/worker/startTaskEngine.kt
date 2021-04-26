@@ -27,7 +27,6 @@ package io.infinitic.tasks.engine.worker
 
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
-import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
@@ -67,7 +66,6 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     commandsOutputChannel: SendChannel<T>,
     sendToClient: SendToClient,
     sendToTaskTagEngine: SendToTaskTagEngine,
-    sendToTaskEngine: SendToTaskEngine,
     sendToTaskEngineAfter: SendToTaskEngineAfter,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToTaskExecutors: SendToTaskExecutors,

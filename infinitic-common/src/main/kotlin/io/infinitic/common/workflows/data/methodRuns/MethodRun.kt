@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.methodRuns
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -40,6 +41,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MethodRun(
+    /**
+     * clients synchronously waiting for the returned value
+     */
+    val waitingClients: MutableSet<ClientName>,
+
     val methodRunId: MethodRunId,
     val parentWorkflowId: WorkflowId?,
     val parentWorkflowName: WorkflowName?,
@@ -52,4 +58,8 @@ data class MethodRun(
     val propertiesNameHashAtStart: Map<PropertyName, PropertyHash>,
     val pastCommands: MutableList<PastCommand> = mutableListOf(),
     val pastSteps: MutableList<PastStep> = mutableListOf()
-)
+) {
+    fun getStepByPosition(position: MethodRunPosition): PastStep? = pastSteps.firstOrNull {
+        it.stepPosition == position
+    }
+}

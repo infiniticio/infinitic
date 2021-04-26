@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.steps
 
+import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 
@@ -39,11 +40,28 @@ object StepStatusOngoing : StepStatus() {
 
 @Serializable
 data class StepStatusCompleted(
-    val completionResult: StepOutput,
+    val returnValue: StepReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex
 ) : StepStatus()
 
 @Serializable
 data class StepStatusCanceled(
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
+) : StepStatus()
+
+@Serializable
+data class StepStatusFailed(
+    val error: Error,
+    val failureWorkflowTaskIndex: WorkflowTaskIndex
+) : StepStatus()
+
+/**
+ * StepStatusOngoingFailure is a transient status given when the failure of a task triggers the failure of a step
+ * - if next workflowTask related to this branch run correctly (error caught in workflow code), status will eventually be StepStatusFailed
+ * - if not, task can be retried and status can transition to StepStatusCompleted
+ */
+@Serializable
+data class StepStatusOngoingFailure(
+    val error: Error,
+    val failureWorkflowTaskIndex: WorkflowTaskIndex
 ) : StepStatus()

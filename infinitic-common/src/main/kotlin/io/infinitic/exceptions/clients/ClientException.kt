@@ -37,14 +37,14 @@ class NotAStubException(
     name: String,
     async: String
 ) : ClientException(
-    msg = "The first parameter of the client.$async(.) function should be a stub",
-    help = "Make sure to provide the stub provided by a client.task($name) or client.workflow($name) function."
+    msg = "First parameter of client.$async function should be a stub",
+    help = "Make sure to provide the stub returned by client.newTask($name) or client.newWorkflow($name) function"
 )
 
 class CanNotApplyOnChannelException(
     action: String
 ) : ClientException(
-    msg = "The first parameter of the client.$action(.) function should be the stub of an existing task or workflow",
+    msg = "First parameter of client.$action should be the stub of an existing task or workflow",
     help = "Make sure to provide the stub returned by client.getTask or client.getWorkflow function"
 )
 
@@ -59,16 +59,16 @@ class CanNotApplyOnNewTaskStubException(
     name: String,
     action: String
 ) : ClientException(
-    msg = "You can not `$action` a new task stub",
-    help = "Please target an existing $name task using `getTask()` "
+    msg = "You can not `$action` on the stub of a new task",
+    help = "Please target an existing $name task using `client.getTask()` "
 )
 
 class CanNotApplyOnNewWorkflowStubException(
     name: String,
     action: String
 ) : ClientException(
-    msg = "You can not `$action` a new workflow stub",
-    help = "Please target an existing $name workflow using `getWorkflow()` "
+    msg = "You can not `$action` on the stub of a new workflow",
+    help = "Please target an existing $name workflow using `client.getWorkflow()` "
 )
 
 class SuspendMethodNotSupportedException(
@@ -76,7 +76,7 @@ class SuspendMethodNotSupportedException(
     method: String
 ) : ClientException(
     msg = "method \"$method\" in class \"$klass\" is a suspend function",
-    help = "Suspend functions are not supported"
+    help = "Suspend functions are not supporteds"
 )
 
 class NoMethodCallException(
@@ -123,30 +123,56 @@ class UnknownTaskException(
     taskId: String,
     taskName: String,
 ) : ClientException(
-    msg = "Failed to  wait for task $taskId completion ($taskName)",
-    help = "This task instance is probably already completed"
+    msg = "Unknown workflow instance: $taskName ($taskId)",
+    help = "This instance is probably already completed"
 )
 
 class CanceledTaskException(
     taskId: String,
     taskName: String,
 ) : ClientException(
-    msg = "task $taskId ($taskName) has been canceled",
+    msg = "task canceled: $taskName ($taskId)",
     help = ""
+)
+
+class FailedTaskException(
+    taskId: String,
+    taskName: String,
+    errorStackTrace: String
+) : ClientException(
+    msg = "task instance failed: $taskName ($taskId)",
+    help = errorStackTrace
 )
 
 class UnknownWorkflowException(
     workflowId: String,
     workflowName: String
 ) : ClientException(
-    msg = "Failed to  wait for workflow $workflowId completion ($workflowName)",
-    help = "This workflow instance is probably already completed"
+    msg = "Unknown workflow instance: $workflowName ($workflowId)",
+    help = "This instance is probably already completed"
 )
 
 class CanceledWorkflowException(
     workflowId: String,
     workflowName: String
 ) : ClientException(
-    msg = "workflow $workflowId ($workflowName) has been canceled",
+    msg = "workflow instance canceled: $workflowName ($workflowId)",
     help = ""
+)
+
+class AlreadyCompletedWorkflowException(
+    workflowId: String,
+    workflowName: String
+) : ClientException(
+    msg = "workflow instance's main method already completed: $workflowName ($workflowId)",
+    help = ""
+)
+
+class FailedWorkflowException(
+    workflowId: String,
+    workflowName: String,
+    errorStackTrace: String
+) : ClientException(
+    msg = "workflow instance failed: $workflowName ($workflowId)",
+    help = errorStackTrace
 )

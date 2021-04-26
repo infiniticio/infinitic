@@ -61,14 +61,14 @@ class MultipleMethodCallsAtAsyncException(
 class ShouldNotWaitInsideInlinedTaskException(
     method: String
 ) : WorkflowTaskException(
-    msg = "You must not suspend computations inside an inlined task",
-    help = "In $method, make sure you do not wait for task or child workflow completion inside `task { ... }`"
+    msg = "Asynchronous computation inside an inlined task in forbidden",
+    help = "In $method, make sure you do not wait for task or child workflow completion inside `inline { ... }`"
 )
 
 class ShouldNotUseAsyncFunctionInsideInlinedTaskException(
     method: String
 ) : WorkflowTaskException(
-    msg = "You must not suspend computations inside an inlined task",
+    msg = "Asynchronous computation inside an inlined task in forbidden",
     help = "In $method, make sure you do not use `async { ... }` function inside `task { ... }`"
 )
 

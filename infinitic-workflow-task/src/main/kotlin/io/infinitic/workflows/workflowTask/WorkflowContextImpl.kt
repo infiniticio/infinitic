@@ -39,9 +39,7 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
-import io.infinitic.common.workflows.data.commands.CommandStatusCanceled
 import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
-import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.DispatchTask
@@ -63,14 +61,17 @@ import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.data.steps.StepStatusCanceled
 import io.infinitic.common.workflows.data.steps.StepStatusCompleted
+import io.infinitic.common.workflows.data.steps.StepStatusFailed
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
+import io.infinitic.common.workflows.data.steps.StepStatusOngoingFailure
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.exceptions.deferred.CancellationException
+import io.infinitic.exceptions.deferred.FailureException
 import io.infinitic.exceptions.workflowTasks.MultipleMethodCallsAtAsyncException
 import io.infinitic.exceptions.workflowTasks.NoMethodCallAtAsyncException
 import io.infinitic.exceptions.workflowTasks.ShouldNotUseAsyncFunctionInsideInlinedTaskException
 import io.infinitic.exceptions.workflowTasks.ShouldNotWaitInsideInlinedTaskException
 import io.infinitic.exceptions.workflowTasks.WorkflowUpdatedWhileRunningException
-import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowContext
@@ -234,9 +235,8 @@ internal class WorkflowContextImpl(
         } else {
             @Suppress("UNCHECKED_CAST")
             return when (val status = pastCommand.commandStatus) {
-                is CommandStatusOngoing -> throw RuntimeException("This should not happen: ongoing inline task")
-                is CommandStatusCanceled -> throw RuntimeException("This should not happen: canceled inline task")
                 is CommandStatusCompleted -> status.returnValue.get() as S
+                else -> throw RuntimeException("This should not happen: inline task with status $status")
             }
         }
     }
@@ -258,24 +258,28 @@ internal class WorkflowContextImpl(
 
         if (pastStep == null) {
             // it can be a new step (eg. a logical combination of previous deferred)
-            deferred.stepStatus = newStep.step.stepStatusAtWorkflowTaskIndex(workflowTaskIndex)
+            deferred.stepStatus = newStep.step.stepStatusAt(workflowTaskIndex)
 
-            return when (deferred.stepStatus) {
+            return when (val stepStatus = deferred.stepStatus) {
                 is StepStatusOngoing -> {
                     // we add a new step
                     newSteps.add(newStep)
                     // and stop here
                     throw NewStepException
                 }
-                is StepStatusCanceled -> throw CanceledDeferredException
-                is StepStatusCompleted -> (deferred.stepStatus as StepStatusCompleted).completionResult.get() as T
+                is StepStatusCanceled -> throw CancellationException
+                is StepStatusCompleted -> stepStatus.returnValue.get() as T
+                is StepStatusFailed -> throw FailureException(stepStatus.error)
+                is StepStatusOngoingFailure -> throw FailureException(stepStatus.error)
             }
         }
 
         val stepStatus = when (val stepStatus = pastStep.stepStatus) {
             is StepStatusOngoing -> throw KnownStepException
-            is StepStatusCanceled -> throw CanceledDeferredException
+            is StepStatusCanceled -> throw CancellationException
             is StepStatusCompleted -> stepStatus
+            is StepStatusFailed -> throw FailureException(stepStatus.error)
+            is StepStatusOngoingFailure -> throw FailureException(stepStatus.error)
         }
 
         // update deferred status (StepStatusCompleted)
@@ -291,17 +295,20 @@ internal class WorkflowContextImpl(
         )
 
         // return deferred value
-        return stepStatus.completionResult.get() as T
+        return stepStatus.returnValue.get() as T
     }
 
     /*
      * Deferred status()
      */
-    override fun <T> status(deferred: Deferred<T>): DeferredStatus = when (deferred.step.stepStatusAtWorkflowTaskIndex(workflowTaskIndex)) {
-        is StepStatusOngoing -> DeferredStatus.ONGOING
-        is StepStatusCompleted -> DeferredStatus.COMPLETED
-        is StepStatusCanceled -> DeferredStatus.CANCELED
-    }
+    override fun <T> status(deferred: Deferred<T>): DeferredStatus =
+        when (deferred.step.stepStatusAt(workflowTaskIndex)) {
+            is StepStatusOngoing -> DeferredStatus.ONGOING
+            is StepStatusCompleted -> DeferredStatus.COMPLETED
+            is StepStatusCanceled -> DeferredStatus.CANCELED
+            is StepStatusFailed -> DeferredStatus.FAILED
+            is StepStatusOngoingFailure -> DeferredStatus.FAILED
+        }
 
     /*
      * Task dispatching

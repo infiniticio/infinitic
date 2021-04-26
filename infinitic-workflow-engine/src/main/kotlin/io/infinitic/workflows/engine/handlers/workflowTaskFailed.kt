@@ -25,39 +25,37 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
-import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
-import io.infinitic.common.workflows.engine.messages.TaskCompleted
+import io.infinitic.common.clients.messages.WorkflowFailed
+import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
+import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
-internal suspend fun taskCompleted(
-    workflowEngineOutput: WorkflowEngineOutput,
+internal suspend fun workflowTaskFailed(
+    output: WorkflowEngineOutput,
     state: WorkflowState,
-    msg: TaskCompleted
+    msg: TaskFailed
 ) {
+    // if on main path, forward the error
+    if (state.runningMethodRunPosition!!.isOnMainPath()) {
+        val methodRun = state.getRunningMethodRun()
 
-    when (msg.isWorkflowTask()) {
-        true -> workflowTaskCompleted(
-            workflowEngineOutput,
-            state,
-            msg
-        )
-        false -> {
-            val commandStatus = CommandStatusCompleted(
-                CommandReturnValue(msg.taskReturnValue.serializedData),
-                state.workflowTaskIndex
-            )
+        // send to waiting clients
+        methodRun.waitingClients.forEach {
+            val workflowFailed = WorkflowFailed(it, state.workflowId, msg.error)
+            output.sendEventsToClient(workflowFailed)
+        }
 
-            commandTerminated(
-                workflowEngineOutput,
-                state,
-                msg.methodRunId,
-                CommandId(msg.taskId),
-                commandStatus
+        // send to parent workflow
+        methodRun.parentWorkflowId?. run {
+            val childWorkflowFailed = ChildWorkflowFailed(
+                workflowId = methodRun.parentWorkflowId!!,
+                workflowName = methodRun.parentWorkflowName!!,
+                methodRunId = methodRun.parentMethodRunId!!,
+                childWorkflowId = state.workflowId,
+                childWorkflowError = msg.error
             )
+            output.sendToWorkflowEngine(childWorkflowFailed)
         }
     }
 }

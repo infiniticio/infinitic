@@ -84,15 +84,13 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         } catch (e: InvocationTargetException) {
             when (e.cause) {
                 is WorkflowTaskException -> null
-                else -> throw e.cause!!
+                else -> throw e.cause!! // this error will be caught by the task executor
             }
         }
 
         val properties = getWorkflowProperties(workflow)
 
         return WorkflowTaskReturnValue(
-            workflowTaskParameters.workflowId,
-            workflowTaskParameters.methodRun.methodRunId,
             (workflow.context as WorkflowContextImpl).newCommands,
             (workflow.context as WorkflowContextImpl).newSteps,
             properties,

@@ -48,7 +48,9 @@ import io.infinitic.common.workflows.data.commands.StartInlineTask
 import io.infinitic.common.workflows.data.commands.StartInstantTimer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
+import io.infinitic.common.workflows.data.steps.StepStatusFailed
 import io.infinitic.common.workflows.data.steps.StepStatusOngoing
+import io.infinitic.common.workflows.data.steps.StepStatusOngoingFailure
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflowTasks.plus
@@ -61,7 +63,6 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
-import io.infinitic.workflows.engine.helpers.getMethodRun
 import io.infinitic.workflows.engine.helpers.getPastCommand
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowCompletedInClient
@@ -72,11 +73,23 @@ internal suspend fun workflowTaskCompleted(
     state: WorkflowState,
     msg: TaskCompleted
 ) {
+    val workflowTaskOutput = msg.taskReturnValue.get() as WorkflowTaskReturnValue
+
     // remove currentWorkflowTaskId
     state.runningWorkflowTaskId = null
 
-    val workflowTaskOutput = msg.taskReturnValue.get() as WorkflowTaskReturnValue
-    val methodRun = getMethodRun(state, workflowTaskOutput.methodRunId)
+    // retrieve current methodRun
+    val methodRun = state.getRunningMethodRun()
+
+    // if current step status was ongoingFailure
+    // convert it definitively to Failed, as the error has been caught by the workflow
+    methodRun.getStepByPosition(state.runningMethodRunPosition!!)
+        ?. run {
+            val status = stepStatus
+            if (status is StepStatusOngoingFailure) {
+                stepStatus = StepStatusFailed(status.error, status.failureWorkflowTaskIndex)
+            }
+        }
 
     // properties updates
     workflowTaskOutput.properties.map {
@@ -124,31 +137,26 @@ internal suspend fun workflowTaskCompleted(
         // set methodOutput in state
         methodRun.methodReturnValue = workflowTaskOutput.methodReturnValue
 
-        // if this is the main method, it means the workflow is completed
-        if (methodRun.methodRunId.id == state.workflowId.id) {
-            // send output back to waiting clients
-            state.waitingClients.map {
-                workflowEngineOutput.sendEventsToClient(
-                    WorkflowCompletedInClient(
-                        clientName = it,
-                        workflowId = state.workflowId,
-                        workflowReturnValue = methodRun.methodReturnValue!!
-                    )
-                )
-            }
+        // send output back to waiting clients
+        methodRun.waitingClients.map {
+            val workflowCompleted = WorkflowCompletedInClient(
+                clientName = it,
+                workflowId = state.workflowId,
+                workflowReturnValue = methodRun.methodReturnValue!!
+            )
+            workflowEngineOutput.sendEventsToClient(workflowCompleted)
         }
 
         // tell parent workflow if any
         methodRun.parentWorkflowId?.let {
-            workflowEngineOutput.sendToWorkflowEngine(
-                ChildWorkflowCompleted(
-                    workflowId = it,
-                    workflowName = state.workflowName,
-                    methodRunId = methodRun.parentMethodRunId!!,
-                    childWorkflowId = state.workflowId,
-                    childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!
-                )
+            val childWorkflowCompleted = ChildWorkflowCompleted(
+                workflowId = it,
+                workflowName = state.workflowName,
+                methodRunId = methodRun.parentMethodRunId!!,
+                childWorkflowId = state.workflowId,
+                childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!
             )
+            workflowEngineOutput.sendToWorkflowEngine(childWorkflowCompleted)
         }
     }
 
@@ -178,24 +186,22 @@ internal suspend fun workflowTaskCompleted(
             CommandType.START_INSTANT_TIMER,
             CommandType.RECEIVE_IN_CHANNEL,
             CommandType.END_ASYNC -> {
-                // note: pastSteps is naturally ordered by time
-                // => the first branch completed is the earliest step
-                val pastStep = methodRun.pastSteps.find { it.isTerminatedBy(pastCommand) }
-                if (pastStep == null) {
-                    // remove it
-                    state.bufferedCommands.removeAt(0)
-                } else {
-                    // update pastStep with current properties and anticipated workflowTaskIndex
-                    pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
-                    pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
-                    // dispatch a new workflowTask
-                    dispatchWorkflowTask(
-                        workflowEngineOutput,
-                        state,
-                        methodRun,
-                        pastStep.stepPosition
-                    )
-                    // state.bufferedCommands is untouched as we could have another pastStep solved by this command
+                // note: pastSteps is naturally ordered by time => the first branch completed is the earliest step
+                when (val pastStep = methodRun.pastSteps.find { it.isTerminatedBy(pastCommand) }) {
+                    null -> state.bufferedCommands.removeAt(0)
+                    else -> {
+                        // update pastStep with current properties and anticipated workflowTaskIndex
+                        pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
+                        pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
+                        // dispatch a new workflowTask
+                        dispatchWorkflowTask(
+                            workflowEngineOutput,
+                            state,
+                            methodRun,
+                            pastStep.stepPosition
+                        )
+                        // state.bufferedCommands is untouched as we could have another pastStep solved by this command
+                    }
                 }
             }
             else -> throw RuntimeException("This should not happen: unmanaged ${pastCommand.commandType} type in  state.bufferedCommands")
