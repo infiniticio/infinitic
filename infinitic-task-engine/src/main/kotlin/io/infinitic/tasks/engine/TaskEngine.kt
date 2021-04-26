@@ -28,12 +28,9 @@ package io.infinitic.tasks.engine
 import io.infinitic.common.clients.messages.UnknownTask
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.metrics.perName.messages.TaskStatusUpdated
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskError
-import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskStatus
@@ -54,6 +51,7 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTaskAttempt
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.tasks.engine.storage.LoggedTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import org.slf4j.Logger
@@ -356,29 +354,35 @@ class TaskEngine(
     }
 
     private suspend fun taskAttemptFailed(oldState: TaskState, msg: TaskAttemptFailed): TaskState {
-        return delayRetryTaskAttempt(
-            oldState = oldState,
-            delay = msg.taskAttemptDelayBeforeRetry,
-            error = msg.taskAttemptError,
-            messageId = msg.messageId,
-            taskMeta = msg.taskMeta
-        )
-    }
 
-    private suspend fun delayRetryTaskAttempt(
-        oldState: TaskState,
-        delay: MillisDuration?,
-        error: TaskError,
-        messageId: MessageId,
-        taskMeta: TaskMeta
-    ): TaskState {
-        // no retry
-        if (delay == null) return oldState.copy(
-            lastMessageId = messageId,
-            taskStatus = TaskStatus.RUNNING_ERROR,
-            lastTaskError = error,
-            taskMeta = taskMeta
-        )
+        val delay = msg.taskAttemptDelayBeforeRetry
+        val error = msg.taskAttemptError
+        val messageId = msg.messageId
+        val taskMeta = msg.taskMeta
+
+        // task failed
+        if (delay == null) {
+            val newState = oldState.copy(
+                lastMessageId = messageId,
+                taskStatus = TaskStatus.RUNNING_ERROR,
+                lastTaskError = error,
+                taskMeta = taskMeta
+            )
+
+            newState.workflowId?.let {
+                val taskFailed = TaskFailed(
+                    workflowId = it,
+                    workflowName = newState.workflowName!!,
+                    methodRunId = newState.methodRunId!!,
+                    taskId = newState.taskId,
+                    taskName = newState.taskName,
+                    taskError = error
+                )
+                sendToWorkflowEngine(taskFailed)
+            }
+
+            return newState
+        }
         // immediate retry
         if (delay.long <= 0) return retryTaskAttempt(
             oldState.copy(lastTaskError = error, taskMeta = taskMeta),

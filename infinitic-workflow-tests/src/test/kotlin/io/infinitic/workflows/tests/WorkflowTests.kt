@@ -49,7 +49,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.exceptions.clients.CanceledWorkflowException
-import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -780,15 +779,15 @@ class WorkflowTests : StringSpec({
         workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
     }
 
-    "Canceling child workflow should throw exception" {
-        // run system
-        coroutineScope {
-            init()
-            shouldThrow<CanceledDeferredException> {
-                workflowB.cancelChild()
-            }
-        }
-    }
+//    "Canceling child workflow should throw exception" {
+//        // run system
+//        coroutineScope {
+//            init()
+//            shouldThrow<CanceledDeferredException> {
+//                workflowB.cancelChild()
+//            }
+//        }
+//    }
 })
 
 fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {

@@ -39,6 +39,7 @@ import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
+import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -178,6 +179,7 @@ class WorkflowEngine(
             is ChildWorkflowCanceled -> childWorkflowCanceled(output, state, message)
             is ChildWorkflowCompleted -> childWorkflowCompleted(output, state, message)
             is TimerCompleted -> timerCompleted(output, state, message)
+            is TaskFailed -> taskFailed(output, state, message)
             is TaskCanceled -> taskCanceled(output, state, message)
             is TaskCompleted -> taskCompleted(output, state, message)
             else -> throw RuntimeException("Unexpected WorkflowEngineMessage: $message")
@@ -190,7 +192,10 @@ class WorkflowEngine(
 
         when (state.workflowStatus) {
             WorkflowStatus.ALIVE -> Unit
-            WorkflowStatus.TERMINATED -> removeTags(output, state)
+            WorkflowStatus.TERMINATED -> {
+                // remove tags reference to this instance
+                removeTags(output, state)
+            }
             WorkflowStatus.CANCELED -> {
                 // send cancellation info to waiting clients
                 state.waitingClients.map {
@@ -217,8 +222,12 @@ class WorkflowEngine(
         }
     }
 
+    private suspend fun taskFailed(workflowEngineOutput: WorkflowEngineOutput, state: WorkflowState, msg: TaskFailed) {
+//        TODO()
+    }
+
     private suspend fun taskCanceled(workflowEngineOutput: WorkflowEngineOutput, state: WorkflowState, msg: TaskCanceled) {
-        TODO()
+//        TODO()
     }
 
     private fun waitWorkflow(state: WorkflowState, msg: WaitWorkflow) {

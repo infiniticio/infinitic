@@ -25,25 +25,26 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
+import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
-import java.time.Instant
 
 internal suspend fun timerCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: TimerCompleted
 ) {
+    val commandStatus = CommandStatusCompleted(CommandReturnValue.now(), state.workflowTaskIndex)
+
     commandTerminated(
         workflowEngineOutput,
         state,
         msg.methodRunId,
         CommandId(msg.timerId),
-        CommandReturnValue(SerializedData.from(Instant.now()))
+        commandStatus
     )
 }

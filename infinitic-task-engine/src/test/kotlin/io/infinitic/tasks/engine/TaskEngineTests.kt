@@ -55,6 +55,7 @@ import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.kotest.core.spec.style.StringSpec
@@ -297,6 +298,7 @@ internal class TaskEngineTests : StringSpec({
         // then
         coVerifySequence {
             taskStateStorage.getState(msgIn.taskId)
+            sendToWorkflowEngine(ofType<TaskFailed>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
             taskStateStorage.putState(msgIn.taskId, ofType())
         }

@@ -37,6 +37,7 @@ enum class WorkflowEngineMessageType {
     CHILD_WORKFLOW_COMPLETED,
     TIMER_COMPLETED,
     DISPATCH_WORKFLOW,
+    TASK_FAILED,
     TASK_CANCELED,
     TASK_COMPLETED
 }

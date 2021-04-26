@@ -52,7 +52,7 @@ internal suspend fun dispatchWorkflowTask(
     state.workflowTaskIndex = state.workflowTaskIndex + 1
 
     // defines workflow task input
-    val workflowTaskInput = WorkflowTaskParameters(
+    val workflowTaskParameters = WorkflowTaskParameters(
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         workflowOptions = state.workflowOptions,
@@ -72,7 +72,7 @@ internal suspend fun dispatchWorkflowTask(
         taskName = TaskName(WorkflowTask::class.java.name),
         methodName = MethodName(WorkflowTask::handle.name),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
-        methodParameters = MethodParameters.from(workflowTaskInput),
+        methodParameters = MethodParameters.from(workflowTaskParameters),
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,

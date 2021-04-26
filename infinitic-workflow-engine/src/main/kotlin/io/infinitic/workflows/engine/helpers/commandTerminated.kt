@@ -26,9 +26,7 @@
 package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandReturnValue
-import io.infinitic.common.workflows.data.commands.CommandStatusCanceled
-import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
+import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflowTasks.plus
@@ -40,7 +38,7 @@ internal suspend fun commandTerminated(
     state: WorkflowState,
     methodRunId: MethodRunId,
     commandId: CommandId,
-    commandReturnValue: CommandReturnValue? // null => canceled else completed
+    commandStatus: CommandStatus
 ) {
     val methodRun = getMethodRun(state, methodRunId)
     val pastCommand = getPastCommand(methodRun, commandId)
@@ -49,10 +47,7 @@ internal suspend fun commandTerminated(
     if (pastCommand.commandStatus !is CommandStatusOngoing) return
 
     // update command status
-    pastCommand.commandStatus = when (commandReturnValue) {
-        null -> CommandStatusCanceled(state.workflowTaskIndex)
-        else -> CommandStatusCompleted(commandReturnValue, state.workflowTaskIndex)
-    }
+    pastCommand.commandStatus = commandStatus
 
     // trigger a new workflow task for the first step solved by this command
     // note: pastSteps is naturally ordered by time (workflowTaskIndex) => the first branch completed is the earliest step

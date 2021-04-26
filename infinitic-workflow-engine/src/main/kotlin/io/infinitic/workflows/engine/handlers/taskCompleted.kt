@@ -27,6 +27,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
+import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
@@ -37,18 +38,26 @@ internal suspend fun taskCompleted(
     state: WorkflowState,
     msg: TaskCompleted
 ) {
+
     when (msg.isWorkflowTaskCompleted()) {
         true -> workflowTaskCompleted(
             workflowEngineOutput,
             state,
             msg
         )
-        false -> commandTerminated(
-            workflowEngineOutput,
-            state,
-            msg.methodRunId,
-            CommandId(msg.taskId),
-            CommandReturnValue(msg.taskReturnValue.serializedData)
-        )
+        false -> {
+            val commandStatus = CommandStatusCompleted(
+                CommandReturnValue(msg.taskReturnValue.serializedData),
+                state.workflowTaskIndex
+            )
+
+            commandTerminated(
+                workflowEngineOutput,
+                state,
+                msg.methodRunId,
+                CommandId(msg.taskId),
+                commandStatus
+            )
+        }
     }
 }

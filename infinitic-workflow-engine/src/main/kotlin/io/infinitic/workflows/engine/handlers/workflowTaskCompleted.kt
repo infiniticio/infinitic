@@ -224,12 +224,17 @@ private suspend fun endAsync(
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
     }
 
+    val commandStatus = CommandStatusCompleted(
+        command.asyncReturnValue,
+        state.workflowTaskIndex
+    )
+
     commandTerminated(
         workflowEngineOutput,
         state,
         methodRun.methodRunId,
         pastStartAsync.commandId,
-        command.asyncReturnValue
+        commandStatus
     )
 }
 
