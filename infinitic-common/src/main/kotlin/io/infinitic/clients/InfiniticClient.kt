@@ -102,7 +102,7 @@ interface InfiniticClient {
     ): T
 
     /**
-     * Create stub for an existing workflow per id
+     * Create stub for an existing workflow targeted per id
      */
     fun <T : Any> getWorkflow(
         klass: Class<out T>,
@@ -110,7 +110,7 @@ interface InfiniticClient {
     ): T
 
     /**
-     * Create stub for an existing workflow per tag
+     * Create stub for an existing workflow targeted per tag
      */
     fun <T : Any> getWorkflow(
         klass: Class<out T>,
@@ -123,14 +123,78 @@ interface InfiniticClient {
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
 
     /**
-     *  Cancel a task or a workflow
+     *  Cancel a task or a workflow from a stub
      */
     fun <T : Any> cancel(proxy: T)
 
     /**
-     * Retry a task or a workflowTask
+     *  Cancel a task by id
+     */
+    fun <T : Any> cancelTask(
+        klass: Class<out T>,
+        id: UUID
+    ) = cancel(getTask(klass, id))
+
+    /**
+     *  Cancel a task by tag
+     */
+    fun <T : Any> cancelTask(
+        klass: Class<out T>,
+        tag: String
+    ) = cancel(getTask(klass, tag))
+
+    /**
+     *  Cancel a workflow by id
+     */
+    fun <T : Any> cancelWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ) = cancel(getWorkflow(klass, id))
+
+    /**
+     *  Cancel a workflow by tag
+     */
+    fun <T : Any> cancelWorkflow(
+        klass: Class<out T>,
+        tag: String
+    ) = cancel(getWorkflow(klass, tag))
+
+    /**
+     * Retry a task or a workflowTask from a stub
      */
     fun <T : Any> retry(proxy: T)
+
+    /**
+     * Retry a task by id
+     */
+    fun <T : Any> retryTask(
+        klass: Class<out T>,
+        id: UUID
+    ) = retry(getTask(klass, id))
+
+    /**
+     * Retry a task by tag
+     */
+    fun <T : Any> retryTask(
+        klass: Class<out T>,
+        tag: String
+    ) = retry(getTask(klass, tag))
+
+    /**
+     * Retry a workflow by id
+     */
+    fun <T : Any> retryWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ) = retry(getWorkflow(klass, id))
+
+    /**
+     * Retry a workflow by tag
+     */
+    fun <T : Any> retryWorkflow(
+        klass: Class<out T>,
+        tag: String
+    ) = retry(getWorkflow(klass, tag))
 }
 
 /**
@@ -178,3 +242,59 @@ inline fun <reified T : Any> InfiniticClient.getWorkflow(
 inline fun <reified T : Any> InfiniticClient.getWorkflow(
     tag: String
 ): T = getWorkflow(T::class.java, tag)
+
+/**
+ * (kotlin) Cancel task by id
+ */
+inline fun <reified T : Any> InfiniticClient.cancelTask(
+    id: UUID
+) = cancelTask(T::class.java, id)
+
+/**
+ * (kotlin) Cancel task by tag
+ */
+inline fun <reified T : Any> InfiniticClient.cancelTask(
+    tag: String
+) = cancelTask(T::class.java, tag)
+
+/**
+ * (kotlin) Cancel workflow by id
+ */
+inline fun <reified T : Any> InfiniticClient.cancelWorkflow(
+    id: UUID
+) = cancelWorkflow(T::class.java, id)
+
+/**
+ * (kotlin) Cancel workflow by tag
+ */
+inline fun <reified T : Any> InfiniticClient.cancelWorkflow(
+    tag: String
+) = cancelWorkflow(T::class.java, tag)
+
+/**
+ * (kotlin) Retry task by id
+ */
+inline fun <reified T : Any> InfiniticClient.retryTask(
+    id: UUID
+) = retryTask(T::class.java, id)
+
+/**
+ * (kotlin) Retry task by tag
+ */
+inline fun <reified T : Any> InfiniticClient.retryTask(
+    tag: String
+) = retryTask(T::class.java, tag)
+
+/**
+ * (kotlin) Retry workflow by id
+ */
+inline fun <reified T : Any> InfiniticClient.retryWorkflow(
+    id: UUID
+) = retryWorkflow(T::class.java, id)
+
+/**
+ * (kotlin) Retry workflow by tag
+ */
+inline fun <reified T : Any> InfiniticClient.retryWorkflow(
+    tag: String
+) = retryWorkflow(T::class.java, tag)
