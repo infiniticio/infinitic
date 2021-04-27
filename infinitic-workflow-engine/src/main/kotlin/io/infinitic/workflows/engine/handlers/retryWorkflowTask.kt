@@ -35,12 +35,11 @@ internal suspend fun retryWorkflowTask(
 ) {
     if (state.runningWorkflowTaskId != null) return
 
-    val methodRun = state.getRunningMethodRun()
-
+    // retry last workflowTask
     dispatchWorkflowTask(
         output,
         state,
-        methodRun,
+        state.getRunningMethodRun(),
         state.runningMethodRunPosition!!
     )
 }

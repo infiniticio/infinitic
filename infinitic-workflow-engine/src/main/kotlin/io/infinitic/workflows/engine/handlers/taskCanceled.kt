@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.workflows.data.commands.CommandCanceled
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatusCanceled
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
@@ -41,7 +41,7 @@ internal suspend fun taskCanceled(
     when (msg.isWorkflowTask()) {
         true -> TODO()
         false -> {
-            val commandStatus = CommandStatusCanceled(state.workflowTaskIndex)
+            val commandStatus = CommandCanceled(state.workflowTaskIndex)
 
             commandTerminated(
                 workflowEngineOutput,

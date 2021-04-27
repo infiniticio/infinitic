@@ -151,4 +151,6 @@ data class WorkflowState(
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
 
     fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
+
+    fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull() { it.methodRunId == methodRunId }
 }

@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks
 
+import io.infinitic.common.data.Name
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
@@ -148,6 +149,16 @@ class DataTests : StringSpec({
         json shouldBe "\"qwerty\""
 
         val m2 = Json.decodeFromString<TaskName>(json)
+        m2 shouldBe m
+    }
+
+    "Name should be serialized as String" {
+        val m = Name("qwerty")
+
+        val json = Json.encodeToString(m)
+        json shouldBe "\"qwerty\""
+
+        val m2 = Json.decodeFromString<Name>(json)
         m2 shouldBe m
     }
 })

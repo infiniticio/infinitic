@@ -37,9 +37,9 @@ import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
+import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
-import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.DispatchTask
@@ -141,6 +141,7 @@ internal class WorkflowContextImpl(
         // create instruction that will be sent to engine only if new
         val newCommand = NewCommand(
             command = StartAsync,
+            commandName = null,
             commandSimpleName = CommandSimpleName("${CommandType.START_ASYNC}"),
             commandPosition = methodRunIndex.methodPosition
         )
@@ -178,6 +179,7 @@ internal class WorkflowContextImpl(
             newCommands.add(
                 NewCommand(
                     command = EndAsync(commandOutput),
+                    commandName = null,
                     commandSimpleName = CommandSimpleName("${CommandType.END_ASYNC}"),
                     commandPosition = methodRunIndex.methodPosition
                 )
@@ -201,6 +203,7 @@ internal class WorkflowContextImpl(
         // create instruction that will be sent to engine only if new
         val startCommand = NewCommand(
             command = StartInlineTask,
+            commandName = null,
             commandSimpleName = CommandSimpleName("${CommandType.START_INLINE_TASK}"),
             commandPosition = methodRunIndex.methodPosition
         )
@@ -225,6 +228,7 @@ internal class WorkflowContextImpl(
             // record result
             val endCommand = NewCommand(
                 command = EndInlineTask(commandOutput),
+                commandName = null,
                 commandSimpleName = CommandSimpleName("${CommandType.END_INLINE_TASK}"),
                 commandPosition = methodRunIndex.methodPosition
             )
@@ -235,7 +239,7 @@ internal class WorkflowContextImpl(
         } else {
             @Suppress("UNCHECKED_CAST")
             return when (val status = pastCommand.commandStatus) {
-                is CommandStatusCompleted -> status.returnValue.get() as S
+                is CommandCompleted -> status.returnValue.get() as S
                 else -> throw RuntimeException("This should not happen: inline task with status $status")
             }
         }
@@ -468,6 +472,11 @@ internal class WorkflowContextImpl(
         // create instruction that may be sent to engine
         val newCommand = NewCommand(
             command = command,
+            commandName = when (command) {
+                is DispatchTask -> command.taskName
+                is DispatchChildWorkflow -> command.childWorkflowName
+                else -> null
+            },
             commandSimpleName = commandSimpleName,
             commandPosition = methodRunIndex.methodPosition
         )

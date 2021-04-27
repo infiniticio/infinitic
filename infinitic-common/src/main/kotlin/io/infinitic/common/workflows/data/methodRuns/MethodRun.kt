@@ -30,6 +30,8 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -59,7 +61,29 @@ data class MethodRun(
     val pastCommands: MutableList<PastCommand> = mutableListOf(),
     val pastSteps: MutableList<PastStep> = mutableListOf()
 ) {
-    fun getStepByPosition(position: MethodRunPosition): PastStep? = pastSteps.firstOrNull {
-        it.stepPosition == position
-    }
+    /**
+     * Retrieve step by position
+     * This value could be null (eg. for starting position of async command)
+     */
+    fun getStepByPosition(position: MethodRunPosition): PastStep? =
+        pastSteps.firstOrNull { it.stepPosition == position }
+
+    /**
+     * Retrieve pastCommand per commandId.
+     * This value should always be present.
+     */
+    fun getPastCommand(commandId: CommandId): PastCommand =
+        pastCommands.first { it.commandId == commandId }
+
+    /**
+     * To be terminated, a method should provide a return value and have all steps terminated.
+     * We add a constraint on child-workflows as well to ensure that this methodRun is not deleted
+     * before child workflows are completed, so that child workflows can be canceled
+     * if the workflow itself is canceled
+     */
+    fun isTerminated() = methodReturnValue != null &&
+        pastSteps.all { it.isTerminated() } &&
+        pastCommands
+            .filter { it.commandType == CommandType.DISPATCH_CHILD_WORKFLOW }
+            .all { it.isTerminated() }
 }

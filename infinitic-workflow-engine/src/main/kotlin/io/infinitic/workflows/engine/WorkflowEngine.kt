@@ -47,6 +47,7 @@ import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.interfaces.MethodRunMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
@@ -182,12 +183,23 @@ class WorkflowEngine(
     }
 
     private suspend fun processMessage(state: WorkflowState, message: WorkflowEngineMessage) {
+        // if message is related to a workflowTask, it's not running anymore
         if (message.isWorkflowTask()) state.runningWorkflowTaskId = null
 
+        // if methodRun has already been cleaned (completed), then discard the message
+        if (message is MethodRunMessage && state.getMethodRun(message.methodRunId) == null) {
+            logDiscardingMessage(message, "as null methodRun")
+
+            return
+        }
+
         val o = when (message) {
+            is DispatchWorkflow -> throw RuntimeException("DispatchWorkflow should not reach this point")
             is CancelWorkflow -> cancelWorkflow(output, state)
             is SendToChannel -> sendToChannel(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)
+            is CompleteWorkflow -> TODO()
+            is RetryWorkflowTask -> retryWorkflowTask(output, state)
             is ChildWorkflowFailed -> childWorkflowFailed(output, state, message)
             is ChildWorkflowCanceled -> childWorkflowCanceled(output, state, message)
             is ChildWorkflowCompleted -> childWorkflowCompleted(output, state, message)
@@ -195,9 +207,6 @@ class WorkflowEngine(
             is TaskFailed -> taskFailed(output, state, message)
             is TaskCanceled -> taskCanceled(output, state, message)
             is TaskCompleted -> taskCompleted(output, state, message)
-            is CompleteWorkflow -> TODO()
-            is DispatchWorkflow -> throw RuntimeException("DispatchWorkflow should not reach this point")
-            is RetryWorkflowTask -> retryWorkflowTask(output, state)
         }
 
         // workflow is terminated if all methodRuns have been deleted

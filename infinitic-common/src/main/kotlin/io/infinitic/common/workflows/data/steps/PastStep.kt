@@ -43,9 +43,10 @@ data class PastStep(
     var workflowTaskIndexAtTermination: WorkflowTaskIndex? = null
 ) {
     @JsonIgnore
-    fun isTerminated() = stepStatus is StepStatusCompleted ||
-        stepStatus is StepStatusCanceled ||
-        stepStatus is StepStatusFailed
+    fun isTerminated() =
+        stepStatus is StepStatusCompleted ||
+            stepStatus is StepStatusCanceled ||
+            stepStatus is StepStatusFailed
 
     fun isTerminatedBy(pastCommand: PastCommand): Boolean {
         // returns false if already terminated

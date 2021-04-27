@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
-import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.WorkflowEngine
@@ -49,7 +49,7 @@ internal suspend fun sendToChannel(
         ?.also {
             state.receivingChannels.remove(it)
 
-            val commandStatus = CommandStatusCompleted(
+            val commandStatus = CommandCompleted(
                 CommandReturnValue(msg.channelEvent.serializedData),
                 state.workflowTaskIndex
             )

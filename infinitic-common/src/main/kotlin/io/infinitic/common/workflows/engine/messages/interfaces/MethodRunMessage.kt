@@ -23,10 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.helpers
+package io.infinitic.common.workflows.engine.messages.interfaces
 
-import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 
-internal fun getPastCommand(methodRun: MethodRun, commandId: CommandId) =
-    methodRun.pastCommands.first { it.commandId == commandId }
+interface MethodRunMessage {
+    val methodRunId: MethodRunId
+}

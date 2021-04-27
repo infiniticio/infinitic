@@ -39,11 +39,11 @@ internal suspend fun commandTerminated(
     commandId: CommandId,
     commandStatus: CommandStatus
 ) {
-    val methodRun = getMethodRun(state, methodRunId)
-    val pastCommand = getPastCommand(methodRun, commandId)
+    val methodRun = state.getMethodRun(methodRunId)!!
+    val pastCommand = methodRun.getPastCommand(commandId)
 
     // do nothing if this command is already terminated (canceled or completed, failed is considered transient)
-    if (pastCommand.commandStatus.isTerminated()) return
+    if (pastCommand.isTerminated()) return
 
     // update command status
     pastCommand.commandStatus = commandStatus

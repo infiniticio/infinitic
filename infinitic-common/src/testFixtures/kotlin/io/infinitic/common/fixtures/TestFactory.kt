@@ -35,7 +35,7 @@ import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
+import io.infinitic.common.workflows.data.commands.CommandOngoing
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -107,7 +107,7 @@ object TestFactory {
     }
 
     private fun steps(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(), CommandStatusOngoing)
+        fun getStepId() = Step.Id(CommandId(), CommandOngoing)
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

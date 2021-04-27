@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
+import io.infinitic.common.data.Name
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import kotlinx.serialization.Serializable
 
@@ -32,10 +33,11 @@ import kotlinx.serialization.Serializable
 data class NewCommand(
     val commandId: CommandId = CommandId(),
     val command: Command,
+    val commandName: Name?,
     val commandSimpleName: CommandSimpleName,
     val commandPosition: MethodRunPosition
 ) {
-    val commandStatus: CommandStatus = CommandStatusOngoing
+    val commandStatus: CommandStatus = CommandOngoing
 
     val commandHash: CommandHash = command.hash()
 

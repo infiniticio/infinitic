@@ -25,6 +25,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
+import io.infinitic.common.data.Name
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
@@ -38,21 +39,22 @@ data class PastCommand(
     val commandType: CommandType,
     val commandId: CommandId,
     val commandHash: CommandHash,
+    val commandName: Name?,
     val commandSimpleName: CommandSimpleName,
     var commandStatus: CommandStatus,
     // property below are used only for start_async command
     var propertiesNameHashAtStart: Map<PropertyName, PropertyHash>? = null,
     var workflowTaskIndexAtStart: WorkflowTaskIndex? = null
 ) {
-    fun isTerminated() = this.commandStatus is CommandStatusCompleted || this.commandStatus is CommandStatusCanceled
+    fun isTerminated() = commandStatus.isTerminated()
 
     fun isSimilarTo(newCommand: NewCommand, mode: WorkflowChangeCheckMode): Boolean =
         newCommand.commandPosition == commandPosition &&
             when (mode) {
-                WorkflowChangeCheckMode.NONE ->
-                    true
+                WorkflowChangeCheckMode.NONE -> true
                 WorkflowChangeCheckMode.SIMPLE_NAME_ONLY ->
-                    newCommand.commandType == commandType && newCommand.commandSimpleName == commandSimpleName
+                    newCommand.commandType == commandType &&
+                        newCommand.commandSimpleName == commandSimpleName
                 WorkflowChangeCheckMode.ALL ->
                     newCommand.commandHash == commandHash
             }

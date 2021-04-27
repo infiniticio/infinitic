@@ -25,27 +25,42 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.workflows.data.commands.CommandType
+import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowStatus
+import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
 internal suspend fun cancelWorkflow(
-    workflowEngineOutput: WorkflowEngineOutput,
+    output: WorkflowEngineOutput,
     state: WorkflowState
 ) {
     state.workflowStatus = WorkflowStatus.CANCELED
 
-    // tell parents
-    state.methodRuns.forEach {
-        if (it.parentWorkflowId != null) {
+    state.methodRuns.forEach { methodRun ->
+        // tell parents
+        if (methodRun.parentWorkflowId != null) {
             val childWorkflowCanceled = ChildWorkflowCanceled(
-                workflowId = it.parentWorkflowId!!,
-                workflowName = it.parentWorkflowName!!,
-                methodRunId = it.parentMethodRunId!!,
+                workflowId = methodRun.parentWorkflowId!!,
+                workflowName = methodRun.parentWorkflowName!!,
+                methodRunId = methodRun.parentMethodRunId!!,
                 childWorkflowId = state.workflowId
             )
-            workflowEngineOutput.sendToWorkflowEngine(childWorkflowCanceled)
+            output.sendToWorkflowEngine(childWorkflowCanceled)
         }
+
+        // cancel children
+        methodRun.pastCommands
+            .filter { it.commandType == CommandType.DISPATCH_CHILD_WORKFLOW }
+            .forEach {
+                val cancelWorkflow = CancelWorkflow(
+                    workflowId = WorkflowId(it.commandId.id),
+                    workflowName = WorkflowName("${it.commandName}")
+                )
+                output.sendToWorkflowEngine(cancelWorkflow)
+            }
     }
 }

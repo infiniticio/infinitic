@@ -47,7 +47,7 @@ internal suspend fun dispatchWorkflowTask(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,
-    methodRunPosition: MethodRunPosition = MethodRunPosition("")
+    methodRunPosition: MethodRunPosition
 ) {
     state.workflowTaskIndex = state.workflowTaskIndex + 1
 
@@ -86,8 +86,11 @@ internal suspend fun dispatchWorkflowTask(
 
     with(state) {
         runningWorkflowTaskId = workflowTask.taskId
-        runningWorkflowTaskInstant = MillisInstant.now()
-        runningMethodRunId = methodRun.methodRunId
-        runningMethodRunPosition = methodRunPosition
+        // do not update runningWorkflowTaskInstant if it is a retry
+        if (runningMethodRunId != methodRun.methodRunId || runningMethodRunPosition != methodRunPosition) {
+            runningWorkflowTaskInstant = MillisInstant.now()
+            runningMethodRunId = methodRun.methodRunId
+            runningMethodRunPosition = methodRunPosition
+        }
     }
 }

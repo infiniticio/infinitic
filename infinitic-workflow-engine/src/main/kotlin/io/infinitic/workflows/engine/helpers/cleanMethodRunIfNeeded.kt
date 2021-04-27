@@ -25,23 +25,13 @@
 
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.engine.state.WorkflowState
 
 internal fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
     // if everything is completed in methodRun then filter state
-    // (non-blocking waiting for events or for timer do not prevent cleaning)
-    if (methodRun.methodReturnValue != null &&
-        methodRun.pastCommands.all {
-            it.commandType == CommandType.RECEIVE_IN_CHANNEL ||
-                it.commandType == CommandType.START_DURATION_TIMER ||
-                it.commandType == CommandType.START_INSTANT_TIMER ||
-                it.isTerminated()
-        } &&
-        methodRun.pastSteps.all { it.isTerminated() }
-    ) {
+    if (methodRun.methodReturnValue != null && methodRun.pastSteps.all { it.isTerminated() }) {
         state.methodRuns.remove(methodRun)
 
         state.receivingChannels.removeAll {
@@ -58,27 +48,17 @@ internal fun removeUnusedPropertyHash(state: WorkflowState) {
 
     state.methodRuns.forEach { methodRun ->
         methodRun.pastSteps.forEach { pastStep ->
-            pastStep.propertiesNameHashAtTermination?.forEach {
-                propertyHashes.add(it.value)
-            }
+            pastStep.propertiesNameHashAtTermination?.forEach { propertyHashes.add(it.value) }
         }
         methodRun.pastCommands.forEach { pastCommand ->
-            pastCommand.propertiesNameHashAtStart?.forEach {
-                propertyHashes.add(it.value)
-            }
+            pastCommand.propertiesNameHashAtStart?.forEach { propertyHashes.add(it.value) }
         }
-        methodRun.propertiesNameHashAtStart.forEach {
-            propertyHashes.add(it.value)
-        }
+        methodRun.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
     }
-    state.currentPropertiesNameHash.forEach {
-        propertyHashes.add(it.value)
-    }
+    state.currentPropertiesNameHash.forEach { propertyHashes.add(it.value) }
 
     // remove each propertyHashValue entry not in propertyHashes
-    state.propertiesHashValue.keys.filter {
-        it !in propertyHashes
-    }.forEach {
-        state.propertiesHashValue.remove(it)
-    }
+    state.propertiesHashValue.keys
+        .filter { it !in propertyHashes }
+        .forEach { state.propertiesHashValue.remove(it) }
 }

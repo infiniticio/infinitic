@@ -32,8 +32,8 @@ import io.infinitic.common.data.minus
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
-import io.infinitic.common.workflows.data.commands.CommandStatusCompleted
-import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
+import io.infinitic.common.workflows.data.commands.CommandCompleted
+import io.infinitic.common.workflows.data.commands.CommandOngoing
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.EndAsync
@@ -63,7 +63,6 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
-import io.infinitic.workflows.engine.helpers.getPastCommand
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowCompletedInClient
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
@@ -79,9 +78,10 @@ internal suspend fun workflowTaskCompleted(
     val methodRun = state.getRunningMethodRun()
 
     // if current step status was ongoingFailure
-    // convert it definitively to Failed, as the error has been caught by the workflow
+    // convert it to a definitive StepStatusFailed
+    // as the error has been caught by the workflow
     methodRun.getStepByPosition(state.runningMethodRunPosition!!)
-        ?. run {
+        ?.run {
             val status = stepStatus
             if (status is StepStatusOngoingFailure) {
                 stepStatus = StepStatusFailed(status.error, status.failureWorkflowTaskIndex)
@@ -160,7 +160,7 @@ internal suspend fun workflowTaskCompleted(
     // does previous commands trigger another workflowTask?
     while (state.bufferedCommands.isNotEmpty() && state.runningWorkflowTaskId == null) {
         val commandId = state.bufferedCommands.first()
-        val pastCommand = getPastCommand(methodRun, commandId)
+        val pastCommand = methodRun.getPastCommand(commandId)
 
         when (pastCommand.commandType) {
             CommandType.START_ASYNC -> {
@@ -227,7 +227,7 @@ private suspend fun endAsync(
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
     }
 
-    val commandStatus = CommandStatusCompleted(
+    val commandStatus = CommandCompleted(
         command.asyncReturnValue,
         state.workflowTaskIndex
     )
@@ -252,7 +252,7 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_INLINE_TASK
     }
     // past command completed
-    pastStartInlineTask.commandStatus = CommandStatusCompleted(
+    pastStartInlineTask.commandStatus = CommandCompleted(
         returnValue = command.inlineTaskReturnValue,
         completionWorkflowTaskIndex = state.workflowTaskIndex
     )
@@ -385,20 +385,12 @@ private fun addPastCommand(
         commandType = newCommand.commandType,
         commandId = newCommand.commandId,
         commandHash = newCommand.commandHash,
+        commandName = newCommand.commandName,
         commandSimpleName = newCommand.commandSimpleName,
-        commandStatus = CommandStatusOngoing
+        commandStatus = CommandOngoing
     )
 
-    methodRun.pastCommands.add(
-        PastCommand(
-            commandPosition = newCommand.commandPosition,
-            commandType = newCommand.commandType,
-            commandId = newCommand.commandId,
-            commandHash = newCommand.commandHash,
-            commandSimpleName = newCommand.commandSimpleName,
-            commandStatus = CommandStatusOngoing
-        )
-    )
+    methodRun.pastCommands.add(pastCommand)
 
     return pastCommand
 }

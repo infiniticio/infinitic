@@ -47,6 +47,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.engine.messages.interfaces.MethodRunMessage
 import io.infinitic.common.workflows.engine.messages.interfaces.TaskMessage
 import kotlinx.serialization.Serializable
 
@@ -119,61 +120,61 @@ data class SendToChannel(
 data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
-    val methodRunId: MethodRunId,
+    override val methodRunId: MethodRunId,
     val childWorkflowId: WorkflowId
-) : WorkflowEngineMessage()
+) : WorkflowEngineMessage(), MethodRunMessage
 
 @Serializable
 data class ChildWorkflowFailed(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
-    val methodRunId: MethodRunId,
+    override val methodRunId: MethodRunId,
     val childWorkflowId: WorkflowId,
     val childWorkflowError: Error
-) : WorkflowEngineMessage()
+) : WorkflowEngineMessage(), MethodRunMessage
 
 @Serializable
 data class ChildWorkflowCompleted(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
-    val methodRunId: MethodRunId,
+    override val methodRunId: MethodRunId,
     val childWorkflowId: WorkflowId,
     val childWorkflowReturnValue: MethodReturnValue
-) : WorkflowEngineMessage()
+) : WorkflowEngineMessage(), MethodRunMessage
 
 @Serializable
 data class TimerCompleted(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
-    val methodRunId: MethodRunId,
+    override val methodRunId: MethodRunId,
     val timerId: TimerId
-) : WorkflowEngineMessage()
+) : WorkflowEngineMessage(), MethodRunMessage
 
 @Serializable
 data class TaskFailed(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
-    val methodRunId: MethodRunId,
+    override val methodRunId: MethodRunId,
     override val taskId: TaskId,
     override val taskName: TaskName,
     val error: Error
-) : WorkflowEngineMessage(), TaskMessage
+) : WorkflowEngineMessage(), TaskMessage, MethodRunMessage
 
 @Serializable
 data class TaskCanceled(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
-    val methodRunId: MethodRunId,
+    override val methodRunId: MethodRunId,
     override val taskId: TaskId,
     override val taskName: TaskName
-) : WorkflowEngineMessage(), TaskMessage
+) : WorkflowEngineMessage(), TaskMessage, MethodRunMessage
 
 @Serializable
 data class TaskCompleted(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
-    val methodRunId: MethodRunId,
+    override val methodRunId: MethodRunId,
     override val taskId: TaskId,
     override val taskName: TaskName,
     val taskReturnValue: MethodReturnValue
-) : WorkflowEngineMessage(), TaskMessage
+) : WorkflowEngineMessage(), TaskMessage, MethodRunMessage

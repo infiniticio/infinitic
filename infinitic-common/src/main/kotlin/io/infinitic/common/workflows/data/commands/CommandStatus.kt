@@ -31,27 +31,30 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class CommandStatus {
-    fun isTerminated() = this is CommandStatusCompleted || this is CommandStatusCanceled
+    /**
+     * A command is terminated if canceled or completed, failed is considered a transient state
+     */
+    fun isTerminated() = this is CommandCompleted || this is CommandCanceled
 }
 
 @Serializable
-object CommandStatusOngoing : CommandStatus() {
+object CommandOngoing : CommandStatus() {
     override fun equals(other: Any?) = javaClass == other?.javaClass
 }
 
 @Serializable
-data class CommandStatusCompleted(
+data class CommandCompleted(
     val returnValue: CommandReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()
 
 @Serializable
-data class CommandStatusCanceled(
+data class CommandCanceled(
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()
 
 @Serializable
-data class CommandStatusOngoingFailure(
+data class CommandOngoingFailure(
     val error: Error,
     val failureWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()
