@@ -33,8 +33,7 @@ class CachedKeySetStorage(
     val storage: KeySetStorage
 ) : KeySetStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getSet(key: String): Set<ByteArray> = cache.getSet(key)
         ?: run {

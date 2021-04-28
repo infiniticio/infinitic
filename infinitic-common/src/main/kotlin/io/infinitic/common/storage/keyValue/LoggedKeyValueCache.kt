@@ -32,8 +32,7 @@ class LoggedKeyValueCache<T>(
     val cache: KeyValueCache<T>
 ) : KeyValueCache<T> by cache {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun getValue(key: String): T? {
         val value = cache.getValue(key)

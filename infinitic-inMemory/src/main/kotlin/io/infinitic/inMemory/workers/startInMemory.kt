@@ -28,23 +28,20 @@ package io.infinitic.inMemory.workers
 import io.infinitic.client.Client
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.workers.MessageToProcess
-import io.infinitic.inMemory.InfiniticClient
 import io.infinitic.inMemory.transport.InMemoryOutput
-import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
+import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.worker.startMetricsGlobalEngine
-import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
+import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
-import io.infinitic.storage.inMemory.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
+import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.infinitic.tags.tasks.worker.startTaskTagEngine
-import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
+import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tags.workflows.worker.startWorkflowTagEngine
 import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
+import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.tasks.engine.worker.startTaskEngine
 import io.infinitic.tasks.executor.worker.startTaskExecutor
-import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
+import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -54,10 +51,14 @@ fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
     client: Client,
     output: InMemoryOutput,
+    taskTagStorage: TaskTagStorage,
+    taskStorage: TaskStateStorage,
+    workflowTagStorage: WorkflowTagStorage,
+    workflowStorage: WorkflowStateStorage,
+    metricsPerNameStorage: MetricsPerNameStateStorage,
+    metricsGlobalStorage: MetricsGlobalStateStorage,
     logFn: (_: MessageToProcess<*>) -> Unit
 ) = launch {
-    val keyValueStorage = InMemoryKeyValueStorage()
-    val keySetStorage = InMemoryKeySetStorage()
 
     launch(CoroutineName("logger")) {
         for (messageToProcess in output.logChannel) {
@@ -73,7 +74,7 @@ fun CoroutineScope.startInMemory(
 
     startTaskTagEngine(
         "in-memory-task-tag-engine",
-        BinaryTaskTagStorage(keyValueStorage, keySetStorage),
+        taskTagStorage,
         eventsInputChannel = output.taskTagEventsChannel,
         eventsOutputChannel = output.logChannel,
         commandsInputChannel = output.taskTagCommandsChannel,
@@ -83,7 +84,7 @@ fun CoroutineScope.startInMemory(
 
     startTaskEngine(
         "in-memory-task-engine",
-        BinaryTaskStateStorage(keyValueStorage),
+        taskStorage,
         eventsInputChannel = output.taskEventsChannel,
         eventsOutputChannel = output.logChannel,
         commandsInputChannel = output.taskCommandsChannel,
@@ -98,7 +99,7 @@ fun CoroutineScope.startInMemory(
 
     startWorkflowTagEngine(
         "in-memory-workflow-tag-engine",
-        BinaryWorkflowTagStorage(keyValueStorage, keySetStorage),
+        workflowTagStorage,
         eventsInputChannel = output.workflowTagEventsChannel,
         eventsOutputChannel = output.logChannel,
         commandsInputChannel = output.workflowTagCommandsChannel,
@@ -108,7 +109,7 @@ fun CoroutineScope.startInMemory(
 
     startWorkflowEngine(
         "in-memory-workflow-engine",
-        BinaryWorkflowStateStorage(keyValueStorage),
+        workflowStorage,
         eventsInputChannel = output.workflowEventsChannel,
         eventsOutputChannel = output.logChannel,
         commandsInputChannel = output.workflowCommandsChannel,
@@ -120,19 +121,21 @@ fun CoroutineScope.startInMemory(
         output.sendToWorkflowEngineAfter
     )
 
-    @Suppress("MoveLambdaOutsideParentheses")
-    startTaskExecutor(
-        "in-memory-task-executor",
-        taskExecutorRegister,
-        inputChannel = output.executorChannel,
-        outputChannel = output.logChannel,
-        output.sendEventsToTaskEngine,
-        { InfiniticClient(taskExecutorRegister) }
-    )
+    repeat(10) {
+        @Suppress("MoveLambdaOutsideParentheses")
+        startTaskExecutor(
+            "in-memory-task-executor",
+            taskExecutorRegister,
+            inputChannel = output.executorChannel,
+            outputChannel = output.logChannel,
+            output.sendEventsToTaskEngine,
+            { client }
+        )
+    }
 
     startMetricsPerNameEngine(
         "in-memory-metrics-per-name-engine",
-        BinaryMetricsPerNameStateStorage(keyValueStorage),
+        metricsPerNameStorage,
         inputChannel = output.metricsPerNameChannel,
         outputChannel = output.logChannel,
         output.sendToMetricsGlobal
@@ -140,7 +143,7 @@ fun CoroutineScope.startInMemory(
 
     startMetricsGlobalEngine(
         "in-memory-metrics-global-engine",
-        BinaryMetricsGlobalStateStorage(keyValueStorage),
+        metricsGlobalStorage,
         inputChannel = output.metricsGlobalChannel,
         outputChannel = output.logChannel
     )

@@ -25,17 +25,16 @@
 
 package io.infinitic.exceptions.tasks
 
-import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.exceptions.UserException
 
-sealed class TaskException(
+sealed class TaskUserException(
     msg: String,
     help: String
 ) : UserException("$msg.\n$help")
 
 class ClassNotFoundException(
     name: String
-) : TaskException(
+) : TaskUserException(
     msg = "Impossible to find a Class associated to $name",
     help = "Use \"register\" method to provide an instance that will be used associated to $name"
 )
@@ -44,7 +43,7 @@ class NoMethodFoundWithParameterTypesException(
     klass: String,
     method: String,
     parameterTypes: List<String>
-) : TaskException(
+) : TaskUserException(
     msg = "No method \"$method(${ parameterTypes.joinToString() })\" found in \"$klass\" class",
     help = "Make sure parameter types are consistent with your method definition"
 )
@@ -53,7 +52,7 @@ class NoMethodFoundWithParameterCountException(
     klass: String,
     method: String,
     parameterCount: Int
-) : TaskException(
+) : TaskUserException(
     msg = "No method \"$method\" with $parameterCount parameters found in \"$klass\" class",
     help = ""
 )
@@ -62,15 +61,7 @@ class TooManyMethodsFoundWithParameterCountException(
     klass: String,
     method: String,
     parameterCount: Int
-) : TaskException(
+) : TaskUserException(
     msg = "Unable to decide which method \"$method\" with $parameterCount parameters to use in \"$klass\" class",
     help = ""
-)
-
-class ProcessingTimeoutException(
-    klass: String,
-    delay: Float
-) : TaskException(
-    msg = "The processing of task \"$klass\" took more than $delay seconds",
-    help = "You can increase (or remove entirely) this constraint in the options ${TaskOptions::javaClass.name}"
 )

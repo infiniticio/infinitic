@@ -23,27 +23,26 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.exceptions.deferred
+package io.infinitic.exceptions.workflows
 
-import io.infinitic.common.tasks.data.Error
-import io.infinitic.exceptions.UserException
+import io.infinitic.common.data.Error
+import io.infinitic.exceptions.RunException
+import java.util.UUID
 
-sealed class DeferredException(
+sealed class WorkflowRunException(
     msg: String,
-    help: String
-) : UserException("$msg.\n$help")
+    causeError: Error? = null
+) : RunException(msg, causeError)
 
-object CancellationException : DeferredException(
-    msg = "Waiting for a canceled deferred",
-    help = "You should kill this workflow, or try / catch this exception in the workflow"
+class CanceledDeferredException(val name: String?, val id: UUID) : WorkflowRunException(
+    msg = "Canceled deferred: $name ($id)",
 )
 
-class FailureException(val error: Error) : DeferredException(
-    msg = "Waiting for a failed deferred: $error",
-    help = "You should retry it, or try / catch this exception in the workflow"
+class FailedDeferredException(val name: String?, val id: UUID, error: Error? = null) : WorkflowRunException(
+    msg = "Failed deferred: $name ($id)",
+    causeError = error
 )
 
-object TimeoutException : DeferredException(
-    msg = "Waiting for a timed-out deferred",
-    help = "You should retry it, or try / catch this exception in the workflow"
+class TimedOutDeferredException(val name: String?, val id: UUID) : WorkflowRunException(
+    msg = "Timed-out deferred: $name ($id)",
 )

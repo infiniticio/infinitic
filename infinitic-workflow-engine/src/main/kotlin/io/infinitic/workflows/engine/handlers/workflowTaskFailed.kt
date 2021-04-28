@@ -26,9 +26,15 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.WorkflowFailed
+import io.infinitic.common.workflows.data.commands.CommandCanceled
+import io.infinitic.common.workflows.data.commands.CommandCompleted
+import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandOngoing
+import io.infinitic.common.workflows.data.commands.CommandOngoingFailure
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
 import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 
 internal suspend fun workflowTaskFailed(
@@ -37,12 +43,25 @@ internal suspend fun workflowTaskFailed(
     msg: TaskFailed
 ) {
     // if on main path, forward the error
-    if (state.runningMethodRunPosition!!.isOnMainPath()) {
+    if (state.isRunningWorkflowTaskOnMainPath()) {
         val methodRun = state.getRunningMethodRun()
+
+        // if the error is due to a a command failure, we enrich the error
+        val error = when (msg.error.errorCause == null && msg.error.id != null) {
+            true -> msg.error.copy(
+                errorCause = when (val commandStatus = methodRun.getPastCommand(CommandId(msg.error.id!!)).commandStatus) {
+                    is CommandCompleted -> thisShouldNotHappen()
+                    CommandOngoing -> thisShouldNotHappen()
+                    is CommandOngoingFailure -> commandStatus.error
+                    is CommandCanceled -> null
+                }
+            )
+            false -> msg.error
+        }
 
         // send to waiting clients
         methodRun.waitingClients.forEach {
-            val workflowFailed = WorkflowFailed(it, state.workflowId, msg.error)
+            val workflowFailed = WorkflowFailed(it, state.workflowId, error)
             output.sendEventsToClient(workflowFailed)
         }
 
@@ -53,7 +72,7 @@ internal suspend fun workflowTaskFailed(
                 workflowName = methodRun.parentWorkflowName!!,
                 methodRunId = methodRun.parentMethodRunId!!,
                 childWorkflowId = state.workflowId,
-                childWorkflowError = msg.error
+                childWorkflowError = error
             )
             output.sendToWorkflowEngine(childWorkflowFailed)
         }

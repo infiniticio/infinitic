@@ -38,8 +38,7 @@ class MetricsGlobalEngine(
 ) {
     private val storage = LoggedMetricsGlobalStateStorage(storage)
 
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: MetricsGlobalMessage) {
         logger.debug("receiving {}", message)

@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.tasks.data.Error
+import io.infinitic.common.data.Error
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 
@@ -40,6 +40,7 @@ sealed class CommandStatus {
 @Serializable
 object CommandOngoing : CommandStatus() {
     override fun equals(other: Any?) = javaClass == other?.javaClass
+    override fun toString(): String = CommandOngoing::class.java.name
 }
 
 @Serializable

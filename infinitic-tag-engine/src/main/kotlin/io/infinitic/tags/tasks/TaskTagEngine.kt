@@ -48,8 +48,7 @@ class TaskTagEngine(
     private lateinit var scope: CoroutineScope
     private val storage = LoggedTaskTagStorage(storage)
 
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskTagEngineMessage) {
         logger.debug("receiving {}", message)

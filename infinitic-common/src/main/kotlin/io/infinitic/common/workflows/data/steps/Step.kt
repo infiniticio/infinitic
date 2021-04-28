@@ -35,6 +35,7 @@ import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
+import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.serialization.Serializable
 import kotlin.Int.Companion.MAX_VALUE
 
@@ -60,26 +61,26 @@ sealed class Step {
         override fun hash() = StepHash(SerializedData.from(commandId).hash())
 
         override fun isTerminatedAt(index: WorkflowTaskIndex) = when (stepStatusAt(index)) {
-            is StepStatusOngoing -> false
-            is StepStatusOngoingFailure -> true
-            is StepStatusCompleted -> true
-            is StepStatusCanceled -> true
-            is StepStatusFailed -> thisShouldNotHappen()
+            is StepOngoing -> false
+            is StepOngoingFailure -> true
+            is StepCompleted -> true
+            is StepCanceled -> true
+            is StepFailed -> thisShouldNotHappen()
         }
 
         override fun stepStatusAt(index: WorkflowTaskIndex) = when (val status = commandStatus) {
-            is CommandOngoing -> StepStatusOngoing
+            is CommandOngoing -> StepOngoing
             is CommandCompleted -> when (index >= status.completionWorkflowTaskIndex) {
-                true -> StepStatusCompleted(StepReturnValue.from(status.returnValue.get()), status.completionWorkflowTaskIndex)
-                false -> StepStatusOngoing
+                true -> StepCompleted(StepReturnValue.from(status.returnValue.get()), status.completionWorkflowTaskIndex)
+                false -> StepOngoing
             }
             is CommandCanceled -> when (index >= status.cancellationWorkflowTaskIndex) {
-                true -> StepStatusCanceled(status.cancellationWorkflowTaskIndex)
-                false -> StepStatusOngoing
+                true -> StepCanceled(commandId, status.cancellationWorkflowTaskIndex)
+                false -> StepOngoing
             }
             is CommandOngoingFailure -> when (index >= status.failureWorkflowTaskIndex) {
-                true -> StepStatusOngoingFailure(status.error, status.failureWorkflowTaskIndex)
-                false -> StepStatusOngoing
+                true -> StepOngoingFailure(commandId, status.failureWorkflowTaskIndex)
+                false -> StepOngoing
             }
         }
 
@@ -102,25 +103,25 @@ sealed class Step {
 
             // if at least one step is canceled or ongoingFailure, then And(...steps) is the first of them
             val firstTerminated = statuses
-                .filter { it is StepStatusOngoingFailure && it is StepStatusCanceled }
+                .filter { it is StepOngoingFailure && it is StepCanceled }
                 .minByOrNull {
                     when (it) {
-                        is StepStatusOngoingFailure -> it.failureWorkflowTaskIndex
-                        is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
-                        is StepStatusCompleted, is StepStatusFailed, is StepStatusOngoing -> thisShouldNotHappen()
+                        is StepOngoingFailure -> it.failureWorkflowTaskIndex
+                        is StepCanceled -> it.cancellationWorkflowTaskIndex
+                        is StepCompleted, is StepFailed, is StepOngoing -> thisShouldNotHappen()
                     }
                 }
             if (firstTerminated != null) return firstTerminated
 
             // if at least one step is ongoing, then And(...steps) is ongoing
-            if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing
+            if (statuses.any { it is StepOngoing }) return StepOngoing
 
             // if all steps are completed, then And(...steps) is completed
-            if (statuses.all { it is StepStatusCompleted }) {
-                val maxIndex = statuses.maxOf { (it as StepStatusCompleted).completionWorkflowTaskIndex }
-                val results = statuses.map { (it as StepStatusCompleted).returnValue.get() }
+            if (statuses.all { it is StepCompleted }) {
+                val maxIndex = statuses.maxOf { (it as StepCompleted).completionWorkflowTaskIndex }
+                val results = statuses.map { (it as StepCompleted).returnValue.get() }
 
-                return StepStatusCompleted(StepReturnValue.from(results), maxIndex)
+                return StepCompleted(StepReturnValue.from(results), maxIndex)
             }
 
             thisShouldNotHappen()
@@ -140,19 +141,19 @@ sealed class Step {
 
             // if at least one step is completed, then Or(...steps) is the first completed
             val firstCompleted = statuses
-                .filterIsInstance<StepStatusCompleted>()
+                .filterIsInstance<StepCompleted>()
                 .minByOrNull { it.completionWorkflowTaskIndex }
             if (firstCompleted != null) return firstCompleted
 
             // if at least one step is ongoing, then Or(...steps) is ongoing
-            if (statuses.any { it is StepStatusOngoing }) return StepStatusOngoing
+            if (statuses.any { it is StepOngoing }) return StepOngoing
 
             // all steps are neither completed, neither ongoing => canceled, failed based on last one
             val lastTerminated = statuses.maxByOrNull {
                 when (it) {
-                    is StepStatusOngoingFailure -> it.failureWorkflowTaskIndex
-                    is StepStatusCanceled -> it.cancellationWorkflowTaskIndex
-                    is StepStatusCompleted, is StepStatusFailed, is StepStatusOngoing -> thisShouldNotHappen()
+                    is StepOngoingFailure -> it.failureWorkflowTaskIndex
+                    is StepCanceled -> it.cancellationWorkflowTaskIndex
+                    is StepCompleted, is StepFailed, is StepOngoing -> thisShouldNotHappen()
                 }
             }
             if (lastTerminated != null) return lastTerminated
@@ -209,6 +210,4 @@ sealed class Step {
         }
         return this
     }
-
-    protected fun thisShouldNotHappen(): Nothing = throw RuntimeException("this should not happen")
 }

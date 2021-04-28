@@ -26,11 +26,11 @@
 package io.infinitic.tasks.executor
 
 import io.infinitic.clients.InfiniticClient
+import io.infinitic.common.data.Error
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.parser.getMethodPerNameAndParameterCount
 import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
-import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
@@ -59,8 +59,7 @@ class TaskExecutor(
     private val clientFactory: () -> InfiniticClient
 ) : TaskExecutorRegister by taskExecutorRegister {
 
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskExecutorMessage) {
         logger.debug("receiving {}", message)
@@ -179,12 +178,11 @@ class TaskExecutor(
 
     private suspend fun sendTaskAttemptFailed(
         message: ExecuteTaskAttempt,
-        error: Throwable,
+        cause: Throwable,
         delay: MillisDuration?,
         taskMeta: TaskMeta
     ) {
-
-        logger.error("taskId {} - error {}", message.taskId, error)
+        logger.error("taskId: {} - error: {}", message.taskId, cause)
 
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = message.taskId,
@@ -193,7 +191,7 @@ class TaskExecutor(
             taskRetrySequence = message.taskRetrySequence,
             taskRetryIndex = message.taskRetryIndex,
             taskAttemptDelayBeforeRetry = delay,
-            taskAttemptError = Error.from(error),
+            taskAttemptError = Error.from(cause),
             taskMeta = taskMeta
         )
 

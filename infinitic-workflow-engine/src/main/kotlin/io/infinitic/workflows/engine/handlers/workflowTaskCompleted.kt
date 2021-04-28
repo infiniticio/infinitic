@@ -48,9 +48,9 @@ import io.infinitic.common.workflows.data.commands.StartInlineTask
 import io.infinitic.common.workflows.data.commands.StartInstantTimer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
-import io.infinitic.common.workflows.data.steps.StepStatusFailed
-import io.infinitic.common.workflows.data.steps.StepStatusOngoing
-import io.infinitic.common.workflows.data.steps.StepStatusOngoingFailure
+import io.infinitic.common.workflows.data.steps.StepFailed
+import io.infinitic.common.workflows.data.steps.StepOngoing
+import io.infinitic.common.workflows.data.steps.StepOngoingFailure
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
 import io.infinitic.common.workflows.data.workflowTasks.plus
@@ -83,8 +83,8 @@ internal suspend fun workflowTaskCompleted(
     methodRun.getStepByPosition(state.runningMethodRunPosition!!)
         ?.run {
             val status = stepStatus
-            if (status is StepStatusOngoingFailure) {
-                stepStatus = StepStatusFailed(status.error, status.failureWorkflowTaskIndex)
+            if (status is StepOngoingFailure) {
+                stepStatus = StepFailed(status.commandId, status.failureWorkflowTaskIndex)
             }
         }
 
@@ -124,7 +124,7 @@ internal suspend fun workflowTaskCompleted(
                 stepPosition = it.stepPosition,
                 step = it.step,
                 stepHash = it.stepHash,
-                stepStatus = StepStatusOngoing
+                stepStatus = StepOngoing
             )
         )
     }

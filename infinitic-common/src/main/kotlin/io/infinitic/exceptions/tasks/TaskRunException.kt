@@ -23,26 +23,20 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.exceptions.tasks
 
-import kotlinx.serialization.Serializable
+import io.infinitic.common.tasks.data.TaskOptions
+import io.infinitic.exceptions.UserException
 
-@Serializable
-data class Error(
-    val errorName: String,
-    val errorMessage: String?,
-    val errorStacktrace: String,
-    val errorCause: Error? = null
-) {
-    companion object {
-        fun from(e: Throwable): Error = Error(
-            errorName = e::class.java.name,
-            errorMessage = e.message,
-            errorStacktrace = e.stackTraceToString(),
-            errorCause = run {
-                val cause = e.cause
-                if (cause == e || cause == null) null else from(cause)
-            }
-        )
-    }
-}
+sealed class TaskRunException(
+    msg: String,
+    help: String
+) : UserException("$msg.\n$help")
+
+class ProcessingTimeoutException(
+    klass: String,
+    delay: Float
+) : TaskRunException(
+    msg = "The processing of task \"$klass\" took more than $delay seconds",
+    help = "You can increase (or remove entirely) this constraint in the options ${TaskOptions::javaClass.name}"
+)

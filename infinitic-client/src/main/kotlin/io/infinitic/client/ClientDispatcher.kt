@@ -68,11 +68,9 @@ import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.exceptions.clients.AlreadyCompletedWorkflowException
-import io.infinitic.exceptions.clients.CanceledTaskException
-import io.infinitic.exceptions.clients.CanceledWorkflowException
+import io.infinitic.exceptions.clients.CanceledDeferredException
 import io.infinitic.exceptions.clients.ChannelUsedOnNewWorkflowException
-import io.infinitic.exceptions.clients.FailedTaskException
-import io.infinitic.exceptions.clients.FailedWorkflowException
+import io.infinitic.exceptions.clients.FailedDeferredException
 import io.infinitic.exceptions.clients.MultipleMethodCallsException
 import io.infinitic.exceptions.clients.NoMethodCallException
 import io.infinitic.exceptions.clients.NoSendMethodCallException
@@ -185,14 +183,14 @@ internal class ClientDispatcher(
         @Suppress("UNCHECKED_CAST")
         return when (taskResult) {
             is TaskCompleted -> taskResult.taskReturnValue.get() as T
-            is TaskCanceled -> throw CanceledTaskException(
-                "${deferredTask.taskId}",
-                "${deferredTask.taskName}"
-            )
-            is TaskFailed -> throw FailedTaskException(
+            is TaskCanceled -> throw CanceledDeferredException(
                 "${deferredTask.taskId}",
                 "${deferredTask.taskName}",
-                taskResult.error.errorStacktrace
+            )
+            is TaskFailed -> throw FailedDeferredException(
+                "${deferredTask.taskId}",
+                "${deferredTask.taskName}",
+                taskResult.error
             )
             is UnknownTask -> throw UnknownTaskException(
                 "${deferredTask.taskId}",
@@ -287,14 +285,14 @@ internal class ClientDispatcher(
         @Suppress("UNCHECKED_CAST")
         return when (workflowResult) {
             is WorkflowCompleted -> workflowResult.workflowReturnValue.get() as T
-            is WorkflowCanceled -> throw CanceledWorkflowException(
+            is WorkflowCanceled -> throw CanceledDeferredException(
                 "${deferredWorkflow.workflowId}",
                 "${deferredWorkflow.workflowName}"
             )
-            is WorkflowFailed -> throw FailedWorkflowException(
+            is WorkflowFailed -> throw FailedDeferredException(
                 "${deferredWorkflow.workflowId}",
                 "${deferredWorkflow.workflowName}",
-                workflowResult.error.errorStacktrace
+                workflowResult.error
             )
             is UnknownWorkflow -> throw UnknownWorkflowException(
                 "${deferredWorkflow.workflowId}",

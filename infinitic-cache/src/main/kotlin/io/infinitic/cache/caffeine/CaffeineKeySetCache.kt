@@ -35,8 +35,7 @@ import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
 class CaffeineKeySetCache<S>(config: CaffeineConfig) : KeySetCache<S>, Flushable {
 
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     private var caffeine: Cache<String, Set<S>> =
         Caffeine.newBuilder().setup(config).build()

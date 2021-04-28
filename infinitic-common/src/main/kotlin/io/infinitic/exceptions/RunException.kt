@@ -23,31 +23,12 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyValue
+package io.infinitic.exceptions
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import io.infinitic.common.data.Error
+import java.lang.RuntimeException
 
-open class LoggedKeyValueStorage(
-    val storage: KeyValueStorage
-) : KeyValueStorage by storage {
-
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
-
-    override suspend fun getValue(key: String): ByteArray? {
-        val value = storage.getValue(key)
-        logger.debug("key {} - getValue {}", key, value)
-
-        return value
-    }
-
-    override suspend fun putValue(key: String, value: ByteArray) {
-        logger.debug("key {} - putValue {}", key, value)
-        storage.putValue(key, value)
-    }
-
-    override suspend fun delValue(key: String) {
-        logger.debug("key {} - delValue", key)
-        storage.delValue(key)
-    }
-}
+open class RunException(
+    message: String,
+    val causeError: Error?
+) : RuntimeException(message)

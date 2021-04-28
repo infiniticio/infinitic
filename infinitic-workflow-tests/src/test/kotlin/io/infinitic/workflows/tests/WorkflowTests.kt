@@ -48,8 +48,8 @@ import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.exceptions.clients.CanceledWorkflowException
-import io.infinitic.exceptions.clients.FailedWorkflowException
+import io.infinitic.exceptions.clients.CanceledDeferredException
+import io.infinitic.exceptions.clients.FailedDeferredException
 import io.infinitic.metrics.global.engine.MetricsGlobalEngine
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
@@ -763,7 +763,7 @@ class WorkflowTests : StringSpec({
         coroutineScope {
             init()
             launch { client.cancel(workflowA) }
-            shouldThrow<CanceledWorkflowException> { workflowA.channel1() }
+            shouldThrow<CanceledDeferredException> { workflowA.channel1() }
         }
     }
 
@@ -774,7 +774,7 @@ class WorkflowTests : StringSpec({
             init()
             deferred = client.async(workflowA) { channel1() }
             launch { client.cancel(workflowA) }
-            shouldThrow<CanceledWorkflowException> { deferred.await() }
+            shouldThrow<CanceledDeferredException> { deferred.await() }
         }
         // check output
         workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
@@ -795,7 +795,7 @@ class WorkflowTests : StringSpec({
         // run
         coroutineScope {
             init()
-            e = shouldThrow<FailedWorkflowException> {
+            e = shouldThrow<FailedDeferredException> {
                 workflowB.cancelChild()
             }
         }

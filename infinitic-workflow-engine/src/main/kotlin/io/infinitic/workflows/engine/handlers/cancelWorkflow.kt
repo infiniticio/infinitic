@@ -47,7 +47,8 @@ internal suspend fun cancelWorkflow(
                 workflowId = methodRun.parentWorkflowId!!,
                 workflowName = methodRun.parentWorkflowName!!,
                 methodRunId = methodRun.parentMethodRunId!!,
-                childWorkflowId = state.workflowId
+                childWorkflowId = state.workflowId,
+                childWorkflowName = state.workflowName
             )
             output.sendToWorkflowEngine(childWorkflowCanceled)
         }

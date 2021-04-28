@@ -50,8 +50,7 @@ class WorkflowTagEngine(
     private lateinit var scope: CoroutineScope
     private val storage = LoggedWorkflowTagStorage(storage)
 
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: WorkflowTagEngineMessage) {
         logger.debug("receiving {}", message)

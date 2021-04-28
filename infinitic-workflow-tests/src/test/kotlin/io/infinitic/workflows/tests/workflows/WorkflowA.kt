@@ -27,7 +27,7 @@ package io.infinitic.workflows.tests.workflows
 
 import com.jayway.jsonpath.Criteria.where
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.exceptions.deferred.FailureException
+import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
@@ -483,7 +483,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun failing1() = try {
         taskA.failing()
         "ok"
-    } catch (e: FailureException) {
+    } catch (e: FailedDeferredException) {
         taskA.reverse("ok")
     }
 }

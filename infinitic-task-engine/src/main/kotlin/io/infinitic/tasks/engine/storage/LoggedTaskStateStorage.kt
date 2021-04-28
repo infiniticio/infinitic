@@ -25,18 +25,17 @@
 
 package io.infinitic.tasks.engine.storage
 
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedTaskStateStorage(
     val storage: TaskStateStorage
-) : TaskStateStorage, Flushable by storage {
+) : TaskStateStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getState(taskId: TaskId): TaskState? {
         val taskState = storage.getState(taskId)
@@ -53,5 +52,11 @@ class LoggedTaskStateStorage(
     override suspend fun delState(taskId: TaskId) {
         logger.debug("taskId {} - delState", taskId)
         storage.delState(taskId)
+    }
+
+    @TestOnly
+    override fun flush() {
+        logger.debug("flush()")
+        storage.flush()
     }
 }

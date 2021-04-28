@@ -72,8 +72,7 @@ class InMemoryOutput(
     val metricsPerNameChannel: Channel<MetricsPerNameMessageToProcess> = Channel(),
     val metricsGlobalChannel: Channel<MetricsGlobalMessageToProcess> = Channel()
 ) {
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     val sendEventsToClient: SendToClient = { message: ClientMessage ->
         logger.debug("sendEventsToClient {}", message)

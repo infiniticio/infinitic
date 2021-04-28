@@ -32,8 +32,7 @@ class LoggedKeySetStorage(
     val storage: KeySetStorage
 ) : KeySetStorage by storage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getSet(key: String): Set<ByteArray> {
         val value = storage.getSet(key)

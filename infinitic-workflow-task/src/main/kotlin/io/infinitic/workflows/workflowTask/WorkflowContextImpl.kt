@@ -28,6 +28,7 @@ package io.infinitic.workflows.workflowTask
 import com.jayway.jsonpath.Criteria
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.Name
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
@@ -38,6 +39,7 @@ import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandCompleted
+import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
 import io.infinitic.common.workflows.data.commands.CommandType
@@ -59,19 +61,19 @@ import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.Step
-import io.infinitic.common.workflows.data.steps.StepStatusCanceled
-import io.infinitic.common.workflows.data.steps.StepStatusCompleted
-import io.infinitic.common.workflows.data.steps.StepStatusFailed
-import io.infinitic.common.workflows.data.steps.StepStatusOngoing
-import io.infinitic.common.workflows.data.steps.StepStatusOngoingFailure
+import io.infinitic.common.workflows.data.steps.StepCanceled
+import io.infinitic.common.workflows.data.steps.StepCompleted
+import io.infinitic.common.workflows.data.steps.StepFailed
+import io.infinitic.common.workflows.data.steps.StepOngoing
+import io.infinitic.common.workflows.data.steps.StepOngoingFailure
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
-import io.infinitic.exceptions.deferred.CancellationException
-import io.infinitic.exceptions.deferred.FailureException
-import io.infinitic.exceptions.workflowTasks.MultipleMethodCallsAtAsyncException
-import io.infinitic.exceptions.workflowTasks.NoMethodCallAtAsyncException
-import io.infinitic.exceptions.workflowTasks.ShouldNotUseAsyncFunctionInsideInlinedTaskException
-import io.infinitic.exceptions.workflowTasks.ShouldNotWaitInsideInlinedTaskException
-import io.infinitic.exceptions.workflowTasks.WorkflowUpdatedWhileRunningException
+import io.infinitic.exceptions.workflows.CanceledDeferredException
+import io.infinitic.exceptions.workflows.FailedDeferredException
+import io.infinitic.exceptions.workflows.MultipleMethodCallsAtAsyncException
+import io.infinitic.exceptions.workflows.NoMethodCallAtAsyncException
+import io.infinitic.exceptions.workflows.ShouldNotUseAsyncFunctionInsideInlinedTaskException
+import io.infinitic.exceptions.workflows.ShouldNotWaitInsideInlinedTaskException
+import io.infinitic.exceptions.workflows.WorkflowUpdatedWhileRunningException
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowContext
@@ -105,10 +107,10 @@ internal class WorkflowContextImpl(
     // current workflowTaskIndex (useful to retrieve status of Deferred)
     private var workflowTaskIndex = workflowTaskParameters.methodRun.workflowTaskIndexAtStart
 
-    // new commands (if any) discovered during execution of the method
+    // new commands discovered during execution of the method
     var newCommands: MutableList<NewCommand> = mutableListOf()
 
-    // new steps (if any) discovered during execution the method (can be multiple due to `async` function)
+    // new steps discovered during execution the method (possibly more than one due to `async` function)
     var newSteps: MutableList<NewStep> = mutableListOf()
 
     /*
@@ -260,30 +262,47 @@ internal class WorkflowContextImpl(
         )
         val pastStep = getSimilarPastStep(newStep)
 
+        // new step (eg. a logical combination of previous deferred)
         if (pastStep == null) {
-            // it can be a new step (eg. a logical combination of previous deferred)
+            // add a new step
+            newSteps.add(newStep)
+            // determine status
             deferred.stepStatus = newStep.step.stepStatusAt(workflowTaskIndex)
 
             return when (val stepStatus = deferred.stepStatus) {
-                is StepStatusOngoing -> {
-                    // we add a new step
-                    newSteps.add(newStep)
-                    // and stop here
-                    throw NewStepException
-                }
-                is StepStatusCanceled -> throw CancellationException
-                is StepStatusCompleted -> stepStatus.returnValue.get() as T
-                is StepStatusFailed -> throw FailureException(stepStatus.error)
-                is StepStatusOngoingFailure -> throw FailureException(stepStatus.error)
+                is StepCompleted -> stepStatus.returnValue.get() as T
+                is StepOngoing -> throw NewStepException
+                is StepCanceled -> throw CanceledDeferredException(
+                    getCommandName(stepStatus.commandId)?.toString(),
+                    stepStatus.commandId.id
+                )
+                is StepFailed -> throw FailedDeferredException(
+                    getCommandName(stepStatus.commandId)?.toString(),
+                    stepStatus.commandId.id
+                )
+                is StepOngoingFailure -> throw FailedDeferredException(
+                    getCommandName(stepStatus.commandId)?.toString(),
+                    stepStatus.commandId.id
+                )
             }
         }
 
+        // known step
         val stepStatus = when (val stepStatus = pastStep.stepStatus) {
-            is StepStatusOngoing -> throw KnownStepException
-            is StepStatusCanceled -> throw CancellationException
-            is StepStatusCompleted -> stepStatus
-            is StepStatusFailed -> throw FailureException(stepStatus.error)
-            is StepStatusOngoingFailure -> throw FailureException(stepStatus.error)
+            is StepCompleted -> stepStatus
+            is StepOngoing -> throw KnownStepException
+            is StepCanceled -> throw CanceledDeferredException(
+                getCommandName(stepStatus.commandId)?.toString(),
+                stepStatus.commandId.id
+            )
+            is StepFailed -> throw FailedDeferredException(
+                getCommandName(stepStatus.commandId)?.toString(),
+                stepStatus.commandId.id
+            )
+            is StepOngoingFailure -> throw FailedDeferredException(
+                getCommandName(stepStatus.commandId)?.toString(),
+                stepStatus.commandId.id
+            )
         }
 
         // update deferred status (StepStatusCompleted)
@@ -307,11 +326,11 @@ internal class WorkflowContextImpl(
      */
     override fun <T> status(deferred: Deferred<T>): DeferredStatus =
         when (deferred.step.stepStatusAt(workflowTaskIndex)) {
-            is StepStatusOngoing -> DeferredStatus.ONGOING
-            is StepStatusCompleted -> DeferredStatus.COMPLETED
-            is StepStatusCanceled -> DeferredStatus.CANCELED
-            is StepStatusFailed -> DeferredStatus.FAILED
-            is StepStatusOngoingFailure -> DeferredStatus.FAILED
+            is StepOngoing -> DeferredStatus.ONGOING
+            is StepCompleted -> DeferredStatus.COMPLETED
+            is StepCanceled -> DeferredStatus.CANCELED
+            is StepFailed -> DeferredStatus.FAILED
+            is StepOngoingFailure -> DeferredStatus.FAILED
         }
 
     /*
@@ -500,7 +519,7 @@ internal class WorkflowContextImpl(
             .find { it.commandPosition == methodRunIndex.methodPosition }
 
         // if it exists, check it has not changed
-        if (pastCommand != null && !pastCommand.isSimilarTo(newCommand, workflowTaskParameters.workflowOptions.workflowChangeCheckMode)) {
+        if (pastCommand != null && !pastCommand.isSameThan(newCommand, workflowTaskParameters.workflowOptions.workflowChangeCheckMode)) {
             logger.error("pastCommand =  {}", pastCommand)
             logger.error("newCommand =  {}", newCommand)
             logger.error("workflowChangeCheckMode =  {}", workflowTaskParameters.workflowOptions.workflowChangeCheckMode)
@@ -532,4 +551,8 @@ internal class WorkflowContextImpl(
 
         return pastStep
     }
+
+    private fun getCommandName(commandId: CommandId): Name? = workflowTaskParameters.methodRun
+        .pastCommands.firstOrNull { it.commandId == commandId }?.commandName
+        ?: newCommands.firstOrNull { it.commandId == commandId }?.commandName
 }

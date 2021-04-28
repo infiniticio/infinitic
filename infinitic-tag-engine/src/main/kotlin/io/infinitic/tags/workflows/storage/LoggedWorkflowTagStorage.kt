@@ -26,19 +26,18 @@
 package io.infinitic.tags.workflows.storage
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedWorkflowTagStorage(
     val storage: WorkflowTagStorage
-) : WorkflowTagStorage, Flushable by storage {
+) : WorkflowTagStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId? {
         val messageId = storage.getLastMessageId(tag, workflowName)
@@ -67,5 +66,11 @@ class LoggedWorkflowTagStorage(
     override suspend fun removeWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
         logger.debug("tag {} - name {} - removeWorkflowId {}", tag, workflowName, workflowId)
         storage.removeWorkflowId(tag, workflowName, workflowId)
+    }
+
+    @TestOnly
+    override fun flush() {
+        logger.debug("flush()")
+        storage.flush()
     }
 }

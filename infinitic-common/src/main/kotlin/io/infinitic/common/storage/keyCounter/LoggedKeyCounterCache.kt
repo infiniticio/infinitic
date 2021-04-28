@@ -32,8 +32,7 @@ class LoggedKeyCounterCache(
     val cache: KeyCounterCache
 ) : KeyCounterCache by cache {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun getCounter(key: String): Long? {
         val value = cache.getCounter(key)

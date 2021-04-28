@@ -25,7 +25,4 @@
 
 package io.infinitic.exceptions
 
-import kotlinx.serialization.Serializable
-
-@Serializable
 open class UserException(override val message: String) : RuntimeException(message)

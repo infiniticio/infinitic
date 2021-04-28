@@ -84,6 +84,7 @@ class InfiniticClient @JvmOverloads constructor(
     }
 
     companion object {
+
         /**
          * Create Client from a custom PulsarClient and a ClientConfig instance
          */

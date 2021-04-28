@@ -69,6 +69,13 @@ data class MethodRun(
         pastSteps.firstOrNull { it.stepPosition == position }
 
     /**
+     * Retrieve step by position
+     * This value could be null (eg. for starting position of async command)
+     */
+    fun getCommandByPosition(position: MethodRunPosition): PastCommand? =
+        pastCommands.firstOrNull { it.commandPosition == position }
+
+    /**
      * Retrieve pastCommand per commandId.
      * This value should always be present.
      */

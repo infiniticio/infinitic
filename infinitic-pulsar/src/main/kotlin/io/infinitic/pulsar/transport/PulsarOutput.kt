@@ -56,8 +56,7 @@ class PulsarOutput(
     pulsarTenant: String,
     pulsarNamespace: String
 ) {
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     private val topicNamer = TopicNamer(pulsarTenant, pulsarNamespace)
     private val zero = MillisDuration(0)

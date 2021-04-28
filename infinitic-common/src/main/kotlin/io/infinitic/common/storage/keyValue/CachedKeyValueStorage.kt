@@ -33,8 +33,7 @@ open class CachedKeyValueStorage(
     val storage: KeyValueStorage
 ) : KeyValueStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getValue(key: String) = cache.getValue(key)
         ?: run {

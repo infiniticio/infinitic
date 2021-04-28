@@ -29,12 +29,27 @@ import io.infinitic.client.Client
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
+import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
+import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
+import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
+import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
+import io.infinitic.storage.inMemory.InMemoryKeySetStorage
+import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
+import io.infinitic.tags.tasks.storage.TaskTagStorage
+import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
+import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tasks.TaskExecutorRegister
+import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
+import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
+import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
 
+@Suppress("MemberVisibilityCanBePrivate")
 class InfiniticClient(
     taskExecutorRegister: TaskExecutorRegister,
     val name: String? = null
@@ -63,7 +78,27 @@ class InfiniticClient(
         threadPool.shutdown()
     }
 
+    private val keyValueStorage = InMemoryKeyValueStorage()
+    private val keySetStorage = InMemoryKeySetStorage()
+
+    val taskTagStorage: TaskTagStorage = BinaryTaskTagStorage(keyValueStorage, keySetStorage)
+    val taskStorage: TaskStateStorage = BinaryTaskStateStorage(keyValueStorage)
+    val workflowTagStorage: WorkflowTagStorage = BinaryWorkflowTagStorage(keyValueStorage, keySetStorage)
+    val workflowStateStorage: WorkflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
+    val metricsPerNameStorage: MetricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
+    val metricsGlobalStorage: MetricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
+
     init {
-        job = scope.startInMemory(taskExecutorRegister, this, inMemoryOutput) { }
+        job = scope.startInMemory(
+            taskExecutorRegister,
+            this,
+            inMemoryOutput,
+            taskTagStorage,
+            taskStorage,
+            workflowTagStorage,
+            workflowStateStorage,
+            metricsPerNameStorage,
+            metricsGlobalStorage
+        ) { }
     }
 }

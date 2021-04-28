@@ -25,20 +25,41 @@
 
 package io.infinitic.inMemory.tasks
 
+import io.infinitic.clients.cancelTask
+import io.infinitic.clients.cancelWorkflow
+import io.infinitic.inMemory.workflows.WorkflowA
 import io.infinitic.tasks.Task
-import kotlinx.coroutines.delay
+import java.time.Duration
+import java.util.UUID
 
 interface TaskA {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
     fun await(delay: Long): Long
+    fun workflowId(): UUID?
+    fun workflowName(): String?
+    fun cancelWorkflowA(id: UUID)
+    fun cancelTaskA(id: UUID)
+    fun failing()
 }
 
 class TaskAImpl : Task(), TaskA {
     override fun concat(str1: String, str2: String) = str1 + str2
     override fun reverse(str: String) = str.reversed()
-    override fun await(delay: Long): Long {
-        Thread.sleep(delay)
-        return delay
+    override fun await(delay: Long): Long { Thread.sleep(delay); return delay }
+    override fun workflowId() = context.workflowId
+    override fun workflowName() = context.workflowName
+    override fun cancelWorkflowA(id: UUID) {
+        Thread.sleep(50)
+        context.client.cancelWorkflow<WorkflowA>(id)
     }
+
+    override fun cancelTaskA(id: UUID) {
+        Thread.sleep(50)
+        context.client.cancelTask<TaskA>(id)
+    }
+
+    override fun failing() = throw Exception("sorry")
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }

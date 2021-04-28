@@ -26,16 +26,15 @@
 package io.infinitic.metrics.global.engine.storage
 
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
-import io.infinitic.common.storage.Flushable
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedMetricsGlobalStateStorage(
     val storage: MetricsGlobalStateStorage
-) : MetricsGlobalStateStorage, Flushable by storage {
+) : MetricsGlobalStateStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getState(): MetricsGlobalState? {
         val state = storage.getState()
@@ -52,5 +51,11 @@ class LoggedMetricsGlobalStateStorage(
     override suspend fun delState() {
         logger.debug("delState")
         storage.delState()
+    }
+
+    @TestOnly
+    override fun flush() {
+        logger.debug("flush()")
+        storage.flush()
     }
 }

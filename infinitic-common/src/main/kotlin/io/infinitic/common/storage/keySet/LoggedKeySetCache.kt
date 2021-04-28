@@ -32,8 +32,7 @@ class LoggedKeySetCache<T>(
     val cache: KeySetCache<T>
 ) : KeySetCache<T> by cache {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun getSet(key: String): Set<T>? {
         val value = cache.getSet(key)

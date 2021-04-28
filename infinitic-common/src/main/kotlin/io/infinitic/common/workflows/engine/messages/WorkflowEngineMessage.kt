@@ -26,13 +26,13 @@
 package io.infinitic.common.workflows.engine.messages
 
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.Error
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.channels.ChannelEvent
@@ -121,7 +121,8 @@ data class ChildWorkflowCanceled(
     override val workflowId: WorkflowId,
     override val workflowName: WorkflowName,
     override val methodRunId: MethodRunId,
-    val childWorkflowId: WorkflowId
+    val childWorkflowId: WorkflowId,
+    val childWorkflowName: WorkflowName
 ) : WorkflowEngineMessage(), MethodRunMessage
 
 @Serializable

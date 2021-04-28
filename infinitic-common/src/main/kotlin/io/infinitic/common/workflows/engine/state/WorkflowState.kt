@@ -31,6 +31,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
@@ -45,6 +46,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -153,4 +155,14 @@ data class WorkflowState(
     fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
 
     fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull() { it.methodRunId == methodRunId }
+
+    /**
+     * true if the current workflow task is on main path
+     */
+    fun isRunningWorkflowTaskOnMainPath(): Boolean {
+        val p = runningMethodRunPosition ?: throw thisShouldNotHappen()
+
+        return p.isOnMainPath() &&
+            getRunningMethodRun().getCommandByPosition(p)?.commandType != CommandType.START_ASYNC
+    }
 }

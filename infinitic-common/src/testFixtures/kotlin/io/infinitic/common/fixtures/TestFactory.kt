@@ -25,13 +25,13 @@
 
 package io.infinitic.common.fixtures
 
+import io.infinitic.common.data.Error
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.tasks.data.Error
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -93,9 +93,11 @@ object TestFactory {
             .randomize(Error::class.java) {
                 Error(
                     errorName = random(),
-                    errorStacktrace = random(),
+                    errorStackTraceToString = random(),
                     errorMessage = random(),
-                    errorCause = null
+                    errorCause = null,
+                    id = null,
+                    name = null
                 )
             }
 

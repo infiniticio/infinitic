@@ -48,7 +48,7 @@ data class PastCommand(
 ) {
     fun isTerminated() = commandStatus.isTerminated()
 
-    fun isSimilarTo(newCommand: NewCommand, mode: WorkflowChangeCheckMode): Boolean =
+    fun isSameThan(newCommand: NewCommand, mode: WorkflowChangeCheckMode): Boolean =
         newCommand.commandPosition == commandPosition &&
             when (mode) {
                 WorkflowChangeCheckMode.NONE -> true

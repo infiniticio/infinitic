@@ -23,31 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyValue
+package io.infinitic.common.serDe.kserializer
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import java.util.UUID
 
-open class LoggedKeyValueStorage(
-    val storage: KeyValueStorage
-) : KeyValueStorage by storage {
-
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
-
-    override suspend fun getValue(key: String): ByteArray? {
-        val value = storage.getValue(key)
-        logger.debug("key {} - getValue {}", key, value)
-
-        return value
-    }
-
-    override suspend fun putValue(key: String, value: ByteArray) {
-        logger.debug("key {} - putValue {}", key, value)
-        storage.putValue(key, value)
-    }
-
-    override suspend fun delValue(key: String) {
-        logger.debug("key {} - delValue", key)
-        storage.delValue(key)
-    }
+object UUIDSerializer : KSerializer<UUID> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: UUID) { encoder.encodeString(value.toString()) }
+    override fun deserialize(decoder: Decoder) = UUID.fromString(decoder.decodeString())
 }
