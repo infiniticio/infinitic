@@ -30,20 +30,26 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class TaskStatus {
     RUNNING_OK {
-        override val isTerminated: Boolean get() = false
+        override val isTerminated = false
+        override val isOngoingFailure = false
     },
     RUNNING_WARNING {
-        override val isTerminated: Boolean get() = false
+        override val isTerminated = false
+        override val isOngoingFailure = false
     },
     RUNNING_ERROR {
-        override val isTerminated: Boolean get() = false
+        override val isTerminated = false
+        override val isOngoingFailure = true
     },
     TERMINATED_COMPLETED {
-        override val isTerminated: Boolean get() = true
+        override val isTerminated = true
+        override val isOngoingFailure = false
     },
     TERMINATED_CANCELED {
-        override val isTerminated: Boolean get() = true
+        override val isTerminated = true
+        override val isOngoingFailure = false
     };
 
     abstract val isTerminated: Boolean
+    abstract val isOngoingFailure: Boolean
 }

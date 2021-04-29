@@ -55,15 +55,15 @@ data class Error(
 
     /**
      * for CanceledDeferredException, FailedDeferredException, TimedOutDeferredException
-     * id of the failing task or child workflow that triggered the error
+     * id of the failing task or child workflow where the error occurred
      */
-    @Serializable(with = UUIDSerializer::class) val id: UUID? = null,
+    @Serializable(with = UUIDSerializer::class) val whereId: UUID? = null,
 
     /**
      * for CanceledDeferredException, FailedDeferredException, TimedOutDeferredException
-     * name of the failing task or child workflow that triggered the error
+     * name of the failing task or child workflow where the error occurred
      */
-    val name: String? = null,
+    val whereName: String? = null,
 
     /**
      * cause of the error
@@ -72,14 +72,14 @@ data class Error(
 ) {
     companion object {
         fun from(throwable: Throwable): Error {
-            val id = when (throwable) {
+            val whereId = when (throwable) {
                 is CanceledDeferredException -> throwable.id
                 is FailedDeferredException -> throwable.id
                 is TimedOutDeferredException -> throwable.id
                 else -> null
             }
 
-            val name = when (throwable) {
+            val whereName = when (throwable) {
                 is CanceledDeferredException -> throwable.name
                 is FailedDeferredException -> throwable.name
                 is TimedOutDeferredException -> throwable.name
@@ -89,13 +89,13 @@ data class Error(
             return Error(
                 errorName = throwable::class.java.name,
                 errorMessage = throwable.message,
-                errorStackTraceToString = if (id != null) throwable.stackTraceToString() else null,
+                errorStackTraceToString = if (whereId != null) throwable.stackTraceToString() else null,
                 errorCause = run {
                     val cause = throwable.cause
                     if (cause == throwable || cause == null) null else from(cause)
                 },
-                id = id,
-                name = name
+                whereId = whereId,
+                whereName = whereName
             )
         }
     }

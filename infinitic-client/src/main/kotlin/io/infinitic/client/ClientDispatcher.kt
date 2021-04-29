@@ -75,26 +75,25 @@ import io.infinitic.exceptions.clients.MultipleMethodCallsException
 import io.infinitic.exceptions.clients.NoMethodCallException
 import io.infinitic.exceptions.clients.NoSendMethodCallException
 import io.infinitic.exceptions.clients.UnknownMethodInSendChannelException
+import io.infinitic.exceptions.clients.UnknownTaskException
+import io.infinitic.exceptions.clients.UnknownWorkflowException
 import io.infinitic.workflows.SendChannel
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
 import kotlin.reflect.full.isSubclassOf
-import io.infinitic.exceptions.clients.UnknownTaskException as UnknownTaskException
-import io.infinitic.exceptions.clients.UnknownWorkflowException as UnknownWorkflowException
 
 internal class ClientDispatcher(
+    val scope: CoroutineScope,
     val clientName: ClientName,
     val sendToTaskTagEngine: SendToTaskTagEngine,
     val sendToTaskEngine: (suspend (TaskEngineMessage) -> Unit),
     val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
 ) : Dispatcher {
-    // could be replay = 0
-    // but replay = 1 makes tests easier, as we can emit a message before listening
-    private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 1)
+    private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
 
     suspend fun handle(message: ClientMessage) {
         responseFlow.emit(message)
@@ -146,7 +145,7 @@ internal class ClientDispatcher(
         )
 
         // send messages
-        GlobalScope.future {
+        scope.future {
             addTaskTags.map { sendToTaskTagEngine(it) }
             sendToTaskEngine(dispatchTask)
         }.join()
@@ -168,7 +167,7 @@ internal class ClientDispatcher(
                 taskName = deferredTask.taskName,
                 clientName = clientName
             )
-            GlobalScope.future {
+            scope.future {
                 sendToTaskEngine(waitTask)
             }.join()
         }
@@ -249,7 +248,7 @@ internal class ClientDispatcher(
         )
 
         // send messages
-        GlobalScope.future {
+        scope.future {
             addWorkflowTags.map { sendToWorkflowTagEngine(it) }
             sendToWorkflowEngine(dispatchWorkflow)
         }.join()
@@ -270,7 +269,7 @@ internal class ClientDispatcher(
                 workflowName = deferredWorkflow.workflowName,
                 clientName = clientName
             )
-            GlobalScope.future {
+            scope.future {
                 sendToWorkflowEngine(waitWorkflow)
             }.join()
         }
@@ -353,7 +352,7 @@ internal class ClientDispatcher(
                 channelEventTypes = ChannelEventType.allFrom(event::class.java)
             )
 
-            GlobalScope.future { sendToWorkflowTagEngine(msg) }.join()
+            scope.future { sendToWorkflowTagEngine(msg) }.join()
 
             return
         }
@@ -369,13 +368,12 @@ internal class ClientDispatcher(
                 channelEventTypes = ChannelEventType.allFrom(event::class.java)
             )
 
-            GlobalScope.future { sendToWorkflowEngine(msg) }.join()
+            scope.future { sendToWorkflowEngine(msg) }.join()
         }
     }
 
     // synchronous send on a channel: existingWorkflow.channel.send()
     override fun dispatchAndWait(handler: SendChannelProxyHandler<*>) {
-        // dispatch
         dispatch(handler)
     }
 }

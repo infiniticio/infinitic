@@ -46,6 +46,9 @@ import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 fun mockSendToTaskTagEngine(slots: MutableList<TaskTagEngineMessage>): SendToTaskTagEngine {
     val mock = mockk<SendToTaskTagEngine>()
@@ -67,14 +70,17 @@ fun mockSendToTaskEngine(
     coEvery { mock(capture(message)) } coAnswers {
         val msg = message.captured
         if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
-            client.handle(
-                TaskCompleted(
-                    clientName = client.clientName,
-                    taskId = msg.taskId,
-                    taskReturnValue = MethodReturnValue.from("success"),
-                    taskMeta = TaskMeta()
-                )
+            val taskCompleted = TaskCompleted(
+                clientName = client.clientName,
+                taskId = msg.taskId,
+                taskReturnValue = MethodReturnValue.from("success"),
+                taskMeta = TaskMeta()
             )
+            GlobalScope.launch {
+                // delay is useful to ensure that the client is listening before sending the event
+                delay(50)
+                client.handle(taskCompleted)
+            }
         }
     }
 
@@ -89,14 +95,18 @@ fun mockSendToWorkflowEngine(
     coEvery { mock(capture(message)) } coAnswers {
         val msg = message.captured
         if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
-            client.handle(
-                WorkflowCompleted(
-                    clientName = client.clientName,
-                    workflowId = msg.workflowId,
-                    workflowReturnValue = MethodReturnValue.from("success")
-                )
+            val workflowCompleted = WorkflowCompleted(
+                clientName = client.clientName,
+                workflowId = msg.workflowId,
+                workflowReturnValue = MethodReturnValue.from("success")
             )
+            GlobalScope.launch {
+                // delay is useful to ensure that the client is listening before sending the event
+                delay(50)
+                client.handle(workflowCompleted)
+            }
         }
     }
+
     return mock
 }

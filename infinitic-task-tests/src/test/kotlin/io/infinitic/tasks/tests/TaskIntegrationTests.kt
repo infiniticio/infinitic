@@ -67,6 +67,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -439,6 +440,7 @@ fun CoroutineScope.init() {
     val scope = this
 
     class ClientTest : Client() {
+        override val scope = GlobalScope
         override val clientName = ClientName("clientTest")
         override val sendToTaskTagEngine: SendToTaskTagEngine = { scope.sendToTaskTagEngine(it) }
         override val sendToTaskEngine: SendToTaskEngine = { scope.sendToTaskEngine(it) }

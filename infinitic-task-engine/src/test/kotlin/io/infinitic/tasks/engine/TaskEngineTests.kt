@@ -118,7 +118,7 @@ internal class TaskEngineTests : StringSpec({
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
-            taskStateStorage.delState(msgIn.taskId)
+            taskStateStorage.putState(msgIn.taskId, ofType())
         }
         verifyAll()
 
@@ -228,11 +228,11 @@ internal class TaskEngineTests : StringSpec({
             methodParameters shouldBe stateIn.methodParameters
             taskAttemptId shouldBe executeTaskAttempt.taskAttemptId
             taskRetryIndex shouldBe executeTaskAttempt.taskRetryIndex
-            taskStatus shouldBe TaskStatus.RUNNING_WARNING
+            taskStatus shouldBe TaskStatus.RUNNING_OK
         }
         with(taskStatusUpdated) {
             oldStatus shouldBe stateIn.taskStatus
-            newStatus shouldBe TaskStatus.RUNNING_WARNING
+            newStatus shouldBe TaskStatus.RUNNING_OK
         }
     }
 
@@ -262,7 +262,7 @@ internal class TaskEngineTests : StringSpec({
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
-            taskStateStorage.delState(msgIn.taskId)
+            taskStateStorage.putState(msgIn.taskId, ofType())
         }
         verifyAll()
 
@@ -476,7 +476,7 @@ private fun mockSendToTaskExecutors(slot: CapturingSlot<TaskExecutorMessage>): S
 
 private fun mockSendToMetricsPerName(slot: CapturingSlot<MetricsPerNameMessage>): SendToMetricsPerName {
     val mock = mockk<SendToMetricsPerName>()
-    coEvery { mock(capture(slot)) } returns println("mockSendToMetricsPerName")
+    coEvery { mock(capture(slot)) } just Runs
     return mock
 }
 

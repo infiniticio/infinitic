@@ -62,6 +62,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.coroutineScope
 import java.util.UUID
 
@@ -71,6 +72,7 @@ private val workflowTagSlots = mutableListOf<WorkflowTagEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 
 class ClientWorkflow : Client() {
+    override val scope = GlobalScope
     override val clientName = ClientName("clientTest")
     override val sendToTaskTagEngine = mockSendToTaskTagEngine(taskTagSlots)
     override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot)

@@ -30,8 +30,10 @@ import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
+import kotlinx.coroutines.CoroutineScope
 
 class InfiniticClient(
+    override val scope: CoroutineScope,
     override val clientName: ClientName,
     override val sendToTaskTagEngine: SendToTaskTagEngine,
     override val sendToTaskEngine: SendToTaskEngine,

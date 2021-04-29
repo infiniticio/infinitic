@@ -35,14 +35,14 @@ sealed class WorkflowRunException(
 ) : RunException(msg, causeError)
 
 class CanceledDeferredException(val name: String?, val id: UUID) : WorkflowRunException(
-    msg = "Canceled deferred: $name ($id)",
+    msg = "Waiting for a canceled deferred: $name ($id)",
 )
 
 class FailedDeferredException(val name: String?, val id: UUID, error: Error? = null) : WorkflowRunException(
-    msg = "Failed deferred: $name ($id)",
+    msg = "Waiting for a failed deferred: $name ($id)",
     causeError = error
 )
 
 class TimedOutDeferredException(val name: String?, val id: UUID) : WorkflowRunException(
-    msg = "Timed-out deferred: $name ($id)",
+    msg = "Waiting for a timed-out deferred: $name ($id)",
 )

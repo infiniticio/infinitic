@@ -43,6 +43,7 @@ import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -82,6 +83,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -755,7 +757,7 @@ class WorkflowTests : StringSpec({
             client.cancel(workflowA)
         }
         // check output
-        workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
+        workflowStateStorage.getState(WorkflowId(deferred.id))?.workflowStatus shouldBe WorkflowStatus.CANCELED
     }
 
     "Canceling sync workflow" {
@@ -777,7 +779,7 @@ class WorkflowTests : StringSpec({
             shouldThrow<CanceledDeferredException> { deferred.await() }
         }
         // check output
-        workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
+        workflowStateStorage.getState(WorkflowId(deferred.id))?.workflowStatus shouldBe WorkflowStatus.CANCELED
     }
 
     "try/catch a failing task" {
@@ -849,6 +851,7 @@ fun CoroutineScope.init() {
     val scope = this
 
     class ClientTest : Client() {
+        override val scope = GlobalScope
         override val clientName = ClientName("clientTest")
         override val sendToTaskTagEngine: SendToTaskTagEngine = { }
         override val sendToTaskEngine: SendToTaskEngine = { scope.sendToTaskEngine(it) }

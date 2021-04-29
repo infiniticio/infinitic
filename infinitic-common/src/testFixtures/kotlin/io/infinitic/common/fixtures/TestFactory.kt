@@ -96,8 +96,8 @@ object TestFactory {
                     errorStackTraceToString = random(),
                     errorMessage = random(),
                     errorCause = null,
-                    id = null,
-                    name = null
+                    whereId = null,
+                    whereName = null
                 )
             }
 

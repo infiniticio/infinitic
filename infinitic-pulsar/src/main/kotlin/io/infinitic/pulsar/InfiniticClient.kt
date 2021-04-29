@@ -54,6 +54,8 @@ class InfiniticClient @JvmOverloads constructor(
 
     private val producerName = getProducerName(pulsarClient, name)
 
+    override val scope = CoroutineScope(Dispatchers.IO + Job())
+
     override val clientName = ClientName(producerName)
 
     private val pulsarOutput =
@@ -80,7 +82,7 @@ class InfiniticClient @JvmOverloads constructor(
         val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
             .newClientResponseConsumer(producerName, ClientName(producerName))
 
-        job = CoroutineScope(Dispatchers.IO + Job()).startClientResponseWorker(this, clientResponseConsumer)
+        job = scope.startClientResponseWorker(this, clientResponseConsumer)
     }
 
     companion object {

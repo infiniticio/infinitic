@@ -52,20 +52,20 @@ import java.time.Instant
 import io.infinitic.exceptions.workflows.CanceledDeferredException as CanceledInWorkflowException
 import io.infinitic.exceptions.workflows.FailedDeferredException as FailedInWorkflowException
 
-private val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
-    registerTask(TaskA::class.java.name) { TaskAImpl() }
-    registerWorkflow(WorkflowA::class.java.name) { WorkflowAImpl() }
-    registerWorkflow(WorkflowB::class.java.name) { WorkflowBImpl() }
-}
-
-val client = InfiniticClient(taskExecutorRegister, "client: inMemory")
-
-internal class InMemoryTests : StringSpec({
+internal class WorkflowTests : StringSpec({
 
     lateinit var workflowA: WorkflowA
     lateinit var workflowATagged: WorkflowA
     lateinit var workflowAMeta: WorkflowA
     lateinit var workflowB: WorkflowB
+
+    val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
+        registerTask(TaskA::class.java.name) { TaskAImpl() }
+        registerWorkflow(WorkflowA::class.java.name) { WorkflowAImpl() }
+        registerWorkflow(WorkflowB::class.java.name) { WorkflowBImpl() }
+    }
+
+    val client = InfiniticClient(taskExecutorRegister, "client: inMemory")
 
     beforeTest {
         workflowA = client.newWorkflow()
@@ -472,24 +472,27 @@ internal class InMemoryTests : StringSpec({
 
     "Canceling async workflow" {
         val deferred = client.async(workflowA) { channel1() }
+
         client.cancel(workflowA)
 
-        delay(100)
-        client.workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
+        shouldThrow<CanceledDeferredException> { deferred.await() }
     }
 
     "Canceling sync workflow" {
-        launch { client.cancel(workflowA) }
+        launch {
+            delay(50)
+            client.cancel(workflowA)
+        }
+
         shouldThrow<CanceledDeferredException> { workflowA.channel1() }
     }
 
     "Canceling sync workflow with deferred" {
         val deferred = client.async(workflowA) { channel1() }
-        launch { client.cancel(workflowA) }
-        shouldThrow<CanceledDeferredException> { deferred.await() }
 
-        // check output
-        client.workflowStateStorage.getState(WorkflowId(deferred.id)) shouldBe null
+        client.cancel(workflowA)
+
+        shouldThrow<CanceledDeferredException> { deferred.await() }
     }
 
     "try/catch a failing task" {
@@ -502,7 +505,7 @@ internal class InMemoryTests : StringSpec({
         val e = shouldThrow<FailedDeferredException> { workflowA.failing2() }
 
         e.causeError?.errorName shouldBe FailedInWorkflowException::class.java.name
-        e.causeError?.name shouldBe TaskA::class.java.name
+        e.causeError?.whereName shouldBe TaskA::class.java.name
     }
 
     "failing async task on main path should not throw" {
@@ -527,7 +530,7 @@ internal class InMemoryTests : StringSpec({
         val e = shouldThrow<FailedDeferredException> { workflowA.failing4() }
 
         e.causeError?.errorName shouldBe CanceledInWorkflowException::class.java.name
-        e.causeError?.name shouldBe TaskA::class.java.name
+        e.causeError?.whereName shouldBe TaskA::class.java.name
     }
 
     "Canceling task not on main path should not throw " {
@@ -540,7 +543,7 @@ internal class InMemoryTests : StringSpec({
         val e = shouldThrow<FailedDeferredException> { workflowB.cancelChild1() }
 
         e.causeError?.errorName shouldBe CanceledInWorkflowException::class.java.name
-        e.causeError?.name shouldBe WorkflowA::class.java.name
+        e.causeError?.whereName shouldBe WorkflowA::class.java.name
     }
 
     "Canceling child workflow not on main path should not throw" {
@@ -553,10 +556,10 @@ internal class InMemoryTests : StringSpec({
         val e = shouldThrow<FailedDeferredException> { workflowA.failing6() }
 
         e.causeError?.errorName shouldBe FailedInWorkflowException::class.java.name
-        e.causeError?.name shouldBe WorkflowA::class.java.name
+        e.causeError?.whereName shouldBe WorkflowA::class.java.name
 
         e.causeError?.errorCause?.errorName shouldBe FailedInWorkflowException::class.java.name
-        e.causeError?.errorCause?.name shouldBe TaskA::class.java.name
+        e.causeError?.errorCause?.whereName shouldBe TaskA::class.java.name
     }
 
     "Failure in child workflow not on main path should not throw" {
@@ -569,5 +572,8 @@ internal class InMemoryTests : StringSpec({
     }
 
     "retry a caught failed task should not throw" {
+    }
+
+    "child workflow is canceled when workflow is canceled" {
     }
 })

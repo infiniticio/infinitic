@@ -65,8 +65,12 @@ import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
+import kotlin.coroutines.coroutineContext
 
 class WorkflowEngine(
     storage: WorkflowStateStorage,
@@ -91,15 +95,20 @@ class WorkflowEngine(
     suspend fun handle(message: WorkflowEngineMessage) {
         val state = process(message) ?: return
 
-        when (state.workflowStatus) {
-            WorkflowStatus.ALIVE -> storage.putState(message.workflowId, state)
-            WorkflowStatus.CANCELED,
-            WorkflowStatus.TERMINATED -> storage.delState(message.workflowId)
+        storage.putState(message.workflowId, state)
+
+        // delete state if terminated
+        // the delay makes tests easier, avoiding failure of synchronous requests
+        if (state.workflowStatus == WorkflowStatus.TERMINATED) {
+            CoroutineScope(coroutineContext).launch {
+                delay(200L)
+                storage.delState(message.workflowId)
+            }
         }
     }
 
     private suspend fun process(message: WorkflowEngineMessage): WorkflowState? {
-        logger.debug("receiving {}", message)
+        logger.warn("receiving {}", message)
 
         // get associated state
         val state = storage.getState(message.workflowId)
@@ -123,6 +132,13 @@ class WorkflowEngine(
         // check if this message has already been handled
         if (state.lastMessageId == message.messageId) {
             logDiscardingMessage(message, "as state already contains this messageId")
+
+            return null
+        }
+
+        // discard all message (except client request is already terminated)
+        if (state.workflowStatus == WorkflowStatus.TERMINATED && message !is WaitWorkflow) {
+            logDiscardingMessage(message, "as workflow is already terminated")
 
             return null
         }

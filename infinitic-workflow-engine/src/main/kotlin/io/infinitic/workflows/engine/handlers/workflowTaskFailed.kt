@@ -47,9 +47,9 @@ internal suspend fun workflowTaskFailed(
         val methodRun = state.getRunningMethodRun()
 
         // if the error is due to a a command failure, we enrich the error
-        val error = when (msg.error.errorCause == null && msg.error.id != null) {
+        val error = when (msg.error.errorCause == null && msg.error.whereId != null) {
             true -> msg.error.copy(
-                errorCause = when (val commandStatus = methodRun.getPastCommand(CommandId(msg.error.id!!)).commandStatus) {
+                errorCause = when (val commandStatus = methodRun.getPastCommand(CommandId(msg.error.whereId!!)).commandStatus) {
                     is CommandCompleted -> thisShouldNotHappen()
                     CommandOngoing -> thisShouldNotHappen()
                     is CommandOngoingFailure -> commandStatus.error
