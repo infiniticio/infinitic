@@ -252,12 +252,12 @@ internal class TaskTests : StringSpec({
         client.taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe true
 
         launch {
-            delay(50)
             client.cancel(taskTestWithTags)
         }
 
         shouldThrow<CanceledDeferredException> { deferred.await() }
 
+        delay(50)
         client.taskTagStorage.getTaskIds(TaskTag("foo"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
         client.taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
     }
