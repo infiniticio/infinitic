@@ -40,6 +40,7 @@ import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -57,6 +58,7 @@ import io.infinitic.metrics.perName.engine.MetricsPerNameEngine
 import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
 import io.infinitic.storage.inMemory.InMemoryKeySetStorage
 import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
+import io.infinitic.tags.tasks.TaskTagEngine
 import io.infinitic.tags.workflows.WorkflowTagEngine
 import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
 import io.infinitic.tasks.engine.TaskEngine
@@ -99,6 +101,7 @@ private val workflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
 private val metricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
 private val metricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
+private lateinit var taskTagEngine: TaskTagEngine
 private lateinit var taskEngine: TaskEngine
 private lateinit var workflowTagEngine: WorkflowTagEngine
 private lateinit var workflowEngine: WorkflowEngine
@@ -822,6 +825,10 @@ fun CoroutineScope.sendToWorkflowTagEngine(msg: WorkflowTagEngineMessage) = laun
     workflowTagEngine.handle(msg)
 }
 
+fun CoroutineScope.sendToTaskTagEngine(msg: TaskTagEngineMessage) = launch {
+    taskTagEngine.handle(msg)
+}
+
 fun CoroutineScope.sendToTaskEngine(msg: TaskEngineMessage) = launch {
     taskEngine.handle(msg)
 }
@@ -853,7 +860,7 @@ fun CoroutineScope.init() {
     class ClientTest : Client() {
         override val scope = GlobalScope
         override val clientName = ClientName("clientTest")
-        override val sendToTaskTagEngine: SendToTaskTagEngine = { }
+        override val sendToTaskTagEngine: SendToTaskTagEngine = { scope.sendToTaskTagEngine(it) }
         override val sendToTaskEngine: SendToTaskEngine = { scope.sendToTaskEngine(it) }
         override val sendToWorkflowTagEngine: SendToWorkflowTagEngine = { scope.sendToWorkflowTagEngine(it) }
         override val sendToWorkflowEngine: SendToWorkflowEngine = { scope.sendToWorkflowEngine(it) }
@@ -876,7 +883,7 @@ fun CoroutineScope.init() {
     taskEngine = TaskEngine(
         taskStateStorage,
         { sendToClient(it) },
-        { },
+        { sendToTaskTagEngine(it) },
         { msg, after -> sendToTaskEngineAfter(msg, after) },
         { sendToWorkflowEngine(it) },
         { sendToWorkers(it) },
@@ -886,8 +893,9 @@ fun CoroutineScope.init() {
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
         { sendToClient(it) },
-        { sendToWorkflowTagEngine(it) },
+        { sendToTaskTagEngine(it) },
         { sendToTaskEngine(it) },
+        { sendToWorkflowTagEngine(it) },
         { sendToWorkflowEngine(it) },
         { msg, after -> sendToWorkflowEngineAfter(msg, after) }
     )

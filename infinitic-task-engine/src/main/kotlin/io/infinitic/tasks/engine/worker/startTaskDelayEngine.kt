@@ -39,7 +39,7 @@ private val logger: Logger
     get() = LoggerFactory.getLogger(TaskEngine::class.java)
 
 private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable) = logger.error(
-    "taskId {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    "taskId {} - exception on message {}: {}",
     messageToProcess.message.taskId,
     messageToProcess.message,
     e

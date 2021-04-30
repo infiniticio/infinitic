@@ -26,6 +26,7 @@
 package io.infinitic.inMemory.workflows
 
 import com.jayway.jsonpath.Criteria.where
+import io.infinitic.clients.newWorkflow
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.inMemory.tasks.TaskA
@@ -107,6 +108,7 @@ interface WorkflowA {
     fun failing8(): String
     fun failing9(): Boolean
     fun failing10(): String
+    fun cancel1()
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -115,7 +117,6 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override val channelB = channel<String>()
 
     private val taskA = newTask<TaskA>()
-    private val workflowB = newWorkflow<WorkflowB>()
     private var p1 = ""
 
     override fun empty() = "void"
@@ -298,7 +299,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun child1(): String {
-
+        val workflowB = newWorkflow<WorkflowB>()
         var str: String = workflowB.concat("-")
         str = taskA.concat(str, "-")
 
@@ -306,6 +307,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     }
 
     override fun child2(): String {
+        val workflowB = newWorkflow<WorkflowB>()
         val str = taskA.reverse("12")
         val d = async(workflowB) { concat(str) }
 
@@ -580,5 +582,11 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun failing10(): String {
         return "ok"
+    }
+
+    override fun cancel1() {
+        val taggedChild = newWorkflow<WorkflowA>(tags = setOf("foo", "bar"))
+
+        taggedChild.channel1()
     }
 }

@@ -26,6 +26,7 @@
 package io.infinitic.inMemory
 
 import io.infinitic.clients.getWorkflow
+import io.infinitic.clients.getWorkflowIds
 import io.infinitic.clients.newWorkflow
 import io.infinitic.clients.retryTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -56,8 +57,8 @@ import io.infinitic.exceptions.workflows.FailedDeferredException as FailedInWork
 
 internal class WorkflowTests : StringSpec({
 
-    // each test should not be longer than 5s
-    configuration.timeout = 5000
+    // each test should not be longer than 30s
+    configuration.timeout = 30000
 
     lateinit var workflowA: WorkflowA
     lateinit var workflowATagged: WorkflowA
@@ -590,6 +591,16 @@ internal class WorkflowTests : StringSpec({
     }
 
     "child workflow is canceled when workflow is canceled" {
+        val deferred = client.async(workflowATagged) { cancel1() }
+
+        // delay to be sure the child workflow has been dispatched
+        delay(500)
+        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 2
+
+        client.cancel(workflowATagged)
+
+        delay(500)
+        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
     }
 
     "Tag should be added then deleted after completion" {

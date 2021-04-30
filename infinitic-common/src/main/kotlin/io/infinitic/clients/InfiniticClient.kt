@@ -301,35 +301,35 @@ inline fun <reified T : Any> InfiniticClient.getWorkflow(
 ): T = getWorkflow(T::class.java, tag)
 
 /**
- * (kotlin) Cancel task by id
+ * (kotlin) Cancel task per id
  */
 inline fun <reified T : Any> InfiniticClient.cancelTask(
     id: UUID
 ) = cancelTask(T::class.java, id)
 
 /**
- * (kotlin) Cancel task by tag
+ * (kotlin) Cancel task per tag
  */
 inline fun <reified T : Any> InfiniticClient.cancelTask(
     tag: String
 ) = cancelTask(T::class.java, tag)
 
 /**
- * (kotlin) Cancel workflow by id
+ * (kotlin) Cancel workflow per id
  */
 inline fun <reified T : Any> InfiniticClient.cancelWorkflow(
     id: UUID
 ) = cancelWorkflow(T::class.java, id)
 
 /**
- * (kotlin) Cancel workflow by tag
+ * (kotlin) Cancel workflow per tag
  */
 inline fun <reified T : Any> InfiniticClient.cancelWorkflow(
     tag: String
 ) = cancelWorkflow(T::class.java, tag)
 
 /**
- * (kotlin) Complete task by id
+ * (kotlin) Complete task per id
  */
 inline fun <reified T : Any> InfiniticClient.completeTask(
     id: UUID,
@@ -337,7 +337,7 @@ inline fun <reified T : Any> InfiniticClient.completeTask(
 ) = completeTask(T::class.java, id, value)
 
 /**
- * (kotlin) Complete task by tag
+ * (kotlin) Complete task per tag
  */
 inline fun <reified T : Any> InfiniticClient.completeTask(
     tag: String,
@@ -345,7 +345,7 @@ inline fun <reified T : Any> InfiniticClient.completeTask(
 ) = completeTask(T::class.java, tag, value)
 
 /**
- * (kotlin) Complete workflow by id
+ * (kotlin) Complete workflow per id
  */
 inline fun <reified T : Any> InfiniticClient.completeWorkflow(
     id: UUID,
@@ -353,7 +353,7 @@ inline fun <reified T : Any> InfiniticClient.completeWorkflow(
 ) = completeWorkflow(T::class.java, id, value)
 
 /**
- * (kotlin) Complete workflow by tag
+ * (kotlin) Complete workflow per tag
  */
 inline fun <reified T : Any> InfiniticClient.completeWorkflow(
     tag: String,
@@ -361,29 +361,43 @@ inline fun <reified T : Any> InfiniticClient.completeWorkflow(
 ) = completeWorkflow(T::class.java, tag, value)
 
 /**
- * (kotlin) Retry task by id
+ * (kotlin) Retry task per id
  */
 inline fun <reified T : Any> InfiniticClient.retryTask(
     id: UUID
 ) = retryTask(T::class.java, id)
 
 /**
- * (kotlin) Retry task by tag
+ * (kotlin) Retry task per tag
  */
 inline fun <reified T : Any> InfiniticClient.retryTask(
     tag: String
 ) = retryTask(T::class.java, tag)
 
 /**
- * (kotlin) Retry workflow by id
+ * (kotlin) Retry workflow per id
  */
 inline fun <reified T : Any> InfiniticClient.retryWorkflow(
     id: UUID
 ) = retryWorkflow(T::class.java, id)
 
 /**
- * (kotlin) Retry workflow by tag
+ * (kotlin) Retry workflow per tag
  */
 inline fun <reified T : Any> InfiniticClient.retryWorkflow(
     tag: String
 ) = retryWorkflow(T::class.java, tag)
+
+/**
+ * (kotlin) Get task ids per tag
+ */
+inline fun <reified T : Any> InfiniticClient.getTaskIds(
+    tag: String
+) = getTaskIds(T::class.java, tag)
+
+/**
+ * (kotlin) Get workflow ids per tag
+ */
+inline fun <reified T : Any> InfiniticClient.getWorkflowIds(
+    tag: String
+) = getWorkflowIds(T::class.java, tag)

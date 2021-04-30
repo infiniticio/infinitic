@@ -29,6 +29,7 @@ import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
 import io.infinitic.clients.getWorkflow
+import io.infinitic.clients.getWorkflowIds
 import io.infinitic.clients.newWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
@@ -51,6 +52,7 @@ import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
+import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
@@ -74,9 +76,9 @@ private val workflowSlot = slot<WorkflowEngineMessage>()
 class ClientWorkflow : Client() {
     override val scope = GlobalScope
     override val clientName = ClientName("clientTest")
-    override val sendToTaskTagEngine = mockSendToTaskTagEngine(taskTagSlots)
+    override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots)
     override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot)
-    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(workflowTagSlots)
+    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(this, workflowTagSlots)
     override val sendToWorkflowEngine = mockSendToWorkflowEngine(this, workflowSlot)
     override fun close() {}
 }
@@ -502,5 +504,18 @@ class ClientWorkflowTests : StringSpec({
             workflowId = WorkflowId(deferred.id),
             workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
+    }
+
+    "get task ids par name and workflow" {
+        val workflowIds = client.getWorkflowIds<FakeWorkflow>("foo")
+        // then
+        workflowIds.size shouldBe 2
+        workflowTagSlots.size shouldBe 1
+        workflowTagSlots[0] shouldBe GetWorkflowIds(
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowTag = WorkflowTag("foo"),
+            clientName = ClientName("clientTest")
+        )
+        workflowSlot.isCaptured shouldBe false
     }
 })

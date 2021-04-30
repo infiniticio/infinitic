@@ -145,7 +145,7 @@ abstract class Client : InfiniticClientInterface {
         klass: Class<out T>,
         tag: String
     ): Set<UUID> = dispatcher.getTaskIdsPerTag(
-        TaskName(klass::class.java.name),
+        TaskName(klass.name),
         TaskTag(tag)
     )
 
@@ -195,7 +195,7 @@ abstract class Client : InfiniticClientInterface {
         klass: Class<out T>,
         tag: String
     ): Set<UUID> = dispatcher.getWorkflowIdsPerTag(
-        WorkflowName(klass::class.java.name),
+        WorkflowName(klass.name),
         WorkflowTag(tag)
     )
 

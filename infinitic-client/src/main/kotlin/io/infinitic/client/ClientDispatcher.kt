@@ -109,9 +109,9 @@ internal class ClientDispatcher(
     // synchronously get task ids per tag
     internal fun getTaskIdsPerTag(taskName: TaskName, taskTag: TaskTag): Set<UUID> {
         val msg = GetTaskIds(
-            clientName = clientName,
             taskTag = taskTag,
-            taskName = taskName
+            taskName = taskName,
+            clientName = clientName
         )
         scope.future { sendToTaskTagEngine(msg) }.join()
 

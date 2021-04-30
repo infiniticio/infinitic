@@ -44,7 +44,7 @@ private val logger: Logger
 typealias MetricsPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
 private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwable) = logger.error(
-    "taskName {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    "taskName {} - exception on message {}: {}",
     messageToProcess.message.taskName,
     messageToProcess.message,
     e

@@ -47,7 +47,7 @@ private val logger: Logger
 typealias WorkflowTagEngineMessageToProcess = MessageToProcess<WorkflowTagEngineMessage>
 
 private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Throwable) = logger.error(
-    "exception on message {}:${System.getProperty("line.separator")}{}",
+    "exception on message {}: {}",
     messageToProcess.message,
     e
 )

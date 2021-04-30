@@ -43,7 +43,7 @@ private val logger: Logger
 typealias MetricsGlobalMessageToProcess = MessageToProcess<MetricsGlobalMessage>
 
 private fun logError(messageToProcess: MetricsGlobalMessageToProcess, e: Throwable) = logger.error(
-    "exception on message {}:${System.getProperty("line.separator")}{}",
+    "exception on message {}: {}",
     messageToProcess.message,
     e
 )

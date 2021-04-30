@@ -51,7 +51,7 @@ private val logger: Logger
 typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 
 private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable) = logger.error(
-    "taskId {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    "taskId {} - exception on message {}: {}",
     messageToProcess.message.taskId,
     messageToProcess.message,
     e

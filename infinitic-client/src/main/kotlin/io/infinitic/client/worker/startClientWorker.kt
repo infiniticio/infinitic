@@ -39,7 +39,7 @@ private val logger: Logger
     get() = LoggerFactory.getLogger(Client::class.java)
 
 private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = logger.error(
-    "exception on message {}:${System.getProperty("line.separator")}{}",
+    "exception on message {}: {}",
     messageToProcess.message,
     e
 )

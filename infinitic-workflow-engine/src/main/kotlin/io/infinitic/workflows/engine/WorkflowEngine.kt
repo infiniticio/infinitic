@@ -30,6 +30,7 @@ import io.infinitic.common.clients.messages.WorkflowAlreadyCompleted
 import io.infinitic.common.clients.messages.WorkflowCanceled
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
@@ -75,8 +76,9 @@ import kotlin.coroutines.coroutineContext
 class WorkflowEngine(
     storage: WorkflowStateStorage,
     sendEventsToClient: SendToClient,
-    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
+    sendToTaskTagEngine: SendToTaskTagEngine,
     sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
@@ -86,8 +88,9 @@ class WorkflowEngine(
 
     private val output = WorkflowEngineOutput(
         sendEventsToClient,
-        sendToWorkflowTagEngine,
+        sendToTaskTagEngine,
         sendToTaskEngine,
+        sendToWorkflowTagEngine,
         sendToWorkflowEngine,
         sendToWorkflowEngineAfter
     )
@@ -108,7 +111,7 @@ class WorkflowEngine(
     }
 
     private suspend fun process(message: WorkflowEngineMessage): WorkflowState? {
-        logger.warn("receiving {}", message)
+        logger.debug("receiving {}", message)
 
         // get associated state
         val state = storage.getState(message.workflowId)

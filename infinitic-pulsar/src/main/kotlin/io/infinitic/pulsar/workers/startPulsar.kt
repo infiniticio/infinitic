@@ -43,7 +43,7 @@ private val logger: Logger
     get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
 
 private fun <S> logError(message: Message<S>, e: Throwable) = logger.error(
-    "exception on Pulsar message {}:${System.getProperty("line.separator")}{}",
+    "exception on Pulsar message {}: {}",
     message,
     e
 )

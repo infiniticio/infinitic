@@ -42,11 +42,15 @@ import io.infinitic.inMemory.tasks.TaskTest
 import io.infinitic.inMemory.tasks.TaskTestImpl
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 
 internal class TaskTests : StringSpec({
+
+    // each test should not be longer than 30s
+    configuration.timeout = 30000
 
     lateinit var behavior: (index: Int, retry: Int) -> Status
 

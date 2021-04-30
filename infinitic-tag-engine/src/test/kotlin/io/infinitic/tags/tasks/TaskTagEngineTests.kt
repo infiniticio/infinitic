@@ -26,6 +26,7 @@
 package io.infinitic.tags.tasks
 
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.clients.messages.TaskIdsPerTag
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
@@ -38,12 +39,14 @@ import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.tags.messages.AddTaskTag
 import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
+import io.infinitic.common.tasks.tags.messages.GetTaskIds
 import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
 import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -157,6 +160,25 @@ internal class TaskTagEngineTests : StringSpec({
         with(cancelTask) {
             taskId shouldBe taskIds.last()
         }
+    }
+
+    "getTaskIdsPerTag should return set of ids" {
+        // given
+        val msgIn = random<GetTaskIds>()
+        val taskId1 = TaskId()
+        val taskId2 = TaskId()
+        // when
+        getEngine(msgIn.taskTag, msgIn.taskName, taskIds = setOf(taskId1, taskId2)).handle(msgIn)
+        // then
+        coVerifySequence {
+            tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.taskName)
+            sendToClient(ofType<TaskIdsPerTag>())
+            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
+        }
+        verifyAll()
+
+        captured(clientMessage).shouldBeInstanceOf<TaskIdsPerTag>()
+        (captured(clientMessage) as TaskIdsPerTag).taskIds shouldBe setOf(taskId1, taskId2)
     }
 })
 

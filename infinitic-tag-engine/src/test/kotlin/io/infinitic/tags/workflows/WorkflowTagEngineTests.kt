@@ -26,6 +26,7 @@
 package io.infinitic.tags.workflows
 
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.clients.messages.WorkflowIdsPerTag
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
@@ -37,11 +38,13 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
+import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -135,6 +138,25 @@ internal class WorkflowTagEngineTests : StringSpec({
             channelEventTypes shouldBe msgIn.channelEventTypes
             channelName shouldBe msgIn.channelName
         }
+    }
+
+    "getWorkflowIdsPerTag should return set of ids" {
+        // given
+        val msgIn = random<GetWorkflowIds>()
+        val workflowId1 = WorkflowId()
+        val workflowId2 = WorkflowId()
+        // when
+        getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = setOf(workflowId1, workflowId2)).handle(msgIn)
+        // then
+        coVerifySequence {
+            workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
+            sendToClient(ofType<WorkflowIdsPerTag>())
+            workflowTagStorage.setLastMessageId(msgIn.workflowTag, msgIn.workflowName, msgIn.messageId)
+        }
+        verifyAll()
+
+        captured(clientMessage).shouldBeInstanceOf<WorkflowIdsPerTag>()
+        (captured(clientMessage) as WorkflowIdsPerTag).workflowIds shouldBe setOf(workflowId1, workflowId2)
     }
 })
 

@@ -80,7 +80,7 @@ class TaskEngine(
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskEngineMessage) {
-        logger.warn("receiving {}", message)
+        logger.debug("receiving {}", message)
 
         // get current state
         val oldState = storage.getState(message.taskId)

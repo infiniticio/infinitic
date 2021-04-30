@@ -117,8 +117,9 @@ fun CoroutineScope.startInMemory(
         commandsInputChannel = output.workflowCommandsChannel,
         commandsOutputChannel = output.logChannel,
         output.sendEventsToClient,
-        output.sendEventsToWorkflowTagEngine,
+        output.sendCommandsToTaskTagEngine,
         output.sendCommandsToTaskEngine,
+        output.sendEventsToWorkflowTagEngine,
         output.sendEventsToWorkflowEngine,
         output.sendToWorkflowEngineAfter
     )
