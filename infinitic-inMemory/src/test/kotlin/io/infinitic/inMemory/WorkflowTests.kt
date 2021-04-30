@@ -224,98 +224,79 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Inline task" {
-        val deferred = client.async(workflowA) { inline1(7) }
-        val result = deferred.await()
+        val result = workflowA.inline1(7)
 
         result shouldBe "2 * 7 = 14"
     }
 
     "Inline task with asynchronous task inside" {
-        val deferred = client.async(workflowA) { inline2(21) }
-        val result = deferred.await()
+        val result = workflowA.inline2(21)
 
         result shouldBe "2 * 21 = 42"
     }
 
     "Inline task with synchronous task inside" {
-        val deferred = client.async(workflowA) { inline3(14) }
-        shouldThrow<FailedDeferredException> { deferred.await() }
+        shouldThrow<FailedDeferredException> { workflowA.inline3(14) }
     }
 
     "Sequential Child Workflow" {
-        val deferred = client.async(workflowA) { child1() }
-        val result = deferred.await()
+        val result = workflowA.child1()
 
         result shouldBe "-abc-"
     }
 
     "Asynchronous Child Workflow" {
-        val deferred = client.async(workflowA) { child2() }
-        val result = deferred.await()
+        val result = workflowA.child2()
 
         result shouldBe "21abc21"
     }
 
     "Nested Child Workflow" {
-        val deferred = client.async(workflowB) { factorial(14) }
-        val result = deferred.await()
+        val result = workflowB.factorial(14)
 
         result shouldBe 87178291200
     }
 
     "Check prop1" {
-        val deferred = client.async(workflowA) { prop1() }
-        val result = deferred.await()
+        val result = workflowA.prop1()
 
         result shouldBe "ac"
     }
 
     "Check prop2" {
-        val deferred = client.async(workflowA) { prop2() }
-        val result = deferred.await()
+        val result = workflowA.prop2()
 
         result shouldBe "acbd"
     }
 
     "Check prop3" {
-        val deferred = client.async(workflowA) { prop3() }
-        val result = deferred.await()
+        val result = workflowA.prop3()
 
         result shouldBe "acbd"
     }
 
     "Check prop4" {
-        val deferred = client.async(workflowA) { prop4() }
-        val result = deferred.await()
+        val result = workflowA.prop4()
 
         result shouldBe "acd"
     }
 
     "Check prop5" {
-        val deferred = client.async(workflowA) { prop5() }
-        val result = deferred.await()
+        val result = workflowA.prop5()
 
         result shouldBe "adbc"
     }
 
     "Check prop6" {
-        val deferred = client.async(workflowA) { prop6() }
-        val result = deferred.await()
+        val result = workflowA.prop6()
 
         result shouldBe "abab"
     }
 
     "Check prop7" {
-        val deferred = client.async(workflowA) { prop7() }
-        val result = deferred.await()
+        val result = workflowA.prop7()
 
         result shouldBe "acbd"
-    }
-
-    "Check prop6 sync" {
-        val result = workflowA.prop6()
-
-        result shouldBe "abab"
     }
 
     "Check multiple sync" {
