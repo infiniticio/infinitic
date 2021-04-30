@@ -44,6 +44,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -208,11 +209,18 @@ internal class TaskTests : StringSpec({
         val deferred1 = client.async(taskTestWithTags) { log() }
         val deferred2 = client.async(taskTestWithTags) { log() }
 
-        client.cancelTask<TaskTest>("foo")
-
-        delay(50)
-        shouldThrow<CanceledDeferredException> { deferred1.await() }
-        shouldThrow<CanceledDeferredException> { deferred2.await() }
+        coroutineScope {
+            launch {
+                shouldThrow<CanceledDeferredException> { deferred1.await() }
+            }
+            launch {
+                shouldThrow<CanceledDeferredException> { deferred2.await() }
+            }
+            launch {
+                delay(50)
+                client.cancelTask<TaskTest>("foo")
+            }
+        }
     }
 
     "Tag should be added then deleted after completion" {

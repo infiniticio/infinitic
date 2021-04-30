@@ -162,17 +162,6 @@ class TaskEngine(
 
     private suspend fun waitTask(oldState: TaskState, message: WaitTask): TaskState =
         when (oldState.taskStatus) {
-            // immediate response if task has ongoing failure
-//            TaskStatus.RUNNING_ERROR -> {
-//                val taskFailed = TaskFailedInClient(
-//                    clientName = message.clientName,
-//                    taskId = oldState.taskId,
-//                    error = oldState.lastError!!,
-//                )
-//                sendToClient(taskFailed)
-//
-//                oldState
-//            }
             TaskStatus.TERMINATED_COMPLETED -> {
                 val taskCompleted = TaskCompletedInClient(
                     clientName = message.clientName,
