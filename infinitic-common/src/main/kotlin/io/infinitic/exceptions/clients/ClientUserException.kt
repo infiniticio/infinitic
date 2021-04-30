@@ -118,3 +118,10 @@ class UnknownMethodInSendChannelException(
     msg = "Unknown method $method used on channel $channel in $workflow",
     help = "Make sure to use the ${SendChannel<*>::send.name} method"
 )
+
+class CanNotAwaitStubPerTag(
+    klass: String
+) : ClientUserException(
+    msg = "You can not await a task or workflow ($klass) based on a tag",
+    help = "Please target the task or workflow per id"
+)

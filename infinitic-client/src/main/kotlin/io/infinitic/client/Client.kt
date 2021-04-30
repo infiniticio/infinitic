@@ -25,6 +25,8 @@
 
 package io.infinitic.client
 
+import io.infinitic.client.deferred.DeferredTask
+import io.infinitic.client.deferred.DeferredWorkflow
 import io.infinitic.clients.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
@@ -56,6 +58,7 @@ import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
 import io.infinitic.exceptions.clients.CanNotApplyOnChannelException
 import io.infinitic.exceptions.clients.CanNotApplyOnNewTaskStubException
 import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
+import io.infinitic.exceptions.clients.CanNotAwaitStubPerTag
 import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
 import io.infinitic.exceptions.clients.NotAStubException
 import io.infinitic.exceptions.thisShouldNotHappen
@@ -238,6 +241,20 @@ abstract class Client : InfiniticClientInterface {
     }
 
     /**
+     * Await a task or a workflowTask from a stub
+     */
+    override fun <T : Any> await(proxy: T): Any {
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
+
+        return when (val handler = Proxy.getInvocationHandler(proxy)) {
+            is TaskProxyHandler<*> -> awaitTaskHandler(handler)
+            is WorkflowProxyHandler<*> -> awaitWorkflowHandler(handler)
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("await")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+        }
+    }
+
+    /**
      *  Complete a task or a workflow from a stub
      */
     override fun <T : Any> complete(proxy: T, value: Any) {
@@ -313,6 +330,21 @@ abstract class Client : InfiniticClientInterface {
         }.join()
     }
 
+    private fun <T : Any> awaitTaskHandler(handler: TaskProxyHandler<T>): Any {
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "await")
+
+        return when {
+            handler.perTaskId != null -> DeferredTask<Any>(
+                taskName = TaskName(handler.klass.name),
+                taskId = handler.perTaskId!!,
+                isSync = false,
+                dispatcher = dispatcher
+            ).await()
+            handler.perTag != null -> throw CanNotAwaitStubPerTag(handler.klass.name)
+            else -> thisShouldNotHappen()
+        }
+    }
+
     private fun <T : Any> cancelWorkflowHandler(handler: WorkflowProxyHandler<T>) {
         if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
 
@@ -359,5 +391,20 @@ abstract class Client : InfiniticClientInterface {
                 else -> thisShouldNotHappen()
             }
         }.join()
+    }
+
+    private fun <T : Any> awaitWorkflowHandler(handler: WorkflowProxyHandler<T>): Any {
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "await")
+
+        return when {
+            handler.perWorkflowId != null -> DeferredWorkflow<Any>(
+                workflowName = WorkflowName(handler.klass.name),
+                workflowId = handler.perWorkflowId!!,
+                isSync = false,
+                dispatcher = dispatcher
+            ).await()
+            handler.perTag != null -> throw CanNotAwaitStubPerTag(handler.klass.name)
+            else -> thisShouldNotHappen()
+        }
     }
 }

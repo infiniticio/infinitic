@@ -80,7 +80,7 @@ class TaskEngine(
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskEngineMessage) {
-        logger.debug("receiving {}", message)
+        logger.warn("receiving {}", message)
 
         // get current state
         val oldState = storage.getState(message.taskId)
@@ -163,16 +163,16 @@ class TaskEngine(
     private suspend fun waitTask(oldState: TaskState, message: WaitTask): TaskState =
         when (oldState.taskStatus) {
             // immediate response if task has ongoing failure
-            TaskStatus.RUNNING_ERROR -> {
-                val taskFailed = TaskFailedInClient(
-                    clientName = message.clientName,
-                    taskId = oldState.taskId,
-                    error = oldState.lastError!!,
-                )
-                sendToClient(taskFailed)
-
-                oldState
-            }
+//            TaskStatus.RUNNING_ERROR -> {
+//                val taskFailed = TaskFailedInClient(
+//                    clientName = message.clientName,
+//                    taskId = oldState.taskId,
+//                    error = oldState.lastError!!,
+//                )
+//                sendToClient(taskFailed)
+//
+//                oldState
+//            }
             TaskStatus.TERMINATED_COMPLETED -> {
                 val taskCompleted = TaskCompletedInClient(
                     clientName = message.clientName,
@@ -185,12 +185,12 @@ class TaskEngine(
                 oldState
             }
             TaskStatus.TERMINATED_CANCELED -> {
-                val taskCanceledInClient = TaskCanceledInClient(
+                val taskCanceled = TaskCanceledInClient(
                     clientName = message.clientName,
                     taskId = oldState.taskId,
                     taskMeta = oldState.taskMeta
                 )
-                sendToClient(taskCanceledInClient)
+                sendToClient(taskCanceled)
 
                 oldState
             }

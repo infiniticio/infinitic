@@ -28,7 +28,6 @@
 package io.infinitic.inMemory
 
 import io.infinitic.clients.cancelTask
-import io.infinitic.clients.getTask
 import io.infinitic.clients.newTask
 import io.infinitic.clients.retryTask
 import io.infinitic.common.tasks.data.TaskId
@@ -46,6 +45,7 @@ import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 internal class TaskTests : StringSpec({
 
@@ -94,7 +94,7 @@ internal class TaskTests : StringSpec({
             when {
                 (retry < 3) -> Status.FAILED_WITH_RETRY
                 else -> Status.SUCCESS
-            } 
+            }
         }
 
         val result = taskTest.log()
@@ -107,7 +107,7 @@ internal class TaskTests : StringSpec({
             when {
                 (retry < 3) -> Status.FAILED_WITH_RETRY
                 else -> Status.SUCCESS
-            } 
+            }
         }
 
         val deferred = client.async(taskTest) { log() }
@@ -131,7 +131,7 @@ internal class TaskTests : StringSpec({
             when {
                 retry < 3 -> Status.FAILED_WITH_RETRY
                 else -> Status.FAILED_WITHOUT_RETRY
-            } 
+            }
         }
 
         val e = shouldThrow<FailedDeferredException> { taskTest.log() }
@@ -146,17 +146,14 @@ internal class TaskTests : StringSpec({
             when (index) {
                 0 -> Status.FAILED_WITHOUT_RETRY
                 else -> Status.SUCCESS
-            } 
+            }
         }
 
-        val deferred = client.async(taskTest) { log() }
+        shouldThrow<FailedDeferredException> { taskTest.log() }
 
-        shouldThrow<FailedDeferredException> { deferred.await() }
+        client.retry(taskTest)
 
-        client.retryTask<TaskTest>(deferred.id)
-
-//        delay(50)
-        deferred.await() shouldBe "01"
+        client.await(taskTest) shouldBe "01"
     }
 
     "Task succeeds after automatic and manual retry" {
@@ -165,42 +162,21 @@ internal class TaskTests : StringSpec({
             when (index) {
                 0 -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
                 else -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS
-            } 
-        }
-
-        val deferred = client.async(taskTest) { log() }
-
-        shouldThrow<FailedDeferredException> { deferred.await() }
-
-        client.retryTask<TaskTest>(deferred.id)
-
-        delay(50)
-        deferred.await() shouldBe "00000001"
-    }
-
-    "Task succeeds after manual retry on same stub" {
-        // task will succeed only after manual retry
-        behavior = { index, _ ->
-            when (index) {
-                0 -> Status.FAILED_WITHOUT_RETRY
-                else -> Status.SUCCESS
             }
         }
-        val deferred = client.async(taskTest) { log() }
 
-        shouldThrow<FailedDeferredException> { deferred.await() }
+        shouldThrow<FailedDeferredException> { taskTest.log() }
 
         client.retry(taskTest)
 
-        delay(50)
-        deferred.await() shouldBe "01"
+        client.await(taskTest) shouldBe "00000001"
     }
 
     "Task succeeds after manual retry using tags" {
         // task will succeed only after manual retry
-        behavior = { index, _ ->
+        behavior = { index, retry ->
             when (index) {
-                0 -> Status.FAILED_WITHOUT_RETRY
+                0 -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
                 else -> Status.SUCCESS
             }
         }
@@ -208,11 +184,9 @@ internal class TaskTests : StringSpec({
 
         shouldThrow<FailedDeferredException> { deferred.await() }
 
-        val existingTask = client.getTask<TaskTest>("foo")
-        client.retry(existingTask)
+        client.retryTask<TaskTest>("foo")
 
-        delay(50)
-        deferred.await() shouldBe "01"
+        deferred.await() shouldBe "00001"
     }
 
     "Task canceled during automatic retry" {
@@ -220,9 +194,11 @@ internal class TaskTests : StringSpec({
 
         val deferred = client.async(taskTest) { log() }
 
-        client.cancel(taskTest)
+        launch {
+            delay(50)
+            client.cancel(taskTest)
+        }
 
-        delay(50)
         shouldThrow<CanceledDeferredException> { deferred.await() }
     }
 

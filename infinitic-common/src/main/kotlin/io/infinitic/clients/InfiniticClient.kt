@@ -252,6 +252,27 @@ interface InfiniticClient {
         klass: Class<out T>,
         tag: String
     ) = retry(getWorkflow(klass, tag))
+
+    /**
+     * Await a task or a workflowTask from a stub
+     */
+    fun <T : Any> await(proxy: T): Any
+
+    /**
+     * Await a task by id
+     */
+    fun <T : Any> awaitTask(
+        klass: Class<out T>,
+        id: UUID
+    ): Any = await(getTask(klass, id))
+
+    /**
+     * Await a workflow by id
+     */
+    fun <T : Any> awaitWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ): Any = await(getWorkflow(klass, id))
 }
 
 /**
@@ -387,6 +408,20 @@ inline fun <reified T : Any> InfiniticClient.retryWorkflow(
 inline fun <reified T : Any> InfiniticClient.retryWorkflow(
     tag: String
 ) = retryWorkflow(T::class.java, tag)
+
+/**
+ * (kotlin) Await task per id
+ */
+inline fun <reified T : Any> InfiniticClient.awaitTask(
+    id: UUID
+) = awaitTask(T::class.java, id)
+
+/**
+ * (kotlin) Await workflow per id
+ */
+inline fun <reified T : Any> InfiniticClient.awaitWorkflow(
+    id: UUID
+) = awaitWorkflow(T::class.java, id)
 
 /**
  * (kotlin) Get task ids per tag
