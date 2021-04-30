@@ -92,7 +92,7 @@ internal class WorkflowTests : StringSpec({
 
     "get id from context" {
         val deferred = client.async(workflowA) { context1() }
-        val result = workflowA.context1()
+        val result = deferred.await()
 
         result shouldBe deferred.id
     }
@@ -294,18 +294,24 @@ internal class WorkflowTests : StringSpec({
 
     "Waiting for event, sent after dispatched" {
         val deferred = client.async(workflowA) { channel1() }
-        workflowA.channelA.send("test")
-        val result = deferred.await()
 
-        result shouldBe "test"
+        launch {
+            delay(50)
+            workflowA.channelA.send("test")
+        }
+
+        deferred.await() shouldBe "test"
     }
 
     "Waiting for event, sent by id" {
         val deferred = client.async(workflowA) { channel1() }
-        client.getWorkflow<WorkflowA>(deferred.id).channelA.send("test")
-        val result = deferred.await()
 
-        result shouldBe "test"
+        launch {
+            delay(50)
+            client.getWorkflow<WorkflowA>(deferred.id).channelA.send("test")
+        }
+
+        deferred.await() shouldBe "test"
     }
 
     "Waiting for event, sent by tag" {
@@ -588,7 +594,10 @@ internal class WorkflowTests : StringSpec({
 
         e.causeError?.whereName shouldBe TaskA::class.java.name
 
-        client.retryTask<TaskA>(e.causeError?.whereId!!)
+        launch {
+            delay(50)
+            client.retryTask<TaskA>(e.causeError?.whereId!!)
+        }
 
         deferred.await() shouldBe "ok"
     }

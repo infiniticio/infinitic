@@ -76,8 +76,7 @@ internal class TaskTests : StringSpec({
     "Asynchronous execution succeeds at first try" {
         behavior = { _, _ -> Status.SUCCESS }
 
-        val deferred = client.async(taskTest) { log() }
-        val result = deferred.await()
+        val result = taskTest.log()
 
         result shouldBe "1"
     }
@@ -91,7 +90,12 @@ internal class TaskTests : StringSpec({
     }
 
     "Synchronous Task succeeds at 4th try" {
-        behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
+        behavior = { _, retry ->
+            when {
+                (retry < 3) -> Status.FAILED_WITH_RETRY
+                else -> Status.SUCCESS
+            } 
+        }
 
         val result = taskTest.log()
 
@@ -99,7 +103,12 @@ internal class TaskTests : StringSpec({
     }
 
     "Asynchronous Task succeeds at 4th try" {
-        behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS }
+        behavior = { _, retry ->
+            when {
+                (retry < 3) -> Status.FAILED_WITH_RETRY
+                else -> Status.SUCCESS
+            } 
+        }
 
         val deferred = client.async(taskTest) { log() }
         val result = deferred.await()
@@ -118,7 +127,12 @@ internal class TaskTests : StringSpec({
 
     "Task fails after 4 tries " {
         // task will failed and stop retries after 3rd
-        behavior = { _, retry -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY }
+        behavior = { _, retry ->
+            when {
+                retry < 3 -> Status.FAILED_WITH_RETRY
+                else -> Status.FAILED_WITHOUT_RETRY
+            } 
+        }
 
         val e = shouldThrow<FailedDeferredException> { taskTest.log() }
 
@@ -132,8 +146,9 @@ internal class TaskTests : StringSpec({
             when (index) {
                 0 -> Status.FAILED_WITHOUT_RETRY
                 else -> Status.SUCCESS
-            }
+            } 
         }
+
         val deferred = client.async(taskTest) { log() }
 
         shouldThrow<FailedDeferredException> { deferred.await() }
@@ -147,11 +162,10 @@ internal class TaskTests : StringSpec({
     "Task succeeds after automatic and manual retry" {
         // task will succeed only after manual retry
         behavior = { index, retry ->
-            if (index == 0) {
-                if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
-            } else {
-                if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS
-            }
+            when (index) {
+                0 -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.FAILED_WITHOUT_RETRY
+                else -> if (retry < 3) Status.FAILED_WITH_RETRY else Status.SUCCESS
+            } 
         }
 
         val deferred = client.async(taskTest) { log() }
