@@ -43,7 +43,5 @@ jobs:
         with:
           java-version: 8
 
-      - name: Run gradle build
-        uses: eskatos/gradle-command-action@v1
-        with:
-          arguments: build
+      - name: Build with Gradle
+        run: ./gradlew build
