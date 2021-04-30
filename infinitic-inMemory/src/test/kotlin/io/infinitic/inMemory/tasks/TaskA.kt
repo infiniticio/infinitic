@@ -27,6 +27,7 @@ package io.infinitic.inMemory.tasks
 
 import io.infinitic.clients.cancelTask
 import io.infinitic.clients.cancelWorkflow
+import io.infinitic.clients.retryTask
 import io.infinitic.inMemory.workflows.WorkflowA
 import io.infinitic.tasks.Task
 import java.time.Duration
@@ -41,6 +42,8 @@ interface TaskA {
     fun cancelWorkflowA(id: UUID)
     fun cancelTaskA(id: UUID)
     fun failing()
+    fun successAtRetry(): String
+    fun retryTaskA(id: UUID)
 }
 
 class TaskAImpl : Task(), TaskA {
@@ -60,6 +63,14 @@ class TaskAImpl : Task(), TaskA {
     }
 
     override fun failing() = throw Exception("sorry")
+    override fun successAtRetry() = when (context.retrySequence) {
+        0 -> throw Exception()
+        else -> "ok"
+    }
+    override fun retryTaskA(id: UUID) {
+        Thread.sleep(50)
+        context.client.retryTask<TaskA>(id)
+    }
 
     override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }

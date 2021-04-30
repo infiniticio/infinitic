@@ -805,7 +805,7 @@ class WorkflowTests : StringSpec({
     }
 })
 
-fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
+fun CoroutineScope.sendToClient(msg: ClientMessage) = launch {
     client.handle(msg)
 }
 
@@ -869,12 +869,13 @@ fun CoroutineScope.init() {
 
     workflowTagEngine = WorkflowTagEngine(
         workflowTagStorage,
-        { sendToWorkflowEngine(it) }
+        { sendToWorkflowEngine(it) },
+        { sendToClient(it) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        { sendToClientResponse(it) },
+        { sendToClient(it) },
         { },
         { msg, after -> sendToTaskEngineAfter(msg, after) },
         { sendToWorkflowEngine(it) },
@@ -884,7 +885,7 @@ fun CoroutineScope.init() {
 
     workflowEngine = WorkflowEngine(
         workflowStateStorage,
-        { sendToClientResponse(it) },
+        { sendToClient(it) },
         { sendToWorkflowTagEngine(it) },
         { sendToTaskEngine(it) },
         { sendToWorkflowEngine(it) },

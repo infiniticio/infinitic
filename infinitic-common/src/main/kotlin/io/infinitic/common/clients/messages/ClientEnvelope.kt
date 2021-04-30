@@ -32,17 +32,19 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ClientEnvelope(
-    val clientName: ClientName,
-    val type: ClientMessageType,
-    val taskCompleted: TaskCompleted? = null,
-    val taskCanceled: TaskCanceled? = null,
-    val taskFailed: TaskFailed? = null,
-    val unknownTask: UnknownTask? = null,
-    val workflowCompleted: WorkflowCompleted? = null,
-    val workflowCanceled: WorkflowCanceled? = null,
-    val workflowFailed: WorkflowFailed? = null,
-    val unknownWorkflow: UnknownWorkflow? = null,
-    val workflowAlreadyCompleted: WorkflowAlreadyCompleted? = null
+    private val clientName: ClientName,
+    private val type: ClientMessageType,
+    private val taskCompleted: TaskCompleted? = null,
+    private val taskCanceled: TaskCanceled? = null,
+    private val taskFailed: TaskFailed? = null,
+    private val unknownTask: UnknownTask? = null,
+    private val taskIdsPerTag: TaskIdsPerTag? = null,
+    private val workflowCompleted: WorkflowCompleted? = null,
+    private val workflowCanceled: WorkflowCanceled? = null,
+    private val workflowFailed: WorkflowFailed? = null,
+    private val unknownWorkflow: UnknownWorkflow? = null,
+    private val workflowAlreadyCompleted: WorkflowAlreadyCompleted? = null,
+    private val workflowIdsPerTag: WorkflowIdsPerTag? = null
 ) : Envelope<ClientMessage> {
     init {
         val noNull = listOfNotNull(
@@ -50,11 +52,13 @@ data class ClientEnvelope(
             taskCanceled,
             taskFailed,
             unknownTask,
+            taskIdsPerTag,
             workflowCompleted,
             workflowCanceled,
             workflowFailed,
             unknownWorkflow,
-            workflowAlreadyCompleted
+            workflowAlreadyCompleted,
+            workflowIdsPerTag
         )
 
         require(noNull.size == 1)
@@ -84,6 +88,11 @@ data class ClientEnvelope(
                 ClientMessageType.UNKNOWN_TASK,
                 unknownTask = msg
             )
+            is TaskIdsPerTag -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.TASK_IDS_PER_TAG,
+                taskIdsPerTag = msg
+            )
             is WorkflowCompleted -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.WORKFLOW_COMPLETED,
@@ -109,6 +118,11 @@ data class ClientEnvelope(
                 ClientMessageType.WORKFLOW_ALREADY_COMPLETED,
                 workflowAlreadyCompleted = msg
             )
+            is WorkflowIdsPerTag -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.WORKFLOW_IDS_PER_TAG,
+                workflowIdsPerTag = msg
+            )
         }
 
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
@@ -119,11 +133,13 @@ data class ClientEnvelope(
         ClientMessageType.TASK_COMPLETED -> taskCompleted!!
         ClientMessageType.TASK_CANCELED -> taskCanceled!!
         ClientMessageType.TASK_FAILED -> taskFailed!!
+        ClientMessageType.TASK_IDS_PER_TAG -> taskIdsPerTag!!
         ClientMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
         ClientMessageType.WORKFLOW_CANCELED -> workflowCanceled!!
         ClientMessageType.WORKFLOW_FAILED -> workflowFailed!!
         ClientMessageType.UNKNOWN_WORKFLOW -> unknownWorkflow!!
         ClientMessageType.WORKFLOW_ALREADY_COMPLETED -> workflowAlreadyCompleted!!
+        ClientMessageType.WORKFLOW_IDS_PER_TAG -> workflowIdsPerTag!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

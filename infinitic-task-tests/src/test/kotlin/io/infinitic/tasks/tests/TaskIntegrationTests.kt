@@ -396,7 +396,7 @@ class TaskIntegrationTests : StringSpec({
     }
 })
 
-fun CoroutineScope.sendToClientResponse(msg: ClientMessage) = launch {
+fun CoroutineScope.sendToClient(msg: ClientMessage) = launch {
     client.handle(msg)
 }
 
@@ -457,12 +457,13 @@ fun CoroutineScope.init() {
 
     taskTagEngine = TaskTagEngine(
         taskTagStorage,
-        { sendToTaskEngine(it) }
+        { sendToTaskEngine(it) },
+        { sendToClient(it) }
     )
 
     taskEngine = TaskEngine(
         taskStateStorage,
-        { msg: ClientMessage -> sendToClientResponse(msg) },
+        { msg: ClientMessage -> sendToClient(msg) },
         { msg: TaskTagEngineMessage -> sendToTaskTagEngine(msg) },
         { msg, after -> sendToTaskEngineAfter(msg, after) },
         { },

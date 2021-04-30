@@ -29,5 +29,6 @@ enum class TaskTagEngineMessageType {
     ADD_TASK_TAG,
     REMOVE_TASK_TAG,
     CANCEL_TASK_PER_TAG,
-    RETRY_TASK_PER_TAG
+    RETRY_TASK_PER_TAG,
+    GET_TASK_IDS
 }

@@ -27,6 +27,7 @@ package io.infinitic.inMemory
 
 import io.infinitic.clients.getWorkflow
 import io.infinitic.clients.newWorkflow
+import io.infinitic.clients.retryTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -43,6 +44,7 @@ import io.infinitic.inMemory.workflows.WorkflowB
 import io.infinitic.inMemory.workflows.WorkflowBImpl
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -53,6 +55,9 @@ import io.infinitic.exceptions.workflows.CanceledDeferredException as CanceledIn
 import io.infinitic.exceptions.workflows.FailedDeferredException as FailedInWorkflowException
 
 internal class WorkflowTests : StringSpec({
+
+    // each test should not be longer than 5s
+    configuration.timeout = 5000
 
     lateinit var workflowA: WorkflowA
     lateinit var workflowATagged: WorkflowA
@@ -233,7 +238,7 @@ internal class WorkflowTests : StringSpec({
 
     "Inline task with synchronous task inside" {
         val deferred = client.async(workflowA) { inline3(14) }
-        val e = shouldThrow<FailedDeferredException> { deferred.await() }
+        shouldThrow<FailedDeferredException> { deferred.await() }
     }
 
     "Sequential Child Workflow" {
@@ -568,12 +573,55 @@ internal class WorkflowTests : StringSpec({
         result shouldBe 100
     }
 
-    "retry a failed task should work" {
+    "retry a failed task from client should restart a workflow" {
+        val deferred = client.async(workflowA) { failing8() }
+
+        val e = shouldThrow<FailedDeferredException> { deferred.await() }
+
+        e.causeError?.whereName shouldBe TaskA::class.java.name
+
+        client.retryTask<TaskA>(e.causeError?.whereId!!)
+
+        deferred.await() shouldBe "ok"
     }
 
-    "retry a caught failed task should not throw" {
+    "retry a caught failed task should not throw and influence workflow" {
+        workflowA.failing9() shouldBe true
     }
 
     "child workflow is canceled when workflow is canceled" {
+    }
+
+    "Tag should be added then deleted after completion" {
+        val deferred = client.async(workflowATagged) { await(200) }
+        val workflowId = WorkflowId(deferred.id)
+
+        delay(50)
+        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe true
+        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe true
+
+        deferred.await()
+
+        delay(50)
+        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe false
+        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe false
+    }
+
+    "Tag should be added then deleted after cancellation" {
+        val deferred = client.async(workflowATagged) { channel1() }
+        val workflowId = WorkflowId(deferred.id)
+
+        delay(50)
+        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe true
+        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe true
+
+        client.cancel(workflowATagged)
+
+        delay(50)
+        shouldThrow<CanceledDeferredException> { deferred.await() }
+
+        delay(50)
+        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe false
+        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe false
     }
 })

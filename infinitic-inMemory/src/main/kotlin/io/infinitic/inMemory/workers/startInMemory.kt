@@ -79,7 +79,8 @@ fun CoroutineScope.startInMemory(
         eventsOutputChannel = output.logChannel,
         commandsInputChannel = output.taskTagCommandsChannel,
         commandsOutputChannel = output.logChannel,
-        output.sendCommandsToTaskEngine
+        output.sendCommandsToTaskEngine,
+        output.sendEventsToClient
     )
 
     startTaskEngine(
@@ -104,7 +105,8 @@ fun CoroutineScope.startInMemory(
         eventsOutputChannel = output.logChannel,
         commandsInputChannel = output.workflowTagCommandsChannel,
         commandsOutputChannel = output.logChannel,
-        output.sendCommandsToWorkflowEngine
+        output.sendCommandsToWorkflowEngine,
+        output.sendEventsToClient
     )
 
     startWorkflowEngine(

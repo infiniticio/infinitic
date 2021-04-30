@@ -53,6 +53,7 @@ interface WorkflowA {
     val channelB: SendChannel<String>
 
     fun empty(): String
+    fun await(duration: Long): Long
     fun context1(): UUID
     fun context2(): Set<String>
     fun context3(): WorkflowMeta
@@ -103,6 +104,9 @@ interface WorkflowA {
     fun failing5(): Long
     fun failing6()
     fun failing7(): Long
+    fun failing8(): String
+    fun failing9(): Boolean
+    fun failing10(): String
 }
 
 class WorkflowAImpl : Workflow(), WorkflowA {
@@ -115,6 +119,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     private var p1 = ""
 
     override fun empty() = "void"
+
+    override fun await(duration: Long) = taskA.await(duration)
 
     override fun context1(): UUID = context.id
 
@@ -550,5 +556,29 @@ class WorkflowAImpl : Workflow(), WorkflowA {
             workflowABis.failing2()
         }
         return taskA.await(100)
+    }
+
+    override fun failing8() = taskA.successAtRetry()
+
+    override fun failing9(): Boolean {
+        // this method will complete only after retry
+        val deferred = async(taskA) { successAtRetry() }
+
+        val result = try {
+            deferred.await()
+        } catch (e: FailedDeferredException) {
+            "caught"
+        }
+
+        taskA.retryTaskA(deferred.id!!)
+
+        // we wait here only on avoid to make sure the previous retry is completed
+        taskA.await(100)
+
+        return deferred.await() == "ok" && result == "caught"
+    }
+
+    override fun failing10(): String {
+        return "ok"
     }
 }

@@ -41,8 +41,6 @@ import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
 import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
 import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -62,10 +60,10 @@ private lateinit var stateMessageId: CapturingSlot<MessageId>
 private lateinit var stateTaskId: CapturingSlot<TaskId>
 private lateinit var clientMessage: CapturingSlot<ClientMessage>
 private lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
-private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
 
 private lateinit var tagStateStorage: TaskTagStorage
 private lateinit var sendToTaskEngine: SendToTaskEngine
+private lateinit var sendToClient: SendToClient
 
 internal class TaskTagEngineTests : StringSpec({
 
@@ -177,12 +175,6 @@ private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>): SendT
     return mock
 }
 
-private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
-    val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(slot)) } just Runs
-    return mock
-}
-
 private fun mockTagStateStorage(tag: TaskTag, name: TaskName, messageId: MessageId?, taskIds: Set<TaskId>): TaskTagStorage {
     val tagStateStorage = mockk<TaskTagStorage>()
     coEvery { tagStateStorage.getLastMessageId(tag, name) } returns messageId
@@ -204,12 +196,12 @@ private fun getEngine(
     stateTaskId = slot()
     clientMessage = slot()
     taskEngineMessage = slot()
-    workflowEngineMessage = slot()
 
     tagStateStorage = mockTagStateStorage(taskTag, taskName, messageId, taskIds)
     sendToTaskEngine = mockSendToTaskEngine(taskEngineMessage)
+    sendToClient = mockSendToClient(clientMessage)
 
-    return TaskTagEngine(tagStateStorage, sendToTaskEngine)
+    return TaskTagEngine(tagStateStorage, sendToTaskEngine, sendToClient)
 }
 
 private fun verifyAll() = confirmVerified(

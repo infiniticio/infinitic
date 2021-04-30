@@ -233,6 +233,7 @@ internal class TaskTests : StringSpec({
 
         deferred.await()
 
+        delay(50)
         // checks taskId has been removed from tag storage
         client.taskTagStorage.getTaskIds(TaskTag("foo"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
         client.taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false

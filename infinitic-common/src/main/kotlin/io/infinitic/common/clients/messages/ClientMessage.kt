@@ -34,7 +34,11 @@ import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -74,10 +78,25 @@ data class UnknownTask(
 ) : ClientMessage(), TaskMessage
 
 @Serializable
+data class TaskIdsPerTag(
+    override val clientName: ClientName,
+    val taskName: TaskName,
+    val taskTag: TaskTag,
+    val taskIds: Set<TaskId>
+) : ClientMessage()
+
+@Serializable
 data class WorkflowCompleted(
     override val clientName: ClientName,
     override val workflowId: WorkflowId,
     val workflowReturnValue: MethodReturnValue
+) : ClientMessage(), WorkflowMessage
+
+@Serializable
+data class WorkflowFailed(
+    override val clientName: ClientName,
+    override val workflowId: WorkflowId,
+    val error: Error
 ) : ClientMessage(), WorkflowMessage
 
 @Serializable
@@ -99,8 +118,9 @@ data class WorkflowAlreadyCompleted(
 ) : ClientMessage(), WorkflowMessage
 
 @Serializable
-data class WorkflowFailed(
+data class WorkflowIdsPerTag(
     override val clientName: ClientName,
-    override val workflowId: WorkflowId,
-    val error: Error
-) : ClientMessage(), WorkflowMessage
+    val workflowName: WorkflowName,
+    val workflowTag: WorkflowTag,
+    val workflowIds: Set<WorkflowId>
+) : ClientMessage()

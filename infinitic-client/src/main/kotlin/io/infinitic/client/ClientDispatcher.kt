@@ -32,12 +32,14 @@ import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.TaskCanceled
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskFailed
+import io.infinitic.common.clients.messages.TaskIdsPerTag
 import io.infinitic.common.clients.messages.UnknownTask
 import io.infinitic.common.clients.messages.UnknownWorkflow
 import io.infinitic.common.clients.messages.WorkflowAlreadyCompleted
 import io.infinitic.common.clients.messages.WorkflowCanceled
 import io.infinitic.common.clients.messages.WorkflowCompleted
 import io.infinitic.common.clients.messages.WorkflowFailed
+import io.infinitic.common.clients.messages.WorkflowIdsPerTag
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
 import io.infinitic.common.clients.messages.interfaces.WorkflowMessage
 import io.infinitic.common.data.methods.MethodName
@@ -49,23 +51,27 @@ import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.engine.messages.WaitTask
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.AddTaskTag
+import io.infinitic.common.tasks.tags.messages.GetTaskIds
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
+import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.exceptions.clients.AlreadyCompletedWorkflowException
 import io.infinitic.exceptions.clients.CanceledDeferredException
@@ -83,6 +89,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
+import java.util.UUID
 import kotlin.reflect.full.isSubclassOf
 
 internal class ClientDispatcher(
@@ -97,6 +104,42 @@ internal class ClientDispatcher(
 
     suspend fun handle(message: ClientMessage) {
         responseFlow.emit(message)
+    }
+
+    // synchronously get task ids per tag
+    internal fun getTaskIdsPerTag(taskName: TaskName, taskTag: TaskTag): Set<UUID> {
+        val msg = GetTaskIds(
+            clientName = clientName,
+            taskTag = taskTag,
+            taskName = taskName
+        )
+        scope.future { sendToTaskTagEngine(msg) }.join()
+
+        val taskIdsPerTag = runBlocking {
+            responseFlow.first {
+                it is TaskIdsPerTag && it.taskName == taskName && it.taskName == taskName
+            } as TaskIdsPerTag
+        }
+
+        return taskIdsPerTag.taskIds.map { it.id }.toSet()
+    }
+
+    // synchronously get workflow ids per tag
+    internal fun getWorkflowIdsPerTag(workflowName: WorkflowName, workflowTag: WorkflowTag): Set<UUID> {
+        val msg = GetWorkflowIds(
+            clientName = clientName,
+            workflowTag = workflowTag,
+            workflowName = workflowName
+        )
+        scope.future { sendToWorkflowTagEngine(msg) }.join()
+
+        val workflowIdsPerTag = runBlocking {
+            responseFlow.first {
+                it is WorkflowIdsPerTag && it.workflowName == workflowName && it.workflowName == workflowName
+            } as WorkflowIdsPerTag
+        }
+
+        return workflowIdsPerTag.workflowIds.map { it.id }.toSet()
     }
 
     // asynchronous call: async(newTask) { method() }
@@ -167,9 +210,7 @@ internal class ClientDispatcher(
                 taskName = deferredTask.taskName,
                 clientName = clientName
             )
-            scope.future {
-                sendToTaskEngine(waitTask)
-            }.join()
+            scope.future { sendToTaskEngine(waitTask) }.join()
         }
 
         // wait for result

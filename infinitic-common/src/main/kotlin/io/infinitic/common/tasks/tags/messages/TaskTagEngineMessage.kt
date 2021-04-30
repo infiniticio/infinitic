@@ -25,6 +25,7 @@
 
 package io.infinitic.common.tasks.tags.messages
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
@@ -65,4 +66,11 @@ data class RemoveTaskTag(
     override val taskTag: TaskTag,
     override val taskName: TaskName,
     val taskId: TaskId,
+) : TaskTagEngineMessage()
+
+@Serializable
+data class GetTaskIds(
+    override val taskTag: TaskTag,
+    override val taskName: TaskName,
+    val clientName: ClientName
 ) : TaskTagEngineMessage()

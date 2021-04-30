@@ -25,11 +25,14 @@
 
 package io.infinitic.tags.tasks
 
+import io.infinitic.common.clients.messages.TaskIdsPerTag
+import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.CancelTask
 import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.tags.messages.AddTaskTag
 import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
+import io.infinitic.common.tasks.tags.messages.GetTaskIds
 import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
 import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
@@ -43,7 +46,8 @@ import org.slf4j.LoggerFactory
 
 class TaskTagEngine(
     storage: TaskTagStorage,
-    val sendToTaskEngine: SendToTaskEngine
+    val sendToTaskEngine: SendToTaskEngine,
+    val sendToClient: SendToClient
 ) {
     private lateinit var scope: CoroutineScope
     private val storage = LoggedTaskTagStorage(storage)
@@ -53,8 +57,8 @@ class TaskTagEngine(
     suspend fun handle(message: TaskTagEngineMessage) {
         logger.debug("receiving {}", message)
 
-        // coroutineScope let us send messages in parallel
-        // it can be important as we can have a lot of them
+        // coroutineScope let send messages in parallel
+        // it's important as we can have a lot of them
         coroutineScope {
             scope = this
             when (message) {
@@ -62,10 +66,23 @@ class TaskTagEngine(
                 is RemoveTaskTag -> removeTaskTag(message)
                 is CancelTaskPerTag -> cancelTaskPerTag(message)
                 is RetryTaskPerTag -> retryTaskPerTag(message)
+                is GetTaskIds -> getTaskIds(message)
             }
         }
 
         storage.setLastMessageId(message.taskTag, message.taskName, message.messageId)
+    }
+
+    private suspend fun getTaskIds(message: GetTaskIds) {
+        val taskIds = storage.getTaskIds(message.taskTag, message.taskName)
+
+        val taskIdsPerTag = TaskIdsPerTag(
+            message.clientName,
+            message.taskName,
+            message.taskTag,
+            taskIds = taskIds
+        )
+        scope.launch { sendToClient(taskIdsPerTag) }
     }
 
     private suspend fun addTaskTag(message: AddTaskTag) {

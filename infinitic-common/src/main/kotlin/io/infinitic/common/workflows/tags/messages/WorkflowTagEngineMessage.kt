@@ -83,3 +83,10 @@ data class RemoveWorkflowTag(
     override val workflowName: WorkflowName,
     val workflowId: WorkflowId,
 ) : WorkflowTagEngineMessage()
+
+@Serializable
+data class GetWorkflowIds(
+    override val workflowTag: WorkflowTag,
+    override val workflowName: WorkflowName,
+    val clientName: ClientName
+) : WorkflowTagEngineMessage()

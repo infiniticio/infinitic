@@ -37,7 +37,8 @@ data class WorkflowTagEngineEnvelope(
     val removeWorkflowTag: RemoveWorkflowTag? = null,
     val sendToChannelPerTag: SendToChannelPerTag? = null,
     val cancelWorkflowPerTag: CancelWorkflowPerTag? = null,
-    val retryWorkflowTaskPerTag: RetryWorkflowTaskPerTag? = null
+    val retryWorkflowTaskPerTag: RetryWorkflowTaskPerTag? = null,
+    val getWorkflowIds: GetWorkflowIds? = null,
 ) : Envelope<WorkflowTagEngineMessage> {
     init {
         val noNull = listOfNotNull(
@@ -45,7 +46,8 @@ data class WorkflowTagEngineEnvelope(
             removeWorkflowTag,
             sendToChannelPerTag,
             cancelWorkflowPerTag,
-            retryWorkflowTaskPerTag
+            retryWorkflowTaskPerTag,
+            getWorkflowIds
         )
 
         require(noNull.size == 1)
@@ -80,6 +82,11 @@ data class WorkflowTagEngineEnvelope(
                 WorkflowTagEngineMessageType.RETRY_WORKFLOW_TASK_PER_TAG,
                 retryWorkflowTaskPerTag = msg
             )
+            is GetWorkflowIds -> WorkflowTagEngineEnvelope(
+                "${msg.workflowName}",
+                WorkflowTagEngineMessageType.GET_WORKFLOW_IDS,
+                getWorkflowIds = msg
+            )
         }
 
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
@@ -91,6 +98,7 @@ data class WorkflowTagEngineEnvelope(
         WorkflowTagEngineMessageType.SEND_TO_CHANNEL_PER_TAG -> sendToChannelPerTag!!
         WorkflowTagEngineMessageType.CANCEL_WORKFLOW_PER_TAG -> cancelWorkflowPerTag!!
         WorkflowTagEngineMessageType.RETRY_WORKFLOW_TASK_PER_TAG -> retryWorkflowTaskPerTag!!
+        WorkflowTagEngineMessageType.GET_WORKFLOW_IDS -> getWorkflowIds!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

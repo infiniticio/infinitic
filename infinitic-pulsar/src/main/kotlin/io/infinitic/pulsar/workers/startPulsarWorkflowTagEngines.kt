@@ -60,7 +60,8 @@ fun CoroutineScope.startPulsarWorkflowTagEngines(
             eventsOutputChannel = eventsOutputChannel,
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
-            output.sendToWorkflowEngine(TopicType.COMMANDS)
+            output.sendToWorkflowEngine(TopicType.COMMANDS),
+            output.sendToClient()
         )
 
         // Pulsar consumers

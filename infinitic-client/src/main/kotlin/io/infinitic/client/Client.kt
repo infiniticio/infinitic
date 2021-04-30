@@ -139,6 +139,17 @@ abstract class Client : InfiniticClientInterface {
     ) { dispatcher }.stub()
 
     /**
+     * Synchronous call to get task'ids per tag and name
+     */
+    override fun <T : Any> getTaskIds(
+        klass: Class<out T>,
+        tag: String
+    ): Set<UUID> = dispatcher.getTaskIdsPerTag(
+        TaskName(klass::class.java.name),
+        TaskTag(tag)
+    )
+
+    /**
      * Create stub for a new workflow
      */
     override fun <T : Any> newWorkflow(
@@ -176,6 +187,17 @@ abstract class Client : InfiniticClientInterface {
         perTag = WorkflowTag(tag),
         perWorkflowId = null
     ) { dispatcher }.stub()
+
+    /**
+     * Synchronous call to get WorkflowIds per tag and name
+     */
+    override fun <T : Any> getWorkflowIds(
+        klass: Class<out T>,
+        tag: String
+    ): Set<UUID> = dispatcher.getWorkflowIdsPerTag(
+        WorkflowName(klass::class.java.name),
+        WorkflowTag(tag)
+    )
 
     /**
      *  Asynchronously process a task or a workflow
@@ -246,88 +268,96 @@ abstract class Client : InfiniticClientInterface {
     private fun <T : Any> cancelTaskHandler(handler: TaskProxyHandler<T>) {
         if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "cancel")
 
-        return when {
-            handler.perTaskId != null -> {
-                val msg = CancelTask(
-                    taskId = handler.perTaskId!!,
-                    taskName = TaskName(handler.klass.name)
-                )
-                scope.future { sendToTaskEngine(msg) }
+        return scope.future {
+            when {
+                handler.perTaskId != null -> {
+                    val msg = CancelTask(
+                        taskId = handler.perTaskId!!,
+                        taskName = TaskName(handler.klass.name)
+                    )
+                    sendToTaskEngine(msg)
+                }
+                handler.perTag != null -> {
+                    val msg = CancelTaskPerTag(
+                        taskTag = handler.perTag!!,
+                        taskName = TaskName(handler.klass.name)
+                    )
+                    sendToTaskTagEngine(msg)
+                }
+                else -> thisShouldNotHappen()
             }
-            handler.perTag != null -> {
-                val msg = CancelTaskPerTag(
-                    taskTag = handler.perTag!!,
-                    taskName = TaskName(handler.klass.name)
-                )
-                scope.future { sendToTaskTagEngine(msg) }
-            }
-            else -> thisShouldNotHappen()
         }.join()
     }
 
     private fun <T : Any> retryTaskHandler(handler: TaskProxyHandler<T>) {
         if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "retry")
 
-        return when {
-            handler.perTaskId != null -> {
-                val msg = RetryTask(
-                    taskId = handler.perTaskId!!,
-                    taskName = TaskName(handler.klass.name)
-                )
-                scope.future { sendToTaskEngine(msg) }
+        return scope.future {
+            when {
+                handler.perTaskId != null -> {
+                    val msg = RetryTask(
+                        taskId = handler.perTaskId!!,
+                        taskName = TaskName(handler.klass.name)
+                    )
+                    sendToTaskEngine(msg)
+                }
+                handler.perTag != null -> {
+                    val msg = RetryTaskPerTag(
+                        taskTag = handler.perTag!!,
+                        taskName = TaskName(handler.klass.name)
+                    )
+                    sendToTaskTagEngine(msg)
+                }
+                else -> thisShouldNotHappen()
             }
-            handler.perTag != null -> {
-                val msg = RetryTaskPerTag(
-                    taskTag = handler.perTag!!,
-                    taskName = TaskName(handler.klass.name)
-                )
-                scope.future { sendToTaskTagEngine(msg) }
-            }
-            else -> thisShouldNotHappen()
         }.join()
     }
 
     private fun <T : Any> cancelWorkflowHandler(handler: WorkflowProxyHandler<T>) {
         if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
 
-        return when {
-            handler.perWorkflowId != null -> {
-                val msg = CancelWorkflow(
-                    workflowId = handler.perWorkflowId!!,
-                    workflowName = WorkflowName(handler.klass.name)
-                )
-                scope.future { sendToWorkflowEngine(msg) }
+        return scope.future {
+            when {
+                handler.perWorkflowId != null -> {
+                    val msg = CancelWorkflow(
+                        workflowId = handler.perWorkflowId!!,
+                        workflowName = WorkflowName(handler.klass.name)
+                    )
+                    sendToWorkflowEngine(msg)
+                }
+                handler.perTag != null -> {
+                    val msg = CancelWorkflowPerTag(
+                        workflowTag = handler.perTag!!,
+                        workflowName = WorkflowName(handler.klass.name)
+                    )
+                    sendToWorkflowTagEngine(msg)
+                }
+                else -> thisShouldNotHappen()
             }
-            handler.perTag != null -> {
-                val msg = CancelWorkflowPerTag(
-                    workflowTag = handler.perTag!!,
-                    workflowName = WorkflowName(handler.klass.name)
-                )
-                scope.future { sendToWorkflowTagEngine(msg) }
-            }
-            else -> thisShouldNotHappen()
         }.join()
     }
 
     private fun <T : Any> retryWorkflowHandler(handler: WorkflowProxyHandler<T>) {
         if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
 
-        return when {
-            handler.perWorkflowId != null -> {
-                val msg = RetryWorkflowTask(
-                    workflowId = handler.perWorkflowId!!,
-                    workflowName = WorkflowName(handler.klass.name)
-                )
-                scope.future { sendToWorkflowEngine(msg) }
+        return scope.future {
+            when {
+                handler.perWorkflowId != null -> {
+                    val msg = RetryWorkflowTask(
+                        workflowId = handler.perWorkflowId!!,
+                        workflowName = WorkflowName(handler.klass.name)
+                    )
+                    sendToWorkflowEngine(msg)
+                }
+                handler.perTag != null -> {
+                    val msg = RetryWorkflowTaskPerTag(
+                        workflowTag = handler.perTag!!,
+                        workflowName = WorkflowName(handler.klass.name)
+                    )
+                    sendToWorkflowTagEngine(msg)
+                }
+                else -> thisShouldNotHappen()
             }
-            handler.perTag != null -> {
-                val msg = RetryWorkflowTaskPerTag(
-                    workflowTag = handler.perTag!!,
-                    workflowName = WorkflowName(handler.klass.name)
-                )
-                scope.future { sendToWorkflowTagEngine(msg) }
-            }
-            else -> thisShouldNotHappen()
         }.join()
     }
 }

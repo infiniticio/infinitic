@@ -25,12 +25,15 @@
 
 package io.infinitic.tags.workflows
 
+import io.infinitic.common.clients.messages.WorkflowIdsPerTag
+import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
+import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
 import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
@@ -45,7 +48,9 @@ import org.slf4j.LoggerFactory
 
 class WorkflowTagEngine(
     storage: WorkflowTagStorage,
-    val sendToWorkflowEngine: SendToWorkflowEngine
+    val sendToWorkflowEngine: SendToWorkflowEngine,
+    val sendToClient: SendToClient
+
 ) {
     private lateinit var scope: CoroutineScope
     private val storage = LoggedWorkflowTagStorage(storage)
@@ -55,8 +60,8 @@ class WorkflowTagEngine(
     suspend fun handle(message: WorkflowTagEngineMessage) {
         logger.debug("receiving {}", message)
 
-        // coroutineScope let us send messages in parallel
-        // it can be important as we can have a lot of them
+        // coroutineScope let send messages in parallel
+        // it's important as we can have a lot of them
         coroutineScope {
             scope = this
             val o = when (message) {
@@ -65,10 +70,23 @@ class WorkflowTagEngine(
                 is SendToChannelPerTag -> sendToChannelPerTag(message)
                 is CancelWorkflowPerTag -> cancelWorkflowPerTag(message)
                 is RetryWorkflowTaskPerTag -> retryWorkflowTaskPerTag(message)
+                is GetWorkflowIds -> getWorkflowIds(message)
             }
         }
 
         storage.setLastMessageId(message.workflowTag, message.workflowName, message.messageId)
+    }
+
+    private suspend fun getWorkflowIds(message: GetWorkflowIds) {
+        val workflowIds = storage.getWorkflowIds(message.workflowTag, message.workflowName)
+
+        val workflowIdsPerTag = WorkflowIdsPerTag(
+            message.clientName,
+            message.workflowName,
+            message.workflowTag,
+            workflowIds = workflowIds
+        )
+        scope.launch { sendToClient(workflowIdsPerTag) }
     }
 
     private suspend fun retryWorkflowTaskPerTag(message: RetryWorkflowTaskPerTag) {

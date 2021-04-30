@@ -25,6 +25,8 @@
 
 package io.infinitic.tags.workflows
 
+import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -55,9 +57,11 @@ private fun <T : Any> captured(slot: CapturingSlot<T>) = if (slot.isCaptured) sl
 private lateinit var stateMessageId: CapturingSlot<MessageId>
 private lateinit var stateWorkflowId: CapturingSlot<WorkflowId>
 private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
+private lateinit var clientMessage: CapturingSlot<ClientMessage>
 
 private lateinit var workflowTagStorage: WorkflowTagStorage
 private lateinit var sendToWorkflowEngine: SendToWorkflowEngine
+private lateinit var sendToClient: SendToClient
 
 internal class WorkflowTagEngineTests : StringSpec({
 
@@ -137,6 +141,12 @@ internal class WorkflowTagEngineTests : StringSpec({
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
     TestFactory.random<T>(values)
 
+private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
+    val mock = mockk<SendToClient>()
+    coEvery { mock(capture(slot)) } just Runs
+    return mock
+}
+
 private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
     coEvery { mock(capture(slot)) } just Runs
@@ -167,12 +177,14 @@ private fun getEngine(
 ): WorkflowTagEngine {
     stateMessageId = slot()
     stateWorkflowId = slot()
+    clientMessage = slot()
     workflowEngineMessage = slot()
 
     workflowTagStorage = mockWorkflowTagStorage(workflowTag, workflowName, messageId, workflowIds)
     sendToWorkflowEngine = mockSendToWorkflowEngine(workflowEngineMessage)
+    sendToClient = mockSendToClient(clientMessage)
 
-    return WorkflowTagEngine(workflowTagStorage, sendToWorkflowEngine)
+    return WorkflowTagEngine(workflowTagStorage, sendToWorkflowEngine, sendToClient)
 }
 
 private fun verifyAll() = confirmVerified(

@@ -118,6 +118,22 @@ interface InfiniticClient {
     ): T
 
     /**
+     * Synchronous call to get task ids per tag and name
+     */
+    fun <T : Any> getTaskIds(
+        klass: Class<out T>,
+        tag: String
+    ): Set<UUID>
+
+    /**
+     * Synchronous call to get workflow ids per tag and nam
+     */
+    fun <T : Any> getWorkflowIds(
+        klass: Class<out T>,
+        tag: String
+    ): Set<UUID>
+
+    /**
      *  Asynchronously process a task or a workflow
      */
     fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
