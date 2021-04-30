@@ -49,8 +49,8 @@ import kotlinx.coroutines.delay
 
 internal class TaskTests : StringSpec({
 
-    // each test should not be longer than 30s
-    configuration.timeout = 30000
+    // each test should not be longer than 3 min (for github)
+    configuration.timeout = 180000
 
     lateinit var behavior: (index: Int, retry: Int) -> Status
 

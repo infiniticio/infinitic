@@ -57,8 +57,8 @@ import io.infinitic.exceptions.workflows.FailedDeferredException as FailedInWork
 
 internal class WorkflowTests : StringSpec({
 
-    // each test should not be longer than 30s
-    configuration.timeout = 30000
+    // each test should not be longer than 3 min (for github)
+    configuration.timeout = 180000
 
     lateinit var workflowA: WorkflowA
     lateinit var workflowATagged: WorkflowA
@@ -591,7 +591,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "child workflow is canceled when workflow is canceled" {
-        val deferred = client.async(workflowATagged) { cancel1() }
+        client.async(workflowATagged) { cancel1() }
 
         // delay to be sure the child workflow has been dispatched
         delay(500)
