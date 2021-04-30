@@ -57,8 +57,8 @@ import io.infinitic.exceptions.workflows.FailedDeferredException as FailedInWork
 
 internal class WorkflowTests : StringSpec({
 
-    // each test should not be longer than 3 min (for github)
-    configuration.timeout = 180000
+    // each test should not be longer than 5s (for github)
+    configuration.timeout = 5000
 
     lateinit var workflowA: WorkflowA
     lateinit var workflowATagged: WorkflowA
@@ -106,8 +106,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "get meta from context" {
-        val deferred = client.async(workflowAMeta) { context3() }
-        val result = deferred.await()
+        val result = workflowAMeta.context3()
 
         result shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
     }
@@ -120,8 +119,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "get workflow name from task context" {
-        val deferred = client.async(workflowA) { context5() }
-        val result = deferred.await()
+        val result = workflowA.context5()
 
         result shouldBe WorkflowA::class.java.name
     }
@@ -189,36 +187,31 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Or step with 3 async tasks through list" {
-        val deferred = client.async(workflowA) { or3() }
-        val result = deferred.await()
+        val result = workflowA.or3()
 
         result shouldBeIn listOf("ba", "dc", "fe")
     }
 
     "Or step with Status checking" {
-        val deferred = client.async(workflowA) { or4() }
-        val result = deferred.await()
+        val result = workflowA.or4()
 
         result shouldBe "baba"
     }
 
     "And step with 3 async tasks" {
-        val deferred = client.async(workflowA) { and1() }
-        val result = deferred.await()
+        val result = workflowA.and1()
 
         result shouldBe listOf("ba", "dc", "fe")
     }
 
     "And step with 3 async tasks through list" {
-        val deferred = client.async(workflowA) { and2() }
-        val result = deferred.await()
+        val result = workflowA.and2()
 
         result shouldBe listOf("ba", "dc", "fe")
     }
 
     "And step with 3 async tasks through large list" {
-        val deferred = client.async(workflowA) { and3() }
-        val result = deferred.await()
+        val result = workflowA.and3()
 
         result shouldBe MutableList(1_00) { "ba" }
     }
@@ -358,46 +351,55 @@ internal class WorkflowTests : StringSpec({
     "Waiting for Obj event" {
         val obj1 = Obj1("foo", 42)
         val deferred = client.async(workflowA) { channel4() }
-        workflowA.channelObj.send(obj1)
-        val result = deferred.await()
 
-        result shouldBe obj1
+        launch {
+            delay(50)
+            workflowA.channelObj.send(obj1)
+        }
+
+        deferred.await() shouldBe obj1
     }
 
     "Waiting for filtered event using jsonPath only" {
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
         val deferred = client.async(workflowA) { channel4bis() }
-        workflowA.channelObj.send(obj1a)
-        delay(50)
-        workflowA.channelObj.send(obj1b)
-        val result = deferred.await()
+        launch {
+            delay(50)
+            workflowA.channelObj.send(obj1a)
+            delay(50)
+            workflowA.channelObj.send(obj1b)
+        }
 
-        result shouldBe obj1b
+        deferred.await() shouldBe obj1b
     }
 
     "Waiting for filtered event using using jsonPath and criteria" {
         val obj1a = Obj1("oof", 12)
         val obj1b = Obj1("foo", 12)
         val deferred = client.async(workflowA) { channel4ter() }
-        workflowA.channelObj.send(obj1a)
-        delay(50)
-        workflowA.channelObj.send(obj1b)
-        val result = deferred.await()
+        launch {
+            delay(50)
+            workflowA.channelObj.send(obj1a)
+            delay(50)
+            workflowA.channelObj.send(obj1b)
+        }
 
-        result shouldBe obj1b
+        deferred.await() shouldBe obj1b
     }
 
     "Waiting for event of specific type" {
         val obj1 = Obj1("foo", 42)
         val obj2 = Obj2("foo", 42)
         val deferred = client.async(workflowA) { channel5() }
-        workflowA.channelObj.send(obj2)
-        delay(50)
-        workflowA.channelObj.send(obj1)
-        val result = deferred.await()
+        launch {
+            delay(50)
+            workflowA.channelObj.send(obj2)
+            delay(50)
+            workflowA.channelObj.send(obj1)
+        }
 
-        result shouldBe obj1
+        deferred.await() shouldBe obj1
     }
 
     "Waiting event of specific type filtered using jsonPath only" {
@@ -405,14 +407,16 @@ internal class WorkflowTests : StringSpec({
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
         val deferred = client.async(workflowA) { channel5bis() }
-        workflowA.channelObj.send(obj3)
-        delay(50)
-        workflowA.channelObj.send(obj2)
-        delay(50)
-        workflowA.channelObj.send(obj1)
-        val result = deferred.await()
+        launch {
+            delay(50)
+            workflowA.channelObj.send(obj3)
+            delay(50)
+            workflowA.channelObj.send(obj2)
+            delay(50)
+            workflowA.channelObj.send(obj1)
+        }
 
-        result shouldBe obj1
+        deferred.await() shouldBe obj1
     }
 
     "Waiting event of specific type filtered using jsonPath and criteria" {
@@ -420,38 +424,47 @@ internal class WorkflowTests : StringSpec({
         val obj2 = Obj2("foo", 42)
         val obj3 = Obj1("oof", 42)
         val deferred = client.async(workflowA) { channel5ter() }
-        client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj3)
-        delay(50)
-        client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj2)
-        delay(50)
-        client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj1)
-        val result = deferred.await()
+        launch {
+            delay(50)
+            client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj3)
+            delay(50)
+            client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj2)
+            delay(50)
+            client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj1)
+        }
 
-        result shouldBe obj1
+        deferred.await() shouldBe obj1
     }
 
     "Waiting for 2 events of specific types presented in wrong order" {
         val obj1 = Obj1("foo", 6)
         val obj2 = Obj2("bar", 7)
         val deferred = client.async(workflowA) { channel6() }
-        client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj2)
-        delay(50)
-        workflowA.channelObj.send(obj1)
-        val result = deferred.await()
+        launch {
+            delay(50)
+            client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj2)
+            delay(50)
+            workflowA.channelObj.send(obj1)
+        }
 
-        result shouldBe "foobar42"
+        deferred.await() shouldBe "foobar42"
     }
 
     "Tag should be added and deleted after completion" {
         val deferred = client.async(workflowATagged) { channel1() }
         val id = deferred.id
         // checks id has been added to tag storage
+        delay(50)
         client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe true
         client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe true
-        workflowATagged.channelA.send("test")
-        val result = deferred.await()
 
-        result shouldBe "test"
+        launch {
+            delay(50)
+            workflowATagged.channelA.send("test")
+        }
+
+        deferred.await() shouldBe "test"
+
         delay(50)
         client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe false
         client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe false
@@ -460,7 +473,10 @@ internal class WorkflowTests : StringSpec({
     "Canceling async workflow" {
         val deferred = client.async(workflowA) { channel1() }
 
-        client.cancel(workflowA)
+        launch {
+            delay(50)
+            client.cancel(workflowA)
+        }
 
         shouldThrow<CanceledDeferredException> { deferred.await() }
     }
