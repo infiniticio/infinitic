@@ -140,7 +140,7 @@ internal class TaskTests : StringSpec({
 
         client.retryTask<TaskTest>(deferred.id)
 
-        delay(50)
+//        delay(50)
         deferred.await() shouldBe "01"
     }
 
