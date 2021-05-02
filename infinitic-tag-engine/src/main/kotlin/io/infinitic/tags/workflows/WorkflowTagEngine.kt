@@ -58,7 +58,7 @@ class WorkflowTagEngine(
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: WorkflowTagEngineMessage) {
-        logger.debug("receiving {}", message)
+        logger.warn("receiving {}", message)
 
         process(message)
 

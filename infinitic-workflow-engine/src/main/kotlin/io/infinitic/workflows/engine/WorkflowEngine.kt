@@ -116,7 +116,7 @@ class WorkflowEngine(
     private suspend fun process(message: WorkflowEngineMessage): WorkflowState? = coroutineScope {
         scope = this
 
-        logger.debug("receiving {}", message)
+        logger.warn("receiving {}", message)
 
         // get associated state
         val state = storage.getState(message.workflowId)
