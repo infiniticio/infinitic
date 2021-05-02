@@ -175,8 +175,8 @@ class WorkflowEngine(
         // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
         // except also for WaitWorkflow, as we want to handle it asap to avoid terminating the workflow before it
         if (state.runningWorkflowTaskId != null &&
-            message !is WaitWorkflow &&
-            ! message.isWorkflowTask()
+            ! message.isWorkflowTask() &&
+            message !is WaitWorkflow
         ) {
             // buffer this message
             state.bufferedMessages.add(message)
@@ -276,10 +276,17 @@ class WorkflowEngine(
     }
 
     private fun CoroutineScope.waitWorkflow(output: WorkflowEngineOutput, state: WorkflowState, msg: WaitWorkflow) {
-        when (val main = state.methodRuns.find { it.methodRunId.id == msg.workflowId.id }) {
-            null -> {
+        val main = state.methodRuns.find { it.methodRunId.id == msg.workflowId.id }
+        when {
+            // main branch is already completed
+            (main == null) -> {
                 val workflowAlreadyCompleted = WorkflowAlreadyCompleted(msg.clientName, msg.workflowId)
                 launch { output.sendEventsToClient(workflowAlreadyCompleted) }
+            }
+            // workflow is canceled
+            state.workflowStatus == WorkflowStatus.CANCELED -> {
+                val workflowCanceled = WorkflowCanceled(msg.clientName, msg.workflowId)
+                launch { output.sendEventsToClient(workflowCanceled) }
             }
             else -> main.waitingClients.add(msg.clientName)
         }
