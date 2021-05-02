@@ -606,7 +606,7 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing9() shouldBe true
     }
 
-    "child workflow is canceled when workflow is canceled" {
+    "child workflow is canceled when parent workflow is canceled" {
         client.async(workflowATagged) { cancel1() }
 
         // delay to be sure the child workflow has been dispatched

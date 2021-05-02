@@ -117,7 +117,7 @@ internal class ClientDispatcher(
 
         val taskIdsPerTag = runBlocking {
             responseFlow.first {
-                it is TaskIdsPerTag && it.taskName == taskName && it.taskName == taskName
+                it is TaskIdsPerTag && it.taskName == taskName && it.taskTag == taskTag
             } as TaskIdsPerTag
         }
 
@@ -135,7 +135,7 @@ internal class ClientDispatcher(
 
         val workflowIdsPerTag = runBlocking {
             responseFlow.first {
-                it is WorkflowIdsPerTag && it.workflowName == workflowName && it.workflowName == workflowName
+                it is WorkflowIdsPerTag && it.workflowName == workflowName && it.workflowTag == workflowTag
             } as WorkflowIdsPerTag
         }
 
