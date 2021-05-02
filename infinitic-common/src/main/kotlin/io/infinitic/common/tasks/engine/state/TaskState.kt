@@ -49,25 +49,25 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TaskState(
-    val waitingClients: Set<ClientName>,
-    val lastMessageId: MessageId,
+    val waitingClients: MutableSet<ClientName>,
+    var lastMessageId: MessageId,
     val taskId: TaskId,
     val taskName: TaskName,
-    val taskReturnValue: MethodReturnValue?,
+    var taskReturnValue: MethodReturnValue?,
     val methodName: MethodName,
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val workflowId: WorkflowId?,
     val workflowName: WorkflowName?,
     val methodRunId: MethodRunId?,
-    val taskStatus: TaskStatus,
+    var taskStatus: TaskStatus,
     var taskRetrySequence: TaskRetrySequence = TaskRetrySequence(0),
     var taskAttemptId: TaskAttemptId,
     var taskRetryIndex: TaskRetryIndex = TaskRetryIndex(0),
     var lastError: Error? = null,
     val taskTags: Set<TaskTag>,
     val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta
+    var taskMeta: TaskMeta
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())

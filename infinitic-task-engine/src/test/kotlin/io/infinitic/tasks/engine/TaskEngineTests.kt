@@ -99,41 +99,6 @@ private lateinit var sendToMetricsPerName: SendToMetricsPerName
 
 internal class TaskEngineTests : StringSpec({
 
-    "CancelTask" {
-        // given
-        val stateIn = random<TaskState>(
-            mapOf(
-                "taskStatus" to TaskStatus.RUNNING_OK,
-                "taskTags" to setOf(TaskTag("foo"), TaskTag("bar"))
-            )
-        )
-        val msgIn = random<CancelTask>(mapOf("taskId" to stateIn.taskId))
-        // when
-        getEngine(stateIn).handle(msgIn)
-        // then
-        coVerifySequence {
-            taskStateStorage.getState(msgIn.taskId)
-            sendToWorkflowEngine(ofType<TaskCanceledInWorkflow>())
-            sendToClient(ofType<TaskCanceledInClient>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
-            sendToTaskTagEngine(ofType<RemoveTaskTag>())
-            sendToMetricsPerName(ofType<TaskStatusUpdated>())
-            taskStateStorage.putState(msgIn.taskId, ofType())
-        }
-        verifyAll()
-
-        val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
-        val taskCanceledInClient = captured(clientMessage)!! as TaskCanceledInClient
-
-        with(taskStatusUpdated) {
-            oldStatus shouldBe stateIn.taskStatus
-            newStatus shouldBe TaskStatus.TERMINATED_CANCELED
-        }
-        with(taskCanceledInClient) {
-            taskId shouldBe stateIn.taskId
-        }
-    }
-
     "DispatchTask" {
         // given
         val stateIn = null
@@ -172,6 +137,41 @@ internal class TaskEngineTests : StringSpec({
         with(taskStatusUpdated) {
             oldStatus shouldBe null
             newStatus shouldBe TaskStatus.RUNNING_OK
+        }
+    }
+
+    "CancelTask" {
+        // given
+        val stateIn = random<TaskState>(
+            mapOf(
+                "taskStatus" to TaskStatus.RUNNING_OK,
+                "taskTags" to setOf(TaskTag("foo"), TaskTag("bar"))
+            )
+        )
+        val msgIn = random<CancelTask>(mapOf("taskId" to stateIn.taskId))
+        // when
+        getEngine(stateIn).handle(msgIn)
+        // then
+        coVerifySequence {
+            taskStateStorage.getState(msgIn.taskId)
+            sendToWorkflowEngine(ofType<TaskCanceledInWorkflow>())
+            sendToClient(ofType<TaskCanceledInClient>())
+            sendToTaskTagEngine(ofType<RemoveTaskTag>())
+            sendToTaskTagEngine(ofType<RemoveTaskTag>())
+            sendToMetricsPerName(ofType<TaskStatusUpdated>())
+            taskStateStorage.putState(msgIn.taskId, ofType())
+        }
+        verifyAll()
+
+        val taskStatusUpdated = captured(metricsPerNameMessage)!! as TaskStatusUpdated
+        val taskCanceledInClient = captured(clientMessage)!! as TaskCanceledInClient
+
+        with(taskStatusUpdated) {
+            oldStatus shouldBe stateIn.taskStatus
+            newStatus shouldBe TaskStatus.TERMINATED_CANCELED
+        }
+        with(taskCanceledInClient) {
+            taskId shouldBe stateIn.taskId
         }
     }
 

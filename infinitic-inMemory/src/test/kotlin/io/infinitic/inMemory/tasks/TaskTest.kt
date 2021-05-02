@@ -41,6 +41,8 @@ class TaskTestImpl : Task(), TaskTest {
     var log = ""
 
     override fun log(): String {
+        Thread.sleep(50)
+
         val status = behavior(context.retrySequence, context.retryIndex)
 
         log = context.meta["log"]?.let { String(it) } ?: ""

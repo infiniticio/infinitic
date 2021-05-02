@@ -199,7 +199,7 @@ internal class ClientDispatcher(
         // handler now target an existing task
         handler.perTaskId = taskId
 
-        return DeferredTask<T>(taskName, taskId, isSync, this)
+        return DeferredTask(taskName, taskId, isSync, this)
     }
 
     internal fun <T> await(deferredTask: DeferredTask<T>): T {
@@ -241,7 +241,7 @@ internal class ClientDispatcher(
     }
 
     // synchronous call: task.method()
-    override fun <S> dispatchAndWait(handler: TaskProxyHandler<*>): S = dispatch<S>(handler).await()
+    override fun <T> dispatchAndWait(handler: TaskProxyHandler<*>): T = dispatch<T>(handler).await()
 
     // asynchronous workflow: async(newWorkflow) { method() }
     internal fun <T> dispatch(handler: WorkflowProxyHandler<*>): DeferredWorkflow<T> {

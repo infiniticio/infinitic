@@ -615,7 +615,7 @@ internal class WorkflowTests : StringSpec({
 
         client.cancel(workflowATagged)
 
-        delay(500)
+        delay(50)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
     }
 

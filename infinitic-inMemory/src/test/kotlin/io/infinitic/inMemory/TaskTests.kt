@@ -77,7 +77,7 @@ internal class TaskTests : StringSpec({
     "Asynchronous execution succeeds at first try" {
         behavior = { _, _ -> Status.SUCCESS }
 
-        val result = taskTest.log()
+        val result = client.async(taskTest) { log() }.await()
 
         result shouldBe "1"
     }

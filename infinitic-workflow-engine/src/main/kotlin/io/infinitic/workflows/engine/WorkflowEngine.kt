@@ -144,7 +144,7 @@ class WorkflowEngine(
             return@coroutineScope null
         }
 
-        // discard all message (except client request is already terminated)
+        // discard all message if already terminated (except client request)
         if (state.workflowStatus == WorkflowStatus.TERMINATED && message !is WaitWorkflow) {
             logDiscardingMessage(message, "as workflow is already terminated")
 
@@ -170,7 +170,6 @@ class WorkflowEngine(
             return@coroutineScope null
         }
 
-        // set current messageId
         state.lastMessageId = message.messageId
 
         // if a workflow task is ongoing then buffer this message, except for WorkflowTaskCompleted of course
