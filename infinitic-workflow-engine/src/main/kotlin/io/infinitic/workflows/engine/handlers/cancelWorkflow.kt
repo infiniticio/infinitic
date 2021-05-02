@@ -33,8 +33,10 @@ import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-internal suspend fun cancelWorkflow(
+internal fun CoroutineScope.cancelWorkflow(
     output: WorkflowEngineOutput,
     state: WorkflowState
 ) {
@@ -50,7 +52,7 @@ internal suspend fun cancelWorkflow(
                 childWorkflowId = state.workflowId,
                 childWorkflowName = state.workflowName
             )
-            output.sendToWorkflowEngine(childWorkflowCanceled)
+            launch { output.sendToWorkflowEngine(childWorkflowCanceled) }
         }
 
         // cancel children
@@ -61,7 +63,7 @@ internal suspend fun cancelWorkflow(
                     workflowId = WorkflowId(it.commandId.id),
                     workflowName = WorkflowName("${it.commandName}")
                 )
-                output.sendToWorkflowEngine(cancelWorkflow)
+                launch { output.sendToWorkflowEngine(cancelWorkflow) }
             }
     }
 }

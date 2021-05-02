@@ -32,8 +32,9 @@ import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-internal suspend fun timerCompleted(
+internal fun CoroutineScope.timerCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: TimerCompleted

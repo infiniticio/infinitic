@@ -36,8 +36,10 @@ import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-internal suspend fun workflowTaskFailed(
+internal fun CoroutineScope.workflowTaskFailed(
     output: WorkflowEngineOutput,
     state: WorkflowState,
     msg: TaskFailed
@@ -62,7 +64,7 @@ internal suspend fun workflowTaskFailed(
         // send to waiting clients
         methodRun.waitingClients.forEach {
             val workflowFailed = WorkflowFailed(it, state.workflowId, error)
-            output.sendEventsToClient(workflowFailed)
+            launch { output.sendEventsToClient(workflowFailed) }
         }
 
         // send to parent workflow
@@ -74,7 +76,7 @@ internal suspend fun workflowTaskFailed(
                 childWorkflowId = state.workflowId,
                 childWorkflowError = error
             )
-            output.sendToWorkflowEngine(childWorkflowFailed)
+            launch { output.sendToWorkflowEngine(childWorkflowFailed) }
         }
     }
 }

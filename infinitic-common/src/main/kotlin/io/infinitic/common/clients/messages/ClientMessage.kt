@@ -28,9 +28,9 @@ package io.infinitic.common.clients.messages
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
 import io.infinitic.common.clients.messages.interfaces.WorkflowMessage
-import io.infinitic.common.data.Error
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.errors.Error
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta

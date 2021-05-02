@@ -32,8 +32,9 @@ import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-internal suspend fun childWorkflowCompleted(
+internal fun CoroutineScope.childWorkflowCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: ChildWorkflowCompleted

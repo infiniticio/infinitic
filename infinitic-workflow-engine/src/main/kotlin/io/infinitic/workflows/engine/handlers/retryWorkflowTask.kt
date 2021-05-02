@@ -28,8 +28,9 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-internal suspend fun retryWorkflowTask(
+internal fun CoroutineScope.retryWorkflowTask(
     output: WorkflowEngineOutput,
     state: WorkflowState
 ) {

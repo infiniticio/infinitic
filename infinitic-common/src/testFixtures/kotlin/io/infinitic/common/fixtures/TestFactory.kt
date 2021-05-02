@@ -25,8 +25,8 @@
 
 package io.infinitic.common.fixtures
 
-import io.infinitic.common.data.Error
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.errors.Error
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope

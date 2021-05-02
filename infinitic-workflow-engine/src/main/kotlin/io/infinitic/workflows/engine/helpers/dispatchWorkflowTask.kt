@@ -42,8 +42,10 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-internal suspend fun dispatchWorkflowTask(
+internal fun CoroutineScope.dispatchWorkflowTask(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,
@@ -82,7 +84,7 @@ internal suspend fun dispatchWorkflowTask(
     )
 
     // dispatch workflow task
-    workflowEngineOutput.sendToTaskEngine(workflowTask)
+    launch { workflowEngineOutput.sendToTaskEngine(workflowTask) }
 
     with(state) {
         runningWorkflowTaskId = workflowTask.taskId

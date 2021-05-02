@@ -60,21 +60,23 @@ class WorkflowTagEngine(
     suspend fun handle(message: WorkflowTagEngineMessage) {
         logger.debug("receiving {}", message)
 
-        // coroutineScope let send messages in parallel
-        // it's important as we can have a lot of them
-        coroutineScope {
-            scope = this
-            val o = when (message) {
-                is AddWorkflowTag -> addWorkflowTag(message)
-                is RemoveWorkflowTag -> removeWorkflowTag(message)
-                is SendToChannelPerTag -> sendToChannelPerTag(message)
-                is CancelWorkflowPerTag -> cancelWorkflowPerTag(message)
-                is RetryWorkflowTaskPerTag -> retryWorkflowTaskPerTag(message)
-                is GetWorkflowIds -> getWorkflowIds(message)
-            }
-        }
+        process(message)
 
         storage.setLastMessageId(message.workflowTag, message.workflowName, message.messageId)
+    }
+
+    // coroutineScope let send messages in parallel
+    // it's important as we can have a lot of them
+    private suspend fun process(message: WorkflowTagEngineMessage) = coroutineScope {
+        scope = this
+        val o = when (message) {
+            is AddWorkflowTag -> addWorkflowTag(message)
+            is RemoveWorkflowTag -> removeWorkflowTag(message)
+            is SendToChannelPerTag -> sendToChannelPerTag(message)
+            is CancelWorkflowPerTag -> cancelWorkflowPerTag(message)
+            is RetryWorkflowTaskPerTag -> retryWorkflowTaskPerTag(message)
+            is GetWorkflowIds -> getWorkflowIds(message)
+        }
     }
 
     private suspend fun getWorkflowIds(message: GetWorkflowIds) {

@@ -31,8 +31,9 @@ import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-internal suspend fun taskCanceled(
+internal fun CoroutineScope.taskCanceled(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: TaskCanceled

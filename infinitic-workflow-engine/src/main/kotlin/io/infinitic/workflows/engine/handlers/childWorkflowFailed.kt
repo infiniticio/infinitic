@@ -31,8 +31,9 @@ import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-internal suspend fun childWorkflowFailed(
+internal fun CoroutineScope.childWorkflowFailed(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: ChildWorkflowFailed

@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.data
+package io.infinitic.common.errors
 
 import io.infinitic.common.serDe.kserializer.UUIDSerializer
 import io.infinitic.exceptions.workflows.CanceledDeferredException

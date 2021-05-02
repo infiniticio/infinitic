@@ -25,7 +25,7 @@
 
 package io.infinitic.exceptions.clients
 
-import io.infinitic.common.data.Error
+import io.infinitic.common.errors.Error
 import io.infinitic.exceptions.RunException
 
 sealed class ClientRunException(

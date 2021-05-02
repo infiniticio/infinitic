@@ -25,7 +25,7 @@
 
 package io.infinitic.exceptions
 
-import io.infinitic.common.data.Error
+import io.infinitic.common.errors.Error
 import java.lang.RuntimeException
 
 open class RunException(

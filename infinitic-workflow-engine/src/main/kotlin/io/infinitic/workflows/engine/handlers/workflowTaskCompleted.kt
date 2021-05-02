@@ -66,10 +66,12 @@ import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowCompletedInClient
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
-internal suspend fun workflowTaskCompleted(
+internal fun CoroutineScope.workflowTaskCompleted(
     output: WorkflowEngineOutput,
     state: WorkflowState,
     msg: TaskCompleted
@@ -143,7 +145,7 @@ internal suspend fun workflowTaskCompleted(
                 workflowId = state.workflowId,
                 workflowReturnValue = methodRun.methodReturnValue!!
             )
-            output.sendEventsToClient(workflowCompleted)
+            launch { output.sendEventsToClient(workflowCompleted) }
         }
 
         // tell parent workflow if any
@@ -155,7 +157,7 @@ internal suspend fun workflowTaskCompleted(
                 childWorkflowId = state.workflowId,
                 childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!
             )
-            output.sendToWorkflowEngine(childWorkflowCompleted)
+            launch { output.sendToWorkflowEngine(childWorkflowCompleted) }
         }
     }
 
@@ -217,7 +219,7 @@ private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: Work
     state.bufferedCommands.add(pastCommand.commandId)
 }
 
-private suspend fun endAsync(
+private fun CoroutineScope.endAsync(
     output: WorkflowEngineOutput,
     methodRun: MethodRun,
     newCommand: NewCommand,
@@ -260,7 +262,7 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
     )
 }
 
-private suspend fun startDurationTimer(
+private fun CoroutineScope.startDurationTimer(
     output: WorkflowEngineOutput,
     methodRun: MethodRun,
     newCommand: NewCommand,
@@ -277,12 +279,12 @@ private suspend fun startDurationTimer(
 
     val diff: MillisDuration = state.runningWorkflowTaskInstant!! - MillisInstant.now()
 
-    output.sendToWorkflowEngineAfter(msg, command.duration - diff)
+    launch { output.sendToWorkflowEngineAfter(msg, command.duration - diff) }
 
     addPastCommand(methodRun, newCommand)
 }
 
-private suspend fun startInstantTimer(
+private fun CoroutineScope.startInstantTimer(
     output: WorkflowEngineOutput,
     methodRun: MethodRun,
     newCommand: NewCommand,
@@ -297,7 +299,7 @@ private suspend fun startInstantTimer(
         timerId = TimerId(newCommand.commandId.id)
     )
 
-    output.sendToWorkflowEngineAfter(msg, command.instant - MillisInstant.now())
+    launch { output.sendToWorkflowEngineAfter(msg, command.instant - MillisInstant.now()) }
 
     addPastCommand(methodRun, newCommand)
 }
@@ -322,7 +324,7 @@ private fun receiveFromChannel(
     addPastCommand(methodRun, newCommand)
 }
 
-private suspend fun dispatchTask(
+private fun CoroutineScope.dispatchTask(
     output: WorkflowEngineOutput,
     methodRun: MethodRun,
     newCommand: NewCommand,
@@ -346,7 +348,7 @@ private suspend fun dispatchTask(
         taskMeta = command.taskMeta,
         taskOptions = command.taskOptions
     )
-    output.sendToTaskEngine(dispatchTask)
+    launch { output.sendToTaskEngine(dispatchTask) }
 
     // add provided tags
     dispatchTask.taskTags.forEach {
@@ -355,13 +357,13 @@ private suspend fun dispatchTask(
             taskName = dispatchTask.taskName,
             taskId = dispatchTask.taskId
         )
-        output.sendToTaskTagEngine(addTaskTag)
+        launch { output.sendToTaskTagEngine(addTaskTag) }
     }
 
     addPastCommand(methodRun, newCommand)
 }
 
-private suspend fun dispatchChildWorkflow(
+private fun CoroutineScope.dispatchChildWorkflow(
     output: WorkflowEngineOutput,
     methodRun: MethodRun,
     newCommand: NewCommand,
@@ -385,7 +387,7 @@ private suspend fun dispatchChildWorkflow(
         workflowMeta = state.workflowMeta,
         workflowOptions = state.workflowOptions
     )
-    output.sendToWorkflowEngine(dispatchWorkflow)
+    launch { output.sendToWorkflowEngine(dispatchWorkflow) }
 
     // add provided tags
     dispatchWorkflow.workflowTags.forEach {
@@ -394,7 +396,7 @@ private suspend fun dispatchChildWorkflow(
             workflowName = dispatchWorkflow.workflowName,
             workflowId = dispatchWorkflow.workflowId
         )
-        output.sendToWorkflowTagEngine(addWorkflowTag)
+        launch { output.sendToWorkflowTagEngine(addWorkflowTag) }
     }
 
     addPastCommand(methodRun, newCommand)

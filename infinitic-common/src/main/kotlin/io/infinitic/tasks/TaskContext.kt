@@ -26,7 +26,7 @@
 package io.infinitic.tasks
 
 import io.infinitic.clients.InfiniticClient
-import io.infinitic.common.data.Error
+import io.infinitic.common.errors.Error
 import io.infinitic.common.tasks.data.TaskOptions
 import java.util.UUID
 

@@ -25,7 +25,7 @@
 
 package io.infinitic.common.workflows.data.commands
 
-import io.infinitic.common.data.Error
+import io.infinitic.common.errors.Error
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 

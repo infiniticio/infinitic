@@ -25,11 +25,11 @@
 
 package io.infinitic.common.tasks.executors.messages
 
-import io.infinitic.common.data.Error
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.errors.Error
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskAttemptId
 import io.infinitic.common.tasks.data.TaskId

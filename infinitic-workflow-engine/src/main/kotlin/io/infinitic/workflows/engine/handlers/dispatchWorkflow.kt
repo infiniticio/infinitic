@@ -33,8 +33,9 @@ import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-internal suspend fun dispatchWorkflow(
+internal fun CoroutineScope.dispatchWorkflow(
     workflowEngineOutput: WorkflowEngineOutput,
     message: DispatchWorkflow
 ): WorkflowState {

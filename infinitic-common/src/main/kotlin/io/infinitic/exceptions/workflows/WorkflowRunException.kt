@@ -25,7 +25,7 @@
 
 package io.infinitic.exceptions.workflows
 
-import io.infinitic.common.data.Error
+import io.infinitic.common.errors.Error
 import io.infinitic.exceptions.RunException
 import java.util.UUID
 

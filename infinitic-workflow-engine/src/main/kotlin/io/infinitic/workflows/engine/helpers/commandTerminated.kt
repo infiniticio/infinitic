@@ -31,8 +31,9 @@ import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-internal suspend fun commandTerminated(
+internal fun CoroutineScope.commandTerminated(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRunId: MethodRunId,

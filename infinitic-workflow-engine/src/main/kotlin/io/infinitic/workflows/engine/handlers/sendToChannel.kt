@@ -32,11 +32,12 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
 
-internal suspend fun sendToChannel(
+internal fun CoroutineScope.sendToChannel(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: SendToChannel

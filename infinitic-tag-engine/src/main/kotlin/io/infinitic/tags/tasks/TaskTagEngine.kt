@@ -50,6 +50,7 @@ class TaskTagEngine(
     val sendToClient: SendToClient
 ) {
     private lateinit var scope: CoroutineScope
+
     private val storage = LoggedTaskTagStorage(storage)
 
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -57,20 +58,23 @@ class TaskTagEngine(
     suspend fun handle(message: TaskTagEngineMessage) {
         logger.debug("receiving {}", message)
 
-        // coroutineScope let send messages in parallel
-        // it's important as we can have a lot of them
-        coroutineScope {
-            scope = this
-            when (message) {
-                is AddTaskTag -> addTaskTag(message)
-                is RemoveTaskTag -> removeTaskTag(message)
-                is CancelTaskPerTag -> cancelTaskPerTag(message)
-                is RetryTaskPerTag -> retryTaskPerTag(message)
-                is GetTaskIds -> getTaskIds(message)
-            }
-        }
+        process(message)
 
         storage.setLastMessageId(message.taskTag, message.taskName, message.messageId)
+    }
+
+    // coroutineScope let send messages in parallel
+    // it's important as we can have a lot of them
+    private suspend fun process(message: TaskTagEngineMessage) = coroutineScope {
+        scope = this
+
+        when (message) {
+            is AddTaskTag -> addTaskTag(message)
+            is RemoveTaskTag -> removeTaskTag(message)
+            is CancelTaskPerTag -> cancelTaskPerTag(message)
+            is RetryTaskPerTag -> retryTaskPerTag(message)
+            is GetTaskIds -> getTaskIds(message)
+        }
     }
 
     private suspend fun getTaskIds(message: GetTaskIds) {
@@ -82,6 +86,7 @@ class TaskTagEngine(
             message.taskTag,
             taskIds = taskIds
         )
+
         scope.launch { sendToClient(taskIdsPerTag) }
     }
 
@@ -97,12 +102,12 @@ class TaskTagEngine(
         // is not an idempotent action
         if (hasMessageAlreadyBeenHandled(message)) return
 
-        val ids = storage.getTaskIds(message.taskTag, message.taskName)
-        when (ids.isEmpty()) {
+        val taskIds = storage.getTaskIds(message.taskTag, message.taskName)
+        when (taskIds.isEmpty()) {
             true -> {
                 discardTagWithoutIds(message)
             }
-            false -> ids.forEach {
+            false -> taskIds.forEach {
                 val retryTask = RetryTask(
                     taskId = it,
                     taskName = message.taskName
