@@ -98,7 +98,7 @@ class TaskEngine(
     }
 
     private suspend fun process(message: TaskEngineMessage): TaskState? = coroutineScope {
-        logger.debug("receiving {}", message)
+        logger.warn("receiving {}", message)
 
         // get current state
         val state = storage.getState(message.taskId)
