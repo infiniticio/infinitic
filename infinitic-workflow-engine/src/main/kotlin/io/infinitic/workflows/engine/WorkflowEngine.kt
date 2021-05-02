@@ -216,6 +216,8 @@ class WorkflowEngine(
             return
         }
 
+        val oldStatus = state.workflowStatus
+
         val o = when (message) {
             is DispatchWorkflow -> throw RuntimeException("DispatchWorkflow should not reach this point")
             is CancelWorkflow -> cancelWorkflow(output, state)
@@ -237,24 +239,26 @@ class WorkflowEngine(
             state.workflowStatus = WorkflowStatus.TERMINATED
         }
 
-        when (state.workflowStatus) {
-            WorkflowStatus.ALIVE -> Unit
-            WorkflowStatus.TERMINATED -> {
-                // remove tags reference to this instance
-                removeTags(output, state)
-            }
-            WorkflowStatus.CANCELED -> {
-                // send cancellation info to waiting clients
-                state.methodRuns.forEach { methodRun ->
-                    methodRun.waitingClients.forEach {
-                        val workflowCanceled = WorkflowCanceled(
-                            clientName = it,
-                            workflowId = state.workflowId,
-                        )
-                        launch { output.sendEventsToClient(workflowCanceled) }
-                    }
+        if (state.workflowStatus != oldStatus) {
+            when (state.workflowStatus) {
+                WorkflowStatus.ALIVE -> Unit
+                WorkflowStatus.TERMINATED -> {
                     // remove tags reference to this instance
                     removeTags(output, state)
+                }
+                WorkflowStatus.CANCELED -> {
+                    // send cancellation info to waiting clients
+                    state.methodRuns.forEach { methodRun ->
+                        methodRun.waitingClients.forEach {
+                            val workflowCanceled = WorkflowCanceled(
+                                clientName = it,
+                                workflowId = state.workflowId,
+                            )
+                            launch { output.sendEventsToClient(workflowCanceled) }
+                        }
+                        // remove tags reference to this instance
+                        removeTags(output, state)
+                    }
                 }
             }
         }
