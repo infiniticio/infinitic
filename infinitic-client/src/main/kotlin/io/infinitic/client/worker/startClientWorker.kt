@@ -35,8 +35,7 @@ import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(Client::class.java)
+private val logger: Logger = LoggerFactory.getLogger(Client::class.java)
 
 private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = logger.error(
     "exception on message {}: {}",

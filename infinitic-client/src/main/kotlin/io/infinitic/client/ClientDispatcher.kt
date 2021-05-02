@@ -83,6 +83,7 @@ import io.infinitic.exceptions.clients.NoSendMethodCallException
 import io.infinitic.exceptions.clients.UnknownMethodInSendChannelException
 import io.infinitic.exceptions.clients.UnknownTaskException
 import io.infinitic.exceptions.clients.UnknownWorkflowException
+import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.SendChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -310,9 +311,7 @@ internal class ClientDispatcher(
                 workflowName = deferredWorkflow.workflowName,
                 clientName = clientName
             )
-            scope.future {
-                sendToWorkflowEngine(waitWorkflow)
-            }.join()
+            scope.future { sendToWorkflowEngine(waitWorkflow) }.join()
         }
 
         // wait for result
@@ -381,36 +380,38 @@ internal class ClientDispatcher(
 
         val event = handler.args.last()[0]
 
-        if (handler.perTag != null) {
-            val msg = SendToChannelPerTag(
-                workflowTag = handler.perTag!!,
-                workflowName = handler.workflowName,
-                clientName = clientName,
-                clientWaiting = handler.isSync,
-                channelEventId = ChannelEventId(),
-                channelName = handler.channelName,
-                channelEvent = ChannelEvent.from(event),
-                channelEventTypes = ChannelEventType.allFrom(event::class.java)
-            )
+        scope.future {
+            when {
+                handler.perTag != null -> {
+                    val msg = SendToChannelPerTag(
+                        workflowTag = handler.perTag!!,
+                        workflowName = handler.workflowName,
+                        clientName = clientName,
+                        clientWaiting = handler.isSync,
+                        channelEventId = ChannelEventId(),
+                        channelName = handler.channelName,
+                        channelEvent = ChannelEvent.from(event),
+                        channelEventTypes = ChannelEventType.allFrom(event::class.java)
+                    )
 
-            scope.future { sendToWorkflowTagEngine(msg) }.join()
+                    sendToWorkflowTagEngine(msg)
+                }
+                handler.perWorkflowId != null -> {
+                    val msg = SendToChannel(
+                        workflowId = handler.perWorkflowId!!,
+                        workflowName = handler.workflowName,
+                        clientName = clientName,
+                        channelEventId = ChannelEventId(),
+                        channelName = handler.channelName,
+                        channelEvent = ChannelEvent.from(event),
+                        channelEventTypes = ChannelEventType.allFrom(event::class.java)
+                    )
 
-            return
-        }
-
-        if (handler.perWorkflowId != null) {
-            val msg = SendToChannel(
-                workflowId = handler.perWorkflowId!!,
-                workflowName = handler.workflowName,
-                clientName = clientName,
-                channelEventId = ChannelEventId(),
-                channelName = handler.channelName,
-                channelEvent = ChannelEvent.from(event),
-                channelEventTypes = ChannelEventType.allFrom(event::class.java)
-            )
-
-            scope.future { sendToWorkflowEngine(msg) }.join()
-        }
+                    sendToWorkflowEngine(msg)
+                }
+                else -> thisShouldNotHappen()
+            }
+        }.join()
     }
 
     // synchronous send on a channel: existingWorkflow.channel.send()
