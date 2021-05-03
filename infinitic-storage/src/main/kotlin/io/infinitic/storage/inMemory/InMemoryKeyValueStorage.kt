@@ -29,7 +29,7 @@ import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryKeyValueStorage() : KeyValueStorage, Flushable {
+class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
     private val stateStorage = ConcurrentHashMap<String, ByteArray>()
 
     override suspend fun getValue(key: String): ByteArray? {

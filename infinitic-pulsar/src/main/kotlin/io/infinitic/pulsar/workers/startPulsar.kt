@@ -36,11 +36,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(InfiniticWorker::class.java)
+private val logger = LoggerFactory.getLogger(InfiniticWorker::class.java)
 
 private fun <S> logError(message: Message<S>, e: Throwable) = logger.error(
     "exception on Pulsar message {}: {}",

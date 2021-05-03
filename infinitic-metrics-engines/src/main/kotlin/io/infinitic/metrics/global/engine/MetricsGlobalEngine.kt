@@ -30,7 +30,6 @@ import io.infinitic.common.metrics.global.messages.TaskCreated
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
 import io.infinitic.metrics.global.engine.storage.LoggedMetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class MetricsGlobalEngine(
@@ -38,7 +37,7 @@ class MetricsGlobalEngine(
 ) {
     private val storage = LoggedMetricsGlobalStateStorage(storage)
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: MetricsGlobalMessage) {
         logger.debug("receiving {}", message)

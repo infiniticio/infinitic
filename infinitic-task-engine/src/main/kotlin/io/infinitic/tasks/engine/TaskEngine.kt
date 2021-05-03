@@ -59,7 +59,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.coroutines.coroutineContext
 import io.infinitic.common.clients.messages.TaskCanceled as TaskCanceledInClient
@@ -79,7 +78,7 @@ class TaskEngine(
 ) {
     private val storage = LoggedTaskStateStorage(storage)
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskEngineMessage) {
         val state = process(message) ?: return

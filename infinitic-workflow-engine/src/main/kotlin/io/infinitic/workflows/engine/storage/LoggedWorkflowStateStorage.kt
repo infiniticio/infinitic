@@ -28,7 +28,6 @@ package io.infinitic.workflows.engine.storage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
@@ -39,7 +38,7 @@ class LoggedWorkflowStateStorage(
     private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
         val workflowState = storage.getState(workflowId)

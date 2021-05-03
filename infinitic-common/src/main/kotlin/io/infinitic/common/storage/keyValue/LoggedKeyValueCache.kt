@@ -25,14 +25,13 @@
 
 package io.infinitic.common.storage.keyValue
 
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedKeyValueCache<T>(
     val cache: KeyValueCache<T>
 ) : KeyValueCache<T> by cache {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun getValue(key: String): T? {
         val value = cache.getValue(key)

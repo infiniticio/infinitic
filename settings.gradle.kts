@@ -38,3 +38,4 @@ include("infinitic-workflow-task")
 
 include("infinitic-inMemory")
 include("infinitic-pulsar")
+include("infinitic-tests")

@@ -25,7 +25,6 @@
 
 package io.infinitic.common.storage.keyValue
 
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 open class CachedKeyValueStorage(
@@ -33,14 +32,16 @@ open class CachedKeyValueStorage(
     val storage: KeyValueStorage
 ) : KeyValueStorage {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun getValue(key: String) = cache.getValue(key)
-        ?: run {
-            logger.debug("key {} - getValue - absent from cache, get from storage", key)
-            storage.getValue(key)
-                ?.also { cache.putValue(key, it) }
-        }
+    override suspend fun getValue(key: String): ByteArray? {
+        return cache.getValue(key)
+            ?: run {
+                logger.debug("key {} - getValue - absent from cache, get from storage", key)
+                storage.getValue(key)
+                    ?.also { cache.putValue(key, it) }
+            }
+    }
 
     override suspend fun putValue(key: String, value: ByteArray) {
         storage.putValue(key, value)

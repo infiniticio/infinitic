@@ -30,14 +30,13 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedWorkflowTagStorage(
     val storage: WorkflowTagStorage
 ) : WorkflowTagStorage {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId? {
         val messageId = storage.getLastMessageId(tag, workflowName)

@@ -48,7 +48,6 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withTimeout
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -59,7 +58,7 @@ class TaskExecutor(
     private val clientFactory: () -> InfiniticClient
 ) : TaskExecutorRegister by taskExecutorRegister {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskExecutorMessage) {
         logger.debug("receiving {}", message)

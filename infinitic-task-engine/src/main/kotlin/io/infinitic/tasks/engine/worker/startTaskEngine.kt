@@ -42,11 +42,9 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(TaskEngine::class.java)
+private val logger = LoggerFactory.getLogger(TaskEngine::class.java)
 
 typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 

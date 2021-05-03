@@ -152,7 +152,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
         methodRun.parentWorkflowId?.let {
             val childWorkflowCompleted = ChildWorkflowCompleted(
                 workflowId = it,
-                workflowName = state.workflowName,
+                workflowName = methodRun.parentWorkflowName!!,
                 methodRunId = methodRun.parentMethodRunId!!,
                 childWorkflowId = state.workflowId,
                 childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!

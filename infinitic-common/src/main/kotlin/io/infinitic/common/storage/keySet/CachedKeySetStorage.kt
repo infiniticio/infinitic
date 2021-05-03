@@ -25,7 +25,6 @@
 
 package io.infinitic.common.storage.keySet
 
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class CachedKeySetStorage(
@@ -33,7 +32,7 @@ class CachedKeySetStorage(
     val storage: KeySetStorage
 ) : KeySetStorage {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getSet(key: String): Set<ByteArray> = cache.getSet(key)
         ?: run {

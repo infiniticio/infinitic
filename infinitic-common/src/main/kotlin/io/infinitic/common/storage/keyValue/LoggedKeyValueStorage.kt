@@ -25,14 +25,13 @@
 
 package io.infinitic.common.storage.keyValue
 
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 open class LoggedKeyValueStorage(
     val storage: KeyValueStorage
 ) : KeyValueStorage by storage {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getValue(key: String): ByteArray? {
         val value = storage.getValue(key)

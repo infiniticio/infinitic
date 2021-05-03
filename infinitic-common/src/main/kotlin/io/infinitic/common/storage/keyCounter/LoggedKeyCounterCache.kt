@@ -25,14 +25,13 @@
 
 package io.infinitic.common.storage.keyCounter
 
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedKeyCounterCache(
     val cache: KeyCounterCache
 ) : KeyCounterCache by cache {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun getCounter(key: String): Long? {
         val value = cache.getCounter(key)

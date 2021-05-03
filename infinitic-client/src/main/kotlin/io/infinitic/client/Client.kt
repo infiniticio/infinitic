@@ -72,7 +72,7 @@ import io.infinitic.clients.InfiniticClient as InfiniticClientInterface
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class Client : InfiniticClientInterface {
     abstract val clientName: ClientName
-    protected abstract val scope: CoroutineScope
+    abstract val scope: CoroutineScope
     protected abstract val sendToTaskTagEngine: SendToTaskTagEngine
     protected abstract val sendToTaskEngine: SendToTaskEngine
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine

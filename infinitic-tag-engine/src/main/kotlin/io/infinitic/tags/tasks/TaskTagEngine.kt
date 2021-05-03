@@ -41,7 +41,6 @@ import io.infinitic.tags.tasks.storage.TaskTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class TaskTagEngine(
@@ -53,7 +52,7 @@ class TaskTagEngine(
 
     private val storage = LoggedTaskTagStorage(storage)
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: TaskTagEngineMessage) {
         logger.debug("receiving {}", message)

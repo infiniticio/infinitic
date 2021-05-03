@@ -27,14 +27,13 @@ package io.infinitic.metrics.global.engine.storage
 
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedMetricsGlobalStateStorage(
     val storage: MetricsGlobalStateStorage
 ) : MetricsGlobalStateStorage {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getState(): MetricsGlobalState? {
         val state = storage.getState()

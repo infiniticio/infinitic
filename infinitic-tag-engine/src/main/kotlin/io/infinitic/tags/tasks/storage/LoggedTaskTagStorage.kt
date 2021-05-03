@@ -30,14 +30,13 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedTaskTagStorage(
     val storage: TaskTagStorage
 ) : TaskTagStorage {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId? {
         val messageId = storage.getLastMessageId(tag, taskName)

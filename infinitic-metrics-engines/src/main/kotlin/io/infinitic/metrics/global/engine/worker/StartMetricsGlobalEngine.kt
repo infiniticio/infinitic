@@ -34,11 +34,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(MetricsGlobalEngine::class.java)
+private val logger = LoggerFactory.getLogger(MetricsGlobalEngine::class.java)
 
 typealias MetricsGlobalMessageToProcess = MessageToProcess<MetricsGlobalMessage>
 

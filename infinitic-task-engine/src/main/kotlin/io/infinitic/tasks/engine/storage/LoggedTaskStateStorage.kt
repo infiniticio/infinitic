@@ -28,14 +28,13 @@ package io.infinitic.tasks.engine.storage
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedTaskStateStorage(
     val storage: TaskStateStorage
 ) : TaskStateStorage {
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getState(taskId: TaskId): TaskState? {
         val taskState = storage.getState(taskId)

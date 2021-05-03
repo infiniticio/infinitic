@@ -43,7 +43,6 @@ import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class WorkflowTagEngine(
@@ -55,7 +54,7 @@ class WorkflowTagEngine(
     private lateinit var scope: CoroutineScope
     private val storage = LoggedWorkflowTagStorage(storage)
 
-    private val logger: Logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: WorkflowTagEngineMessage) {
         logger.warn("receiving {}", message)
@@ -157,6 +156,8 @@ class WorkflowTagEngine(
 
     private suspend fun removeWorkflowTag(message: RemoveWorkflowTag) {
         storage.removeWorkflowId(message.workflowTag, message.workflowName, message.workflowId)
+        logger.warn("removeWorkflowTag {} {} {}", message.workflowTag, message.workflowName, message.workflowId)
+        logger.warn(" -> getWorkflowIds {}", storage.getWorkflowIds(message.workflowTag, message.workflowName))
     }
 
     private suspend fun hasMessageAlreadyBeenHandled(message: WorkflowTagEngineMessage) =
