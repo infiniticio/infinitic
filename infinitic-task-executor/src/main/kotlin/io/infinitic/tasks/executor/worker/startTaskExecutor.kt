@@ -39,8 +39,7 @@ import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(TaskExecutor::class.java)
+private val logger: Logger = LoggerFactory.getLogger(TaskExecutor::class.java)
 
 typealias TaskExecutorMessageToProcess = MessageToProcess<TaskExecutorMessage>
 

@@ -89,7 +89,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.util.UUID
 import kotlin.reflect.full.isSubclassOf
@@ -112,36 +111,36 @@ internal class ClientDispatcher(
 
     // synchronously get task ids per tag
     internal fun getTaskIdsPerTag(taskName: TaskName, taskTag: TaskTag): Set<UUID> {
-        val msg = GetTaskIds(
-            taskTag = taskTag,
-            taskName = taskName,
-            clientName = clientName
-        )
-        scope.future { sendToTaskTagEngine(msg) }.join()
+        val taskIdsPerTag = scope.future {
+            val msg = GetTaskIds(
+                taskTag = taskTag,
+                taskName = taskName,
+                clientName = clientName
+            )
+            sendToTaskTagEngine(msg)
 
-        val taskIdsPerTag = runBlocking {
             responseFlow.first {
                 it is TaskIdsPerTag && it.taskName == taskName && it.taskTag == taskTag
             } as TaskIdsPerTag
-        }
+        }.join()
 
         return taskIdsPerTag.taskIds.map { it.id }.toSet()
     }
 
     // synchronously get workflow ids per tag
     internal fun getWorkflowIdsPerTag(workflowName: WorkflowName, workflowTag: WorkflowTag): Set<UUID> {
-        val msg = GetWorkflowIds(
-            clientName = clientName,
-            workflowTag = workflowTag,
-            workflowName = workflowName
-        )
-        scope.future { sendToWorkflowTagEngine(msg) }.join()
+        val workflowIdsPerTag = scope.future {
+            val msg = GetWorkflowIds(
+                clientName = clientName,
+                workflowTag = workflowTag,
+                workflowName = workflowName
+            )
+            sendToWorkflowTagEngine(msg)
 
-        val workflowIdsPerTag = runBlocking {
             responseFlow.first {
                 it is WorkflowIdsPerTag && it.workflowName == workflowName && it.workflowTag == workflowTag
             } as WorkflowIdsPerTag
-        }
+        }.join()
 
         return workflowIdsPerTag.workflowIds.map { it.id }.toSet()
     }
@@ -207,23 +206,21 @@ internal class ClientDispatcher(
     }
 
     internal fun <T> await(deferredTask: DeferredTask<T>): T {
-        // if task was not sync, then send WaitTask message
-        if (! deferredTask.isSync) {
-            val waitTask = WaitTask(
-                taskId = deferredTask.taskId,
-                taskName = deferredTask.taskName,
-                clientName = clientName
-            )
-            scope.future { sendToTaskEngine(waitTask) }.join()
-        }
-
-        // wait for result
-        val taskResult = runBlocking {
+        val taskResult = scope.future { // if task was not sync, then send WaitTask message
+            if (! deferredTask.isSync) {
+                val waitTask = WaitTask(
+                    taskId = deferredTask.taskId,
+                    taskName = deferredTask.taskName,
+                    clientName = clientName
+                )
+                sendToTaskEngine(waitTask)
+            }
+            // wait for result
             responseFlow.first {
                 logger.warn("ResponseFlow: {}", it)
                 it is TaskMessage && it.taskId == deferredTask.taskId
             }
-        }
+        }.join()
 
         @Suppress("UNCHECKED_CAST")
         return when (taskResult) {
@@ -308,22 +305,23 @@ internal class ClientDispatcher(
     }
 
     internal fun <T> await(deferredWorkflow: DeferredWorkflow<T>): T {
-        // if task was not sync, then send WaitTask message
-        if (! deferredWorkflow.isSync) {
-            val waitWorkflow = WaitWorkflow(
-                workflowId = deferredWorkflow.workflowId,
-                workflowName = deferredWorkflow.workflowName,
-                clientName = clientName
-            )
-            scope.future { sendToWorkflowEngine(waitWorkflow) }.join()
-        }
+        val workflowResult = scope.future {
+            // if task was not sync, then send WaitTask message
+            if (! deferredWorkflow.isSync) {
+                val waitWorkflow = WaitWorkflow(
+                    workflowId = deferredWorkflow.workflowId,
+                    workflowName = deferredWorkflow.workflowName,
+                    clientName = clientName
+                )
+                sendToWorkflowEngine(waitWorkflow)
+            }
 
-        // wait for result
-        val workflowResult = runBlocking {
+            // wait for result
             responseFlow.first {
+                logger.warn("ResponseFlow: {}", it)
                 (it is WorkflowMessage && it.workflowId == deferredWorkflow.workflowId)
             }
-        }
+        }.join()
 
         @Suppress("UNCHECKED_CAST")
         return when (workflowResult) {
