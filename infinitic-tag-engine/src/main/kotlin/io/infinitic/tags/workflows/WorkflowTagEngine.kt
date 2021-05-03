@@ -57,7 +57,7 @@ class WorkflowTagEngine(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: WorkflowTagEngineMessage) {
-        logger.warn("receiving {}", message)
+        logger.debug("receiving {}", message)
 
         process(message)
 
@@ -156,8 +156,6 @@ class WorkflowTagEngine(
 
     private suspend fun removeWorkflowTag(message: RemoveWorkflowTag) {
         storage.removeWorkflowId(message.workflowTag, message.workflowName, message.workflowId)
-        logger.warn("removeWorkflowTag {} {} {}", message.workflowTag, message.workflowName, message.workflowId)
-        logger.warn(" -> getWorkflowIds {}", storage.getWorkflowIds(message.workflowTag, message.workflowName))
     }
 
     private suspend fun hasMessageAlreadyBeenHandled(message: WorkflowTagEngineMessage) =
