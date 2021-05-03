@@ -44,5 +44,5 @@ jobs:
           java-version: 8
 
       - name: Build with Gradle
-        run: ./gradlew build # -d <= used to debug if needed
+        run: ./gradlew build -d #<= used to debug if needed
         timeout-minutes: 15 # max time allocated (useful if some tests hang)
