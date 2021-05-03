@@ -44,4 +44,4 @@ jobs:
           java-version: 8
 
       - name: Build with Gradle
-        run: ./gradlew build -d
+        run: ./gradlew build # -d <= used to debug if needed

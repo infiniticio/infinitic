@@ -138,6 +138,7 @@ internal class ClientDispatcher(
             sendToWorkflowTagEngine(msg)
 
             responseFlow.first {
+                logger.debug("ResponseFlow: {}", it)
                 it is WorkflowIdsPerTag && it.workflowName == workflowName && it.workflowTag == workflowTag
             } as WorkflowIdsPerTag
         }.join()
@@ -217,7 +218,7 @@ internal class ClientDispatcher(
             }
             // wait for result
             responseFlow.first {
-                logger.warn("ResponseFlow: {}", it)
+                logger.debug("ResponseFlow: {}", it)
                 it is TaskMessage && it.taskId == deferredTask.taskId
             }
         }.join()
@@ -318,7 +319,7 @@ internal class ClientDispatcher(
 
             // wait for result
             responseFlow.first {
-                logger.warn("ResponseFlow: {}", it)
+                logger.debug("ResponseFlow: {}", it)
                 (it is WorkflowMessage && it.workflowId == deferredWorkflow.workflowId)
             }
         }.join()

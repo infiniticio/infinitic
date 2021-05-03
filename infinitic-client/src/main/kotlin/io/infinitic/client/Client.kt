@@ -97,7 +97,7 @@ abstract class Client : InfiniticClientInterface {
         }
 
     suspend fun handle(message: ClientMessage) {
-        logger.warn("receiving {}", message)
+        logger.debug("receiving {}", message)
 
         dispatcher.handle(message)
     }
