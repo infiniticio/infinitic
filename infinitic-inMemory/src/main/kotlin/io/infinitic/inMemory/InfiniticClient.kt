@@ -57,11 +57,11 @@ class InfiniticClient(
 
     private val job: Job
 
-    override val clientName: ClientName = ClientName(name ?: "client: inMemory")
-
     private val threadPool = Executors.newCachedThreadPool()
 
-    public override val scope = CoroutineScope(threadPool.asCoroutineDispatcher() + Job())
+    override val scope = CoroutineScope(threadPool.asCoroutineDispatcher() + Job())
+
+    override val clientName: ClientName = ClientName(name ?: "client: inMemory")
 
     private val inMemoryOutput = InMemoryOutput(scope)
 
