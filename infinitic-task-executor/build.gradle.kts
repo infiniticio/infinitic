@@ -27,6 +27,7 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation(Libs.Coroutines.core)
 
+    implementation(project(":infinitic-client"))
     implementation(project(":infinitic-common"))
     implementation(project(":infinitic-workflow-task"))
 }

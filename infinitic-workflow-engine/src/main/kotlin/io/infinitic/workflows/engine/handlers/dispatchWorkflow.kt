@@ -26,18 +26,27 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
+import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-suspend fun dispatchWorkflow(
+internal fun CoroutineScope.dispatchWorkflow(
     workflowEngineOutput: WorkflowEngineOutput,
     message: DispatchWorkflow
 ): WorkflowState {
     val methodRun = MethodRun(
-        isMain = true,
+        methodRunId = MethodRunId(message.workflowId.id),
+        waitingClients = when (message.clientWaiting) {
+            true -> mutableSetOf(message.clientName)
+            false -> mutableSetOf()
+        },
         parentWorkflowId = message.parentWorkflowId,
+        parentWorkflowName = message.parentWorkflowName,
         parentMethodRunId = message.parentMethodRunId,
         methodName = message.methodName,
         methodParameterTypes = message.methodParameterTypes,
@@ -46,10 +55,7 @@ suspend fun dispatchWorkflow(
     )
 
     val state = WorkflowState(
-        clientWaiting = when (message.clientWaiting) {
-            true -> mutableSetOf(message.clientName)
-            false -> mutableSetOf()
-        },
+        workflowStatus = WorkflowStatus.ALIVE,
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,
@@ -59,7 +65,7 @@ suspend fun dispatchWorkflow(
         methodRuns = mutableListOf(methodRun)
     )
 
-    dispatchWorkflowTask(workflowEngineOutput, state, methodRun)
+    dispatchWorkflowTask(workflowEngineOutput, state, methodRun, MethodRunPosition(""))
 
     return state
 }

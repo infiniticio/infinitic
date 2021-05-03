@@ -32,9 +32,9 @@ import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.errors.Error
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.TaskAttemptId
-import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
@@ -85,17 +85,17 @@ data class WaitTask(
 @Serializable
 data class RetryTask(
     override val taskId: TaskId,
-    override val taskName: TaskName,
-    val methodName: MethodName?,
-    val methodParameterTypes: MethodParameterTypes?,
-    val methodParameters: MethodParameters?,
-    val taskTags: Set<TaskTag>?,
-    val taskMeta: TaskMeta?,
-    val taskOptions: TaskOptions?
+    override val taskName: TaskName
 ) : TaskEngineMessage()
 
 @Serializable
 data class CancelTask(
+    override val taskId: TaskId,
+    override val taskName: TaskName
+) : TaskEngineMessage()
+
+@Serializable
+data class CompleteTask(
     override val taskId: TaskId,
     override val taskName: TaskName,
     val taskReturnValue: MethodReturnValue
@@ -129,6 +129,6 @@ data class TaskAttemptFailed(
     override val taskRetrySequence: TaskRetrySequence,
     override val taskRetryIndex: TaskRetryIndex,
     override val taskAttemptDelayBeforeRetry: MillisDuration?,
-    val taskAttemptError: TaskError,
+    val taskAttemptError: Error,
     val taskMeta: TaskMeta
 ) : TaskEngineMessage(), FailingTaskAttemptMessage

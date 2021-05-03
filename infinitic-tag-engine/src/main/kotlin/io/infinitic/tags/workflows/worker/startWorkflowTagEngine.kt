@@ -25,6 +25,7 @@
 
 package io.infinitic.tags.workflows.worker
 
+import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
@@ -37,16 +38,14 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(WorkflowTagEngine::class.java)
+private val logger = LoggerFactory.getLogger(WorkflowTagEngine::class.java)
 
 typealias WorkflowTagEngineMessageToProcess = MessageToProcess<WorkflowTagEngineMessage>
 
 private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Throwable) = logger.error(
-    "exception on message {}:${System.getProperty("line.separator")}{}",
+    "exception on message {}: {}",
     messageToProcess.message,
     e
 )
@@ -59,11 +58,13 @@ fun <T : WorkflowTagEngineMessageToProcess> CoroutineScope.startWorkflowTagEngin
     commandsInputChannel: ReceiveChannel<T>,
     commandsOutputChannel: SendChannel<T>,
     sendToWorkflowEngine: SendToWorkflowEngine,
+    sendToClient: SendToClient,
 ) = launch(CoroutineName(coroutineName)) {
 
     val tagEngine = WorkflowTagEngine(
         workflowTagStorage,
-        sendToWorkflowEngine
+        sendToWorkflowEngine,
+        sendToClient
     )
 
     while (isActive) {

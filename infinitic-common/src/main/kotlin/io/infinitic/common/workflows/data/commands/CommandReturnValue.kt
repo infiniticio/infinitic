@@ -32,10 +32,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.time.Instant
 
 @Serializable(with = CommandOutputSerializer::class)
 data class CommandReturnValue(override val serializedData: SerializedData) : Data(serializedData) {
     companion object {
+        fun now() = CommandReturnValue(SerializedData.from(Instant.now()))
         fun from(data: Any?) = CommandReturnValue(SerializedData.from(data))
     }
 }

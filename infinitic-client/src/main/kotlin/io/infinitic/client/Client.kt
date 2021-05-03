@@ -25,10 +25,11 @@
 
 package io.infinitic.client
 
-import io.infinitic.client.deferred.Deferred
+import io.infinitic.client.deferred.DeferredTask
+import io.infinitic.client.deferred.DeferredWorkflow
+import io.infinitic.clients.Deferred
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
 import io.infinitic.common.proxies.WorkflowProxyHandler
@@ -50,33 +51,41 @@ import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
-import io.infinitic.exceptions.CanNotReuseWorkflowStub
-import io.infinitic.exceptions.CanNotUseNewTaskStub
-import io.infinitic.exceptions.CanNotUseNewWorkflowStub
-import io.infinitic.exceptions.IncorrectExistingStub
-import io.infinitic.exceptions.NotAStub
-import kotlinx.coroutines.GlobalScope
+import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskPerTag
+import io.infinitic.exceptions.clients.CanNotApplyOnChannelException
+import io.infinitic.exceptions.clients.CanNotApplyOnNewTaskStubException
+import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
+import io.infinitic.exceptions.clients.CanNotAwaitStubPerTag
+import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
+import io.infinitic.exceptions.clients.NotAStubException
+import io.infinitic.exceptions.thisShouldNotHappen
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 import java.util.UUID
+import io.infinitic.clients.InfiniticClient as InfiniticClientInterface
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-abstract class Client {
+abstract class Client : InfiniticClientInterface {
     abstract val clientName: ClientName
+    abstract val scope: CoroutineScope
     protected abstract val sendToTaskTagEngine: SendToTaskTagEngine
     protected abstract val sendToTaskEngine: SendToTaskEngine
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
     protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     private var _dispatcher: ClientDispatcher? = null
 
     private val dispatcher: ClientDispatcher
         get() = _dispatcher ?: run {
             _dispatcher = ClientDispatcher(
+                scope,
                 clientName,
                 sendToTaskTagEngine,
                 sendToTaskEngine,
@@ -87,25 +96,20 @@ abstract class Client {
             _dispatcher!!
         }
 
-    abstract fun close()
-
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
-
     suspend fun handle(message: ClientMessage) {
         logger.debug("receiving {}", message)
 
         dispatcher.handle(message)
     }
 
-    /*
+    /**
      * Create stub for a new task
      */
-    @JvmOverloads fun <T : Any> newTask(
+    override fun <T : Any> newTask(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
+        tags: Set<String>,
+        options: TaskOptions?,
+        meta: Map<String, ByteArray>
     ): T = TaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
@@ -113,79 +117,49 @@ abstract class Client {
         taskMeta = TaskMeta(meta)
     ) { dispatcher }.stub()
 
-    /*
-     * (Kotlin) Create stub for a new task
-     */
-    inline fun <reified T : Any> newTask(
-        tags: Set<String> = setOf(),
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = newTask(T::class.java, tags, options, meta)
-
-    /*
+    /**
      * Create stub for an existing task targeted per id
      */
-    @JvmOverloads fun <T : Any> getTask(
+    override fun <T : Any> getTask(
         klass: Class<out T>,
-        id: UUID,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
+        id: UUID
     ): T = TaskProxyHandler(
         klass = klass,
-        taskTags = tags?.map { TaskTag(it) }?.toSet(),
-        taskOptions = options,
-        taskMeta = meta?.let { TaskMeta(it) },
         perTaskId = TaskId(id),
         perTag = null
     ) { dispatcher }.stub()
 
-    /*
+    /**
      * Create stub for an existing task targeted per tag
      */
-    @JvmOverloads fun <T : Any> getTask(
+    override fun <T : Any> getTask(
         klass: Class<out T>,
-        tag: String,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
+        tag: String
     ): T = TaskProxyHandler(
         klass = klass,
-        taskTags = tags?.map { TaskTag(it) }?.toSet(),
-        taskOptions = options,
-        taskMeta = meta?.let { TaskMeta(it) },
         perTaskId = null,
         perTag = TaskTag(tag)
     ) { dispatcher }.stub()
 
-    /*
-     * (Kotlin) Create stub for an existing task targeted per id
+    /**
+     * Synchronous call to get task'ids per tag and name
      */
-    inline fun <reified T : Any> getTask(
-        id: UUID,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): T = getTask(T::class.java, id, tags, options, meta)
+    override fun <T : Any> getTaskIds(
+        klass: Class<out T>,
+        tag: String
+    ): Set<UUID> = dispatcher.getTaskIdsPerTag(
+        TaskName(klass.name),
+        TaskTag(tag)
+    )
 
-    /*
-     * (Kotlin) Create stub for an existing task targeted per tag
-     */
-    inline fun <reified T : Any> getTask(
-        tag: String,
-        tags: Set<String>? = null,
-        options: TaskOptions? = null,
-        meta: Map<String, ByteArray>? = null
-    ): T = getTask(T::class.java, tag, tags, options, meta)
-
-    /*
+    /**
      * Create stub for a new workflow
      */
-    @JvmOverloads fun <T : Any> newWorkflow(
+    override fun <T : Any> newWorkflow(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
+        tags: Set<String>,
+        options: WorkflowOptions?,
+        meta: Map<String, ByteArray>
     ): T = WorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
@@ -193,76 +167,46 @@ abstract class Client {
         workflowMeta = WorkflowMeta(meta)
     ) { dispatcher }.stub()
 
-    /*
-     * (Kotlin) Create stub for a new workflow
-     */
-    inline fun <reified T : Any> newWorkflow(
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = newWorkflow(T::class.java, tags, options, meta)
-
-    /*
+    /**
      * Create stub for an existing workflow per id
      */
-    @JvmOverloads fun <T : Any> getWorkflow(
+    override fun <T : Any> getWorkflow(
         klass: Class<out T>,
-        id: UUID,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray>? = null
+        id: UUID
     ): T = WorkflowProxyHandler(
         klass = klass,
         perTag = null,
-        perWorkflowId = WorkflowId(id),
-        workflowTags = tags?.map { WorkflowTag(it) }?.toSet(),
-        workflowOptions = options,
-        workflowMeta = meta?.let { WorkflowMeta(it) }
+        perWorkflowId = WorkflowId(id)
     ) { dispatcher }.stub()
 
-    /*
+    /**
      * Create stub for an existing workflow per tag
      */
-    @JvmOverloads fun <T : Any> getWorkflow(
+    override fun <T : Any> getWorkflow(
         klass: Class<out T>,
-        tag: String,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray>? = null
+        tag: String
     ): T = WorkflowProxyHandler(
         klass = klass,
         perTag = WorkflowTag(tag),
-        perWorkflowId = null,
-        workflowTags = tags?.map { WorkflowTag(it) }?.toSet(),
-        workflowOptions = options,
-        workflowMeta = meta?.let { WorkflowMeta(it) }
+        perWorkflowId = null
     ) { dispatcher }.stub()
 
-    /*
-     * (kotlin) Create stub for an existing workflow per id
+    /**
+     * Synchronous call to get WorkflowIds per tag and name
      */
-    inline fun <reified T : Any> getWorkflow(
-        id: UUID,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = getWorkflow(T::class.java, id, tags, options, meta)
+    override fun <T : Any> getWorkflowIds(
+        klass: Class<out T>,
+        tag: String
+    ): Set<UUID> = dispatcher.getWorkflowIdsPerTag(
+        WorkflowName(klass.name),
+        WorkflowTag(tag)
+    )
 
-    /*
-     * (kotlin) Create stub for an existing workflow per tag
-     */
-    inline fun <reified T : Any> getWorkflow(
-        tag: String,
-        tags: Set<String>? = null,
-        options: WorkflowOptions? = null,
-        meta: Map<String, ByteArray> = mapOf()
-    ): T = getWorkflow(T::class.java, tag, tags, options, meta)
-
-    /*
+    /**
      *  Asynchronously process a task or a workflow
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
-        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "async")
+    override fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "async")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
             is TaskProxyHandler<*> -> {
@@ -272,132 +216,195 @@ abstract class Client {
                 dispatcher.dispatch(handler)
             }
             is WorkflowProxyHandler<*> -> {
-                if (! handler.isNew()) throw CanNotReuseWorkflowStub(handler.klass.name)
+                if (! handler.isNew()) throw CanNotReuseWorkflowStubException(handler.klass.name)
                 handler.isSync = false
                 proxy.method()
                 dispatcher.dispatch(handler)
             }
-            else -> throw RuntimeException()
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
         }
     }
 
-    /*
-     *  Cancel a task or a workflow
+    /**
+     *  Cancel a task or a workflow from a stub
      */
-    fun <T : Any> cancel(proxy: T, returnValue: Any? = null) {
-        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "cancel")
-
-        when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> cancel(handler, returnValue)
-            is WorkflowProxyHandler<*> -> cancel(handler, returnValue)
-            is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "cancel")
-            else -> throw RuntimeException()
-        }
-    }
-
-    /*
-     * Retry a task or a workflowTask
-     * when a non-null parameter is provided, it will supersede current one
-     */
-    fun <T : Any> retry(proxy: T) {
-        if (proxy !is Proxy) throw NotAStub(proxy::class.java.name, "retry")
+    override fun <T : Any> cancel(proxy: T) {
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "cancel")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
-            is TaskProxyHandler<*> -> retry(handler)
-            is WorkflowProxyHandler<*> -> retry(handler)
-            is SendChannelProxyHandler<*> -> throw IncorrectExistingStub(handler.klass.name, "retry")
-            else -> throw RuntimeException()
+            is TaskProxyHandler<*> -> cancelTaskHandler(handler)
+            is WorkflowProxyHandler<*> -> cancelWorkflowHandler(handler)
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
         }
     }
 
-    private fun <T : Any> cancel(handler: TaskProxyHandler<T>, output: Any?) {
-        if (handler.isNew()) throw CanNotUseNewTaskStub(handler.klass.name, "cancel")
+    /**
+     * Await a task or a workflowTask from a stub
+     */
+    override fun <T : Any> await(proxy: T): Any {
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
 
-        when (handler.perTaskId) {
-            null -> {
-                val msg = CancelTaskPerTag(
-                    taskTag = handler.perTag!!,
-                    taskName = TaskName(handler.klass.name),
-                    taskReturnValue = MethodReturnValue.from(output)
-                )
-                GlobalScope.future { sendToTaskTagEngine(msg) }.join()
-            }
-            else -> {
-                val msg = CancelTask(
-                    taskId = handler.perTaskId!!,
-                    taskName = TaskName(handler.klass.name),
-                    taskReturnValue = MethodReturnValue.from(output)
-                )
-                GlobalScope.future { sendToTaskEngine(msg) }.join()
-            }
+        return when (val handler = Proxy.getInvocationHandler(proxy)) {
+            is TaskProxyHandler<*> -> awaitTaskHandler(handler)
+            is WorkflowProxyHandler<*> -> awaitWorkflowHandler(handler)
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("await")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
         }
     }
 
-    private fun <T : Any> retry(handler: TaskProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotUseNewTaskStub(handler.klass.name, "retry")
+    /**
+     *  Complete a task or a workflow from a stub
+     */
+    override fun <T : Any> complete(proxy: T, value: Any) {
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "complete")
 
-        if (handler.perTaskId != null) {
-            val msg = RetryTask(
+        when (val handler = Proxy.getInvocationHandler(proxy)) {
+            is TaskProxyHandler<*> -> TODO("Not yet implemented")
+            is WorkflowProxyHandler<*> -> TODO("Not yet implemented")
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("complete")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+        }
+    }
+
+    /**
+     * Retry a task or a workflowTask from a stub
+     */
+    override fun <T : Any> retry(proxy: T) {
+        if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
+
+        return when (val handler = Proxy.getInvocationHandler(proxy)) {
+            is TaskProxyHandler<*> -> retryTaskHandler(handler)
+            is WorkflowProxyHandler<*> -> retryWorkflowHandler(handler)
+            is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("retry")
+            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+        }
+    }
+
+    private fun <T : Any> cancelTaskHandler(handler: TaskProxyHandler<T>) {
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "cancel")
+
+        return scope.future {
+            when {
+                handler.perTaskId != null -> {
+                    val msg = CancelTask(
+                        taskId = handler.perTaskId!!,
+                        taskName = TaskName(handler.klass.name)
+                    )
+                    sendToTaskEngine(msg)
+                }
+                handler.perTag != null -> {
+                    val msg = CancelTaskPerTag(
+                        taskTag = handler.perTag!!,
+                        taskName = TaskName(handler.klass.name)
+                    )
+                    sendToTaskTagEngine(msg)
+                }
+                else -> thisShouldNotHappen()
+            }
+        }.join()
+    }
+
+    private fun <T : Any> retryTaskHandler(handler: TaskProxyHandler<T>) {
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "retry")
+
+        return scope.future {
+            when {
+                handler.perTaskId != null -> {
+                    val msg = RetryTask(
+                        taskId = handler.perTaskId!!,
+                        taskName = TaskName(handler.klass.name)
+                    )
+                    sendToTaskEngine(msg)
+                }
+                handler.perTag != null -> {
+                    val msg = RetryTaskPerTag(
+                        taskTag = handler.perTag!!,
+                        taskName = TaskName(handler.klass.name)
+                    )
+                    sendToTaskTagEngine(msg)
+                }
+                else -> thisShouldNotHappen()
+            }
+        }.join()
+    }
+
+    private fun <T : Any> awaitTaskHandler(handler: TaskProxyHandler<T>): Any {
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "await")
+
+        return when {
+            handler.perTaskId != null -> DeferredTask<Any>(
+                taskName = TaskName(handler.klass.name),
                 taskId = handler.perTaskId!!,
-                taskName = TaskName(handler.klass.name),
-                methodName = null,
-                methodParameterTypes = null,
-                methodParameters = null,
-                taskTags = handler.taskTags,
-                taskOptions = handler.taskOptions,
-                taskMeta = handler.taskMeta
-            )
-            GlobalScope.future { sendToTaskEngine(msg) }.join()
-
-            return
-        }
-
-        if (handler.perTag != null) {
-            val msg = RetryTaskPerTag(
-                taskTag = handler.perTag!!,
-                taskName = TaskName(handler.klass.name),
-                methodName = null,
-                methodParameterTypes = null,
-                methodParameters = null,
-                taskTags = handler.taskTags,
-                taskOptions = handler.taskOptions,
-                taskMeta = handler.taskMeta
-            )
-            GlobalScope.future { sendToTaskTagEngine(msg) }.join()
-
-            return
+                isSync = false,
+                dispatcher = dispatcher
+            ).await()
+            handler.perTag != null -> throw CanNotAwaitStubPerTag(handler.klass.name)
+            else -> thisShouldNotHappen()
         }
     }
 
-    private fun <T : Any> cancel(handler: WorkflowProxyHandler<T>, output: Any?) {
-        if (handler.isNew()) throw CanNotUseNewWorkflowStub(handler.klass.name, "retry")
+    private fun <T : Any> cancelWorkflowHandler(handler: WorkflowProxyHandler<T>) {
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
 
-        if (handler.perWorkflowId != null) {
-            val msg = CancelWorkflow(
+        return scope.future {
+            when {
+                handler.perWorkflowId != null -> {
+                    val msg = CancelWorkflow(
+                        workflowId = handler.perWorkflowId!!,
+                        workflowName = WorkflowName(handler.klass.name)
+                    )
+                    sendToWorkflowEngine(msg)
+                }
+                handler.perTag != null -> {
+                    val msg = CancelWorkflowPerTag(
+                        workflowTag = handler.perTag!!,
+                        workflowName = WorkflowName(handler.klass.name)
+                    )
+                    sendToWorkflowTagEngine(msg)
+                }
+                else -> thisShouldNotHappen()
+            }
+        }.join()
+    }
+
+    private fun <T : Any> retryWorkflowHandler(handler: WorkflowProxyHandler<T>) {
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
+
+        return scope.future {
+            when {
+                handler.perWorkflowId != null -> {
+                    val msg = RetryWorkflowTask(
+                        workflowId = handler.perWorkflowId!!,
+                        workflowName = WorkflowName(handler.klass.name)
+                    )
+                    sendToWorkflowEngine(msg)
+                }
+                handler.perTag != null -> {
+                    val msg = RetryWorkflowTaskPerTag(
+                        workflowTag = handler.perTag!!,
+                        workflowName = WorkflowName(handler.klass.name)
+                    )
+                    sendToWorkflowTagEngine(msg)
+                }
+                else -> thisShouldNotHappen()
+            }
+        }.join()
+    }
+
+    private fun <T : Any> awaitWorkflowHandler(handler: WorkflowProxyHandler<T>): Any {
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "await")
+
+        return when {
+            handler.perWorkflowId != null -> DeferredWorkflow<Any>(
+                workflowName = WorkflowName(handler.klass.name),
                 workflowId = handler.perWorkflowId!!,
-                workflowName = WorkflowName(handler.klass.name),
-                workflowReturnValue = MethodReturnValue.from(output)
-            )
-            GlobalScope.future { sendToWorkflowEngine(msg) }.join()
-
-            return
+                isSync = false,
+                dispatcher = dispatcher
+            ).await()
+            handler.perTag != null -> throw CanNotAwaitStubPerTag(handler.klass.name)
+            else -> thisShouldNotHappen()
         }
-
-        if (handler.perTag != null) {
-            val msg = CancelWorkflowPerTag(
-                workflowTag = handler.perTag!!,
-                workflowName = WorkflowName(handler.klass.name),
-                workflowReturnValue = MethodReturnValue.from(output)
-            )
-            GlobalScope.future { sendToWorkflowTagEngine(msg) }.join()
-
-            return
-        }
-    }
-
-    private fun <T : Any> retry(handler: WorkflowProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotUseNewWorkflowStub(handler.klass.name, "retry")
-
-        TODO("Not yet implemented")
     }
 }

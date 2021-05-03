@@ -26,7 +26,7 @@
 package io.infinitic.tasks.executor.register
 
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.exceptions.ClassNotFoundDuringInstantiation
+import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.TaskFactory
@@ -62,8 +62,8 @@ class TaskExecutorRegisterImpl : TaskExecutorRegister {
     }
 
     override fun getTaskInstance(name: String): Task =
-        registeredTasks[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
+        registeredTasks[name]?.let { it() } ?: throw ClassNotFoundException(name)
 
     override fun getWorkflowInstance(name: String): Workflow =
-        registeredWorkflows[name]?.let { it() } ?: throw ClassNotFoundDuringInstantiation(name)
+        registeredWorkflows[name]?.let { it() } ?: throw ClassNotFoundException(name)
 }

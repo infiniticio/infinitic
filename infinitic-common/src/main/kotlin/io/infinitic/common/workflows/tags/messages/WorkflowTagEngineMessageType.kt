@@ -28,6 +28,8 @@ package io.infinitic.common.workflows.tags.messages
 enum class WorkflowTagEngineMessageType {
     ADD_WORKFLOW_TAG,
     REMOVE_WORKFLOW_TAG,
+    SEND_TO_CHANNEL_PER_TAG,
     CANCEL_WORKFLOW_PER_TAG,
-    SEND_TO_CHANNEL_PER_TAG
+    RETRY_WORKFLOW_TASK_PER_TAG,
+    GET_WORKFLOW_IDS
 }

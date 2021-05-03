@@ -33,7 +33,6 @@ import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.metrics.perName.engine.storage.LoggedMetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class MetricsPerNameEngine(
@@ -42,8 +41,7 @@ class MetricsPerNameEngine(
 ) {
     val storage = LoggedMetricsPerNameStateStorage(storage)
 
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun handle(message: MetricsPerNameMessage) {
         logger.debug("receiving {}", message)

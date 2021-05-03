@@ -33,8 +33,7 @@ class CachedKeyCounterStorage(
     val storage: KeyCounterStorage
 ) : KeyCounterStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getCounter(key: String) = cache.getCounter(key)
         ?: run {

@@ -27,16 +27,15 @@ package io.infinitic.metrics.perName.engine.storage
 
 import io.infinitic.common.data.Name
 import io.infinitic.common.metrics.perName.state.MetricsPerNameState
-import io.infinitic.common.storage.Flushable
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedMetricsPerNameStateStorage(
     val storage: MetricsPerNameStateStorage
-) : MetricsPerNameStateStorage, Flushable by storage {
+) : MetricsPerNameStateStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getState(name: Name): MetricsPerNameState? {
         val state = storage.getState(name)
@@ -53,5 +52,11 @@ class LoggedMetricsPerNameStateStorage(
     override suspend fun delState(name: Name) {
         logger.debug("name {} - delState", name)
         storage.delState(name)
+    }
+
+    @TestOnly
+    override fun flush() {
+        logger.debug("flush()")
+        storage.flush()
     }
 }

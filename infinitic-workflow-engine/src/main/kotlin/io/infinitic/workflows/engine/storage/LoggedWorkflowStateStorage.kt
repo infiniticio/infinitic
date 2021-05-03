@@ -25,10 +25,9 @@
 
 package io.infinitic.workflows.engine.storage
 
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import org.slf4j.Logger
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.LoggerFactory
 
 /**
@@ -37,10 +36,9 @@ import org.slf4j.LoggerFactory
  */
 class LoggedWorkflowStateStorage(
     private val storage: WorkflowStateStorage,
-) : WorkflowStateStorage, Flushable by storage {
+) : WorkflowStateStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
         val workflowState = storage.getState(workflowId)
@@ -57,5 +55,11 @@ class LoggedWorkflowStateStorage(
     override suspend fun delState(workflowId: WorkflowId) {
         logger.debug("workflowId {} - delState", workflowId)
         storage.delState(workflowId)
+    }
+
+    @TestOnly
+    override fun flush() {
+        logger.debug("flush()")
+        storage.flush()
     }
 }

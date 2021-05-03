@@ -25,15 +25,13 @@
 
 package io.infinitic.common.storage.keyCounter
 
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedKeyCounterStorage(
     val storage: KeyCounterStorage
 ) : KeyCounterStorage by storage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getCounter(key: String): Long {
         val value = storage.getCounter(key)

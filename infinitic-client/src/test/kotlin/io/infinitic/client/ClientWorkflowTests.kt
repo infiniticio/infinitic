@@ -28,11 +28,13 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
+import io.infinitic.clients.getWorkflow
+import io.infinitic.clients.getWorkflowIds
+import io.infinitic.clients.newWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
 import io.infinitic.common.data.methods.MethodParameters
-import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
@@ -50,17 +52,19 @@ import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowPerTag
+import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.exceptions.CanNotReuseWorkflowStub
-import io.infinitic.exceptions.CanNotUseNewWorkflowStub
-import io.infinitic.exceptions.MultipleMethodCalls
-import io.infinitic.exceptions.NoMethodCall
-import io.infinitic.exceptions.SuspendMethodNotSupported
+import io.infinitic.exceptions.clients.CanNotApplyOnNewWorkflowStubException
+import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
+import io.infinitic.exceptions.clients.MultipleMethodCallsException
+import io.infinitic.exceptions.clients.NoMethodCallException
+import io.infinitic.exceptions.clients.SuspendMethodNotSupportedException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.slot
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.coroutineScope
 import java.util.UUID
 
@@ -70,10 +74,11 @@ private val workflowTagSlots = mutableListOf<WorkflowTagEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 
 class ClientWorkflow : Client() {
+    override val scope = GlobalScope
     override val clientName = ClientName("clientTest")
-    override val sendToTaskTagEngine = mockSendToTaskTagEngine(taskTagSlots)
+    override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots)
     override val sendToTaskEngine = mockSendToTaskEngine(this, taskSlot)
-    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(workflowTagSlots)
+    override val sendToWorkflowTagEngine = mockSendToWorkflowTagEngine(this, workflowTagSlots)
     override val sendToWorkflowEngine = mockSendToWorkflowEngine(this, workflowSlot)
     override fun close() {}
 }
@@ -91,7 +96,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when re-using a stub" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<CanNotReuseWorkflowStub> {
+        shouldThrow<CanNotReuseWorkflowStubException> {
             client.async(fakeWorkflow) { m1() }
             client.async(fakeWorkflow) { m1() }
         }
@@ -100,7 +105,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when calling 2 methods" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<MultipleMethodCalls> {
+        shouldThrow<MultipleMethodCallsException> {
             client.async(fakeWorkflow) { m1(); m1() }
         }
     }
@@ -108,7 +113,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when not calling any method" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<NoMethodCall> {
+        shouldThrow<NoMethodCallException> {
             client.async(fakeWorkflow) { }
         }
     }
@@ -116,7 +121,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when retrying new stub" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<CanNotUseNewWorkflowStub> {
+        shouldThrow<CanNotApplyOnNewWorkflowStubException> {
             client.retry(fakeWorkflow)
         }
     }
@@ -124,7 +129,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when canceling new stub" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<CanNotUseNewWorkflowStub> {
+        shouldThrow<CanNotApplyOnNewWorkflowStubException> {
             client.cancel(fakeWorkflow)
         }
     }
@@ -132,7 +137,7 @@ class ClientWorkflowTests : StringSpec({
     "Should throw when using a suspend method" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
-        shouldThrow<SuspendMethodNotSupported> {
+        shouldThrow<SuspendMethodNotSupportedException> {
             fakeWorkflow.suspendedMethod()
         }
     }
@@ -152,6 +157,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -174,6 +180,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -202,6 +209,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = options,
@@ -235,6 +243,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(WorkflowTag("foo"), WorkflowTag("bar")),
             workflowOptions = WorkflowOptions(),
@@ -258,6 +267,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Integer::class.java.name)),
             methodParameters = MethodParameters.from(0),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -281,6 +291,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
             methodParameters = MethodParameters.from("a"),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -304,6 +315,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodParameters = MethodParameters.from(0, "a"),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -329,6 +341,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(FakeInterface::class.java.name)),
             methodParameters = MethodParameters.from(klass),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -356,6 +369,7 @@ class ClientWorkflowTests : StringSpec({
             methodParameterTypes = MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             methodParameters = MethodParameters.from(0, "a"),
             parentWorkflowId = null,
+            parentWorkflowName = null,
             parentMethodRunId = null,
             workflowTags = setOf(),
             workflowOptions = WorkflowOptions(),
@@ -448,23 +462,7 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
             workflowId = WorkflowId(id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(null)
-        )
-    }
-
-    "Should be able to cancel workflow per id with output" {
-        val output = TestFactory.random<String>()
-        // when
-        val id = UUID.randomUUID()
-        val fakeWorkflow = client.getWorkflow<FakeWorkflow>(id)
-        client.cancel(fakeWorkflow, output)
-        // then
-        workflowTagSlots.size shouldBe 0
-        workflowSlot.captured shouldBe CancelWorkflow(
-            workflowId = WorkflowId(id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(output)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
     }
 
@@ -476,23 +474,20 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
             workflowTag = WorkflowTag("foo"),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(null)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
         workflowSlot.isCaptured shouldBe false
     }
 
     "Should be able to cancel workflow per tag with output" {
-        val output = TestFactory.random<String>()
         // when
         val fakeWorkflow = client.getWorkflow<FakeWorkflow>("foo")
-        client.cancel(fakeWorkflow, output)
+        client.cancel(fakeWorkflow)
         // then
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
             workflowTag = WorkflowTag("foo"),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(output)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
         workflowSlot.isCaptured shouldBe false
     }
@@ -507,8 +502,20 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
             workflowId = WorkflowId(deferred.id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowReturnValue = MethodReturnValue.from(null)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name)
         )
+    }
+
+    "get task ids par name and workflow" {
+        val workflowIds = client.getWorkflowIds<FakeWorkflow>("foo")
+        // then
+        workflowIds.size shouldBe 2
+        workflowTagSlots.size shouldBe 1
+        workflowTagSlots[0] shouldBe GetWorkflowIds(
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            workflowTag = WorkflowTag("foo"),
+            clientName = ClientName("clientTest")
+        )
+        workflowSlot.isCaptured shouldBe false
     }
 })

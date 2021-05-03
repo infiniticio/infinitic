@@ -25,25 +25,37 @@
 
 package io.infinitic.common.workflows.data.commands
 
+import io.infinitic.common.errors.Error
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class CommandStatus
-
-@Serializable
-object CommandStatusOngoing : CommandStatus() {
-    override fun equals(other: Any?) = javaClass == other?.javaClass
+sealed class CommandStatus {
+    /**
+     * A command is terminated if canceled or completed, failed is considered a transient state
+     */
+    fun isTerminated() = this is CommandCompleted || this is CommandCanceled
 }
 
 @Serializable
-data class CommandStatusCompleted(
+object CommandOngoing : CommandStatus() {
+    override fun equals(other: Any?) = javaClass == other?.javaClass
+    override fun toString(): String = CommandOngoing::class.java.name
+}
+
+@Serializable
+data class CommandCompleted(
     val returnValue: CommandReturnValue,
     val completionWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()
 
 @Serializable
-data class CommandStatusCanceled(
-    val returnValue: CommandReturnValue,
+data class CommandCanceled(
     val cancellationWorkflowTaskIndex: WorkflowTaskIndex
+) : CommandStatus()
+
+@Serializable
+data class CommandOngoingFailure(
+    val error: Error,
+    val failureWorkflowTaskIndex: WorkflowTaskIndex
 ) : CommandStatus()

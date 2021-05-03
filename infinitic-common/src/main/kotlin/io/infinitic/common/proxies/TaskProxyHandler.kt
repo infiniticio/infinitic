@@ -33,9 +33,9 @@ import java.lang.reflect.Method
 
 class TaskProxyHandler<T : Any>(
     override val klass: Class<T>,
-    val taskTags: Set<TaskTag>?,
-    val taskOptions: TaskOptions?,
-    val taskMeta: TaskMeta?,
+    val taskTags: Set<TaskTag>? = null,
+    val taskOptions: TaskOptions? = null,
+    val taskMeta: TaskMeta? = null,
     var perTaskId: TaskId? = null,
     var perTag: TaskTag? = null,
     private val dispatcherFn: () -> Dispatcher

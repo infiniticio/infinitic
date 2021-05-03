@@ -27,12 +27,12 @@ package io.infinitic.common.serDe
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.kserializer.getKSerializerOrNull
-import io.infinitic.exceptions.ClassNotFoundDuringDeserialization
-import io.infinitic.exceptions.ExceptionDuringJsonDeserialization
-import io.infinitic.exceptions.ExceptionDuringKotlinDeserialization
-import io.infinitic.exceptions.MissingMetaJavaClassDuringDeserialization
-import io.infinitic.exceptions.SerializerNotFoundDuringDeserialization
-import io.infinitic.exceptions.TryingToRetrieveJsonFromNonJsonData
+import io.infinitic.exceptions.serialization.ClassNotFoundException
+import io.infinitic.exceptions.serialization.JsonDeserializationException
+import io.infinitic.exceptions.serialization.KotlinDeserializationException
+import io.infinitic.exceptions.serialization.MissingMetaJavaClassException
+import io.infinitic.exceptions.serialization.SerializerNotFoundException
+import io.infinitic.exceptions.serialization.WrongSerializationTypeException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -94,12 +94,12 @@ data class SerializedData(
      * @return deserialized value
      */
     fun deserialize(): Any? {
-        val klassName = getClassName() ?: throw MissingMetaJavaClassDuringDeserialization(this)
+        val klassName = getClassName() ?: throw MissingMetaJavaClassException
 
         val klass = try {
             Class.forName(klassName)
-        } catch (e: ClassNotFoundException) {
-            throw ClassNotFoundDuringDeserialization(klassName)
+        } catch (e: java.lang.ClassNotFoundException) {
+            throw ClassNotFoundException(klassName)
         }
 
         return deserialize(klass)
@@ -107,7 +107,7 @@ data class SerializedData(
 
     fun getJson(): String = when (type) {
         SerializedDataType.JSON_KOTLIN, SerializedDataType.JSON_JACKSON -> String(bytes, Charsets.UTF_8)
-        else -> throw TryingToRetrieveJsonFromNonJsonData(getClassName(), type)
+        else -> throw WrongSerializationTypeException(getClassName(), type)
     }
 
     fun hash(): String {
@@ -149,16 +149,16 @@ data class SerializedData(
     private fun <T : Any> fromJsonJackson(klass: Class<out T>): T = try {
         JsonJackson.parse(getJson(), klass)
     } catch (e: JsonProcessingException) {
-        throw ExceptionDuringJsonDeserialization(klass.name, causeString = e.toString())
+        throw JsonDeserializationException(klass.name, causeString = e.toString())
     }
 
     private fun fromJsonKotlin(klass: Class<*>): Any? {
-        val serializer = getKSerializerOrNull(klass) ?: throw SerializerNotFoundDuringDeserialization(klass.name)
+        val serializer = getKSerializerOrNull(klass) ?: throw SerializerNotFoundException(klass.name)
 
         return try {
             JsonKotlin.decodeFromString(serializer, getJson())
         } catch (e: SerializationException) {
-            throw ExceptionDuringKotlinDeserialization(klass.name, causeString = e.toString())
+            throw KotlinDeserializationException(klass.name, causeString = e.toString())
         }
     }
 }

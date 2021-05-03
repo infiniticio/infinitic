@@ -48,7 +48,6 @@ import io.infinitic.pulsar.topics.TopicNamer
 import io.infinitic.pulsar.topics.TopicType
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class PulsarOutput(
@@ -56,8 +55,7 @@ class PulsarOutput(
     pulsarTenant: String,
     pulsarNamespace: String
 ) {
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     private val topicNamer = TopicNamer(pulsarTenant, pulsarNamespace)
     private val zero = MillisDuration(0)

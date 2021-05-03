@@ -37,8 +37,7 @@ class BinaryTaskStateStorage(
     override suspend fun getState(taskId: TaskId): TaskState? {
         val key = getTaskStateKey(taskId)
 
-        return storage.getValue(key)
-            ?.let { TaskState.fromByteArray(it) }
+        return storage.getValue(key)?.let { TaskState.fromByteArray(it) }
     }
 
     override suspend fun putState(taskId: TaskId, taskState: TaskState) {

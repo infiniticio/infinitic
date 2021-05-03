@@ -32,19 +32,33 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ClientEnvelope(
-    val clientName: ClientName,
-    val type: ClientMessageType,
-    val taskCompleted: TaskCompleted? = null,
-    val unknownTaskWaited: UnknownTaskWaited? = null,
-    val workflowCompleted: WorkflowCompleted? = null,
-    val unknownWorkflowWaited: UnknownWorkflowWaited? = null
+    private val clientName: ClientName,
+    private val type: ClientMessageType,
+    private val taskCompleted: TaskCompleted? = null,
+    private val taskCanceled: TaskCanceled? = null,
+    private val taskFailed: TaskFailed? = null,
+    private val unknownTask: UnknownTask? = null,
+    private val taskIdsPerTag: TaskIdsPerTag? = null,
+    private val workflowCompleted: WorkflowCompleted? = null,
+    private val workflowCanceled: WorkflowCanceled? = null,
+    private val workflowFailed: WorkflowFailed? = null,
+    private val unknownWorkflow: UnknownWorkflow? = null,
+    private val workflowAlreadyCompleted: WorkflowAlreadyCompleted? = null,
+    private val workflowIdsPerTag: WorkflowIdsPerTag? = null
 ) : Envelope<ClientMessage> {
     init {
         val noNull = listOfNotNull(
             taskCompleted,
-            unknownTaskWaited,
+            taskCanceled,
+            taskFailed,
+            unknownTask,
+            taskIdsPerTag,
             workflowCompleted,
-            unknownWorkflowWaited
+            workflowCanceled,
+            workflowFailed,
+            unknownWorkflow,
+            workflowAlreadyCompleted,
+            workflowIdsPerTag
         )
 
         require(noNull.size == 1)
@@ -59,20 +73,55 @@ data class ClientEnvelope(
                 ClientMessageType.TASK_COMPLETED,
                 taskCompleted = msg
             )
-            is UnknownTaskWaited -> ClientEnvelope(
+            is TaskCanceled -> ClientEnvelope(
                 msg.clientName,
-                ClientMessageType.UNKNOWN_TASK_WAITED,
-                unknownTaskWaited = msg
+                ClientMessageType.TASK_CANCELED,
+                taskCanceled = msg
+            )
+            is TaskFailed -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.TASK_FAILED,
+                taskFailed = msg
+            )
+            is UnknownTask -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.UNKNOWN_TASK,
+                unknownTask = msg
+            )
+            is TaskIdsPerTag -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.TASK_IDS_PER_TAG,
+                taskIdsPerTag = msg
             )
             is WorkflowCompleted -> ClientEnvelope(
                 msg.clientName,
                 ClientMessageType.WORKFLOW_COMPLETED,
                 workflowCompleted = msg
             )
-            is UnknownWorkflowWaited -> ClientEnvelope(
+            is WorkflowCanceled -> ClientEnvelope(
                 msg.clientName,
-                ClientMessageType.UNKNOWN_WORKFLOW_WAITED,
-                unknownWorkflowWaited = msg
+                ClientMessageType.WORKFLOW_CANCELED,
+                workflowCanceled = msg
+            )
+            is WorkflowFailed -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.WORKFLOW_FAILED,
+                workflowFailed = msg
+            )
+            is UnknownWorkflow -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.UNKNOWN_WORKFLOW,
+                unknownWorkflow = msg
+            )
+            is WorkflowAlreadyCompleted -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.WORKFLOW_ALREADY_COMPLETED,
+                workflowAlreadyCompleted = msg
+            )
+            is WorkflowIdsPerTag -> ClientEnvelope(
+                msg.clientName,
+                ClientMessageType.WORKFLOW_IDS_PER_TAG,
+                workflowIdsPerTag = msg
             )
         }
 
@@ -80,10 +129,17 @@ data class ClientEnvelope(
     }
 
     override fun message(): ClientMessage = when (type) {
+        ClientMessageType.UNKNOWN_TASK -> unknownTask!!
         ClientMessageType.TASK_COMPLETED -> taskCompleted!!
-        ClientMessageType.UNKNOWN_TASK_WAITED -> unknownTaskWaited!!
+        ClientMessageType.TASK_CANCELED -> taskCanceled!!
+        ClientMessageType.TASK_FAILED -> taskFailed!!
+        ClientMessageType.TASK_IDS_PER_TAG -> taskIdsPerTag!!
         ClientMessageType.WORKFLOW_COMPLETED -> workflowCompleted!!
-        ClientMessageType.UNKNOWN_WORKFLOW_WAITED -> unknownWorkflowWaited!!
+        ClientMessageType.WORKFLOW_CANCELED -> workflowCanceled!!
+        ClientMessageType.WORKFLOW_FAILED -> workflowFailed!!
+        ClientMessageType.UNKNOWN_WORKFLOW -> unknownWorkflow!!
+        ClientMessageType.WORKFLOW_ALREADY_COMPLETED -> workflowAlreadyCompleted!!
+        ClientMessageType.WORKFLOW_IDS_PER_TAG -> workflowIdsPerTag!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

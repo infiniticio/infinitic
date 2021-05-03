@@ -35,6 +35,8 @@ dependencies {
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-metrics-engines"))
     implementation(project(":infinitic-task-executor"))
+
+    testImplementation(Libs.Coroutines.jdk8)
 }
 
 apply("../publish.gradle.kts")

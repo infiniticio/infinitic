@@ -25,6 +25,7 @@
 
 package io.infinitic.tags.tasks.worker
 
+import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workers.MessageToProcess
@@ -37,16 +38,14 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(TaskTagEngine::class.java)
+private val logger = LoggerFactory.getLogger(TaskTagEngine::class.java)
 
 typealias TaskTagEngineMessageToProcess = MessageToProcess<TaskTagEngineMessage>
 
 private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Throwable) = logger.error(
-    "exception on message {}:${System.getProperty("line.separator")}{}",
+    "exception on message {}: {}",
     messageToProcess.message,
     e
 )
@@ -59,11 +58,13 @@ fun <T : TaskTagEngineMessageToProcess> CoroutineScope.startTaskTagEngine(
     commandsInputChannel: ReceiveChannel<T>,
     commandsOutputChannel: SendChannel<T>,
     sendToTaskEngine: SendToTaskEngine,
+    sendToClient: SendToClient,
 ) = launch(CoroutineName(coroutineName)) {
 
     val tagEngine = TaskTagEngine(
         taskTagStorage,
-        sendToTaskEngine
+        sendToTaskEngine,
+        sendToClient
     )
 
     while (isActive) {

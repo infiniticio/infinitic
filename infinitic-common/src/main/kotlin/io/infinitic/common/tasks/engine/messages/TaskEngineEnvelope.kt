@@ -39,6 +39,7 @@ data class TaskEngineEnvelope(
     val retryTask: RetryTask? = null,
     val retryTaskAttempt: RetryTaskAttempt? = null,
     val cancelTask: CancelTask? = null,
+    val completeTask: CompleteTask? = null,
     val taskAttemptCompleted: TaskAttemptCompleted? = null,
     val taskAttemptFailed: TaskAttemptFailed? = null
 ) : Envelope<TaskEngineMessage> {
@@ -49,6 +50,7 @@ data class TaskEngineEnvelope(
             retryTask,
             retryTaskAttempt,
             cancelTask,
+            completeTask,
             taskAttemptCompleted,
             taskAttemptFailed
         )
@@ -85,6 +87,11 @@ data class TaskEngineEnvelope(
                 TaskEngineMessageType.CANCEL_TASK,
                 cancelTask = msg
             )
+            is CompleteTask -> TaskEngineEnvelope(
+                msg.taskId,
+                TaskEngineMessageType.COMPLETE_TASK,
+                completeTask = msg
+            )
             is TaskAttemptCompleted -> TaskEngineEnvelope(
                 msg.taskId,
                 TaskEngineMessageType.TASK_ATTEMPT_COMPLETED,
@@ -106,6 +113,7 @@ data class TaskEngineEnvelope(
         TaskEngineMessageType.RETRY_TASK -> retryTask!!
         TaskEngineMessageType.RETRY_TASK_ATTEMPT -> retryTaskAttempt!!
         TaskEngineMessageType.CANCEL_TASK -> cancelTask!!
+        TaskEngineMessageType.COMPLETE_TASK -> completeTask!!
         TaskEngineMessageType.TASK_ATTEMPT_COMPLETED -> taskAttemptCompleted!!
         TaskEngineMessageType.TASK_ATTEMPT_FAILED -> taskAttemptFailed!!
     }

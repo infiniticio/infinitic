@@ -27,7 +27,7 @@ package io.infinitic.common.data
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.exceptions.ErrorDuringJsonSerializationOfParameter
+import io.infinitic.exceptions.serialization.ParameterSerializationException
 import java.lang.reflect.Method
 
 abstract class Parameters(open vararg val serializedDataArray: SerializedData) {
@@ -39,7 +39,7 @@ abstract class Parameters(open vararg val serializedDataArray: SerializedData) {
             val parameterType = method.parameterTypes[index]
             val methodName = method.name
             val className = method.declaringClass.name
-            throw ErrorDuringJsonSerializationOfParameter(parameterName, parameterType.name, methodName, className)
+            throw ParameterSerializationException(parameterName, parameterType.name, methodName, className)
         }
     }
 

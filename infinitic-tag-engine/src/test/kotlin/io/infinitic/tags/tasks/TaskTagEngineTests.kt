@@ -26,6 +26,7 @@
 package io.infinitic.tags.tasks
 
 import io.infinitic.common.clients.messages.ClientMessage
+import io.infinitic.common.clients.messages.TaskIdsPerTag
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.fixtures.TestFactory
@@ -38,14 +39,14 @@ import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.tags.messages.AddTaskTag
 import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
+import io.infinitic.common.tasks.tags.messages.GetTaskIds
 import io.infinitic.common.tasks.tags.messages.RemoveTaskTag
 import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -62,10 +63,10 @@ private lateinit var stateMessageId: CapturingSlot<MessageId>
 private lateinit var stateTaskId: CapturingSlot<TaskId>
 private lateinit var clientMessage: CapturingSlot<ClientMessage>
 private lateinit var taskEngineMessage: CapturingSlot<TaskEngineMessage>
-private lateinit var workflowEngineMessage: CapturingSlot<WorkflowEngineMessage>
 
 private lateinit var tagStateStorage: TaskTagStorage
 private lateinit var sendToTaskEngine: SendToTaskEngine
+private lateinit var sendToClient: SendToClient
 
 internal class TaskTagEngineTests : StringSpec({
 
@@ -160,6 +161,25 @@ internal class TaskTagEngineTests : StringSpec({
             taskId shouldBe taskIds.last()
         }
     }
+
+    "getTaskIdsPerTag should return set of ids" {
+        // given
+        val msgIn = random<GetTaskIds>()
+        val taskId1 = TaskId()
+        val taskId2 = TaskId()
+        // when
+        getEngine(msgIn.taskTag, msgIn.taskName, taskIds = setOf(taskId1, taskId2)).handle(msgIn)
+        // then
+        coVerifySequence {
+            tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.taskName)
+            sendToClient(ofType<TaskIdsPerTag>())
+            tagStateStorage.setLastMessageId(msgIn.taskTag, msgIn.taskName, msgIn.messageId)
+        }
+        verifyAll()
+
+        captured(clientMessage).shouldBeInstanceOf<TaskIdsPerTag>()
+        (captured(clientMessage) as TaskIdsPerTag).taskIds shouldBe setOf(taskId1, taskId2)
+    }
 })
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
@@ -174,12 +194,6 @@ private fun mockSendToClient(slot: CapturingSlot<ClientMessage>): SendToClient {
 private fun mockSendToTaskEngine(slots: CapturingSlot<TaskEngineMessage>): SendToTaskEngine {
     val mock = mockk<SendToTaskEngine>()
     coEvery { mock(capture(slots)) } just Runs
-    return mock
-}
-
-private fun mockSendToWorkflowEngine(slot: CapturingSlot<WorkflowEngineMessage>): SendToWorkflowEngine {
-    val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(slot)) } just Runs
     return mock
 }
 
@@ -204,12 +218,12 @@ private fun getEngine(
     stateTaskId = slot()
     clientMessage = slot()
     taskEngineMessage = slot()
-    workflowEngineMessage = slot()
 
     tagStateStorage = mockTagStateStorage(taskTag, taskName, messageId, taskIds)
     sendToTaskEngine = mockSendToTaskEngine(taskEngineMessage)
+    sendToClient = mockSendToClient(clientMessage)
 
-    return TaskTagEngine(tagStateStorage, sendToTaskEngine)
+    return TaskTagEngine(tagStateStorage, sendToTaskEngine, sendToClient)
 }
 
 private fun verifyAll() = confirmVerified(

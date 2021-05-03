@@ -36,11 +36,15 @@ data class WorkflowEngineEnvelope(
     val type: WorkflowEngineMessageType,
     val waitWorkflow: WaitWorkflow? = null,
     val cancelWorkflow: CancelWorkflow? = null,
+    val retryWorkflowTask: RetryWorkflowTask? = null,
+    val completeWorkflow: CompleteWorkflow? = null,
     val sendToChannel: SendToChannel? = null,
+    val childWorkflowFailed: ChildWorkflowFailed? = null,
     val childWorkflowCanceled: ChildWorkflowCanceled? = null,
     val childWorkflowCompleted: ChildWorkflowCompleted? = null,
     val timerCompleted: TimerCompleted? = null,
     val dispatchWorkflow: DispatchWorkflow? = null,
+    val taskFailed: TaskFailed? = null,
     val taskCanceled: TaskCanceled? = null,
     val taskCompleted: TaskCompleted? = null
 ) : Envelope<WorkflowEngineMessage> {
@@ -48,11 +52,15 @@ data class WorkflowEngineEnvelope(
         val noNull = listOfNotNull(
             waitWorkflow,
             cancelWorkflow,
+            retryWorkflowTask,
+            completeWorkflow,
             sendToChannel,
+            childWorkflowFailed,
             childWorkflowCanceled,
             childWorkflowCompleted,
             timerCompleted,
             dispatchWorkflow,
+            taskFailed,
             taskCanceled,
             taskCompleted
         )
@@ -86,10 +94,25 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.CANCEL_WORKFLOW,
                 cancelWorkflow = msg
             )
+            is RetryWorkflowTask -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.RETRY_WORKFLOW_TASK,
+                retryWorkflowTask = msg
+            )
+            is CompleteWorkflow -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.COMPLETE_WORKFLOW,
+                completeWorkflow = msg
+            )
             is SendToChannel -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.EMIT_TO_CHANNEL,
                 sendToChannel = msg
+            )
+            is ChildWorkflowFailed -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED,
+                childWorkflowFailed = msg
             )
             is ChildWorkflowCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
@@ -111,6 +134,11 @@ data class WorkflowEngineEnvelope(
                 WorkflowEngineMessageType.DISPATCH_WORKFLOW,
                 dispatchWorkflow = msg
             )
+            is TaskFailed -> WorkflowEngineEnvelope(
+                msg.workflowId,
+                WorkflowEngineMessageType.TASK_FAILED,
+                taskFailed = msg
+            )
             is TaskCanceled -> WorkflowEngineEnvelope(
                 msg.workflowId,
                 WorkflowEngineMessageType.TASK_CANCELED,
@@ -129,11 +157,15 @@ data class WorkflowEngineEnvelope(
     override fun message(): WorkflowEngineMessage = when (type) {
         WorkflowEngineMessageType.WAIT_WORKFLOW -> waitWorkflow!!
         WorkflowEngineMessageType.CANCEL_WORKFLOW -> cancelWorkflow!!
+        WorkflowEngineMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask!!
+        WorkflowEngineMessageType.COMPLETE_WORKFLOW -> completeWorkflow!!
         WorkflowEngineMessageType.EMIT_TO_CHANNEL -> sendToChannel!!
+        WorkflowEngineMessageType.CHILD_WORKFLOW_FAILED -> childWorkflowFailed!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_CANCELED -> childWorkflowCanceled!!
         WorkflowEngineMessageType.CHILD_WORKFLOW_COMPLETED -> childWorkflowCompleted!!
         WorkflowEngineMessageType.TIMER_COMPLETED -> timerCompleted!!
         WorkflowEngineMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow!!
+        WorkflowEngineMessageType.TASK_FAILED -> taskFailed!!
         WorkflowEngineMessageType.TASK_CANCELED -> taskCanceled!!
         WorkflowEngineMessageType.TASK_COMPLETED -> taskCompleted!!
     }

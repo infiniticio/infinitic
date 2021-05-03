@@ -25,17 +25,19 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.WorkflowEngine
-import io.infinitic.workflows.engine.helpers.commandCompleted
+import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
 
-suspend fun sendToChannel(
+internal fun CoroutineScope.sendToChannel(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: SendToChannel
@@ -48,12 +50,17 @@ suspend fun sendToChannel(
         ?.also {
             state.receivingChannels.remove(it)
 
-            commandCompleted(
+            val commandStatus = CommandCompleted(
+                CommandReturnValue(msg.channelEvent.serializedData),
+                state.workflowTaskIndex
+            )
+
+            commandTerminated(
                 workflowEngineOutput,
                 state,
                 it.methodRunId,
                 it.commandId,
-                CommandReturnValue(msg.channelEvent.serializedData)
+                commandStatus
             )
         }
         ?: logger.debug("workflowId {} - discarding {} (messageId {})", msg.workflowId, msg, msg.messageId)

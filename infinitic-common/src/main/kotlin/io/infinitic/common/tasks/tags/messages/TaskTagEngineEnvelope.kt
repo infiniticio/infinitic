@@ -36,14 +36,16 @@ data class TaskTagEngineEnvelope(
     val addTaskTag: AddTaskTag? = null,
     val removeTaskTag: RemoveTaskTag? = null,
     val cancelTaskPerTag: CancelTaskPerTag? = null,
-    val retryTaskPerTag: RetryTaskPerTag? = null
+    val retryTaskPerTag: RetryTaskPerTag? = null,
+    val getTaskIds: GetTaskIds? = null
 ) : Envelope<TaskTagEngineMessage> {
     init {
         val noNull = listOfNotNull(
             addTaskTag,
             removeTaskTag,
             cancelTaskPerTag,
-            retryTaskPerTag
+            retryTaskPerTag,
+            getTaskIds
         )
 
         require(noNull.size == 1)
@@ -73,6 +75,11 @@ data class TaskTagEngineEnvelope(
                 TaskTagEngineMessageType.RETRY_TASK_PER_TAG,
                 retryTaskPerTag = msg
             )
+            is GetTaskIds -> TaskTagEngineEnvelope(
+                "${msg.taskName}",
+                TaskTagEngineMessageType.GET_TASK_IDS,
+                getTaskIds = msg
+            )
         }
 
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
@@ -83,6 +90,7 @@ data class TaskTagEngineEnvelope(
         TaskTagEngineMessageType.REMOVE_TASK_TAG -> removeTaskTag!!
         TaskTagEngineMessageType.CANCEL_TASK_PER_TAG -> cancelTaskPerTag!!
         TaskTagEngineMessageType.RETRY_TASK_PER_TAG -> retryTaskPerTag!!
+        TaskTagEngineMessageType.GET_TASK_IDS -> getTaskIds!!
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

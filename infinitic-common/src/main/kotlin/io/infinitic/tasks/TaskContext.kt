@@ -25,19 +25,21 @@
 
 package io.infinitic.tasks
 
-import io.infinitic.common.tasks.data.TaskError
+import io.infinitic.clients.InfiniticClient
+import io.infinitic.common.errors.Error
 import io.infinitic.common.tasks.data.TaskOptions
 import java.util.UUID
 
 interface TaskContext {
     val register: TaskExecutorRegister
+    val client: InfiniticClient
     val id: UUID
     val workflowId: UUID?
     val workflowName: String?
     val attemptId: UUID
     val retrySequence: Int
     val retryIndex: Int
-    val lastError: TaskError?
+    val lastError: Error?
     val meta: MutableMap<String, ByteArray>
     val options: TaskOptions
 }

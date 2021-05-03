@@ -26,16 +26,16 @@
 package io.infinitic.common.fixtures
 
 import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.errors.Error
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.tasks.data.TaskError
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatusOngoing
+import io.infinitic.common.workflows.data.commands.CommandOngoing
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -90,12 +90,14 @@ object TestFactory {
                 val sub = MetricsGlobalMessage::class.sealedSubclasses.shuffled().first()
                 MetricsGlobalEnvelope.from(random(sub))
             }
-            .randomize(TaskError::class.java) {
-                TaskError(
-                    name = random(),
-                    stacktrace = random(),
-                    message = random(),
-                    cause = null
+            .randomize(Error::class.java) {
+                Error(
+                    errorName = random(),
+                    errorStackTraceToString = random(),
+                    errorMessage = random(),
+                    errorCause = null,
+                    whereId = null,
+                    whereName = null
                 )
             }
 
@@ -107,7 +109,7 @@ object TestFactory {
     }
 
     private fun steps(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(), CommandStatusOngoing)
+        fun getStepId() = Step.Id(CommandId(), CommandOngoing)
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

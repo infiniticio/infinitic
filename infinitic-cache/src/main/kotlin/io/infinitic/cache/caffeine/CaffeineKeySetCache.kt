@@ -27,36 +27,36 @@ package io.infinitic.cache.caffeine
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.common.data.Bytes
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetCache
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
-class CaffeineKeySetCache<S>(config: CaffeineConfig) : KeySetCache<S>, Flushable {
+class CaffeineKeySetCache(config: CaffeineConfig) : KeySetCache<ByteArray>, Flushable {
 
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
-    private var caffeine: Cache<String, Set<S>> =
+    private var caffeine: Cache<String, Set<Bytes>> =
         Caffeine.newBuilder().setup(config).build()
 
-    override fun getSet(key: String): Set<S>? {
+    override fun getSet(key: String): Set<ByteArray>? {
         return caffeine.get(key) { null }
+            ?.map { it.content }?.toSet()
     }
 
-    override fun setSet(key: String, value: Set<S>) {
-        caffeine.put(key, value)
+    override fun setSet(key: String, value: Set<ByteArray>) {
+        caffeine.put(key, value.map { Bytes(it) }.toMutableSet())
     }
 
-    override fun addToSet(key: String, value: S) {
-        getSet(key)
-            ?.also { caffeine.put(key, it.toMutableSet().plus(value)) }
+    override fun addToSet(key: String, value: ByteArray) {
+        caffeine.getIfPresent(key)
+            ?.also { caffeine.put(key, it.plus(Bytes(value))) }
     }
 
-    override fun removeFromSet(key: String, value: S) {
-        getSet(key)
-            ?.also { caffeine.put(key, it.toMutableSet().minus(value)) }
+    override fun removeFromSet(key: String, value: ByteArray) {
+        caffeine.getIfPresent(key)
+            ?.also { caffeine.put(key, it.minus(Bytes(value))) }
     }
 
     override fun flush() {

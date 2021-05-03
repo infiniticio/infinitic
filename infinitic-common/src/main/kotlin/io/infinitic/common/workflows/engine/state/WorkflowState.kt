@@ -26,13 +26,15 @@
 package io.infinitic.common.workflows.engine.state
 
 import io.infinitic.common.avro.AvroSerDe
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.methodRuns.MethodRunId
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -41,99 +43,106 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowState(
-    /*
-     clients synchronously waiting for the returned value
+    /**
+     * Workflow's status
      */
-    val clientWaiting: MutableSet<ClientName>,
+    var workflowStatus: WorkflowStatus,
 
-    /*
-    Id of last received message (used to ensure idempotency)
+    /**
+     * Id of last handled message (used to ensure idempotency)
      */
     var lastMessageId: MessageId,
 
-    /*
-    Id of this workflow instance
+    /**
+     * Id of this workflow instance
      */
     val workflowId: WorkflowId,
 
-    /*
-    Id of parent's workflow (if any)
-     */
-    val parentWorkflowId: WorkflowId? = null,
-
-    /*
-    Workflow's name (used wy worker to instantiate)
+    /**
+     * Workflow's name (used wy worker to instantiate)
      */
     val workflowName: WorkflowName,
 
-    /*
-    Instance's tags defined when dispatched
+    /**
+     * Instance's tags defined when dispatched
      */
     val workflowTags: Set<WorkflowTag>,
 
-    /*
-    Instance's options defined when dispatched
+    /**
+     * Instance's options defined when dispatched
      */
     val workflowOptions: WorkflowOptions,
 
-    /*
-    Instance's meta defined when dispatched
+    /**
+     * Instance's meta defined when dispatched
      */
     val workflowMeta: WorkflowMeta,
 
-    /*
-    Id of WorkflowTask currently running (max one at a time)
+    /**
+     * Id of WorkflowTask currently running
      */
     var runningWorkflowTaskId: TaskId? = null,
 
-    /*
-    Id of WorkflowTask currently running (max one at a time)
+    /**
+     * MethodRunId of WorkflowTask currently running
+     */
+    var runningMethodRunId: MethodRunId? = null,
+
+    /**
+     * Position of the step that triggered WorkflowTask currently running
+     */
+    var runningMethodRunPosition: MethodRunPosition? = null,
+
+    /**
+     * Instant when WorkflowTask currently running was triggered
      */
     var runningWorkflowTaskInstant: MillisInstant? = null,
 
-    /*
-    Incremental index counting WorkflowTasks (used as an index for instance's state)
+    /**
+     * Incremental index counting WorkflowTasks (used as an index for instance's state)
      */
     var workflowTaskIndex: WorkflowTaskIndex = WorkflowTaskIndex(0),
 
-    /*
-    Methods currently running. Once completed this data can be deleted to limit memory usage
+    /**
+     * Methods currently running. Once completed this data can be deleted to limit memory usage
      */
     val methodRuns: MutableList<MethodRun>,
 
-    /*
-    Ordered list of channels currently receiving
+    /**
+     * Ordered list of channels currently receiving
      */
     val receivingChannels: MutableList<ReceivingChannel> = mutableListOf(),
 
-    /*
-    Current (last) hash of instance's properties. hash is used as an index to actual value
+    /**
+     * Current (last) hash of instance's properties. hash is used as an index to actual value
      */
     val currentPropertiesNameHash: MutableMap<PropertyName, PropertyHash> = mutableMapOf(),
 
-    /*
-    Store containing values of past and current values of properties
-    (past values are useful when replaying WorkflowTask)
+    /**
+     * Store containing values of past and current values of properties
+     * (past values are useful when replaying WorkflowTask)
      */
     var propertiesHashValue: MutableMap<PropertyHash, PropertyValue> = mutableMapOf(),
 
-    /*
-    Messages received while a WorkflowTask is still running.
-    They can not be handled immediately, so are stored in this buffer
+    /**
+     * Messages received while a WorkflowTask is still running.
+     * They can not be handled immediately, so are stored in this buffer
      */
     val bufferedMessages: MutableList<WorkflowEngineMessage> = mutableListOf(),
 
-    /*
-    In some situations, we know that multiples branches must be processed.
-    As WorkflowTask handles branch one by one, we orderly buffer these branches here
-    (it happens when a workflowTask decide to launch more than one async branch,
-    or when more than one branch' steps are completed by the same message)
+    /**
+     * In some situations, we know that multiples branches must be processed.
+     * As WorkflowTask handles branch one by one, we orderly buffer these branches here
+     * (it happens when a workflowTask decide to launch more than one async branch,
+     * or when more than one branch' steps are completed by the same message)
      */
     val bufferedCommands: MutableList<CommandId> = mutableListOf()
 ) {
@@ -142,4 +151,18 @@ data class WorkflowState(
     }
 
     fun toByteArray() = AvroSerDe.writeBinary(this, serializer())
+
+    fun getRunningMethodRun(): MethodRun = methodRuns.first { it.methodRunId == runningMethodRunId }
+
+    fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull() { it.methodRunId == methodRunId }
+
+    /**
+     * true if the current workflow task is on main path
+     */
+    fun isRunningWorkflowTaskOnMainPath(): Boolean {
+        val p = runningMethodRunPosition ?: throw thisShouldNotHappen()
+
+        return p.isOnMainPath() &&
+            getRunningMethodRun().getCommandByPosition(p)?.commandType != CommandType.START_ASYNC
+    }
 }

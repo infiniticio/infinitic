@@ -27,7 +27,6 @@ package io.infinitic.tasks.engine.worker
 
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
-import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
@@ -43,16 +42,14 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(TaskEngine::class.java)
+private val logger = LoggerFactory.getLogger(TaskEngine::class.java)
 
 typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 
 private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable) = logger.error(
-    "taskId {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    "taskId {} - exception on message {}: {}",
     messageToProcess.message.taskId,
     messageToProcess.message,
     e
@@ -67,7 +64,6 @@ fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     commandsOutputChannel: SendChannel<T>,
     sendToClient: SendToClient,
     sendToTaskTagEngine: SendToTaskTagEngine,
-    sendToTaskEngine: SendToTaskEngine,
     sendToTaskEngineAfter: SendToTaskEngineAfter,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToTaskExecutors: SendToTaskExecutors,

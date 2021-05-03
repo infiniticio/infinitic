@@ -54,22 +54,24 @@ class InfiniticClient @JvmOverloads constructor(
 
     private val producerName = getProducerName(pulsarClient, name)
 
+    override val scope = CoroutineScope(Dispatchers.IO + Job())
+
     override val clientName = ClientName(producerName)
 
-    private val pulsarOutputs =
+    private val pulsarOutput =
         PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
 
     override val sendToTaskTagEngine =
-        pulsarOutputs.sendToTaskTagEngine(TopicType.COMMANDS, true)
+        pulsarOutput.sendToTaskTagEngine(TopicType.COMMANDS, true)
 
     override val sendToTaskEngine =
-        pulsarOutputs.sendToTaskEngine(TopicType.COMMANDS, null, true)
+        pulsarOutput.sendToTaskEngine(TopicType.COMMANDS, null, true)
 
     override val sendToWorkflowTagEngine =
-        pulsarOutputs.sendToWorkflowTagEngine(TopicType.COMMANDS, true)
+        pulsarOutput.sendToWorkflowTagEngine(TopicType.COMMANDS, true)
 
     override val sendToWorkflowEngine =
-        pulsarOutputs.sendToWorkflowEngine(TopicType.COMMANDS, true)
+        pulsarOutput.sendToWorkflowEngine(TopicType.COMMANDS, true)
 
     override fun close() {
         job.cancel()
@@ -80,10 +82,11 @@ class InfiniticClient @JvmOverloads constructor(
         val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
             .newClientResponseConsumer(producerName, ClientName(producerName))
 
-        job = CoroutineScope(Dispatchers.IO + Job()).startClientResponseWorker(this, clientResponseConsumer)
+        job = scope.startClientResponseWorker(this, clientResponseConsumer)
     }
 
     companion object {
+
         /**
          * Create Client from a custom PulsarClient and a ClientConfig instance
          */

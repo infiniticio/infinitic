@@ -29,6 +29,7 @@ enum class TaskEngineMessageType {
     DISPATCH_TASK,
     WAIT_TASK,
     CANCEL_TASK,
+    COMPLETE_TASK,
     TASK_ATTEMPT_COMPLETED,
     TASK_ATTEMPT_FAILED,
     RETRY_TASK,

@@ -26,8 +26,7 @@
 package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-
-const val POSITION_SEPARATOR = "."
+import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition.Companion.POSITION_SEPARATOR
 
 internal data class MethodRunIndex(
     val parent: MethodRunIndex? = null,
@@ -44,7 +43,7 @@ internal data class MethodRunIndex(
 
     fun up() = parent
 
-    fun down() = MethodRunIndex(this, -1)
+    fun down() = MethodRunIndex(this)
 
     fun leadsTo(target: MethodRunPosition) = "${target}$POSITION_SEPARATOR".startsWith("$methodPosition$POSITION_SEPARATOR")
 }

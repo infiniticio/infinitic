@@ -53,7 +53,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class InMemoryOutput(
@@ -72,8 +71,7 @@ class InMemoryOutput(
     val metricsPerNameChannel: Channel<MetricsPerNameMessageToProcess> = Channel(),
     val metricsGlobalChannel: Channel<MetricsGlobalMessageToProcess> = Channel()
 ) {
-    private val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     val sendEventsToClient: SendToClient = { message: ClientMessage ->
         logger.debug("sendEventsToClient {}", message)

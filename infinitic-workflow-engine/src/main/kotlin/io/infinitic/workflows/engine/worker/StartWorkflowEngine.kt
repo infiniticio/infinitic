@@ -27,6 +27,7 @@ package io.infinitic.workflows.engine.worker
 
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
+import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
@@ -41,16 +42,14 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(WorkflowEngine::class.java)
+private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
 
 typealias WorkflowEngineMessageToProcess = MessageToProcess<WorkflowEngineMessage>
 
 private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwable) = logger.error(
-    "workflowId {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    "workflowId {} - exception on message {}: {}",
     messageToProcess.message.workflowId,
     messageToProcess.message,
     e
@@ -64,8 +63,9 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     commandsInputChannel: ReceiveChannel<T>,
     commandsOutputChannel: SendChannel<T>,
     sendEventsToClient: SendToClient,
-    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
+    sendToTaskTagEngine: SendToTaskTagEngine,
     sendToTaskEngine: SendToTaskEngine,
+    sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) = launch(CoroutineName(coroutineName)) {
@@ -73,8 +73,9 @@ fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     val workflowEngine = WorkflowEngine(
         workflowStateStorage,
         sendEventsToClient,
-        sendToWorkflowTagEngine,
+        sendToTaskTagEngine,
         sendToTaskEngine,
+        sendToWorkflowTagEngine,
         sendToWorkflowEngine,
         sendToWorkflowEngineAfter
     )

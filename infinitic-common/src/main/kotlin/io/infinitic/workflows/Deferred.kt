@@ -27,6 +27,7 @@ package io.infinitic.workflows
 
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.data.steps.StepStatus
+import java.util.UUID
 import io.infinitic.common.workflows.data.steps.and as stepAnd
 import io.infinitic.common.workflows.data.steps.or as stepOr
 
@@ -35,9 +36,9 @@ data class Deferred<T> (
     val step: Step,
     internal val workflowContext: WorkflowContext
 ) {
-    val id: String?
+    val id: UUID?
         get() = when (step) {
-            is Step.Id -> "${step.commandId}"
+            is Step.Id -> step.commandId.id
             else -> null
         }
 

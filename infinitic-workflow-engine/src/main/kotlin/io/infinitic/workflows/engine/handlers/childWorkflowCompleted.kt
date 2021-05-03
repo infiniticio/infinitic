@@ -25,23 +25,30 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.commandCompleted
+import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
 
-suspend fun childWorkflowCompleted(
+internal fun CoroutineScope.childWorkflowCompleted(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: ChildWorkflowCompleted
 ) {
-    commandCompleted(
+    val commandStatus = CommandCompleted(
+        CommandReturnValue(msg.childWorkflowReturnValue.serializedData),
+        state.workflowTaskIndex
+    )
+
+    commandTerminated(
         workflowEngineOutput,
         state,
         msg.methodRunId,
         CommandId(msg.childWorkflowId),
-        CommandReturnValue(msg.childWorkflowReturnValue.serializedData)
+        commandStatus
     )
 }

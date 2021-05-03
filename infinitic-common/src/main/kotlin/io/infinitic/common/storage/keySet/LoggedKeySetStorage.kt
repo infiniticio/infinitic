@@ -25,15 +25,13 @@
 
 package io.infinitic.common.storage.keySet
 
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LoggedKeySetStorage(
     val storage: KeySetStorage
 ) : KeySetStorage by storage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getSet(key: String): Set<ByteArray> {
         val value = storage.getSet(key)

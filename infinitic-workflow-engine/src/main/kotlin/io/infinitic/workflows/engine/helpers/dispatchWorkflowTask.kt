@@ -42,17 +42,19 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-suspend fun dispatchWorkflowTask(
+internal fun CoroutineScope.dispatchWorkflowTask(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     methodRun: MethodRun,
-    branchPosition: MethodRunPosition = MethodRunPosition("")
+    methodRunPosition: MethodRunPosition
 ) {
     state.workflowTaskIndex = state.workflowTaskIndex + 1
 
     // defines workflow task input
-    val workflowTaskInput = WorkflowTaskParameters(
+    val workflowTaskParameters = WorkflowTaskParameters(
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         workflowOptions = state.workflowOptions,
@@ -61,7 +63,7 @@ suspend fun dispatchWorkflowTask(
         workflowPropertiesHashValue = state.propertiesHashValue, // TODO filterStore(state.propertyStore, listOf(methodRun))
         workflowTaskIndex = state.workflowTaskIndex,
         methodRun = methodRun,
-        targetPosition = branchPosition
+        targetPosition = methodRunPosition
     )
 
     // defines workflow task
@@ -72,7 +74,7 @@ suspend fun dispatchWorkflowTask(
         taskName = TaskName(WorkflowTask::class.java.name),
         methodName = MethodName(WorkflowTask::handle.name),
         methodParameterTypes = MethodParameterTypes(listOf(WorkflowTaskParameters::class.java.name)),
-        methodParameters = MethodParameters.from(workflowTaskInput),
+        methodParameters = MethodParameters.from(workflowTaskParameters),
         workflowId = state.workflowId,
         workflowName = state.workflowName,
         methodRunId = methodRun.methodRunId,
@@ -82,8 +84,15 @@ suspend fun dispatchWorkflowTask(
     )
 
     // dispatch workflow task
-    workflowEngineOutput.sendToTaskEngine(workflowTask)
+    launch { workflowEngineOutput.sendToTaskEngine(workflowTask) }
 
-    state.runningWorkflowTaskId = workflowTask.taskId
-    state.runningWorkflowTaskInstant = MillisInstant.now()
+    with(state) {
+        runningWorkflowTaskId = workflowTask.taskId
+        // do not update runningWorkflowTaskInstant if it is a retry
+        if (runningMethodRunId != methodRun.methodRunId || runningMethodRunPosition != methodRunPosition) {
+            runningWorkflowTaskInstant = MillisInstant.now()
+            runningMethodRunId = methodRun.methodRunId
+            runningMethodRunPosition = methodRunPosition
+        }
+    }
 }

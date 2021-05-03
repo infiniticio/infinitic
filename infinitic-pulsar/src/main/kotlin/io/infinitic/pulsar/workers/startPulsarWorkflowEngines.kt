@@ -47,7 +47,7 @@ fun CoroutineScope.startPulsarWorkflowEngines(
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {
-    repeat(concurrency) {
+    repeat(concurrency) { count ->
 
         val eventsInputChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
         val eventsOutputChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
@@ -58,27 +58,28 @@ fun CoroutineScope.startPulsarWorkflowEngines(
         val workflowTaskEngine = output.sendToTaskEngine(TopicType.COMMANDS, workflowName)
 
         startWorkflowEngine(
-            "workflow-engine:$it",
+            "workflow-engine:$count",
             storage,
             eventsInputChannel = eventsInputChannel,
             eventsOutputChannel = eventsOutputChannel,
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
             output.sendToClient(),
-            output.sendToWorkflowTagEngine(TopicType.EVENTS),
+            output.sendToTaskTagEngine(TopicType.COMMANDS),
             sendToTaskEngine = { if (it.isWorkflowTask()) workflowTaskEngine(it) else taskEngine(it) },
+            output.sendToWorkflowTagEngine(TopicType.EVENTS),
             output.sendToWorkflowEngine(TopicType.EVENTS),
             output.sendToWorkflowEngineAfter()
         )
 
         // Pulsar consumers
         val eventsConsumer = consumerFactory.newWorkflowEngineConsumer(
-            consumerName = "$consumerName:$it",
+            consumerName = "$consumerName:$count",
             topicType = TopicType.EVENTS,
             workflowName = workflowName
         )
         val commandsConsumer = consumerFactory.newWorkflowEngineConsumer(
-            consumerName = "$consumerName:$it",
+            consumerName = "$consumerName:$count",
             topicType = TopicType.COMMANDS,
             workflowName = workflowName
         )

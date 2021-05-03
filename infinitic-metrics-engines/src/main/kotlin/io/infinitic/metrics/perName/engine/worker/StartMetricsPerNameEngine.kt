@@ -35,16 +35,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger
-    get() = LoggerFactory.getLogger(MetricsPerNameEngine::class.java)
+private val logger = LoggerFactory.getLogger(MetricsPerNameEngine::class.java)
 
 typealias MetricsPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
 private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwable) = logger.error(
-    "taskName {} - exception on message {}:${System.getProperty("line.separator")}{}",
+    "taskName {} - exception on message {}: {}",
     messageToProcess.message.taskName,
     messageToProcess.message,
     e

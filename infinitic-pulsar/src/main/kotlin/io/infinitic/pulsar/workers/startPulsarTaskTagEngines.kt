@@ -60,7 +60,8 @@ fun CoroutineScope.startPulsarTaskTagEngines(
             eventsOutputChannel = eventsOutputChannel,
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
-            output.sendToTaskEngine(TopicType.COMMANDS, taskName)
+            output.sendToTaskEngine(TopicType.COMMANDS, taskName),
+            output.sendToClient()
         )
 
         // Pulsar consumers

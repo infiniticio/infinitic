@@ -26,19 +26,17 @@
 package io.infinitic.tags.tasks.storage
 
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
-import org.slf4j.Logger
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.LoggerFactory
 
 class LoggedTaskTagStorage(
     val storage: TaskTagStorage
-) : TaskTagStorage, Flushable by storage {
+) : TaskTagStorage {
 
-    val logger: Logger
-        get() = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId? {
         val messageId = storage.getLastMessageId(tag, taskName)
@@ -67,5 +65,11 @@ class LoggedTaskTagStorage(
     override suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
         logger.debug("tag {} - name {} - removeTaskId {}", tag, taskName, taskId)
         storage.removeTaskId(tag, taskName, taskId)
+    }
+
+    @TestOnly
+    override fun flush() {
+        logger.debug("flush()")
+        storage.flush()
     }
 }
