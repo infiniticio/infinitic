@@ -44,12 +44,9 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
-import kotlin.coroutines.coroutineContext
 
 internal class TaskTests : StringSpec({
 
@@ -57,7 +54,6 @@ internal class TaskTests : StringSpec({
     configuration.timeout = 5000
 
     lateinit var behavior: (index: Int, retry: Int) -> Status
-    lateinit var job: Job
 
     val taskTestImpl = TaskTestImpl()
 
@@ -73,14 +69,6 @@ internal class TaskTests : StringSpec({
     val client = InfiniticClient(taskExecutorRegister, "client: inMemory")
     val taskTest = client.newTask<TaskTest>()
     val taskTestWithTags = client.newTask<TaskTest>(tags = setOf("foo", "bar"))
-
-    beforeTest {
-        job = CoroutineScope(coroutineContext).launch { }
-    }
-
-    afterTest {
-        job.join()
-    }
 
     afterSpec {
         client.close()
@@ -207,12 +195,14 @@ internal class TaskTests : StringSpec({
 
         val deferred = client.async(taskTest) { log() }
 
-        job = launch(Dispatchers.IO) {
+        val job = client.scope.future {
             delay(100)
             client.cancel(taskTest)
         }
 
         shouldThrow<CanceledDeferredException> { deferred.await() }
+
+        job.join()
     }
 
     "Multiple Tasks canceled using A tag" {
@@ -221,7 +211,7 @@ internal class TaskTests : StringSpec({
         val deferred1 = client.async(taskTestWithTags) { log() }
         val deferred2 = client.async(taskTestWithTags) { log() }
 
-        with(CoroutineScope(Dispatchers.IO)) {
+        client.scope.future {
             launch {
                 shouldThrow<CanceledDeferredException> { deferred1.await() }
             }
@@ -263,7 +253,7 @@ internal class TaskTests : StringSpec({
         client.taskTagStorage.getTaskIds(TaskTag("foo"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe true
         client.taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe true
 
-        job = launch(Dispatchers.IO) {
+        val job = client.scope.future {
             delay(100)
             client.cancel(taskTestWithTags)
         }
@@ -273,5 +263,7 @@ internal class TaskTests : StringSpec({
         delay(50)
         client.taskTagStorage.getTaskIds(TaskTag("foo"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
         client.taskTagStorage.getTaskIds(TaskTag("bar"), TaskName(TaskTest::class.java.name)).contains(taskId) shouldBe false
+
+        job.join()
     }
 })

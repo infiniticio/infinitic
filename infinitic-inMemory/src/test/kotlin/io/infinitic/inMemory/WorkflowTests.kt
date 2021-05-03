@@ -50,11 +50,10 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.future.future
 import java.time.Instant
+import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.coroutineContext
 import io.infinitic.exceptions.workflows.CanceledDeferredException as CanceledInWorkflowException
 import io.infinitic.exceptions.workflows.FailedDeferredException as FailedInWorkflowException
@@ -68,7 +67,7 @@ internal class WorkflowTests : StringSpec({
     lateinit var workflowATagged: WorkflowA
     lateinit var workflowAMeta: WorkflowA
     lateinit var workflowB: WorkflowB
-    lateinit var job: Job
+    lateinit var job: CompletableFuture<*>
 
     val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
         registerTask(TaskA::class.java.name) { TaskAImpl() }
@@ -79,13 +78,19 @@ internal class WorkflowTests : StringSpec({
     val client = InfiniticClient(taskExecutorRegister, "client: inMemory")
 
     beforeTest {
-        job = CoroutineScope(coroutineContext).launch { }
+        job = CoroutineScope(coroutineContext).future { }
         workflowA = client.newWorkflow()
         workflowATagged = client.newWorkflow(setOf("foo", "bar"))
         workflowAMeta = client.newWorkflow(meta = mapOf("foo" to "bar".toByteArray()))
         workflowB = client.newWorkflow()
     }
 
+    /**
+     * Be careful: deferred.await() blocks the current thread
+     * that's why we use `client.scope.future {}` instead of `launch {}`
+     * if not, this code is not executed
+     * Using the same scope as client guarantees also that any exception in this part will be visible
+     */
     afterTest {
         job.join()
     }
@@ -305,7 +310,7 @@ internal class WorkflowTests : StringSpec({
     "Waiting for event, sent after dispatched" {
         val deferred = client.async(workflowA) { channel1() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             workflowA.channelA.send("test")
         }
@@ -316,7 +321,7 @@ internal class WorkflowTests : StringSpec({
     "Waiting for event, sent by id" {
         val deferred = client.async(workflowA) { channel1() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.getWorkflow<WorkflowA>(deferred.id).channelA.send("test")
         }
@@ -327,7 +332,7 @@ internal class WorkflowTests : StringSpec({
     "Waiting for event, sent by tag" {
         val deferred = client.async(workflowATagged) { channel1() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.getWorkflow<WorkflowA>("foo").channelA.send("test")
         }
@@ -338,7 +343,7 @@ internal class WorkflowTests : StringSpec({
     "Waiting for event, sent to the right channel" {
         val deferred = client.async(workflowA) { channel2() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.getWorkflow<WorkflowA>(deferred.id).channelA.send("test")
         }
@@ -349,7 +354,7 @@ internal class WorkflowTests : StringSpec({
     "Waiting for event but sent to the wrong channel" {
         val deferred = client.async(workflowA) { channel2() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.getWorkflow<WorkflowA>(deferred.id).channelB.send("test")
         }
@@ -360,7 +365,7 @@ internal class WorkflowTests : StringSpec({
     "Sending event before waiting for it prevents catching" {
         val deferred = client.async(workflowA) { channel3() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.getWorkflow<WorkflowA>(deferred.id).channelA.send("test")
         }
@@ -372,7 +377,7 @@ internal class WorkflowTests : StringSpec({
         val obj1 = Obj1("foo", 42)
         val deferred = client.async(workflowA) { channel4() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             workflowA.channelObj.send(obj1)
         }
@@ -385,7 +390,7 @@ internal class WorkflowTests : StringSpec({
         val obj1b = Obj1("foo", 12)
         val deferred = client.async(workflowA) { channel4bis() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             workflowA.channelObj.send(obj1a)
             delay(100)
@@ -400,7 +405,7 @@ internal class WorkflowTests : StringSpec({
         val obj1b = Obj1("foo", 12)
         val deferred = client.async(workflowA) { channel4ter() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             workflowA.channelObj.send(obj1a)
             delay(100)
@@ -415,7 +420,7 @@ internal class WorkflowTests : StringSpec({
         val obj2 = Obj2("foo", 42)
         val deferred = client.async(workflowA) { channel5() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             workflowA.channelObj.send(obj2)
             delay(100)
@@ -431,7 +436,7 @@ internal class WorkflowTests : StringSpec({
         val obj3 = Obj1("oof", 42)
         val deferred = client.async(workflowA) { channel5bis() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             workflowA.channelObj.send(obj3)
             delay(100)
@@ -449,7 +454,7 @@ internal class WorkflowTests : StringSpec({
         val obj3 = Obj1("oof", 42)
         val deferred = client.async(workflowA) { channel5ter() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj3)
             delay(100)
@@ -466,7 +471,7 @@ internal class WorkflowTests : StringSpec({
         val obj2 = Obj2("bar", 7)
         val deferred = client.async(workflowA) { channel6() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.getWorkflow<WorkflowA>(deferred.id).channelObj.send(obj2)
             delay(100)
@@ -484,7 +489,7 @@ internal class WorkflowTests : StringSpec({
         client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe true
         client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe true
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             workflowATagged.channelA.send("test")
         }
@@ -499,7 +504,7 @@ internal class WorkflowTests : StringSpec({
     "Canceling async workflow" {
         val deferred = client.async(workflowA) { channel1() }
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.cancel(workflowA)
         }
@@ -508,7 +513,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Canceling sync workflow" {
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(100)
             client.cancel(workflowA)
         }
@@ -604,7 +609,7 @@ internal class WorkflowTests : StringSpec({
 
         e.causeError?.whereName shouldBe TaskA::class.java.name
 
-        job = launch(Dispatchers.IO) {
+        job = client.scope.future {
             delay(50)
             client.retryTask<TaskA>(e.causeError?.whereId!!)
         }
