@@ -90,6 +90,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 import java.util.UUID
 import kotlin.reflect.full.isSubclassOf
 
@@ -101,6 +102,8 @@ internal class ClientDispatcher(
     val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
 ) : Dispatcher {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
 
     suspend fun handle(message: ClientMessage) {
@@ -217,6 +220,7 @@ internal class ClientDispatcher(
         // wait for result
         val taskResult = runBlocking {
             responseFlow.first {
+                logger.warn("ResponseFlow: {}", it)
                 it is TaskMessage && it.taskId == deferredTask.taskId
             }
         }
