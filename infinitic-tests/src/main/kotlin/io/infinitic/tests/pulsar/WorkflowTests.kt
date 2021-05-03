@@ -69,9 +69,7 @@ internal class WorkflowTests : StringSpec({
     val worker = InfiniticWorker.fromConfigResource("/pulsar.yml")
 
     beforeSpec {
-        thread {
-            worker.start()
-        }
+        thread { worker.start() }
         delay(2000)
     }
 
