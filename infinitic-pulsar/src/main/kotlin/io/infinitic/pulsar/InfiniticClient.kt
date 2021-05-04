@@ -35,7 +35,6 @@ import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startClientResponseWorker
-import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -99,13 +98,7 @@ class InfiniticClient @JvmOverloads constructor(
                 clientConfig.name
             )
 
-            Transport.inMemory -> {
-                val register = TaskExecutorRegisterImpl()
-                clientConfig.tasks.map { register.registerTask(it.name) { it.instance } }
-                clientConfig.workflows.map { register.registerWorkflow(it.name) { it.instance } }
-
-                InMemoryClient(register, clientConfig.name)
-            }
+            Transport.inMemory -> InMemoryClient.fromConfig(clientConfig)
         }
 
         /**

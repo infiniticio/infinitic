@@ -180,7 +180,10 @@ class InfiniticWorker private constructor(
 
             // starting task executors running workflows tasks
             workflow.`class`?.let {
-                println("- workflow executor".padEnd(25) + ": (instances: ${workflow.concurrency})")
+                println(
+                    "- workflow executor".padEnd(25) +
+                        ": (instances: ${workflow.concurrency}) ${workflow.instance::class.java.name}"
+                )
                 taskExecutorRegister.registerWorkflow(workflow.name) { workflow.instance }
                 startPulsarTaskExecutors(
                     workflowName,
@@ -300,7 +303,10 @@ class InfiniticWorker private constructor(
 
             // starting task executors running tasks
             task.`class`?.let {
-                println("- task executor".padEnd(25) + ": (instances: ${task.concurrency})")
+                println(
+                    "- task executor".padEnd(25) +
+                        ": (instances: ${task.concurrency}) ${task.instance::class.java.name}"
+                )
                 taskExecutorRegister.registerTask(task.name) { task.instance }
                 startPulsarTaskExecutors(
                     taskName,

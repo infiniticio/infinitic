@@ -27,6 +27,7 @@ dependencies {
     api(Libs.Coroutines.core)
 
     api(project(":infinitic-common"))
+    api(project(":infinitic-config"))
     api(project(":infinitic-client"))
     api(project(":infinitic-storage"))
     implementation(project(":infinitic-cache"))

@@ -27,6 +27,7 @@ package io.infinitic.inMemory
 
 import io.infinitic.client.Client
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.config.ClientConfig
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
@@ -42,11 +43,14 @@ import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate")
@@ -54,6 +58,32 @@ class InfiniticClient(
     taskExecutorRegister: TaskExecutorRegister,
     val name: String? = null
 ) : Client() {
+    companion object {
+        val logger: Logger = LoggerFactory.getLogger(InfiniticClient::class.java.name)
+
+        /**
+         * Create InfiniticClient from a ClientConfig
+         */
+        @JvmStatic
+        fun fromConfig(clientConfig: ClientConfig): InfiniticClient {
+            val register = TaskExecutorRegisterImpl()
+            clientConfig.tasks.forEach {
+                register.registerTask(it.name) { it.instance }
+            }
+            if (clientConfig.tasks.isEmpty()) {
+                logger.warn("No task registered in your ClientConfig file")
+            }
+
+            clientConfig.workflows.forEach {
+                register.registerWorkflow(it.name) { it.instance }
+            }
+            if (clientConfig.workflows.isEmpty()) {
+                logger.warn("No workflow registered in your ClientConfig file")
+            }
+
+            return InfiniticClient(register, clientConfig.name)
+        }
+    }
 
     private val job: Job
 

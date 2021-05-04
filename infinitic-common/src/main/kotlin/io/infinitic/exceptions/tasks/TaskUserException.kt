@@ -35,7 +35,7 @@ sealed class TaskUserException(
 class ClassNotFoundException(
     name: String
 ) : TaskUserException(
-    msg = "Impossible to find a Class associated to $name",
+    msg = "No implementation class provided for $name",
     help = "Use \"register\" method to provide an instance that will be used associated to $name"
 )
 
