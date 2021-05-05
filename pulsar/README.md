@@ -59,5 +59,5 @@ To obtain the service url of Pulsar *from the Pulsar Manager container*, do:
 ```bash
 docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pulsar_pulsar_1
 ```
-you should obtain something like `172.18.0.2`.
-Then the service url to use for adding an environment is `http://172.18.0.2:8080`
+you should obtain something like `172.20.0.3`.
+Then the service url to use for adding an environment is `http://172.20.0.3:8080`

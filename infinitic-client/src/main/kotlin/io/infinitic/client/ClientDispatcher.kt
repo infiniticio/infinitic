@@ -193,7 +193,7 @@ internal class ClientDispatcher(
 
         // send messages
         scope.future {
-            addTaskTags.map { sendToTaskTagEngine(it) }
+            addTaskTags.forEach { sendToTaskTagEngine(it) }
             sendToTaskEngine(dispatchTask)
         }.join()
 
@@ -293,7 +293,7 @@ internal class ClientDispatcher(
 
         // send messages
         scope.future {
-            addWorkflowTags.map { sendToWorkflowTagEngine(it) }
+            addWorkflowTags.forEach { sendToWorkflowTagEngine(it) }
             sendToWorkflowEngine(dispatchWorkflow)
         }.join()
 
