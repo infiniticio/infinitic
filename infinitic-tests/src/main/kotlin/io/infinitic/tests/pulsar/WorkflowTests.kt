@@ -103,6 +103,18 @@ internal class WorkflowTests : StringSpec({
         result shouldBe "void"
     }
 
+    "run task from parent interface" {
+        val result = workflowA.parent()
+
+        result shouldBe "ok"
+    }
+
+    "run childWorkflow from parent interface" {
+        val result = workflowA.wparent()
+
+        result shouldBe "ok"
+    }
+
     "get id from context" {
         val deferred = client.async(workflowA) { context1() }
         val result = deferred.await()

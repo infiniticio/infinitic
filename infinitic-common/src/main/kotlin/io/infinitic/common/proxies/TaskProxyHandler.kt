@@ -27,6 +27,7 @@ package io.infinitic.common.proxies
 
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
 import java.lang.reflect.Method
@@ -40,6 +41,8 @@ class TaskProxyHandler<T : Any>(
     var perTag: TaskTag? = null,
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
+
+    val taskName = TaskName(klass.name)
 
     init {
         require(perTaskId == null || perTag == null)

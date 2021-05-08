@@ -216,7 +216,7 @@ abstract class Client : InfiniticClientInterface {
                 dispatcher.dispatch(handler)
             }
             is WorkflowProxyHandler<*> -> {
-                if (! handler.isNew()) throw CanNotReuseWorkflowStubException(handler.klass.name)
+                if (! handler.isNew()) throw CanNotReuseWorkflowStubException("${handler.workflowName}")
                 handler.isSync = false
                 proxy.method()
                 dispatcher.dispatch(handler)
@@ -283,21 +283,21 @@ abstract class Client : InfiniticClientInterface {
     }
 
     private fun <T : Any> cancelTaskHandler(handler: TaskProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "cancel")
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "cancel")
 
         return scope.future {
             when {
                 handler.perTaskId != null -> {
                     val msg = CancelTask(
                         taskId = handler.perTaskId!!,
-                        taskName = TaskName(handler.klass.name)
+                        taskName = handler.taskName
                     )
                     sendToTaskEngine(msg)
                 }
                 handler.perTag != null -> {
                     val msg = CancelTaskPerTag(
                         taskTag = handler.perTag!!,
-                        taskName = TaskName(handler.klass.name)
+                        taskName = handler.taskName
                     )
                     sendToTaskTagEngine(msg)
                 }
@@ -307,21 +307,21 @@ abstract class Client : InfiniticClientInterface {
     }
 
     private fun <T : Any> retryTaskHandler(handler: TaskProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "retry")
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "retry")
 
         return scope.future {
             when {
                 handler.perTaskId != null -> {
                     val msg = RetryTask(
                         taskId = handler.perTaskId!!,
-                        taskName = TaskName(handler.klass.name)
+                        taskName = handler.taskName
                     )
                     sendToTaskEngine(msg)
                 }
                 handler.perTag != null -> {
                     val msg = RetryTaskPerTag(
                         taskTag = handler.perTag!!,
-                        taskName = TaskName(handler.klass.name)
+                        taskName = handler.taskName
                     )
                     sendToTaskTagEngine(msg)
                 }
@@ -331,36 +331,36 @@ abstract class Client : InfiniticClientInterface {
     }
 
     private fun <T : Any> awaitTaskHandler(handler: TaskProxyHandler<T>): Any {
-        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException(handler.klass.name, "await")
+        if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "await")
 
         return when {
             handler.perTaskId != null -> DeferredTask<Any>(
-                taskName = TaskName(handler.klass.name),
+                taskName = handler.taskName,
                 taskId = handler.perTaskId!!,
                 isSync = false,
                 dispatcher = dispatcher
             ).await()
-            handler.perTag != null -> throw CanNotAwaitStubPerTag(handler.klass.name)
+            handler.perTag != null -> throw CanNotAwaitStubPerTag("${handler.taskName}")
             else -> thisShouldNotHappen()
         }
     }
 
     private fun <T : Any> cancelWorkflowHandler(handler: WorkflowProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException("${handler.workflowName}", "retry")
 
         return scope.future {
             when {
                 handler.perWorkflowId != null -> {
                     val msg = CancelWorkflow(
                         workflowId = handler.perWorkflowId!!,
-                        workflowName = WorkflowName(handler.klass.name)
+                        workflowName = handler.workflowName
                     )
                     sendToWorkflowEngine(msg)
                 }
                 handler.perTag != null -> {
                     val msg = CancelWorkflowPerTag(
                         workflowTag = handler.perTag!!,
-                        workflowName = WorkflowName(handler.klass.name)
+                        workflowName = handler.workflowName
                     )
                     sendToWorkflowTagEngine(msg)
                 }
@@ -370,21 +370,21 @@ abstract class Client : InfiniticClientInterface {
     }
 
     private fun <T : Any> retryWorkflowHandler(handler: WorkflowProxyHandler<T>) {
-        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "retry")
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException("${handler.workflowName}", "retry")
 
         return scope.future {
             when {
                 handler.perWorkflowId != null -> {
                     val msg = RetryWorkflowTask(
                         workflowId = handler.perWorkflowId!!,
-                        workflowName = WorkflowName(handler.klass.name)
+                        workflowName = handler.workflowName
                     )
                     sendToWorkflowEngine(msg)
                 }
                 handler.perTag != null -> {
                     val msg = RetryWorkflowTaskPerTag(
                         workflowTag = handler.perTag!!,
-                        workflowName = WorkflowName(handler.klass.name)
+                        workflowName = handler.workflowName
                     )
                     sendToWorkflowTagEngine(msg)
                 }
@@ -394,16 +394,16 @@ abstract class Client : InfiniticClientInterface {
     }
 
     private fun <T : Any> awaitWorkflowHandler(handler: WorkflowProxyHandler<T>): Any {
-        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException(handler.klass.name, "await")
+        if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException("${handler.workflowName}", "await")
 
         return when {
             handler.perWorkflowId != null -> DeferredWorkflow<Any>(
-                workflowName = WorkflowName(handler.klass.name),
+                workflowName = handler.workflowName,
                 workflowId = handler.perWorkflowId!!,
                 isSync = false,
                 dispatcher = dispatcher
             ).await()
-            handler.perTag != null -> throw CanNotAwaitStubPerTag(handler.klass.name)
+            handler.perTag != null -> throw CanNotAwaitStubPerTag("${handler.workflowName}")
             else -> thisShouldNotHappen()
         }
     }

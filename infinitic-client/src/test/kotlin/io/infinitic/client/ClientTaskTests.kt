@@ -429,6 +429,34 @@ class ClientTaskTests : StringSpec({
         )
     }
 
+    "dispatch a method from a parent interface" {
+        // when
+        val fakeTask = client.newTask<FakeTask>()
+        var result: String
+        coroutineScope {
+            result = fakeTask.parent()
+        }
+        // then
+        result shouldBe "success"
+        taskTagSlots.size shouldBe 0
+        val msg = taskSlot.captured
+        msg shouldBe DispatchTask(
+            clientName = client.clientName,
+            clientWaiting = true,
+            taskId = msg.taskId,
+            taskName = TaskName(FakeTask::class.java.name),
+            methodName = MethodName("parent"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters.from(),
+            workflowId = null,
+            workflowName = null,
+            methodRunId = null,
+            taskTags = setOf(),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta()
+        )
+    }
+
     "await for a task just dispatched" {
         // when
         val fakeTask = client.newTask<FakeTask>()
