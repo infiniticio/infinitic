@@ -68,13 +68,14 @@ data class DispatchTask(
 ) : Command() {
     companion object {
         fun from(
+            klass: Class<*>,
             method: Method,
             args: Array<out Any>,
             taskTags: Set<TaskTag>,
             taskMeta: TaskMeta,
             taskOptions: TaskOptions
         ) = DispatchTask(
-            taskName = TaskName.from(method),
+            taskName = TaskName(klass.name),
             methodParameters = MethodParameters.from(method, args),
             methodParameterTypes = MethodParameterTypes.from(method),
             methodName = MethodName.from(method),
@@ -97,13 +98,14 @@ data class DispatchChildWorkflow(
 ) : Command() {
     companion object {
         fun from(
+            klass: Class<*>,
             method: Method,
             args: Array<out Any>,
             workflowTags: Set<WorkflowTag>,
             workflowMeta: WorkflowMeta,
             workflowOptions: WorkflowOptions
         ) = DispatchChildWorkflow(
-            childWorkflowName = WorkflowName.from(method),
+            childWorkflowName = WorkflowName(klass.name),
             childMethodName = MethodName.from(method),
             childMethodParameterTypes = MethodParameterTypes.from(method),
             childMethodParameters = MethodParameters.from(method, args),

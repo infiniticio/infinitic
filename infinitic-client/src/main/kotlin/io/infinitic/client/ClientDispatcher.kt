@@ -162,7 +162,7 @@ internal class ClientDispatcher(
         checkMethodIsNotSuspend(method)
 
         val taskId = TaskId()
-        val taskName = TaskName.from(method)
+        val taskName = TaskName(handler.klass.name)
         val isSync = handler.isSync
 
         // add provided tags for this id
@@ -262,7 +262,7 @@ internal class ClientDispatcher(
         checkMethodIsNotSuspend(method)
 
         val workflowId = WorkflowId()
-        val workflowName = WorkflowName.from(method)
+        val workflowName = WorkflowName(handler.klass.name)
         val isSync = handler.isSync
 
         // add provided tags
