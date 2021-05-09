@@ -624,13 +624,12 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Tag should be added then deleted after completion" {
-        val deferred = client.async(workflowATagged) { await(200) }
+        client.async(workflowATagged) { await(100) }
+        delay(50)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 1
 
-        deferred.await()
-
         // delay is necessary to be sure that tag engine has processed
-        delay(200)
+        delay(700)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
     }
 })
