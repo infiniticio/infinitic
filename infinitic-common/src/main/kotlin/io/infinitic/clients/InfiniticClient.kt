@@ -95,9 +95,9 @@ interface InfiniticClient {
      */
     fun <T : Any, S> asyncTask(
         klass: Class<out T>,
-        tags: Set<String>,
-        options: TaskOptions?,
-        meta: Map<String, ByteArray>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf(),
         method: T.() -> S
     ) = async(newTask(klass, tags, options, meta), method)
 
@@ -125,9 +125,9 @@ interface InfiniticClient {
 
     fun <T : Any, S> asyncWorkflow(
         klass: Class<out T>,
-        tags: Set<String>,
-        options: WorkflowOptions?,
-        meta: Map<String, ByteArray>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf(),
         method: T.() -> S
     ) = async(newWorkflow(klass, tags, options, meta), method)
 
