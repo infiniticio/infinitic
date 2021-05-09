@@ -33,7 +33,11 @@ import io.infinitic.tests.workflows.WorkflowA
 import java.time.Duration
 import java.util.UUID
 
-interface TaskA {
+interface ParentInterface {
+    fun parent(): String
+}
+
+interface TaskA : ParentInterface {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
     fun await(delay: Long): Long
@@ -71,6 +75,8 @@ class TaskAImpl : Task(), TaskA {
         Thread.sleep(50)
         context.client.retryTask<TaskA>(id)
     }
+
+    override fun parent() = "ok"
 
     override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }

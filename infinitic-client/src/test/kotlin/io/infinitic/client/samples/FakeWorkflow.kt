@@ -27,7 +27,11 @@ package io.infinitic.client.samples
 
 import io.infinitic.workflows.Channel
 
-internal interface FakeWorkflow {
+internal interface FakeWorkflowParent {
+    fun parent(): String
+}
+
+internal interface FakeWorkflow : FakeWorkflowParent {
     fun m1()
     fun m1(i: Int?): String
     fun m1(str: String): Any?

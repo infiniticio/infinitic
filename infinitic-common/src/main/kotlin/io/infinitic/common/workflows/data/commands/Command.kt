@@ -45,7 +45,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import kotlinx.serialization.Serializable
-import java.lang.reflect.Method
 
 @Serializable
 sealed class Command {
@@ -65,25 +64,7 @@ data class DispatchTask(
     val taskTags: Set<TaskTag>,
     val taskMeta: TaskMeta,
     val taskOptions: TaskOptions
-) : Command() {
-    companion object {
-        fun from(
-            method: Method,
-            args: Array<out Any>,
-            taskTags: Set<TaskTag>,
-            taskMeta: TaskMeta,
-            taskOptions: TaskOptions
-        ) = DispatchTask(
-            taskName = TaskName.from(method),
-            methodParameters = MethodParameters.from(method, args),
-            methodParameterTypes = MethodParameterTypes.from(method),
-            methodName = MethodName.from(method),
-            taskTags = taskTags,
-            taskMeta = taskMeta,
-            taskOptions = taskOptions
-        )
-    }
-}
+) : Command()
 
 @Serializable
 data class DispatchChildWorkflow(
@@ -94,29 +75,10 @@ data class DispatchChildWorkflow(
     val workflowTags: Set<WorkflowTag>,
     val workflowMeta: WorkflowMeta,
     val workflowOptions: WorkflowOptions
-) : Command() {
-    companion object {
-        fun from(
-            method: Method,
-            args: Array<out Any>,
-            workflowTags: Set<WorkflowTag>,
-            workflowMeta: WorkflowMeta,
-            workflowOptions: WorkflowOptions
-        ) = DispatchChildWorkflow(
-            childWorkflowName = WorkflowName.from(method),
-            childMethodName = MethodName.from(method),
-            childMethodParameterTypes = MethodParameterTypes.from(method),
-            childMethodParameters = MethodParameters.from(method, args),
-            workflowTags = workflowTags,
-            workflowMeta = workflowMeta,
-            workflowOptions = workflowOptions
-        )
-    }
-}
+) : Command()
 
 @Serializable
 object StartAsync : Command() {
-    // as we can not define a data class without parameter, we add manually the equals func
     override fun equals(other: Any?) = javaClass == other?.javaClass
 }
 

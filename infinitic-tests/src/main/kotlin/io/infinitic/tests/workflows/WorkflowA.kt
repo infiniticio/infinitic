@@ -28,6 +28,7 @@ package io.infinitic.tests.workflows
 import com.jayway.jsonpath.Criteria.where
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.exceptions.workflows.FailedDeferredException
+import io.infinitic.tests.tasks.ParentInterface
 import io.infinitic.tests.tasks.TaskA
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
@@ -45,13 +46,14 @@ data class Obj1(val foo: String, val bar: Int) : Obj()
 @Serializable
 data class Obj2(val foo: String, val bar: Int) : Obj()
 
-interface WorkflowA {
+interface WorkflowA : ParentInterface {
     val channelObj: SendChannel<Obj>
     val channelA: SendChannel<String>
     val channelB: SendChannel<String>
 
     fun empty(): String
     fun await(duration: Long): Long
+    fun wparent(): String
     fun context1(): UUID
     fun context2(): Set<String>
     fun context3(): WorkflowMeta
@@ -119,6 +121,13 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun empty() = "void"
 
     override fun await(duration: Long) = taskA.await(duration)
+
+    override fun parent() = taskA.parent()
+
+    override fun wparent(): String {
+        val workflowA = newWorkflow<WorkflowA>()
+        return workflowA.parent()
+    }
 
     override fun context1(): UUID = context.id
 

@@ -165,6 +165,29 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
+    "Should be able to dispatch a workflow from a prent interface" {
+        // when
+        val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
+        val deferred = client.async(fakeWorkflow) { parent() }
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe DispatchWorkflow(
+            clientName = client.clientName,
+            clientWaiting = false,
+            workflowId = WorkflowId(deferred.id),
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            methodName = MethodName("parent"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters(),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentMethodRunId = null,
+            workflowTags = setOf(),
+            workflowOptions = WorkflowOptions(),
+            workflowMeta = WorkflowMeta()
+        )
+    }
+
     "Should be able to dispatch a workflow with Java syntax" {
         // when
         val fakeWorkflow = client.newWorkflow(FakeWorkflow::class.java)

@@ -29,7 +29,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
-open class MethodProxyHandler<T>(open val klass: Class<T>) : InvocationHandler {
+open class MethodProxyHandler<T>(protected open val klass: Class<T>) : InvocationHandler {
     var isSync: Boolean = true
     var methods: MutableList<Method> = mutableListOf()
     var args: MutableList<Array<out Any>> = mutableListOf()

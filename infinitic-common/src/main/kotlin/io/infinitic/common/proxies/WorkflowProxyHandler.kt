@@ -27,6 +27,7 @@ package io.infinitic.common.proxies
 
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import java.lang.reflect.Method
@@ -40,6 +41,8 @@ class WorkflowProxyHandler<T : Any>(
     var perTag: WorkflowTag? = null,
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
+
+    val workflowName = WorkflowName(klass.name)
 
     init {
         require(perWorkflowId == null || perTag == null)
