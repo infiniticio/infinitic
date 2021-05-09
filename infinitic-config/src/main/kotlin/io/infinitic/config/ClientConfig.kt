@@ -29,6 +29,8 @@ import io.infinitic.config.data.Pulsar
 import io.infinitic.config.data.Task
 import io.infinitic.config.data.Transport
 import io.infinitic.config.data.Workflow
+import io.infinitic.config.loaders.loadConfigFromFile
+import io.infinitic.config.loaders.loadConfigFromResource
 
 data class ClientConfig(
     /*
@@ -61,5 +63,19 @@ data class ClientConfig(
         if (transport == Transport.pulsar) {
             require(pulsar != null) { "Missing Pulsar configuration" }
         }
+    }
+
+    companion object {
+        /**
+         * Create ClientConfig from file in file system
+         */
+        @JvmStatic
+        fun fromFile(vararg files: String): ClientConfig = loadConfigFromFile(files.toList())
+
+        /**
+         * Create ClientConfig from file in resources directory
+         */
+        @JvmStatic
+        fun fromResource(vararg resources: String): ClientConfig = loadConfigFromResource(resources.toList())
     }
 }

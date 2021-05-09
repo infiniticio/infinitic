@@ -28,7 +28,7 @@ import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.PropertySource
 import java.io.File
 
-inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T = ConfigLoader
+internal inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T = ConfigLoader
     .Builder()
     .also { builder ->
         resources.toList().map {
@@ -38,7 +38,7 @@ inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T 
     .build()
     .loadConfigOrThrow()
 
-inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = ConfigLoader
+internal inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = ConfigLoader
     .Builder()
     .also { builder ->
         files.toList().map {

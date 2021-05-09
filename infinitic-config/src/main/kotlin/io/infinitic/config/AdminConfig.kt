@@ -26,10 +26,26 @@
 package io.infinitic.config
 
 import io.infinitic.config.data.Pulsar
+import io.infinitic.config.loaders.loadConfigFromFile
+import io.infinitic.config.loaders.loadConfigFromResource
 
 data class AdminConfig(
     /*
     Pulsar configuration
      */
     @JvmField val pulsar: Pulsar
-)
+) {
+    companion object {
+        /**
+         * Create AdminConfig from file in file system
+         */
+        @JvmStatic
+        fun fromFile(vararg files: String): AdminConfig = loadConfigFromFile(files.toList())
+
+        /**
+         * Create AdminConfig from file in resources directory
+         */
+        @JvmStatic
+        fun fromResource(vararg resources: String): AdminConfig = loadConfigFromResource(resources.toList())
+    }
+}

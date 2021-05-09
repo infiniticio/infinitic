@@ -33,8 +33,6 @@ import io.infinitic.config.WorkerConfig
 import io.infinitic.config.cache.getKeySetCache
 import io.infinitic.config.cache.getKeyValueCache
 import io.infinitic.config.data.Transport
-import io.infinitic.config.loaders.loadConfigFromFile
-import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.config.storage.getKeySetStorage
 import io.infinitic.config.storage.getKeyValueStorage
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
@@ -108,18 +106,18 @@ class InfiniticWorker private constructor(
         }
 
         /**
-         * Create InfiniticWorker from WorkerConfig resources
+         * Create InfiniticWorker from file in resources directory
          */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
-            fromConfig(loadConfigFromResource(resources.toList()))
+            fromConfig(WorkerConfig.fromResource(*resources))
 
         /**
-         * Create InfiniticWorker from WorkerConfig files
+         * Create InfiniticWorker from file in system file
          */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
-            fromConfig(loadConfigFromFile(files.toList()))
+            fromConfig(WorkerConfig.fromFile(*files))
     }
 
     /**

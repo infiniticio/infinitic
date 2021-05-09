@@ -28,8 +28,6 @@ package io.infinitic.pulsar
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.config.AdminConfig
-import io.infinitic.config.loaders.loadConfigFromFile
-import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.admin.setupInfinitic
 import io.infinitic.pulsar.topics.TopicNamer
 import io.infinitic.pulsar.topics.TopicType
@@ -75,18 +73,18 @@ class InfiniticAdmin @JvmOverloads constructor(
         }
 
         /**
-         * Create InfiniticAdmin from AdminConfig resources
+         * Create InfiniticAdmin from file in resources directory
          */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
-            fromConfig(loadConfigFromResource(resources.toList()))
+            fromConfig(AdminConfig.fromResource(*resources))
 
         /**
-         * Create InfiniticAdmin from AdminConfig files
+         * Create InfiniticAdmin from file in system file
          */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
-            fromConfig(loadConfigFromFile(files.toList()))
+            fromConfig(AdminConfig.fromFile(*files))
     }
 
     /**

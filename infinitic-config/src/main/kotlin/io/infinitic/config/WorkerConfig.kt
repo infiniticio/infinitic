@@ -31,6 +31,8 @@ import io.infinitic.config.data.Pulsar
 import io.infinitic.config.data.Task
 import io.infinitic.config.data.Transport
 import io.infinitic.config.data.Workflow
+import io.infinitic.config.loaders.loadConfigFromFile
+import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.redis.Redis
 
@@ -123,6 +125,20 @@ data class WorkerConfig(
                 if (it.default) it.concurrency = workflow.concurrency
             }
         }
+    }
+
+    companion object {
+        /**
+         * Create WorkerConfig from file in file system
+         */
+        @JvmStatic
+        fun fromFile(vararg files: String): WorkerConfig = loadConfigFromFile(files.toList())
+
+        /**
+         * Create WorkerConfig from file in resources directory
+         */
+        @JvmStatic
+        fun fromResource(vararg resources: String): WorkerConfig = loadConfigFromResource(resources.toList())
     }
 
     private fun checkStateStorage(stateStorage: StateStorage?, name: String) {

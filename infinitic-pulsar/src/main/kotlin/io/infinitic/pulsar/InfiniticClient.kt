@@ -29,8 +29,6 @@ import io.infinitic.client.Client
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.config.ClientConfig
 import io.infinitic.config.data.Transport
-import io.infinitic.config.loaders.loadConfigFromFile
-import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -115,17 +113,17 @@ class InfiniticClient @JvmOverloads constructor(
         }
 
         /**
-         * Create Client from ClientConfig resources
+         * Create Client from file in resources directory
          */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
-            fromConfig(loadConfigFromResource(resources.toList()))
+            fromConfig(ClientConfig.fromResource(*resources))
 
         /**
-         * Create Client from ClientConfig files
+         * Create Client from file in system file
          */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
-            fromConfig(loadConfigFromFile(files.toList()))
+            fromConfig(ClientConfig.fromFile(*files))
     }
 }
