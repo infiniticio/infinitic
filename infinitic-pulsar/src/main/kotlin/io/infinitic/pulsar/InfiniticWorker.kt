@@ -32,6 +32,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.config.WorkerConfig
 import io.infinitic.config.cache.getKeySetCache
 import io.infinitic.config.cache.getKeyValueCache
+import io.infinitic.config.data.Transport
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.config.storage.getKeySetStorage
@@ -64,6 +65,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.api.PulsarClient
 import org.jetbrains.annotations.TestOnly
 import org.slf4j.LoggerFactory
@@ -129,17 +131,24 @@ class InfiniticWorker private constructor(
      * Start worker
      */
     fun start() {
-        val threadPool = Executors.newCachedThreadPool()
-        val scope = CoroutineScope(threadPool.asCoroutineDispatcher())
-
-        scope.launch {
-            try {
-                coroutineScope { start(pulsarClient, workerConfig) }
-            } finally {
-                // must close Pulsar client to avoid other key-shared subscriptions to be blocked
+        when (workerConfig.transport) {
+            Transport.inMemory -> {
+                logger.info("Infinitic Worker closing due to `inMemory` transport setting")
                 close()
-                // closing the worker is important for devops
-                threadPool.shutdown()
+            }
+            Transport.pulsar -> {
+                val threadPool = Executors.newCachedThreadPool()
+
+                runBlocking(threadPool.asCoroutineDispatcher()) {
+                    try {
+                        coroutineScope { start(pulsarClient, workerConfig) }
+                    } finally {
+                        // closing Pulsar client is necessary to avoid other key-shared subscriptions to be blocked
+                        close()
+                        // shutdown the threadPool is necessary for the worker to close
+                        threadPool.shutdown()
+                    }
+                }
             }
         }
     }
@@ -163,7 +172,6 @@ class InfiniticWorker private constructor(
         pulsarClient: PulsarClient,
         config: WorkerConfig
     ) = launch {
-
         val workerName = getProducerName(pulsarClient, config.name)
         val tenant = config.pulsar.tenant
         val namespace = config.pulsar.namespace

@@ -21,6 +21,8 @@
 #
 # Licensor: infinitic.io
 
+transport: inMemory
+
 stateStorage: redis
 
 stateCache: caffeine

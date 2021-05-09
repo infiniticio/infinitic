@@ -23,28 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.inMemory
+package io.infinitic.tests.pulsar
 
 import io.infinitic.clients.getWorkflow
 import io.infinitic.clients.getWorkflowIds
 import io.infinitic.clients.newWorkflow
 import io.infinitic.clients.retryTask
-import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.CanceledDeferredException
 import io.infinitic.exceptions.clients.FailedDeferredException
-import io.infinitic.inMemory.InfiniticClient
-import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
+import io.infinitic.pulsar.InfiniticClient
+import io.infinitic.pulsar.InfiniticWorker
 import io.infinitic.tests.tasks.TaskA
-import io.infinitic.tests.tasks.TaskAImpl
 import io.infinitic.tests.workflows.Obj1
 import io.infinitic.tests.workflows.Obj2
 import io.infinitic.tests.workflows.WorkflowA
-import io.infinitic.tests.workflows.WorkflowAImpl
 import io.infinitic.tests.workflows.WorkflowB
-import io.infinitic.tests.workflows.WorkflowBImpl
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
@@ -55,14 +49,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
+import kotlin.concurrent.thread
 import kotlin.coroutines.coroutineContext
 import io.infinitic.exceptions.workflows.CanceledDeferredException as CanceledInWorkflowException
 import io.infinitic.exceptions.workflows.FailedDeferredException as FailedInWorkflowException
 
 internal class WorkflowTests : StringSpec({
 
-    // each test should not be longer than 5s (for github)
-    configuration.timeout = 5000
+    // each test should not be longer than 10s (for github)
+    configuration.timeout = 10000
 
     lateinit var workflowA: WorkflowA
     lateinit var workflowATagged: WorkflowA
@@ -70,15 +65,20 @@ internal class WorkflowTests : StringSpec({
     lateinit var workflowB: WorkflowB
     lateinit var job: CompletableFuture<*>
 
-    val taskExecutorRegister = TaskExecutorRegisterImpl().apply {
-        registerTask(TaskA::class.java.name) { TaskAImpl() }
-        registerWorkflow(WorkflowA::class.java.name) { WorkflowAImpl() }
-        registerWorkflow(WorkflowB::class.java.name) { WorkflowBImpl() }
+    val client = InfiniticClient.fromConfigResource("/pulsar.yml")
+    val worker = InfiniticWorker.fromConfigResource("/pulsar.yml")
+
+    beforeSpec {
+        thread { worker.start() }
     }
 
-    val client = InfiniticClient(taskExecutorRegister, "client: inMemory")
+    afterSpec {
+        worker.close()
+    }
 
     beforeTest {
+        worker.storageFlush()
+
         job = CoroutineScope(coroutineContext).future { }
         workflowA = client.newWorkflow()
         workflowATagged = client.newWorkflow(setOf("foo", "bar"))
@@ -87,17 +87,13 @@ internal class WorkflowTests : StringSpec({
     }
 
     /**
-     * Be careful: deferred.await() blocks the current thread
+     * deferred.await() blocks the current thread
      * that's why we use `client.scope.future {}` instead of `launch {}`
      * if not, this code is not executed
      * Using the same scope as client guarantees also that any exception in this part will be visible
      */
     afterTest {
         job.join()
-    }
-
-    afterSpec {
-        client.close()
     }
 
     "empty Workflow" {
@@ -494,26 +490,6 @@ internal class WorkflowTests : StringSpec({
         deferred.await() shouldBe "foobar42"
     }
 
-    "Tag should be added and deleted after completion" {
-        val deferred = client.async(workflowATagged) { channel1() }
-        val id = deferred.id
-        // checks id has been added to tag storage
-        delay(100)
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe true
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe true
-
-        job = client.scope.future {
-            delay(100)
-            workflowATagged.channelA.send("test")
-        }
-
-        deferred.await() shouldBe "test"
-
-        delay(100)
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe false
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(WorkflowId(id)) shouldBe false
-    }
-
     "Canceling async workflow" {
         val deferred = client.async(workflowA) { channel1() }
 
@@ -634,49 +610,27 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing9() shouldBe true
     }
 
-    "child workflow is canceled when parent workflow is canceled" {
+    "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
         client.async(workflowATagged) { cancel1() }
 
-        // delay to be sure the child workflow has been dispatched
+        // delay to be sure the child workflow has been dispatched and tag engines have processed
         delay(500)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 2
-
         client.cancel(workflowATagged)
 
-        delay(50)
+        // delay to be sure that workflows have been canceled and tag engines have processed
+        delay(500)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
     }
 
     "Tag should be added then deleted after completion" {
         val deferred = client.async(workflowATagged) { await(200) }
-        val workflowId = WorkflowId(deferred.id)
-
-        delay(50)
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe true
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe true
+        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 1
 
         deferred.await()
 
-        delay(50)
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe false
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe false
-    }
-
-    "Tag should be added then deleted after cancellation" {
-        val deferred = client.async(workflowATagged) { channel1() }
-        val workflowId = WorkflowId(deferred.id)
-
-        delay(50)
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe true
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe true
-
-        client.cancel(workflowATagged)
-
-        delay(50)
-        shouldThrow<CanceledDeferredException> { deferred.await() }
-
-        delay(50)
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("foo"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe false
-        client.workflowTagStorage.getWorkflowIds(WorkflowTag("bar"), WorkflowName(WorkflowA::class.java.name)).contains(workflowId) shouldBe false
+        // delay is necessary to be sure that tag engine has processed
+        delay(200)
+        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
     }
 })
