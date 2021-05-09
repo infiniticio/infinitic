@@ -257,7 +257,7 @@ abstract class Client : InfiniticClientInterface {
     /**
      *  Complete a task or a workflow from a stub
      */
-    override fun <T : Any> complete(proxy: T, value: Any) {
+    override fun <T : Any> complete(proxy: T, value: Any?) {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "complete")
 
         when (val handler = Proxy.getInvocationHandler(proxy)) {
