@@ -21,6 +21,9 @@
 #
 # Licensor: infinitic.io
 
+# Uncomment the line below to perform test on a local Pulsar cluster
+transport: inMemory
+
 stateStorage: redis
 
 stateCache: caffeine

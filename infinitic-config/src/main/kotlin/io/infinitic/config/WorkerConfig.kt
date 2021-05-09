@@ -29,6 +29,7 @@ import io.infinitic.cache.StateCache
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.config.data.Pulsar
 import io.infinitic.config.data.Task
+import io.infinitic.config.data.Transport
 import io.infinitic.config.data.Workflow
 import io.infinitic.storage.StateStorage
 import io.infinitic.storage.redis.Redis
@@ -38,6 +39,11 @@ data class WorkerConfig(
     Worker name - used to identify multiple workers
      */
     @JvmField val name: String? = null,
+
+    /*
+    Transport configuration
+     */
+    @JvmField val transport: Transport = Transport.pulsar,
 
     /*
     Default state storage
