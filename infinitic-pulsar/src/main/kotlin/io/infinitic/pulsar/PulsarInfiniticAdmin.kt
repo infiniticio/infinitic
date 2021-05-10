@@ -37,7 +37,7 @@ import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 
-class InfiniticAdmin @JvmOverloads constructor(
+class PulsarInfiniticAdmin @JvmOverloads constructor(
     @JvmField val pulsarAdmin: PulsarAdmin,
     @JvmField val tenant: String,
     @JvmField val namespace: String,
@@ -50,7 +50,7 @@ class InfiniticAdmin @JvmOverloads constructor(
          * Create InfiniticAdmin from a custom PulsarAdmin and an AdminConfig instance
          */
         @JvmStatic
-        fun from(pulsarAdmin: PulsarAdmin, adminConfig: AdminConfig) = InfiniticAdmin(
+        fun from(pulsarAdmin: PulsarAdmin, adminConfig: AdminConfig) = PulsarInfiniticAdmin(
             pulsarAdmin,
             adminConfig.pulsar.tenant,
             adminConfig.pulsar.namespace,
@@ -61,7 +61,7 @@ class InfiniticAdmin @JvmOverloads constructor(
          * Create InfiniticAdmin from an AdminConfig instance
          */
         @JvmStatic
-        fun fromConfig(adminConfig: AdminConfig): InfiniticAdmin {
+        fun fromConfig(adminConfig: AdminConfig): PulsarInfiniticAdmin {
             // build PulsarAdmin from config
             val pulsarAdmin = PulsarAdmin
                 .builder()

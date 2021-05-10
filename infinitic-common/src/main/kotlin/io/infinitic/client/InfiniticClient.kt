@@ -23,13 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.clients
+package io.infinitic.client
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import kotlinx.coroutines.CoroutineScope
 import java.util.UUID
 
 interface InfiniticClient {
+    val clientName: ClientName
+
+    val scope: CoroutineScope
+
     /**
      * Close client
      */

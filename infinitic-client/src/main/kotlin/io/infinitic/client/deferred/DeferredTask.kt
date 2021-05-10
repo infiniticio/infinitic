@@ -26,7 +26,7 @@
 package io.infinitic.client.deferred
 
 import io.infinitic.client.ClientDispatcher
-import io.infinitic.clients.Deferred
+import io.infinitic.client.Deferred
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import java.util.UUID

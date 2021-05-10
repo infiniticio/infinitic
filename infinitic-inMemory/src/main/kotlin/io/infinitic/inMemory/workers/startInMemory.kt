@@ -25,7 +25,7 @@
 
 package io.infinitic.inMemory.workers
 
-import io.infinitic.client.Client
+import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.workers.MessageToProcess
 import io.infinitic.inMemory.transport.InMemoryOutput
@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 
 fun CoroutineScope.startInMemory(
     taskExecutorRegister: TaskExecutorRegister,
-    client: Client,
+    client: AbstractInfiniticClient,
     output: InMemoryOutput,
     taskTagStorage: TaskTagStorage,
     taskStorage: TaskStateStorage,

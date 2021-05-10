@@ -25,21 +25,9 @@
 
 package io.infinitic.client
 
-import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.tasks.engine.SendToTaskEngine
-import io.infinitic.common.tasks.tags.SendToTaskTagEngine
-import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
-import kotlinx.coroutines.CoroutineScope
+import java.util.UUID
 
-class InfiniticClient(
-    override val scope: CoroutineScope,
-    override val clientName: ClientName,
-    override val sendToTaskTagEngine: SendToTaskTagEngine,
-    override val sendToTaskEngine: SendToTaskEngine,
-    override val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
-    override val sendToWorkflowEngine: SendToWorkflowEngine,
-    val closeFn: () -> Unit
-) : Client() {
-    override fun close() { closeFn() }
+interface Deferred<T> {
+    fun await(): T
+    val id: UUID
 }

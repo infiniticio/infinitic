@@ -25,10 +25,10 @@
 
 package io.infinitic.tests.pulsar
 
-import io.infinitic.pulsar.InfiniticAdmin
+import io.infinitic.pulsar.PulsarInfiniticAdmin
 
 fun main() {
-    val admin = InfiniticAdmin.fromConfigResource("/pulsar.yml")
+    val admin = PulsarInfiniticAdmin.fromConfigResource("/pulsar.yml")
 
     admin.setupPulsar()
 

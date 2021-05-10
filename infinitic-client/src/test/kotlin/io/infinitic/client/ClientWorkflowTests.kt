@@ -28,9 +28,6 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
-import io.infinitic.clients.getWorkflow
-import io.infinitic.clients.getWorkflowIds
-import io.infinitic.clients.newWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -73,7 +70,7 @@ private val taskSlot = slot<TaskEngineMessage>()
 private val workflowTagSlots = mutableListOf<WorkflowTagEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 
-class ClientWorkflow : Client() {
+class ClientWorkflow : AbstractInfiniticClient() {
     override val scope = GlobalScope
     override val clientName = ClientName("clientTest")
     override val sendToTaskTagEngine = mockSendToTaskTagEngine(this, taskTagSlots)

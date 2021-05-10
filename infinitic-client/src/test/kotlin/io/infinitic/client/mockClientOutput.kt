@@ -55,7 +55,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 fun mockSendToTaskTagEngine(
-    client: Client,
+    client: AbstractInfiniticClient,
     slots: MutableList<TaskTagEngineMessage>
 ): SendToTaskTagEngine {
     val mock = mockk<SendToTaskTagEngine>()
@@ -80,7 +80,7 @@ fun mockSendToTaskTagEngine(
 }
 
 fun mockSendToWorkflowTagEngine(
-    client: Client,
+    client: AbstractInfiniticClient,
     slots: MutableList<WorkflowTagEngineMessage>
 ): SendToWorkflowTagEngine {
     val mock = mockk<SendToWorkflowTagEngine>()
@@ -105,7 +105,7 @@ fun mockSendToWorkflowTagEngine(
 }
 
 fun mockSendToTaskEngine(
-    client: Client,
+    client: AbstractInfiniticClient,
     message: CapturingSlot<TaskEngineMessage>
 ): SendToTaskEngine {
     val mock = mockk<SendToTaskEngine>()
@@ -130,7 +130,7 @@ fun mockSendToTaskEngine(
 }
 
 fun mockSendToWorkflowEngine(
-    client: Client,
+    client: AbstractInfiniticClient,
     message: CapturingSlot<WorkflowEngineMessage>
 ): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()

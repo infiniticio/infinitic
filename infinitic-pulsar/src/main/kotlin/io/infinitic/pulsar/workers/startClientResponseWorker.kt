@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.client.Client
+import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.clients.messages.ClientEnvelope
 import io.infinitic.common.clients.messages.ClientMessage
@@ -38,7 +38,7 @@ import org.apache.pulsar.client.api.Consumer
 typealias PulsarClientMessageToProcess = PulsarMessageToProcess<ClientMessage>
 
 fun CoroutineScope.startClientResponseWorker(
-    client: Client,
+    client: AbstractInfiniticClient,
     consumer: Consumer<ClientEnvelope>
 ) = launch {
 

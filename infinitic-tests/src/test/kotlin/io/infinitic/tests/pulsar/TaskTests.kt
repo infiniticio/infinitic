@@ -27,13 +27,13 @@
 
 package io.infinitic.tests.pulsar
 
-import io.infinitic.clients.cancelTask
-import io.infinitic.clients.newTask
-import io.infinitic.clients.retryTask
+import io.infinitic.client.cancelTask
+import io.infinitic.client.newTask
+import io.infinitic.client.retryTask
 import io.infinitic.exceptions.clients.CanceledDeferredException
 import io.infinitic.exceptions.clients.FailedDeferredException
-import io.infinitic.pulsar.InfiniticClient
-import io.infinitic.pulsar.InfiniticWorker
+import io.infinitic.pulsar.PulsarInfiniticClient
+import io.infinitic.pulsar.PulsarInfiniticWorker
 import io.infinitic.tests.tasks.Status
 import io.infinitic.tests.tasks.TaskException
 import io.infinitic.tests.tasks.TaskTest
@@ -52,8 +52,8 @@ internal class TaskTests : StringSpec({
     // each test should not be longer than 10s (for github)
     configuration.timeout = 10000
 
-    val client = InfiniticClient.fromConfigResource("/pulsar.yml")
-    val worker = InfiniticWorker.fromConfigResource("/pulsar.yml")
+    val client = PulsarInfiniticClient.fromConfigResource("/pulsar.yml")
+    val worker = PulsarInfiniticWorker.fromConfigResource("/pulsar.yml")
 
     val taskTest = client.newTask<TaskTest>()
     val taskTestWithTags = client.newTask<TaskTest>(tags = setOf("foo", "bar"))

@@ -25,7 +25,7 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.client.Client
+import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.config.ClientConfig
 import io.infinitic.inMemory.transport.InMemoryOutput
@@ -54,18 +54,18 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate")
-class InfiniticClient(
+class InMemoryInfiniticClient(
     taskExecutorRegister: TaskExecutorRegister,
     val name: String? = null
-) : Client() {
+) : AbstractInfiniticClient() {
     companion object {
-        val logger: Logger = LoggerFactory.getLogger(InfiniticClient::class.java.name)
+        val logger: Logger = LoggerFactory.getLogger(InMemoryInfiniticClient::class.java.name)
 
         /**
          * Create InfiniticClient from a ClientConfig
          */
         @JvmStatic
-        fun fromConfig(clientConfig: ClientConfig): InfiniticClient {
+        fun fromConfig(clientConfig: ClientConfig): InMemoryInfiniticClient {
             val register = TaskExecutorRegisterImpl()
             clientConfig.tasks.forEach {
                 register.registerTask(it.name) { it.instance }
@@ -81,7 +81,7 @@ class InfiniticClient(
                 logger.warn("No workflow registered in your ClientConfig file")
             }
 
-            return InfiniticClient(register, clientConfig.name)
+            return InMemoryInfiniticClient(register, clientConfig.name)
         }
     }
 

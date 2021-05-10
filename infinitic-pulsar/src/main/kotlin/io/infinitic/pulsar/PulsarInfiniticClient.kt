@@ -25,7 +25,8 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.client.Client
+import io.infinitic.client.AbstractInfiniticClient
+import io.infinitic.client.InfiniticClient
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.config.ClientConfig
 import io.infinitic.config.data.Transport
@@ -37,15 +38,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import org.apache.pulsar.client.api.PulsarClient
-import io.infinitic.inMemory.InfiniticClient as InMemoryClient
+import io.infinitic.inMemory.InMemoryInfiniticClient as InMemoryClient
 
 @Suppress("unused", "MemberVisibilityCanBePrivate", "CanBeParameter")
-class InfiniticClient @JvmOverloads constructor(
+class PulsarInfiniticClient @JvmOverloads constructor(
     @JvmField val pulsarClient: PulsarClient,
     @JvmField val pulsarTenant: String,
     @JvmField val pulsarNamespace: String,
     name: String? = null
-) : Client() {
+) : AbstractInfiniticClient() {
 
     private var job: Job
 
@@ -88,8 +89,8 @@ class InfiniticClient @JvmOverloads constructor(
          * Create Client from a custom PulsarClient and a ClientConfig instance
          */
         @JvmStatic
-        fun from(pulsarClient: PulsarClient, clientConfig: ClientConfig): Client = when (clientConfig.transport) {
-            Transport.pulsar -> InfiniticClient(
+        fun from(pulsarClient: PulsarClient, clientConfig: ClientConfig): InfiniticClient = when (clientConfig.transport) {
+            Transport.pulsar -> PulsarInfiniticClient(
                 pulsarClient,
                 clientConfig.pulsar!!.tenant,
                 clientConfig.pulsar!!.namespace,
@@ -103,7 +104,7 @@ class InfiniticClient @JvmOverloads constructor(
          * Create Client from a ClientConfig instance
          */
         @JvmStatic
-        fun fromConfig(clientConfig: ClientConfig): Client {
+        fun fromConfig(clientConfig: ClientConfig): InfiniticClient {
             val pulsarClient = PulsarClient
                 .builder()
                 .serviceUrl(clientConfig.pulsar!!.serviceUrl)
