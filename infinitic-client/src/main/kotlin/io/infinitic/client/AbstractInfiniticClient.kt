@@ -27,8 +27,6 @@ package io.infinitic.client
 
 import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.deferred.DeferredWorkflow
-import io.infinitic.clients.Deferred
-import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
@@ -62,17 +60,13 @@ import io.infinitic.exceptions.clients.CanNotAwaitStubPerTag
 import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
 import io.infinitic.exceptions.clients.NotAStubException
 import io.infinitic.exceptions.thisShouldNotHappen
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 import java.util.UUID
-import io.infinitic.clients.InfiniticClient as InfiniticClientInterface
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-abstract class Client : InfiniticClientInterface {
-    abstract val clientName: ClientName
-    abstract val scope: CoroutineScope
+abstract class AbstractInfiniticClient : InfiniticClient {
     protected abstract val sendToTaskTagEngine: SendToTaskTagEngine
     protected abstract val sendToTaskEngine: SendToTaskEngine
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
@@ -257,7 +251,7 @@ abstract class Client : InfiniticClientInterface {
     /**
      *  Complete a task or a workflow from a stub
      */
-    override fun <T : Any> complete(proxy: T, value: Any) {
+    override fun <T : Any> complete(proxy: T, value: Any?) {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "complete")
 
         when (val handler = Proxy.getInvocationHandler(proxy)) {

@@ -25,7 +25,7 @@
 
 package io.infinitic.client.worker
 
-import io.infinitic.client.Client
+import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.common.clients.transport.ClientMessageToProcess
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +34,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger(Client::class.java)
+private val logger = LoggerFactory.getLogger(AbstractInfiniticClient::class.java)
 
 private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = logger.error(
     "exception on message {}: {}",
@@ -43,7 +43,7 @@ private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = l
 )
 
 fun <T : ClientMessageToProcess> CoroutineScope.startClientWorker(
-    client: Client,
+    client: AbstractInfiniticClient,
     inputChannel: ReceiveChannel<T>,
     outputChannel: SendChannel<T>
 ) = launch(CoroutineName("client: ${client.clientName}")) {

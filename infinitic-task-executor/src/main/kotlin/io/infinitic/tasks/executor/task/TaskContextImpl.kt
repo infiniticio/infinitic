@@ -25,7 +25,7 @@
 
 package io.infinitic.tasks.executor.task
 
-import io.infinitic.clients.InfiniticClient
+import io.infinitic.client.InfiniticClient
 import io.infinitic.common.errors.Error
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.tasks.TaskContext

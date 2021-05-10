@@ -23,13 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.clients
+package io.infinitic.client
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
+import kotlinx.coroutines.CoroutineScope
 import java.util.UUID
 
 interface InfiniticClient {
+    val clientName: ClientName
+
+    val scope: CoroutineScope
+
     /**
      * Close client
      */
@@ -47,13 +53,13 @@ interface InfiniticClient {
 
     fun <T : Any> newTask(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: TaskOptions? = null,
+        tags: Set<String>,
+        options: TaskOptions?,
     ): T = newTask(klass, tags, options, mapOf())
 
     fun <T : Any> newTask(
         klass: Class<out T>,
-        tags: Set<String> = setOf()
+        tags: Set<String>
     ): T = newTask(klass, tags, null, mapOf())
 
     fun <T : Any> newTask(
@@ -72,18 +78,82 @@ interface InfiniticClient {
 
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
-        options: WorkflowOptions? = null
+        tags: Set<String>,
+        options: WorkflowOptions?
     ): T = newWorkflow(klass, tags, options, mapOf())
 
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
-        tags: Set<String> = setOf(),
+        tags: Set<String>,
     ): T = newWorkflow(klass, tags, null, mapOf())
 
     fun <T : Any> newWorkflow(
         klass: Class<out T>,
     ): T = newWorkflow(klass, setOf(), null, mapOf())
+
+    /**
+     *  Asynchronously process a task or a workflow from its stub
+     */
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
+
+    /**
+     *  Asynchronously process a task
+     */
+    fun <T : Any, S> asyncTask(
+        klass: Class<out T>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf(),
+        method: T.() -> S
+    ) = async(newTask(klass, tags, options, meta), method)
+
+    fun <T : Any, S> asyncTask(
+        klass: Class<out T>,
+        tags: Set<String>,
+        options: TaskOptions?,
+        method: T.() -> S
+    ) = asyncTask(klass, tags, options, mapOf(), method)
+
+    fun <T : Any, S> asyncTask(
+        klass: Class<out T>,
+        tags: Set<String>,
+        method: T.() -> S
+    ) = asyncTask(klass, tags, null, mapOf(), method)
+
+    fun <T : Any, S> asyncTask(
+        klass: Class<out T>,
+        method: T.() -> S
+    ) = asyncTask(klass, setOf(), null, mapOf(), method)
+
+    /**
+     *  Asynchronously process a workflow
+     */
+
+    fun <T : Any, S> asyncWorkflow(
+        klass: Class<out T>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf(),
+        method: T.() -> S
+    ) = async(newWorkflow(klass, tags, options, meta), method)
+
+    fun <T : Any, S> asyncWorkflow(
+        klass: Class<out T>,
+        tags: Set<String>,
+        options: WorkflowOptions?,
+        method: T.() -> S
+    ) = asyncWorkflow(klass, tags, options, mapOf(), method)
+
+    fun <T : Any, S> asyncWorkflow(
+        klass: Class<out T>,
+        tags: Set<String>,
+        method: T.() -> S
+    ) = asyncWorkflow(klass, tags, null, mapOf(), method)
+
+    fun <T : Any, S> asyncWorkflow(
+        klass: Class<out T>,
+        method: T.() -> S
+    ) = asyncWorkflow(klass, setOf(), null, mapOf(), method)
 
     /**
      * Create stub for an existing task targeted per id
@@ -118,7 +188,7 @@ interface InfiniticClient {
     ): T
 
     /**
-     * Synchronous call to get task ids per tag and name
+     * Get ids of running tasks with tag and name
      */
     fun <T : Any> getTaskIds(
         klass: Class<out T>,
@@ -126,7 +196,7 @@ interface InfiniticClient {
     ): Set<UUID>
 
     /**
-     * Synchronous call to get workflow ids per tag and nam
+     * Get ids of running workflows with tag and name
      */
     fun <T : Any> getWorkflowIds(
         klass: Class<out T>,
@@ -134,14 +204,9 @@ interface InfiniticClient {
     ): Set<UUID>
 
     /**
-     *  Asynchronously process a task or a workflow
-     */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S>
-
-    /**
      *  Complete a task or a workflow from a stub
      */
-    fun <T : Any> complete(proxy: T, value: Any)
+    fun <T : Any> complete(proxy: T, value: Any?)
 
     /**
      *  Complete a task by id
@@ -149,7 +214,7 @@ interface InfiniticClient {
     fun <T : Any> completeTask(
         klass: Class<out T>,
         id: UUID,
-        value: Any
+        value: Any?
     ) = complete(getTask(klass, id), value)
 
     /**
@@ -158,7 +223,7 @@ interface InfiniticClient {
     fun <T : Any> completeTask(
         klass: Class<out T>,
         tag: String,
-        value: Any
+        value: Any?
     ) = complete(getTask(klass, tag), value)
 
     /**
@@ -167,7 +232,7 @@ interface InfiniticClient {
     fun <T : Any> completeWorkflow(
         klass: Class<out T>,
         id: UUID,
-        value: Any
+        value: Any?
     ) = complete(getWorkflow(klass, id), value)
 
     /**
@@ -176,7 +241,7 @@ interface InfiniticClient {
     fun <T : Any> completeWorkflow(
         klass: Class<out T>,
         tag: String,
-        value: Any
+        value: Any?
     ) = complete(getWorkflow(klass, tag), value)
 
     /**
@@ -424,14 +489,14 @@ inline fun <reified T : Any> InfiniticClient.awaitWorkflow(
 ) = awaitWorkflow(T::class.java, id)
 
 /**
- * (kotlin) Get task ids per tag
+ * (kotlin) Get ids of running tasks per tag and name
  */
 inline fun <reified T : Any> InfiniticClient.getTaskIds(
     tag: String
 ) = getTaskIds(T::class.java, tag)
 
 /**
- * (kotlin) Get workflow ids per tag
+ * (kotlin) Get ids of running workflows per tag and name
  */
 inline fun <reified T : Any> InfiniticClient.getWorkflowIds(
     tag: String

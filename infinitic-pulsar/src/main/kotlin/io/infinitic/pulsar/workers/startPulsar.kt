@@ -26,7 +26,7 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.messages.Envelope
-import io.infinitic.pulsar.InfiniticWorker
+import io.infinitic.pulsar.PulsarInfiniticWorker
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -38,7 +38,7 @@ import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
 import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger(InfiniticWorker::class.java)
+private val logger = LoggerFactory.getLogger(PulsarInfiniticWorker::class.java)
 
 private fun <S> logError(message: Message<S>, e: Throwable) = logger.error(
     "exception on Pulsar message {}: {}",

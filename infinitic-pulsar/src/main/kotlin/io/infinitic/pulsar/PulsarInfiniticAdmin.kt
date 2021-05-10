@@ -28,8 +28,6 @@ package io.infinitic.pulsar
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.config.AdminConfig
-import io.infinitic.config.loaders.loadConfigFromFile
-import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.pulsar.admin.setupInfinitic
 import io.infinitic.pulsar.topics.TopicNamer
 import io.infinitic.pulsar.topics.TopicType
@@ -39,7 +37,7 @@ import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 
-class InfiniticAdmin @JvmOverloads constructor(
+class PulsarInfiniticAdmin @JvmOverloads constructor(
     @JvmField val pulsarAdmin: PulsarAdmin,
     @JvmField val tenant: String,
     @JvmField val namespace: String,
@@ -52,7 +50,7 @@ class InfiniticAdmin @JvmOverloads constructor(
          * Create InfiniticAdmin from a custom PulsarAdmin and an AdminConfig instance
          */
         @JvmStatic
-        fun from(pulsarAdmin: PulsarAdmin, adminConfig: AdminConfig) = InfiniticAdmin(
+        fun from(pulsarAdmin: PulsarAdmin, adminConfig: AdminConfig) = PulsarInfiniticAdmin(
             pulsarAdmin,
             adminConfig.pulsar.tenant,
             adminConfig.pulsar.namespace,
@@ -63,7 +61,7 @@ class InfiniticAdmin @JvmOverloads constructor(
          * Create InfiniticAdmin from an AdminConfig instance
          */
         @JvmStatic
-        fun fromConfig(adminConfig: AdminConfig): InfiniticAdmin {
+        fun fromConfig(adminConfig: AdminConfig): PulsarInfiniticAdmin {
             // build PulsarAdmin from config
             val pulsarAdmin = PulsarAdmin
                 .builder()
@@ -75,18 +73,18 @@ class InfiniticAdmin @JvmOverloads constructor(
         }
 
         /**
-         * Create InfiniticAdmin from AdminConfig resources
+         * Create InfiniticAdmin from file in resources directory
          */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
-            fromConfig(loadConfigFromResource(resources.toList()))
+            fromConfig(AdminConfig.fromResource(*resources))
 
         /**
-         * Create InfiniticAdmin from AdminConfig files
+         * Create InfiniticAdmin from file in system file
          */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
-            fromConfig(loadConfigFromFile(files.toList()))
+            fromConfig(AdminConfig.fromFile(*files))
     }
 
     /**

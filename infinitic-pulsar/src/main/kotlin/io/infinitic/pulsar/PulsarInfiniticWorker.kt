@@ -33,8 +33,6 @@ import io.infinitic.config.WorkerConfig
 import io.infinitic.config.cache.getKeySetCache
 import io.infinitic.config.cache.getKeyValueCache
 import io.infinitic.config.data.Transport
-import io.infinitic.config.loaders.loadConfigFromFile
-import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.config.storage.getKeySetStorage
 import io.infinitic.config.storage.getKeyValueStorage
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
@@ -72,7 +70,7 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-class InfiniticWorker private constructor(
+class PulsarInfiniticWorker private constructor(
     @JvmField val pulsarClient: PulsarClient,
     @JvmField val workerConfig: WorkerConfig
 ) {
@@ -91,35 +89,35 @@ class InfiniticWorker private constructor(
          * Create InfiniticWorker from a custom PulsarClient and a WorkerConfig instance
          */
         @JvmStatic
-        fun from(pulsarClient: PulsarClient, workerConfig: WorkerConfig) = InfiniticWorker(pulsarClient, workerConfig)
+        fun from(pulsarClient: PulsarClient, workerConfig: WorkerConfig) = PulsarInfiniticWorker(pulsarClient, workerConfig)
 
         /**
          * Create InfiniticWorker from a WorkerConfig
          */
         @JvmStatic
-        fun fromConfig(workerConfig: WorkerConfig): InfiniticWorker {
+        fun fromConfig(workerConfig: WorkerConfig): PulsarInfiniticWorker {
             // build Pulsar client from config
             val pulsarClient: PulsarClient = PulsarClient
                 .builder()
                 .serviceUrl(workerConfig.pulsar.serviceUrl)
                 .build()
 
-            return InfiniticWorker(pulsarClient, workerConfig)
+            return PulsarInfiniticWorker(pulsarClient, workerConfig)
         }
 
         /**
-         * Create InfiniticWorker from WorkerConfig resources
+         * Create InfiniticWorker from file in resources directory
          */
         @JvmStatic
         fun fromConfigResource(vararg resources: String) =
-            fromConfig(loadConfigFromResource(resources.toList()))
+            fromConfig(WorkerConfig.fromResource(*resources))
 
         /**
-         * Create InfiniticWorker from WorkerConfig files
+         * Create InfiniticWorker from file in system file
          */
         @JvmStatic
         fun fromConfigFile(vararg files: String) =
-            fromConfig(loadConfigFromFile(files.toList()))
+            fromConfig(WorkerConfig.fromFile(*files))
     }
 
     /**
@@ -180,7 +178,7 @@ class InfiniticWorker private constructor(
 
         val taskExecutorRegister = TaskExecutorRegisterImpl()
 
-        val clientFactory = { InfiniticClient(pulsarClient, tenant, namespace) }
+        val clientFactory = { PulsarInfiniticClient(pulsarClient, tenant, namespace) }
 
         for (workflow in config.workflows) {
             val workflowName = WorkflowName(workflow.name)

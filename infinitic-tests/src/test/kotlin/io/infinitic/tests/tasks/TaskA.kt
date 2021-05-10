@@ -25,9 +25,9 @@
 
 package io.infinitic.tests.tasks
 
-import io.infinitic.clients.cancelTask
-import io.infinitic.clients.cancelWorkflow
-import io.infinitic.clients.retryTask
+import io.infinitic.client.cancelTask
+import io.infinitic.client.cancelWorkflow
+import io.infinitic.client.retryTask
 import io.infinitic.tasks.Task
 import io.infinitic.tests.workflows.WorkflowA
 import java.time.Duration
