@@ -599,7 +599,7 @@ internal class WorkflowTests : StringSpec({
         e.causeError?.whereName shouldBe TaskA::class.java.name
 
         job = client.scope.future {
-            delay(50)
+            delay(200)
             client.retryTask<TaskA>(e.causeError?.whereId!!)
         }
 
