@@ -25,6 +25,8 @@
 
 package io.infinitic.config.data
 
+import java.lang.reflect.Constructor
+import java.lang.reflect.InvocationTargetException
 import io.infinitic.workflows.Workflow as WorkflowInstance
 
 data class Workflow(
@@ -35,8 +37,10 @@ data class Workflow(
     @JvmField var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
     @JvmField var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true }
 ) {
-    val instance: WorkflowInstance
-        get() = Class.forName(`class`).getDeclaredConstructor().newInstance() as WorkflowInstance
+    private lateinit var _constructor: Constructor<out Any>
+
+    val instance
+        get() = _constructor.newInstance() as WorkflowInstance
 
     init {
         require(name.isNotEmpty()) { "name can not be empty" }
@@ -44,15 +48,30 @@ data class Workflow(
         `class`?.let {
             require(`class`.isNotEmpty()) { "class empty for workflow $name" }
 
-            require(try { instance; true } catch (e: ClassNotFoundException) { false }) {
-                "class $`class` is unknown (workflow $name)"
+            val klass = try {
+                Class.forName(`class`)
+            } catch (e: ClassNotFoundException) {
+                throw IllegalArgumentException("class \"$it\" is unknown (workflow $name)")
+            } catch (e: ExceptionInInitializerError) {
+                throw e.cause ?: e
             }
-            require(try { instance; true } catch (e: ClassCastException) { false }) {
-                "class \"$it\" is not a workflow as it does not extend ${WorkflowInstance::class.java.name}"
+
+            _constructor = try {
+                klass!!.getDeclaredConstructor()
+            } catch (e: NoSuchMethodException) {
+                throw IllegalArgumentException("class \"$it\" must have an empty constructor (workflow $name)")
             }
-            require(try { instance; true } catch (e: Exception) { false }) {
-                "class \"$it\" can not be instantiated using .getDeclaredConstructor().newInstance(). " +
-                    "This class must be public and have an empty constructor"
+
+            val instance = try {
+                _constructor.newInstance()
+            } catch (e: ExceptionInInitializerError) {
+                throw e.cause ?: e
+            } catch (e: InvocationTargetException) {
+                throw e.cause ?: e
+            }
+
+            require(instance is WorkflowInstance) {
+                "class \"$it\" must extend ${WorkflowInstance::class.java.name} to be used as a workflow"
             }
 
             require(concurrency >= 0) { "concurrency must be positive (workflow $name)" }

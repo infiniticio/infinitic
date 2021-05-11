@@ -599,7 +599,7 @@ internal class WorkflowTests : StringSpec({
         e.causeError?.whereName shouldBe TaskA::class.java.name
 
         job = client.scope.future {
-            delay(50)
+            delay(200)
             client.retryTask<TaskA>(e.causeError?.whereId!!)
         }
 
@@ -614,7 +614,7 @@ internal class WorkflowTests : StringSpec({
         client.async(workflowATagged) { cancel1() }
 
         // delay to be sure the child workflow has been dispatched and tag engines have processed
-        delay(500)
+        delay(200)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 2
         client.cancel(workflowATagged)
 

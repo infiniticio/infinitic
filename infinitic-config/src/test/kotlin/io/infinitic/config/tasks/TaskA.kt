@@ -23,21 +23,26 @@
  * Licensor: infinitic.io
  */
 
-object Ci {
+package io.infinitic.config.tasks
 
-    // this is the version used for building snapshots
-    // .GITHUB_RUN_NUMBER-snapshot will be appended
-    private const val snapshotBase = "0.6.3"
+import io.infinitic.tasks.Task
+import java.lang.Exception
 
-    private val githubRunNumber = System.getenv("GITHUB_RUN_NUMBER")
+interface TaskA
 
-    private val snapshotVersion = when (githubRunNumber) {
-        null -> "$snapshotBase-SNAPSHOT"
-        else -> "$snapshotBase.$githubRunNumber-SNAPSHOT"
+class TaskAImpl : Task(), TaskA
+
+class TaskWithInvocationTargetException : Task(), TaskA {
+    init {
+        throw Exception("InvocationTargetException")
     }
-
-    private val releaseVersion = System.getenv("RELEASE_VERSION")
-
-    val isRelease = releaseVersion != null
-    val version = releaseVersion ?: snapshotVersion
 }
+
+class TaskWithExceptionInInitializerError : Task(), TaskA {
+    companion object {
+        @JvmStatic
+        val e: Nothing = throw Exception("ExceptionInInitializerError")
+    }
+}
+
+class NotATask : TaskA
