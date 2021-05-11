@@ -40,90 +40,91 @@ jobs:
         with:
           java-version: 8
 
-      - name: Run gradle build
-        uses: eskatos/gradle-command-action@v1
-        with:
-          arguments: build
-
-      - name: Detect project version
-        id: detect-project-version
-        run: |
-          echo "::set-output name=project-version::$(sed -n -e 's/^.*version = \"\(.*\)\"/\1/p' build.gradle.kts)"
-
-      - name: Create release directory
-        id: create-release-dir
-        run: |
-          mkdir -p release/infinitic-${{ steps.detect-project-version.outputs.project-version }} && cd $_
-          echo "::set-output name=release-dir::$PWD"
-
-      - name: Add job manager to release
-        run: |
-          cp $GITHUB_WORKSPACE/infinitic-taskManager-pulsar/build/libs/infinitic-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar ${{ steps.create-release-dir.outputs.release-dir }}
-
-      - name: Add schemas to release
-        working-directory: ${{ runner.temp }}
-        run: |
-          mkdir build-schemas && cd $_
-          java -cp $GITHUB_WORKSPACE/infinitic-taskManager-pulsar/build/libs/infinitic-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar io.infinitic.engine.taskManager.pulsar.utils.GenerateSchemaFilesKt
-          mkdir ${{ steps.create-release-dir.outputs.release-dir }}/schemas
-          mv build/schemas/* ${{ steps.create-release-dir.outputs.release-dir }}/schemas
-          cd ..
-          rm -rf build-schemas
-
-      - name: Add rest api to release
-        run: |
-          cp $GITHUB_WORKSPACE/infinitic-rest-api/build/libs/infinitic-rest-api-${{ steps.detect-project-version.outputs.project-version }}-all.jar ${{ steps.create-release-dir.outputs.release-dir }}
-
-      - name: Use Node 12
-        uses: actions/setup-node@v1
-        with:
-          node-version: 12.x
-
-      - name: Use cached node_modules
-        uses: actions/cache@v2
-        with:
-          path: |
-            webui/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('webui/yarn.lock') }}
-
-      - name: Install Web UI Dependencies
-        working-directory: webui
-        run: yarn install --frozen-lockfile
-
-      - name: Build Web UI
-        working-directory: webui
-        run: yarn build
-
-      - name: Add WebUI to release
-        run: |
-          mkdir ${{ steps.create-release-dir.outputs.release-dir }}/webui
-          cp -r $GITHUB_WORKSPACE/webui/dist ${{ steps.create-release-dir.outputs.release-dir }}/webui
-
-      - name: Archive release
-        id: archive-release
-        uses: thedoctor0/zip-release@master
-        with:
-          filename: infinitic-${{ steps.detect-project-version.outputs.project-version }}.zip
-          directory: release
-
-      - name: Create release
-        id: create-release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: true
-          prerelease: true
-
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./release/infinitic-${{ steps.detect-project-version.outputs.project-version }}.zip
-          asset_name: infinitic-${{ steps.detect-project-version.outputs.project-version }}.zip
-          asset_content_type: application/zip
+#      - name: Run gradle build
+#        uses: eskatos/gradle-command-action@v1
+#        timeout-minutes: 10 # max time allocated (useful if some tests hang)
+#        with:
+#          arguments: build
+#
+#      - name: Detect project version
+#        id: detect-project-version
+#        run: |
+#          echo "::set-output name=project-version::$(sed -n -e 's/^.*version = \"\(.*\)\"/\1/p' build.gradle.kts)"
+#
+#      - name: Create release directory
+#        id: create-release-dir
+#        run: |
+#          mkdir -p release/infinitic-${{ steps.detect-project-version.outputs.project-version }} && cd $_
+#          echo "::set-output name=release-dir::$PWD"
+#
+#      - name: Add job manager to release
+#        run: |
+#          cp $GITHUB_WORKSPACE/infinitic-taskManager-pulsar/build/libs/infinitic-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar ${{ steps.create-release-dir.outputs.release-dir }}
+#
+#      - name: Add schemas to release
+#        working-directory: ${{ runner.temp }}
+#        run: |
+#          mkdir build-schemas && cd $_
+#          java -cp $GITHUB_WORKSPACE/infinitic-taskManager-pulsar/build/libs/infinitic-taskManager-pulsar-${{ steps.detect-project-version.outputs.project-version }}-all.jar io.infinitic.engine.taskManager.pulsar.utils.GenerateSchemaFilesKt
+#          mkdir ${{ steps.create-release-dir.outputs.release-dir }}/schemas
+#          mv build/schemas/* ${{ steps.create-release-dir.outputs.release-dir }}/schemas
+#          cd ..
+#          rm -rf build-schemas
+#
+#      - name: Add rest api to release
+#        run: |
+#          cp $GITHUB_WORKSPACE/infinitic-rest-api/build/libs/infinitic-rest-api-${{ steps.detect-project-version.outputs.project-version }}-all.jar ${{ steps.create-release-dir.outputs.release-dir }}
+#
+#      - name: Use Node 12
+#        uses: actions/setup-node@v1
+#        with:
+#          node-version: 12.x
+#
+#      - name: Use cached node_modules
+#        uses: actions/cache@v2
+#        with:
+#          path: |
+#            webui/node_modules
+#          key: ${{ runner.os }}-${{ hashFiles('webui/yarn.lock') }}
+#
+#      - name: Install Web UI Dependencies
+#        working-directory: webui
+#        run: yarn install --frozen-lockfile
+#
+#      - name: Build Web UI
+#        working-directory: webui
+#        run: yarn build
+#
+#      - name: Add WebUI to release
+#        run: |
+#          mkdir ${{ steps.create-release-dir.outputs.release-dir }}/webui
+#          cp -r $GITHUB_WORKSPACE/webui/dist ${{ steps.create-release-dir.outputs.release-dir }}/webui
+#
+#      - name: Archive release
+#        id: archive-release
+#        uses: thedoctor0/zip-release@master
+#        with:
+#          filename: infinitic-${{ steps.detect-project-version.outputs.project-version }}.zip
+#          directory: release
+#
+#      - name: Create release
+#        id: create-release
+#        uses: actions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          tag_name: ${{ github.ref }}
+#          release_name: Release ${{ github.ref }}
+#          draft: true
+#          prerelease: true
+#
+#      - name: Upload Release Asset
+#        id: upload-release-asset
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create-release.outputs.upload_url }}
+#          asset_path: ./release/infinitic-${{ steps.detect-project-version.outputs.project-version }}.zip
+#          asset_name: infinitic-${{ steps.detect-project-version.outputs.project-version }}.zip
+#          asset_content_type: application/zip

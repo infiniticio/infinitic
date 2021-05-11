@@ -36,8 +36,8 @@ dependencies {
     api(Libs.Pulsar.clientAdmin)
     api(project(":infinitic-config"))
     api(project(":infinitic-common"))
+    api(project(":infinitic-client"))
 
-    implementation(project(":infinitic-client"))
     implementation(project(":infinitic-metrics-engines"))
     implementation(project(":infinitic-tag-engine"))
     implementation(project(":infinitic-task-engine"))

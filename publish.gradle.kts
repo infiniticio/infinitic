@@ -32,7 +32,7 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
-        maven(url = uri("https://oss.sonatype.org/content/repositories/snapshots/"))
+        maven(url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
         maven(url = uri("https://plugins.gradle.org/m2/"))
     }
 }
@@ -65,8 +65,8 @@ val ossSonatypeOrgPassword: String? by project
 
 publishing {
     repositories {
-        val releasesRepoUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
-        val snapshotsRepoUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+        val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+        val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
         maven {
             name = "deploy"
             url = if (Ci.isRelease) releasesRepoUrl else snapshotsRepoUrl
