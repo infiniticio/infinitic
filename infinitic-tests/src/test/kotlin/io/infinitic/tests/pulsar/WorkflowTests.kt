@@ -611,16 +611,16 @@ internal class WorkflowTests : StringSpec({
     }
 
     "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
-//        client.async(workflowATagged) { cancel1() }
-//
-//        // delay to be sure the child workflow has been dispatched and tag engines have processed
-//        delay(200)
-//        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 2
-//        client.cancel(workflowATagged)
-//
-//        // delay to be sure that workflows have been canceled and tag engines have processed
-//        delay(500)
-//        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
+        client.async(workflowATagged) { cancel1() }
+
+        // delay to be sure the child workflow has been dispatched and tag engines have processed
+        delay(200)
+        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 2
+        client.cancel(workflowATagged)
+
+        // delay to be sure that workflows have been canceled and tag engines have processed
+        delay(500)
+        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
     }
 
     "Tag should be added then deleted after completion" {
