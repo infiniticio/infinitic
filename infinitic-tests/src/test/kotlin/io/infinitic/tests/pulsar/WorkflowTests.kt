@@ -592,9 +592,7 @@ internal class WorkflowTests : StringSpec({
     }
 
     "retry a failed task from client should restart a workflow" {
-        val deferred = client.async(workflowA) { failing8() }
-
-        val e = shouldThrow<FailedDeferredException> { deferred.await() }
+        val e = shouldThrow<FailedDeferredException> { workflowA.failing8() }
 
         e.causeError?.whereName shouldBe TaskA::class.java.name
 
@@ -603,7 +601,7 @@ internal class WorkflowTests : StringSpec({
             client.retryTask<TaskA>(e.causeError?.whereId!!)
         }
 
-        deferred.await() shouldBe "ok"
+        client.await(workflowA) shouldBe "ok"
     }
 
     "retry a caught failed task should not throw and influence workflow" {
@@ -614,10 +612,10 @@ internal class WorkflowTests : StringSpec({
         client.async(workflowATagged) { cancel1() }
 
         // delay to be sure the child workflow has been dispatched and tag engines have processed
-        delay(200)
+        delay(500)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 2
-        client.cancel(workflowATagged)
 
+        client.cancel(workflowATagged)
         // delay to be sure that workflows have been canceled and tag engines have processed
         delay(500)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
