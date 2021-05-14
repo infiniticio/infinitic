@@ -55,7 +55,7 @@ class LoggedTaskStateStorage(
 
     @TestOnly
     override fun flush() {
-        logger.debug("flush()")
+        logger.debug("flushing taskStateStorage")
         storage.flush()
     }
 }

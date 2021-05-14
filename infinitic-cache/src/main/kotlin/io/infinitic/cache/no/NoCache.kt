@@ -29,6 +29,7 @@ import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyCounter.KeyCounterCache
 import io.infinitic.common.storage.keySet.KeySetCache
 import io.infinitic.common.storage.keyValue.KeyValueCache
+import org.jetbrains.annotations.TestOnly
 
 class NoCache<T>() : KeyValueCache<T>, KeySetCache<T>, KeyCounterCache, Flushable {
 
@@ -72,6 +73,7 @@ class NoCache<T>() : KeyValueCache<T>, KeySetCache<T>, KeyCounterCache, Flushabl
         // nothing
     }
 
+    @TestOnly
     override fun flush() {
         // nothing
     }

@@ -26,6 +26,7 @@
 package io.infinitic.common.storage.keySet
 
 import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
 class CachedKeySetStorage(
     val cache: KeySetCache<ByteArray>,
@@ -50,6 +51,7 @@ class CachedKeySetStorage(
         storage.removeFromSet(key, value)
     }
 
+    @TestOnly
     override fun flush() {
         storage.flush()
         cache.flush()

@@ -49,7 +49,7 @@ private val logger = KotlinLogging.logger {}
 typealias WorkflowEngineMessageToProcess = MessageToProcess<WorkflowEngineMessage>
 
 private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwable) = logger.error {
-    "exception on message ${ messageToProcess.message}: $e"
+    "exception on message ${messageToProcess.message}: $e"
 }
 
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(

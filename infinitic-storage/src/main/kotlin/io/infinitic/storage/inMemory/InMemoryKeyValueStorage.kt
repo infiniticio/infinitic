@@ -27,6 +27,7 @@ package io.infinitic.storage.inMemory
 
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyValue.KeyValueStorage
+import org.jetbrains.annotations.TestOnly
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
@@ -44,6 +45,7 @@ class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
         stateStorage.remove(key)
     }
 
+    @TestOnly
     override fun flush() {
         stateStorage.clear()
     }

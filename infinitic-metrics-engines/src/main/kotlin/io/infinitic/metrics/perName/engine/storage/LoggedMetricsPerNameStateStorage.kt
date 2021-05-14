@@ -56,7 +56,7 @@ class LoggedMetricsPerNameStateStorage(
 
     @TestOnly
     override fun flush() {
-        logger.debug("flush()")
+        logger.debug("flushing metricsPerNameStateStorage")
         storage.flush()
     }
 }

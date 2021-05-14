@@ -64,8 +64,8 @@ class MetricsGlobalEngine(
         }
     }
 
-    private fun logDiscardingMessage(message: MetricsGlobalMessage, reason: String) {
-        logger.info { "discarding $reason: $message" }
+    private fun logDiscardingMessage(message: MetricsGlobalMessage, cause: String) {
+        logger.info { "discarding $cause: $message" }
     }
 
     private fun handleTaskTypeCreated(message: TaskCreated, state: MetricsGlobalState) {

@@ -26,6 +26,7 @@
 package io.infinitic.common.storage.keyValue
 
 import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
 open class CachedKeyValueStorage(
     val cache: KeyValueCache<ByteArray>,
@@ -53,6 +54,7 @@ open class CachedKeyValueStorage(
         cache.delValue(key)
     }
 
+    @TestOnly
     override fun flush() {
         cache.flush()
         storage.flush()

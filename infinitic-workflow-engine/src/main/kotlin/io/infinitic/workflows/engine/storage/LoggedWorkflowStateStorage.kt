@@ -59,7 +59,7 @@ class LoggedWorkflowStateStorage(
 
     @TestOnly
     override fun flush() {
-        logger.debug("flush()")
+        logger.debug("flushing workflowStateStorage")
         storage.flush()
     }
 }

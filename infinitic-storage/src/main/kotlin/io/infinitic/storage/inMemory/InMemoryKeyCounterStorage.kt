@@ -27,6 +27,7 @@ package io.infinitic.storage.inMemory
 
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyCounter.KeyCounterStorage
+import org.jetbrains.annotations.TestOnly
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryKeyCounterStorage() : KeyCounterStorage, Flushable {
@@ -38,6 +39,7 @@ class InMemoryKeyCounterStorage() : KeyCounterStorage, Flushable {
         counterStorage[key] = getCounter(key) + amount
     }
 
+    @TestOnly
     override fun flush() {
         counterStorage.clear()
     }

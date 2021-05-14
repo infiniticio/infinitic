@@ -49,9 +49,7 @@ private val logger = KotlinLogging.logger(TaskEngine::class.java.name)
 typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 
 private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable) = logger.error {
-    "taskId ${messageToProcess.message.taskId} " +
-        "- exception on message ${messageToProcess.message}:" +
-        "$e"
+    "exception on message ${messageToProcess.message}: $e"
 }
 
 fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(

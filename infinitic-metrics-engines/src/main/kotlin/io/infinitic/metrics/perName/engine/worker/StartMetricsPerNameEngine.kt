@@ -42,9 +42,7 @@ private val logger = KotlinLogging.logger(MetricsPerNameEngine::class.java.name)
 typealias MetricsPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
 private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwable) = logger.error {
-    "taskName ${messageToProcess.message.taskName} - " +
-        "exception on message ${messageToProcess.message}:" +
-        "$e"
+    "exception on message ${messageToProcess.message}: $e"
 }
 
 fun <T : MetricsPerNameMessageToProcess> CoroutineScope.startMetricsPerNameEngine(

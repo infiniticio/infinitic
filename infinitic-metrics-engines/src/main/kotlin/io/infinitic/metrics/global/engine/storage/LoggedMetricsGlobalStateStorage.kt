@@ -54,7 +54,7 @@ class LoggedMetricsGlobalStateStorage(
 
     @TestOnly
     override fun flush() {
-        logger.debug("flush()")
+        logger.debug("flushing metricsGlobalStateStorage")
         storage.flush()
     }
 }

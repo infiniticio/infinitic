@@ -62,5 +62,5 @@ internal fun CoroutineScope.sendToChannel(
                 commandStatus
             )
         }
-        ?: logger.debug { "workflowId ${msg.workflowId} - discarding non-waited event $msg" }
+        ?: logger.debug { "discarding non-waited event $msg" }
 }
