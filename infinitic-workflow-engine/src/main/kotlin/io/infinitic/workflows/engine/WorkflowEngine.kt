@@ -70,7 +70,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.lang.RuntimeException
 import kotlin.coroutines.coroutineContext
 
@@ -83,7 +83,7 @@ class WorkflowEngine(
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     private lateinit var scope: CoroutineScope
 
@@ -116,7 +116,7 @@ class WorkflowEngine(
     private suspend fun process(message: WorkflowEngineMessage): WorkflowState? = coroutineScope {
         scope = this
 
-        logger.debug("receiving {}", message)
+        logger.debug { "receiving $message" }
 
         // get associated state
         val state = storage.getState(message.workflowId)
@@ -194,7 +194,7 @@ class WorkflowEngine(
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
             val bufferedMsg = state.bufferedMessages.removeAt(0)
-            logger.debug("workflowId {} - processing buffered message {}", bufferedMsg.workflowId, bufferedMsg)
+            logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered message $bufferedMsg" }
             processMessage(state, bufferedMsg)
         }
 
@@ -202,7 +202,7 @@ class WorkflowEngine(
     }
 
     private fun logDiscardingMessage(message: WorkflowEngineMessage, reason: String) {
-        logger.info("workflowId {} - discarding {}: {}", message.workflowId, reason, message)
+        logger.info { "workflowId ${message.workflowId} - discarding $reason: $message" }
     }
 
     private fun CoroutineScope.processMessage(state: WorkflowState, message: WorkflowEngineMessage) {

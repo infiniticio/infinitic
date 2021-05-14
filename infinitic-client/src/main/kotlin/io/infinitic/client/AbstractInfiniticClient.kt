@@ -61,7 +61,7 @@ import io.infinitic.exceptions.clients.CanNotReuseWorkflowStubException
 import io.infinitic.exceptions.clients.NotAStubException
 import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.coroutines.future.future
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.lang.reflect.Proxy
 import java.util.UUID
 
@@ -72,7 +72,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
     protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     private var _dispatcher: ClientDispatcher? = null
 
@@ -91,7 +91,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
         }
 
     suspend fun handle(message: ClientMessage) {
-        logger.debug("receiving {}", message)
+        logger.debug { "receiving $message" }
 
         dispatcher.handle(message)
     }

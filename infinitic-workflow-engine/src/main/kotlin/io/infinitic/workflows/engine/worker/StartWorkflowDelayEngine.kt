@@ -32,16 +32,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
-private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
+private val logger = KotlinLogging.logger(WorkflowEngine::class.java.name)
 
-private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwable) = logger.error(
-    "workflowId {} - exception on message {}: {}",
-    messageToProcess.message.workflowId,
-    messageToProcess.message,
-    e
-)
+private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwable) = logger.error {
+    "exception on message ${messageToProcess.message}: $e"
+}
 
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowDelayEngine(
     coroutineName: String,

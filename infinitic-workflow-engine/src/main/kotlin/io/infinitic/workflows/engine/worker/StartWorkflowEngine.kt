@@ -42,18 +42,15 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
-private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
+private val logger = KotlinLogging.logger {}
 
 typealias WorkflowEngineMessageToProcess = MessageToProcess<WorkflowEngineMessage>
 
-private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwable) = logger.error(
-    "workflowId {} - exception on message {}: {}",
-    messageToProcess.message.workflowId,
-    messageToProcess.message,
-    e
-)
+private fun logError(messageToProcess: WorkflowEngineMessageToProcess, e: Throwable) = logger.error {
+    "exception on message ${ messageToProcess.message}: $e"
+}
 
 fun <T : WorkflowEngineMessageToProcess> CoroutineScope.startWorkflowEngine(
     coroutineName: String,

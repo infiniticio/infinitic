@@ -89,7 +89,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.future
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.util.UUID
 import kotlin.reflect.full.isSubclassOf
 
@@ -101,7 +101,7 @@ internal class ClientDispatcher(
     val sendToWorkflowTagEngine: SendToWorkflowTagEngine,
     val sendToWorkflowEngine: (suspend (WorkflowEngineMessage) -> Unit)
 ) : Dispatcher {
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     private val responseFlow = MutableSharedFlow<ClientMessage>(replay = 0)
 
@@ -138,7 +138,7 @@ internal class ClientDispatcher(
             sendToWorkflowTagEngine(msg)
 
             responseFlow.first {
-                logger.debug("ResponseFlow: {}", it)
+                logger.debug { "ResponseFlow: $it" }
                 it is WorkflowIdsPerTag && it.workflowName == workflowName && it.workflowTag == workflowTag
             } as WorkflowIdsPerTag
         }.join()
@@ -218,7 +218,7 @@ internal class ClientDispatcher(
             }
             // wait for result
             responseFlow.first {
-                logger.debug("ResponseFlow: {}", it)
+                logger.debug { "ResponseFlow: $it" }
                 it is TaskMessage && it.taskId == deferredTask.taskId
             }
         }.join()
@@ -319,7 +319,7 @@ internal class ClientDispatcher(
 
             // wait for result
             responseFlow.first {
-                logger.debug("ResponseFlow: {}", it)
+                logger.debug { "ResponseFlow: $it" }
                 (it is WorkflowMessage && it.workflowId == deferredWorkflow.workflowId)
             }
         }.join()

@@ -27,29 +27,29 @@ package io.infinitic.tasks.engine.storage
 
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.state.TaskState
+import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.LoggerFactory
 
 class LoggedTaskStateStorage(
     val storage: TaskStateStorage
 ) : TaskStateStorage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getState(taskId: TaskId): TaskState? {
         val taskState = storage.getState(taskId)
-        logger.debug("taskId {} - getState {}", taskId, taskState)
+        logger.debug { "taskId $taskId - getState $taskState" }
 
         return taskState
     }
 
     override suspend fun putState(taskId: TaskId, taskState: TaskState) {
-        logger.debug("taskId {} - putState {}", taskId, taskState)
+        logger.debug { "taskId $taskId - putState $taskState" }
         storage.putState(taskId, taskState)
     }
 
     override suspend fun delState(taskId: TaskId) {
-        logger.debug("taskId {} - delState", taskId)
+        logger.debug { "taskId $taskId - delState" }
         storage.delState(taskId)
     }
 

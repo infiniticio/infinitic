@@ -25,28 +25,28 @@
 
 package io.infinitic.common.storage.keyCounter
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class LoggedKeyCounterCache(
     val cache: KeyCounterCache
 ) : KeyCounterCache by cache {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override fun getCounter(key: String): Long? {
         val value = cache.getCounter(key)
-        logger.debug("key {} - getCounter {}", key, value)
+        logger.debug { "key $key - getCounter $value" }
 
         return value
     }
 
     override fun setCounter(key: String, amount: Long) {
-        logger.debug("key {} - setCounter {}", key, amount)
+        logger.debug { "key $key - setCounter $amount" }
         cache.setCounter(key, amount)
     }
 
     override fun incrCounter(key: String, amount: Long) {
-        logger.debug("key {} - incrCounter {}", key, amount)
+        logger.debug { "key $key - incrCounter $amount" }
         cache.incrCounter(key, amount)
     }
 }

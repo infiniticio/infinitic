@@ -29,47 +29,47 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.LoggerFactory
 
 class LoggedWorkflowTagStorage(
     val storage: WorkflowTagStorage
 ) : WorkflowTagStorage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId? {
         val messageId = storage.getLastMessageId(tag, workflowName)
-        logger.debug("tag {} - name {} - getLastMessageId {}", tag, workflowName, messageId)
+        logger.debug { "tag $tag - name $workflowName - getLastMessageId $messageId" }
 
         return messageId
     }
 
     override suspend fun setLastMessageId(tag: WorkflowTag, workflowName: WorkflowName, messageId: MessageId) {
-        logger.debug("tag {} - name {} - setLastMessageId {}", tag, workflowName, messageId)
+        logger.debug { "tag $tag - name $workflowName - setLastMessageId $messageId" }
         storage.setLastMessageId(tag, workflowName, messageId)
     }
 
     override suspend fun getWorkflowIds(tag: WorkflowTag, workflowName: WorkflowName): Set<WorkflowId> {
         val workflowIds = storage.getWorkflowIds(tag, workflowName)
-        logger.debug("tag {} - workflowName {} - getWorkflowIds {}", tag, workflowName, workflowIds)
+        logger.debug { "tag $tag - workflowName $workflowName - getWorkflowIds $workflowIds" }
 
         return workflowIds
     }
 
     override suspend fun addWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
-        logger.debug("tag {} - name {} - addWorkflowId {}", tag, workflowName, workflowId)
+        logger.debug { "tag $tag - name $workflowName - addWorkflowId $workflowId" }
         storage.addWorkflowId(tag, workflowName, workflowId)
     }
 
     override suspend fun removeWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
-        logger.debug("tag {} - name {} - removeWorkflowId {}", tag, workflowName, workflowId)
+        logger.debug { "tag $tag - name $workflowName - removeWorkflowId $workflowId" }
         storage.removeWorkflowId(tag, workflowName, workflowId)
     }
 
     @TestOnly
     override fun flush() {
-        logger.debug("flush()")
+        logger.warn("flushing workflowTagStorage")
         storage.flush()
     }
 }

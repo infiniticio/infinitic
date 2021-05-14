@@ -25,27 +25,27 @@
 
 package io.infinitic.common.storage.keyValue
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class LoggedKeyValueCache<T>(
     val cache: KeyValueCache<T>
 ) : KeyValueCache<T> by cache {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override fun getValue(key: String): T? {
         val value = cache.getValue(key)
-        logger.debug("key {} - getValue {}", key, value)
+        logger.debug { "key $key - getValue $value" }
 
         return value
     }
 
     override fun putValue(key: String, value: T) {
-        logger.debug("key {} - putValue {}", key, value)
+        logger.debug { "key $key - putValue $value" }
         cache.putValue(key, value)
     }
     override fun delValue(key: String) {
-        logger.debug("key {} - delValue", key)
+        logger.debug { "key $key - delValue" }
         cache.delValue(key)
     }
 }

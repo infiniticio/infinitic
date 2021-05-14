@@ -80,7 +80,7 @@ import io.infinitic.exceptions.workflows.WorkflowUpdatedWhileRunningException
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.WorkflowContext
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.lang.reflect.Proxy
 import java.util.UUID
 import java.time.Duration as JavaDuration
@@ -90,7 +90,8 @@ internal class WorkflowContextImpl(
     private val workflowTaskParameters: WorkflowTaskParameters,
     private val setProperties: (Map<PropertyHash, PropertyValue>, Map<PropertyName, PropertyHash>) -> Unit
 ) : WorkflowContext {
-    private val logger = LoggerFactory.getLogger(javaClass)
+
+    private val logger = KotlinLogging.logger {}
 
     // internal workflow id
     override val id: UUID
@@ -539,9 +540,9 @@ internal class WorkflowContextImpl(
 
         // if it exists, check it has not changed
         if (pastCommand != null && !pastCommand.isSameThan(newCommand, workflowTaskParameters.workflowOptions.workflowChangeCheckMode)) {
-            logger.error("pastCommand =  {}", pastCommand)
-            logger.error("newCommand =  {}", newCommand)
-            logger.error("workflowChangeCheckMode =  {}", workflowTaskParameters.workflowOptions.workflowChangeCheckMode)
+            logger.error { "pastCommand =  $pastCommand" }
+            logger.error { "newCommand =  $newCommand" }
+            logger.error { "workflowChangeCheckMode = ${workflowTaskParameters.workflowOptions.workflowChangeCheckMode}" }
             throw WorkflowUpdatedWhileRunningException(
                 workflowTaskParameters.workflowName.name,
                 "${workflowTaskParameters.methodRun.methodName}",
@@ -559,8 +560,8 @@ internal class WorkflowContextImpl(
 
         // if it exists, check it has not changed
         if (pastStep != null && !pastStep.isSimilarTo(newStep)) {
-            logger.error("pastStep =  {}", pastStep)
-            logger.error("newStep =  {}", newStep)
+            logger.error { "pastStep =  $pastStep" }
+            logger.error { "newStep = $newStep" }
             throw WorkflowUpdatedWhileRunningException(
                 workflowTaskParameters.workflowName.name,
                 "${workflowTaskParameters.methodRun.methodName}",

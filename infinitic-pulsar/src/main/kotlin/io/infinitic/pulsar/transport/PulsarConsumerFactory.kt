@@ -40,12 +40,12 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.TopicNamer
 import io.infinitic.pulsar.topics.TopicType
+import mu.KotlinLogging
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
-import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
 import java.util.concurrent.TimeUnit
 
@@ -54,7 +54,7 @@ class PulsarConsumerFactory(
     pulsarTenant: String,
     pulsarNamespace: String
 ) {
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     private val topics = TopicNamer(pulsarTenant, pulsarNamespace)
 
@@ -184,7 +184,7 @@ class PulsarConsumerFactory(
         ackTimeout: Long? = null,
         earliest: Boolean = true
     ): Consumer<T> {
-        logger.info("Topic $topic: creating consumer $consumerName of type ${T::class}")
+        logger.info { "Topic $topic: creating consumer $consumerName of type ${T::class}" }
 
         return pulsarClient.newConsumer(Schema.AVRO(schemaDefinition<T>()))
             .topic(topic)

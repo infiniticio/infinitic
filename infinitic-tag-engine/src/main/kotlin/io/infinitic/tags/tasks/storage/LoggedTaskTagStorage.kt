@@ -29,47 +29,47 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskTag
+import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.LoggerFactory
 
 class LoggedTaskTagStorage(
     val storage: TaskTagStorage
 ) : TaskTagStorage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId? {
         val messageId = storage.getLastMessageId(tag, taskName)
-        logger.debug("tag {} - name {} - getLastMessageId {}", tag, taskName, messageId)
+        logger.debug { "tag $tag - name $taskName - getLastMessageId $messageId" }
 
         return messageId
     }
 
     override suspend fun setLastMessageId(tag: TaskTag, taskName: TaskName, messageId: MessageId) {
-        logger.debug("tag {} - name {} - setLastMessageId {}", tag, taskName, messageId)
+        logger.debug { "tag $tag - name $taskName - setLastMessageId $messageId" }
         storage.setLastMessageId(tag, taskName, messageId)
     }
 
     override suspend fun getTaskIds(tag: TaskTag, taskName: TaskName): Set<TaskId> {
         val taskIds = storage.getTaskIds(tag, taskName)
-        logger.debug("tag {} - taskName {} - getTaskIds {}", tag, taskName, taskIds)
+        logger.debug { "tag $tag - taskName $taskName - getTaskIds $taskIds" }
 
         return taskIds
     }
 
     override suspend fun addTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
-        logger.debug("tag {} - name {} - addTaskId {}", tag, taskName, taskId)
+        logger.debug { "tag $tag - name $taskName - addTaskId $taskId" }
         storage.addTaskId(tag, taskName, taskId)
     }
 
     override suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
-        logger.debug("tag {} - name {} - removeTaskId {}", tag, taskName, taskId)
+        logger.debug { "tag $tag - name $taskName - removeTaskId $taskId" }
         storage.removeTaskId(tag, taskName, taskId)
     }
 
     @TestOnly
     override fun flush() {
-        logger.debug("flush()")
+        logger.warn("flushing taskTagStorage")
         storage.flush()
     }
 }

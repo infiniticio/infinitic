@@ -27,8 +27,8 @@ package io.infinitic.workflows.engine.storage
 
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.LoggerFactory
 
 /**
  * This WorkflowStateStorage implementation converts state objects used by the engine to Avro objects, and saves
@@ -38,22 +38,22 @@ class LoggedWorkflowStateStorage(
     private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
         val workflowState = storage.getState(workflowId)
-        logger.debug("workflowId {} - getState {}", workflowId, workflowState)
+        logger.debug { "workflowId $workflowId - getState $workflowState" }
 
         return workflowState
     }
 
     override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
-        logger.debug("workflowId {} - putState {}", workflowId, workflowState)
+        logger.debug { "workflowId $workflowId - putState $workflowState" }
         storage.putState(workflowId, workflowState)
     }
 
     override suspend fun delState(workflowId: WorkflowId) {
-        logger.debug("workflowId {} - delState", workflowId)
+        logger.debug { "workflowId $workflowId - delState" }
         storage.delState(workflowId)
     }
 

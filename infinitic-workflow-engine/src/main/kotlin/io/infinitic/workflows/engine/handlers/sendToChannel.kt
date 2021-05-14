@@ -29,13 +29,12 @@ import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.WorkflowEngine
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
-private val logger = LoggerFactory.getLogger(WorkflowEngine::class.java)
+private val logger = KotlinLogging.logger {}
 
 internal fun CoroutineScope.sendToChannel(
     workflowEngineOutput: WorkflowEngineOutput,
@@ -63,5 +62,5 @@ internal fun CoroutineScope.sendToChannel(
                 commandStatus
             )
         }
-        ?: logger.debug("workflowId {} - discarding {} (messageId {})", msg.workflowId, msg, msg.messageId)
+        ?: logger.debug { "workflowId ${msg.workflowId} - discarding non-waited event $msg" }
 }

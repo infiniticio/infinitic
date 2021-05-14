@@ -35,18 +35,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
-private val logger = LoggerFactory.getLogger(MetricsPerNameEngine::class.java)
+private val logger = KotlinLogging.logger(MetricsPerNameEngine::class.java.name)
 
 typealias MetricsPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
-private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwable) = logger.error(
-    "taskName {} - exception on message {}: {}",
-    messageToProcess.message.taskName,
-    messageToProcess.message,
-    e
-)
+private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwable) = logger.error {
+    "taskName ${messageToProcess.message.taskName} - " +
+        "exception on message ${messageToProcess.message}:" +
+        "$e"
+}
 
 fun <T : MetricsPerNameMessageToProcess> CoroutineScope.startMetricsPerNameEngine(
     coroutineName: String,

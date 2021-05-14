@@ -59,7 +59,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import kotlin.coroutines.coroutineContext
 import io.infinitic.common.clients.messages.TaskCanceled as TaskCanceledInClient
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClient
@@ -78,7 +78,7 @@ class TaskEngine(
 ) {
     private val storage = LoggedTaskStateStorage(storage)
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     suspend fun handle(message: TaskEngineMessage) {
         val state = process(message) ?: return
@@ -97,7 +97,7 @@ class TaskEngine(
     }
 
     private suspend fun process(message: TaskEngineMessage): TaskState? = coroutineScope {
-        logger.debug("receiving {}", message)
+        logger.debug { "receiving $message" }
 
         // get current state
         val state = storage.getState(message.taskId)
@@ -440,7 +440,7 @@ class TaskEngine(
         }
     }
 
-    private fun logDiscardingMessage(message: TaskEngineMessage, reason: String) {
-        logger.info("{} - discarding {}", reason, message)
+    private fun logDiscardingMessage(message: TaskEngineMessage, cause: String) {
+        logger.info { "$cause - discarding $message" }
     }
 }
