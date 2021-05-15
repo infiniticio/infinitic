@@ -25,10 +25,12 @@
 
 package io.infinitic.common.parser
 
+import io.infinitic.annotations.Name
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
+import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterTypesException
 import java.lang.reflect.Method
 
 fun getClassForName(name: String): Class<out Any> = when (name) {
@@ -48,21 +50,52 @@ fun getClassForName(name: String): Class<out Any> = when (name) {
         }
 }
 
-// TODO: currently methods with varargs parameters are not supported
-fun getMethodPerNameAndParameterTypes(obj: Any, methodName: String, parameterTypes: List<String>): Method {
-    val parameterClasses = parameterTypes.map { getClassForName(it) }.toTypedArray()
-    try {
-        return obj::class.java.getMethod(methodName, *parameterClasses)
-    } catch (e: NoSuchMethodException) {
-        throw NoMethodFoundWithParameterTypesException(obj::class.java.name, methodName, parameterClasses.map { it.name })
+// TODO: support methods with varargs
+fun getMethodPerNameAndParameters(obj: Any, name: String, parameterTypes: List<String>?, parametersCount: Int): Method {
+    val className by lazy { obj::class.java.name }
+    val methods: Array<Method> = obj::class.javaObjectType.methods
+    return when (parameterTypes) {
+        null -> getMethodPerAnnotationAndParameterCount(className, methods, name, parametersCount)
+            ?: getMethodPerNameAndParameterCount(className, methods, name, parametersCount)
+            ?: throw NoMethodFoundWithParameterCountException(className, name, parametersCount)
+        else -> getMethodPerAnnotationAndParameterTypes(className, methods, name, parameterTypes)
+            ?: getMethodPerNameAndParameterTypes(className, methods, name, parameterTypes)
+            ?: throw NoMethodFoundWithParameterTypesException(className, name, parameterTypes)
     }
 }
 
-// TODO: currently methods with varargs parameters are not supported
-fun getMethodPerNameAndParameterCount(obj: Any, methodName: String, parameterCount: Int): Method {
-    val methods = obj::class.javaObjectType.methods.filter { it.name == methodName && it.parameterCount == parameterCount }
-    if (methods.isEmpty()) throw NoMethodFoundWithParameterCountException(obj::class.java.name, methodName, parameterCount)
-    if (methods.size > 1) throw TooManyMethodsFoundWithParameterCountException(obj::class.java.name, methodName, parameterCount)
+private fun getMethodPerAnnotationAndParameterTypes(className: String, methods: Array<Method>, name: String, parameterTypes: List<String>): Method? {
+    val candidates = methods.filter { it.getAnnotation(Name::class.java)?.name == name && it.parameterTypes.map { it.name } == parameterTypes }
+    return when (candidates.size) {
+        0 -> null
+        1 -> candidates[0]
+        else -> throw TooManyMethodsFoundWithParameterTypesException(className, name, parameterTypes)
+    }
+}
 
-    return methods[0]
+private fun getMethodPerNameAndParameterTypes(className: String, methods: Array<Method>, name: String, parameterTypes: List<String>): Method? {
+    val candidates = methods.filter { it.name == name && it.parameterTypes.map { it.name } == parameterTypes }
+    return when (candidates.size) {
+        0 -> null
+        1 -> candidates[0]
+        else -> throw TooManyMethodsFoundWithParameterTypesException(className, name, parameterTypes)
+    }
+}
+
+private fun getMethodPerAnnotationAndParameterCount(className: String, methods: Array<Method>, name: String, parameterCount: Int): Method? {
+    val candidates = methods.filter { it.getAnnotation(Name::class.java)?.name == name && it.parameterCount == parameterCount }
+    return when (candidates.size) {
+        0 -> null
+        1 -> candidates[0]
+        else -> throw TooManyMethodsFoundWithParameterCountException(className, name, parameterCount)
+    }
+}
+
+private fun getMethodPerNameAndParameterCount(className: String, methods: Array<Method>, name: String, parameterCount: Int): Method? {
+    val candidates = methods.filter { it.name == name && it.parameterCount == parameterCount }
+    return when (candidates.size) {
+        0 -> null
+        1 -> candidates[0]
+        else -> throw TooManyMethodsFoundWithParameterCountException(className, name, parameterCount)
+    }
 }

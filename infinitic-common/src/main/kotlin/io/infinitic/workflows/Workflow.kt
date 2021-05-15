@@ -67,7 +67,7 @@ abstract class Workflow {
     inline fun <reified T : Any> newTask(
         tags: Set<String> = setOf(),
         options: TaskOptions = TaskOptions(),
-        meta: TaskMeta = TaskMeta()
+        meta: Map<String, ByteArray> = mapOf()
     ): T = newTask(T::class.java, tags, options, meta)
 
     /*
@@ -92,7 +92,7 @@ abstract class Workflow {
     inline fun <reified T : Any> newWorkflow(
         tags: Set<String> = setOf(),
         options: WorkflowOptions = WorkflowOptions(),
-        meta: WorkflowMeta = WorkflowMeta()
+        meta: Map<String, ByteArray> = mapOf()
     ): T = newWorkflow(T::class.java, tags, options, meta)
 
     /*

@@ -23,31 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client.samples
+package io.infinitic.tests.workflows
 
 import io.infinitic.annotations.Name
-import io.infinitic.workflows.Channel
+import io.infinitic.tests.tasks.TaskA
+import io.infinitic.workflows.Workflow
 
-internal interface FakeWorkflowParent {
-    fun parent(): String
+@Name("annotated")
+interface WorkflowAnnotated {
+    @Name("bar")
+    fun concat(input: String): String
+}
+
+class WorkflowAnnotatedImpl : Workflow(), WorkflowAnnotated {
+    private val task = newTask<TaskA>()
 
     @Name("bar")
-    fun annotated(): String
-}
+    override fun concat(input: String): String {
+        var str = input
 
-internal interface FakeWorkflow : FakeWorkflowParent {
-    fun m1()
-    fun m1(i: Int?): String
-    fun m1(str: String): Any?
-    fun m1(p1: Int, p2: String): String
-    fun m1(id: FakeInterface): String
-    suspend fun suspendedMethod()
+        str = task.concat(str, "a")
+        str = task.concat(str, "b")
+        str = task.concat(str, "c")
 
-    val channel: Channel<String>
-}
-
-@Name(name = "foo")
-internal interface FooWorkflow : FakeTaskParent {
-    @Name(name = "bar")
-    fun m()
+        return str // should be "${input}abc"
+    }
 }

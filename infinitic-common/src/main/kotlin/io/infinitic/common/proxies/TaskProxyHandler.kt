@@ -42,7 +42,7 @@ class TaskProxyHandler<T : Any>(
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
 
-    val taskName = TaskName(klass.name)
+    val taskName = TaskName.from(klass)
 
     init {
         require(perTaskId == null || perTag == null)

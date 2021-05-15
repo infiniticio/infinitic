@@ -29,8 +29,7 @@ import io.infinitic.client.InfiniticClient
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.errors.Error
-import io.infinitic.common.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.messages.TaskAttemptCompleted
@@ -159,11 +158,13 @@ class TaskExecutor(
         val task = getTaskInstance("${msg.taskName}")
 
         val parameterTypes = msg.methodParameterTypes
-        val method = if (parameterTypes == null) {
-            getMethodPerNameAndParameterCount(task, "${msg.methodName}", msg.methodParameters.size)
-        } else {
-            getMethodPerNameAndParameterTypes(task, "${msg.methodName}", parameterTypes.types)
-        }
+
+        val method = getMethodPerNameAndParameters(
+            task,
+            "${msg.methodName}",
+            parameterTypes?.types,
+            msg.methodParameters.size
+        )
 
         return TaskCommand(task, method, msg.methodParameters.get(), msg.taskOptions)
     }

@@ -42,7 +42,7 @@ class WorkflowProxyHandler<T : Any>(
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
 
-    val workflowName = WorkflowName(klass.name)
+    val workflowName = WorkflowName.from(klass)
 
     init {
         require(perWorkflowId == null || perTag == null)

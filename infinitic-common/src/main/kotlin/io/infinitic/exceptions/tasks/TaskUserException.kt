@@ -57,6 +57,15 @@ class NoMethodFoundWithParameterCountException(
     help = ""
 )
 
+class TooManyMethodsFoundWithParameterTypesException(
+    klass: String,
+    method: String,
+    parameterTypes: List<String>
+) : TaskUserException(
+    msg = "Unable to decide which method \"$method\" with ${parameterTypes.joinToString()} parameters to use in \"$klass\" class",
+    help = ""
+)
+
 class TooManyMethodsFoundWithParameterCountException(
     klass: String,
     method: String,

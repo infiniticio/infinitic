@@ -28,6 +28,7 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeWorkflow
+import io.infinitic.client.samples.FooWorkflow
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -162,7 +163,53 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "Should be able to dispatch a workflow from a prent interface" {
+    "Should be able to dispatch a workflow with annotation" {
+        // when
+        val fooWorkflow = client.newWorkflow<FooWorkflow>()
+        val deferred = client.async(fooWorkflow) { m() }
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe DispatchWorkflow(
+            clientName = client.clientName,
+            clientWaiting = false,
+            workflowId = WorkflowId(deferred.id),
+            workflowName = WorkflowName("foo"),
+            methodName = MethodName("bar"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters(),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentMethodRunId = null,
+            workflowTags = setOf(),
+            workflowOptions = WorkflowOptions(),
+            workflowMeta = WorkflowMeta()
+        )
+    }
+
+    "Should be able to dispatch a workflow with annotation on parent" {
+        // when
+        val fooWorkflow = client.newWorkflow<FooWorkflow>()
+        val deferred = client.async(fooWorkflow) { annotated() }
+        // then
+        workflowTagSlots.size shouldBe 0
+        workflowSlot.captured shouldBe DispatchWorkflow(
+            clientName = client.clientName,
+            clientWaiting = false,
+            workflowId = WorkflowId(deferred.id),
+            workflowName = WorkflowName("foo"),
+            methodName = MethodName("bar"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters(),
+            parentWorkflowId = null,
+            parentWorkflowName = null,
+            parentMethodRunId = null,
+            workflowTags = setOf(),
+            workflowOptions = WorkflowOptions(),
+            workflowMeta = WorkflowMeta()
+        )
+    }
+
+    "Should be able to dispatch a workflow from a parent interface" {
         // when
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>()
         val deferred = client.async(fakeWorkflow) { parent() }

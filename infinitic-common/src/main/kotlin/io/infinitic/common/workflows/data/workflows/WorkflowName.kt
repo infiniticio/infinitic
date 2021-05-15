@@ -33,12 +33,19 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.lang.reflect.Method
+import io.infinitic.annotations.Name as AnnotationName
 
 @Serializable(with = WorkflowNameSerializer::class)
 data class WorkflowName(override val name: String) : Name(name) {
     companion object {
-        fun from(method: Method) = WorkflowName(method.declaringClass.name)
+        fun from(klass: Class<*>): WorkflowName {
+            val name = when (klass.isAnnotationPresent(AnnotationName::class.java)) {
+                true -> klass.getAnnotation(AnnotationName::class.java).name
+                false -> klass.name
+            }
+
+            return WorkflowName(name)
+        }
     }
 }
 

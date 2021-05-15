@@ -25,10 +25,14 @@
 
 package io.infinitic.client.samples
 
+import io.infinitic.annotations.Name
 import io.infinitic.common.tasks.data.TaskId
 
 internal interface FakeTaskParent {
     fun parent(): String
+
+    @Name("bar")
+    fun annotated(): String
 }
 
 internal interface FakeTask : FakeTaskParent {
@@ -39,4 +43,10 @@ internal interface FakeTask : FakeTaskParent {
     fun m1(id: FakeInterface): TaskId
     fun m2(): Boolean
     suspend fun suspendedMethod()
+}
+
+@Name("foo")
+internal interface FooTask : FakeTaskParent {
+    @Name("bar")
+    fun m()
 }
