@@ -53,7 +53,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class InMemoryOutput(
     private val scope: CoroutineScope,
@@ -71,10 +71,10 @@ class InMemoryOutput(
     val metricsPerNameChannel: Channel<MetricsPerNameMessageToProcess> = Channel(),
     val metricsGlobalChannel: Channel<MetricsGlobalMessageToProcess> = Channel()
 ) {
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     val sendEventsToClient: SendToClient = { message: ClientMessage ->
-        logger.debug("sendEventsToClient {}", message)
+        logger.debug { "sendEventsToClient $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             clientEventsChannel.send(InMemoryMessageToProcess(message))
@@ -82,12 +82,12 @@ class InMemoryOutput(
     }
 
     val sendCommandsToTaskTagEngine: SendToTaskTagEngine = { message: TaskTagEngineMessage ->
-        logger.debug("sendCommandsToTaskTagEngine {}", message)
+        logger.debug { "sendCommandsToTaskTagEngine $message" }
         taskTagCommandsChannel.send(InMemoryMessageToProcess(message))
     }
 
     val sendEventsToTaskTagEngine: SendToTaskTagEngine = { message: TaskTagEngineMessage ->
-        logger.debug("sendEventsToTaskTagEngine {}", message)
+        logger.debug { "sendEventsToTaskTagEngine $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             taskTagEventsChannel.send(InMemoryMessageToProcess(message))
@@ -95,12 +95,12 @@ class InMemoryOutput(
     }
 
     val sendCommandsToTaskEngine: SendToTaskEngine = { message ->
-        logger.debug("sendCommandsToTaskEngine {}", message)
+        logger.debug { "sendCommandsToTaskEngine $message" }
         taskCommandsChannel.send(InMemoryMessageToProcess(message))
     }
 
     val sendEventsToTaskEngine: SendToTaskEngine = { message ->
-        logger.debug("sendEventsToTaskEngine {}", message)
+        logger.debug { "sendEventsToTaskEngine $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             taskEventsChannel.send(InMemoryMessageToProcess(message))
@@ -108,7 +108,7 @@ class InMemoryOutput(
     }
 
     val sendToTaskEngineAfter: SendToTaskEngineAfter = { message, after ->
-        logger.debug("sendToTaskEngineAfter {}", message)
+        logger.debug { "sendToTaskEngineAfter $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             delay(after.long)
@@ -117,12 +117,12 @@ class InMemoryOutput(
     }
 
     val sendCommandsToWorkflowTagEngine: SendToWorkflowTagEngine = { message ->
-        logger.debug("sendCommandsToWorkflowTagEngine {}", message)
+        logger.debug { "sendCommandsToWorkflowTagEngine $message" }
         workflowTagCommandsChannel.send(InMemoryMessageToProcess(message))
     }
 
     val sendEventsToWorkflowTagEngine: SendToWorkflowTagEngine = { message ->
-        logger.debug("sendEventsToWorkflowTagEngine {}", message)
+        logger.debug { "sendEventsToWorkflowTagEngine $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             workflowTagEventsChannel.send(InMemoryMessageToProcess(message))
@@ -130,12 +130,12 @@ class InMemoryOutput(
     }
 
     val sendCommandsToWorkflowEngine: SendToWorkflowEngine = { message ->
-        logger.debug("sendCommandsToWorkflowEngine {}", message)
+        logger.debug { "sendCommandsToWorkflowEngine $message" }
         workflowCommandsChannel.send(InMemoryMessageToProcess(message))
     }
 
     val sendEventsToWorkflowEngine: SendToWorkflowEngine = { message ->
-        logger.debug("sendEventsToWorkflowEngine {}", message)
+        logger.debug { "sendEventsToWorkflowEngine $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             workflowEventsChannel.send(InMemoryMessageToProcess(message))
@@ -143,7 +143,7 @@ class InMemoryOutput(
     }
 
     val sendToWorkflowEngineAfter: SendToWorkflowEngineAfter = { message, after ->
-        logger.debug("sendToWorkflowEngineAfter {}", message)
+        logger.debug { "sendToWorkflowEngineAfter $message" }
         // As it's a back loop, we trigger it asynchronously to avoid deadlocks
         scope.launch {
             delay(after.long)
@@ -152,17 +152,17 @@ class InMemoryOutput(
     }
 
     val sendToTaskExecutors: SendToTaskExecutors = { message: TaskExecutorMessage ->
-        logger.debug("sendToTaskExecutors {}", message)
+        logger.debug { "sendToTaskExecutors $message" }
         executorChannel.send(InMemoryMessageToProcess(message))
     }
 
     val sendToMetricsPerName: SendToMetricsPerName = { message: MetricsPerNameMessage ->
-        logger.debug("sendToMonitoringPerName {}", message)
+        logger.debug { "sendToMonitoringPerName $message" }
         metricsPerNameChannel.send(InMemoryMessageToProcess(message))
     }
 
     val sendToMetricsGlobal: SendToMetricsGlobal = { message: MetricsGlobalMessage ->
-        logger.debug("sendToMonitoringGlobal {}", message)
+        logger.debug { "sendToMonitoringGlobal $message" }
         metricsGlobalChannel.send(InMemoryMessageToProcess(message))
     }
 }

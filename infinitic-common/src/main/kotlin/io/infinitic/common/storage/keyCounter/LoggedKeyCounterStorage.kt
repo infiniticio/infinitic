@@ -25,23 +25,23 @@
 
 package io.infinitic.common.storage.keyCounter
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class LoggedKeyCounterStorage(
     val storage: KeyCounterStorage
 ) : KeyCounterStorage by storage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getCounter(key: String): Long {
         val value = storage.getCounter(key)
-        logger.debug("key {} - getCounter {}", key, value)
+        logger.debug { "key $key - getCounter $value" }
 
         return value
     }
 
     override suspend fun incrCounter(key: String, amount: Long) {
-        logger.debug("key {} - incrCounter {}", key, amount)
+        logger.debug { "key $key - incrCounter $amount" }
         storage.incrCounter(key, amount)
     }
 }

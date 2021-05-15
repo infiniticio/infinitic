@@ -64,9 +64,9 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.apache.pulsar.client.api.PulsarClient
 import org.jetbrains.annotations.TestOnly
-import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -74,7 +74,7 @@ class PulsarInfiniticWorker private constructor(
     @JvmField val pulsarClient: PulsarClient,
     @JvmField val workerConfig: WorkerConfig
 ) {
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     private val taskStorages = mutableMapOf<TaskName, TaskStateStorage>()
     private val taskTagStorages = mutableMapOf<TaskName, TaskTagStorage>()
@@ -131,7 +131,7 @@ class PulsarInfiniticWorker private constructor(
     fun start() {
         when (workerConfig.transport) {
             Transport.inMemory -> {
-                logger.info("Infinitic Worker closing due to `inMemory` transport setting")
+                logger.info { "Infinitic Worker closing due to `inMemory` transport setting" }
                 close()
             }
             Transport.pulsar -> {

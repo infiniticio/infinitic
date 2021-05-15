@@ -27,6 +27,7 @@ package io.infinitic.pulsar.storage
 
 import io.infinitic.common.storage.keyValue.KeyValueStorage
 import org.apache.pulsar.functions.api.Context
+import org.jetbrains.annotations.TestOnly
 import java.nio.ByteBuffer
 
 class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
@@ -39,6 +40,7 @@ class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
     override suspend fun delValue(key: String) =
         context.deleteState(key)
 
+    @TestOnly
     override fun flush() {
         // flush is used in tests, no actual implementation needed here
     }

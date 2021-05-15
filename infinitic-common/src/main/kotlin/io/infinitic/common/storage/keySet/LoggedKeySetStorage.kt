@@ -25,28 +25,28 @@
 
 package io.infinitic.common.storage.keySet
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class LoggedKeySetStorage(
     val storage: KeySetStorage
 ) : KeySetStorage by storage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getSet(key: String): Set<ByteArray> {
         val value = storage.getSet(key)
-        logger.debug("key {} - getSet.size {}", key, value.size)
+        logger.debug { "key $key - getSet.size ${value.size}" }
 
         return value
     }
 
     override suspend fun addToSet(key: String, value: ByteArray) {
-        logger.debug("key {} - addToSet {}", key, value)
+        logger.debug { "key $key - addToSet $value" }
         storage.addToSet(key, value)
     }
 
     override suspend fun removeFromSet(key: String, value: ByteArray) {
-        logger.debug("key {} - removeFromSet {}", key, value)
+        logger.debug { "key $key - removeFromSet $value" }
         storage.removeFromSet(key, value)
     }
 }

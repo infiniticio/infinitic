@@ -25,28 +25,28 @@
 
 package io.infinitic.common.storage.keyValue
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 open class LoggedKeyValueStorage(
     val storage: KeyValueStorage
 ) : KeyValueStorage by storage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getValue(key: String): ByteArray? {
         val value = storage.getValue(key)
-        logger.debug("key {} - getValue {}", key, value)
+        logger.debug { "key $key - getValue $value" }
 
         return value
     }
 
     override suspend fun putValue(key: String, value: ByteArray) {
-        logger.debug("key {} - putValue {}", key, value)
+        logger.debug { "key $key - putValue $value" }
         storage.putValue(key, value)
     }
 
     override suspend fun delValue(key: String) {
-        logger.debug("key {} - delValue", key)
+        logger.debug { "key $key - delValue" }
         storage.delValue(key)
     }
 }

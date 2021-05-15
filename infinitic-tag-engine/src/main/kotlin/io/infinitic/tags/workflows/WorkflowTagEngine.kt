@@ -43,7 +43,7 @@ import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class WorkflowTagEngine(
     storage: WorkflowTagStorage,
@@ -52,12 +52,13 @@ class WorkflowTagEngine(
 
 ) {
     private lateinit var scope: CoroutineScope
+
     private val storage = LoggedWorkflowTagStorage(storage)
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     suspend fun handle(message: WorkflowTagEngineMessage) {
-        logger.debug("receiving {}", message)
+        logger.debug { "receiving $message" }
 
         process(message)
 
@@ -161,13 +162,13 @@ class WorkflowTagEngine(
     private suspend fun hasMessageAlreadyBeenHandled(message: WorkflowTagEngineMessage) =
         when (storage.getLastMessageId(message.workflowTag, message.workflowName)) {
             message.messageId -> {
-                logger.info("discarding as state already contains this messageId: {}", message)
+                logger.info { "discarding as state already contains this messageId: $message" }
                 true
             }
             else -> false
         }
 
     private fun discardTagWithoutIds(message: WorkflowTagEngineMessage) {
-        logger.debug("discarding {} as no id found for the provided tag", message)
+        logger.debug { "discarding as no id found for the provided tag: $message" }
     }
 }

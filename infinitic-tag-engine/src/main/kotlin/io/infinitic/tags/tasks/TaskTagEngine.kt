@@ -41,7 +41,7 @@ import io.infinitic.tags.tasks.storage.TaskTagStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class TaskTagEngine(
     storage: TaskTagStorage,
@@ -52,10 +52,10 @@ class TaskTagEngine(
 
     private val storage = LoggedTaskTagStorage(storage)
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     suspend fun handle(message: TaskTagEngineMessage) {
-        logger.debug("receiving {}", message)
+        logger.debug { "receiving $message" }
 
         process(message)
 
@@ -138,13 +138,13 @@ class TaskTagEngine(
     private suspend fun hasMessageAlreadyBeenHandled(message: TaskTagEngineMessage) =
         when (storage.getLastMessageId(message.taskTag, message.taskName)) {
             message.messageId -> {
-                logger.info("discarding as state already contains this messageId: {}", message)
+                logger.info { "discarding as state already contains this messageId: $message" }
                 true
             }
             else -> false
         }
 
     private fun discardTagWithoutIds(message: TaskTagEngineMessage) {
-        logger.debug("discarding {} as no id found for the provided tag", message)
+        logger.debug { "discarding as no id found for the provided tag: $message" }
     }
 }

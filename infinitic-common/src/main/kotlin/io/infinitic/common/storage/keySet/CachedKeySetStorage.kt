@@ -25,18 +25,19 @@
 
 package io.infinitic.common.storage.keySet
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
 class CachedKeySetStorage(
     val cache: KeySetCache<ByteArray>,
     val storage: KeySetStorage
 ) : KeySetStorage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getSet(key: String): Set<ByteArray> = cache.getSet(key)
         ?: run {
-            logger.debug("key {} - getSet - absent from cache, get from storage", key)
+            logger.debug { "key $key - getSet - absent from cache, get from storage" }
             storage.getSet(key)
                 .also { cache.setSet(key, it) }
         }
@@ -50,6 +51,7 @@ class CachedKeySetStorage(
         storage.removeFromSet(key, value)
     }
 
+    @TestOnly
     override fun flush() {
         storage.flush()
         cache.flush()

@@ -34,17 +34,15 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Message
-import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger(PulsarInfiniticWorker::class.java)
+private val logger = KotlinLogging.logger(PulsarInfiniticWorker::class.java.name)
 
-private fun <S> logError(message: Message<S>, e: Throwable) = logger.error(
-    "exception on Pulsar message {}: {}",
-    message,
-    e
-)
+private fun <S> logError(message: Message<S>, e: Throwable) = logger.error {
+    "exception on Pulsar message $message: $e"
+}
 
 fun <E : Envelope<M>, M> CoroutineScope.pullMessages(
     consumer: Consumer<E>,

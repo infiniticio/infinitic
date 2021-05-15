@@ -26,8 +26,10 @@
 
 package io.infinitic.pulsar.admin
 
+import io.infinitic.pulsar.PulsarInfiniticAdmin
 import io.infinitic.pulsar.schemas.getPostSchemaPayload
 import kotlinx.coroutines.future.await
+import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.common.policies.data.AutoTopicCreationOverride
@@ -36,10 +38,9 @@ import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicType
-import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
-private val logger = LoggerFactory.getLogger("io.infinitic.pulsar.admin.PulsarAdmin.initInfinitic")
+private val logger = KotlinLogging.logger(PulsarInfiniticAdmin::class.java.name)
 
 suspend fun PulsarAdmin.setupInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>?) {
     createTenant(this, tenant, getAllowedClusters(this, allowedClusters))
@@ -72,10 +73,10 @@ private suspend fun createTenant(admin: PulsarAdmin, tenant: String, allowedClus
 
     // create or update infinitic tenant
     if (!tenants.contains(tenant)) {
-        logger.info("Creating tenant {} with info {}", tenant, tenantInfo)
+        logger.info { "Creating tenant $tenant with info $tenantInfo" }
         admin.tenants().createTenantAsync(tenant, tenantInfo).await()
     } else {
-        logger.info("Updating tenant {} with info {}", tenant, tenantInfo)
+        logger.info { "Updating tenant $tenant with info $tenantInfo" }
         admin.tenants().updateTenantAsync(tenant, tenantInfo).await()
     }
 }
@@ -112,7 +113,7 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
             // Changes allowed: add optional fields, delete fields
             schema_compatibility_strategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE
         }
-        logger.info("Creating namespace {} with policies {}", fullNamespace, policies)
+        logger.info { "Creating namespace $fullNamespace with policies $policies" }
         admin.namespaces().createNamespaceAsync(fullNamespace, policies).await()
     }
 }
@@ -120,10 +121,10 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
 private suspend fun createPartitionedTopic(admin: PulsarAdmin, topic: String) {
     // create topic as partitioned topic with one partition
     try {
-        logger.info("Creating partitioned topic {}", topic)
+        logger.info { "Creating partitioned topic $topic" }
         admin.topics().createPartitionedTopicAsync(topic, 1).await()
     } catch (e: PulsarAdminException.ConflictException) {
-        logger.info("Topic {} already exist", topic)
+        logger.info { "Topic $topic already exist" }
         // the topic already exists
     }
 }

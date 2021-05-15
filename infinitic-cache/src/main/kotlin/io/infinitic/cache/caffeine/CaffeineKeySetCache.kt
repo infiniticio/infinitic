@@ -30,12 +30,10 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import io.infinitic.common.data.Bytes
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetCache
-import org.slf4j.LoggerFactory
+import org.jetbrains.annotations.TestOnly
 import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
 class CaffeineKeySetCache(config: CaffeineConfig) : KeySetCache<ByteArray>, Flushable {
-
-    private val logger = LoggerFactory.getLogger(javaClass)
 
     private var caffeine: Cache<String, Set<Bytes>> =
         Caffeine.newBuilder().setup(config).build()
@@ -59,6 +57,7 @@ class CaffeineKeySetCache(config: CaffeineConfig) : KeySetCache<ByteArray>, Flus
             ?.also { caffeine.put(key, it.minus(Bytes(value))) }
     }
 
+    @TestOnly
     override fun flush() {
         caffeine.invalidateAll()
     }

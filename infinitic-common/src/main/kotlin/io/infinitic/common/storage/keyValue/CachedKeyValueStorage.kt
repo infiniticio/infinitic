@@ -25,19 +25,20 @@
 
 package io.infinitic.common.storage.keyValue
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
+import org.jetbrains.annotations.TestOnly
 
 open class CachedKeyValueStorage(
     val cache: KeyValueCache<ByteArray>,
     val storage: KeyValueStorage
 ) : KeyValueStorage {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getValue(key: String): ByteArray? {
         return cache.getValue(key)
             ?: run {
-                logger.debug("key {} - getValue - absent from cache, get from storage", key)
+                logger.debug { "key $key - getValue - absent from cache, get from storage" }
                 storage.getValue(key)
                     ?.also { cache.putValue(key, it) }
             }
@@ -53,6 +54,7 @@ open class CachedKeyValueStorage(
         cache.delValue(key)
     }
 
+    @TestOnly
     override fun flush() {
         cache.flush()
         storage.flush()

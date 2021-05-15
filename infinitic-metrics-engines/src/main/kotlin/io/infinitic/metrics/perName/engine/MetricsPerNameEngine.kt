@@ -33,7 +33,7 @@ import io.infinitic.common.metrics.perName.state.MetricsPerNameState
 import io.infinitic.common.tasks.data.TaskStatus
 import io.infinitic.metrics.perName.engine.storage.LoggedMetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class MetricsPerNameEngine(
     storage: MetricsPerNameStateStorage,
@@ -41,10 +41,10 @@ class MetricsPerNameEngine(
 ) {
     val storage = LoggedMetricsPerNameStateStorage(storage)
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     suspend fun handle(message: MetricsPerNameMessage) {
-        logger.debug("receiving {}", message)
+        logger.debug { "receiving $message" }
 
         // get state
         val oldState = storage.getState(message.taskName)
@@ -93,7 +93,7 @@ class MetricsPerNameEngine(
         }
     }
 
-    private fun logDiscardingMessage(message: MetricsPerNameMessage, reason: String) {
-        logger.info("{} - discarding {}", reason, message)
+    private fun logDiscardingMessage(message: MetricsPerNameMessage, cause: String) {
+        logger.info { "$cause - discarding $message" }
     }
 }

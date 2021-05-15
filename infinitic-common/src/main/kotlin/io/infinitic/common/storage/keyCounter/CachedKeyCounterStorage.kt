@@ -25,6 +25,7 @@
 
 package io.infinitic.common.storage.keyCounter
 
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -47,6 +48,7 @@ class CachedKeyCounterStorage(
         storage.incrCounter(key, amount)
     }
 
+    @TestOnly
     override fun flush() {
         storage.flush()
         cache.flush()

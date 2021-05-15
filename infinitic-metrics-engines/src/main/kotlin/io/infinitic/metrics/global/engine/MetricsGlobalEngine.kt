@@ -30,17 +30,17 @@ import io.infinitic.common.metrics.global.messages.TaskCreated
 import io.infinitic.common.metrics.global.state.MetricsGlobalState
 import io.infinitic.metrics.global.engine.storage.LoggedMetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class MetricsGlobalEngine(
     storage: MetricsGlobalStateStorage
 ) {
     private val storage = LoggedMetricsGlobalStateStorage(storage)
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     suspend fun handle(message: MetricsGlobalMessage) {
-        logger.debug("receiving {}", message)
+        logger.debug { "receiving $message" }
 
         // get state
         val oldState = storage.getState()
@@ -64,8 +64,8 @@ class MetricsGlobalEngine(
         }
     }
 
-    private fun logDiscardingMessage(message: MetricsGlobalMessage, reason: String) {
-        logger.info("discarding {}: {} (messageId {})", reason, message, message.messageId)
+    private fun logDiscardingMessage(message: MetricsGlobalMessage, cause: String) {
+        logger.info { "discarding $cause: $message" }
     }
 
     private fun handleTaskTypeCreated(message: TaskCreated, state: MetricsGlobalState) {

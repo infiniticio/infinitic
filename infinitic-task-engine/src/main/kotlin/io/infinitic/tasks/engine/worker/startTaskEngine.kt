@@ -42,18 +42,15 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
-private val logger = LoggerFactory.getLogger(TaskEngine::class.java)
+private val logger = KotlinLogging.logger(TaskEngine::class.java.name)
 
 typealias TaskEngineMessageToProcess = MessageToProcess<TaskEngineMessage>
 
-private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable) = logger.error(
-    "taskId {} - exception on message {}: {}",
-    messageToProcess.message.taskId,
-    messageToProcess.message,
-    e
-)
+private fun logError(messageToProcess: TaskEngineMessageToProcess, e: Throwable) = logger.error {
+    "exception on message ${messageToProcess.message}: $e"
+}
 
 fun <T : TaskEngineMessageToProcess> CoroutineScope.startTaskEngine(
     coroutineName: String,

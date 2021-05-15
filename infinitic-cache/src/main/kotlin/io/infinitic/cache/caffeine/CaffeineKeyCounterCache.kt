@@ -29,6 +29,7 @@ import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keyCounter.KeyCounterCache
+import org.jetbrains.annotations.TestOnly
 import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
 class CaffeineKeyCounterCache(config: CaffeineConfig) : KeyCounterCache, Flushable {
@@ -47,6 +48,7 @@ class CaffeineKeyCounterCache(config: CaffeineConfig) : KeyCounterCache, Flushab
         }
     }
 
+    @TestOnly
     override fun flush() {
         caffeine.invalidateAll()
     }

@@ -25,32 +25,32 @@
 
 package io.infinitic.common.storage.keySet
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class LoggedKeySetCache<T>(
     val cache: KeySetCache<T>
 ) : KeySetCache<T> by cache {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = KotlinLogging.logger {}
 
     override fun getSet(key: String): Set<T>? {
         val value = cache.getSet(key)
-        logger.debug("key {} - getSet.size {}", key, value?.size)
+        logger.debug { "key $key - getSet.size ${value?.size}" }
 
         return value
     }
 
     override fun setSet(key: String, value: Set<T>) {
-        logger.debug("key {} - setSet.size {}", key, value.size)
+        logger.debug { "key $key - setSet.size ${value.size}" }
         cache.setSet(key, value)
     }
 
     override fun addToSet(key: String, value: T) {
-        logger.debug("key {} - addToSet {}", key, value)
+        logger.debug { "key $key - addToSet $value" }
         cache.addToSet(key, value)
     }
     override fun removeFromSet(key: String, value: T) {
-        logger.debug("key {} - removeFromSet {}", key, value)
+        logger.debug { "key $key - removeFromSet $value" }
         cache.removeFromSet(key, value)
     }
 }

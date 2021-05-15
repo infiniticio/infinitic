@@ -32,15 +32,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
-private val logger = LoggerFactory.getLogger(AbstractInfiniticClient::class.java)
+private val logger = KotlinLogging.logger(AbstractInfiniticClient::class.java.name)
 
-private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = logger.error(
-    "exception on message {}: {}",
-    messageToProcess.message,
-    e
-)
+private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = logger.error {
+    "exception on message ${messageToProcess.message}: $e"
+}
 
 fun <T : ClientMessageToProcess> CoroutineScope.startClientWorker(
     client: AbstractInfiniticClient,
