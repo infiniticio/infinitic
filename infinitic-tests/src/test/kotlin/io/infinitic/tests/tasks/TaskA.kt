@@ -25,6 +25,7 @@
 
 package io.infinitic.tests.tasks
 
+import io.infinitic.annotations.Name
 import io.infinitic.client.cancelTask
 import io.infinitic.client.cancelWorkflow
 import io.infinitic.client.retryTask
@@ -37,6 +38,7 @@ interface ParentInterface {
     fun parent(): String
 }
 
+@Name("test")
 interface TaskA : ParentInterface {
     fun concat(str1: String, str2: String): String
     fun reverse(str: String): String
@@ -48,8 +50,12 @@ interface TaskA : ParentInterface {
     fun failing()
     fun successAtRetry(): String
     fun retryTaskA(id: UUID)
+    @Name("concatenation")
+    fun annnoted(str1: String, str2: String): String
+
 }
 
+@Name("test")
 class TaskAImpl : Task(), TaskA {
     override fun concat(str1: String, str2: String) = str1 + str2
     override fun reverse(str: String) = str.reversed()
@@ -75,6 +81,10 @@ class TaskAImpl : Task(), TaskA {
         Thread.sleep(50)
         context.client.retryTask<TaskA>(id)
     }
+
+    @Name("concatenation")
+    override fun annnoted(str1: String, str2: String) = str1 + str2
+
 
     override fun parent() = "ok"
 

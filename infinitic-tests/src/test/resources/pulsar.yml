@@ -42,6 +42,9 @@ pulsar:
   namespace: dev
 
 tasks:
+  - name: test
+    class: io.infinitic.tests.tasks.TaskAImpl
+    concurrency: 3
   - name: io.infinitic.tests.tasks.TaskA
     class: io.infinitic.tests.tasks.TaskAImpl
     concurrency: 3

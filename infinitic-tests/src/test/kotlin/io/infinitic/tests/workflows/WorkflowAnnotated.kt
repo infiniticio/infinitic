@@ -32,19 +32,19 @@ import io.infinitic.workflows.Workflow
 @Name("annotated")
 interface WorkflowAnnotated {
     @Name("bar")
-    fun concat(input: String): String
+    fun foo(input: String): String
 }
 
 class WorkflowAnnotatedImpl : Workflow(), WorkflowAnnotated {
     private val task = newTask<TaskA>()
 
     @Name("bar")
-    override fun concat(input: String): String {
+    override fun foo(input: String): String {
         var str = input
 
-        str = task.concat(str, "a")
-        str = task.concat(str, "b")
-        str = task.concat(str, "c")
+        str = task.annnoted(str, "a")
+        str = task.annnoted(str, "b")
+        str = task.annnoted(str, "c")
 
         return str // should be "${input}abc"
     }
