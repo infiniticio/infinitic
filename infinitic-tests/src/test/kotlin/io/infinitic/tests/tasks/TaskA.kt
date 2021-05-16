@@ -52,7 +52,6 @@ interface TaskA : ParentInterface {
     fun retryTaskA(id: UUID)
     @Name("concatenation")
     fun annnoted(str1: String, str2: String): String
-
 }
 
 @Name("test")
@@ -84,7 +83,6 @@ class TaskAImpl : Task(), TaskA {
 
     @Name("concatenation")
     override fun annnoted(str1: String, str2: String) = str1 + str2
-
 
     override fun parent() = "ok"
 
