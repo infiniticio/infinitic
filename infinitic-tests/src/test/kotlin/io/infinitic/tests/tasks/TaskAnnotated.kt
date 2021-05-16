@@ -23,29 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.workflows
+package io.infinitic.tests.tasks
 
 import io.infinitic.annotations.Name
-import io.infinitic.tests.tasks.TaskAnnotated
-import io.infinitic.workflows.Workflow
+import io.infinitic.tasks.Task
+import java.time.Duration
 
-@Name("annotated")
-interface WorkflowAnnotated {
-    @Name("bar")
-    fun foo(input: String): String
+@Name("test")
+interface TaskAnnotated {
+    @Name("concatenation")
+    fun annotated(str1: String, str2: String): String
 }
 
-class WorkflowAnnotatedImpl : Workflow(), WorkflowAnnotated {
-    private val task = newTask<TaskAnnotated>()
+@Name("test")
+class TaskAnnotatedImpl : Task(), TaskAnnotated {
 
-    @Name("bar")
-    override fun foo(input: String): String {
-        var str = input
+    @Name("concatenation")
+    override fun annotated(str1: String, str2: String) = str1 + str2
 
-        str = task.annotated(str, "a")
-        str = task.annotated(str, "b")
-        str = task.annotated(str, "c")
-
-        return str // should be "${input}abc"
-    }
+    override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }
