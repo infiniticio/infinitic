@@ -30,6 +30,8 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.exceptions.clients.MultipleMethodCallsException
+import io.infinitic.exceptions.clients.NoMethodCallException
 import java.lang.reflect.Method
 
 class TaskProxyHandler<T : Any>(
@@ -42,7 +44,20 @@ class TaskProxyHandler<T : Any>(
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
 
-    val taskName = TaskName.from(klass)
+    val taskName = TaskName(className)
+
+    override val method: Method
+        get() {
+            if (methods.isEmpty()) {
+                throw NoMethodCallException(klass.name)
+            }
+
+            if (methods.size > 1) {
+                throw MultipleMethodCallsException(klass.name, methods.first().name, methods.last().name)
+            }
+
+            return methods.last()
+        }
 
     init {
         require(perTaskId == null || perTag == null)

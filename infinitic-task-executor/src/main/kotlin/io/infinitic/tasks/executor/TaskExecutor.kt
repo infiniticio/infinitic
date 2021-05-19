@@ -160,7 +160,7 @@ class TaskExecutor(
         val parameterTypes = msg.methodParameterTypes
 
         val method = getMethodPerNameAndParameters(
-            task,
+            task::class.java,
             "${msg.methodName}",
             parameterTypes?.types,
             msg.methodParameters.size

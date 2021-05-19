@@ -26,76 +26,105 @@
 package io.infinitic.common.parser
 
 import io.infinitic.annotations.Name
-import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterTypesException
 import java.lang.reflect.Method
 
-fun getClassForName(name: String): Class<out Any> = when (name) {
-    "bytes" -> Byte::class.java
-    "short" -> Short::class.java
-    "int" -> Int::class.java
-    "long" -> Long::class.java
-    "float" -> Float::class.java
-    "double" -> Double::class.java
-    "boolean" -> Boolean::class.java
-    "char" -> Character::class.java
-    else ->
-        try {
-            Class.forName(name)
-        } catch (e: java.lang.ClassNotFoundException) {
-            throw ClassNotFoundException(name)
-        }
-}
-
 // TODO: support methods with varargs
-fun getMethodPerNameAndParameters(obj: Any, name: String, parameterTypes: List<String>?, parametersCount: Int): Method {
-    val className by lazy { obj::class.java.name }
-    val methods: Array<Method> = obj::class.javaObjectType.methods
-    return when (parameterTypes) {
-        null -> getMethodPerAnnotationAndParameterCount(className, methods, name, parametersCount)
-            ?: getMethodPerNameAndParameterCount(className, methods, name, parametersCount)
-            ?: throw NoMethodFoundWithParameterCountException(className, name, parametersCount)
-        else -> getMethodPerAnnotationAndParameterTypes(className, methods, name, parameterTypes)
-            ?: getMethodPerNameAndParameterTypes(className, methods, name, parameterTypes)
-            ?: throw NoMethodFoundWithParameterTypesException(className, name, parameterTypes)
+fun getMethodPerNameAndParameters(
+    klass: Class<*>,
+    name: String,
+    parameterTypes: List<String>?,
+    parametersCount: Int
+): Method = when (parameterTypes) {
+    null -> getMethodPerAnnotationAndParametersCount(klass, name, parametersCount)
+        ?: getMethodPerNameAndParameterCount(klass, name, parametersCount)
+        ?: throw NoMethodFoundWithParameterCountException(klass.name, name, parametersCount)
+    else -> getMethodPerAnnotationAndParameterTypes(klass, name, parameterTypes)
+        ?: getMethodPerNameAndParameterTypes(klass, name, parameterTypes)
+        ?: throw NoMethodFoundWithParameterTypesException(klass.name, name, parameterTypes)
+}
+
+private fun getMethodPerAnnotationAndParameterTypes(klass: Class<*>, name: String, parameterTypes: List<String>): Method? {
+    var clazz = klass
+
+    do {
+        // has current class a method with @Name annotation and right parameters?
+        val methods = clazz.methods.filter { method ->
+            method.isAccessible = true
+            method.isAnnotationPresent(Name::class.java) &&
+                method.parameterTypes.map { it.name } == parameterTypes
+        }
+        when (methods.size) {
+            0 -> Unit
+            1 -> return methods[0]
+            else -> throw TooManyMethodsFoundWithParameterTypesException(klass.name, name, parameterTypes)
+        }
+
+        // has any of the interfaces a method with @Name annotation and right parameters?
+        clazz.interfaces.forEach { interfaze ->
+            getMethodPerAnnotationAndParameterTypes(interfaze, name, parameterTypes)?.also { return it }
+        }
+
+        // if not, inspect the superclass
+        clazz = clazz.superclass ?: break
+    } while ("java.lang.Object" != clazz.canonicalName)
+
+    return null
+}
+
+private fun getMethodPerNameAndParameterTypes(klass: Class<*>, name: String, parameterTypes: List<String>): Method? {
+    val methods = klass.methods.filter { method ->
+        method.isAccessible = true
+        method.name == name && method.parameterTypes.map { it.name } == parameterTypes
+    }
+
+    return when (methods.size) {
+        0 -> null
+        1 -> methods[0]
+        else -> throw TooManyMethodsFoundWithParameterTypesException(klass.name, name, parameterTypes)
     }
 }
 
-private fun getMethodPerAnnotationAndParameterTypes(className: String, methods: Array<Method>, name: String, parameterTypes: List<String>): Method? {
-    val candidates = methods.filter { it.getAnnotation(Name::class.java)?.name == name && it.parameterTypes.map { it.name } == parameterTypes }
-    return when (candidates.size) {
-        0 -> null
-        1 -> candidates[0]
-        else -> throw TooManyMethodsFoundWithParameterTypesException(className, name, parameterTypes)
-    }
+private fun getMethodPerAnnotationAndParametersCount(klass: Class<*>, name: String, parameterCount: Int): Method? {
+    var clazz = klass
+
+    do {
+        // has current class a method with @Name annotation and right count of parameters?
+        val methods = clazz.methods.filter { method ->
+            method.isAccessible = true
+            method.isAnnotationPresent(Name::class.java) &&
+                method.parameterTypes.size == parameterCount
+        }
+        when (methods.size) {
+            0 -> Unit
+            1 -> return methods[0]
+            else -> throw TooManyMethodsFoundWithParameterCountException(klass.name, name, parameterCount)
+        }
+
+        // has any of the interfaces a method with @Name annotation and right count of parameters?
+        clazz.interfaces.forEach { interfaze ->
+            getMethodPerAnnotationAndParametersCount(interfaze, name, parameterCount)?.also { return it }
+        }
+
+        // if not, inspect the superclass
+        clazz = clazz.superclass ?: break
+    } while ("java.lang.Object" != clazz.canonicalName)
+
+    return null
 }
 
-private fun getMethodPerNameAndParameterTypes(className: String, methods: Array<Method>, name: String, parameterTypes: List<String>): Method? {
-    val candidates = methods.filter { it.name == name && it.parameterTypes.map { it.name } == parameterTypes }
-    return when (candidates.size) {
-        0 -> null
-        1 -> candidates[0]
-        else -> throw TooManyMethodsFoundWithParameterTypesException(className, name, parameterTypes)
+private fun getMethodPerNameAndParameterCount(klass: Class<*>, name: String, parameterCount: Int): Method? {
+    val methods = klass.methods.filter { method ->
+        method.isAccessible = true
+        method.name == name && method.parameterCount == parameterCount
     }
-}
 
-private fun getMethodPerAnnotationAndParameterCount(className: String, methods: Array<Method>, name: String, parameterCount: Int): Method? {
-    val candidates = methods.filter { it.getAnnotation(Name::class.java)?.name == name && it.parameterCount == parameterCount }
-    return when (candidates.size) {
+    return when (methods.size) {
         0 -> null
-        1 -> candidates[0]
-        else -> throw TooManyMethodsFoundWithParameterCountException(className, name, parameterCount)
-    }
-}
-
-private fun getMethodPerNameAndParameterCount(className: String, methods: Array<Method>, name: String, parameterCount: Int): Method? {
-    val candidates = methods.filter { it.name == name && it.parameterCount == parameterCount }
-    return when (candidates.size) {
-        0 -> null
-        1 -> candidates[0]
-        else -> throw TooManyMethodsFoundWithParameterCountException(className, name, parameterCount)
+        1 -> methods[0]
+        else -> throw TooManyMethodsFoundWithParameterCountException(klass.name, name, parameterCount)
     }
 }

@@ -72,8 +72,6 @@ import io.infinitic.common.workflows.data.steps.StepOngoingFailure
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.exceptions.workflows.FailedDeferredException
-import io.infinitic.exceptions.workflows.MultipleMethodCallsAtAsyncException
-import io.infinitic.exceptions.workflows.NoMethodCallAtAsyncException
 import io.infinitic.exceptions.workflows.ShouldNotUseAsyncFunctionInsideInlinedTaskException
 import io.infinitic.exceptions.workflows.ShouldNotWaitInsideInlinedTaskException
 import io.infinitic.exceptions.workflows.WorkflowUpdatedWhileRunningException
@@ -341,30 +339,22 @@ internal class WorkflowContextImpl(
      * Task dispatching
      */
     override fun <S> dispatchTask(handler: TaskProxyHandler<*>): Deferred<S> {
-        val method = when (handler.methods.size) {
-            0 -> throw NoMethodCallAtAsyncException("${handler.taskName}")
-            1 -> handler.methods[0]
-            else -> throw MultipleMethodCallsAtAsyncException(
-                "${handler.taskName}",
-                handler.methods.first().name,
-                handler.methods.last().name
-            )
-        }
-        val args = handler.args[0]
+        val method = handler.method
+        val methodArgs = handler.methodArgs
 
         checkMethodIsNotSuspend(method)
 
         val deferred = dispatchCommand<S>(
             DispatchTask(
                 taskName = handler.taskName,
-                methodParameters = MethodParameters.from(method, args),
+                methodParameters = MethodParameters.from(method, methodArgs),
                 methodParameterTypes = MethodParameterTypes.from(method),
-                methodName = MethodName.from(method),
+                methodName = MethodName(handler.methodName),
                 taskTags = handler.taskTags!!,
                 taskMeta = handler.taskMeta!!,
                 taskOptions = handler.taskOptions!!
             ),
-            CommandSimpleName.fromMethod(method)
+            CommandSimpleName(handler.simpleName)
         )
         handler.reset()
         return deferred
@@ -377,30 +367,23 @@ internal class WorkflowContextImpl(
      * Workflow dispatching
      */
     override fun <S> dispatchWorkflow(handler: WorkflowProxyHandler<*>): Deferred<S> {
-        val method = when (handler.methods.size) {
-            0 -> throw NoMethodCallAtAsyncException("${handler.workflowName}")
-            1 -> handler.methods[0]
-            else -> throw MultipleMethodCallsAtAsyncException(
-                "${handler.workflowName}",
-                handler.methods.first().name,
-                handler.methods.last().name
-            )
-        }
-        val args = handler.args[0]
+        val method = handler.method
+        val args = handler.methodArgs
+        val name = handler.methodName
 
         checkMethodIsNotSuspend(method)
 
         val deferred = dispatchCommand<S>(
             DispatchChildWorkflow(
                 childWorkflowName = handler.workflowName,
-                childMethodName = MethodName.from(method),
+                childMethodName = MethodName(name),
                 childMethodParameterTypes = MethodParameterTypes.from(method),
                 childMethodParameters = MethodParameters.from(method, args),
                 workflowTags = handler.workflowTags!!,
                 workflowMeta = handler.workflowMeta!!,
                 workflowOptions = handler.workflowOptions!!
             ),
-            CommandSimpleName.fromMethod(method)
+            CommandSimpleName(handler.simpleName)
         )
         handler.reset()
         return deferred

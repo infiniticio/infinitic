@@ -29,17 +29,15 @@ import io.infinitic.annotations.Name
 import io.infinitic.tasks.Task
 import java.time.Duration
 
-@Name("test")
+@Name("annotatedTask")
 interface TaskAnnotated {
-    @Name("concatenation")
-    fun annotated(str1: String, str2: String): String
+    @Name("bar")
+    fun foo(str1: String, str2: String): String
 }
 
-@Name("test")
 class TaskAnnotatedImpl : Task(), TaskAnnotated {
 
-    @Name("concatenation")
-    override fun annotated(str1: String, str2: String) = str1 + str2
+    override fun foo(str1: String, str2: String) = str1 + str2
 
     override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }

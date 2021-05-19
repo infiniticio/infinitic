@@ -30,7 +30,12 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.exceptions.clients.ChannelUsedOnNewWorkflowException
+import io.infinitic.exceptions.clients.MultipleMethodCallsException
+import io.infinitic.exceptions.clients.NoMethodCallException
+import io.infinitic.workflows.SendChannel
 import java.lang.reflect.Method
+import kotlin.reflect.full.isSubclassOf
 
 class WorkflowProxyHandler<T : Any>(
     override val klass: Class<T>,
@@ -42,7 +47,28 @@ class WorkflowProxyHandler<T : Any>(
     private val dispatcherFn: () -> Dispatcher
 ) : MethodProxyHandler<T>(klass) {
 
-    val workflowName = WorkflowName.from(klass)
+    val workflowName = WorkflowName(className)
+
+    override val method: Method
+        get() {
+            if (methods.isEmpty()) {
+                throw NoMethodCallException(klass.name)
+            }
+
+            val method = methods.last()
+
+            val isChannel = method.returnType.kotlin.isSubclassOf(SendChannel::class)
+
+            if (isChannel && isNew()) {
+                throw ChannelUsedOnNewWorkflowException("$workflowName")
+            }
+
+            if (!isChannel && methods.size > 1) {
+                throw MultipleMethodCallsException(klass.name, methods.first().name, methods.last().name)
+            }
+
+            return method
+        }
 
     init {
         require(perWorkflowId == null || perTag == null)

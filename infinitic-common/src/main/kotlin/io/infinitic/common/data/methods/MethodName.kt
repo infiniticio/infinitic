@@ -33,22 +33,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.lang.reflect.Method
-import io.infinitic.annotations.Name as AnnotationName
 
 @Serializable(with = MethodNameSerializer::class)
-data class MethodName(override val name: String) : Name(name) {
-    companion object {
-        fun from(method: Method): MethodName {
-            method.isAccessible = true
-            val name = when (method.isAnnotationPresent(AnnotationName::class.java)) {
-                true -> method.getAnnotation(AnnotationName::class.java).name
-                false -> method.name
-            }
-            return MethodName(name)
-        }
-    }
-}
+data class MethodName(override val name: String) : Name(name)
 
 object MethodNameSerializer : KSerializer<MethodName> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MethodName", PrimitiveKind.STRING)

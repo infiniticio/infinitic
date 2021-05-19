@@ -74,7 +74,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         // get method
         val methodRun = workflowTaskParameters.methodRun
         val method = getMethodPerNameAndParameters(
-            workflow,
+            workflow::class.java,
             "${methodRun.methodName}",
             methodRun.methodParameterTypes?.types,
             methodRun.methodParameters.size

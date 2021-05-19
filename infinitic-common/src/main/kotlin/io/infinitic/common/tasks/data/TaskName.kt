@@ -33,21 +33,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import io.infinitic.annotations.Name as AnnotationName
 
 @Serializable(with = TaskNameSerializer::class)
-data class TaskName(override val name: String) : Name(name) {
-    companion object {
-        fun from(klass: Class<*>): TaskName {
-            val name = when (klass.isAnnotationPresent(AnnotationName::class.java)) {
-                true -> klass.getAnnotation(AnnotationName::class.java).name
-                false -> klass.name
-            }
-
-            return TaskName(name)
-        }
-    }
-}
+data class TaskName(override val name: String) : Name(name)
 
 object TaskNameSerializer : KSerializer<TaskName> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskName", PrimitiveKind.STRING)

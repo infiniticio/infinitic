@@ -29,7 +29,7 @@ import io.infinitic.annotations.Name
 import io.infinitic.tests.tasks.TaskAnnotated
 import io.infinitic.workflows.Workflow
 
-@Name("annotated")
+@Name("annotatedWorkflow")
 interface WorkflowAnnotated {
     @Name("bar")
     fun foo(input: String): String
@@ -38,13 +38,12 @@ interface WorkflowAnnotated {
 class WorkflowAnnotatedImpl : Workflow(), WorkflowAnnotated {
     private val task = newTask<TaskAnnotated>()
 
-    @Name("bar")
     override fun foo(input: String): String {
         var str = input
 
-        str = task.annotated(str, "a")
-        str = task.annotated(str, "b")
-        str = task.annotated(str, "c")
+        str = task.foo(str, "a")
+        str = task.foo(str, "b")
+        str = task.foo(str, "c")
 
         return str // should be "${input}abc"
     }
