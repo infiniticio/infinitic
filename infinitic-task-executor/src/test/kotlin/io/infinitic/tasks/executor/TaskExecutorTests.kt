@@ -294,5 +294,6 @@ private fun getExecuteTaskAttempt(name: String, method: String, input: Array<out
     methodParameterTypes = types?.let { MethodParameterTypes(it) },
     methodParameters = MethodParameters.from(*input),
     taskOptions = TaskOptions(runningTimeout = .2F),
+    taskTags = setOf(),
     taskMeta = TaskMeta()
 )

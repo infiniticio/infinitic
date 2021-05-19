@@ -40,6 +40,7 @@ interface TaskContext {
     val retrySequence: Int
     val retryIndex: Int
     val lastError: Error?
+    val tags: Set<String>
     val meta: MutableMap<String, ByteArray>
     val options: TaskOptions
 }

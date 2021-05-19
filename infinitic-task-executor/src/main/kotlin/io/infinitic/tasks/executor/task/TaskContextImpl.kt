@@ -41,16 +41,10 @@ data class TaskContextImpl(
     override val retrySequence: Int,
     override val retryIndex: Int,
     override val lastError: Error?,
+    override val tags: Set<String>,
     override val meta: MutableMap<String, ByteArray>,
     override val options: TaskOptions,
     private val clientFactory: () -> InfiniticClient
 ) : TaskContext {
-    private var _client: InfiniticClient? = null
-
-    override val client: InfiniticClient
-        get() = _client ?: run {
-            val client = clientFactory()
-            _client = client
-            return client
-        }
+    override val client: InfiniticClient by lazy { clientFactory() }
 }

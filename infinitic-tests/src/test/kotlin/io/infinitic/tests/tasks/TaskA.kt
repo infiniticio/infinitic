@@ -28,6 +28,7 @@ package io.infinitic.tests.tasks
 import io.infinitic.client.cancelTask
 import io.infinitic.client.cancelWorkflow
 import io.infinitic.client.retryTask
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
 import io.infinitic.tests.workflows.WorkflowA
 import java.time.Duration
@@ -48,6 +49,9 @@ interface TaskA : ParentInterface {
     fun failing()
     fun successAtRetry(): String
     fun retryTaskA(id: UUID)
+
+    fun tags(): Set<String>
+    fun meta(): TaskMeta
 }
 
 class TaskAImpl : Task(), TaskA {
@@ -83,6 +87,10 @@ class TaskAImpl : Task(), TaskA {
     }
 
     override fun parent() = "ok"
+
+    override fun tags() = context.tags
+
+    override fun meta() = TaskMeta(context.meta)
 
     override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }

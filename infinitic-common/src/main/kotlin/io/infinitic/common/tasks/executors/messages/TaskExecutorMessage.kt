@@ -38,6 +38,7 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
+import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.serialization.Serializable
@@ -65,5 +66,6 @@ data class ExecuteTaskAttempt(
     val methodParameterTypes: MethodParameterTypes?,
     val methodParameters: MethodParameters,
     val taskOptions: TaskOptions,
-    val taskMeta: TaskMeta
+    val taskMeta: TaskMeta,
+    val taskTags: Set<TaskTag>
 ) : TaskExecutorMessage()
