@@ -75,11 +75,7 @@ import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.SendToChannelPerTag
 import io.infinitic.exceptions.clients.AlreadyCompletedWorkflowException
 import io.infinitic.exceptions.clients.CanceledDeferredException
-import io.infinitic.exceptions.clients.ChannelUsedOnNewWorkflowException
 import io.infinitic.exceptions.clients.FailedDeferredException
-import io.infinitic.exceptions.clients.MultipleMethodCallsException
-import io.infinitic.exceptions.clients.NoMethodCallException
-import io.infinitic.exceptions.clients.NoSendMethodCallException
 import io.infinitic.exceptions.clients.UnknownMethodInSendChannelException
 import io.infinitic.exceptions.clients.UnknownTaskException
 import io.infinitic.exceptions.clients.UnknownWorkflowException
@@ -148,18 +144,7 @@ internal class ClientDispatcher(
 
     // asynchronous call: async(newTask) { method() }
     internal fun <T> dispatch(handler: TaskProxyHandler<*>): DeferredTask<T> {
-        val method = when (handler.methods.size) {
-            0 -> throw NoMethodCallException("${handler.taskName}")
-            1 -> handler.methods[0]
-            else -> throw MultipleMethodCallsException(
-                "${handler.taskName}",
-                handler.methods.first().name,
-                handler.methods.last().name
-            )
-        }
-        val args = handler.args[0]
-
-        checkMethodIsNotSuspend(method)
+        checkMethodIsNotSuspend(handler.method)
 
         val taskId = TaskId()
         val taskName = handler.taskName
@@ -180,9 +165,9 @@ internal class ClientDispatcher(
             clientName = clientName,
             clientWaiting = handler.isSync,
             taskName = taskName,
-            methodName = MethodName.from(method),
-            methodParameterTypes = MethodParameterTypes.from(method),
-            methodParameters = MethodParameters.from(method, args),
+            methodName = MethodName(handler.methodName),
+            methodParameterTypes = MethodParameterTypes.from(handler.method),
+            methodParameters = MethodParameters.from(handler.method, handler.methodArgs),
             workflowId = null,
             workflowName = null,
             methodRunId = null,
@@ -248,18 +233,8 @@ internal class ClientDispatcher(
 
     // asynchronous workflow: async(newWorkflow) { method() }
     internal fun <T> dispatch(handler: WorkflowProxyHandler<*>): DeferredWorkflow<T> {
-        val method = when (handler.methods.size) {
-            0 -> throw NoMethodCallException("${handler.workflowName}")
-            1 -> handler.methods[0]
-            else -> throw MultipleMethodCallsException(
-                "${handler.workflowName}",
-                handler.methods.first().name,
-                handler.methods.last().name
-            )
-        }
-        val args = handler.args.last()
 
-        checkMethodIsNotSuspend(method)
+        checkMethodIsNotSuspend(handler.method)
 
         val workflowId = WorkflowId()
         val workflowName = handler.workflowName
@@ -280,9 +255,9 @@ internal class ClientDispatcher(
             clientName = clientName,
             clientWaiting = isSync,
             workflowName = workflowName,
-            methodName = MethodName.from(method),
-            methodParameterTypes = MethodParameterTypes.from(method),
-            methodParameters = MethodParameters.from(method, args),
+            methodName = MethodName(handler.methodName),
+            methodParameterTypes = MethodParameterTypes.from(handler.method),
+            methodParameters = MethodParameters.from(handler.method, handler.methodArgs),
             parentWorkflowId = null,
             parentWorkflowName = null,
             parentMethodRunId = null,
@@ -352,18 +327,16 @@ internal class ClientDispatcher(
     @Suppress("UNCHECKED_CAST")
     override fun <S> dispatchAndWait(handler: WorkflowProxyHandler<*>): S {
         // special case of getting a channel
-        val method = handler.methods.last()
+        val method = handler.method
+
         if (method.returnType.kotlin.isSubclassOf(SendChannel::class)) {
-            return when (handler.isNew()) {
-                true -> throw ChannelUsedOnNewWorkflowException("${handler.workflowName}")
-                false -> SendChannelProxyHandler(
-                    method.returnType,
-                    handler.workflowName,
-                    ChannelName(method.name),
-                    handler.perWorkflowId,
-                    handler.perTag
-                ) { this }.stub() as S
-            }
+            return SendChannelProxyHandler(
+                method.returnType,
+                handler.workflowName,
+                ChannelName(method.name),
+                handler.perWorkflowId,
+                handler.perTag
+            ) { this }.stub() as S
         }
 
         // dispatch and wait
@@ -372,8 +345,7 @@ internal class ClientDispatcher(
 
     // asynchronous send on a channel: async(existingWorkflow.channel) { send() }
     private fun dispatch(handler: SendChannelProxyHandler<*>) {
-        val method = handler.methods.lastOrNull()
-            ?: throw NoSendMethodCallException("${handler.workflowName}", "${handler.channelName}")
+        val method = handler.method
 
         if (method.name != SendChannel<*>::send.name) throw UnknownMethodInSendChannelException(
             "${handler.workflowName}",
@@ -381,7 +353,7 @@ internal class ClientDispatcher(
             method.name
         )
 
-        val event = handler.args.last()[0]
+        val event = handler.methodArgs[0]
 
         scope.future {
             when {

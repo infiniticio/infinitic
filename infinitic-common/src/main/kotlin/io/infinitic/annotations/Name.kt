@@ -23,22 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.annotations
 
-import io.infinitic.common.data.Name
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-
-@Serializable(with = TaskNameSerializer::class)
-data class TaskName(override val name: String) : Name(name)
-
-object TaskNameSerializer : KSerializer<TaskName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TaskName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = TaskName(decoder.decodeString())
-}
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+annotation class Name(val name: String)

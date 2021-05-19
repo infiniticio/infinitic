@@ -83,7 +83,7 @@ class NoMethodCallException(
     klass: String
 ) : ClientUserException(
     msg = "The method to call for your task or workflow is missing",
-    help = "Make sure to call a method of \"$klass\" in the second parameter of client.async()"
+    help = "Make sure to call a method of \"$klass\""
 )
 
 class NoSendMethodCallException(
@@ -99,7 +99,7 @@ class MultipleMethodCallsException(
     method1: String,
     method2: String
 ) : ClientUserException(
-    msg = "Only one method of \"$klass\" can be dispatched at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
+    msg = "Only one method of \"$klass\" can be called at a time. You can not call \"$method2\" method as you have already called \"$method1\"",
     help = "Make sure you call only one method of \"$klass\" - multiple calls in the provided lambda is forbidden"
 )
 

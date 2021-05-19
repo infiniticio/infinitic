@@ -33,14 +33,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.lang.reflect.Method
 
 @Serializable(with = CommandSimpleNameSerializer::class)
-data class CommandSimpleName(override val name: String) : Name(name) {
-    companion object {
-        fun fromMethod(method: Method) = CommandSimpleName("${method.declaringClass.simpleName}::${method.name}")
-    }
-}
+data class CommandSimpleName(override val name: String) : Name(name)
 
 object CommandSimpleNameSerializer : KSerializer<CommandSimpleName> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandSimpleName", PrimitiveKind.STRING)

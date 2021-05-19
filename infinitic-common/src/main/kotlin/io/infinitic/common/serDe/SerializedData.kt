@@ -106,7 +106,8 @@ data class SerializedData(
     }
 
     fun getJson(): String = when (type) {
-        SerializedDataType.JSON_KOTLIN, SerializedDataType.JSON_JACKSON -> String(bytes, Charsets.UTF_8)
+        SerializedDataType.JSON_KOTLIN,
+        SerializedDataType.JSON_JACKSON -> String(bytes, Charsets.UTF_8)
         else -> throw WrongSerializationTypeException(getClassName(), type)
     }
 

@@ -23,22 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.tests.workflows
 
-import io.infinitic.common.data.Name
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import io.infinitic.annotations.Name
+import io.infinitic.tests.tasks.TaskAnnotated
+import io.infinitic.workflows.Workflow
 
-@Serializable(with = TaskNameSerializer::class)
-data class TaskName(override val name: String) : Name(name)
+@Name("annotatedWorkflow")
+interface WorkflowAnnotated {
+    @Name("bar")
+    fun foo(input: String): String
+}
 
-object TaskNameSerializer : KSerializer<TaskName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TaskName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = TaskName(decoder.decodeString())
+class WorkflowAnnotatedImpl : Workflow(), WorkflowAnnotated {
+    private val task = newTask<TaskAnnotated>()
+
+    override fun foo(input: String): String {
+        var str = input
+
+        str = task.foo(str, "a")
+        str = task.foo(str, "b")
+        str = task.foo(str, "c")
+
+        return str // should be "${input}abc"
+    }
 }

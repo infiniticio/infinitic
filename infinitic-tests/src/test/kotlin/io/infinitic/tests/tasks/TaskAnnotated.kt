@@ -23,22 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.tasks.data
+package io.infinitic.tests.tasks
 
-import io.infinitic.common.data.Name
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import io.infinitic.annotations.Name
+import io.infinitic.tasks.Task
+import java.time.Duration
 
-@Serializable(with = TaskNameSerializer::class)
-data class TaskName(override val name: String) : Name(name)
+@Name("annotatedTask")
+interface TaskAnnotated {
+    @Name("bar")
+    fun foo(str1: String, str2: String): String
+}
 
-object TaskNameSerializer : KSerializer<TaskName> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaskName", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TaskName) { encoder.encodeString(value.name) }
-    override fun deserialize(decoder: Decoder) = TaskName(decoder.decodeString())
+class TaskAnnotatedImpl : Task(), TaskAnnotated {
+
+    override fun foo(str1: String, str2: String) = str1 + str2
+
+    override fun getDurationBeforeRetry(e: Exception): Duration? = null
 }

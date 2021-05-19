@@ -25,10 +25,14 @@
 
 package io.infinitic.client.samples
 
+import io.infinitic.annotations.Name
 import io.infinitic.workflows.Channel
 
 internal interface FakeWorkflowParent {
     fun parent(): String
+
+    @Name("bar")
+    fun annotated(): String
 }
 
 internal interface FakeWorkflow : FakeWorkflowParent {
@@ -40,4 +44,10 @@ internal interface FakeWorkflow : FakeWorkflowParent {
     suspend fun suspendedMethod()
 
     val channel: Channel<String>
+}
+
+@Name(name = "foo")
+internal interface FooWorkflow : FakeTaskParent {
+    @Name(name = "bar")
+    fun m()
 }

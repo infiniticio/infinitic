@@ -33,14 +33,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.lang.reflect.Method
 
 @Serializable(with = WorkflowNameSerializer::class)
-data class WorkflowName(override val name: String) : Name(name) {
-    companion object {
-        fun from(method: Method) = WorkflowName(method.declaringClass.name)
-    }
-}
+data class WorkflowName(override val name: String) : Name(name)
 
 object WorkflowNameSerializer : KSerializer<WorkflowName> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("WorkflowName", PrimitiveKind.STRING)

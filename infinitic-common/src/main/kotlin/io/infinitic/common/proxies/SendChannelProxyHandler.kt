@@ -44,6 +44,9 @@ class SendChannelProxyHandler<T : Any>(
         require(perWorkflowId == null || perTag == null)
     }
 
+    override val method: Method
+        get() = methods.last()
+
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val any = super.invoke(proxy, method, args)
 
@@ -54,6 +57,4 @@ class SendChannelProxyHandler<T : Any>(
             false -> any
         }
     }
-
-    fun isNew() = perWorkflowId == null && perTag == null
 }

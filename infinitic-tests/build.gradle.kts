@@ -40,6 +40,8 @@ dependencies {
     implementation(project(":infinitic-tag-engine"))
 
     testImplementation(project(":infinitic-inMemory"))
+    // should be removed with pulsar 2.8
+    testImplementation("org.apache.avro:avro") { version { strictly("1.9.+") } }
 }
 
 apply("../publish.gradle.kts")

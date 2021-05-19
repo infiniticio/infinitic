@@ -42,6 +42,9 @@ pulsar:
   namespace: dev
 
 tasks:
+  - name: annotatedTask
+    class: io.infinitic.tests.tasks.TaskAnnotatedImpl
+    concurrency: 3
   - name: io.infinitic.tests.tasks.TaskA
     class: io.infinitic.tests.tasks.TaskAImpl
     concurrency: 3
@@ -55,4 +58,7 @@ workflows:
     concurrency: 2
   - name: io.infinitic.tests.workflows.WorkflowB
     class: io.infinitic.tests.workflows.WorkflowBImpl
+    concurrency: 2
+  - name: annotatedWorkflow
+    class: io.infinitic.tests.workflows.WorkflowAnnotatedImpl
     concurrency: 2

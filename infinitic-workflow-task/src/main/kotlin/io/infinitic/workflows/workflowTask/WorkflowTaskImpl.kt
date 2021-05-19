@@ -26,10 +26,8 @@
 package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.parser.getMethodPerNameAndParameterCount
-import io.infinitic.common.parser.getMethodPerNameAndParameterTypes
+import io.infinitic.common.parser.getMethodPerNameAndParameters
 import io.infinitic.common.workflows.data.channels.ChannelImpl
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -74,17 +72,23 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         setChannelNames(workflow)
 
         // get method
-        val method = getMethod(workflow, workflowTaskParameters.methodRun)
+        val methodRun = workflowTaskParameters.methodRun
+        val method = getMethodPerNameAndParameters(
+            workflow::class.java,
+            "${methodRun.methodName}",
+            methodRun.methodParameterTypes?.types,
+            methodRun.methodParameters.size
+        )
 
         // run method and get return value (null if end not reached)
-        val parameters = workflowTaskParameters.methodRun.methodParameters.get().toTypedArray()
+        val parameters = methodRun.methodParameters.get().toTypedArray()
 
         val methodReturnValue = try {
             MethodReturnValue.from(method.invoke(workflow, *parameters))
         } catch (e: InvocationTargetException) {
             when (e.cause) {
                 is WorkflowTaskException -> null
-                else -> throw e.cause!! // this error will be caught by the task executor
+                else -> throw e.cause ?: e // this error will be caught by the task executor
             }
         }
 
@@ -95,20 +99,6 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             (workflow.context as WorkflowContextImpl).newSteps,
             properties,
             methodReturnValue
-        )
-    }
-
-    private fun getMethod(workflow: Workflow, methodRun: MethodRun) = if (methodRun.methodParameterTypes == null) {
-        getMethodPerNameAndParameterCount(
-            workflow,
-            "${methodRun.methodName}",
-            methodRun.methodParameters.size
-        )
-    } else {
-        getMethodPerNameAndParameterTypes(
-            workflow,
-            "${methodRun.methodName}",
-            methodRun.methodParameterTypes!!.types
         )
     }
 

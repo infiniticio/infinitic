@@ -28,6 +28,7 @@ package io.infinitic.client
 import io.infinitic.client.samples.FakeClass
 import io.infinitic.client.samples.FakeInterface
 import io.infinitic.client.samples.FakeTask
+import io.infinitic.client.samples.FooTask
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -163,6 +164,52 @@ class ClientTaskTests : StringSpec({
             taskId = TaskId(deferred.id),
             taskName = TaskName(FakeTask::class.java.name),
             methodName = MethodName("m1"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters(),
+            workflowId = null,
+            workflowName = null,
+            methodRunId = null,
+            taskTags = setOf(),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta()
+        )
+    }
+
+    "dispatch method with annotations" {
+        // when
+        val fooTask = client.newTask<FooTask>()
+        val deferred: Deferred<Unit> = client.async(fooTask) { m() }
+        // then
+        taskTagSlots.size shouldBe 0
+        taskSlot.captured shouldBe DispatchTask(
+            clientName = client.clientName,
+            clientWaiting = false,
+            taskId = TaskId(deferred.id),
+            taskName = TaskName("foo"),
+            methodName = MethodName("bar"),
+            methodParameterTypes = MethodParameterTypes(listOf()),
+            methodParameters = MethodParameters(),
+            workflowId = null,
+            workflowName = null,
+            methodRunId = null,
+            taskTags = setOf(),
+            taskOptions = TaskOptions(),
+            taskMeta = TaskMeta()
+        )
+    }
+
+    "dispatch method with annotations on parent" {
+        // when
+        val fooTask = client.newTask<FooTask>()
+        val deferred: Deferred<Unit> = client.async(fooTask) { annotated() }
+        // then
+        taskTagSlots.size shouldBe 0
+        taskSlot.captured shouldBe DispatchTask(
+            clientName = client.clientName,
+            clientWaiting = false,
+            taskId = TaskId(deferred.id),
+            taskName = TaskName("foo"),
+            methodName = MethodName("bar"),
             methodParameterTypes = MethodParameterTypes(listOf()),
             methodParameters = MethodParameters(),
             workflowId = null,

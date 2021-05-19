@@ -52,10 +52,15 @@ interface TaskA : ParentInterface {
 
 class TaskAImpl : Task(), TaskA {
     override fun concat(str1: String, str2: String) = str1 + str2
+
     override fun reverse(str: String) = str.reversed()
+
     override fun await(delay: Long): Long { Thread.sleep(delay); return delay }
+
     override fun workflowId() = context.workflowId
+
     override fun workflowName() = context.workflowName
+
     override fun cancelWorkflowA(id: UUID) {
         Thread.sleep(50)
         context.client.cancelWorkflow<WorkflowA>(id)
@@ -67,6 +72,7 @@ class TaskAImpl : Task(), TaskA {
     }
 
     override fun failing() = throw Exception("sorry")
+
     override fun successAtRetry() = when (context.retrySequence) {
         0 -> throw Exception()
         else -> "ok"

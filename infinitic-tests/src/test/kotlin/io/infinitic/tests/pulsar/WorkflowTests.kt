@@ -38,6 +38,7 @@ import io.infinitic.tests.tasks.TaskA
 import io.infinitic.tests.workflows.Obj1
 import io.infinitic.tests.workflows.Obj2
 import io.infinitic.tests.workflows.WorkflowA
+import io.infinitic.tests.workflows.WorkflowAnnotated
 import io.infinitic.tests.workflows.WorkflowB
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.configuration
@@ -63,6 +64,7 @@ internal class WorkflowTests : StringSpec({
     lateinit var workflowATagged: WorkflowA
     lateinit var workflowAMeta: WorkflowA
     lateinit var workflowB: WorkflowB
+    lateinit var workflowAnnotated: WorkflowAnnotated
     lateinit var job: CompletableFuture<*>
 
     val client = PulsarInfiniticClient.fromConfigResource("/pulsar.yml")
@@ -82,6 +84,7 @@ internal class WorkflowTests : StringSpec({
         job = CoroutineScope(coroutineContext).future { }
         workflowA = client.newWorkflow()
         workflowATagged = client.newWorkflow(setOf("foo", "bar"))
+        workflowAnnotated = client.newWorkflow()
         workflowAMeta = client.newWorkflow(meta = mapOf("foo" to "bar".toByteArray()))
         workflowB = client.newWorkflow()
     }
@@ -629,5 +632,11 @@ internal class WorkflowTests : StringSpec({
         // delay is necessary to be sure that tag engine has processed
         delay(700)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
+    }
+
+    "Annotated Workflow" {
+        val result = workflowAnnotated.foo("")
+
+        result shouldBe "abc"
     }
 })
