@@ -210,7 +210,7 @@ class TaskEngine(
 
     private fun CoroutineScope.dispatchTask(message: DispatchTask): TaskState {
         // init a state
-        val newState = TaskState(
+        val state = TaskState(
             waitingClients = when (message.clientWaiting) {
                 true -> mutableSetOf(message.clientName)
                 false -> mutableSetOf()
@@ -227,30 +227,31 @@ class TaskEngine(
             methodRunId = message.methodRunId,
             taskAttemptId = TaskAttemptId(),
             taskStatus = TaskStatus.RUNNING_OK,
-            taskTags = message.taskTags,
             taskOptions = message.taskOptions,
+            taskTags = message.taskTags,
             taskMeta = message.taskMeta
         )
 
         // send task to workers
         val executeTaskAttempt = ExecuteTaskAttempt(
-            taskName = newState.taskName,
-            taskId = newState.taskId,
-            workflowId = newState.workflowId,
-            workflowName = newState.workflowName,
-            taskAttemptId = newState.taskAttemptId,
-            taskRetrySequence = newState.taskRetrySequence,
-            taskRetryIndex = newState.taskRetryIndex,
+            taskName = state.taskName,
+            taskId = state.taskId,
+            workflowId = state.workflowId,
+            workflowName = state.workflowName,
+            taskAttemptId = state.taskAttemptId,
+            taskRetrySequence = state.taskRetrySequence,
+            taskRetryIndex = state.taskRetryIndex,
             lastError = null,
-            methodName = newState.methodName,
-            methodParameterTypes = newState.methodParameterTypes,
-            methodParameters = newState.methodParameters,
-            taskOptions = newState.taskOptions,
-            taskMeta = newState.taskMeta
+            methodName = state.methodName,
+            methodParameterTypes = state.methodParameterTypes,
+            methodParameters = state.methodParameters,
+            taskOptions = state.taskOptions,
+            taskTags = state.taskTags,
+            taskMeta = state.taskMeta
         )
         launch { sendToTaskExecutors(executeTaskAttempt) }
 
-        return newState
+        return state
     }
 
     private fun CoroutineScope.cancelTask(state: TaskState) {
@@ -304,6 +305,7 @@ class TaskEngine(
             methodParameterTypes = state.methodParameterTypes,
             methodParameters = state.methodParameters,
             taskOptions = state.taskOptions,
+            taskTags = state.taskTags,
             taskMeta = state.taskMeta
         )
         launch { sendToTaskExecutors(executeTaskAttempt) }
@@ -329,6 +331,7 @@ class TaskEngine(
             methodParameterTypes = state.methodParameterTypes,
             methodParameters = state.methodParameters,
             taskOptions = state.taskOptions,
+            taskTags = state.taskTags,
             taskMeta = state.taskMeta
         )
         launch { sendToTaskExecutors(executeTaskAttempt) }

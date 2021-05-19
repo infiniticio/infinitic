@@ -77,6 +77,7 @@ class TaskExecutor(
             retrySequence = message.taskRetrySequence.int,
             retryIndex = message.taskRetryIndex.int,
             lastError = message.lastError,
+            tags = message.taskTags.map { it.tag }.toSet(),
             meta = message.taskMeta.map.toMutableMap(),
             options = message.taskOptions,
             clientFactory

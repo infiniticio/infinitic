@@ -26,6 +26,7 @@
 package io.infinitic.tests.workflows
 
 import com.jayway.jsonpath.Criteria.where
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.tests.tasks.ParentInterface
@@ -59,6 +60,8 @@ interface WorkflowA : ParentInterface {
     fun context3(): WorkflowMeta
     fun context4(): UUID?
     fun context5(): String?
+    fun context6(): Set<String>
+    fun context7(): TaskMeta
     fun seq1(): String
     fun seq2(): String
     fun seq3(): String
@@ -115,7 +118,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override val channelA = channel<String>()
     override val channelB = channel<String>()
 
-    private val taskA = newTask<TaskA>()
+    private val taskA = newTask<TaskA>(tags = setOf("foo", "bar"), meta = mapOf("foo" to "bar".toByteArray()))
     private var p1 = ""
 
     override fun empty() = "void"
@@ -138,6 +141,10 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun context4() = taskA.workflowId()
 
     override fun context5() = taskA.workflowName()
+
+    override fun context6() = taskA.tags()
+
+    override fun context7() = taskA.meta()
 
     override fun seq1(): String {
         var str = ""

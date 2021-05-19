@@ -29,6 +29,7 @@ import io.infinitic.client.getWorkflow
 import io.infinitic.client.getWorkflowIds
 import io.infinitic.client.newWorkflow
 import io.infinitic.client.retryTask
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.exceptions.clients.CanceledDeferredException
 import io.infinitic.exceptions.clients.FailedDeferredException
@@ -147,6 +148,18 @@ internal class WorkflowTests : StringSpec({
         val result = workflowA.context5()
 
         result shouldBe WorkflowA::class.java.name
+    }
+
+    "get task tags from task context" {
+        val result = workflowA.context6()
+
+        result shouldBe setOf("foo", "bar")
+    }
+
+    "get task meta from task context" {
+        val result = workflowA.context7()
+
+        result shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
     }
 
     "Simple Sequential Workflow" {

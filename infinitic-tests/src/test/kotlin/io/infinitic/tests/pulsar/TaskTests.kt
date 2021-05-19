@@ -30,11 +30,13 @@ package io.infinitic.tests.pulsar
 import io.infinitic.client.cancelTask
 import io.infinitic.client.newTask
 import io.infinitic.client.retryTask
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.exceptions.clients.CanceledDeferredException
 import io.infinitic.exceptions.clients.FailedDeferredException
 import io.infinitic.pulsar.PulsarInfiniticClient
 import io.infinitic.pulsar.PulsarInfiniticWorker
 import io.infinitic.tests.tasks.Status
+import io.infinitic.tests.tasks.TaskA
 import io.infinitic.tests.tasks.TaskException
 import io.infinitic.tests.tasks.TaskTest
 import io.infinitic.tests.tasks.TaskTestImpl
@@ -260,4 +262,20 @@ internal class TaskTests : StringSpec({
 //
 //        job.join()
 //    }
+
+    "get tags from context" {
+        val taskWithTags = client.newTask<TaskA>(tags = setOf("foo", "bar"))
+
+        val result = taskWithTags.tags()
+
+        result shouldBe setOf("foo", "bar")
+    }
+
+    "get meta from context" {
+        val taskWithMeta = client.newTask<TaskA>(meta = mapOf("foo" to "bar".toByteArray()))
+
+        val result = taskWithMeta.meta()
+
+        result shouldBe TaskMeta(mapOf("foo" to "bar".toByteArray()))
+    }
 })
