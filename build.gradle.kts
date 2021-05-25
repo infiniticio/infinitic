@@ -33,8 +33,8 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm").version(Libs.kotlinVersion) apply false
-    kotlin("plugin.serialization").version(Libs.serializationVersion) apply false
+    id("org.jetbrains.kotlin.jvm").version(Libs.kotlinVersion) apply false
+    id("org.jetbrains.kotlin.plugin.serialization").version(Libs.kotlinVersion) apply false
     id("org.jlleitschuh.gradle.ktlint").version(Libs.ktlintVersion) apply false
 }
 

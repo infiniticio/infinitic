@@ -25,8 +25,7 @@
 
 object Libs {
     // Plugins version
-    const val kotlinVersion = "1.4.31"
-    const val serializationVersion = "1.4.10"
+    const val kotlinVersion = "1.5.10"
     const val ktlintVersion = "10.0.0"
 
     const val org = "io.infinitic"
@@ -36,13 +35,13 @@ object Libs {
     }
 
     object Coroutines {
-        private const val version = "1.4.3"
+        private const val version = "1.5.0"
         const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
         const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
     }
 
     object Serialization {
-        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0"
+        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1"
     }
 
     object JsonPath {
@@ -50,7 +49,7 @@ object Libs {
     }
 
     object Jackson {
-        private const val version = "2.12.2"
+        private const val version = "2.12.3"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
         const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -59,7 +58,6 @@ object Libs {
 
     object Kotest {
         private const val version = "4.3.2"
-        const val assertions = "io.kotest:kotest-assertions-core-jvm:$version"
         const val property = "io.kotest:kotest-property-jvm:$version"
         const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
     }
@@ -69,7 +67,7 @@ object Libs {
     }
 
     object Avro4k {
-        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.1.0"
+        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.2.0"
     }
 
     object Hoplite {
@@ -79,14 +77,14 @@ object Libs {
     }
 
     object Pulsar {
-        private const val version = "2.7.1"
+        private const val version = "2.7.2"
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
     }
 
     object EasyRandom {
-        const val core = "org.jeasy:easy-random-core:4.2.0"
+        const val core = "org.jeasy:easy-random-core:4.3.0"
     }
 
     object Slf4j {
