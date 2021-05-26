@@ -46,6 +46,9 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
+    extensions.configure(org.jlleitschuh.gradle.ktlint.KtlintExtension::class.java) {
+        version.set("0.41.0")
+    }
 
     group = Libs.org
     version = Ci.version
