@@ -34,6 +34,7 @@ import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowContext
 import java.lang.RuntimeException
+import java.lang.reflect.Proxy
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaType
@@ -55,13 +56,12 @@ get current workflow properties (WorkflowTaskContext, channels and proxies exclu
 TODO: manage Deferred in properties (including WorkflowTaskContext property)
  */
 internal fun getWorkflowProperties(workflow: Workflow) = getPropertiesFromObject(
-    workflow,
-    {
-        // excludes context
-        it.third.javaType.typeName != WorkflowContext::class.java.name &&
-            // excludes Channel
-            ! it.third.isSubtypeOf(Channel::class.starProjectedType) &&
-            // excludes Proxies
-            ! it.second!!::class.java.name.startsWith("com.sun.proxy.")
-    }
-)
+    workflow
+) {
+    // excludes context
+    it.third.javaType.typeName != WorkflowContext::class.java.name &&
+        // excludes Channel
+        !it.third.isSubtypeOf(Channel::class.starProjectedType) &&
+        // excludes Proxies
+        !Proxy.isProxyClass(it.second!!::class.java)
+}

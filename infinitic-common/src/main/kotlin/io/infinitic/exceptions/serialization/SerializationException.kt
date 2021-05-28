@@ -45,7 +45,7 @@ object MissingMetaJavaClassException : SerializationException(
 class ClassNotFoundException(
     name: String
 ) : SerializationException(
-    msg = "Trying to deserialize data into \"$name\$ but this class is unknown",
+    msg = "Trying to deserialize data into \"$name\" but this class is unknown",
     help = "Please make sure to include this class in your code base."
 )
 
@@ -53,14 +53,14 @@ class WrongSerializationTypeException(
     name: String?,
     type: SerializedDataType
 ) : SerializationException(
-    msg = "Trying to retrieve json from \"$name\$ serialized data, but the serialized format is $type",
+    msg = "Trying to retrieve json from \"$name\" serialized data, but the serialized format is $type",
     help = ""
 )
 
 class SerializerNotFoundException(
     name: String
 ) : SerializationException(
-    msg = "Trying to deserialize data into \"$name\$ but this class has no serializer",
+    msg = "Trying to deserialize data into \"$name\" but this class has no serializer",
     help = "Your data was correctly serialized, so make sure you use the same code base everywhere"
 )
 
@@ -68,16 +68,16 @@ class KotlinDeserializationException(
     name: String,
     causeString: String
 ) : SerializationException(
-    msg = "Trying to deserialize data into \"$name\$ but an error occurred during Kotlin deserialization: $causeString",
-    help = "Please make sure your class \"$name\$ can be safely serialized/deserialized using kotlinx.serialization and avro4k"
+    msg = "Trying to deserialize data into \"$name\" but an error occurred during Kotlin deserialization: $causeString",
+    help = "Please make sure your class \"$name\" can be safely serialized/deserialized using kotlinx.serialization and avro4k"
 )
 
 class JsonDeserializationException(
     name: String,
     causeString: String
 ) : SerializationException(
-    msg = "Trying to deserialize data into \"$name\$ but an error occurred during json deserialization: $causeString",
-    help = "Please make sure your class \"$name\$ can be safely serialized/deserialized in Json using FasterXML/jackson"
+    msg = "Trying to deserialize data into \"$name\" but an error occurred during json deserialization: $causeString",
+    help = "Please make sure your class \"$name\" can be safely serialized/deserialized in Json using FasterXML/jackson"
 )
 
 class ParameterSerializationException(
