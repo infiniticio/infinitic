@@ -1,0 +1,14 @@
+stateStorage: redis
+
+redis:
+  host: localhost
+  port: 6379
+  user:
+  password:
+  database: 0
+
+pulsar:
+  serviceUrl: pulsar://localhost:6650
+  serviceHttpUrl: http://localhost:8080
+  tenant: infinitic
+  namespace: dev
