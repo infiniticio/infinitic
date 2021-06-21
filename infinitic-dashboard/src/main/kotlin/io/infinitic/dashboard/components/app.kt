@@ -1,12 +1,46 @@
-package components
+/**
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the License, as defined
+ * below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant of rights under the
+ * License will not include, and the License does not grant to you, the right to
+ * Sell the Software.
+ *
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights
+ * granted to you under the License to provide to third parties, for a fee or
+ * other consideration (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a product or service
+ * whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also
+ * include this Commons Clause License Condition notice.
+ *
+ * Software: Infinitic
+ *
+ * License: MIT License (https://opensource.org/licenses/MIT)
+ *
+ * Licensor: infinitic.io
+ */
 
-import components.menus.*
-import kweb.*
-import kweb.state.render
-import routerView
+package io.infinitic.dashboard.components
+
+import io.infinitic.dashboard.components.menus.MenuItem
+import io.infinitic.dashboard.components.menus.logo
+import io.infinitic.dashboard.components.menus.offCanvasMenuCloseButton
+import io.infinitic.dashboard.components.menus.offCanvasMenuOverlay
+import io.infinitic.dashboard.components.menus.profile
+import io.infinitic.dashboard.routerView
+import kweb.Element
+import kweb.ElementCreator
+import kweb.button
+import kweb.div
+import kweb.nav
+import kweb.new
+import kweb.span
 
 fun ElementCreator<Element>.app() {
-    div().classes("h-screen flex overflow-hidden bg-white").new {
+    div().classes("h-screen flex overflow-hidden bg-gray-100").new {
         // offCanvas menu
         div().classes("fixed inset-0 flex z-40 md:hidden")
             .setAttribute("role", "Dialog")
@@ -18,7 +52,7 @@ fun ElementCreator<Element>.app() {
                 div().classes(
                     MenuItem.isMobileMenuVisible.map {
                         "relative flex-1 flex flex-col max-w-xs w-full bg-white transition ease-in-out duration-300 transform translate-x-0 " +
-                                if (it) "-translate-x-full" else "translate-x-0"
+                            if (it) "-translate-x-full" else "translate-x-0"
                     }
                 ).new {
                     // Close button, show/hide based on off-canvas menu state.
@@ -34,7 +68,7 @@ fun ElementCreator<Element>.app() {
                             // Team
                             MenuItem.TASKS.render(this, true)
                             // Projects
-                            MenuItem.ARCHITECTURE.render(this, true)
+                            MenuItem.PULSAR.render(this, true)
                             // Calendar
                             MenuItem.SETTINGS.render(this, true)
                         }
@@ -45,7 +79,6 @@ fun ElementCreator<Element>.app() {
                 // Force sidebar to shrink to fit close icon
                 div().classes("flex-shrink-0 w-14")
                     .setAttribute("aria-hidden", "true")
-
             }
         // static sidebar for desktop
         div().classes("hidden md:flex md:flex-shrink-0").new {
@@ -63,7 +96,7 @@ fun ElementCreator<Element>.app() {
                             // Team
                             MenuItem.TASKS.render(this)
                             // Projects
-                            MenuItem.ARCHITECTURE.render(this)
+                            MenuItem.PULSAR.render(this)
                             // Calendar
                             MenuItem.SETTINGS.render(this)
                         }
@@ -105,4 +138,3 @@ fun ElementCreator<Element>.app() {
         }
     }
 }
-

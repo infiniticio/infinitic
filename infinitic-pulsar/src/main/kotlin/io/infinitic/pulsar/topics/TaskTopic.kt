@@ -23,21 +23,14 @@
  * Licensor: infinitic.io
  */
 
-repositories {
-    maven("https://jitpack.io")
+package io.infinitic.pulsar.topics
+
+enum class TaskTopic(val prefix: String) {
+    TAG_NEW("task-tag-new"),
+    TAG_EXISTING("task-tag-existing"),
+    ENGINE_NEW("task-engine-new"),
+    ENGINE_EXISTING("task-engine-existing"),
+    DELAYS("task-delays"),
+    EXECUTORS("task-executors"),
+    METRICS("task-metrics")
 }
-
-dependencies {
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    implementation("com.github.kwebio:kweb-core:0.10.3")
-    implementation(Libs.Slf4j.simple)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-pulsar"))
-}
-
-apply("../publish.gradle.kts")

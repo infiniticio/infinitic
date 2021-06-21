@@ -23,21 +23,22 @@
  * Licensor: infinitic.io
  */
 
-repositories {
-    maven("https://jitpack.io")
+package io.infinitic.pulsar.topics
+
+import io.infinitic.common.clients.data.ClientName
+
+class TopicName(private val tenantName: String, private val namespace: String) {
+
+    fun clientTopic(clientName: ClientName) = getPersistentTopicFullName("client: $clientName")
+
+    fun of(type: WorkflowTopic, workflowName: String) = getPersistentTopicFullName(type.prefix + ": " + workflowName)
+
+    fun of(type: WorkflowTaskTopic, workflowName: String) = getPersistentTopicFullName(type.prefix + ": " + workflowName)
+
+    fun of(type: TaskTopic, taskName: String) = getPersistentTopicFullName(type.prefix + ": " + taskName)
+
+    fun of(type: GlobalTopic) = getPersistentTopicFullName(type.prefix)
+
+    private fun getPersistentTopicFullName(topic: String) =
+        "persistent://$tenantName/$namespace/$topic"
 }
-
-dependencies {
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    implementation("com.github.kwebio:kweb-core:0.10.3")
-    implementation(Libs.Slf4j.simple)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-pulsar"))
-}
-
-apply("../publish.gradle.kts")

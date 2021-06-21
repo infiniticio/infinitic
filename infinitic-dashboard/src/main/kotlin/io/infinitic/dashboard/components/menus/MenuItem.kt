@@ -1,17 +1,45 @@
-package components.menus
+/**
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the License, as defined
+ * below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant of rights under the
+ * License will not include, and the License does not grant to you, the right to
+ * Sell the Software.
+ *
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights
+ * granted to you under the License to provide to third parties, for a fee or
+ * other consideration (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a product or service
+ * whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also
+ * include this Commons Clause License Condition notice.
+ *
+ * Software: Infinitic
+ *
+ * License: MIT License (https://opensource.org/licenses/MIT)
+ *
+ * Licensor: infinitic.io
+ */
 
-import kweb.*
+package io.infinitic.dashboard.components.menus
+
+import io.infinitic.dashboard.routeTo
+import kweb.Element
+import kweb.ElementCreator
+import kweb.a
+import kweb.new
 import kweb.state.KVar
-import routeTo
 
 enum class MenuItem(val text: String, val icon: String) {
     WORKFLOWS("Workflows", "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"),
     TASKS("Tasks", "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"),
-    ARCHITECTURE("Architecture", "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"),
+    PULSAR("Pulsar", "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"),
     SETTINGS("Settings", "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z");
 
     companion object {
-        var selected =  KVar(WORKFLOWS)
+        var selected = KVar(WORKFLOWS)
 
         val isMobileMenuVisible = KVar(false)
 
@@ -30,12 +58,14 @@ enum class MenuItem(val text: String, val icon: String) {
 
         val a = creator.a()
             .setAttribute("href", "#")
-            .classes(selected.map {
-                when (it) {
-                    this -> selectedNavStyle
-                    else -> unselectedNavStyle
-                } + if (offCanvas) "text-base" else "text-sm"
-            })
+            .classes(
+                selected.map {
+                    when (it) {
+                        this -> selectedNavStyle
+                        else -> unselectedNavStyle
+                    } + if (offCanvas) "text-base" else "text-sm"
+                }
+            )
 
         a.on.click {
             creator.routeTo(this)
@@ -43,12 +73,14 @@ enum class MenuItem(val text: String, val icon: String) {
 
         val item = this
         a.new {
-            element("svg").classes(selected.map {
-                when (it) {
-                    item -> selectNavIconStyle
-                    else -> unselectNavIconStyle
+            element("svg").classes(
+                selected.map {
+                    when (it) {
+                        item -> selectNavIconStyle
+                        else -> unselectNavIconStyle
+                    }
                 }
-            })
+            )
                 .setAttribute("xmlns", "http://www.w3.org/2000/svg")
                 .setAttribute("fill", "none")
                 .setAttribute("viewBox", "0 0 24 24")

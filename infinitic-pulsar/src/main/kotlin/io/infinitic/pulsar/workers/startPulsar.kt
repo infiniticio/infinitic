@@ -44,8 +44,8 @@ private fun <S> logError(message: Message<S>, e: Throwable) = logger.error {
     "exception on Pulsar message $message: $e"
 }
 
-fun <E : Envelope<M>, M> CoroutineScope.pullMessages(
-    consumer: Consumer<E>,
+fun <M> CoroutineScope.pullMessages(
+    consumer: Consumer<out Envelope<M>>,
     channel: SendChannel<PulsarMessageToProcess<M>>
 ) = launch {
     while (isActive) {

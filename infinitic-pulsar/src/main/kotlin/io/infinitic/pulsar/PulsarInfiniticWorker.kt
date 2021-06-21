@@ -261,6 +261,14 @@ class PulsarInfiniticWorker private constructor(
                     pulsarConsumerFactory,
                     pulsarOutput
                 )
+
+                startPulsarTaskDelayEngines(
+                    workflowName,
+                    workerName,
+                    it.concurrency,
+                    pulsarConsumerFactory,
+                    pulsarOutput
+                )
             }
 
             // starting engines managing workflows
@@ -384,6 +392,7 @@ class PulsarInfiniticWorker private constructor(
                     pulsarConsumerFactory,
                     pulsarOutput
                 )
+
                 startPulsarTaskDelayEngines(
                     taskName,
                     workerName,

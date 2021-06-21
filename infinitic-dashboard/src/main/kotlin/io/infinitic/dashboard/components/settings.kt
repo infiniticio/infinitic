@@ -23,21 +23,24 @@
  * Licensor: infinitic.io
  */
 
-repositories {
-    maven("https://jitpack.io")
+package io.infinitic.dashboard.components
+
+import kweb.Element
+import kweb.ElementCreator
+import kweb.div
+import kweb.h1
+import kweb.new
+
+fun ElementCreator<Element>.settingsPanel() {
+    div().classes("py-6").new {
+        div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
+            h1().classes("text-2xl font-semibold text-gray-900")
+                .text("Settings")
+        }
+        div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
+            div().classes("py-4").new {
+                div().classes("border-4 border-dashed border-gray-200 rounded-lg h-96")
+            }
+        }
+    }
 }
-
-dependencies {
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    implementation("com.github.kwebio:kweb-core:0.10.3")
-    implementation(Libs.Slf4j.simple)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-pulsar"))
-}
-
-apply("../publish.gradle.kts")
