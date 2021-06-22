@@ -29,7 +29,7 @@ import io.infinitic.common.clients.data.ClientName
 
 class TopicName(private val tenantName: String, private val namespace: String) {
 
-    fun clientTopic(clientName: ClientName) = getPersistentTopicFullName("client: $clientName")
+    fun of(clientName: ClientName) = getPersistentTopicFullName("client: $clientName")
 
     fun of(type: WorkflowTopic, workflowName: String) = getPersistentTopicFullName(type.prefix + ": " + workflowName)
 

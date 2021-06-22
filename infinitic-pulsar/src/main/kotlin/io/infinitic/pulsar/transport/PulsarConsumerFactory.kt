@@ -58,16 +58,16 @@ class PulsarConsumerFactory(
 ) {
     private val logger = KotlinLogging.logger {}
 
-    private val topics = TopicName(pulsarTenant, pulsarNamespace)
+    private val topicName = TopicName(pulsarTenant, pulsarNamespace)
 
     companion object {
         const val CLIENT_RESPONSE_SUBSCRIPTION = "client-response"
     }
 
-    fun newClientResponseConsumer(consumerName: String, clientName: ClientName) =
+    fun newClientConsumer(consumerName: String, clientName: ClientName) =
         newConsumer<ClientEnvelope>(
             consumerName = consumerName,
-            topic = topics.clientTopic(clientName),
+            topic = topicName.of(clientName),
             subscriptionType = SubscriptionType.Exclusive,
             subscriptionName = CLIENT_RESPONSE_SUBSCRIPTION,
             ackTimeout = 10,
@@ -75,7 +75,7 @@ class PulsarConsumerFactory(
         )
 
     fun newConsumer(consumerName: String, taskTopic: TaskTopic, taskName: TaskName): Consumer<out Envelope<*>> {
-        val topic = topics.of(taskTopic, "$taskName")
+        val topic = topicName.of(taskTopic, "$taskName")
         val subscriptionName = taskTopic.prefix + "_subscription"
 
         return when (taskTopic) {
@@ -118,7 +118,7 @@ class PulsarConsumerFactory(
     }
 
     fun newConsumer(consumerName: String, workflowTaskTopic: WorkflowTaskTopic, workflowName: WorkflowName): Consumer<*> {
-        val topic = topics.of(workflowTaskTopic, "$workflowName")
+        val topic = topicName.of(workflowTaskTopic, "$workflowName")
         val subscriptionName = workflowTaskTopic.prefix + "_subscription"
 
         return when (workflowTaskTopic) {
@@ -161,7 +161,7 @@ class PulsarConsumerFactory(
     }
 
     fun newConsumer(consumerName: String, workflowTopic: WorkflowTopic, workflowName: WorkflowName): Consumer<*> {
-        val topic = topics.of(workflowTopic, "$workflowName")
+        val topic = topicName.of(workflowTopic, "$workflowName")
         val subscriptionName = workflowTopic.prefix + "_subscription"
 
         return when (workflowTopic) {
@@ -197,7 +197,7 @@ class PulsarConsumerFactory(
     }
 
     fun newConsumer(consumerName: String, globalTopic: GlobalTopic): Consumer<*> {
-        val topic = topics.of(globalTopic)
+        val topic = topicName.of(globalTopic)
         val subscriptionName = globalTopic.prefix + "_subscription"
 
         return when (globalTopic) {

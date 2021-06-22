@@ -133,7 +133,7 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     fun printTopicStats() {
         // get list of all topics
         val leftAlignFormat = "| %-42s | %11d | %10d | %10f |%n"
-        val line = "+--------------------------------------------+----------+-------------+------------+------------+%n"
+        val line = "+--------------------------------------------+-------------+------------+------------+%n"
         val title = "| Subscription                               | NbConsumers | MsgBacklog | MsgRateOut |%n"
 
         println("WORKFLOWS")

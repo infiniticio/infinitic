@@ -63,35 +63,35 @@ fun main() {
 
         fun update() {
             // new-workflow engine
-            var topic = Pulsar.topicNamer.of(WorkflowTopic.ENGINE_NEW, name)
+            var topic = Pulsar.topicName.of(WorkflowTopic.ENGINE_NEW, name)
             var stats = Pulsar.topics.getPartitionedStats(topic, true, true, true)
 
             // existing-workflow engine
-            topic = Pulsar.topicNamer.of(WorkflowTopic.ENGINE_EXISTING, name)
+            topic = Pulsar.topicName.of(WorkflowTopic.ENGINE_EXISTING, name)
             stats = Pulsar.topics.getPartitionedStats(topic, true, true, true)
 
             // workflow-delay engine
-            topic = Pulsar.topicNamer.of(WorkflowTopic.DELAYS, name)
+            topic = Pulsar.topicName.of(WorkflowTopic.DELAYS, name)
             stats = Pulsar.topics.getPartitionedStats(topic, true, true, true)
 
             // new-workflow-tag engine
-            topic = Pulsar.topicNamer.of(WorkflowTopic.TAG_NEW, name)
+            topic = Pulsar.topicName.of(WorkflowTopic.TAG_NEW, name)
             stats = Pulsar.topics.getPartitionedStats(topic, true, true, true)
 
             // existing-workflow-tag engine
-            topic = Pulsar.topicNamer.of(WorkflowTopic.TAG_EXISTING, name)
+            topic = Pulsar.topicName.of(WorkflowTopic.TAG_EXISTING, name)
             stats = Pulsar.topics.getPartitionedStats(topic, true, true, true)
 
             // new-workflowTask engine
-            topic = Pulsar.topicNamer.of(WorkflowTaskTopic.ENGINE_NEW, name)
+            topic = Pulsar.topicName.of(WorkflowTaskTopic.ENGINE_NEW, name)
             stats = Pulsar.topics.getPartitionedStats(topic, true, true, true)
 
             // existing-workflowTask engine
-            topic = Pulsar.topicNamer.of(WorkflowTaskTopic.ENGINE_EXISTING, name)
+            topic = Pulsar.topicName.of(WorkflowTaskTopic.ENGINE_EXISTING, name)
             stats = Pulsar.topics.getPartitionedStats(topic, true, true, true)
 
             // workflow executors
-            topic = Pulsar.topicNamer.of(WorkflowTaskTopic.EXECUTORS, name)
+            topic = Pulsar.topicName.of(WorkflowTaskTopic.EXECUTORS, name)
             stats = Pulsar.topics.getPartitionedStats(topic, true, true, true)
         }
     }

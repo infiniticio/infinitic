@@ -78,7 +78,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
 
     init {
         val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
-            .newClientResponseConsumer(producerName, ClientName(producerName))
+            .newClientConsumer(producerName, ClientName(producerName))
 
         job = scope.startClientResponseWorker(this, clientResponseConsumer)
     }

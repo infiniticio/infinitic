@@ -59,7 +59,7 @@ object Pulsar {
     private val workflows by lazy { Infinitic.admin.workflows }
     private val tasks by lazy { Infinitic.admin.tasks }
 
-    val topicNamer = Infinitic.admin.topicNamer
+    val topicName = Infinitic.admin.topicNamer
     val topics = Infinitic.admin.pulsarAdmin.topics()
 
     fun render(creator: ElementCreator<*>, state: State) = with(creator) {
@@ -121,42 +121,42 @@ object Pulsar {
                                                         val workflowName = WorkflowName(it)
 
                                                         // new-workflow engine
-                                                        var topic = topicNamer.of(WorkflowTopic.ENGINE_NEW, it)
+                                                        var topic = topicName.of(WorkflowTopic.ENGINE_NEW, it)
                                                         var stats = topics.getPartitionedStats(topic, true, true, true)
                                                         displayStats(topic, stats, true)
 
                                                         // existing-workflow engine
-                                                        topic = topicNamer.of(WorkflowTopic.ENGINE_EXISTING, it)
+                                                        topic = topicName.of(WorkflowTopic.ENGINE_EXISTING, it)
                                                         stats = topics.getPartitionedStats(topic, true, true, true)
                                                         displayStats(topic, stats, false)
 
                                                         // workflow-delay engine
-                                                        topic = topicNamer.of(WorkflowTopic.DELAYS, it)
+                                                        topic = topicName.of(WorkflowTopic.DELAYS, it)
                                                         stats = topics.getPartitionedStats(topic, true, true, true)
                                                         displayStats(topic, stats, true)
 
                                                         // new-workflow-tag engine
-                                                        topic = topicNamer.of(WorkflowTopic.TAG_NEW, it)
+                                                        topic = topicName.of(WorkflowTopic.TAG_NEW, it)
                                                         stats = topics.getPartitionedStats(topic, true, true, true)
                                                         displayStats(topic, stats, false)
 
                                                         // existing-workflow-tag engine
-                                                        topic = topicNamer.of(WorkflowTopic.TAG_EXISTING, it)
+                                                        topic = topicName.of(WorkflowTopic.TAG_EXISTING, it)
                                                         stats = topics.getPartitionedStats(topic, true, true, true)
                                                         displayStats(topic, stats, true)
 
                                                         // new-workflowTask engine
-                                                        topic = topicNamer.of(WorkflowTaskTopic.ENGINE_NEW, it)
+                                                        topic = topicName.of(WorkflowTaskTopic.ENGINE_NEW, it)
                                                         stats = topics.getPartitionedStats(topic, true, true, true)
                                                         displayStats(topic, stats, false)
 
                                                         // existing-workflowTask engine
-                                                        topic = topicNamer.of(WorkflowTaskTopic.ENGINE_EXISTING, it)
+                                                        topic = topicName.of(WorkflowTaskTopic.ENGINE_EXISTING, it)
                                                         stats = topics.getPartitionedStats(topic, true, true, true)
                                                         displayStats(topic, stats, true)
 
                                                         // workflow executors
-                                                        topic = topicNamer.of(WorkflowTaskTopic.EXECUTORS, it)
+                                                        topic = topicName.of(WorkflowTaskTopic.EXECUTORS, it)
                                                         stats = topics.getPartitionedStats(topic, true, true, true)
                                                         displayStats(topic, stats, false)
                                                     }
@@ -239,42 +239,42 @@ object Pulsar {
                                                 tbody().new {
                                                     val workflowName = state.detailName!!.value
                                                     // workflow engine commands
-                                                    var topic = topicNamer.of(WorkflowTopic.ENGINE_NEW, workflowName)
+                                                    var topic = topicName.of(WorkflowTopic.ENGINE_NEW, workflowName)
                                                     var stats = topics.getPartitionedStats(topic, true, true, true)
                                                     displayStatsRow(topic, stats, true)
 
                                                     // workflow engine events
-                                                    topic = topicNamer.of(WorkflowTopic.ENGINE_EXISTING, workflowName)
+                                                    topic = topicName.of(WorkflowTopic.ENGINE_EXISTING, workflowName)
                                                     stats = topics.getPartitionedStats(topic, true, true, true)
                                                     displayStatsRow(topic, stats, false)
 
                                                     // workflow delay engine
-                                                    topic = topicNamer.of(WorkflowTopic.DELAYS, workflowName)
+                                                    topic = topicName.of(WorkflowTopic.DELAYS, workflowName)
                                                     stats = topics.getPartitionedStats(topic, true, true, true)
                                                     displayStatsRow(topic, stats, true)
 
                                                     // tag workflow engine commands
-                                                    topic = topicNamer.of(WorkflowTopic.TAG_NEW, workflowName)
+                                                    topic = topicName.of(WorkflowTopic.TAG_NEW, workflowName)
                                                     stats = topics.getPartitionedStats(topic, true, true, true)
                                                     displayStatsRow(topic, stats, false)
 
                                                     // tag workflow engine events
-                                                    topic = topicNamer.of(WorkflowTopic.TAG_EXISTING, workflowName)
+                                                    topic = topicName.of(WorkflowTopic.TAG_EXISTING, workflowName)
                                                     stats = topics.getPartitionedStats(topic, true, true, true)
                                                     displayStatsRow(topic, stats, true)
 
                                                     // workflow tasks engine commands
-                                                    topic = topicNamer.of(WorkflowTaskTopic.ENGINE_NEW, workflowName)
+                                                    topic = topicName.of(WorkflowTaskTopic.ENGINE_NEW, workflowName)
                                                     stats = topics.getPartitionedStats(topic, true, true, true)
                                                     displayStatsRow(topic, stats, false)
 
                                                     // workflow tasks engine events
-                                                    topic = topicNamer.of(WorkflowTaskTopic.ENGINE_EXISTING, workflowName)
+                                                    topic = topicName.of(WorkflowTaskTopic.ENGINE_EXISTING, workflowName)
                                                     stats = topics.getPartitionedStats(topic, true, true, true)
                                                     displayStatsRow(topic, stats, true)
 
                                                     // workflow task executors
-                                                    topic = topicNamer.of(WorkflowTaskTopic.EXECUTORS, workflowName)
+                                                    topic = topicName.of(WorkflowTaskTopic.EXECUTORS, workflowName)
                                                     stats = topics.getPartitionedStats(topic, true, true, true)
                                                     displayStatsRow(topic, stats, false)
                                                 }
