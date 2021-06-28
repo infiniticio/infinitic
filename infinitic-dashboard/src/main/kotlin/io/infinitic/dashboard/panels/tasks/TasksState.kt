@@ -23,21 +23,14 @@
  * Licensor: infinitic.io
  */
 
-repositories {
-    maven("https://jitpack.io")
+package io.infinitic.dashboard.panels.tasks
+
+import kweb.state.KVar
+
+data class TasksState(
+    val counter: Int = 0,
+)
+
+fun KVar<TasksState>.add() {
+    value = value.copy(counter = value.counter + 1)
 }
-
-dependencies {
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    implementation("com.github.kwebio:kweb-core:0.10.4")
-    implementation(Libs.Slf4j.simple)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-pulsar"))
-}
-
-apply("../publish.gradle.kts")

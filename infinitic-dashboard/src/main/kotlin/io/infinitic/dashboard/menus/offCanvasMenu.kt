@@ -23,20 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.components.menus
+package io.infinitic.dashboard.menus
 
+import io.infinitic.dashboard.AppPanel
+import io.infinitic.dashboard.toggleMobileMenu
 import kweb.Element
 import kweb.ElementCreator
 import kweb.button
 import kweb.div
 import kweb.new
 import kweb.span
+import kweb.state.KVar
 
-fun ElementCreator<Element>.offCanvasMenuCloseButton() {
+fun ElementCreator<Element>.offCanvasMenuCloseButton(isMobileMenuVisible: KVar<Boolean>) {
     div().classes(
-        MenuItem.isMobileMenuVisible.map {
+        isMobileMenuVisible.map {
             "absolute top-0 right-0 -mr-12 pt-2 ease-in-out duration-300 " +
-                if (it) "opacity-0" else "opacity-100"
+                if (it) "opacity-100" else "opacity-0"
         }
     ).new {
         val button = button()
@@ -59,18 +62,18 @@ fun ElementCreator<Element>.offCanvasMenuCloseButton() {
         }
 
         button.on.click {
-            MenuItem.isMobileMenuVisible.value = ! MenuItem.isMobileMenuVisible.value
+            AppPanel.appState.toggleMobileMenu()
         }
     }
 }
 
-fun ElementCreator<Element>.offCanvasMenuOverlay() {
+fun ElementCreator<Element>.offCanvasMenuOverlay(isMobileMenuVisible: KVar<Boolean>) {
     div()
         .setAttribute("aria-hidden", "true")
         .classes(
-            MenuItem.isMobileMenuVisible.map {
+            isMobileMenuVisible.map {
                 "fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity ease-linear duration-300 " +
-                    if (it) "opacity-0" else "opacity-100"
+                    if (it) "opacity-100" else "opacity-0"
             }
         )
 }

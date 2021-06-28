@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.components.menus
+package io.infinitic.dashboard.menus
 
 import kotlinx.serialization.json.JsonPrimitive
 import kweb.Element

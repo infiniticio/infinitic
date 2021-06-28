@@ -23,23 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.components.menus
+package io.infinitic.dashboard.panels.pulsar
 
-import kotlinx.serialization.json.JsonPrimitive
-import kweb.Element
-import kweb.ElementCreator
-import kweb.div
-import kweb.img
-import kweb.new
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
-fun ElementCreator<Element>.logo() {
-    div().classes("flex-shrink-0 px-4 flex items-center").new {
-        img(
-            mapOf(
-                "class" to JsonPrimitive("h-8 w-auto"),
-                "src" to JsonPrimitive("https://tailwindui.com/img/logos/workflow-logo-indigo-600-mark-gray-800-text.svg"),
-                "alt" to JsonPrimitive("Workflow")
-            )
-        )
-    }
-}
+data class PulsarTasksState(
+    val taskNames: Set<String>? = null,
+    val taskExecutorsStats: Map<String, PartitionedTopicStats?> = mapOf(),
+)

@@ -23,24 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.components
+package io.infinitic.dashboard.menus
 
-import kweb.Element
-import kweb.ElementCreator
-import kweb.div
-import kweb.h1
-import kweb.new
+import io.infinitic.dashboard.Panel
+import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 
-fun ElementCreator<Element>.workflowsPanel() {
-    div().classes("py-6").new {
-        div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-            h1().classes("text-2xl font-semibold text-gray-900")
-                .text("Workflows")
-        }
-        div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-            div().classes("py-4").new {
-                div().classes("border-4 border-dashed border-gray-200 rounded-lg h-96")
-            }
-        }
-    }
+private const val iconWorkflow = "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+
+object WorkflowMenu : MenuItem("Workflows", iconWorkflow) {
+    override var current: Panel = WorkflowsPanel
 }

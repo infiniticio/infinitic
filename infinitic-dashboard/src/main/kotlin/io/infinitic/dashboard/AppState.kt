@@ -23,21 +23,29 @@
  * Licensor: infinitic.io
  */
 
-repositories {
-    maven("https://jitpack.io")
+package io.infinitic.dashboard
+
+import io.infinitic.dashboard.menus.MenuItem
+import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
+import kweb.state.KVar
+
+data class AppState(
+    val panel: Panel = WorkflowsPanel,
+    val showMobileMenu: Boolean = false,
+)
+
+fun KVar<AppState>.toggleMobileMenu() {
+    value = value.copy(showMobileMenu = ! value.showMobileMenu)
 }
 
-dependencies {
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    implementation("com.github.kwebio:kweb-core:0.10.4")
-    implementation(Libs.Slf4j.simple)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-pulsar"))
+fun KVar<AppState>.selectMenu(menuItem: MenuItem) {
+    if (value.panel.menu != menuItem) {
+        value = value.copy(panel = menuItem.current)
+    }
 }
 
-apply("../publish.gradle.kts")
+fun KVar<AppState>.selectPanel(panel: Panel) {
+    if (value.panel != panel) {
+        value = value.copy(panel = panel)
+    }
+}

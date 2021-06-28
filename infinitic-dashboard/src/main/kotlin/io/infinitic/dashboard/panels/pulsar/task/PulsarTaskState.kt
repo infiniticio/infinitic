@@ -23,21 +23,29 @@
  * Licensor: infinitic.io
  */
 
-repositories {
-    maven("https://jitpack.io")
+package io.infinitic.dashboard.panels.pulsar.task
+
+import io.infinitic.dashboard.Infinitic.topicName
+import io.infinitic.dashboard.Infinitic.topics
+import io.infinitic.pulsar.topics.TaskTopic
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kweb.state.KVar
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+
+data class PulsarTaskState(
+    val taskName: String,
+    val topicsStats: Map<TaskTopic, PartitionedTopicStats?> =
+        TaskTopic.values().map { it }.associateWith { null },
+)
+
+fun KVar<PulsarTaskState>.updateTopicsStats(scope: CoroutineScope) = scope.launch {
+    value.topicsStats.keys.forEach {
+        try {
+            val stats = topics.getPartitionedStats(topicName.of(it, value.taskName), true, true, true)
+            value = value.copy(topicsStats = value.topicsStats.plus(it to stats))
+        } catch (e: Exception) {
+            println("error with $it")
+        }
+    }
 }
-
-dependencies {
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    implementation("com.github.kwebio:kweb-core:0.10.4")
-    implementation(Libs.Slf4j.simple)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-pulsar"))
-}
-
-apply("../publish.gradle.kts")

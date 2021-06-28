@@ -23,24 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.components
+package io.infinitic.dashboard.plugins.images
 
-import kweb.Element
-import kweb.ElementCreator
-import kweb.div
-import kweb.h1
-import kweb.new
+import kweb.plugins.KwebPlugin
+import kweb.plugins.staticFiles.ResourceFolder
+import kweb.plugins.staticFiles.StaticFilesPlugin
 
-fun ElementCreator<Element>.settingsPanel() {
-    div().classes("py-6").new {
-        div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-            h1().classes("text-2xl font-semibold text-gray-900")
-                .text("Settings")
-        }
-        div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-            div().classes("py-4").new {
-                div().classes("border-4 border-dashed border-gray-200 rounded-lg h-96")
-            }
-        }
-    }
-}
+private const val resourceFolder = "/img"
+private const val resourceRoute = "/static/img"
+
+class ImagesPlugin : KwebPlugin(
+    dependsOn = setOf(
+        StaticFilesPlugin(ResourceFolder(resourceFolder), resourceRoute)
+    )
+)
+
+val imagesPlugin get() = ImagesPlugin()

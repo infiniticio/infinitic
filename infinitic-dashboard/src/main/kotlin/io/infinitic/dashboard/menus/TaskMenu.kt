@@ -23,24 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.components
+package io.infinitic.dashboard.menus
 
-import kweb.Element
-import kweb.ElementCreator
-import kweb.div
-import kweb.h1
-import kweb.new
+import io.infinitic.dashboard.Panel
+import io.infinitic.dashboard.panels.tasks.TasksPanel
 
-fun ElementCreator<Element>.tasksPanel() {
-    div().classes("py-6").new {
-        div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-            h1().classes("text-2xl font-semibold text-gray-900")
-                .text("Tasks")
-        }
-        div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-            div().classes("py-4").new {
-                div().classes("border-4 border-dashed border-gray-200 rounded-lg h-96")
-            }
-        }
-    }
+private const val iconTask = "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+
+object TaskMenu : MenuItem("Tasks", iconTask) {
+    override var current: Panel = TasksPanel
 }

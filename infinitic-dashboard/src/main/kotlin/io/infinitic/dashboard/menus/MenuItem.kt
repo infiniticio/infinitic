@@ -23,26 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.components.menus
+package io.infinitic.dashboard.menus
 
+import io.infinitic.dashboard.AppPanel
+import io.infinitic.dashboard.AppState
+import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.routeTo
 import kweb.Element
 import kweb.ElementCreator
 import kweb.a
 import kweb.new
-import kweb.state.KVar
+import kweb.state.property
 
-enum class MenuItem(val text: String, val icon: String) {
-    WORKFLOWS("Workflows", "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"),
-    TASKS("Tasks", "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"),
-    PULSAR("Pulsar", "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"),
-    SETTINGS("Settings", "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z");
+sealed class MenuItem(val text: String, private val icon: String) {
+    abstract var current: Panel
 
     companion object {
-        var selected = KVar(WORKFLOWS)
-
-        val isMobileMenuVisible = KVar(false)
-
         private const val selectedNavStyle =
             "bg-gray-100 text-gray-900 group flex items-center px-2 py-2 font-medium rounded-md "
         private const val unselectedNavStyle =
@@ -54,29 +50,28 @@ enum class MenuItem(val text: String, val icon: String) {
             "text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"
     }
 
-    fun render(creator: ElementCreator<Element>, offCanvas: Boolean = false) {
+    fun render(creator: ElementCreator<Element>, offCanvas: Boolean = false) = with(creator) {
 
-        val a = creator.a()
+        val a = a()
             .setAttribute("href", "#")
             .classes(
-                selected.map {
-                    when (it) {
-                        this -> selectedNavStyle
+                AppPanel.appState.property(AppState::panel).map {
+                    when (it.menu) {
+                        this@MenuItem -> selectedNavStyle
                         else -> unselectedNavStyle
                     } + if (offCanvas) "text-base" else "text-sm"
                 }
             )
 
         a.on.click {
-            creator.routeTo(this)
+            browser.routeTo(current)
         }
 
-        val item = this
         a.new {
             element("svg").classes(
-                selected.map {
-                    when (it) {
-                        item -> selectNavIconStyle
+                AppPanel.appState.property(AppState::panel).map {
+                    when (it.menu) {
+                        this@MenuItem -> selectNavIconStyle
                         else -> unselectNavIconStyle
                     }
                 }
@@ -91,7 +86,7 @@ enum class MenuItem(val text: String, val icon: String) {
                         .setAttribute("stroke-linecap", "round")
                         .setAttribute("stroke-linejoin", "round")
                         .setAttribute("stroke-width", "2")
-                        .setAttribute("d", item.icon)
+                        .setAttribute("d", icon)
                 }
         }
         a.addText(text)

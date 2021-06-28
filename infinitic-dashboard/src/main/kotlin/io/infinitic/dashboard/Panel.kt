@@ -23,21 +23,24 @@
  * Licensor: infinitic.io
  */
 
-repositories {
-    maven("https://jitpack.io")
+package io.infinitic.dashboard
+
+import io.infinitic.dashboard.menus.MenuItem
+import kweb.Element
+import kweb.ElementCreator
+
+abstract class Panel {
+    abstract val menu: MenuItem
+
+    abstract val route: String
+
+    abstract fun render(creator: ElementCreator<Element>)
+
+    open fun onEnter() {
+        // do nothing per default
+    }
+
+    open fun onLeave() {
+        // do nothing per default
+    }
 }
-
-dependencies {
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-
-    implementation("com.github.kwebio:kweb-core:0.10.4")
-    implementation(Libs.Slf4j.simple)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-pulsar"))
-}
-
-apply("../publish.gradle.kts")
