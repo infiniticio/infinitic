@@ -23,11 +23,11 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.pulsar.task
+package io.infinitic.dashboard.panels.pulsar.workflow
 
 import io.infinitic.dashboard.Infinitic.topicName
 import io.infinitic.dashboard.Infinitic.topics
-import io.infinitic.pulsar.topics.TaskTopic
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -35,27 +35,27 @@ import kotlinx.coroutines.launch
 import kweb.state.KVar
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
-data class PulsarTaskState(
-    val taskName: String,
-    val topicsStats: Map<TaskTopic, PartitionedTopicStats?> =
-        TaskTopic.values().map { it }.associateWith { null },
+data class PulsarWorkflowTaskState(
+    val workflowName: String,
+    val workflowTaskTopicsStats: Map<WorkflowTaskTopic, PartitionedTopicStats?> =
+        WorkflowTaskTopic.values().map { it }.associateWith { null }
 )
 
-fun KVar<PulsarTaskState>.update(scope: CoroutineScope) = scope.launch {
+fun KVar<PulsarWorkflowTaskState>.update(scope: CoroutineScope) = scope.launch {
     while (isActive) {
         val delay = launch { delay(3000) }
-        println("UPDATING STATS FOR TASK ${value.taskName}")
+        println("UPDATING STATS FOR WORKFLOW_TASK ${value.workflowName}")
 
-        var topicsStats = value.topicsStats
-        value.topicsStats.keys.forEach {
+        var workflowTaskTopicsStats = value.workflowTaskTopicsStats
+        value.workflowTaskTopicsStats.keys.forEach {
             try {
-                val stats = topics.getPartitionedStats(topicName.of(it, value.taskName), true, true, true)
-                topicsStats = topicsStats.plus(it to stats)
+                val stats = topics.getPartitionedStats(topicName.of(it, value.workflowName), true, true, true)
+                workflowTaskTopicsStats = workflowTaskTopicsStats.plus(it to stats)
             } catch (e: Exception) {
                 println("error with $it")
             }
         }
-        value = value.copy(topicsStats = topicsStats)
+        value = value.copy(workflowTaskTopicsStats = workflowTaskTopicsStats)
 
         delay.join()
     }

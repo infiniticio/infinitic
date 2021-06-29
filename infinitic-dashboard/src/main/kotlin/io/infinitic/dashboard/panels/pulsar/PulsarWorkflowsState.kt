@@ -30,7 +30,9 @@ import io.infinitic.dashboard.Infinitic.topicName
 import io.infinitic.dashboard.Infinitic.topics
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
@@ -40,27 +42,48 @@ data class PulsarWorkflowsState(
     val workflowTaskExecutorsStats: Map<String, PartitionedTopicStats?> = mapOf()
 )
 
-fun KVar<PulsarWorkflowsState>.init(scope: CoroutineScope) = scope.launch {
-    delay((0..10000).random().toLong())
-    // get set of workflow names
-    val workflowNames = Infinitic.admin.workflows
-    // update state with workflow names
-    value = value.copy(
-        workflowNames = workflowNames,
-        workflowTaskExecutorsStats = workflowNames.associateWith { null }
-    )
-    // update state of each workflow
-    workflowNames.map { updateWorkflowTaskExecutorStats(scope, it) }
-}
+fun KVar<PulsarWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
+    while (isActive) {
+        val delayJob = launch { delay(30000) }
 
-private fun KVar<PulsarWorkflowsState>.updateWorkflowTaskExecutorStats(scope: CoroutineScope, workflowName: String) = scope.launch {
-    delay((0..10000).random().toLong())
-    val topic = topicName.of(WorkflowTaskTopic.EXECUTORS, workflowName)
-    try {
-        val stats = topics.getPartitionedStats(topic, true, true, true)
-        value = value.copy(workflowTaskExecutorsStats = value.workflowTaskExecutorsStats.plus(workflowName to stats))
-        println("$value")
-    } catch (e: Exception) {
-        println("error with $topic")
+        // get set of workflow names
+        try {
+            println("UPDATING WORKFLOWS NAMES")
+            // request Pulsar
+            val workflowNames = Infinitic.admin.workflows
+            val workflowTaskExecutorsStats = value.workflowTaskExecutorsStats
+            value = value.copy(
+                workflowNames = workflowNames,
+                workflowTaskExecutorsStats = workflowNames.associateWith {
+                    if (workflowTaskExecutorsStats.containsKey(it)) workflowTaskExecutorsStats[it] else null
+                }
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // update workflow stats every 3 seconds
+        val updateJob = launch {
+            while (isActive) {
+                val delay = launch { delay(3000) }
+                var workflowTaskExecutorsStats = value.workflowTaskExecutorsStats
+                value.workflowNames?.map {
+                    println("updating stats for $it")
+                    val topic = Infinitic.topicName.of(WorkflowTaskTopic.EXECUTORS, it)
+                    try {
+                        val stats = Infinitic.topics.getPartitionedStats(topic, true, true, true)
+                        workflowTaskExecutorsStats = workflowTaskExecutorsStats.plus(it to stats)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                delay.join()
+                value = value.copy(workflowTaskExecutorsStats = workflowTaskExecutorsStats)
+            }
+        }
+        // wait for at least 30s
+        delayJob.join()
+        // cancel updateJob before updating workflowNames
+        updateJob.cancelAndJoin()
     }
 }

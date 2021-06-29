@@ -28,7 +28,6 @@ package io.infinitic.dashboard.panels.pulsar.task
 import io.infinitic.dashboard.Infinitic.topicName
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.PulsarMenu
-import io.infinitic.pulsar.topics.TaskTopic
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -48,8 +47,16 @@ import kweb.th
 import kweb.thead
 import kweb.tr
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.util.concurrent.ConcurrentHashMap
 
-class PulsarTaskPanel(val taskName: String) : Panel() {
+class PulsarTaskPanel private constructor(private val taskName: String) : Panel() {
+
+    companion object {
+        private val instances: ConcurrentHashMap<String, PulsarTaskPanel> = ConcurrentHashMap()
+
+        fun from(taskName: String) = instances.computeIfAbsent(taskName) { PulsarTaskPanel(taskName) }
+    }
+
     override val menu = PulsarMenu
 
     override val route = "/pulsar/t/$taskName"
@@ -59,16 +66,15 @@ class PulsarTaskPanel(val taskName: String) : Panel() {
     lateinit var job: Job
 
     override fun onEnter() {
-        if (! this::job.isInitialized || !job.isActive) {
-            job = GlobalScope.launch { state.updateTopicsStats(this) }
+        if (! this::job.isInitialized || job.isCancelled) {
+            job = GlobalScope.launch {
+                // update of task names every 30 seconds
+                state.update(this)
+            }
         }
     }
 
     override fun onLeave() {
-        if (this::job.isInitialized) {
-            job.cancel()
-        }
-
         if (this::job.isInitialized) {
             job.cancel()
         }
@@ -125,7 +131,7 @@ class PulsarTaskPanel(val taskName: String) : Panel() {
                                                     }
                                                     tbody().new {
                                                         state.topicsStats.forEach {
-                                                            displayTopicStats(it.key, it.value)
+                                                            displayTopicStats(it.key.prefix, topicName.of(it.key, taskName), it.value)
                                                         }
                                                     }
                                                 }
@@ -141,12 +147,12 @@ class PulsarTaskPanel(val taskName: String) : Panel() {
         }
     }
 
-    private fun ElementCreator<Element>.displayTopicStats(type: TaskTopic, stats: PartitionedTopicStats?) {
+    private fun ElementCreator<Element>.displayTopicStats(type: String, topic: String, stats: PartitionedTopicStats?) {
         when (stats) {
             null ->
-                tr().classes("bg-white cursor-pointer").new {
+                tr().classes("bg-white").new {
                     td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                        .text(type.prefix)
+                        .text(type)
                     td().classes("px-6 py-4 text-sm text-gray-500")
                         .text("loading...")
                     td().classes("px-6 py-4 text-sm text-gray-500")
@@ -154,20 +160,20 @@ class PulsarTaskPanel(val taskName: String) : Panel() {
                     td().classes("px-6 py-4 text-sm text-gray-500")
                         .text("loading...")
                     td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text(topicName.of(type, taskName))
+                        .text(topic)
                 }
-            else -> stats?.subscriptions.map {
-                tr().classes("bg-white cursor-pointer").new {
+            else -> stats.subscriptions.map {
+                tr().classes("bg-white").new {
                     td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                        .text(type.prefix)
+                        .text(type)
                     td().classes("px-6 py-4 text-sm text-gray-500")
                         .text(it.value.consumers.size.toString())
                     td().classes("px-6 py-4 text-sm text-gray-500")
                         .text(it.value.msgBacklog.toString())
                     td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text(it.value.msgRateOut.toString())
+                        .text("%.2f".format(it.value.msgRateOut) + " msg/s")
                     td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text(topicName.of(type, taskName))
+                        .text(topic)
                 }
             }
         }

@@ -28,6 +28,7 @@ package io.infinitic.dashboard
 import io.infinitic.dashboard.modals.ErrorModal
 import io.infinitic.dashboard.panels.pulsar.PulsarPanel
 import io.infinitic.dashboard.panels.pulsar.task.PulsarTaskPanel
+import io.infinitic.dashboard.panels.pulsar.workflow.PulsarWorkflowPanel
 import io.infinitic.dashboard.panels.settings.SettingsPanel
 import io.infinitic.dashboard.panels.tasks.TasksPanel
 import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
@@ -54,7 +55,10 @@ fun main() {
                     panel = PulsarPanel
                 }
                 path("/pulsar/t/{name}") {
-                    panel = PulsarTaskPanel(it.getValue("name").value)
+                    panel = PulsarTaskPanel.from(it.getValue("name").value)
+                }
+                path("/pulsar/w/{name}") {
+                    panel = PulsarWorkflowPanel.from(it.getValue("name").value)
                 }
                 path("/settings") {
                     panel = SettingsPanel
