@@ -23,19 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.pulsar
+package io.infinitic.dashboard.panels.infrastructure.workflow
 
+import io.infinitic.dashboard.Infinitic.topicName
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.menus.PulsarMenu
-import io.infinitic.dashboard.panels.pulsar.task.PulsarTaskPanel
-import io.infinitic.dashboard.panels.pulsar.workflow.PulsarWorkflowPanel
-import io.infinitic.dashboard.routeTo
+import io.infinitic.dashboard.menus.InfraMenu
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
+import kweb.h1
 import kweb.h3
 import kweb.new
 import kweb.p
@@ -48,23 +47,31 @@ import kweb.th
 import kweb.thead
 import kweb.tr
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.util.concurrent.ConcurrentHashMap
 
-object PulsarPanel : Panel() {
-    override val menu = PulsarMenu
-    override val route = "/pulsar"
+class InfraWorkflowPanel private constructor(private val workflowName: String) : Panel() {
+    companion object {
+        private val instances: ConcurrentHashMap<String, InfraWorkflowPanel> = ConcurrentHashMap()
 
-    private val tasksState = KVar(PulsarTasksState())
-    private val workflowsState = KVar(PulsarWorkflowsState())
+        fun from(workflowName: String) = instances.computeIfAbsent(workflowName) { InfraWorkflowPanel(workflowName) }
+    }
+
+    override val menu = InfraMenu
+
+    override val route = "/infra/w/$workflowName"
+
+    private val workflowState = KVar(InfraWorkflowState(workflowName))
+    private val workflowTaskState = KVar(InfraWorkflowTaskState(workflowName))
 
     lateinit var job: Job
 
     override fun onEnter() {
         if (! this::job.isInitialized || job.isCancelled) {
             job = GlobalScope.launch {
-                // update of task names every 30 seconds
-                tasksState.update(this)
-                // update of workflow names every 30 seconds
-                workflowsState.update(this)
+                // update of workflow task's topics every 30 seconds
+                workflowState.update(this)
+                // update of workflow's topics every 30 seconds
+                workflowTaskState.update(this)
             }
         }
     }
@@ -75,20 +82,27 @@ object PulsarPanel : Panel() {
         }
     }
 
-    override fun render(creator: ElementCreator<Element>) = with(creator) {
+    override fun render(creator: ElementCreator<Element>): Unit = with(creator) {
+        // Header
+        div().classes("bg-white shadow").new {
+            div().classes("border-b border-gray-200 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8").new {
+                div().classes("flex-1 min-w-0").new {
+                    h1().classes("text-lg font-medium leading-6 text-gray-900 sm:truncate>").text(workflowName)
+                }
+            }
+        }
         // WORKFLOWS
         div().classes("pt-6").new {
             div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-                // Workflows header
-                h3().classes("text-lg leading-6 font-medium text-gray-900").text("Workflows")
+                // Topics header
+                h3().classes("text-lg leading-6 font-medium text-gray-900").text("Workflow-Engine's Topics")
                 p().classes("mt-2 max-w-4xl text-sm text-gray-500").text(
                     """
-                        Here is the list of the workflows processed in Pulsar based on existence of topics.
-                        For a quick check you can see here the number of executors and their msg rate.
-                        Click on a row to get more details.
+                        You should have at least one consumer / topic. If your backlog is non-zero,
+                        then your msg rate should be non-zero as well (except for delays)
                     """
                 )
-                // Workflows table
+                // Topics table
                 div().classes("pt-5").new {
                     div().classes("max-w-none mx-auto").new {
                         div().classes("bg-white overflow-hidden sm:rounded-lg sm:shadow").new {
@@ -96,33 +110,30 @@ object PulsarPanel : Panel() {
                                 div().classes("-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8").new {
                                     div().classes("py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8").new {
                                         div().classes("shadow overflow-hidden border-b border-gray-200 sm:rounded-lg").new {
-                                            render(workflowsState) { state ->
+                                            render(workflowState) { state ->
                                                 table().classes("min-w-full divide-y divide-gray-200").new {
                                                     thead().classes("bg-gray-50").new {
                                                         tr().new {
                                                             th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
                                                                 .setAttribute("scope", "col")
+                                                                .text("Type")
+                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                                .setAttribute("scope", "col")
+                                                                .text("Nb Consumers")
+                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                                .setAttribute("scope", "col")
+                                                                .text("Msg Backlog")
+                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                                .setAttribute("scope", "col")
+                                                                .text("Msg Rate Out")
+                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                                .setAttribute("scope", "col")
                                                                 .text("Name")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Nb Executors")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Executors Backlog")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Executors Rate Out")
                                                         }
                                                     }
                                                     tbody().new {
-                                                        when (val workflows = state.workflowNames) {
-                                                            null -> displayLoading()
-                                                            else -> workflows.forEach {
-                                                                when (val stats = state.workflowTaskExecutorsStats[it]) {
-                                                                    null -> displayExecutorLoading(it, isTask = false)
-                                                                    else -> displayExecutorStats(it, stats, isTask = false)
-                                                                }
-                                                            }
+                                                        state.workflowTopicsStats.forEach {
+                                                            displayTopicStats(it.key.prefix, topicName.of(it.key, workflowName), it.value)
                                                         }
                                                     }
                                                 }
@@ -137,19 +148,18 @@ object PulsarPanel : Panel() {
             }
         }
 
-        // TASKS
+        // WORKFLOW_TASK
         div().classes("pt-6").new {
             div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-                // Workflows header
-                h3().classes("text-lg leading-6 font-medium text-gray-900").text("Tasks")
+                // Topics header
+                h3().classes("text-lg leading-6 font-medium text-gray-900").text("Workflow-Task's Topics")
                 p().classes("mt-2 max-w-4xl text-sm text-gray-500").text(
                     """
-                        Here is the list of the tasks processed in Pulsar based on existence of topics.
-                        For a quick check you can see here the number of executors and their msg rate.
-                        Click on a row to get more details.
+                        You should have at least one consumer / topic. If your backlog is non-zero,
+                        then your msg rate should be non-zero as well (except for delays)
                     """
                 )
-                // Workflows table
+                // Topics table
                 div().classes("pt-5").new {
                     div().classes("max-w-none mx-auto").new {
                         div().classes("bg-white overflow-hidden sm:rounded-lg sm:shadow").new {
@@ -157,33 +167,30 @@ object PulsarPanel : Panel() {
                                 div().classes("-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8").new {
                                     div().classes("py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8").new {
                                         div().classes("shadow overflow-hidden border-b border-gray-200 sm:rounded-lg").new {
-                                            render(tasksState) { state ->
+                                            render(workflowTaskState) { state ->
                                                 table().classes("min-w-full divide-y divide-gray-200").new {
                                                     thead().classes("bg-gray-50").new {
                                                         tr().new {
                                                             th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
                                                                 .setAttribute("scope", "col")
+                                                                .text("Type")
+                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                                .setAttribute("scope", "col")
+                                                                .text("Nb Consumers")
+                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                                .setAttribute("scope", "col")
+                                                                .text("Msg Backlog")
+                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                                .setAttribute("scope", "col")
+                                                                .text("Msg Rate Out")
+                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
+                                                                .setAttribute("scope", "col")
                                                                 .text("Name")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Nb Executors")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Executors Backlog")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Executors Rate Out")
                                                         }
                                                     }
                                                     tbody().new {
-                                                        when (val taskNames = state.taskNames) {
-                                                            null -> displayLoading()
-                                                            else -> taskNames.forEach {
-                                                                when (val stats = state.taskExecutorsStats[it]) {
-                                                                    null -> displayExecutorLoading(it, isTask = true)
-                                                                    else -> displayExecutorStats(it, stats, isTask = true)
-                                                                }
-                                                            }
+                                                        state.workflowTaskTopicsStats.forEach {
+                                                            displayTopicStats(it.key.prefix, topicName.of(it.key, workflowName), it.value)
                                                         }
                                                     }
                                                 }
@@ -199,51 +206,34 @@ object PulsarPanel : Panel() {
         }
     }
 
-    private fun ElementCreator<Element>.displayLoading() {
-        tr().classes("bg-white").new {
-            td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                .text("loading...")
-        }
-    }
-
-    private fun ElementCreator<Element>.displayExecutorLoading(name: String, isTask: Boolean) {
-        val row = tr()
-        row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
-            td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                .text(name)
-            td().classes("px-6 py-4 text-sm text-gray-500")
-                .text("loading...")
-            td().classes("px-6 py-4 text-sm text-gray-500")
-                .text("loading...")
-            td().classes("px-6 py-4 text-sm text-gray-500")
-                .text("loading...")
-        }
-        row.on.click {
-            if (isTask)
-                browser.routeTo(PulsarTaskPanel.from(name))
-            else
-                browser.routeTo(PulsarWorkflowPanel.from(name))
-        }
-    }
-
-    private fun ElementCreator<Element>.displayExecutorStats(name: String, stats: PartitionedTopicStats, isTask: Boolean) {
-        stats.subscriptions.map {
-            val row = tr()
-            row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
-                td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                    .text(name)
-                td().classes("px-6 py-4 text-sm text-gray-500")
-                    .text(it.value.consumers.size.toString())
-                td().classes("px-6 py-4 text-sm text-gray-500")
-                    .text(it.value.msgBacklog.toString())
-                td().classes("px-6 py-4 text-sm text-gray-500")
-                    .text("%.2f".format(it.value.msgRateOut) + " msg/s")
-            }
-            row.on.click {
-                if (isTask)
-                    browser.routeTo(PulsarTaskPanel.from(name))
-                else
-                    browser.routeTo(PulsarWorkflowPanel.from(name))
+    private fun ElementCreator<Element>.displayTopicStats(type: String, topic: String, stats: PartitionedTopicStats?) {
+        when (stats) {
+            null ->
+                tr().classes("bg-white").new {
+                    td().classes("px-6 py-4 text-sm font-medium text-gray-900")
+                        .text(type)
+                    td().classes("px-6 py-4 text-sm text-gray-500")
+                        .text("loading...")
+                    td().classes("px-6 py-4 text-sm text-gray-500")
+                        .text("loading...")
+                    td().classes("px-6 py-4 text-sm text-gray-500")
+                        .text("loading...")
+                    td().classes("px-6 py-4 text-sm text-gray-500")
+                        .text(topic)
+                }
+            else -> stats?.subscriptions.map {
+                tr().classes("bg-white").new {
+                    td().classes("px-6 py-4 text-sm font-medium text-gray-900")
+                        .text(type)
+                    td().classes("px-6 py-4 text-sm text-gray-500")
+                        .text(it.value.consumers.size.toString())
+                    td().classes("px-6 py-4 text-sm text-gray-500")
+                        .text(it.value.msgBacklog.toString())
+                    td().classes("px-6 py-4 text-sm text-gray-500")
+                        .text("%.2f".format(it.value.msgRateOut) + " msg/s")
+                    td().classes("px-6 py-4 text-sm text-gray-500")
+                        .text(topic)
+                }
             }
         }
     }

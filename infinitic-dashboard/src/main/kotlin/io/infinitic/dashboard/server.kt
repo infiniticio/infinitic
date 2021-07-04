@@ -26,9 +26,9 @@
 package io.infinitic.dashboard
 
 import io.infinitic.dashboard.modals.ErrorModal
-import io.infinitic.dashboard.panels.pulsar.PulsarPanel
-import io.infinitic.dashboard.panels.pulsar.task.PulsarTaskPanel
-import io.infinitic.dashboard.panels.pulsar.workflow.PulsarWorkflowPanel
+import io.infinitic.dashboard.panels.infrastructure.InfraPanel
+import io.infinitic.dashboard.panels.infrastructure.task.InfraTaskPanel
+import io.infinitic.dashboard.panels.infrastructure.workflow.InfraWorkflowPanel
 import io.infinitic.dashboard.panels.settings.SettingsPanel
 import io.infinitic.dashboard.panels.tasks.TasksPanel
 import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
@@ -45,22 +45,22 @@ fun main() {
             lateinit var panel: Panel
 
             route {
-                path("/workflows") {
+                path(WorkflowsPanel.route) {
                     panel = WorkflowsPanel
                 }
-                path("/tasks") {
+                path(TasksPanel.route) {
                     panel = TasksPanel
                 }
-                path("/pulsar") {
-                    panel = PulsarPanel
+                path(InfraPanel.route) {
+                    panel = InfraPanel
                 }
-                path("/pulsar/t/{name}") {
-                    panel = PulsarTaskPanel.from(it.getValue("name").value)
+                path("/infra/t/{name}") {
+                    panel = InfraTaskPanel.from(it.getValue("name").value)
                 }
-                path("/pulsar/w/{name}") {
-                    panel = PulsarWorkflowPanel.from(it.getValue("name").value)
+                path("/infra/w/{name}") {
+                    panel = InfraWorkflowPanel.from(it.getValue("name").value)
                 }
-                path("/settings") {
+                path(SettingsPanel.route) {
                     panel = SettingsPanel
                 }
             }

@@ -39,8 +39,8 @@ import kweb.state.KVar
 
 object ErrorModal {
 
-    private val showModal = KVar(true)
-    private val display = KVar(true)
+    private val showModal = KVar(false)
+    private val display = KVar(false)
 
     fun open() {
         display.value = true

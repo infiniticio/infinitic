@@ -23,40 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.pulsar.task
+package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.Infinitic.topics
+import io.infinitic.dashboard.Infinitic
 import io.infinitic.pulsar.topics.TaskTopic
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
-data class PulsarTaskState(
-    val taskName: String,
-    val topicsStats: Map<TaskTopic, PartitionedTopicStats?> =
-        TaskTopic.values().map { it }.associateWith { null },
+data class InfraNames(
+    val names: Set<String>? = null,
+    val status: InfraStatus = InfraStatus.LOADING,
+    val stackTrace: String? = null,
+    val lastUpdated: Instant = Instant.now()
 )
-
-fun KVar<PulsarTaskState>.update(scope: CoroutineScope) = scope.launch {
-    while (isActive) {
-        val delay = launch { delay(3000) }
-        println("UPDATING STATS FOR TASK ${value.taskName}")
-
-        var topicsStats = value.topicsStats
-        value.topicsStats.keys.forEach {
-            try {
-                val stats = topics.getPartitionedStats(topicName.of(it, value.taskName), true, true, true)
-                topicsStats = topicsStats.plus(it to stats)
-            } catch (e: Exception) {
-                println("error with $it")
-            }
-        }
-        value = value.copy(topicsStats = topicsStats)
-
-        delay.join()
-    }
-}

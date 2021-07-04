@@ -26,6 +26,7 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.AppPanel
+import io.infinitic.dashboard.icons.iconClose
 import io.infinitic.dashboard.toggleMobileMenu
 import kweb.Element
 import kweb.ElementCreator
@@ -43,24 +44,10 @@ fun ElementCreator<Element>.offCanvasMenuCloseButton(isMobileMenuVisible: KVar<B
         }
     ).new {
         val button = button()
-
         button.classes("ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white").new {
             span().classes("sr-only").text("Close sidebar")
-            element("svg").classes("h-6 w-6 text-white")
-                .setAttribute("xmlns", "http://www.w3.org/2000/svg")
-                .setAttribute("fill", "none")
-                .setAttribute("viewBox", "0 0 24 24")
-                .setAttribute("stroke", "currentColor")
-                .setAttribute("aria-hidden", "true")
-                .new {
-                    element("path")
-                        .setAttribute("stroke-linecap", "round")
-                        .setAttribute("stroke-linejoin", "round")
-                        .setAttribute("stroke-width", "2")
-                        .setAttribute("d", "M6 18L18 6M6 6l12 12")
-                }
+            iconClose().addClasses("text-white")
         }
-
         button.on.click {
             AppPanel.appState.toggleMobileMenu()
         }

@@ -23,11 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.pulsar
+package io.infinitic.dashboard.panels.infrastructure
 
 import io.infinitic.dashboard.Infinitic
-import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.Infinitic.topics
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelAndJoin
@@ -36,13 +34,15 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
-data class PulsarWorkflowsState(
+data class InfraWorkflowsState(
     val workflowNames: Set<String>? = null,
-    val workflowTaskExecutorsStats: Map<String, PartitionedTopicStats?> = mapOf()
+    val workflowTaskExecutorsStats: Map<String, PartitionedTopicStats?> = mapOf(),
+    val lastUpdated: Instant = Instant.now()
 )
 
-fun KVar<PulsarWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
+fun KVar<InfraWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
     while (isActive) {
         val delayJob = launch { delay(30000) }
 
@@ -78,7 +78,10 @@ fun KVar<PulsarWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
                     }
                 }
                 delay.join()
-                value = value.copy(workflowTaskExecutorsStats = workflowTaskExecutorsStats)
+                value = value.copy(
+                    workflowTaskExecutorsStats = workflowTaskExecutorsStats,
+                    lastUpdated = Instant.now()
+                )
             }
         }
         // wait for at least 30s

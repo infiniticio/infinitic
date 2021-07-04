@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.pulsar.workflow
+package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.dashboard.Infinitic.topicName
 import io.infinitic.dashboard.Infinitic.topics
@@ -34,14 +34,16 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
-data class PulsarWorkflowState(
+data class InfraWorkflowState(
     val workflowName: String,
     val workflowTopicsStats: Map<WorkflowTopic, PartitionedTopicStats?> =
         WorkflowTopic.values().map { it }.associateWith { null },
+    val lastUpdated: Instant = Instant.now()
 )
 
-fun KVar<PulsarWorkflowState>.update(scope: CoroutineScope) = scope.launch {
+fun KVar<InfraWorkflowState>.update(scope: CoroutineScope) = scope.launch {
     while (isActive) {
         val delay = launch { delay(3000) }
         println("UPDATING STATS FOR WORKFLOW_ENGINE ${value.workflowName}")
@@ -55,7 +57,10 @@ fun KVar<PulsarWorkflowState>.update(scope: CoroutineScope) = scope.launch {
                 println("error with $it")
             }
         }
-        value = value.copy(workflowTopicsStats = workflowTopicsStats)
+        value = value.copy(
+            workflowTopicsStats = workflowTopicsStats,
+            lastUpdated = Instant.now()
+        )
 
         delay.join()
     }

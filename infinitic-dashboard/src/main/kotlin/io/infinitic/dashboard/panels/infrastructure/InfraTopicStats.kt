@@ -23,40 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.pulsar.workflow
+package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.Infinitic.topics
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.dashboard.Infinitic
+import io.infinitic.pulsar.topics.TaskTopic
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
-data class PulsarWorkflowTaskState(
-    val workflowName: String,
-    val workflowTaskTopicsStats: Map<WorkflowTaskTopic, PartitionedTopicStats?> =
-        WorkflowTaskTopic.values().map { it }.associateWith { null }
+data class InfraTopicStats(
+    val topic: String,
+    val partitionedTopicStats: PartitionedTopicStats? = null,
+    val status: InfraStatus = InfraStatus.LOADING,
+    val stackTrace: String? = null,
+    val lastUpdated: Instant = Instant.now()
 )
-
-fun KVar<PulsarWorkflowTaskState>.update(scope: CoroutineScope) = scope.launch {
-    while (isActive) {
-        val delay = launch { delay(3000) }
-        println("UPDATING STATS FOR WORKFLOW_TASK ${value.workflowName}")
-
-        var workflowTaskTopicsStats = value.workflowTaskTopicsStats
-        value.workflowTaskTopicsStats.keys.forEach {
-            try {
-                val stats = topics.getPartitionedStats(topicName.of(it, value.workflowName), true, true, true)
-                workflowTaskTopicsStats = workflowTaskTopicsStats.plus(it to stats)
-            } catch (e: Exception) {
-                println("error with $it")
-            }
-        }
-        value = value.copy(workflowTaskTopicsStats = workflowTaskTopicsStats)
-
-        delay.join()
-    }
-}

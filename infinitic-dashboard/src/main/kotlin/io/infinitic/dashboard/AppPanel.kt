@@ -25,7 +25,8 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.dashboard.menus.PulsarMenu
+import io.infinitic.dashboard.icons.iconHamburger
+import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.menus.SettingsMenu
 import io.infinitic.dashboard.menus.TaskMenu
 import io.infinitic.dashboard.menus.WorkflowMenu
@@ -52,6 +53,11 @@ object AppPanel {
 
         val showMobileMenu: KVar<Boolean> = appState.property(AppState::showMobileMenu)
         val panel: KVar<Panel> = appState.property(AppState::panel)
+
+        // get browser timezone (tricky while we do not have session)
+//        browser.callJsFunctionWithCallback("return Intl.DateTimeFormat().resolvedOptions().timeZone", 0, {
+//            println(it)
+//        })
 
         div().classes("h-screen flex overflow-hidden bg-gray-100").new {
             // offCanvas menu
@@ -81,7 +87,7 @@ object AppPanel {
                                 // Team
                                 TaskMenu.render(this, true)
                                 // Projects
-                                PulsarMenu.render(this, true)
+                                InfraMenu.render(this, true)
                                 // Calendar
                                 SettingsMenu.render(this, true)
                             }
@@ -109,7 +115,7 @@ object AppPanel {
                                 // Team
                                 TaskMenu.render(this)
                                 // Projects
-                                PulsarMenu.render(this)
+                                InfraMenu.render(this)
                                 // Calendar
                                 SettingsMenu.render(this)
                             }
@@ -126,19 +132,7 @@ object AppPanel {
                     val hamburger = button()
                     hamburger.classes("-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500").new {
                         span().classes("sr-only").text("Open sidebar")
-                        element("svg").classes("h-6 w-6")
-                            .setAttribute("xmlns", "http://www.w3.org/2000/svg")
-                            .setAttribute("fill", "none")
-                            .setAttribute("viewBox", "0 0 24 24")
-                            .setAttribute("stroke", "currentColor")
-                            .setAttribute("aria-hidden", "true")
-                            .new {
-                                element("path")
-                                    .setAttribute("stroke-linecap", "round")
-                                    .setAttribute("stroke-linejoin", "round")
-                                    .setAttribute("stroke-width", "2")
-                                    .setAttribute("d", "M4 6h16M4 12h16M4 18h16")
-                            }
+                        iconHamburger()
                     }
                     hamburger.on.click {
                         appState.toggleMobileMenu()
