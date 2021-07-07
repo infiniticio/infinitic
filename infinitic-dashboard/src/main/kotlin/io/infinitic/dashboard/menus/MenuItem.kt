@@ -35,7 +35,7 @@ import kweb.a
 import kweb.new
 import kweb.state.property
 
-sealed class MenuItem(val text: String, private val icon: String) {
+sealed class MenuItem(val text: String, private val icon: ElementCreator<Element>.() -> Element) {
     abstract var current: Panel
 
     companion object {
@@ -63,31 +63,17 @@ sealed class MenuItem(val text: String, private val icon: String) {
                 }
             )
 
-        a.on.click {
-            browser.routeTo(current)
-        }
+        a.on.click { browser.routeTo(current) }
 
         a.new {
-            element("svg").classes(
+            icon().classes(
                 AppPanel.appState.property(AppState::panel).map {
                     when (it.menu) {
-                        this@MenuItem -> selectNavIconStyle
-                        else -> unselectNavIconStyle
+                        this@MenuItem -> MenuItem.selectNavIconStyle
+                        else -> MenuItem.unselectNavIconStyle
                     }
                 }
             )
-                .setAttribute("xmlns", "http://www.w3.org/2000/svg")
-                .setAttribute("fill", "none")
-                .setAttribute("viewBox", "0 0 24 24")
-                .setAttribute("stroke", "currentColor")
-                .setAttribute("aria-hidden", "true")
-                .new {
-                    element("path")
-                        .setAttribute("stroke-linecap", "round")
-                        .setAttribute("stroke-linejoin", "round")
-                        .setAttribute("stroke-width", "2")
-                        .setAttribute("d", icon)
-                }
         }
         a.addText(text)
     }

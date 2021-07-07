@@ -26,42 +26,17 @@
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.Infinitic.topics
+import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
+import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kweb.state.KVar
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
 data class InfraWorkflowTaskState(
-    val workflowName: String,
-    val workflowTaskTopicsStats: Map<WorkflowTaskTopic, PartitionedTopicStats?> =
-        WorkflowTaskTopic.values().map { it }.associateWith { null },
-    val lastUpdated: Instant = Instant.now()
-)
-
-fun KVar<InfraWorkflowTaskState>.update(scope: CoroutineScope) = scope.launch {
-    while (isActive) {
-        val delay = launch { delay(3000) }
-        println("UPDATING STATS FOR WORKFLOW_TASK ${value.workflowName}")
-
-        var workflowTaskTopicsStats = value.workflowTaskTopicsStats
-        value.workflowTaskTopicsStats.keys.forEach {
-            try {
-                val stats = topics.getPartitionedStats(topicName.of(it, value.workflowName), true, true, true)
-                workflowTaskTopicsStats = workflowTaskTopicsStats.plus(it to stats)
-            } catch (e: Exception) {
-                println("error with $it")
-            }
-        }
-        value = value.copy(
-            workflowTaskTopicsStats = workflowTaskTopicsStats,
-            lastUpdated = Instant.now()
-        )
-
-        delay.join()
-    }
+    override val name: String,
+    override val topicsStats: Map<WorkflowTaskTopic, InfraTopicStats> =
+        WorkflowTaskTopic.values().map { it }.associateWith { InfraTopicStats(topicName.of(it, name)) },
+    override val lastUpdated: Instant = Instant.now()
+) : InfraJobState<WorkflowTaskTopic> {
+    override fun create(name: String, topicsStats: Map<WorkflowTaskTopic, InfraTopicStats>, lastUpdated: Instant) =
+        InfraWorkflowTaskState(name, topicsStats, lastUpdated)
 }

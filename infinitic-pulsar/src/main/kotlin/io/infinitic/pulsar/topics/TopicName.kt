@@ -31,13 +31,9 @@ class TopicName(private val tenantName: String, private val namespace: String) {
 
     fun of(clientName: ClientName) = getPersistentTopicFullName("client: $clientName")
 
-    fun of(type: WorkflowTopic, workflowName: String) = getPersistentTopicFullName(type.prefix + ": " + workflowName)
+    fun of(type: TopicSet, name: String) = getPersistentTopicFullName(type.prefix + ": " + name)
 
-    fun of(type: WorkflowTaskTopic, workflowName: String) = getPersistentTopicFullName(type.prefix + ": " + workflowName)
-
-    fun of(type: TaskTopic, taskName: String) = getPersistentTopicFullName(type.prefix + ": " + taskName)
-
-    fun of(type: GlobalTopic) = getPersistentTopicFullName(type.prefix)
+    fun of(type: TopicSet) = getPersistentTopicFullName(type.prefix)
 
     private fun getPersistentTopicFullName(topic: String) =
         "persistent://$tenantName/$namespace/$topic"

@@ -33,7 +33,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
+import mu.KotlinLogging
 import java.time.Instant
+
+private val logger = KotlinLogging.logger {}
+
+private const val NAMES_UPDATE_DELAY = 30000L
+private const val STATS_UPDATE_DELAY = 5000L
 
 data class InfraTasksState(
     val taskNames: InfraNames = InfraNames(),
@@ -41,16 +47,13 @@ data class InfraTasksState(
     val lastUpdated: Instant = Instant.now()
 )
 
-const val TASK_NAMES_UPDATE_DELAY = 30000L
-const val TASK_STATS_UPDATE_DELAY = 5000L
-
 fun KVar<InfraTasksState>.update(scope: CoroutineScope) = scope.launch {
     while (isActive) {
-        val delayJob = launch { delay(TASK_NAMES_UPDATE_DELAY) }
+        val delayJob = launch { delay(NAMES_UPDATE_DELAY) }
 
-        // get set of  task names
+        // update task names every NAMES_UPDATE_DELAY millis
         try {
-            println("UPDATING TASKS NAMES")
+            logger.debug { "Updating task names" }
             // request Pulsar
             val taskNames = Infinitic.admin.tasks
             val taskStats = value.taskStats
@@ -77,31 +80,37 @@ fun KVar<InfraTasksState>.update(scope: CoroutineScope) = scope.launch {
                 taskStats = mapOf(),
                 lastUpdated = Instant.now()
             )
-            e.printStackTrace()
+            logger.error { "Error while updating task names" }
+            logger.error { e.printStackTrace() }
         }
 
-        // update task stats every 3 seconds
+        // update task stats every STATS_UPDATE_DELAY millis
         val updateJob = launch {
             while (isActive) {
-                val delay = launch { delay(TASK_STATS_UPDATE_DELAY) }
+                val delay = launch { delay(STATS_UPDATE_DELAY) }
                 var taskStats = value.taskStats
                 value.taskNames.names?.map {
-                    println("updating stats for $it")
+                    logger.debug { "Updating executor stats for $it" }
                     val topic = getExecutorTopicForTask(it)
                     try {
                         val stats = Infinitic.topics.getPartitionedStats(topic, true, true, true)
-                        taskStats = taskStats.plus(it to InfraTopicStats(
-                            topic = topic,
-                            partitionedTopicStats = stats,
-                            status = InfraStatus.COMPLETED
-                        ))
+                        taskStats = taskStats.plus(
+                            it to InfraTopicStats(
+                                topic = topic,
+                                partitionedTopicStats = stats,
+                                status = InfraStatus.COMPLETED
+                            )
+                        )
                     } catch (e: Exception) {
-                        taskStats = taskStats.plus(it to InfraTopicStats(
-                            topic = topic,
-                            status = InfraStatus.ERROR,
-                            stackTrace = e.stackTraceToString()
-                        ))
-                        e.printStackTrace()
+                        taskStats = taskStats.plus(
+                            it to InfraTopicStats(
+                                topic = topic,
+                                status = InfraStatus.ERROR,
+                                stackTrace = e.stackTraceToString()
+                            )
+                        )
+                        logger.error { "Error while updating executor stats for task $it" }
+                        logger.error { e.printStackTrace() }
                     }
                 }
                 // update array of stats

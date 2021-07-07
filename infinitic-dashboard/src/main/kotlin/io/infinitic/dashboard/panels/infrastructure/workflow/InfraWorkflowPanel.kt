@@ -25,28 +25,40 @@
 
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
-import io.infinitic.dashboard.Infinitic.topicName
 import io.infinitic.dashboard.Panel
+import io.infinitic.dashboard.icons.iconChevron
 import io.infinitic.dashboard.menus.InfraMenu
+import io.infinitic.dashboard.panels.infrastructure.InfraPanel
+import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
+import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
+import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
+import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
+import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
+import io.infinitic.dashboard.panels.infrastructure.jobs.update
+import io.infinitic.dashboard.panels.infrastructure.lastUpdated
+import io.infinitic.dashboard.routeTo
+import io.infinitic.pulsar.topics.TopicSet
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.pulsar.topics.WorkflowTopic
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kweb.Element
 import kweb.ElementCreator
+import kweb.a
 import kweb.div
-import kweb.h1
-import kweb.h3
+import kweb.h2
+import kweb.li
+import kweb.nav
 import kweb.new
+import kweb.ol
 import kweb.p
+import kweb.span
 import kweb.state.KVar
+import kweb.state.property
 import kweb.state.render
-import kweb.table
-import kweb.tbody
-import kweb.td
-import kweb.th
-import kweb.thead
-import kweb.tr
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 class InfraWorkflowPanel private constructor(private val workflowName: String) : Panel() {
@@ -61,17 +73,43 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
     override val route = "/infra/w/$workflowName"
 
     private val workflowState = KVar(InfraWorkflowState(workflowName))
+    private val workflowLastUpdated = workflowState.property(InfraWorkflowState::lastUpdated)
+
     private val workflowTaskState = KVar(InfraWorkflowTaskState(workflowName))
+    private val workflowTaskLastUpdated = workflowTaskState.property(InfraWorkflowTaskState::lastUpdated)
+
+    private val selectionTopicType: KVar<TopicSet> = KVar(WorkflowTopic.ENGINE_NEW)
+    private val selectionTopicStats = KVar(InfraTopicStats("Null"))
+
+    private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
 
     lateinit var job: Job
+
+    init {
+        // this listener ensures that the slideover appear/disappear with right content
+        workflowState.addListener { _, new ->
+            if (selectionTopicType.value is WorkflowTopic) {
+                selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
+            }
+        }
+
+        // this listener ensures that the slideover appear/disappear with right content
+        workflowTaskState.addListener { _, new ->
+            if (selectionTopicType.value is WorkflowTaskTopic) {
+                selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
+            }
+        }
+    }
 
     override fun onEnter() {
         if (! this::job.isInitialized || job.isCancelled) {
             job = GlobalScope.launch {
                 // update of workflow task's topics every 30 seconds
-                workflowState.update(this)
+                update(workflowState)
+                // shift the updates
+                delay(2000)
                 // update of workflow's topics every 30 seconds
-                workflowTaskState.update(this)
+                update(workflowTaskState)
             }
         }
     }
@@ -83,157 +121,77 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
     }
 
     override fun render(creator: ElementCreator<Element>): Unit = with(creator) {
-        // Header
-        div().classes("bg-white shadow").new {
-            div().classes("border-b border-gray-200 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8").new {
-                div().classes("flex-1 min-w-0").new {
-                    h1().classes("text-lg font-medium leading-6 text-gray-900 sm:truncate>").text(workflowName)
-                }
-            }
-        }
-        // WORKFLOWS
-        div().classes("pt-6").new {
+        // PAGE HEADER
+        div().classes("bg-white shadow py-8").new {
             div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-                // Topics header
-                h3().classes("text-lg leading-6 font-medium text-gray-900").text("Workflow-Engine's Topics")
-                p().classes("mt-2 max-w-4xl text-sm text-gray-500").text(
-                    """
-                        You should have at least one consumer / topic. If your backlog is non-zero,
-                        then your msg rate should be non-zero as well (except for delays)
-                    """
-                )
-                // Topics table
-                div().classes("pt-5").new {
-                    div().classes("max-w-none mx-auto").new {
-                        div().classes("bg-white overflow-hidden sm:rounded-lg sm:shadow").new {
-                            div().classes("flex flex-col").new {
-                                div().classes("-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8").new {
-                                    div().classes("py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8").new {
-                                        div().classes("shadow overflow-hidden border-b border-gray-200 sm:rounded-lg").new {
-                                            render(workflowState) { state ->
-                                                table().classes("min-w-full divide-y divide-gray-200").new {
-                                                    thead().classes("bg-gray-50").new {
-                                                        tr().new {
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Type")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Nb Consumers")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Msg Backlog")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Msg Rate Out")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Name")
-                                                        }
-                                                    }
-                                                    tbody().new {
-                                                        state.workflowTopicsStats.forEach {
-                                                            displayTopicStats(it.key.prefix, topicName.of(it.key, workflowName), it.value)
-                                                        }
-                                                    }
-                                                }
-                                            }
+                div().classes("lg:flex lg:items-center lg:justify-between").new {
+                    div().classes("flex-1 min-w-0").new {
+                        // breadcrumbs
+                        nav().classes("flex").setAttribute("aria-label", "Breadcrumb").new {
+                            ol().classes("flex items-center space-x-4").setAttribute("role", "list").new {
+                                li {
+                                    div().classes("flex items-center").new {
+                                        val a = a().classes("text-sm font-medium text-gray-500 hover:text-gray-700")
+                                            .setAttribute("href", "#")
+                                            .setAttribute("aria-current", "page")
+                                        a.text(InfraMenu.text)
+                                        a.on.click {
+                                            browser.routeTo(InfraPanel)
                                         }
+                                        span().classes("sr-only").text("Infrastructure")
+                                    }
+                                }
+                                li {
+                                    div().classes("flex items-center").new {
+                                        iconChevron().classes("flex-shrink-0 h-5 w-5 text-gray-400")
                                     }
                                 }
                             }
                         }
+                        // title
+                        h2().classes("mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate")
+                            .text(workflowName)
                     }
                 }
             }
         }
 
-        // WORKFLOW_TASK
-        div().classes("pt-6").new {
-            div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
-                // Topics header
-                h3().classes("text-lg leading-6 font-medium text-gray-900").text("Workflow-Task's Topics")
-                p().classes("mt-2 max-w-4xl text-sm text-gray-500").text(
-                    """
-                        You should have at least one consumer / topic. If your backlog is non-zero,
-                        then your msg rate should be non-zero as well (except for delays)
-                    """
-                )
-                // Topics table
-                div().classes("pt-5").new {
-                    div().classes("max-w-none mx-auto").new {
-                        div().classes("bg-white overflow-hidden sm:rounded-lg sm:shadow").new {
-                            div().classes("flex flex-col").new {
-                                div().classes("-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8").new {
-                                    div().classes("py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8").new {
-                                        div().classes("shadow overflow-hidden border-b border-gray-200 sm:rounded-lg").new {
-                                            render(workflowTaskState) { state ->
-                                                table().classes("min-w-full divide-y divide-gray-200").new {
-                                                    thead().classes("bg-gray-50").new {
-                                                        tr().new {
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Type")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Nb Consumers")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Msg Backlog")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Msg Rate Out")
-                                                            th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
-                                                                .setAttribute("scope", "col")
-                                                                .text("Name")
-                                                        }
-                                                    }
-                                                    tbody().new {
-                                                        state.workflowTaskTopicsStats.forEach {
-                                                            displayTopicStats(it.key.prefix, topicName.of(it.key, workflowName), it.value)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // WORKFLOW ENGINE
+        displayTopicSet(
+            "Workflow engine's topics",
+            "Here are the topics used by the workflow engine for this workflow.",
+            workflowLastUpdated,
+            workflowState
+        )
+
+        // WORKFLOW TASK
+        displayTopicSet(
+            "WorkflowTask's topics",
+            "Here are the topics used by the task engine for this workflowTask.",
+            workflowTaskLastUpdated,
+            workflowTaskState
+        )
+
+        // SELECTION SLIDE
+        selectionSlide.render(this)
     }
 
-    private fun ElementCreator<Element>.displayTopicStats(type: String, topic: String, stats: PartitionedTopicStats?) {
-        when (stats) {
-            null ->
-                tr().classes("bg-white").new {
-                    td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                        .text(type)
-                    td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text("loading...")
-                    td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text("loading...")
-                    td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text("loading...")
-                    td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text(topic)
+    private fun ElementCreator<Element>.displayTopicSet(
+        title: String,
+        text: String,
+        lastUpdated: KVar<Instant>,
+        state: KVar<out InfraJobState<out TopicSet>>
+
+    ) {
+        div().classes("pt-8 pb-8").new {
+            div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
+                displayJobSectionHeader(title, lastUpdated)
+                p().classes("mt-7 text-sm text-gray-500").new {
+                    span()
+                        .text(text)
+                        .addText(" Click on a row to get more details on its real-time stats.")
                 }
-            else -> stats?.subscriptions.map {
-                tr().classes("bg-white").new {
-                    td().classes("px-6 py-4 text-sm font-medium text-gray-900")
-                        .text(type)
-                    td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text(it.value.consumers.size.toString())
-                    td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text(it.value.msgBacklog.toString())
-                    td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text("%.2f".format(it.value.msgRateOut) + " msg/s")
-                    td().classes("px-6 py-4 text-sm text-gray-500")
-                        .text(topic)
-                }
+                displayJobStatsTable(workflowName, state, selectionSlide, selectionTopicType, selectionTopicStats)
             }
         }
     }

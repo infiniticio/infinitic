@@ -25,14 +25,9 @@
 
 package io.infinitic.dashboard.menus
 
-import kotlinx.serialization.json.JsonPrimitive
 import kweb.Element
 import kweb.ElementCreator
-import kweb.a
 import kweb.div
-import kweb.img
-import kweb.new
-import kweb.p
 
 fun ElementCreator<Element>.profile(offCanvas: Boolean = false) {
 //    div().classes("flex-shrink-0 flex border-t border-gray-200 p-4").new {

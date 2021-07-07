@@ -37,7 +37,7 @@ import kweb.p
 import kweb.span
 import kweb.state.KVar
 
-object ErrorModal {
+object Modal {
 
     private val showModal = KVar(false)
     private val display = KVar(false)

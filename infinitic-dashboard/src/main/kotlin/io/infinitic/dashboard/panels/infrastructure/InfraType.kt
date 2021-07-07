@@ -23,12 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.menus
+package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconPulsar
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
-
-object InfraMenu : MenuItem("Workers & Topics", { iconPulsar() }) {
-    override var current: Panel = InfraPanel
+enum class InfraType {
+    TASK,
+    WORKFLOW,
 }

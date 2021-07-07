@@ -26,9 +26,6 @@
 package io.infinitic.dashboard.slideovers
 
 import io.infinitic.dashboard.icons.iconClose
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kweb.Element
 import kweb.ElementCreator
 import kweb.button
@@ -63,15 +60,16 @@ class Slideover<T>(
             .setAttribute("aria-modal", "true")
             .new {
                 div().classes("absolute inset-0 overflow-hidden").new {
-                    //Background overlay, show/hide based on slide-over state.
+                    // Background overlay, show/hide based on slide-over state.
                     div().classes("absolute inset-0").setAttribute("aria-hidden", "true")
 
                     div().classes(
-                        showModal.map { "fixed inset-y-0 right-0 pl-10 pt-12 max-w-full flex sm:pl-16 md:pt-0 pt-0 transform transition ease-in-out duration-500 sm:duration-700 " +
-                            if (it) "translate-x-0" else "translate-x-full"
+                        showModal.map {
+                            "fixed inset-y-0 right-0 pl-10 pt-12 max-w-full flex sm:pl-16 md:pt-0 pt-0 transform transition ease-in-out duration-500 sm:duration-700 " +
+                                if (it) "translate-x-0" else "translate-x-full"
                         }
                     ).new {
-                        div().classes("w-screen max-w-2xl").new {
+                        div().classes("w-screen max-w-3xl").new {
                             div().classes("h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll").new {
                                 div().classes("px-4 sm:px-6").new {
                                     div().classes("flex items-start justify-between").new {
@@ -87,7 +85,7 @@ class Slideover<T>(
                                     }
                                 }
                                 div().classes("mt-6 relative flex-1 px-4 sm:px-6").new {
-                                    //Replace with your content
+                                    // Replace with your content
                                     div().classes("absolute inset-0 px-4 sm:px-6").new {
                                         render(state) {
                                             renderState(state)

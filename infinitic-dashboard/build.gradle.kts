@@ -31,7 +31,7 @@ dependencies {
     implementation(Libs.Hoplite.core)
     implementation(Libs.Hoplite.yaml)
 
-    implementation("com.github.kwebio:kweb-core:0.10.4")
+    implementation("com.github.kwebio:kweb-core:0.10.5")
     implementation(Libs.Slf4j.simple)
 
     implementation(project(":infinitic-cache"))

@@ -27,43 +27,15 @@ package io.infinitic.dashboard.panels.tasks
 
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.TaskMenu
-import io.infinitic.dashboard.modals.ErrorModal
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kweb.Element
 import kweb.ElementCreator
-import kweb.button
 import kweb.div
 import kweb.h1
 import kweb.new
-import kweb.state.KVar
 
 object TasksPanel : Panel() {
     override val menu = TaskMenu
     override val route = "/tasks"
-
-    val state = KVar(TasksState())
-    lateinit var job: Job
-
-    override fun onEnter() {
-        if (! this::job.isInitialized || !job.isActive) {
-            job = GlobalScope.launch {
-                while (isActive) {
-                    delay(1000)
-                    state.add()
-                }
-            }
-        }
-    }
-
-    override fun onLeave() {
-        if (this::job.isInitialized) {
-            job.cancel()
-        }
-    }
 
     override fun render(creator: ElementCreator<Element>): Unit = with(creator) {
         div().classes("py-6").new {
@@ -74,15 +46,6 @@ object TasksPanel : Panel() {
             div().classes("max-w-7xl mx-auto px-4 sm:px-6 md:px-8").new {
                 div().classes("py-4").new {
                     div().classes("border-4 border-dashed border-gray-200 rounded-lg h-96")
-                        .text(
-                            state.map {
-                                it.counter.toString()
-                            }
-                        )
-                    button().text("add").on.click {
-                        state.add()
-                        ErrorModal.open()
-                    }
                 }
             }
         }

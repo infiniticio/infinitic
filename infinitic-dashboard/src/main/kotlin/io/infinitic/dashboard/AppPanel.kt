@@ -27,9 +27,6 @@ package io.infinitic.dashboard
 
 import io.infinitic.dashboard.icons.iconHamburger
 import io.infinitic.dashboard.menus.InfraMenu
-import io.infinitic.dashboard.menus.SettingsMenu
-import io.infinitic.dashboard.menus.TaskMenu
-import io.infinitic.dashboard.menus.WorkflowMenu
 import io.infinitic.dashboard.menus.logo
 import io.infinitic.dashboard.menus.offCanvasMenuCloseButton
 import io.infinitic.dashboard.menus.offCanvasMenuOverlay
@@ -82,14 +79,10 @@ object AppPanel {
                             logo()
                             // navigation
                             nav().classes("mt-5 px-2 space-y-1").new {
-                                // Dashboard
-                                WorkflowMenu.render(this, true)
-                                // Team
-                                TaskMenu.render(this, true)
-                                // Projects
+//                                WorkflowMenu.render(this, true)
+//                                TaskMenu.render(this, true)
                                 InfraMenu.render(this, true)
-                                // Calendar
-                                SettingsMenu.render(this, true)
+//                                SettingsMenu.render(this, true)
                             }
                         }
                         // profile
@@ -110,14 +103,10 @@ object AppPanel {
                             logo()
                             // navigation
                             nav().classes("mt-5 flex-1 px-2 bg-white space-y-1").new {
-                                // Dashboard
-                                WorkflowMenu.render(this)
-                                // Team
-                                TaskMenu.render(this)
-                                // Projects
+//                                WorkflowMenu.render(this)
+//                                TaskMenu.render(this)
                                 InfraMenu.render(this)
-                                // Calendar
-                                SettingsMenu.render(this)
+//                                SettingsMenu.render(this)
                             }
                         }
                         // Profile

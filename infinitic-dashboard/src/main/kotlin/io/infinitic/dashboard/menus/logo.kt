@@ -36,9 +36,9 @@ fun ElementCreator<Element>.logo() {
     div().classes("flex-shrink-0 px-4 flex items-center").new {
         img(
             mapOf(
-                "class" to JsonPrimitive("h-8 w-auto"),
-                "src" to JsonPrimitive("https://tailwindui.com/img/logos/workflow-logo-indigo-600-mark-gray-800-text.svg"),
-                "alt" to JsonPrimitive("Workflow")
+                "class" to JsonPrimitive("h-10 w-auto"),
+                "src" to JsonPrimitive("https://docs.infinitic.io/logo-light.svg"),
+                "alt" to JsonPrimitive("Infinitic")
             )
         )
     }

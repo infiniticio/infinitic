@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.dashboard.modals.ErrorModal
+import io.infinitic.dashboard.modals.Modal
 import io.infinitic.dashboard.panels.infrastructure.InfraPanel
 import io.infinitic.dashboard.panels.infrastructure.task.InfraTaskPanel
 import io.infinitic.dashboard.panels.infrastructure.workflow.InfraWorkflowPanel
@@ -72,7 +72,7 @@ fun main() {
             // rendering the app
             AppPanel.render(this)
 
-            ErrorModal.render(this)
+            Modal.render(this)
         }
     }
 }

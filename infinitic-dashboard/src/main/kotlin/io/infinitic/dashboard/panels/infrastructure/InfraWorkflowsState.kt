@@ -33,60 +33,100 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import mu.KotlinLogging
 import java.time.Instant
 
+private val logger = KotlinLogging.logger {}
+
+private const val NAMES_UPDATE_DELAY = 30000L
+private const val STATS_UPDATE_DELAY = 5000L
+
 data class InfraWorkflowsState(
-    val workflowNames: Set<String>? = null,
-    val workflowTaskExecutorsStats: Map<String, PartitionedTopicStats?> = mapOf(),
+    val workflowNames: InfraNames = InfraNames(),
+    val workflowStats: Map<String, InfraTopicStats?> = mapOf(),
     val lastUpdated: Instant = Instant.now()
 )
 
 fun KVar<InfraWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
     while (isActive) {
-        val delayJob = launch { delay(30000) }
+        val delayJob = launch { delay(NAMES_UPDATE_DELAY) }
 
-        // get set of workflow names
+        // update workflow names every NAMES_UPDATE_DELAY millis
         try {
-            println("UPDATING WORKFLOWS NAMES")
+            logger.debug { "Updating workflow names" }
             // request Pulsar
             val workflowNames = Infinitic.admin.workflows
-            val workflowTaskExecutorsStats = value.workflowTaskExecutorsStats
+            val workflowStats = value.workflowStats
             value = value.copy(
-                workflowNames = workflowNames,
-                workflowTaskExecutorsStats = workflowNames.associateWith {
-                    if (workflowTaskExecutorsStats.containsKey(it)) workflowTaskExecutorsStats[it] else null
+                workflowNames = InfraNames(
+                    names = workflowNames,
+                    status = InfraStatus.COMPLETED,
+                    lastUpdated = Instant.now()
+                ),
+                workflowStats = workflowNames.associateWith {
+                    when (workflowStats.containsKey(it)) {
+                        true -> workflowStats[it]!!
+                        false -> InfraTopicStats(topic = getExecutorTopicForWorkflow(it))
+                    }
                 }
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            value = value.copy(
+                workflowNames = InfraNames(
+                    status = InfraStatus.ERROR,
+                    stackTrace = e.stackTraceToString(),
+                    lastUpdated = Instant.now()
+                ),
+                workflowStats = mapOf(),
+                lastUpdated = Instant.now()
+            )
+            logger.error { "Error while updating workflow names" }
+            logger.error { e.printStackTrace() }
         }
 
-        // update workflow stats every 3 seconds
+        // update workflow stats every STATS_UPDATE_DELAY millis
         val updateJob = launch {
             while (isActive) {
-                val delay = launch { delay(3000) }
-                var workflowTaskExecutorsStats = value.workflowTaskExecutorsStats
-                value.workflowNames?.map {
-                    println("updating stats for $it")
-                    val topic = Infinitic.topicName.of(WorkflowTaskTopic.EXECUTORS, it)
+                val delay = launch { delay(STATS_UPDATE_DELAY) }
+                var workflowStats = value.workflowStats
+                value.workflowNames.names?.map {
+                    logger.debug { "Updating executor stats for $it" }
+                    val topic = getExecutorTopicForWorkflow(it)
                     try {
                         val stats = Infinitic.topics.getPartitionedStats(topic, true, true, true)
-                        workflowTaskExecutorsStats = workflowTaskExecutorsStats.plus(it to stats)
+                        workflowStats = workflowStats.plus(
+                            it to InfraTopicStats(
+                                topic = topic,
+                                partitionedTopicStats = stats,
+                                status = InfraStatus.COMPLETED
+                            )
+                        )
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        workflowStats = workflowStats.plus(
+                            it to InfraTopicStats(
+                                topic = topic,
+                                status = InfraStatus.ERROR,
+                                stackTrace = e.stackTraceToString()
+                            )
+                        )
+                        logger.error { "Error while updating executor stats for workflow $it" }
+                        logger.error { e.printStackTrace() }
                     }
                 }
-                delay.join()
+                // update array of stats
                 value = value.copy(
-                    workflowTaskExecutorsStats = workflowTaskExecutorsStats,
+                    workflowStats = workflowStats,
                     lastUpdated = Instant.now()
                 )
+                // wait at least delay
+                delay.join()
             }
         }
         // wait for at least 30s
         delayJob.join()
-        // cancel updateJob before updating workflowNames
+        // cancel updateJob before updating taskNames
         updateJob.cancelAndJoin()
     }
 }
+
+private fun getExecutorTopicForWorkflow(taskName: String) = Infinitic.topicName.of(WorkflowTaskTopic.EXECUTORS, taskName)

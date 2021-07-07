@@ -26,22 +26,23 @@
 package io.infinitic.dashboard.panels.infrastructure
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconRefresh
 import io.infinitic.dashboard.menus.InfraMenu
+import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
 import io.infinitic.dashboard.panels.infrastructure.task.InfraTaskPanel
 import io.infinitic.dashboard.panels.infrastructure.workflow.InfraWorkflowPanel
 import io.infinitic.dashboard.routeTo
 import io.infinitic.dashboard.slideovers.Slideover
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
 import kweb.h2
-import kweb.h3
 import kweb.new
 import kweb.p
+import kweb.state.KVal
 import kweb.state.KVar
 import kweb.state.property
 import kweb.state.render
@@ -60,16 +61,61 @@ object InfraPanel : Panel() {
     override val menu = InfraMenu
     override val route = "/infra"
 
+    lateinit var job: Job
+
     private val infraTasksState = KVar(InfraTasksState())
     private val infraWorkflowsState = KVar(InfraWorkflowsState())
 
-    lateinit var job: Job
+    private var selectionType = InfraType.TASK
+    private val selectionTitle = KVal("Error!")
+    private val selectionNames = KVar(InfraNames())
+
+    private val slideover = Slideover(selectionTitle, selectionNames) {
+        p().classes("text-sm font-medium text-gray-900").text(lastUpdated(it.value.lastUpdated))
+        p().classes("mt-7 text-sm text-gray-500").new {
+            element("pre").text(selectionNames.value.stackTrace ?: "")
+        }
+    }
+
+    init {
+        // this listener ensures that the slideover appear/disappear with right content
+        infraTasksState.addListener { old, new ->
+            if (selectionType == InfraType.TASK) {
+                when (new.taskNames.status) {
+                    InfraStatus.ERROR -> {
+                        selectionNames.value = new.taskNames
+                        if (old.taskNames.status != InfraStatus.ERROR) {
+                            slideover.open()
+                        }
+                    }
+                    else -> slideover.close()
+                }
+            }
+        }
+
+        // this listener ensures that the slideover appear/disappear with right content
+        infraWorkflowsState.addListener { old, new ->
+            if (selectionType == InfraType.WORKFLOW) {
+                when (new.workflowNames.status) {
+                    InfraStatus.ERROR -> {
+                        selectionNames.value = new.workflowNames
+                        if (old.workflowNames.status != InfraStatus.ERROR) {
+                            slideover.open()
+                        }
+                    }
+                    else -> slideover.close()
+                }
+            }
+        }
+    }
 
     override fun onEnter() {
         if (! this::job.isInitialized || job.isCancelled) {
             job = GlobalScope.launch {
                 // update of task names every 30 seconds
                 infraTasksState.update(this)
+                // shift the updates
+                delay(2000)
                 // update of workflow names every 30 seconds
                 infraWorkflowsState.update(this)
             }
@@ -80,6 +126,7 @@ object InfraPanel : Panel() {
         if (this::job.isInitialized) {
             job.cancel()
         }
+        slideover.close()
     }
 
     override fun render(creator: ElementCreator<Element>) = with(creator) {
@@ -90,34 +137,24 @@ object InfraPanel : Panel() {
                     div().classes("flex-1 min-w-0").new {
                         // title
                         h2().classes("mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate")
-                            .text("Infrastructure")
+                            .text(InfraMenu.text)
                     }
                 }
             }
         }
 
         // WORKFLOWS
-        val workflowsLastUpdated  = infraWorkflowsState.property(InfraWorkflowsState::lastUpdated)
+        val workflowsLastUpdated = infraWorkflowsState.property(InfraWorkflowsState::lastUpdated)
 
         div().classes("pt-8 pb-8").new {
             div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
                 // Workflows header
-                div().classes("pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between").new {
-                    h3().classes("text-lg leading-6 font-medium text-gray-900").text("Workflows")
-                    div().classes("mt-3 sm:mt-0 sm:ml-4").new {
-                        render(workflowsLastUpdated) {
-                            val div = div().classes("inline-flex items-center px-4 py-2 text-sm text-gray-500")
-                            div.new {
-                                iconRefresh().classes("mr-1.5 h-5 w-5 text-gray-400")
-                            }
-                            div.addText(lastUpdated(it))
-                        }
-                    }
-                }
+                displayJobSectionHeader("Workflows", workflowsLastUpdated)
+
                 p().classes("mt-7 text-sm text-gray-500").text(
                     """
-                        Here are your workflows, based on topics found in Pulsar.
-                        Click on a row to get more details.
+                        Here is the list of your workflows, based on existing topics found in your Pulsar cluster.
+                        Click on a row for a complete view of the topics used during the execution of a workflow.
                     """
                 )
                 // Workflows table
@@ -143,16 +180,18 @@ object InfraPanel : Panel() {
                                                                 .text("Executors Backlog")
                                                             th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
                                                                 .setAttribute("scope", "col")
-                                                                .text("Executors Rate Out")
+                                                                .text("Executors Msg Rate Out")
                                                         }
                                                     }
                                                     tbody().new {
-                                                        when (val workflows = state.workflowNames) {
-                                                            null -> displayLoading()
-                                                            else -> workflows.forEach {
-                                                                when (val stats = state.workflowTaskExecutorsStats[it]) {
-                                                                    null -> displayExecutorLoading(it, isTask = false)
-                                                                    else -> displayExecutorStats(it, stats, isTask = false)
+                                                        when (state.workflowNames.status) {
+                                                            InfraStatus.LOADING -> displayNamesLoading()
+                                                            InfraStatus.ERROR -> displayNamesError(state.workflowNames, InfraType.WORKFLOW)
+                                                            InfraStatus.COMPLETED -> state.workflowNames.names!!.forEach {
+                                                                when (state.workflowStats[it]!!.status) {
+                                                                    InfraStatus.LOADING -> displayExecutorLoading(it, InfraType.WORKFLOW)
+                                                                    InfraStatus.ERROR -> displayExecutorError(it, InfraType.WORKFLOW)
+                                                                    InfraStatus.COMPLETED -> displayExecutorStats(it, state.workflowStats[it]!!.partitionedTopicStats!!, InfraType.WORKFLOW)
                                                                 }
                                                             }
                                                         }
@@ -170,27 +209,17 @@ object InfraPanel : Panel() {
         }
 
         // TASKS
-        val tasksLastUpdated  = infraTasksState.property(InfraTasksState::lastUpdated)
+        val tasksLastUpdated = infraTasksState.property(InfraTasksState::lastUpdated)
 
         div().classes("pt-8 pb-8").new {
             div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
                 // Tasks header
-                div().classes("pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between").new {
-                    h3().classes("text-lg leading-6 font-medium text-gray-900").text("Tasks")
-                    div().classes("mt-3 sm:mt-0 sm:ml-4").new {
-                        render(tasksLastUpdated) {
-                            val div = div().classes("inline-flex items-center px-4 py-2 text-sm text-gray-500")
-                            div.new {
-                                iconRefresh().classes("mr-1.5 h-5 w-5 text-gray-400")
-                            }
-                            div.addText(lastUpdated(it))
-                        }
-                    }
-                }
+                displayJobSectionHeader("Tasks", tasksLastUpdated)
+
                 p().classes("mt-7 text-sm text-gray-500").text(
                     """
-                    Here are your tasks, based on topics found in Pulsar.
-                        Click on a row to get more details.
+                        Here is the list of your tasks, based on existing topics found in your Pulsar cluster.
+                        Click on a row for a complete view of the topics used during the execution of a task.
                 """
                 )
                 // Tasks table
@@ -216,18 +245,18 @@ object InfraPanel : Panel() {
                                                                 .text("Executors Backlog")
                                                             th().classes("px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider")
                                                                 .setAttribute("scope", "col")
-                                                                .text("Executors Rate Out")
+                                                                .text("Executors Msg Rate Out")
                                                         }
                                                     }
                                                     tbody().new {
                                                         when (state.taskNames.status) {
-                                                            InfraStatus.LOADING -> displayLoading()
-                                                            InfraStatus.ERROR -> displayError()
-                                                            InfraStatus.COMPLETED  -> state.taskNames.names!!.forEach {
+                                                            InfraStatus.LOADING -> displayNamesLoading()
+                                                            InfraStatus.ERROR -> displayNamesError(state.taskNames, InfraType.TASK)
+                                                            InfraStatus.COMPLETED -> state.taskNames.names!!.forEach {
                                                                 when (state.taskStats[it]!!.status) {
-                                                                    InfraStatus.LOADING -> displayExecutorLoading(it, isTask = true)
-                                                                    InfraStatus.ERROR -> displayExecutorError(it, isTask = true)
-                                                                    InfraStatus.COMPLETED -> displayExecutorStats(it, state.taskStats[it]!!.partitionedTopicStats!!, isTask = true)
+                                                                    InfraStatus.LOADING -> displayExecutorLoading(it, InfraType.TASK)
+                                                                    InfraStatus.ERROR -> displayExecutorError(it, InfraType.TASK)
+                                                                    InfraStatus.COMPLETED -> displayExecutorStats(it, state.taskStats[it]!!.partitionedTopicStats!!, InfraType.TASK)
                                                                 }
                                                             }
                                                         }
@@ -243,23 +272,32 @@ object InfraPanel : Panel() {
                 }
             }
         }
+
+        slideover.render(this)
     }
 
-    private fun ElementCreator<Element>.displayLoading() {
+    private fun ElementCreator<Element>.displayNamesLoading() {
         tr().classes("bg-white").new {
-            td().classes("px-6 py-4 text-sm font-medium text-gray-900")
+            td().setAttribute("colspan", "4").classes("px-6 py-4 text-sm font-medium text-gray-900")
                 .text("loading...")
         }
     }
 
-    private fun ElementCreator<Element>.displayError() {
-        tr().classes("bg-white").new {
-            td().classes("px-6 py-4 text-sm font-medium text-gray-900")
+    private fun ElementCreator<Element>.displayNamesError(names: InfraNames, type: InfraType) {
+        val row = tr()
+        row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
+            td().setAttribute("colspan", "4").classes("px-6 py-4 text-sm font-medium text-gray-900")
                 .text("Error!")
         }
+        row.on.click {
+            selectionType = type
+            selectionNames.value = names
+
+            slideover.open()
+        }
     }
 
-    private fun ElementCreator<Element>.displayExecutorLoading(name: String, isTask: Boolean) {
+    private fun ElementCreator<Element>.displayExecutorLoading(name: String, type: InfraType) {
         val row = tr()
         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
@@ -272,14 +310,14 @@ object InfraPanel : Panel() {
                 .text("loading...")
         }
         row.on.click {
-            if (isTask)
-                browser.routeTo(InfraTaskPanel.from(name))
-            else
-                browser.routeTo(InfraWorkflowPanel.from(name))
+            when (type) {
+                InfraType.TASK -> browser.routeTo(InfraTaskPanel.from(name))
+                InfraType.WORKFLOW -> browser.routeTo(InfraWorkflowPanel.from(name))
+            }
         }
     }
 
-    private fun ElementCreator<Element>.displayExecutorError(name: String, isTask: Boolean) {
+    private fun ElementCreator<Element>.displayExecutorError(name: String, type: InfraType) {
         val row = tr()
         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
@@ -292,13 +330,13 @@ object InfraPanel : Panel() {
                 .text("error!")
         }
         row.on.click {
-            if (isTask)
-                browser.routeTo(InfraTaskPanel.from(name))
-            else
-                browser.routeTo(InfraWorkflowPanel.from(name))
+            when (type) {
+                InfraType.TASK -> browser.routeTo(InfraTaskPanel.from(name))
+                InfraType.WORKFLOW -> browser.routeTo(InfraWorkflowPanel.from(name))
+            }
         }
     }
-    private fun ElementCreator<Element>.displayExecutorStats(name: String, stats: PartitionedTopicStats, isTask: Boolean) {
+    private fun ElementCreator<Element>.displayExecutorStats(name: String, stats: PartitionedTopicStats, type: InfraType) {
         stats.subscriptions.map {
             val row = tr()
             row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
@@ -312,10 +350,10 @@ object InfraPanel : Panel() {
                     .text("%.2f".format(it.value.msgRateOut) + " msg/s")
             }
             row.on.click {
-                if (isTask)
-                    browser.routeTo(InfraTaskPanel.from(name))
-                else
-                    browser.routeTo(InfraWorkflowPanel.from(name))
+                when (type) {
+                    InfraType.TASK -> browser.routeTo(InfraTaskPanel.from(name))
+                    InfraType.WORKFLOW -> browser.routeTo(InfraWorkflowPanel.from(name))
+                }
             }
         }
     }

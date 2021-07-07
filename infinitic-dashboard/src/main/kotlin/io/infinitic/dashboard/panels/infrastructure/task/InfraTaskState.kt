@@ -26,61 +26,17 @@
 package io.infinitic.dashboard.panels.infrastructure.task
 
 import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.Infinitic.topics
-import io.infinitic.dashboard.panels.infrastructure.InfraStatus
 import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
+import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
 import io.infinitic.pulsar.topics.TaskTopic
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kweb.state.KVar
-import mu.KotlinLogging
 import java.time.Instant
 
-const val UPDATE_DELAY = 5000L
-
-private val logger = KotlinLogging.logger {}
-
 data class InfraTaskState(
-    val taskName: String,
-    val topicsStats: Map<TaskTopic, InfraTopicStats> =
-        TaskTopic.values().map { it }.associateWith { InfraTopicStats(topicName.of(it, taskName)) },
-    val lastUpdated: Instant = Instant.now(),
-    val selectedType: TaskTopic = TaskTopic.EXECUTORS,
-    val selectedStats: InfraTopicStats = topicsStats[selectedType] ?: InfraTopicStats("")
-)
-
-fun KVar<InfraTaskState>.update(scope: CoroutineScope) = scope.launch {
-    while (isActive) {
-        val delay = launch { delay(UPDATE_DELAY) }
-        logger.debug { "Updating stats for ${value.taskName}" }
-
-        val map = mutableMapOf<TaskTopic, InfraTopicStats>()
-        value.topicsStats.forEach {
-            try {
-                val stats = topics.getPartitionedStats(it.value.topic, true, true, true)
-                map[it.key] = InfraTopicStats(
-                    status = InfraStatus.COMPLETED,
-                    topic = it.value.topic,
-                    partitionedTopicStats = stats,
-                )
-            } catch (e: Exception) {
-                map[it.key] = InfraTopicStats(
-                    status = InfraStatus.ERROR,
-                    topic = it.value.topic,
-                    stackTrace = e.stackTraceToString()
-                )
-//                logger.error { "Error while requesting PartitionedTopicStats for ${value.taskName}" }
-//                logger.error { e.printStackTrace() }
-            }
-        }
-        value = value.copy(
-            topicsStats = map,
-            lastUpdated = Instant.now(),
-            selectedStats = map[value.selectedType]!!
-        )
-
-        delay.join()
-    }
+    override val name: String,
+    override val topicsStats: Map<TaskTopic, InfraTopicStats> =
+        TaskTopic.values().map { it }.associateWith { InfraTopicStats(topicName.of(it, name)) },
+    override val lastUpdated: Instant = Instant.now()
+) : InfraJobState<TaskTopic> {
+    override fun create(name: String, topicsStats: Map<TaskTopic, InfraTopicStats>, lastUpdated: Instant) =
+        InfraTaskState(name, topicsStats, lastUpdated)
 }
