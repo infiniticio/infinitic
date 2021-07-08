@@ -27,6 +27,14 @@ repositories {
     maven("https://jitpack.io")
 }
 
+plugins {
+    `application`
+}
+
+application {
+    mainClass.set("io.infinitic.dashboard.MainKt")
+}
+
 dependencies {
     implementation(Libs.Hoplite.core)
     implementation(Libs.Hoplite.yaml)

@@ -46,9 +46,6 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
-    extensions.configure(org.jlleitschuh.gradle.ktlint.KtlintExtension::class.java) {
-        version.set("0.41.0")
-    }
 
     group = Libs.org
     version = Ci.version
@@ -67,17 +64,15 @@ subprojects {
         }
     }
 
-    if (name != "infinitic-rest-api") {
-        tasks.withType<Test> {
-            useJUnitPlatform()
-        }
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
 
-        // For Kotlin sources
-        tasks.withType<KotlinCompile> {
-            kotlinOptions {
-                freeCompilerArgs += "-Xjvm-default=enable"
-                jvmTarget = JavaVersion.VERSION_1_8.toString()
-            }
+    // For Kotlin sources
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs += "-Xjvm-default=enable"
+            jvmTarget = JavaVersion.VERSION_1_8.toString()
         }
     }
 
