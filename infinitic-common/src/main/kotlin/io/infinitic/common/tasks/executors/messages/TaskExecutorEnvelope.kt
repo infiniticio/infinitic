@@ -25,8 +25,8 @@
 
 package io.infinitic.common.tasks.executors.messages
 
-import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.messages.Envelope
+import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskName
 import kotlinx.serialization.Serializable
 
