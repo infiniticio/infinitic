@@ -24,7 +24,7 @@
 services:
   # Pulsar settings
   pulsar:
-    image: apachepulsar/pulsar-all:2.8.0
+    image: apachepulsar/pulsar:2.7.2
     environment:
       - BOOKIE_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
     command: >

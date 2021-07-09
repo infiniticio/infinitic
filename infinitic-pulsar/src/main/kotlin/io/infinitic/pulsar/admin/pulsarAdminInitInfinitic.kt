@@ -64,7 +64,9 @@ private suspend fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<
 private suspend fun createTenant(admin: PulsarAdmin, tenant: String, allowedClusters: Set<String>) {
     // create Infinitic tenant info
     // if authorizedClusters is not provided, default is all clusters
-    val tenantInfo = TenantInfo.builder().allowedClusters(allowedClusters).build()
+    val tenantInfo = TenantInfo().apply {
+        this.allowedClusters = allowedClusters
+    }
 
     // get all existing tenant
     val tenants = admin.tenants().tenantsAsync.await()
@@ -92,11 +94,11 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
             // enable message deduplication
             deduplicationEnabled = true
             // all new topics (especially tasks and workflows) are partitioned
-            autoTopicCreationOverride = AutoTopicCreationOverride.builder()
-                .allowAutoTopicCreation(true)
-                .defaultNumPartitions(1)
-                .topicType(TopicType.PARTITIONED.toString())
-                .build()
+            autoTopicCreationOverride = AutoTopicCreationOverride(
+                true,
+                TopicType.PARTITIONED.toString(),
+                1
+            )
             // default retention : 7j || 1Gb - msg is kept 7 days after acknowledgement (up to 1 Gb)
             retention_policies = RetentionPolicies(
                 60 * 24 * 7,
