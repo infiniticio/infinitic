@@ -134,6 +134,5 @@ enum class Type {
 @Serializable
 data class Obj1(val foo: String, val bar: Int, val type: Type) : Obj()
 
-
 @Serializable
 data class Objs(val objs: Set<Obj>)

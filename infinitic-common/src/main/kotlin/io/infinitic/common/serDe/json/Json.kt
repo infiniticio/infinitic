@@ -26,11 +26,16 @@
 package io.infinitic.common.serDe.json
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import org.apache.avro.specific.SpecificRecordBase
+import java.io.IOException
 
 object Json {
     private val mapper = jsonMapper {
@@ -66,5 +71,18 @@ object Json {
     private abstract class AvroMixIn {
         @JsonIgnore abstract fun getSchema(): org.apache.avro.Schema
         @JsonIgnore abstract fun getSpecificData(): org.apache.avro.specific.SpecificData
+
+        @JsonSerialize(using = AvroListStringSerializer::class)
+        abstract fun getListOfString(): List<String>
+    }
+
+    // https://issues.apache.org/jira/browse/AVRO-2702
+    private class AvroListStringSerializer : JsonSerializer<List<String>>() {
+        @Throws(IOException::class)
+        override fun serialize(value: List<String>, gen: JsonGenerator, serializers: SerializerProvider) {
+            gen.writeStartArray()
+            for (o in value) { gen.writeString(o) }
+            gen.writeEndArray()
+        }
     }
 }
