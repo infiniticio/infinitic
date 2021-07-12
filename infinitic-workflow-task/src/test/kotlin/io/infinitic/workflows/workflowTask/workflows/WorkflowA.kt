@@ -30,7 +30,7 @@ import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.workflowTask.tasks.TaskA
 import kotlinx.serialization.Serializable
-import org.slf4j.Logger
+import mu.KotlinLogging
 import org.slf4j.LoggerFactory
 
 sealed class Obj
@@ -46,14 +46,22 @@ interface WorkflowA {
 class WorkflowAImpl : Workflow(), WorkflowA {
     // a channel
     override val channelObj = channel<Obj>()
+
     // a task
     private val taskA = newTask<TaskA>()
+
     // a workflow
     private val workflowA = newWorkflow<WorkflowA>()
+
     // a logger
-    private var logger: Logger = LoggerFactory.getLogger(WorkflowAImpl::class.qualifiedName)
+    private var logger1 = LoggerFactory.getLogger(WorkflowAImpl::class.qualifiedName)
+
+    // another logger
+    private val logger2 = KotlinLogging.logger {}
+
     // this property should be ignored
     @Ignore private var key1 = "42"
+
     // this property should be kept
     private var key2 = 42
 }
