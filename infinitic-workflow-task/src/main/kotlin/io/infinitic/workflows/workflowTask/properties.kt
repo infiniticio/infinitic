@@ -25,6 +25,7 @@
 
 package io.infinitic.workflows.workflowTask
 
+import io.infinitic.annotations.Ignore
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
@@ -35,6 +36,8 @@ import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowContext
 import java.lang.RuntimeException
 import java.lang.reflect.Proxy
+import kotlin.reflect.full.createType
+import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaType
@@ -59,9 +62,13 @@ internal fun getWorkflowProperties(workflow: Workflow) = getPropertiesFromObject
     workflow
 ) {
     // excludes context
-    it.third.javaType.typeName != WorkflowContext::class.java.name &&
-        // excludes Channel
-        !it.third.isSubtypeOf(Channel::class.starProjectedType) &&
-        // excludes Proxies
-        !Proxy.isProxyClass(it.second!!::class.java)
+    it.first.returnType.javaType.typeName != WorkflowContext::class.java.name &&
+        // excludes Channels
+        !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
+        // excludes Proxies (tasks and workflows)
+        !Proxy.isProxyClass(it.second!!::class.java) &&
+        // exclude SLF4J loggers
+        !it.first.returnType.isSubtypeOf(org.slf4j.Logger::class.createType()) &&
+        // exclude Ignore annotation
+        !it.first.hasAnnotation<Ignore>()
 }
