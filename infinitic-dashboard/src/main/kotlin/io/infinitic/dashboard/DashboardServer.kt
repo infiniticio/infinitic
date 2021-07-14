@@ -39,7 +39,6 @@ import io.infinitic.pulsar.PulsarInfiniticAdmin
 import kweb.ElementCreator
 import kweb.Kweb
 import kweb.WebBrowser
-import kweb.h1
 import kweb.route
 import org.apache.pulsar.client.admin.PulsarAdmin
 
@@ -119,7 +118,7 @@ class DashboardServer(
                         url.value = InfraPanel.route
                     }
                     notFound {
-                        h1().text("Page not found!")
+                        NotFound.render(this)
                     }
                 }
             }
