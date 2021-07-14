@@ -28,6 +28,10 @@ package io.infinitic.dashboard.panels.infrastructure
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
+import io.infinitic.dashboard.panels.infrastructure.requests.Completed
+import io.infinitic.dashboard.panels.infrastructure.requests.Failed
+import io.infinitic.dashboard.panels.infrastructure.requests.JobNames
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.task.InfraTaskPanel
 import io.infinitic.dashboard.panels.infrastructure.workflow.InfraWorkflowPanel
 import io.infinitic.dashboard.routeTo
@@ -68,12 +72,12 @@ object InfraPanel : Panel() {
 
     private var selectionType = InfraType.TASK
     private val selectionTitle = KVal("Error!")
-    private val selectionNames = KVar(InfraNames())
+    private val selectionNames = KVar(JobNames())
 
     private val slideover = Slideover(selectionTitle, selectionNames) {
         p().classes("text-sm font-medium text-gray-900").text(lastUpdated(it.value.lastUpdated))
         p().classes("mt-7 text-sm text-gray-500").new {
-            element("pre").text(selectionNames.value.stackTrace ?: "")
+            element("pre").text(it.value.text)
         }
     }
 
@@ -81,10 +85,10 @@ object InfraPanel : Panel() {
         // this listener ensures that the slideover appear/disappear with right content
         infraTasksState.addListener { old, new ->
             if (selectionType == InfraType.TASK) {
-                when (new.taskNames.status) {
-                    InfraStatus.ERROR -> {
+                when (new.taskNames.request) {
+                    is Failed -> {
                         selectionNames.value = new.taskNames
-                        if (old.taskNames.status != InfraStatus.ERROR) {
+                        if (old.taskNames.request !is Failed) {
                             slideover.open()
                         }
                     }
@@ -96,10 +100,10 @@ object InfraPanel : Panel() {
         // this listener ensures that the slideover appear/disappear with right content
         infraWorkflowsState.addListener { old, new ->
             if (selectionType == InfraType.WORKFLOW) {
-                when (new.workflowNames.status) {
-                    InfraStatus.ERROR -> {
+                when (new.workflowNames.request) {
+                    is Failed -> {
                         selectionNames.value = new.workflowNames
-                        if (old.workflowNames.status != InfraStatus.ERROR) {
+                        if (old.workflowNames.request !is Failed) {
                             slideover.open()
                         }
                     }
@@ -184,14 +188,14 @@ object InfraPanel : Panel() {
                                                         }
                                                     }
                                                     tbody().new {
-                                                        when (state.workflowNames.status) {
-                                                            InfraStatus.LOADING -> displayNamesLoading()
-                                                            InfraStatus.ERROR -> displayNamesError(state.workflowNames, InfraType.WORKFLOW)
-                                                            InfraStatus.COMPLETED -> state.workflowNames.names!!.forEach {
-                                                                when (state.workflowStats[it]!!.status) {
-                                                                    InfraStatus.LOADING -> displayExecutorLoading(it, InfraType.WORKFLOW)
-                                                                    InfraStatus.ERROR -> displayExecutorError(it, InfraType.WORKFLOW)
-                                                                    InfraStatus.COMPLETED -> displayExecutorStats(it, state.workflowStats[it]!!.partitionedTopicStats!!, InfraType.WORKFLOW)
+                                                        when (val request = state.workflowNames.request) {
+                                                            is Loading -> displayNamesLoading()
+                                                            is Failed -> displayNamesError(state.workflowNames, InfraType.WORKFLOW)
+                                                            is Completed -> request.result.forEach {
+                                                                when (val request = state.workflowStats[it]!!.request) {
+                                                                    is Loading -> displayExecutorLoading(it, InfraType.WORKFLOW)
+                                                                    is Failed -> displayExecutorError(it, InfraType.WORKFLOW)
+                                                                    is Completed -> displayExecutorStats(it, request.result, InfraType.WORKFLOW)
                                                                 }
                                                             }
                                                         }
@@ -249,14 +253,14 @@ object InfraPanel : Panel() {
                                                         }
                                                     }
                                                     tbody().new {
-                                                        when (state.taskNames.status) {
-                                                            InfraStatus.LOADING -> displayNamesLoading()
-                                                            InfraStatus.ERROR -> displayNamesError(state.taskNames, InfraType.TASK)
-                                                            InfraStatus.COMPLETED -> state.taskNames.names!!.forEach {
-                                                                when (state.taskStats[it]!!.status) {
-                                                                    InfraStatus.LOADING -> displayExecutorLoading(it, InfraType.TASK)
-                                                                    InfraStatus.ERROR -> displayExecutorError(it, InfraType.TASK)
-                                                                    InfraStatus.COMPLETED -> displayExecutorStats(it, state.taskStats[it]!!.partitionedTopicStats!!, InfraType.TASK)
+                                                        when (val request = state.taskNames.request) {
+                                                            is Loading -> displayNamesLoading()
+                                                            is Failed -> displayNamesError(state.taskNames, InfraType.TASK)
+                                                            is Completed -> request.result.forEach {
+                                                                when (val request = state.taskStats[it]!!.request) {
+                                                                    is Loading -> displayExecutorLoading(it, InfraType.TASK)
+                                                                    is Failed -> displayExecutorError(it, InfraType.TASK)
+                                                                    is Completed -> displayExecutorStats(it, request.result, InfraType.TASK)
                                                                 }
                                                             }
                                                         }
@@ -279,11 +283,11 @@ object InfraPanel : Panel() {
     private fun ElementCreator<Element>.displayNamesLoading() {
         tr().classes("bg-white").new {
             td().setAttribute("colspan", "4").classes("px-6 py-4 text-sm font-medium text-gray-900")
-                .text("loading...")
+                .text("Loading...")
         }
     }
 
-    private fun ElementCreator<Element>.displayNamesError(names: InfraNames, type: InfraType) {
+    private fun ElementCreator<Element>.displayNamesError(names: JobNames, type: InfraType) {
         val row = tr()
         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
             td().setAttribute("colspan", "4").classes("px-6 py-4 text-sm font-medium text-gray-900")

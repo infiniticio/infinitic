@@ -26,8 +26,9 @@
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
 import io.infinitic.dashboard.Infinitic.topics
-import io.infinitic.dashboard.panels.infrastructure.InfraStatus
-import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Completed
+import io.infinitic.dashboard.panels.infrastructure.requests.Failed
+import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -46,20 +47,18 @@ internal fun <S, T : InfraJobState<S>> CoroutineScope.update(kvar: KVar<T>) = la
             val delay = launch { delay(UPDATE_DELAY) }
             logger.debug { "Updating stats for ${value.name}" }
 
-            val map = mutableMapOf<S, InfraTopicStats>()
+            val map = mutableMapOf<S, TopicStats>()
             value.topicsStats.forEach {
                 try {
                     val stats = topics.getPartitionedStats(it.value.topic, true, true, true)
-                    map[it.key] = InfraTopicStats(
-                        status = InfraStatus.COMPLETED,
-                        topic = it.value.topic,
-                        partitionedTopicStats = stats,
+                    map[it.key] = TopicStats(
+                        request = Completed(stats),
+                        topic = it.value.topic
                     )
                 } catch (e: Exception) {
-                    map[it.key] = InfraTopicStats(
-                        status = InfraStatus.ERROR,
-                        topic = it.value.topic,
-                        stackTrace = e.stackTraceToString()
+                    map[it.key] = TopicStats(
+                        request = Failed(e),
+                        topic = it.value.topic
                     )
                     logger.error { "Error while requesting PartitionedTopicStats for workflow task ${value.name}" }
                     logger.error { e.printStackTrace() }
@@ -78,12 +77,12 @@ internal fun <S, T : InfraJobState<S>> CoroutineScope.update(kvar: KVar<T>) = la
 
 interface InfraJobState<T> {
     val name: String
-    val topicsStats: Map<T, InfraTopicStats>
+    val topicsStats: Map<T, TopicStats>
     val lastUpdated: Instant
 
     fun create(
         name: String = this.name,
-        topicsStats: Map<T, InfraTopicStats> = this.topicsStats,
+        topicsStats: Map<T, TopicStats> = this.topicsStats,
         lastUpdated: Instant = this.lastUpdated
     ): InfraJobState<T>
 }

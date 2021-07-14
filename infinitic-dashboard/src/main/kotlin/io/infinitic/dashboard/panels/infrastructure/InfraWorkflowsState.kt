@@ -26,6 +26,10 @@
 package io.infinitic.dashboard.panels.infrastructure
 
 import io.infinitic.dashboard.Infinitic
+import io.infinitic.dashboard.panels.infrastructure.requests.Completed
+import io.infinitic.dashboard.panels.infrastructure.requests.Failed
+import io.infinitic.dashboard.panels.infrastructure.requests.JobNames
+import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelAndJoin
@@ -42,8 +46,8 @@ private const val NAMES_UPDATE_DELAY = 30000L
 private const val STATS_UPDATE_DELAY = 5000L
 
 data class InfraWorkflowsState(
-    val workflowNames: InfraNames = InfraNames(),
-    val workflowStats: Map<String, InfraTopicStats?> = mapOf(),
+    val workflowNames: JobNames = JobNames(),
+    val workflowStats: Map<String, TopicStats?> = mapOf(),
     val lastUpdated: Instant = Instant.now()
 )
 
@@ -58,23 +62,21 @@ fun KVar<InfraWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
             val workflowNames = Infinitic.admin.workflows
             val workflowStats = value.workflowStats
             value = value.copy(
-                workflowNames = InfraNames(
-                    names = workflowNames,
-                    status = InfraStatus.COMPLETED,
+                workflowNames = JobNames(
+                    request = Completed(workflowNames),
                     lastUpdated = Instant.now()
                 ),
                 workflowStats = workflowNames.associateWith {
                     when (workflowStats.containsKey(it)) {
                         true -> workflowStats[it]!!
-                        false -> InfraTopicStats(topic = getExecutorTopicForWorkflow(it))
+                        false -> TopicStats(topic = getExecutorTopicForWorkflow(it))
                     }
                 }
             )
         } catch (e: Exception) {
             value = value.copy(
-                workflowNames = InfraNames(
-                    status = InfraStatus.ERROR,
-                    stackTrace = e.stackTraceToString(),
+                workflowNames = JobNames(
+                    request = Failed(e),
                     lastUpdated = Instant.now()
                 ),
                 workflowStats = mapOf(),
@@ -89,28 +91,29 @@ fun KVar<InfraWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
             while (isActive) {
                 val delay = launch { delay(STATS_UPDATE_DELAY) }
                 var workflowStats = value.workflowStats
-                value.workflowNames.names?.map {
-                    logger.debug { "Updating executor stats for $it" }
-                    val topic = getExecutorTopicForWorkflow(it)
-                    try {
-                        val stats = Infinitic.topics.getPartitionedStats(topic, true, true, true)
-                        workflowStats = workflowStats.plus(
-                            it to InfraTopicStats(
-                                topic = topic,
-                                partitionedTopicStats = stats,
-                                status = InfraStatus.COMPLETED
+                val request = value.workflowNames.request
+                if (request is Completed) {
+                    request.result.map {
+                        logger.debug { "Updating executor stats for $it" }
+                        val topic = getExecutorTopicForWorkflow(it)
+                        try {
+                            val stats = Infinitic.topics.getPartitionedStats(topic, true, true, true)
+                            workflowStats = workflowStats.plus(
+                                it to TopicStats(
+                                    topic = topic,
+                                    request = Completed(stats)
+                                )
                             )
-                        )
-                    } catch (e: Exception) {
-                        workflowStats = workflowStats.plus(
-                            it to InfraTopicStats(
-                                topic = topic,
-                                status = InfraStatus.ERROR,
-                                stackTrace = e.stackTraceToString()
+                        } catch (e: Exception) {
+                            workflowStats = workflowStats.plus(
+                                it to TopicStats(
+                                    topic = topic,
+                                    request = Failed(e)
+                                )
                             )
-                        )
-                        logger.error { "Error while updating executor stats for workflow $it" }
-                        logger.error { e.printStackTrace() }
+                            logger.error { "Error while updating executor stats for workflow $it" }
+                            logger.error { e.printStackTrace() }
+                        }
                     }
                 }
                 // update array of stats

@@ -61,16 +61,8 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
          * Create InfiniticAdmin from an AdminConfig instance
          */
         @JvmStatic
-        fun fromConfig(adminConfig: AdminConfig): PulsarInfiniticAdmin {
-            // build PulsarAdmin from config
-            val pulsarAdmin = PulsarAdmin
-                .builder()
-                .serviceHttpUrl(adminConfig.pulsar.serviceHttpUrl)
-                .allowTlsInsecureConnection(true)
-                .build()
-
-            return from(pulsarAdmin, adminConfig)
-        }
+        fun fromConfig(adminConfig: AdminConfig): PulsarInfiniticAdmin =
+            from(adminConfig.pulsar.admin, adminConfig)
 
         /**
          * Create InfiniticAdmin from file in resources directory

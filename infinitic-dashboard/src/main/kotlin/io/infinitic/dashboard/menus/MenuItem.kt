@@ -63,14 +63,16 @@ sealed class MenuItem(val text: String, private val icon: ElementCreator<Element
                 }
             )
 
-        a.on.click { browser.routeTo(current) }
+        a.on.click {
+            browser.routeTo(current)
+        }
 
         a.new {
             icon().classes(
                 AppPanel.appState.property(AppState::panel).map {
                     when (it.menu) {
-                        this@MenuItem -> MenuItem.selectNavIconStyle
-                        else -> MenuItem.unselectNavIconStyle
+                        this@MenuItem -> selectNavIconStyle
+                        else -> unselectNavIconStyle
                     }
                 }
             )

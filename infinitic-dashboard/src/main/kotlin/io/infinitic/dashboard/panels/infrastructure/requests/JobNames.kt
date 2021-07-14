@@ -23,15 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure
+package io.infinitic.dashboard.panels.infrastructure.requests
 
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
-data class InfraTopicStats(
-    val topic: String,
-    val partitionedTopicStats: PartitionedTopicStats? = null,
-    val status: InfraStatus = InfraStatus.LOADING,
-    val stackTrace: String? = null,
+data class JobNames(
+    val request: Request<Set<String>> = Loading(),
     val lastUpdated: Instant = Instant.now()
-)
+) {
+    val text: String
+        get() = when (request) {
+            is Loading -> "Loading..."
+            is Failed -> request.error.stackTraceToString()
+            is Completed -> request.result.joinToString()
+        }
+}

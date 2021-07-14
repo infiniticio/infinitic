@@ -27,7 +27,7 @@ const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
   purge: {
-    enabled: false,
+    enabled: true,
     content: [
       './src/**/*.kt'
     ]

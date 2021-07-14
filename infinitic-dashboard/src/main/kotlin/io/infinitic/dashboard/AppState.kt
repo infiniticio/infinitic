@@ -25,7 +25,6 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.dashboard.menus.MenuItem
 import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import kweb.state.KVar
 
@@ -36,12 +35,6 @@ data class AppState(
 
 fun KVar<AppState>.toggleMobileMenu() {
     value = value.copy(showMobileMenu = ! value.showMobileMenu)
-}
-
-fun KVar<AppState>.selectMenu(menuItem: MenuItem) {
-    if (value.panel.menu != menuItem) {
-        value = value.copy(panel = menuItem.current)
-    }
 }
 
 fun KVar<AppState>.selectPanel(panel: Panel) {

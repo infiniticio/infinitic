@@ -56,7 +56,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             hashValues: Map<PropertyHash, PropertyValue>,
             nameHashes: Map<PropertyName, PropertyHash>
             ->
-            setWorkflowProperties(workflow, hashValues, nameHashes)
+            workflow.setProperties(hashValues, nameHashes)
         }
 
         // set workflow's initial properties
@@ -92,7 +92,7 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
             }
         }
 
-        val properties = getWorkflowProperties(workflow)
+        val properties = workflow.getProperties()
 
         return WorkflowTaskReturnValue(
             (workflow.context as WorkflowContextImpl).newCommands,

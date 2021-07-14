@@ -42,8 +42,7 @@ import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaType
 
-internal fun setWorkflowProperties(
-    workflow: Workflow,
+internal fun Workflow.setProperties(
     propertiesHashValue: Map<PropertyHash, PropertyValue>,
     propertiesNameHash: Map<PropertyName, PropertyHash>
 ) {
@@ -51,16 +50,11 @@ internal fun setWorkflowProperties(
         propertiesHashValue[it.value] ?: throw RuntimeException("This should not happen: unknown hash ${it.value} in $propertiesHashValue")
     }
 
-    setPropertiesToObject(workflow, properties)
+    setPropertiesToObject(this, properties)
 }
 
-/*
-get current workflow properties (WorkflowTaskContext, channels and proxies excluded)
-TODO: manage Deferred in properties (including WorkflowTaskContext property)
- */
-internal fun getWorkflowProperties(workflow: Workflow) = getPropertiesFromObject(
-    workflow
-) {
+// TODO: manage Deferred in properties
+internal fun Workflow.getProperties() = getPropertiesFromObject(this) {
     // excludes context
     it.first.returnType.javaType.typeName != WorkflowContext::class.java.name &&
         // excludes Channels

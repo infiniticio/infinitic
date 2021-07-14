@@ -23,10 +23,40 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure
+package io.infinitic.config
 
-enum class InfraStatus {
-    LOADING,
-    COMPLETED,
-    ERROR
+import io.infinitic.config.data.Pulsar
+import io.infinitic.config.loaders.loadConfigFromFile
+import io.infinitic.config.loaders.loadConfigFromResource
+
+data class DashboardConfig(
+    /*
+    Pulsar configuration
+     */
+    @JvmField val pulsar: Pulsar,
+
+    /*
+    Port configuration
+     */
+    @JvmField val port: Int = 16097,
+
+    /*
+    Debug (KWeb) configuration
+     */
+    @JvmField val debug: Boolean = true
+) {
+
+    companion object {
+        /**
+         * Create DashboardConfig from file in file system
+         */
+        @JvmStatic
+        fun fromFile(vararg files: String): DashboardConfig = loadConfigFromFile(files.toList())
+
+        /**
+         * Create DashboardConfig from file in resources directory
+         */
+        @JvmStatic
+        fun fromResource(vararg resources: String): DashboardConfig = loadConfigFromResource(resources.toList())
+    }
 }

@@ -25,75 +25,13 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.dashboard.modals.Modal
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
-import io.infinitic.dashboard.panels.infrastructure.task.InfraTaskPanel
-import io.infinitic.dashboard.panels.infrastructure.workflow.InfraWorkflowPanel
-import io.infinitic.dashboard.panels.settings.SettingsPanel
-import io.infinitic.dashboard.panels.tasks.TasksPanel
-import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
-import io.infinitic.dashboard.plugins.images.imagesPlugin
-import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
-import io.infinitic.pulsar.PulsarInfiniticAdmin
-import kweb.Kweb
-import kweb.WebBrowser
-import kweb.route
+import io.infinitic.config.DashboardConfig
 
-fun main() {
-    Kweb(port = 16097, plugins = listOf(tailwindPlugin, imagesPlugin)) {
-        doc.body {
-            lateinit var panel: Panel
-
-            route {
-                path(WorkflowsPanel.route) {
-                    panel = WorkflowsPanel
-                }
-                path(TasksPanel.route) {
-                    panel = TasksPanel
-                }
-                path(InfraPanel.route) {
-                    panel = InfraPanel
-                }
-                path("/infra/t/{name}") {
-                    panel = InfraTaskPanel.from(it.getValue("name").value)
-                }
-                path("/infra/w/{name}") {
-                    panel = InfraWorkflowPanel.from(it.getValue("name").value)
-                }
-                path(SettingsPanel.route) {
-                    panel = SettingsPanel
-                }
-            }
-
-            // entering hook
-            panel.onEnter()
-            // selecting panel
-            AppPanel.appState.selectPanel(panel)
-            // rendering the app
-            AppPanel.render(this)
-
-            Modal.render(this)
-        }
-    }
-}
-
-fun WebBrowser.routeTo(to: Panel) {
-    val from = AppPanel.appState.value.panel
-    // leaving / entering hook
-    if (from != to) {
-        from.onLeave()
-        to.onEnter()
-    }
-    // selecting panel - this will trigger a display update
-    AppPanel.appState.selectPanel(to)
-    // update current url
-    url.value = to.route
-}
-
-object Infinitic {
-    val admin by lazy {
-        PulsarInfiniticAdmin.fromConfigFile("infinitic-dashboard/infinitic.yml")
-    }
-    val topicName by lazy { admin.topicNamer }
-    val topics by lazy { admin.pulsarAdmin.topics() }
+fun main(args: Array<String>) {
+    // get name of config file
+    val file = args.getOrNull(0) ?: throw RuntimeException("Please provide a DashboardConfig configuration file")
+    // load config file
+    val dashboardConfig = DashboardConfig.fromFile(file)
+    // start server
+    DashboardServer.fromConfig(dashboardConfig).start()
 }

@@ -104,14 +104,8 @@ class PulsarInfiniticClient @JvmOverloads constructor(
          * Create Client from a ClientConfig instance
          */
         @JvmStatic
-        fun fromConfig(clientConfig: ClientConfig): InfiniticClient {
-            val pulsarClient = PulsarClient
-                .builder()
-                .serviceUrl(clientConfig.pulsar!!.serviceUrl)
-                .build()
-
-            return from(pulsarClient, clientConfig)
-        }
+        fun fromConfig(clientConfig: ClientConfig): InfiniticClient =
+            from(clientConfig.pulsar!!.client, clientConfig)
 
         /**
          * Create Client from file in resources directory

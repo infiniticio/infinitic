@@ -26,6 +26,10 @@
 package io.infinitic.dashboard.panels.infrastructure
 
 import io.infinitic.dashboard.Infinitic
+import io.infinitic.dashboard.panels.infrastructure.requests.Completed
+import io.infinitic.dashboard.panels.infrastructure.requests.Failed
+import io.infinitic.dashboard.panels.infrastructure.requests.JobNames
+import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
 import io.infinitic.pulsar.topics.TaskTopic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelAndJoin
@@ -42,8 +46,8 @@ private const val NAMES_UPDATE_DELAY = 30000L
 private const val STATS_UPDATE_DELAY = 5000L
 
 data class InfraTasksState(
-    val taskNames: InfraNames = InfraNames(),
-    val taskStats: Map<String, InfraTopicStats> = mapOf(),
+    val taskNames: JobNames = JobNames(),
+    val taskStats: Map<String, TopicStats> = mapOf(),
     val lastUpdated: Instant = Instant.now()
 )
 
@@ -58,23 +62,21 @@ fun KVar<InfraTasksState>.update(scope: CoroutineScope) = scope.launch {
             val taskNames = Infinitic.admin.tasks
             val taskStats = value.taskStats
             value = value.copy(
-                taskNames = InfraNames(
-                    names = taskNames,
-                    status = InfraStatus.COMPLETED,
+                taskNames = JobNames(
+                    request = Completed(taskNames),
                     lastUpdated = Instant.now()
                 ),
                 taskStats = taskNames.associateWith {
                     when (taskStats.containsKey(it)) {
                         true -> taskStats[it]!!
-                        false -> InfraTopicStats(topic = getExecutorTopicForTask(it))
+                        false -> TopicStats(topic = getExecutorTopicForTask(it))
                     }
                 }
             )
         } catch (e: Exception) {
             value = value.copy(
-                taskNames = InfraNames(
-                    status = InfraStatus.ERROR,
-                    stackTrace = e.stackTraceToString(),
+                taskNames = JobNames(
+                    request = Failed(e),
                     lastUpdated = Instant.now()
                 ),
                 taskStats = mapOf(),
@@ -89,28 +91,29 @@ fun KVar<InfraTasksState>.update(scope: CoroutineScope) = scope.launch {
             while (isActive) {
                 val delay = launch { delay(STATS_UPDATE_DELAY) }
                 var taskStats = value.taskStats
-                value.taskNames.names?.map {
-                    logger.debug { "Updating executor stats for $it" }
-                    val topic = getExecutorTopicForTask(it)
-                    try {
-                        val stats = Infinitic.topics.getPartitionedStats(topic, true, true, true)
-                        taskStats = taskStats.plus(
-                            it to InfraTopicStats(
-                                topic = topic,
-                                partitionedTopicStats = stats,
-                                status = InfraStatus.COMPLETED
+                val request = value.taskNames.request
+                if (request is Completed) {
+                    request.result.map {
+                        logger.debug { "Updating executor stats for $it" }
+                        val topic = getExecutorTopicForTask(it)
+                        try {
+                            val stats = Infinitic.topics.getPartitionedStats(topic, true, true, true)
+                            taskStats = taskStats.plus(
+                                it to TopicStats(
+                                    topic = topic,
+                                    request = Completed(stats)
+                                )
                             )
-                        )
-                    } catch (e: Exception) {
-                        taskStats = taskStats.plus(
-                            it to InfraTopicStats(
-                                topic = topic,
-                                status = InfraStatus.ERROR,
-                                stackTrace = e.stackTraceToString()
+                        } catch (e: Exception) {
+                            taskStats = taskStats.plus(
+                                it to TopicStats(
+                                    topic = topic,
+                                    request = Failed(e)
+                                )
                             )
-                        )
-                        logger.error { "Error while updating executor stats for task $it" }
-                        logger.error { e.printStackTrace() }
+                            logger.error { "Error while updating executor stats for task $it" }
+                            logger.error { e.printStackTrace() }
+                        }
                     }
                 }
                 // update array of stats

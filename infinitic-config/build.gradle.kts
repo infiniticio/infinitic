@@ -26,6 +26,8 @@
 dependencies {
     implementation(Libs.Hoplite.core)
     implementation(Libs.Hoplite.yaml)
+    implementation(Libs.Pulsar.client)
+    implementation(Libs.Pulsar.clientAdmin)
 
     implementation(project(":infinitic-cache"))
     implementation(project(":infinitic-storage"))

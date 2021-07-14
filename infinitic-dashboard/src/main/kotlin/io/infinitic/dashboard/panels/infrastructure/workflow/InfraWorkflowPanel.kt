@@ -29,13 +29,12 @@ import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.icons.iconChevron
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.InfraPanel
-import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
 import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
 import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
 import io.infinitic.dashboard.panels.infrastructure.jobs.update
-import io.infinitic.dashboard.panels.infrastructure.lastUpdated
+import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
 import io.infinitic.dashboard.routeTo
 import io.infinitic.pulsar.topics.TopicSet
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
@@ -57,7 +56,6 @@ import kweb.p
 import kweb.span
 import kweb.state.KVar
 import kweb.state.property
-import kweb.state.render
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
@@ -79,7 +77,7 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
     private val workflowTaskLastUpdated = workflowTaskState.property(InfraWorkflowTaskState::lastUpdated)
 
     private val selectionTopicType: KVar<TopicSet> = KVar(WorkflowTopic.ENGINE_NEW)
-    private val selectionTopicStats = KVar(InfraTopicStats("Null"))
+    private val selectionTopicStats = KVar(TopicStats("Null"))
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
 

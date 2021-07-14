@@ -25,14 +25,11 @@
 
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
-import io.infinitic.common.serDe.json.Json
-import io.infinitic.dashboard.panels.infrastructure.InfraStatus
-import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
 import io.infinitic.dashboard.panels.infrastructure.lastUpdated
+import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
 import io.infinitic.dashboard.slideovers.Slideover
 import io.infinitic.pulsar.topics.TopicSet
 import kweb.a
-import kweb.div
 import kweb.new
 import kweb.p
 import kweb.span
@@ -40,7 +37,7 @@ import kweb.state.KVar
 
 internal fun selectionSlide(
     selectionType: KVar<TopicSet>,
-    selectionStats: KVar<InfraTopicStats>
+    selectionStats: KVar<TopicStats>
 ) = Slideover(
     selectionType.map { "${it.prefix} stats".replaceFirstChar { c -> c.uppercase() } },
     selectionStats
@@ -54,12 +51,6 @@ internal fun selectionSlide(
         span().text(")")
     }
     p().classes("mt-7 text-sm text-gray-500").new {
-        element("pre").text(
-            when (it.value.status) {
-                InfraStatus.LOADING -> "Loading..."
-                InfraStatus.ERROR -> it.value.stackTrace!!
-                InfraStatus.COMPLETED -> Json.stringify(it.value.partitionedTopicStats, true)
-            }
-        )
+        element("pre").text(it.value.text)
     }
 }

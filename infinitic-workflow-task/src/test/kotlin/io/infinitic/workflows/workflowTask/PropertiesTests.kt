@@ -37,7 +37,7 @@ internal class PropertiesTests : StringSpec({
         // given
         val w = WorkflowAImpl()
         // when
-        val p: Map<PropertyName, PropertyValue> = getWorkflowProperties(w)
+        val p: Map<PropertyName, PropertyValue> = w.getProperties()
         // then
         p.size shouldBe 1
         p.keys.first() shouldBe PropertyName("key2")

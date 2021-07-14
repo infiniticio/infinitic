@@ -23,13 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure
+package io.infinitic.dashboard.panels.infrastructure.requests
 
-import java.time.Instant
+import org.apache.pulsar.client.admin.PulsarAdminException
 
-data class InfraNames(
-    val names: Set<String>? = null,
-    val status: InfraStatus = InfraStatus.LOADING,
-    val stackTrace: String? = null,
-    val lastUpdated: Instant = Instant.now()
-)
+sealed class Request<T>
+
+class Loading<T> : Request<T>()
+
+class Completed<T>(val result: T) : Request<T>()
+
+class Failed<T>(val error: Exception) : Request<T>() {
+    val title: String
+        get() = when (error) {
+            is PulsarAdminException.NotFoundException -> "not found!"
+            is PulsarAdminException.NotAllowedException -> "not allowed!"
+            is PulsarAdminException.NotAuthorizedException -> "not authorized!"
+            is PulsarAdminException.TimeoutException -> "timed out!"
+            else -> "error!"
+        }
+}

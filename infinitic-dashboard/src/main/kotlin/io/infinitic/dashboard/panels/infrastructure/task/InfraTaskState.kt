@@ -26,17 +26,17 @@
 package io.infinitic.dashboard.panels.infrastructure.task
 
 import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
 import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
+import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
 import io.infinitic.pulsar.topics.TaskTopic
 import java.time.Instant
 
 data class InfraTaskState(
     override val name: String,
-    override val topicsStats: Map<TaskTopic, InfraTopicStats> =
-        TaskTopic.values().map { it }.associateWith { InfraTopicStats(topicName.of(it, name)) },
+    override val topicsStats: Map<TaskTopic, TopicStats> =
+        TaskTopic.values().map { it }.associateWith { TopicStats(topicName.of(it, name)) },
     override val lastUpdated: Instant = Instant.now()
 ) : InfraJobState<TaskTopic> {
-    override fun create(name: String, topicsStats: Map<TaskTopic, InfraTopicStats>, lastUpdated: Instant) =
+    override fun create(name: String, topicsStats: Map<TaskTopic, TopicStats>, lastUpdated: Instant) =
         InfraTaskState(name, topicsStats, lastUpdated)
 }

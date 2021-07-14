@@ -23,9 +23,21 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure
+package io.infinitic.dashboard.panels.infrastructure.requests
 
-enum class InfraTopicInfo(val title: String) {
-    STATS("Stats"),
-    GRAPH("Graph")
+import io.infinitic.common.serDe.json.Json
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
+
+data class TopicStats(
+    val topic: String,
+    val request: Request<PartitionedTopicStats> = Loading(),
+    val lastUpdated: Instant = Instant.now()
+) {
+    val text: String
+        get() = when (request) {
+            is Loading -> "Loading..."
+            is Failed -> request.error.stackTraceToString()
+            is Completed -> Json.stringify(request.result, true)
+        }
 }

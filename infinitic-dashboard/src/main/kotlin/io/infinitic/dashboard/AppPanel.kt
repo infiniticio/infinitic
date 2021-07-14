@@ -51,11 +51,6 @@ object AppPanel {
         val showMobileMenu: KVar<Boolean> = appState.property(AppState::showMobileMenu)
         val panel: KVar<Panel> = appState.property(AppState::panel)
 
-        // get browser timezone (tricky while we do not have session)
-//        browser.callJsFunctionWithCallback("return Intl.DateTimeFormat().resolvedOptions().timeZone", 0, {
-//            println(it)
-//        })
-
         div().classes("h-screen flex overflow-hidden bg-gray-100").new {
             // offCanvas menu
             div().classes(

@@ -26,17 +26,17 @@
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
 import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
+import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import java.time.Instant
 
 data class InfraWorkflowTaskState(
     override val name: String,
-    override val topicsStats: Map<WorkflowTaskTopic, InfraTopicStats> =
-        WorkflowTaskTopic.values().map { it }.associateWith { InfraTopicStats(topicName.of(it, name)) },
+    override val topicsStats: Map<WorkflowTaskTopic, TopicStats> =
+        WorkflowTaskTopic.values().map { it }.associateWith { TopicStats(topicName.of(it, name)) },
     override val lastUpdated: Instant = Instant.now()
 ) : InfraJobState<WorkflowTaskTopic> {
-    override fun create(name: String, topicsStats: Map<WorkflowTaskTopic, InfraTopicStats>, lastUpdated: Instant) =
+    override fun create(name: String, topicsStats: Map<WorkflowTaskTopic, TopicStats>, lastUpdated: Instant) =
         InfraWorkflowTaskState(name, topicsStats, lastUpdated)
 }

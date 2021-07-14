@@ -29,13 +29,11 @@ import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.icons.iconChevron
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.InfraPanel
-import io.infinitic.dashboard.panels.infrastructure.InfraTopicInfo
-import io.infinitic.dashboard.panels.infrastructure.InfraTopicStats
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
 import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
 import io.infinitic.dashboard.panels.infrastructure.jobs.update
-import io.infinitic.dashboard.panels.infrastructure.lastUpdated
+import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
 import io.infinitic.dashboard.routeTo
 import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicSet
@@ -55,12 +53,13 @@ import kweb.p
 import kweb.span
 import kweb.state.KVar
 import kweb.state.property
-import kweb.state.render
 import java.util.concurrent.ConcurrentHashMap
 
 class InfraTaskPanel private constructor(private val taskName: String) : Panel() {
 
     companion object {
+        const val template = "/infra/t/{name}"
+
         private val instances: ConcurrentHashMap<String, InfraTaskPanel> = ConcurrentHashMap()
 
         fun from(taskName: String) = instances.computeIfAbsent(taskName) { InfraTaskPanel(taskName) }
@@ -71,11 +70,10 @@ class InfraTaskPanel private constructor(private val taskName: String) : Panel()
     override val route = "/infra/t/$taskName"
 
     private val state = KVar(InfraTaskState(taskName))
-    private val selectedInfo = KVar(InfraTopicInfo.STATS)
 
     private val lastUpdated = state.property(InfraTaskState::lastUpdated)
     private val selectionTopicType: KVar<TopicSet> = KVar(TaskTopic.EXECUTORS)
-    private val selectionTopicStats = KVar(InfraTopicStats(""))
+    private val selectionTopicStats = KVar(TopicStats(""))
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
 
