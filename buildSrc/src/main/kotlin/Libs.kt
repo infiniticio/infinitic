@@ -83,6 +83,10 @@ object Libs {
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
     }
 
+    object Kweb {
+        const val core = "com.github.kwebio:kweb-core:0.10.5"
+    }
+
     object EasyRandom {
         const val core = "org.jeasy:easy-random-core:4.3.0"
     }

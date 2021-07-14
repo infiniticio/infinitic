@@ -25,13 +25,9 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.config.DashboardConfig
-
 fun main(args: Array<String>) {
     // get name of config file
     val file = args.getOrNull(0) ?: throw RuntimeException("Please provide a DashboardConfig configuration file")
-    // load config file
-    val dashboardConfig = DashboardConfig.fromFile(file)
     // start server
-    DashboardServer.fromConfig(dashboardConfig).start()
+    DashboardServer.fromConfigFile(file).start()
 }

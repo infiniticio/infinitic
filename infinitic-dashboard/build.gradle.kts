@@ -28,7 +28,7 @@ repositories {
 }
 
 plugins {
-    `application`
+    application
 }
 
 application {
@@ -36,15 +36,8 @@ application {
 }
 
 dependencies {
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
+    implementation(Libs.Kweb.core)
 
-    implementation("com.github.kwebio:kweb-core:0.10.5")
-    implementation(Libs.Slf4j.simple)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
     implementation(project(":infinitic-pulsar"))
 }
 
