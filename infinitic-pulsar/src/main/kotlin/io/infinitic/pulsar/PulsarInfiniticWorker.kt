@@ -89,21 +89,15 @@ class PulsarInfiniticWorker private constructor(
          * Create InfiniticWorker from a custom PulsarClient and a WorkerConfig instance
          */
         @JvmStatic
-        fun from(pulsarClient: PulsarClient, workerConfig: WorkerConfig) = PulsarInfiniticWorker(pulsarClient, workerConfig)
+        fun from(pulsarClient: PulsarClient, workerConfig: WorkerConfig) =
+            PulsarInfiniticWorker(pulsarClient, workerConfig)
 
         /**
          * Create InfiniticWorker from a WorkerConfig
          */
         @JvmStatic
-        fun fromConfig(workerConfig: WorkerConfig): PulsarInfiniticWorker {
-            // build Pulsar client from config
-            val pulsarClient: PulsarClient = PulsarClient
-                .builder()
-                .serviceUrl(workerConfig.pulsar.serviceUrl)
-                .build()
-
-            return PulsarInfiniticWorker(pulsarClient, workerConfig)
-        }
+        fun fromConfig(workerConfig: WorkerConfig): PulsarInfiniticWorker =
+            PulsarInfiniticWorker(workerConfig.pulsar.client, workerConfig)
 
         /**
          * Create InfiniticWorker from file in resources directory
@@ -261,6 +255,14 @@ class PulsarInfiniticWorker private constructor(
                     pulsarConsumerFactory,
                     pulsarOutput
                 )
+
+                startPulsarTaskDelayEngines(
+                    workflowName,
+                    workerName,
+                    it.concurrency,
+                    pulsarConsumerFactory,
+                    pulsarOutput
+                )
             }
 
             // starting engines managing workflows
@@ -384,6 +386,7 @@ class PulsarInfiniticWorker private constructor(
                     pulsarConsumerFactory,
                     pulsarOutput
                 )
+
                 startPulsarTaskDelayEngines(
                     taskName,
                     workerName,

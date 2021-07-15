@@ -27,8 +27,10 @@ package io.infinitic.pulsar.workers
 
 import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.WorkflowTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -36,9 +38,11 @@ import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.workflows.engine.worker.startWorkflowEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import org.apache.pulsar.client.api.Consumer
 
 typealias PulsarWorkflowEngineMessageToProcess = PulsarMessageToProcess<WorkflowEngineMessage>
 
+@Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarWorkflowEngines(
     workflowName: WorkflowName,
     consumerName: String,
@@ -54,8 +58,8 @@ fun CoroutineScope.startPulsarWorkflowEngines(
         val commandsInputChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
         val commandsOutputChannel = Channel<PulsarWorkflowEngineMessageToProcess>()
 
-        val taskEngine = output.sendToTaskEngine(TopicType.COMMANDS)
-        val workflowTaskEngine = output.sendToTaskEngine(TopicType.COMMANDS, workflowName)
+        val taskEngine = output.sendToTaskEngine(TopicType.NEW)
+        val workflowTaskEngine = output.sendToTaskEngine(TopicType.NEW, workflowName)
 
         startWorkflowEngine(
             "workflow-engine:$count",
@@ -65,35 +69,36 @@ fun CoroutineScope.startPulsarWorkflowEngines(
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
             output.sendToClient(),
-            output.sendToTaskTagEngine(TopicType.COMMANDS),
+            output.sendToTaskTagEngine(TopicType.NEW),
             sendToTaskEngine = { if (it.isWorkflowTask()) workflowTaskEngine(it) else taskEngine(it) },
-            output.sendToWorkflowTagEngine(TopicType.EVENTS),
-            output.sendToWorkflowEngine(TopicType.EVENTS),
+            output.sendToWorkflowTagEngine(TopicType.EXISTING),
+            output.sendToWorkflowEngine(TopicType.EXISTING),
             output.sendToWorkflowEngineAfter()
         )
 
         // Pulsar consumers
-        val eventsConsumer = consumerFactory.newWorkflowEngineConsumer(
+        val existingConsumer = consumerFactory.newConsumer(
             consumerName = "$consumerName:$count",
-            topicType = TopicType.EVENTS,
+            workflowTopic = WorkflowTopic.ENGINE_EXISTING,
             workflowName = workflowName
-        )
-        val commandsConsumer = consumerFactory.newWorkflowEngineConsumer(
+        ) as Consumer<WorkflowEngineEnvelope>
+
+        val newConsumer = consumerFactory.newConsumer(
             consumerName = "$consumerName:$count",
-            topicType = TopicType.COMMANDS,
+            workflowTopic = WorkflowTopic.ENGINE_NEW,
             workflowName = workflowName
-        )
+        ) as Consumer<WorkflowEngineEnvelope>
 
         // coroutine pulling pulsar events messages
-        pullMessages(eventsConsumer, eventsInputChannel)
+        pullMessages(existingConsumer, eventsInputChannel)
 
         // coroutine pulling pulsar commands messages
-        pullMessages(commandsConsumer, commandsInputChannel)
+        pullMessages(newConsumer, commandsInputChannel)
 
         // coroutine acknowledging pulsar event messages
-        acknowledgeMessages(eventsConsumer, eventsOutputChannel)
+        acknowledgeMessages(existingConsumer, eventsOutputChannel)
 
         // coroutine acknowledging pulsar commands messages
-        acknowledgeMessages(commandsConsumer, commandsOutputChannel)
+        acknowledgeMessages(newConsumer, commandsOutputChannel)
     }
 }

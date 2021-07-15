@@ -82,17 +82,15 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         val builder = mockk<TypedMessageBuilder<WorkflowEngineEnvelope>>()
         val slotSchema = slot<AvroSchema<WorkflowEngineEnvelope>>()
         every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
-        every { context.tenant } returns "tenant"
-        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutput.from(context).sendToWorkflowEngine(TopicType.COMMANDS)(msg)
+        PulsarOutput.from(context).sendToWorkflowEngine(TopicType.NEW)(msg)
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/workflow-engine-commands: ${msg.workflowName}",
+                "persistent://tenant/namespace/workflow-engine-new: ${msg.workflowName}",
                 slotSchema.captured
             )
         }
@@ -113,17 +111,15 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         val builder = mockk<TypedMessageBuilder<TaskEngineEnvelope>>()
         val slotSchema = slot<AvroSchema<TaskEngineEnvelope>>()
         every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
-        every { context.tenant } returns "tenant"
-        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
         // when
-        PulsarOutput.from(context).sendToTaskEngine(TopicType.COMMANDS)(msg)
+        PulsarOutput.from(context).sendToTaskEngine(TopicType.NEW)(msg)
         // then
         verify {
             context.newOutputMessage(
-                "persistent://tenant/namespace/task-engine-commands: ${msg.taskName}",
+                "persistent://tenant/namespace/task-engine-new: ${msg.taskName}",
                 slotSchema.captured
             )
         }
@@ -144,8 +140,6 @@ private fun shouldBeAbleToSendMessageToMetricsPerNameTopic(msg: MetricsPerNameMe
         val builder = mockk<TypedMessageBuilder<MetricsPerNameEnvelope>>()
         val slotSchema = slot<AvroSchema<MetricsPerNameEnvelope>>()
         every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
-        every { context.tenant } returns "tenant"
-        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
@@ -175,8 +169,6 @@ private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: MetricsGlobalMess
         val slotSchema = slot<AvroSchema<MetricsGlobalEnvelope>>()
         val slotTopic = slot<String>()
         every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
-        every { context.tenant } returns "tenant"
-        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
@@ -199,8 +191,6 @@ private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessag
         val slotSchema = slot<AvroSchema<TaskExecutorEnvelope>>()
         val slotTopic = slot<String>()
         every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
-        every { context.tenant } returns "tenant"
-        every { context.namespace } returns "namespace"
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
         every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
@@ -208,7 +198,7 @@ private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessag
         PulsarOutput.from(context).sendToTaskExecutors()(msg)
         // then
         verify(exactly = 1) { context.newOutputMessage(slotTopic.captured, slotSchema.captured) }
-        slotTopic.captured shouldBe "persistent://tenant/namespace/task-executor: ${msg.taskName}"
+        slotTopic.captured shouldBe "persistent://tenant/namespace/task-executors: ${msg.taskName}"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(TaskExecutorEnvelope.from(msg)) }
         verify(exactly = 1) { builder.sendAsync() }
@@ -219,6 +209,8 @@ private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessag
 fun context(): Context {
     val context = mockk<Context>()
     every { context.logger } returns mockk(relaxed = true)
+    every { context.tenant } returns "tenant"
+    every { context.namespace } returns "namespace"
 
     return context
 }

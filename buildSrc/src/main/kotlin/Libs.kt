@@ -24,9 +24,6 @@
  */
 
 object Libs {
-    // Plugins version
-    const val kotlinVersion = "1.5.10"
-    const val ktlintVersion = "10.0.0"
 
     const val org = "io.infinitic"
 
@@ -35,17 +32,17 @@ object Libs {
     }
 
     object Coroutines {
-        private const val version = "1.5.0"
+        private const val version = "1.5.1"
         const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
         const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
     }
 
     object Serialization {
-        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1"
+        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2"
     }
 
     object JsonPath {
-        const val jayway = "com.jayway.jsonpath:json-path:2.5.0"
+        const val jayway = "com.jayway.jsonpath:json-path:2.6.0"
     }
 
     object Jackson {
@@ -67,7 +64,7 @@ object Libs {
     }
 
     object Avro4k {
-        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.2.0"
+        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.3.0"
     }
 
     object Hoplite {
@@ -81,6 +78,10 @@ object Libs {
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
+    }
+
+    object Kweb {
+        const val core = "com.github.kwebio:kweb-core:0.10.5"
     }
 
     object EasyRandom {

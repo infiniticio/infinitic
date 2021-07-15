@@ -25,12 +25,12 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.config.AdminConfig
 import io.infinitic.pulsar.admin.setupInfinitic
-import io.infinitic.pulsar.topics.TopicNamer
-import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.TaskTopic
+import io.infinitic.pulsar.topics.TopicName
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.pulsar.topics.WorkflowTopic
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
@@ -43,7 +43,7 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     @JvmField val namespace: String,
     @JvmField val allowedClusters: Set<String>? = null
 ) {
-    private val topicNamer = TopicNamer(tenant, namespace)
+    val topicNamer = TopicName(tenant, namespace)
 
     companion object {
         /**
@@ -61,16 +61,8 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
          * Create InfiniticAdmin from an AdminConfig instance
          */
         @JvmStatic
-        fun fromConfig(adminConfig: AdminConfig): PulsarInfiniticAdmin {
-            // build PulsarAdmin from config
-            val pulsarAdmin = PulsarAdmin
-                .builder()
-                .serviceHttpUrl(adminConfig.pulsar.serviceHttpUrl)
-                .allowTlsInsecureConnection(true)
-                .build()
-
-            return from(pulsarAdmin, adminConfig)
-        }
+        fun fromConfig(adminConfig: AdminConfig): PulsarInfiniticAdmin =
+            from(adminConfig.pulsar.admin, adminConfig)
 
         /**
          * Create InfiniticAdmin from file in resources directory
@@ -99,7 +91,7 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     val tasks: Set<String>
         get() {
             val tasks = mutableSetOf<String>()
-            val prefix = topicNamer.taskEngineTopic(TopicType.COMMANDS, TaskName(""))
+            val prefix = topicNamer.of(TaskTopic.EXECUTORS, "")
             topics.map { if (it.startsWith(prefix)) tasks.add(it.removePrefix(prefix)) }
 
             return tasks
@@ -111,7 +103,7 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     val workflows: Set<String>
         get() {
             val workflows = mutableSetOf<String>()
-            val prefix = topicNamer.workflowEngineTopic(TopicType.COMMANDS, WorkflowName(""))
+            val prefix = topicNamer.of(WorkflowTaskTopic.EXECUTORS, "")
             topics.map { if (it.startsWith(prefix)) workflows.add(it.removePrefix(prefix)) }
 
             return workflows
@@ -132,9 +124,9 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
      */
     fun printTopicStats() {
         // get list of all topics
-        val leftAlignFormat = "| %-22s | %-8s | %11d | %10d | %10f |%n"
-        val line = "+------------------------+----------+-------------+------------+------------+%n"
-        val title = "| Subscription           | Type     | NbConsumers | MsgBacklog | MsgRateOut |%n"
+        val leftAlignFormat = "| %-42s | %11d | %10d | %10f |%n"
+        val line = "+--------------------------------------------+-------------+------------+------------+%n"
+        val title = "| Subscription                               | NbConsumers | MsgBacklog | MsgRateOut |%n"
 
         println("WORKFLOWS")
         println()
@@ -146,45 +138,45 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
             System.out.format(title)
             System.out.format(line)
 
-            // workflow engine commands
-            var topic = topicNamer.workflowEngineTopic(TopicType.COMMANDS, WorkflowName(it))
+            // workflow-new engine
+            var topic = topicNamer.of(WorkflowTopic.ENGINE_NEW, it)
             var stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("commands", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
-            // workflow engine events
-            topic = topicNamer.workflowEngineTopic(TopicType.EVENTS, WorkflowName(it))
+            // workflow-existing engine
+            topic = topicNamer.of(WorkflowTopic.ENGINE_EXISTING, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("events", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
-            // workflow delay engine
-            topic = topicNamer.delayEngineTopic(WorkflowName(it))
+            // workflow-delays engine
+            topic = topicNamer.of(WorkflowTopic.DELAYS, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
-            // tag workflow engine commands
-            topic = topicNamer.tagEngineTopic(TopicType.COMMANDS, WorkflowName(it))
+            // tag workflow-new engine
+            topic = topicNamer.of(WorkflowTopic.TAG_NEW, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("commands", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
             // tag workflow engine events
-            topic = topicNamer.tagEngineTopic(TopicType.EVENTS, WorkflowName(it))
+            topic = topicNamer.of(WorkflowTopic.TAG_EXISTING, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("events", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
-            // workflow tasks engine commands
-            topic = topicNamer.taskEngineTopic(TopicType.COMMANDS, WorkflowName(it))
+            // workflow tasks-new engine
+            topic = topicNamer.of(WorkflowTaskTopic.ENGINE_NEW, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("commands", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
-            // workflow tasks engine events
-            topic = topicNamer.taskEngineTopic(TopicType.EVENTS, WorkflowName(it))
+            // workflow tasks-existing engine
+            topic = topicNamer.of(WorkflowTaskTopic.ENGINE_EXISTING, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("events", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
             // workflow executors
-            topic = topicNamer.executorTopic(WorkflowName(it))
+            topic = topicNamer.of(WorkflowTaskTopic.EXECUTORS, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
             System.out.format(line)
             println("")
@@ -201,52 +193,51 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
             System.out.format(title)
             System.out.format(line)
 
-            // task engine commands
-            var topic = topicNamer.taskEngineTopic(TopicType.COMMANDS, TaskName(it))
+            // task-new engine
+            var topic = topicNamer.of(TaskTopic.ENGINE_NEW, it)
             var stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("commands", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
-            // task engine events
-            topic = topicNamer.taskEngineTopic(TopicType.EVENTS, TaskName(it))
+            // task-existing engine
+            topic = topicNamer.of(TaskTopic.ENGINE_EXISTING, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("events", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
             // task delays engine
-            topic = topicNamer.delayEngineTopic(TaskName(it))
+            topic = topicNamer.of(TaskTopic.DELAYS, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("events", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
-            // tag task engine commands
-            topic = topicNamer.tagEngineTopic(TopicType.COMMANDS, TaskName(it))
+            // tag task-new engine
+            topic = topicNamer.of(TaskTopic.TAG_NEW, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("commands", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
-            // tag task engine events
-            topic = topicNamer.tagEngineTopic(TopicType.EVENTS, TaskName(it))
+            // tag task-existing engine
+            topic = topicNamer.of(TaskTopic.TAG_EXISTING, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("events", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
             // task executors
-            topic = topicNamer.executorTopic(TaskName(it))
+            topic = topicNamer.of(TaskTopic.EXECUTORS, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
             // task metrics
-            topic = topicNamer.metricsTopic(TaskName(it))
+            topic = topicNamer.of(TaskTopic.METRICS, it)
             stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine("", stats, leftAlignFormat)
+            displayStatsLine(stats, leftAlignFormat)
 
             System.out.format(line)
             println("")
         }
     }
 
-    private fun displayStatsLine(title: String, stats: PartitionedTopicStats, format: String) {
+    private fun displayStatsLine(stats: PartitionedTopicStats, format: String) {
         stats.subscriptions.map {
             System.out.format(
                 format,
                 it.key,
-                title,
                 it.value.consumers.size,
                 it.value.msgBacklog,
                 it.value.msgRateOut,

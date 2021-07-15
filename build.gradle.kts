@@ -33,9 +33,9 @@ buildscript {
 }
 
 plugins {
-    id("org.jetbrains.kotlin.jvm").version(Libs.kotlinVersion) apply false
-    id("org.jetbrains.kotlin.plugin.serialization").version(Libs.kotlinVersion) apply false
-    id("org.jlleitschuh.gradle.ktlint").version(Libs.ktlintVersion) apply false
+    id(Plugins.Kotlin.id).version(Plugins.Kotlin.version) apply false
+    id(Plugins.Serialization.id).version(Plugins.Serialization.version) apply false
+    id(Plugins.Ktlint.id).version(Plugins.Ktlint.version) apply false
 }
 
 subprojects {
@@ -43,12 +43,9 @@ subprojects {
         mavenCentral()
     }
 
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
-    apply(plugin = "org.jlleitschuh.gradle.ktlint")
-    extensions.configure(org.jlleitschuh.gradle.ktlint.KtlintExtension::class.java) {
-        version.set("0.41.0")
-    }
+    apply(plugin = Plugins.Kotlin.id)
+    apply(plugin = Plugins.Serialization.id)
+    apply(plugin = Plugins.Ktlint.id)
 
     group = Libs.org
     version = Ci.version
@@ -67,17 +64,15 @@ subprojects {
         }
     }
 
-    if (name != "infinitic-rest-api") {
-        tasks.withType<Test> {
-            useJUnitPlatform()
-        }
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
 
-        // For Kotlin sources
-        tasks.withType<KotlinCompile> {
-            kotlinOptions {
-                freeCompilerArgs += "-Xjvm-default=enable"
-                jvmTarget = JavaVersion.VERSION_1_8.toString()
-            }
+    // For Kotlin sources
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs += "-Xjvm-default=enable"
+            jvmTarget = JavaVersion.VERSION_1_8.toString()
         }
     }
 

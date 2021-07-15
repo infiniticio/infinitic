@@ -39,7 +39,6 @@ import kotlinx.serialization.SerializationException
 import java.math.BigInteger
 import java.security.MessageDigest
 import io.infinitic.common.serDe.json.Json as JsonJackson
-import kotlinx.serialization.json.Json as JsonKotlin
 
 @Serializable
 data class SerializedData(
@@ -50,6 +49,9 @@ data class SerializedData(
     companion object {
         // meta key containing the name of the serialized java class
         const val META_JAVA_CLASS = "javaClass"
+
+        // use a less obvious key than "type" for polymorphic data, to avoid collusion
+        private val jsonKotlin = kotlinx.serialization.json.Json { classDiscriminator = "#klass" }
 
         /**
          * @return serialized value
@@ -87,7 +89,7 @@ data class SerializedData(
             JsonJackson.stringify(value).toByteArray(charset = Charsets.UTF_8)
 
         private fun <T : Any> toJsonKotlinByteArray(serializer: KSerializer<T>, value: T): ByteArray =
-            JsonKotlin.encodeToString(serializer, value).toByteArray(charset = Charsets.UTF_8)
+            jsonKotlin.encodeToString(serializer, value).toByteArray(charset = Charsets.UTF_8)
     }
 
     /**
@@ -157,7 +159,7 @@ data class SerializedData(
         val serializer = getKSerializerOrNull(klass) ?: throw SerializerNotFoundException(klass.name)
 
         return try {
-            JsonKotlin.decodeFromString(serializer, getJson())
+            jsonKotlin.decodeFromString(serializer, getJson())
         } catch (e: SerializationException) {
             throw KotlinDeserializationException(klass.name, causeString = e.toString())
         }

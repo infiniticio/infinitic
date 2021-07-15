@@ -25,6 +25,9 @@
 
 package io.infinitic.config.data
 
+import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.client.api.PulsarClient
+
 data class Pulsar(
     @JvmField val serviceUrl: String = "pulsar://localhost:6650/",
     @JvmField val serviceHttpUrl: String = "http://localhost:8080",
@@ -43,5 +46,20 @@ data class Pulsar(
         ) { "serviceUrl MUST start with http:// or https://" }
         require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
         require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
+    }
+
+    val admin: PulsarAdmin by lazy {
+        PulsarAdmin
+            .builder()
+            .serviceHttpUrl(serviceHttpUrl)
+            .allowTlsInsecureConnection(true)
+            .build()
+    }
+
+    val client: PulsarClient by lazy {
+        PulsarClient
+            .builder()
+            .serviceUrl(serviceUrl)
+            .build()
     }
 }
