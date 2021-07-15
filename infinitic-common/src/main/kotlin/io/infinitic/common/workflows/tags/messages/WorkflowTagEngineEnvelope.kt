@@ -25,8 +25,8 @@
 
 package io.infinitic.common.workflows.tags.messages
 
+import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.messages.Envelope
-import io.infinitic.common.serDe.avro.AvroSerDe
 import kotlinx.serialization.Serializable
 
 @Serializable

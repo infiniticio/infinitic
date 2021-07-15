@@ -28,7 +28,6 @@ package io.infinitic.common.serDe
 import io.infinitic.common.fixtures.TestFactory
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.serialization.Serializable
 
 class SerDeTests : StringSpec({
     "Primitive (ByteArray) should be serializable / deserializable" {
@@ -102,15 +101,8 @@ class SerDeTests : StringSpec({
     }
 
     "Simple Object should be serializable / deserializable" {
-        val val1 = Obj1("42", 42, Type.TYPE_1)
+        val val1 = Obj1("42", 42)
         val val2 = SerializedData.from(val1).deserialize() as Obj1
-
-        val1 shouldBe val2
-    }
-
-    "Object containing set of sealed should be serializable / deserializable (even with a 'type' property)" {
-        val val1 = Objs(setOf(Obj1("42", 42, Type.TYPE_1)))
-        val val2 = SerializedData.from(val1).deserialize() as Objs
 
         val1 shouldBe val2
     }
@@ -123,16 +115,10 @@ class SerDeTests : StringSpec({
 //    }
 })
 
-@Serializable
 sealed class Obj
 
-enum class Type {
-    TYPE_1,
-    TYPE_2,
-}
+data class Obj1(val foo: String, val bar: Int) : Obj()
 
-@Serializable
-data class Obj1(val foo: String, val bar: Int, val type: Type) : Obj()
+data class Obj2(val foo: String, val bar: Int) : Obj()
 
-@Serializable
-data class Objs(val objs: Set<Obj>)
+data class Obj3(val foo: String) : Obj()

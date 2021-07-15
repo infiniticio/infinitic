@@ -65,9 +65,9 @@ class TaskEnginePulsarFunction : Function<TaskEngineEnvelope, Void> {
                 )
             ),
             output.sendToClient(),
-            output.sendToTaskTagEngine(TopicType.EXISTING),
+            output.sendToTaskTagEngine(TopicType.EVENTS),
             output.sendToTaskEngineAfter(),
-            output.sendToWorkflowEngine(TopicType.EXISTING),
+            output.sendToWorkflowEngine(TopicType.EVENTS),
             output.sendToTaskExecutors(),
             output.sendToMetricsPerName()
         )

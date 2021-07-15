@@ -32,27 +32,20 @@ import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 import io.infinitic.common.metrics.global.transport.SendToMetricsGlobal
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.metrics.perName.transport.SendToMetricsPerName
-import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.engine.SendToTaskEngineAfter
 import io.infinitic.common.tasks.executors.SendToTaskExecutors
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessageAsync
-import io.infinitic.pulsar.topics.GlobalTopic
-import io.infinitic.pulsar.topics.TaskTopic
-import io.infinitic.pulsar.topics.TopicName
+import io.infinitic.pulsar.topics.TopicNamer
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
-import io.infinitic.pulsar.topics.WorkflowTopic
 import mu.KotlinLogging
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.functions.api.Context
@@ -64,7 +57,7 @@ class PulsarOutput(
 ) {
     private val logger = KotlinLogging.logger {}
 
-    private val topicName = TopicName(pulsarTenant, pulsarNamespace)
+    private val topicNamer = TopicNamer(pulsarTenant, pulsarNamespace)
     private val zero = MillisDuration(0)
 
     companion object {
@@ -93,18 +86,14 @@ class PulsarOutput(
     }
 
     fun sendToClient(): SendToClient = { message ->
-        val topic = topicName.of(message.clientName)
+        val topic = topicNamer.clientTopic(message.clientName)
         val key = null
         logger.debug { "topic: $topic, sendToClient: $message" }
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
     fun sendToTaskTagEngine(topicType: TopicType, async: Boolean = false): SendToTaskTagEngine = { message ->
-        val taskTopic = when (topicType) {
-            TopicType.NEW -> TaskTopic.TAG_NEW
-            TopicType.EXISTING -> TaskTopic.TAG_EXISTING
-        }
-        val topic = topicName.of(taskTopic, "${message.taskName}")
+        val topic = topicNamer.tagEngineTopic(topicType, message.taskName)
         val key = "${message.taskTag}"
         logger.debug { "topic: $topic, sendToTaskTagEngine: $message" }
         when (async) {
@@ -114,30 +103,7 @@ class PulsarOutput(
     }
 
     fun sendToTaskEngine(topicType: TopicType, name: Name? = null, async: Boolean = false): SendToTaskEngine = { message ->
-        val topic = when (name) {
-            is WorkflowName -> {
-                val workflowTaskTopic = when (topicType) {
-                    TopicType.NEW -> WorkflowTaskTopic.ENGINE_NEW
-                    TopicType.EXISTING -> WorkflowTaskTopic.ENGINE_EXISTING
-                }
-                topicName.of(workflowTaskTopic, "$name")
-            }
-            is TaskName -> {
-                val taskTopic = when (topicType) {
-                    TopicType.NEW -> TaskTopic.ENGINE_NEW
-                    TopicType.EXISTING -> TaskTopic.ENGINE_EXISTING
-                }
-                topicName.of(taskTopic, "$name")
-            }
-            null -> {
-                val taskTopic = when (topicType) {
-                    TopicType.NEW -> TaskTopic.ENGINE_NEW
-                    TopicType.EXISTING -> TaskTopic.ENGINE_EXISTING
-                }
-                topicName.of(taskTopic, "${message.taskName}")
-            }
-            else -> throw thisShouldNotHappen()
-        }
+        val topic = topicNamer.taskEngineTopic(topicType, name ?: message.taskName)
         val key = "${message.taskId}"
         logger.debug { "topic: $topic, sendToTaskEngine: $message" }
         when (async) {
@@ -147,23 +113,14 @@ class PulsarOutput(
     }
 
     fun sendToTaskEngineAfter(name: Name? = null): SendToTaskEngineAfter = { message, after ->
-        val topic = when (name) {
-            is WorkflowName -> topicName.of(WorkflowTaskTopic.DELAYS, "$name")
-            is TaskName -> topicName.of(TaskTopic.DELAYS, "$name")
-            null -> topicName.of(TaskTopic.DELAYS, "${message.taskName}")
-            else -> throw thisShouldNotHappen()
-        }
+        val topic = topicNamer.delayEngineTopic(name ?: message.taskName)
         val key = null
         logger.debug { "topic: $topic, sendToTaskEngineAfter: $message" }
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, after)
     }
 
     fun sendToWorkflowTagEngine(topicType: TopicType, async: Boolean = false): SendToWorkflowTagEngine = { message ->
-        val workflowTopic = when (topicType) {
-            TopicType.NEW -> WorkflowTopic.TAG_NEW
-            TopicType.EXISTING -> WorkflowTopic.TAG_EXISTING
-        }
-        val topic = topicName.of(workflowTopic, "${message.workflowName}")
+        val topic = topicNamer.tagEngineTopic(topicType, message.workflowName)
         val key = "${message.workflowTag}"
         logger.debug { "topic: $topic, sendToWorkflowTagEngine: $message" }
         when (async) {
@@ -173,11 +130,7 @@ class PulsarOutput(
     }
 
     fun sendToWorkflowEngine(topicType: TopicType, async: Boolean = false): SendToWorkflowEngine = { message ->
-        val workflowTopic = when (topicType) {
-            TopicType.NEW -> WorkflowTopic.ENGINE_NEW
-            TopicType.EXISTING -> WorkflowTopic.ENGINE_EXISTING
-        }
-        val topic = topicName.of(workflowTopic, "${message.workflowName}")
+        val topic = topicNamer.workflowEngineTopic(topicType, message.workflowName)
         val key = "${message.workflowId}"
         logger.debug { "topic: $topic, sendToWorkflowEngine: $message" }
         when (async) {
@@ -187,38 +140,28 @@ class PulsarOutput(
     }
 
     fun sendToWorkflowEngineAfter(): SendToWorkflowEngineAfter = { message, after ->
-        val topic = topicName.of(WorkflowTopic.DELAYS, "${message.workflowName}")
+        val topic = topicNamer.delayEngineTopic(message.workflowName)
         val key = null
         logger.debug { "topic: $topic, sendToWorkflowEngineAfter: $message" }
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, after)
     }
 
     fun sendToTaskExecutors(name: Name? = null): SendToTaskExecutors = { message ->
-        val topic = when (name) {
-            is WorkflowName -> topicName.of(WorkflowTaskTopic.EXECUTORS, "$name")
-            is TaskName -> topicName.of(TaskTopic.EXECUTORS, "$name")
-            null -> topicName.of(TaskTopic.EXECUTORS, "${message.taskName}")
-            else -> throw thisShouldNotHappen()
-        }
+        val topic = topicNamer.executorTopic(name ?: message.taskName)
         val key = null
         logger.debug { "topic: $topic, sendToTaskExecutors: $message" }
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
-    fun sendToMetricsPerName(name: Name? = null): SendToMetricsPerName = { message: MetricsPerNameMessage ->
-        val topic = when (name) {
-            is WorkflowName -> topicName.of(WorkflowTaskTopic.METRICS, "$name")
-            is TaskName -> topicName.of(TaskTopic.METRICS, "$name")
-            null -> topicName.of(TaskTopic.METRICS, "${message.taskName}")
-            else -> throw thisShouldNotHappen()
-        }
+    fun sendToMetricsPerName(): SendToMetricsPerName = { message: MetricsPerNameMessage ->
+        val topic = topicNamer.metricsTopic(message.taskName)
         val key = null
         logger.debug { "topic: $topic, sendToMetricsPerName: $message" }
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
     fun sendToMetricsGlobal(): SendToMetricsGlobal = { message: MetricsGlobalMessage ->
-        val topic = topicName.of(GlobalTopic.METRICS)
+        val topic = topicNamer.globalMetricsTopic()
         val key = null
         logger.debug { "topic: $topic, sendToMetricsGlobal: $message" }
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)

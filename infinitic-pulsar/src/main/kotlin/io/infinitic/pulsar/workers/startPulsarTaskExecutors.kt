@@ -26,15 +26,9 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.data.Name
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.executors.messages.TaskExecutorMessage
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.pulsar.PulsarInfiniticClient
-import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -42,11 +36,9 @@ import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.executor.worker.startTaskExecutor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import org.apache.pulsar.client.api.Consumer
 
 typealias PulsarTaskExecutorMessageToProcess = PulsarMessageToProcess<TaskExecutorMessage>
 
-@Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskExecutors(
     name: Name,
     concurrency: Int,
@@ -67,25 +59,16 @@ fun CoroutineScope.startPulsarTaskExecutors(
             taskExecutorRegister,
             inputChannel,
             outputChannel,
-            output.sendToTaskEngine(TopicType.EXISTING, name),
+            output.sendToTaskEngine(TopicType.EVENTS, name),
             clientFactory
         )
     }
 
     // Pulsar consumer
-    val consumer = when (name) {
-        is TaskName -> consumerFactory.newConsumer(
-            consumerName = consumerName,
-            taskTopic = TaskTopic.EXECUTORS,
-            taskName = name
-        )
-        is WorkflowName -> consumerFactory.newConsumer(
-            consumerName = consumerName,
-            workflowTaskTopic = WorkflowTaskTopic.EXECUTORS,
-            workflowName = name
-        )
-        else -> thisShouldNotHappen()
-    } as Consumer<TaskExecutorEnvelope>
+    val consumer = consumerFactory.newExecutorConsumer(
+        consumerName = consumerName,
+        name = name
+    )
 
     // coroutine pulling pulsar commands messages
     pullMessages(consumer, inputChannel)
