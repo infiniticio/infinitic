@@ -25,16 +25,24 @@
 
 package io.infinitic.pulsar.workers
 
+import io.infinitic.common.data.Name
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
+import io.infinitic.common.workflows.data.workflows.WorkflowName
+import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicType
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.tasks.engine.worker.startTaskDelayEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import org.apache.pulsar.client.api.Consumer
 
+@Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskDelayEngines(
-    taskName: TaskName,
+    name: Name,
     consumerName: String,
     concurrency: Int,
     consumerFactory: PulsarConsumerFactory,
@@ -48,15 +56,24 @@ fun CoroutineScope.startPulsarTaskDelayEngines(
             consumerName,
             inputChannel,
             outputChannel,
-            output.sendToTaskEngine(TopicType.EVENTS)
+            output.sendToTaskEngine(TopicType.EXISTING)
         )
     }
 
     // Pulsar consumer
-    val consumer = consumerFactory.newTaskDelayEngineConsumer(
-        consumerName = consumerName,
-        taskName = taskName
-    )
+    val consumer = when (name) {
+        is TaskName -> consumerFactory.newConsumer(
+            consumerName = consumerName,
+            taskTopic = TaskTopic.DELAYS,
+            taskName = name
+        )
+        is WorkflowName -> consumerFactory.newConsumer(
+            consumerName = consumerName,
+            workflowTaskTopic = WorkflowTaskTopic.DELAYS,
+            workflowName = name
+        )
+        else -> thisShouldNotHappen()
+    } as Consumer<TaskEngineEnvelope>
 
     // coroutine pulling pulsar events messages
     pullMessages(consumer, inputChannel)

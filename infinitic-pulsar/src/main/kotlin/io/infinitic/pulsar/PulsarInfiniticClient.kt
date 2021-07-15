@@ -60,16 +60,16 @@ class PulsarInfiniticClient @JvmOverloads constructor(
         PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
 
     override val sendToTaskTagEngine =
-        pulsarOutput.sendToTaskTagEngine(TopicType.COMMANDS, true)
+        pulsarOutput.sendToTaskTagEngine(TopicType.NEW, true)
 
     override val sendToTaskEngine =
-        pulsarOutput.sendToTaskEngine(TopicType.COMMANDS, null, true)
+        pulsarOutput.sendToTaskEngine(TopicType.NEW, null, true)
 
     override val sendToWorkflowTagEngine =
-        pulsarOutput.sendToWorkflowTagEngine(TopicType.COMMANDS, true)
+        pulsarOutput.sendToWorkflowTagEngine(TopicType.NEW, true)
 
     override val sendToWorkflowEngine =
-        pulsarOutput.sendToWorkflowEngine(TopicType.COMMANDS, true)
+        pulsarOutput.sendToWorkflowEngine(TopicType.NEW, true)
 
     override fun close() {
         job.cancel()
@@ -78,7 +78,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
 
     init {
         val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
-            .newClientResponseConsumer(producerName, ClientName(producerName))
+            .newClientConsumer(producerName, ClientName(producerName))
 
         job = scope.startClientResponseWorker(this, clientResponseConsumer)
     }

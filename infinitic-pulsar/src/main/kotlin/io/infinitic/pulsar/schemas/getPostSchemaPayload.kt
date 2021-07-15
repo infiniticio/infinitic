@@ -25,7 +25,7 @@
 
 package io.infinitic.pulsar.schemas
 
-import io.infinitic.common.avro.AvroSerDe
+import io.infinitic.common.serDe.avro.AvroSerDe
 import org.apache.pulsar.common.protocol.schema.PostSchemaPayload
 import kotlin.reflect.KClass
 

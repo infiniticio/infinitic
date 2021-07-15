@@ -25,8 +25,8 @@
 
 object Libs {
     // Plugins version
-    const val kotlinVersion = "1.5.10"
-    const val ktlintVersion = "10.0.0"
+    const val kotlinVersion = "1.5.20"
+    const val ktlintVersion = "10.1.0"
 
     const val org = "io.infinitic"
 
@@ -67,7 +67,7 @@ object Libs {
     }
 
     object Avro4k {
-        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.2.0"
+        const val core = "com.github.avro-kotlin.avro4k:avro4k-core:1.3.0"
     }
 
     object Hoplite {

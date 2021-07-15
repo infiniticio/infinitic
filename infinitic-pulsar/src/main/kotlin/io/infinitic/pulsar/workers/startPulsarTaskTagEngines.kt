@@ -26,7 +26,9 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
+import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
@@ -35,9 +37,11 @@ import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.infinitic.tags.tasks.worker.startTaskTagEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import org.apache.pulsar.client.api.Consumer
 
 typealias PulsarTaskTagEngineMessageToProcess = PulsarMessageToProcess<TaskTagEngineMessage>
 
+@Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskTagEngines(
     taskName: TaskName,
     consumerName: String,
@@ -60,32 +64,33 @@ fun CoroutineScope.startPulsarTaskTagEngines(
             eventsOutputChannel = eventsOutputChannel,
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
-            output.sendToTaskEngine(TopicType.COMMANDS, taskName),
+            output.sendToTaskEngine(TopicType.NEW),
             output.sendToClient()
         )
 
         // Pulsar consumers
-        val eventsConsumer = consumerFactory.newTaskTagEngineConsumer(
+        val existingConsumer = consumerFactory.newConsumer(
             consumerName = "$consumerName:$it",
-            topicType = TopicType.EVENTS,
+            taskTopic = TaskTopic.TAG_EXISTING,
             taskName = taskName
-        )
-        val commandsConsumer = consumerFactory.newTaskTagEngineConsumer(
+        ) as Consumer<TaskTagEngineEnvelope>
+
+        val newConsumer = consumerFactory.newConsumer(
             consumerName = "$consumerName:$it",
-            topicType = TopicType.COMMANDS,
+            taskTopic = TaskTopic.TAG_NEW,
             taskName = taskName
-        )
+        ) as Consumer<TaskTagEngineEnvelope>
 
-        // coroutine pulling pulsar events messages
-        pullMessages(eventsConsumer, eventsInputChannel)
+        // coroutine pulling pulsar messages
+        pullMessages(existingConsumer, eventsInputChannel)
 
-        // coroutine pulling pulsar commands messages
-        pullMessages(commandsConsumer, commandsInputChannel)
+        // coroutine pulling pulsar messages
+        pullMessages(newConsumer, commandsInputChannel)
 
         // coroutine acknowledging pulsar event messages
-        acknowledgeMessages(eventsConsumer, eventsOutputChannel)
+        acknowledgeMessages(existingConsumer, eventsOutputChannel)
 
         // coroutine acknowledging pulsar commands messages
-        acknowledgeMessages(commandsConsumer, commandsOutputChannel)
+        acknowledgeMessages(newConsumer, commandsOutputChannel)
     }
 }

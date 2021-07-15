@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.avro
+package io.infinitic.common.serDe.avro
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.io.AvroEncodeFormat

@@ -65,10 +65,10 @@ class WorkflowEnginePulsarFunction : Function<WorkflowEngineEnvelope, Void> {
                 )
             ),
             output.sendToClient(),
-            output.sendToTaskTagEngine(TopicType.COMMANDS),
-            output.sendToTaskEngine(TopicType.COMMANDS),
-            output.sendToWorkflowTagEngine(TopicType.EVENTS),
-            output.sendToWorkflowEngine(TopicType.EVENTS),
+            output.sendToTaskTagEngine(TopicType.NEW),
+            output.sendToTaskEngine(TopicType.NEW),
+            output.sendToWorkflowTagEngine(TopicType.EXISTING),
+            output.sendToWorkflowEngine(TopicType.EXISTING),
             output.sendToWorkflowEngineAfter()
         )
     }
