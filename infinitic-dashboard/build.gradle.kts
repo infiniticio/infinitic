@@ -40,7 +40,6 @@ application {
 
 dependencies {
     implementation(Libs.Kweb.core)
-    implementation("org.slf4j:slf4j-simple:1.7.+")
 
     implementation(project(":infinitic-pulsar"))
 }
