@@ -34,7 +34,6 @@ import kweb.h3
 import kweb.new
 import kweb.span
 import kweb.state.KVar
-import kweb.state.render
 import java.time.Instant
 
 internal fun ElementCreator<Element>.displayJobSectionHeader(
@@ -47,7 +46,7 @@ internal fun ElementCreator<Element>.displayJobSectionHeader(
             val div = div().classes("inline-flex items-center py-2 text-sm text-gray-500")
             div.new {
                 iconRefresh().classes("mr-1.5 h-5 w-5 text-gray-400")
-                span().text(lastUpdated.map { lastUpdated(it)})
+                span().text(lastUpdated.map { lastUpdated(it) })
             }
         }
     }
