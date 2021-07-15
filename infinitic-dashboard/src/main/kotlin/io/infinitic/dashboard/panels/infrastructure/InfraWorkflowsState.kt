@@ -82,8 +82,8 @@ fun KVar<InfraWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
                 workflowStats = mapOf(),
                 lastUpdated = Instant.now()
             )
-            logger.error { "Error while updating workflow names" }
-            logger.error { e.printStackTrace() }
+//            logger.error { "Error while updating workflow names" }
+//            logger.error { e.printStackTrace() }
         }
 
         // update workflow stats every STATS_UPDATE_DELAY millis
@@ -111,8 +111,8 @@ fun KVar<InfraWorkflowsState>.update(scope: CoroutineScope) = scope.launch {
                                     request = Failed(e)
                                 )
                             )
-                            logger.error { "Error while updating executor stats for workflow $it" }
-                            logger.error { e.printStackTrace() }
+//                            logger.error { "Error while updating executor stats for workflow $it" }
+//                            logger.error { e.printStackTrace() }
                         }
                     }
                 }

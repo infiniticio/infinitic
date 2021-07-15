@@ -24,9 +24,6 @@
  */
 
 object Libs {
-    // Plugins version
-    const val kotlinVersion = "1.5.20"
-    const val ktlintVersion = "10.1.0"
 
     const val org = "io.infinitic"
 
@@ -35,17 +32,17 @@ object Libs {
     }
 
     object Coroutines {
-        private const val version = "1.5.0"
+        private const val version = "1.5.1"
         const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
         const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
     }
 
     object Serialization {
-        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1"
+        const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2"
     }
 
     object JsonPath {
-        const val jayway = "com.jayway.jsonpath:json-path:2.5.0"
+        const val jayway = "com.jayway.jsonpath:json-path:2.6.0"
     }
 
     object Jackson {

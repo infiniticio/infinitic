@@ -33,9 +33,9 @@ buildscript {
 }
 
 plugins {
-    id("org.jetbrains.kotlin.jvm").version(Libs.kotlinVersion) apply false
-    id("org.jetbrains.kotlin.plugin.serialization").version(Libs.kotlinVersion) apply false
-    id("org.jlleitschuh.gradle.ktlint").version(Libs.ktlintVersion) apply false
+    id(Plugins.Kotlin.id).version(Plugins.Kotlin.version) apply false
+    id(Plugins.Serialization.id).version(Plugins.Serialization.version) apply false
+    id(Plugins.Ktlint.id).version(Plugins.Ktlint.version) apply false
 }
 
 subprojects {
@@ -43,9 +43,9 @@ subprojects {
         mavenCentral()
     }
 
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
-    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+    apply(plugin = Plugins.Kotlin.id)
+    apply(plugin = Plugins.Serialization.id)
+    apply(plugin = Plugins.Ktlint.id)
 
     group = Libs.org
     version = Ci.version

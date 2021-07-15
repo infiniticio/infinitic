@@ -40,6 +40,7 @@ import kweb.ElementCreator
 import kweb.Kweb
 import kweb.WebBrowser
 import kweb.route
+import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
 
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
@@ -53,6 +54,8 @@ class DashboardServer(
     init {
         Infinitic.admin = PulsarInfiniticAdmin(pulsarAdmin, tenant, namespace)
     }
+
+    private val logger = KotlinLogging.logger {}
 
     companion object {
         /**
@@ -93,6 +96,8 @@ class DashboardServer(
      * Start dashboard server
      */
     fun start() {
+        logger.info { "Starting dashboard server on port $port" }
+
         Kweb(debug = debug, port = port, plugins = listOf(tailwindPlugin, imagesPlugin)) {
             doc.body {
                 route {

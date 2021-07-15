@@ -60,8 +60,6 @@ internal fun <S, T : InfraJobState<S>> CoroutineScope.update(kvar: KVar<T>) = la
                         request = Failed(e),
                         topic = it.value.topic
                     )
-                    logger.error { "Error while requesting PartitionedTopicStats for workflow task ${value.name}" }
-                    logger.error { e.printStackTrace() }
                 }
             }
 

@@ -82,8 +82,6 @@ fun KVar<InfraTasksState>.update(scope: CoroutineScope) = scope.launch {
                 taskStats = mapOf(),
                 lastUpdated = Instant.now()
             )
-            logger.error { "Error while updating task names" }
-            logger.error { e.printStackTrace() }
         }
 
         // update task stats every STATS_UPDATE_DELAY millis
@@ -111,8 +109,6 @@ fun KVar<InfraTasksState>.update(scope: CoroutineScope) = scope.launch {
                                     request = Failed(e)
                                 )
                             )
-                            logger.error { "Error while updating executor stats for task $it" }
-                            logger.error { e.printStackTrace() }
                         }
                     }
                 }

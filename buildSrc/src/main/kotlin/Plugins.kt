@@ -23,34 +23,26 @@
  * Licensor: infinitic.io
  */
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+const val kotlinVersion = "1.5.20"
 
-repositories {
-    maven("https://jitpack.io")
-}
-
-plugins {
-    application
-    id(Plugins.Shadow.id).version(Plugins.Shadow.version)
-}
-
-application {
-    mainClass.set("io.infinitic.dashboard.MainKt")
-}
-
-dependencies {
-    implementation(Libs.Kweb.core)
-    implementation("org.slf4j:slf4j-simple:1.7.+")
-
-    implementation(project(":infinitic-pulsar"))
-}
-
-tasks.withType<ShadowJar> {
-    manifest {
-        attributes("Main-Class" to "io.infinitic.dashboard.MainKt")
+object Plugins {
+    object Kotlin {
+        const val id = "org.jetbrains.kotlin.jvm"
+        const val version = kotlinVersion
     }
-    // https://stackoverflow.com/questions/48636944/how-to-avoid-a-java-lang-exceptionininitializererror-when-trying-to-run-a-ktor-a
-    mergeServiceFiles()
-}
 
-apply("../publish.gradle.kts")
+    object Serialization {
+        const val id = "org.jetbrains.kotlin.plugin.serialization"
+        const val version = kotlinVersion
+    }
+
+    object Ktlint {
+        const val id = "org.jlleitschuh.gradle.ktlint"
+        const val version = "10.1.0"
+    }
+
+    object Shadow {
+        const val id = "com.github.johnrengelman.shadow"
+        const val version = "7.0.0"
+    }
+}
