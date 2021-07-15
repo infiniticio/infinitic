@@ -75,11 +75,13 @@ class Slideover<T>(
                                     div().classes("flex items-start justify-between").new {
                                         h2().classes("text-lg font-medium text-gray-900").text(title)
                                         div().classes("ml-3 h-7 flex items-center").new {
-                                            button().classes("bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500").new {
+                                            val button = button().classes("bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500")
+                                            button.new {
                                                 span().classes("sr-only").text("Close panel")
-                                                iconClose().on.click {
-                                                    close()
-                                                }
+                                                iconClose()
+                                            }
+                                            button.on.click {
+                                                close()
                                             }
                                         }
                                     }

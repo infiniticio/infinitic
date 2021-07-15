@@ -32,6 +32,7 @@ import kweb.ElementCreator
 import kweb.div
 import kweb.h3
 import kweb.new
+import kweb.span
 import kweb.state.KVar
 import kweb.state.render
 import java.time.Instant
@@ -43,12 +44,10 @@ internal fun ElementCreator<Element>.displayJobSectionHeader(
     div().classes("pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between").new {
         h3().classes("text-lg leading-6 font-medium text-gray-900").text(title)
         div().classes("mt-3 sm:mt-0").new {
-            render(lastUpdated) {
-                val div = div().classes("inline-flex items-center py-2 text-sm text-gray-500")
-                div.new {
-                    iconRefresh().classes("mr-1.5 h-5 w-5 text-gray-400")
-                }
-                div.addText(lastUpdated(it))
+            val div = div().classes("inline-flex items-center py-2 text-sm text-gray-500")
+            div.new {
+                iconRefresh().classes("mr-1.5 h-5 w-5 text-gray-400")
+                span().text(lastUpdated.map { lastUpdated(it)})
             }
         }
     }
