@@ -25,9 +25,9 @@
 
 package io.infinitic.common.workflows.engine.state
 
+import io.infinitic.common.avro.AvroSerDe
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.commands.CommandId

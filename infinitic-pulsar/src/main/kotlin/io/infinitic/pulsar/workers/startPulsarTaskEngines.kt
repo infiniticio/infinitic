@@ -26,14 +26,8 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.data.Name
-import io.infinitic.common.tasks.data.TaskName
-import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
-import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.exceptions.thisShouldNotHappen
-import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -41,11 +35,9 @@ import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.tasks.engine.worker.startTaskEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import org.apache.pulsar.client.api.Consumer
 
 typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMessage>
 
-@Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskEngines(
     name: Name,
     consumerName: String,
@@ -69,52 +61,36 @@ fun CoroutineScope.startPulsarTaskEngines(
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
             output.sendToClient(),
-            output.sendToTaskTagEngine(TopicType.EXISTING),
+            output.sendToTaskTagEngine(TopicType.EVENTS),
             output.sendToTaskEngineAfter(name),
-            output.sendToWorkflowEngine(TopicType.EXISTING),
+            output.sendToWorkflowEngine(TopicType.EVENTS),
             output.sendToTaskExecutors(name),
             output.sendToMetricsPerName()
         )
 
         // Pulsar consumers
-        val existingConsumer = when (name) {
-            is TaskName -> consumerFactory.newConsumer(
-                consumerName = "$consumerName:$it",
-                taskTopic = TaskTopic.ENGINE_EXISTING,
-                taskName = name
-            )
-            is WorkflowName -> consumerFactory.newConsumer(
-                consumerName = "$consumerName:$it",
-                workflowTaskTopic = WorkflowTaskTopic.ENGINE_EXISTING,
-                workflowName = name
-            )
-            else -> throw thisShouldNotHappen()
-        } as Consumer<TaskEngineEnvelope>
+        val eventsConsumer = consumerFactory.newTaskEngineConsumer(
+            consumerName = "$consumerName:$it",
+            topicType = TopicType.EVENTS,
+            name = name
+        )
 
-        val newConsumer = when (name) {
-            is TaskName -> consumerFactory.newConsumer(
-                consumerName = "$consumerName:$it",
-                taskTopic = TaskTopic.ENGINE_NEW,
-                taskName = name
-            )
-            is WorkflowName -> consumerFactory.newConsumer(
-                consumerName = "$consumerName:$it",
-                workflowTaskTopic = WorkflowTaskTopic.ENGINE_NEW,
-                workflowName = name
-            )
-            else -> throw thisShouldNotHappen()
-        } as Consumer<TaskEngineEnvelope>
+        val commandsConsumer = consumerFactory.newTaskEngineConsumer(
+            consumerName = "$consumerName:$it",
+            topicType = TopicType.COMMANDS,
+            name = name
+        )
 
         // coroutine pulling pulsar events messages
-        pullMessages(existingConsumer, eventsInputChannel)
+        pullMessages(eventsConsumer, eventsInputChannel)
 
         // coroutine pulling pulsar commands messages
-        pullMessages(newConsumer, commandsInputChannel)
+        pullMessages(commandsConsumer, commandsInputChannel)
 
         // coroutine acknowledging pulsar event messages
-        acknowledgeMessages(existingConsumer, eventsOutputChannel)
+        acknowledgeMessages(eventsConsumer, eventsOutputChannel)
 
         // coroutine acknowledging pulsar commands messages
-        acknowledgeMessages(newConsumer, commandsOutputChannel)
+        acknowledgeMessages(commandsConsumer, commandsOutputChannel)
     }
 }

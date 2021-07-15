@@ -24,6 +24,7 @@
  */
 
 include("infinitic-common")
+include("infinitic-rest-api")
 include("infinitic-storage")
 include("infinitic-cache")
 include("infinitic-config")
@@ -34,7 +35,6 @@ include("infinitic-task-engine")
 include("infinitic-task-executor")
 include("infinitic-workflow-engine")
 include("infinitic-workflow-task")
-include("infinitic-dashboard")
 
 include("infinitic-inMemory")
 include("infinitic-pulsar")

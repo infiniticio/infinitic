@@ -26,17 +26,13 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.WorkflowTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.workflows.engine.worker.startWorkflowDelayEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import org.apache.pulsar.client.api.Consumer
 
-@Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarWorkflowDelayEngines(
     workflowName: WorkflowName,
     consumerName: String,
@@ -52,16 +48,15 @@ fun CoroutineScope.startPulsarWorkflowDelayEngines(
             consumerName,
             inputChannel,
             outputChannel,
-            output.sendToWorkflowEngine(TopicType.EXISTING)
+            output.sendToWorkflowEngine(TopicType.EVENTS)
         )
     }
 
     // Pulsar consumer
-    val consumer = consumerFactory.newConsumer(
+    val consumer = consumerFactory.newWorkflowDelayEngineConsumer(
         consumerName = consumerName,
-        workflowTopic = WorkflowTopic.DELAYS,
         workflowName = workflowName
-    ) as Consumer<WorkflowEngineEnvelope>
+    )
 
     // coroutine pulling pulsar events messages
     pullMessages(consumer, inputChannel)

@@ -26,6 +26,7 @@
 package io.infinitic.pulsar.topics
 
 enum class TopicType {
-    NEW,
-    EXISTING
+    COMMANDS,
+    EVENTS,
+    DEAD_LETTERS
 }

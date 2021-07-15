@@ -26,10 +26,8 @@
 package io.infinitic.pulsar.workers
 
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.pulsar.topics.TopicType
-import io.infinitic.pulsar.topics.WorkflowTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
@@ -37,11 +35,9 @@ import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tags.workflows.worker.startWorkflowTagEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import org.apache.pulsar.client.api.Consumer
 
 typealias PulsarWorkflowTagEngineMessageToProcess = PulsarMessageToProcess<WorkflowTagEngineMessage>
 
-@Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarWorkflowTagEngines(
     workflowName: WorkflowName,
     consumerName: String,
@@ -64,22 +60,21 @@ fun CoroutineScope.startPulsarWorkflowTagEngines(
             eventsOutputChannel = eventsOutputChannel,
             commandsInputChannel = commandsInputChannel,
             commandsOutputChannel = commandsOutputChannel,
-            output.sendToWorkflowEngine(TopicType.NEW),
+            output.sendToWorkflowEngine(TopicType.COMMANDS),
             output.sendToClient()
         )
 
         // Pulsar consumers
-        val eventsConsumer = consumerFactory.newConsumer(
+        val eventsConsumer = consumerFactory.newWorkflowTagEngineConsumer(
             consumerName = "$consumerName:$it",
-            workflowTopic = WorkflowTopic.TAG_EXISTING,
+            topicType = TopicType.EVENTS,
             workflowName = workflowName
-        ) as Consumer<WorkflowTagEngineEnvelope>
-
-        val commandsConsumer = consumerFactory.newConsumer(
+        )
+        val commandsConsumer = consumerFactory.newWorkflowTagEngineConsumer(
             consumerName = "$consumerName:$it",
-            workflowTopic = WorkflowTopic.TAG_NEW,
+            topicType = TopicType.COMMANDS,
             workflowName = workflowName
-        ) as Consumer<WorkflowTagEngineEnvelope>
+        )
 
         // coroutine pulling pulsar events messages
         pullMessages(eventsConsumer, eventsInputChannel)

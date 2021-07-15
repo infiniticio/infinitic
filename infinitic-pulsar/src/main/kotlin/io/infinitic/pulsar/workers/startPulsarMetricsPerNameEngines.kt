@@ -25,22 +25,18 @@
 
 package io.infinitic.pulsar.workers
 
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import io.infinitic.metrics.perName.engine.worker.startMetricsPerNameEngine
-import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarMessageToProcess
 import io.infinitic.pulsar.transport.PulsarOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import org.apache.pulsar.client.api.Consumer
 
 typealias PulsarMetricsPerNameMessageToProcess = PulsarMessageToProcess<MetricsPerNameMessage>
 
-@Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarMetricsPerNameEngines(
     taskName: TaskName,
     consumerName: String,
@@ -60,11 +56,10 @@ fun CoroutineScope.startPulsarMetricsPerNameEngines(
     )
 
     // Pulsar consumer
-    val consumer = consumerFactory.newConsumer(
+    val consumer = consumerFactory.newMetricsPerNameEngineConsumer(
         consumerName = consumerName,
-        taskTopic = TaskTopic.METRICS,
         taskName = taskName
-    ) as Consumer<MetricsPerNameEnvelope>
+    )
 
     // coroutine pulling pulsar messages
     pullMessages(consumer, inputChannel)
