@@ -35,7 +35,7 @@ import kweb.new
 
 object WorkflowsPanel : Panel() {
     override val menu = WorkflowMenu
-    override val route = "/workflows"
+    override val url = "/workflows"
 
     override fun render(creator: ElementCreator<Element>): Unit = with(creator) {
         div().classes("py-6").new {

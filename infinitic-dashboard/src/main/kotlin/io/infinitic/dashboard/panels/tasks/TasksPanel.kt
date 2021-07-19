@@ -35,7 +35,7 @@ import kweb.new
 
 object TasksPanel : Panel() {
     override val menu = TaskMenu
-    override val route = "/tasks"
+    override val url = "/tasks"
 
     override fun render(creator: ElementCreator<Element>): Unit = with(creator) {
         div().classes("py-6").new {

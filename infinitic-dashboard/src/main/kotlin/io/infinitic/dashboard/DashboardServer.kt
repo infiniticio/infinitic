@@ -101,13 +101,13 @@ class DashboardServer(
         Kweb(debug = debug, port = port, plugins = listOf(tailwindPlugin, imagesPlugin)) {
             doc.body {
                 route {
-                    path(WorkflowsPanel.route) {
+                    path(WorkflowsPanel.url) {
                         display(WorkflowsPanel)
                     }
-                    path(TasksPanel.route) {
+                    path(TasksPanel.url) {
                         display(TasksPanel)
                     }
-                    path(InfraPanel.route) {
+                    path(InfraPanel.url) {
                         display(InfraPanel)
                     }
                     path("/infra/t/{name}") {
@@ -116,11 +116,11 @@ class DashboardServer(
                     path("/infra/w/{name}") {
                         display(InfraWorkflowPanel.from(it.getValue("name").value))
                     }
-                    path(SettingsPanel.route) {
+                    path(SettingsPanel.url) {
                         display(SettingsPanel)
                     }
                     path("/") {
-                        url.value = InfraPanel.route
+                        url.value = InfraPanel.url
                     }
                     notFound {
                         NotFound.render(this)
@@ -142,7 +142,7 @@ class DashboardServer(
 
 internal fun WebBrowser.routeTo(to: Panel) {
     // update current url
-    url.value = to.route
+    url.value = to.url
 }
 
 internal object Infinitic {

@@ -32,7 +32,7 @@ import kweb.ElementCreator
 abstract class Panel {
     abstract val menu: MenuItem
 
-    abstract val route: String
+    abstract val url: String
 
     abstract fun render(creator: ElementCreator<Element>)
 

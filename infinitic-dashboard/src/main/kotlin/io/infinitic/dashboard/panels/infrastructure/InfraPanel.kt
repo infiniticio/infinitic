@@ -63,7 +63,7 @@ import java.util.Date
 
 object InfraPanel : Panel() {
     override val menu = InfraMenu
-    override val route = "/infra"
+    override val url = "/infra"
 
     lateinit var job: Job
 
@@ -141,7 +141,7 @@ object InfraPanel : Panel() {
                     div().classes("flex-1 min-w-0").new {
                         // title
                         h2().classes("mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate")
-                            .text(InfraMenu.text)
+                            .text(InfraMenu.title)
                     }
                 }
             }

@@ -25,6 +25,8 @@
 
 package io.infinitic.dashboard.modals
 
+import io.infinitic.dashboard.icons.iconClose
+import io.infinitic.dashboard.icons.iconWarning
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -93,40 +95,12 @@ object Modal {
                                 .setAttribute("type", "button")
                                 .new {
                                     span().classes("sr-only").text("Close")
-                                    // Heroicon name: outline/x
-                                    element("svg")
-                                        .classes("h-6 w-6")
-                                        .setAttribute("xmlns", "http://www.w3.org/2000/svg")
-                                        .setAttribute("fill", "none")
-                                        .setAttribute("viewBox", "0 0 24 24")
-                                        .setAttribute("stroke", "currentColor")
-                                        .setAttribute("aria-hidden", "true")
-                                        .new {
-                                            element("path")
-                                                .setAttribute("stroke-linecap", "round")
-                                                .setAttribute("stroke-linejoin", "round")
-                                                .setAttribute("stroke-width", "2")
-                                                .setAttribute("d", "M6 18L18 6M6 6l12 12")
-                                        }
+                                    iconClose()
                                 }
                         }
                         div().classes("sm:flex sm:items-start").new {
                             div().classes("mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10").new {
-                                // Heroicon name: outline/exclamation
-                                element("svg")
-                                    .classes("h-6 w-6 text-red-600")
-                                    .setAttribute("xmlns", "http://www.w3.org/2000/svg")
-                                    .setAttribute("fill", "none")
-                                    .setAttribute("viewBox", "0 0 24 24")
-                                    .setAttribute("stroke", "currentColor")
-                                    .setAttribute("aria-hidden", "true")
-                                    .new {
-                                        element("path")
-                                            .setAttribute("stroke-linecap", "round")
-                                            .setAttribute("stroke-linejoin", "round")
-                                            .setAttribute("stroke-width", "2")
-                                            .setAttribute("d", "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z")
-                                    }
+                                iconWarning().addClasses("text-red-600")
                             }
                             div().classes("mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left").new {
                                 element("h3")

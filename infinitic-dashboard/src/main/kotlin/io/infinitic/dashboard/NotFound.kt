@@ -42,14 +42,15 @@ object NotFound {
         div().classes("min-h-screen pt-16 pb-12 flex flex-col bg-white").new {
             element("main").classes("flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8").new {
                 div().classes("flex-shrink-0 flex justify-center").new {
-                    val a = a().setAttribute("href", "#")
-                    a.new {
-                        span().classes("sr-only").text("Infinitic")
-                        img().classes("h-12 w-auto")
-                            .setAttribute("src", "https://docs.infinitic.io/logo-light.svg")
-                            .setAttribute("alt", "Infinitic")
+                    with(a()) {
+                        href =  InfraPanel.url
+                        new {
+                            span().classes("sr-only").text("Infinitic")
+                            img().classes("h-12 w-auto")
+                                .setAttribute("src", "https://docs.infinitic.io/logo-light.svg")
+                                .setAttribute("alt", "Infinitic")
+                        }
                     }
-                    a.on.click { browser.routeTo(InfraPanel) }
                 }
                 div().classes("py-16").new {
                     div().classes("text-center").new {
@@ -60,13 +61,14 @@ object NotFound {
                         p().classes("mt-2 text-base text-gray-500")
                             .text("Sorry, we couldn’t find the page you’re looking for.")
                         div().classes("mt-6").new {
-                            val a = a().classes("text-base font-medium text-indigo-600 hover:text-indigo-500")
-                                .setAttribute("href", "#")
-                            a.new {
-                                span().text("Go back home")
-                                span().text("→").setAttribute("aria-hidden", "true")
+                            with(a()) {
+                                href = InfraPanel.url
+                                classes("text-base font-medium text-indigo-600 hover:text-indigo-500")
+                                new {
+                                    span().text("Go back home")
+                                    span().text("→").setAttribute("aria-hidden", "true")
+                                }
                             }
-                            a.on.click { browser.routeTo(InfraPanel) }
                         }
                     }
                 }
