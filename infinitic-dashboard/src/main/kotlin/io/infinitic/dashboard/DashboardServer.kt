@@ -131,8 +131,6 @@ class DashboardServer(
     }
 
     private fun ElementCreator<*>.display(panel: Panel) {
-        // entering hook
-        panel.onEnter()
         // selecting panel
         AppPanel.appState.selectPanel(panel)
         // rendering the app
@@ -143,14 +141,6 @@ class DashboardServer(
 }
 
 internal fun WebBrowser.routeTo(to: Panel) {
-    val from = AppPanel.appState.value.panel
-    // leaving / entering hook
-    if (from != to) {
-        from.onLeave()
-        to.onEnter()
-    }
-    // selecting panel - this will trigger a display update
-    AppPanel.appState.selectPanel(to)
     // update current url
     url.value = to.route
 }

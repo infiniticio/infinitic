@@ -56,7 +56,7 @@ sealed class MenuItem(val text: String, private val icon: ElementCreator<Element
             .setAttribute("href", "#")
             .classes(
                 AppPanel.appState.property(AppState::panel).map {
-                    when (it.menu) {
+                    when (it?.menu) {
                         this@MenuItem -> selectedNavStyle
                         else -> unselectedNavStyle
                     } + if (offCanvas) "text-base" else "text-sm"
@@ -70,7 +70,7 @@ sealed class MenuItem(val text: String, private val icon: ElementCreator<Element
         a.new {
             icon().classes(
                 AppPanel.appState.property(AppState::panel).map {
-                    when (it.menu) {
+                    when (it?.menu) {
                         this@MenuItem -> selectNavIconStyle
                         else -> unselectNavIconStyle
                     }

@@ -29,8 +29,9 @@ import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.cache.caffeine.CaffeineKeySetCache
 import io.infinitic.cache.no.NoCache
 import io.infinitic.common.storage.keySet.KeySetCache
+import io.infinitic.config.WorkerConfig
 
-fun StateCache.getKeySetCache(workerConfig: io.infinitic.config.WorkerConfig): KeySetCache<ByteArray> = when (this) {
+fun StateCache.getKeySetCache(workerConfig: WorkerConfig): KeySetCache<ByteArray> = when (this) {
     StateCache.none -> NoCache()
     StateCache.caffeine -> CaffeineKeySetCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
 }
