@@ -43,7 +43,7 @@ object NotFound {
             element("main").classes("flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8").new {
                 div().classes("flex-shrink-0 flex justify-center").new {
                     with(a()) {
-                        href =  InfraPanel.url
+                        href = InfraPanel.url
                         new {
                             span().classes("sr-only").text("Infinitic")
                             img().classes("h-12 w-auto")
