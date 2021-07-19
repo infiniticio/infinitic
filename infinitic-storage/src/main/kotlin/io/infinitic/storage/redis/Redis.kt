@@ -25,6 +25,7 @@
 
 package io.infinitic.storage.redis
 
+import com.sksamuel.hoplite.Masked
 import redis.clients.jedis.Protocol
 
 data class Redis(
@@ -32,7 +33,7 @@ data class Redis(
     @JvmField var port: Int = Protocol.DEFAULT_PORT,
     @JvmField var timeout: Int = Protocol.DEFAULT_TIMEOUT,
     @JvmField var user: String? = null,
-    @JvmField var password: String? = null,
+    @JvmField var password: Masked? = null,
     @JvmField var database: Int = Protocol.DEFAULT_DATABASE,
     @JvmField var ssl: Boolean = false
 )
