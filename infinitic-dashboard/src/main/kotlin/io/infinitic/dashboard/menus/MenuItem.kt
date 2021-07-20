@@ -28,14 +28,13 @@ package io.infinitic.dashboard.menus
 import io.infinitic.dashboard.AppPanel
 import io.infinitic.dashboard.AppState
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.routeTo
 import kweb.Element
 import kweb.ElementCreator
 import kweb.a
 import kweb.new
 import kweb.state.property
 
-sealed class MenuItem(val text: String, private val icon: ElementCreator<Element>.() -> Element) {
+sealed class MenuItem(val title: String, private val icon: ElementCreator<Element>.() -> Element) {
     abstract var current: Panel
 
     companion object {
@@ -52,31 +51,27 @@ sealed class MenuItem(val text: String, private val icon: ElementCreator<Element
 
     fun render(creator: ElementCreator<Element>, offCanvas: Boolean = false) = with(creator) {
 
-        val a = a()
-            .setAttribute("href", "#")
-            .classes(
+        with(a()) {
+            href = current.url
+            classes(
                 AppPanel.appState.property(AppState::panel).map {
-                    when (it.menu) {
+                    when (it?.menu) {
                         this@MenuItem -> selectedNavStyle
                         else -> unselectedNavStyle
                     } + if (offCanvas) "text-base" else "text-sm"
                 }
             )
-
-        a.on.click {
-            browser.routeTo(current)
-        }
-
-        a.new {
-            icon().classes(
-                AppPanel.appState.property(AppState::panel).map {
-                    when (it.menu) {
-                        this@MenuItem -> selectNavIconStyle
-                        else -> unselectNavIconStyle
+            new {
+                icon().classes(
+                    AppPanel.appState.property(AppState::panel).map {
+                        when (it?.menu) {
+                            this@MenuItem -> selectNavIconStyle
+                            else -> unselectNavIconStyle
+                        }
                     }
-                }
-            )
+                )
+            }
+            addText(title)
         }
-        a.addText(text)
     }
 }

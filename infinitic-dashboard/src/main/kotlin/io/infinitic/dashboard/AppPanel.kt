@@ -49,7 +49,7 @@ object AppPanel {
     fun render(creator: ElementCreator<Element>): Unit = with(creator) {
 
         val showMobileMenu: KVar<Boolean> = appState.property(AppState::showMobileMenu)
-        val panel: KVar<Panel> = appState.property(AppState::panel)
+        val panel: KVar<Panel?> = appState.property(AppState::panel)
 
         div().classes("h-screen flex overflow-hidden bg-gray-100").new {
             // offCanvas menu
@@ -124,7 +124,7 @@ object AppPanel {
                 }
                 // right-panel content
                 element("main").classes("flex-1 relative z-0 overflow-y-auto focus:outline-none").new {
-                    this.render(panel) { it.render(this) }
+                    this.render(panel) { it?.render(this) }
                 }
             }
         }

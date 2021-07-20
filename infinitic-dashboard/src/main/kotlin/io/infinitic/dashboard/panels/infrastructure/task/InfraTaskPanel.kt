@@ -34,7 +34,6 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
 import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
 import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
-import io.infinitic.dashboard.routeTo
 import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicSet
 import kotlinx.coroutines.GlobalScope
@@ -67,7 +66,7 @@ class InfraTaskPanel private constructor(private val taskName: String) : Panel()
 
     override val menu = InfraMenu
 
-    override val route = "/infra/t/$taskName"
+    override val url = "/infra/t/$taskName"
 
     private val state = KVar(InfraTaskState(taskName))
 
@@ -113,12 +112,11 @@ class InfraTaskPanel private constructor(private val taskName: String) : Panel()
                             ol().classes("flex items-center space-x-4").setAttribute("role", "list").new {
                                 li {
                                     div().classes("flex items-center").new {
-                                        val a = a().classes("text-sm font-medium text-gray-500 hover:text-gray-700")
-                                            .setAttribute("href", "#")
-                                            .setAttribute("aria-current", "page")
-                                        a.text(InfraMenu.text)
-                                        a.on.click {
-                                            browser.routeTo(InfraPanel)
+                                        with(a()) {
+                                            classes("text-sm font-medium text-gray-500 hover:text-gray-700")
+                                            setAttribute("aria-current", InfraMenu.title)
+                                            text(InfraMenu.title)
+                                            href = InfraPanel.url
                                         }
                                         span().classes("sr-only").text("Infrastructure")
                                     }

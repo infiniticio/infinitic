@@ -25,11 +25,10 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import kweb.state.KVar
 
 data class AppState(
-    val panel: Panel = WorkflowsPanel,
+    val panel: Panel? = null,
     val showMobileMenu: Boolean = false,
 )
 
@@ -37,8 +36,13 @@ fun KVar<AppState>.toggleMobileMenu() {
     value = value.copy(showMobileMenu = ! value.showMobileMenu)
 }
 
-fun KVar<AppState>.selectPanel(panel: Panel) {
-    if (value.panel != panel) {
-        value = value.copy(panel = panel)
+fun KVar<AppState>.selectPanel(to: Panel) {
+    val from = value.panel
+
+    if (from != to) {
+        // leaving / entering hook
+        from?.onLeave()
+        to.onEnter()
+        value = value.copy(panel = to)
     }
 }

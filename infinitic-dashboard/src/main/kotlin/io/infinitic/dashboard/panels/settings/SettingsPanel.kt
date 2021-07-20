@@ -35,7 +35,7 @@ import kweb.new
 
 object SettingsPanel : Panel() {
     override val menu = SettingsMenu
-    override val route = "/settings"
+    override val url = "/settings"
 
     override fun render(creator: ElementCreator<Element>): Unit = with(creator) {
         div().classes("py-6").new {

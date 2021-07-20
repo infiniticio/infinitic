@@ -47,7 +47,7 @@ fun getPool(config: Redis) = getPool(
     port = config.port,
     timeout = config.timeout,
     user = config.user,
-    password = config.password,
+    password = config.password?.value,
     database = config.database,
     ssl = config.ssl
 )
