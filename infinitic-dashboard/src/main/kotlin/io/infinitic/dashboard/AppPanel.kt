@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.dashboard.icons.iconHamburger
+import io.infinitic.dashboard.svgs.icons.iconHamburger
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.menus.logo
 import io.infinitic.dashboard.menus.offCanvasMenuCloseButton

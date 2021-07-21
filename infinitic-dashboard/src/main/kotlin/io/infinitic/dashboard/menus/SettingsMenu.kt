@@ -26,7 +26,7 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconSettings
+import io.infinitic.dashboard.svgs.icons.iconSettings
 import io.infinitic.dashboard.panels.settings.SettingsPanel
 
 object SettingsMenu : MenuItem("Settings", { iconSettings() }) {

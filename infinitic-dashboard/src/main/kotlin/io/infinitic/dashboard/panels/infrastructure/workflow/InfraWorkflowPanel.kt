@@ -26,7 +26,7 @@
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconChevron
+import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.InfraPanel
 import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState

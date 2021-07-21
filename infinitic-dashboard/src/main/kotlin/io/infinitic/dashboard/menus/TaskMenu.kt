@@ -26,7 +26,7 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconTask
+import io.infinitic.dashboard.svgs.icons.iconTask
 import io.infinitic.dashboard.panels.tasks.TasksPanel
 
 object TaskMenu : MenuItem("Tasks", { iconTask() }) {

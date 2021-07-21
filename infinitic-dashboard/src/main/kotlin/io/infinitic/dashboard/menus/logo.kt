@@ -25,6 +25,7 @@
 
 package io.infinitic.dashboard.menus
 
+import io.infinitic.dashboard.svgs.logo.infiniticLight
 import kotlinx.serialization.json.JsonPrimitive
 import kweb.Element
 import kweb.ElementCreator
@@ -34,12 +35,13 @@ import kweb.new
 
 fun ElementCreator<Element>.logo() {
     div().classes("flex-shrink-0 px-4 flex items-center").new {
-        img(
-            mapOf(
-                "class" to JsonPrimitive("h-10 w-auto"),
-                "src" to JsonPrimitive("https://docs.infinitic.io/logo-light.svg"),
-                "alt" to JsonPrimitive("Infinitic")
-            )
-        )
+        infiniticLight().classes("h-10 w-auto")
+//        img(
+//            mapOf(w
+//                "class" to JsonPrimitive("h-10 w-auto"),
+//                "src" to JsonPrimitive("https://docs.infinitic.io/logo-light.svg"),
+//                "alt" to JsonPrimitive("Infinitic")
+//            )
+//        )
     }
 }

@@ -26,7 +26,7 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconPulsar
+import io.infinitic.dashboard.svgs.icons.iconPulsar
 import io.infinitic.dashboard.panels.infrastructure.InfraPanel
 
 object InfraMenu : MenuItem("Workers & Topics", { iconPulsar() }) {

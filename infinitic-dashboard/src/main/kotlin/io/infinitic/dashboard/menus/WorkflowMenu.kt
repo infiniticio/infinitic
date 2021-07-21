@@ -26,7 +26,7 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconWorkflow
+import io.infinitic.dashboard.svgs.icons.iconWorkflow
 import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 
 object WorkflowMenu : MenuItem("Workflows", { iconWorkflow() }) {
