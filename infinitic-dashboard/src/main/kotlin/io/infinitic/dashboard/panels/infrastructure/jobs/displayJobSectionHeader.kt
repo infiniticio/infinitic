@@ -25,8 +25,8 @@
 
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
-import io.infinitic.dashboard.svgs.icons.iconRefresh
 import io.infinitic.dashboard.panels.infrastructure.lastUpdated
+import io.infinitic.dashboard.svgs.icons.iconRefresh
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div

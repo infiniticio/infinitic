@@ -25,12 +25,12 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.dashboard.svgs.icons.iconHamburger
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.menus.logo
 import io.infinitic.dashboard.menus.offCanvasMenuCloseButton
 import io.infinitic.dashboard.menus.offCanvasMenuOverlay
 import io.infinitic.dashboard.menus.profile
+import io.infinitic.dashboard.svgs.icons.iconHamburger
 import kweb.Element
 import kweb.ElementCreator
 import kweb.button

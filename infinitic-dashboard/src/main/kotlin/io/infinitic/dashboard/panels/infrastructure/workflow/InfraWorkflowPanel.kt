@@ -26,7 +26,6 @@
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.InfraPanel
 import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
@@ -35,6 +34,7 @@ import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
 import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
 import io.infinitic.dashboard.panels.infrastructure.jobs.update
 import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
+import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.pulsar.topics.TopicSet
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.topics.WorkflowTopic

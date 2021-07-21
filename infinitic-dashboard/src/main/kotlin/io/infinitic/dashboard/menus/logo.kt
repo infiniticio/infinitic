@@ -26,11 +26,9 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.svgs.logo.infiniticLight
-import kotlinx.serialization.json.JsonPrimitive
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
-import kweb.img
 import kweb.new
 
 fun ElementCreator<Element>.logo() {
