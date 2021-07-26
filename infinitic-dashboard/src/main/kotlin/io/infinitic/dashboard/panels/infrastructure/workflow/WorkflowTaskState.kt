@@ -23,18 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.requests
+package io.infinitic.dashboard.panels.infrastructure.workflow
 
+import io.infinitic.dashboard.Infinitic.topicName
+import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
+import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import java.time.Instant
 
-data class JobNames(
-    val request: Request<Set<String>> = Loading(),
-    val lastUpdated: Instant = Instant.now()
-) {
-    val text: String
-        get() = when (request) {
-            is Loading -> "Loading..."
-            is Failed -> request.error.stackTraceToString()
-            is Completed -> request.result.joinToString()
-        }
+data class WorkflowTaskState(
+    override val name: String,
+    override val topicsStats: TopicsStats<WorkflowTaskTopic> = WorkflowTaskTopic.values().associateWith { Loading() },
+    val isLoading: Boolean = isLoading(topicsStats),
+    val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
+) : JobState<WorkflowTaskTopic>(name, topicsStats) {
+    override fun create(name: String, topicsStats: TopicsStats<WorkflowTaskTopic>) =
+        WorkflowTaskState(name = name, topicsStats = topicsStats)
+
+    override fun getTopic(type: WorkflowTaskTopic) = topicName.of(type, name)
 }

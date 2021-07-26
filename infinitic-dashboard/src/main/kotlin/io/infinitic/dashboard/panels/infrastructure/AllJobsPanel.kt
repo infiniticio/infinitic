@@ -30,10 +30,10 @@ import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
-import io.infinitic.dashboard.panels.infrastructure.requests.JobNames
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.dashboard.panels.infrastructure.task.InfraTaskPanel
-import io.infinitic.dashboard.panels.infrastructure.workflow.InfraWorkflowPanel
+import io.infinitic.dashboard.panels.infrastructure.requests.Request
+import io.infinitic.dashboard.panels.infrastructure.task.TaskPanel
+import io.infinitic.dashboard.panels.infrastructure.workflow.WorkflowPanel
 import io.infinitic.dashboard.routeTo
 import io.infinitic.dashboard.slideovers.Slideover
 import kotlinx.coroutines.GlobalScope
@@ -61,34 +61,40 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.Date
 
-object InfraPanel : Panel() {
+object AllJobsPanel : Panel() {
     override val menu = InfraMenu
     override val url = "/infra"
 
     lateinit var job: Job
 
-    private val infraTasksState = KVar(InfraTasksState())
-    private val infraWorkflowsState = KVar(InfraWorkflowsState())
+    private val infraTasksState = KVar(AllTasksState())
+    private val infraWorkflowsState = KVar(AllWorkflowsState())
 
-    private var selectionType = InfraType.TASK
+    private var selectionType = JobType.TASK
     private val selectionTitle = KVal("Error!")
-    private val selectionNames = KVar(JobNames())
+    private val selectionNames: KVar<Request<Set<String>>> = KVar(Loading())
 
     private val slideover = Slideover(selectionTitle, selectionNames) {
         p().classes("text-sm font-medium text-gray-900").text(lastUpdated(it.value.lastUpdated))
         p().classes("mt-7 text-sm text-gray-500").new {
-            element("pre").text(it.value.text)
+            element("pre").text(
+                when (val request = it.value) {
+                    is Loading -> "Loading..."
+                    is Failed -> request.error.stackTraceToString()
+                    is Completed -> request.result.joinToString()
+                }
+            )
         }
     }
 
     init {
         // this listener ensures that the slideover appear/disappear with right content
         infraTasksState.addListener { old, new ->
-            if (selectionType == InfraType.TASK) {
-                when (new.taskNames.request) {
+            if (selectionType == JobType.TASK) {
+                when (new.names) {
                     is Failed -> {
-                        selectionNames.value = new.taskNames
-                        if (old.taskNames.request !is Failed) {
+                        selectionNames.value = new.names
+                        if (old.names !is Failed) {
                             slideover.open()
                         }
                     }
@@ -99,11 +105,11 @@ object InfraPanel : Panel() {
 
         // this listener ensures that the slideover appear/disappear with right content
         infraWorkflowsState.addListener { old, new ->
-            if (selectionType == InfraType.WORKFLOW) {
-                when (new.workflowNames.request) {
+            if (selectionType == JobType.WORKFLOW) {
+                when (new.names) {
                     is Failed -> {
-                        selectionNames.value = new.workflowNames
-                        if (old.workflowNames.request !is Failed) {
+                        selectionNames.value = new.names
+                        if (old.names !is Failed) {
                             slideover.open()
                         }
                     }
@@ -117,11 +123,11 @@ object InfraPanel : Panel() {
         if (! this::job.isInitialized || job.isCancelled) {
             job = GlobalScope.launch {
                 // update of task names every 30 seconds
-                infraTasksState.update(this)
+                update(infraTasksState)
                 // shift the updates
                 delay(2000)
                 // update of workflow names every 30 seconds
-                infraWorkflowsState.update(this)
+                update(infraWorkflowsState)
             }
         }
     }
@@ -148,12 +154,13 @@ object InfraPanel : Panel() {
         }
 
         // WORKFLOWS
-        val workflowsLastUpdated = infraWorkflowsState.property(InfraWorkflowsState::lastUpdated)
+        val workflowsLastUpdated = infraWorkflowsState.property(AllWorkflowsState::lastUpdatedAt)
+        val workflowsIsLoading = infraWorkflowsState.property(AllWorkflowsState::isLoading)
 
         div().classes("pt-8 pb-8").new {
             div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
                 // Workflows header
-                displayJobSectionHeader("Workflows", workflowsLastUpdated)
+                displayJobSectionHeader("Workflows", workflowsIsLoading, workflowsLastUpdated)
 
                 p().classes("mt-7 text-sm text-gray-500").text(
                     """
@@ -188,14 +195,14 @@ object InfraPanel : Panel() {
                                                         }
                                                     }
                                                     tbody().new {
-                                                        when (val request = state.workflowNames.request) {
+                                                        when (val request = state.names) {
                                                             is Loading -> displayNamesLoading()
-                                                            is Failed -> displayNamesError(state.workflowNames, InfraType.WORKFLOW)
+                                                            is Failed -> displayNamesError(state.names, JobType.WORKFLOW)
                                                             is Completed -> request.result.forEach {
-                                                                when (val request = state.workflowStats[it]!!.request) {
-                                                                    is Loading -> displayExecutorLoading(it, InfraType.WORKFLOW)
-                                                                    is Failed -> displayExecutorError(it, InfraType.WORKFLOW)
-                                                                    is Completed -> displayExecutorStats(it, request.result, InfraType.WORKFLOW)
+                                                                when (val request = state.stats[it]!!) {
+                                                                    is Loading -> displayExecutorLoading(it, JobType.WORKFLOW)
+                                                                    is Failed -> displayExecutorError(it, JobType.WORKFLOW)
+                                                                    is Completed -> displayExecutorStats(it, request.result, JobType.WORKFLOW)
                                                                 }
                                                             }
                                                         }
@@ -213,12 +220,13 @@ object InfraPanel : Panel() {
         }
 
         // TASKS
-        val tasksLastUpdated = infraTasksState.property(InfraTasksState::lastUpdated)
+        val tasksLastUpdated = infraTasksState.property(AllTasksState::lastUpdatedAt)
+        val tasksIsLoading = infraTasksState.property(AllTasksState::isLoading)
 
         div().classes("pt-8 pb-8").new {
             div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
                 // Tasks header
-                displayJobSectionHeader("Tasks", tasksLastUpdated)
+                displayJobSectionHeader("Tasks", tasksIsLoading, tasksLastUpdated)
 
                 p().classes("mt-7 text-sm text-gray-500").text(
                     """
@@ -253,14 +261,14 @@ object InfraPanel : Panel() {
                                                         }
                                                     }
                                                     tbody().new {
-                                                        when (val request = state.taskNames.request) {
+                                                        when (val request = state.names) {
                                                             is Loading -> displayNamesLoading()
-                                                            is Failed -> displayNamesError(state.taskNames, InfraType.TASK)
+                                                            is Failed -> displayNamesError(state.names, JobType.TASK)
                                                             is Completed -> request.result.forEach {
-                                                                when (val request = state.taskStats[it]!!.request) {
-                                                                    is Loading -> displayExecutorLoading(it, InfraType.TASK)
-                                                                    is Failed -> displayExecutorError(it, InfraType.TASK)
-                                                                    is Completed -> displayExecutorStats(it, request.result, InfraType.TASK)
+                                                                when (val request = state.stats[it]!!) {
+                                                                    is Loading -> displayExecutorLoading(it, JobType.TASK)
+                                                                    is Failed -> displayExecutorError(it, JobType.TASK)
+                                                                    is Completed -> displayExecutorStats(it, request.result, JobType.TASK)
                                                                 }
                                                             }
                                                         }
@@ -287,7 +295,7 @@ object InfraPanel : Panel() {
         }
     }
 
-    private fun ElementCreator<Element>.displayNamesError(names: JobNames, type: InfraType) {
+    private fun ElementCreator<Element>.displayNamesError(names: Request<Set<String>>, type: JobType) {
         val row = tr()
         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
             td().setAttribute("colspan", "4").classes("px-6 py-4 text-sm font-medium text-gray-900")
@@ -301,7 +309,7 @@ object InfraPanel : Panel() {
         }
     }
 
-    private fun ElementCreator<Element>.displayExecutorLoading(name: String, type: InfraType) {
+    private fun ElementCreator<Element>.displayExecutorLoading(name: String, type: JobType) {
         val row = tr()
         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
@@ -315,13 +323,13 @@ object InfraPanel : Panel() {
         }
         row.on.click {
             when (type) {
-                InfraType.TASK -> browser.routeTo(InfraTaskPanel.from(name))
-                InfraType.WORKFLOW -> browser.routeTo(InfraWorkflowPanel.from(name))
+                JobType.TASK -> browser.routeTo(TaskPanel.from(name))
+                JobType.WORKFLOW -> browser.routeTo(WorkflowPanel.from(name))
             }
         }
     }
 
-    private fun ElementCreator<Element>.displayExecutorError(name: String, type: InfraType) {
+    private fun ElementCreator<Element>.displayExecutorError(name: String, type: JobType) {
         val row = tr()
         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
@@ -335,12 +343,12 @@ object InfraPanel : Panel() {
         }
         row.on.click {
             when (type) {
-                InfraType.TASK -> browser.routeTo(InfraTaskPanel.from(name))
-                InfraType.WORKFLOW -> browser.routeTo(InfraWorkflowPanel.from(name))
+                JobType.TASK -> browser.routeTo(TaskPanel.from(name))
+                JobType.WORKFLOW -> browser.routeTo(WorkflowPanel.from(name))
             }
         }
     }
-    private fun ElementCreator<Element>.displayExecutorStats(name: String, stats: PartitionedTopicStats, type: InfraType) {
+    private fun ElementCreator<Element>.displayExecutorStats(name: String, stats: PartitionedTopicStats, type: JobType) {
         stats.subscriptions.map {
             val row = tr()
             row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
@@ -355,8 +363,8 @@ object InfraPanel : Panel() {
             }
             row.on.click {
                 when (type) {
-                    InfraType.TASK -> browser.routeTo(InfraTaskPanel.from(name))
-                    InfraType.WORKFLOW -> browser.routeTo(InfraWorkflowPanel.from(name))
+                    JobType.TASK -> browser.routeTo(TaskPanel.from(name))
+                    JobType.WORKFLOW -> browser.routeTo(WorkflowPanel.from(name))
                 }
             }
         }

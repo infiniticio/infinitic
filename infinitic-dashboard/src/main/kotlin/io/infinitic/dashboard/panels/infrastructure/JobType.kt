@@ -23,20 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.workflow
+package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
-import io.infinitic.pulsar.topics.WorkflowTopic
-import java.time.Instant
-
-data class InfraWorkflowState(
-    override val name: String,
-    override val topicsStats: Map<WorkflowTopic, TopicStats> =
-        WorkflowTopic.values().map { it }.associateWith { TopicStats(topicName.of(it, name)) },
-    override val lastUpdated: Instant = Instant.now()
-) : InfraJobState<WorkflowTopic> {
-    override fun create(name: String, topicsStats: Map<WorkflowTopic, TopicStats>, lastUpdated: Instant) =
-        InfraWorkflowState(name, topicsStats, lastUpdated)
+enum class JobType {
+    TASK,
+    WORKFLOW,
 }

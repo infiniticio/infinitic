@@ -23,24 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.workflow
+package io.infinitic.dashboard.panels.infrastructure.task
 
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
-import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
+import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
 import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
 import io.infinitic.dashboard.panels.infrastructure.jobs.update
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
+import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicSet
-import io.infinitic.pulsar.topics.WorkflowTaskTopic
-import io.infinitic.pulsar.topics.WorkflowTopic
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kweb.Element
 import kweb.ElementCreator
@@ -55,58 +53,47 @@ import kweb.p
 import kweb.span
 import kweb.state.KVar
 import kweb.state.property
-import java.time.Instant
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.util.concurrent.ConcurrentHashMap
 
-class InfraWorkflowPanel private constructor(private val workflowName: String) : Panel() {
-    companion object {
-        private val instances: ConcurrentHashMap<String, InfraWorkflowPanel> = ConcurrentHashMap()
+class TaskPanel private constructor(private val taskName: String) : Panel() {
 
-        fun from(workflowName: String) = instances.computeIfAbsent(workflowName) { InfraWorkflowPanel(workflowName) }
+    companion object {
+        const val template = "/infra/t/{name}"
+
+        private val instances: ConcurrentHashMap<String, TaskPanel> = ConcurrentHashMap()
+
+        fun from(taskName: String) = instances.computeIfAbsent(taskName) { TaskPanel(taskName) }
     }
 
     override val menu = InfraMenu
 
-    override val url = "/infra/w/$workflowName"
+    override val url = "/infra/t/$taskName"
 
-    private val workflowState = KVar(InfraWorkflowState(workflowName))
-    private val workflowLastUpdated = workflowState.property(InfraWorkflowState::lastUpdated)
+    private val state = KVar(TaskState(taskName))
 
-    private val workflowTaskState = KVar(InfraWorkflowTaskState(workflowName))
-    private val workflowTaskLastUpdated = workflowTaskState.property(InfraWorkflowTaskState::lastUpdated)
+    private val lastUpdated = state.property(TaskState::lastUpdatedAt)
+    private val isLoading = state.property(TaskState::isLoading)
 
-    private val selectionTopicType: KVar<TopicSet> = KVar(WorkflowTopic.ENGINE_NEW)
-    private val selectionTopicStats = KVar(TopicStats("Null"))
+    private val selectionTopicType: KVar<TopicSet> = KVar(TaskTopic.EXECUTORS)
+    private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
 
     lateinit var job: Job
 
     init {
-        // this listener ensures that the slideover appear/disappear with right content
-        workflowState.addListener { _, new ->
-            if (selectionTopicType.value is WorkflowTopic) {
-                selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
-            }
-        }
-
-        // this listener ensures that the slideover appear/disappear with right content
-        workflowTaskState.addListener { _, new ->
-            if (selectionTopicType.value is WorkflowTaskTopic) {
-                selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
-            }
+        // making sure slideover content is updated
+        state.addListener { _, new ->
+            selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
         }
     }
 
     override fun onEnter() {
         if (! this::job.isInitialized || job.isCancelled) {
             job = GlobalScope.launch {
-                // update of workflow task's topics every 30 seconds
-                update(workflowState)
-                // shift the updates
-                delay(2000)
-                // update of workflow's topics every 30 seconds
-                update(workflowTaskState)
+                // update of task names every 30 seconds
+                update(state)
             }
         }
     }
@@ -115,6 +102,7 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
         if (this::job.isInitialized) {
             job.cancel()
         }
+        selectionSlide.close()
     }
 
     override fun render(creator: ElementCreator<Element>): Unit = with(creator) {
@@ -132,9 +120,9 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
                                             classes("text-sm font-medium text-gray-500 hover:text-gray-700")
                                             setAttribute("aria-current", InfraMenu.title)
                                             text(InfraMenu.title)
-                                            href = InfraPanel.url
+                                            href = AllJobsPanel.url
                                         }
-                                        span().classes("sr-only").text(InfraMenu.title)
+                                        span().classes("sr-only").text("Infrastructure")
                                     }
                                 }
                                 li {
@@ -146,49 +134,24 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
                         }
                         // title
                         h2().classes("mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate")
-                            .text(workflowName)
+                            .text(taskName)
                     }
                 }
             }
         }
-
-        // WORKFLOW ENGINE
-        displayTopicSet(
-            "Workflow engine's topics",
-            "Here are the topics used by the workflow engine for this workflow.",
-            workflowLastUpdated,
-            workflowState
-        )
-
-        // WORKFLOW TASK
-        displayTopicSet(
-            "WorkflowTask's topics",
-            "Here are the topics used by the task engine for this workflowTask.",
-            workflowTaskLastUpdated,
-            workflowTaskState
-        )
-
-        // SELECTION SLIDE
-        selectionSlide.render(this)
-    }
-
-    private fun ElementCreator<Element>.displayTopicSet(
-        title: String,
-        text: String,
-        lastUpdated: KVar<Instant>,
-        state: KVar<out InfraJobState<out TopicSet>>
-
-    ) {
+        // TASK TOPICS
         div().classes("pt-8 pb-8").new {
             div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
-                displayJobSectionHeader(title, lastUpdated)
+                displayJobSectionHeader("Task's topics", isLoading, lastUpdated)
                 p().classes("mt-7 text-sm text-gray-500").new {
                     span()
-                        .text(text)
+                        .text("Here are the topics used for this task.")
                         .addText(" Click on a row to get more details on its real-time stats.")
                 }
-                displayJobStatsTable(workflowName, state, selectionSlide, selectionTopicType, selectionTopicStats)
+                displayJobStatsTable(taskName, state, selectionSlide, selectionTopicType, selectionTopicStats)
             }
         }
+
+        selectionSlide.render(this)
     }
 }

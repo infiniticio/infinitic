@@ -27,9 +27,9 @@ package io.infinitic.dashboard
 
 import io.infinitic.config.DashboardConfig
 import io.infinitic.dashboard.modals.Modal
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
-import io.infinitic.dashboard.panels.infrastructure.task.InfraTaskPanel
-import io.infinitic.dashboard.panels.infrastructure.workflow.InfraWorkflowPanel
+import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
+import io.infinitic.dashboard.panels.infrastructure.task.TaskPanel
+import io.infinitic.dashboard.panels.infrastructure.workflow.WorkflowPanel
 import io.infinitic.dashboard.panels.settings.SettingsPanel
 import io.infinitic.dashboard.panels.tasks.TasksPanel
 import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
@@ -107,20 +107,20 @@ class DashboardServer(
                     path(TasksPanel.url) {
                         display(TasksPanel)
                     }
-                    path(InfraPanel.url) {
-                        display(InfraPanel)
+                    path(AllJobsPanel.url) {
+                        display(AllJobsPanel)
                     }
                     path("/infra/t/{name}") {
-                        display(InfraTaskPanel.from(it.getValue("name").value))
+                        display(TaskPanel.from(it.getValue("name").value))
                     }
                     path("/infra/w/{name}") {
-                        display(InfraWorkflowPanel.from(it.getValue("name").value))
+                        display(WorkflowPanel.from(it.getValue("name").value))
                     }
                     path(SettingsPanel.url) {
                         display(SettingsPanel)
                     }
                     path("/") {
-                        url.value = InfraPanel.url
+                        url.value = AllJobsPanel.url
                     }
                     notFound {
                         NotFound.render(this)

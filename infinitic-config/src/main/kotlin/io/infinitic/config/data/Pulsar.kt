@@ -43,7 +43,7 @@ data class Pulsar(
         require(
             serviceHttpUrl.startsWith("http://") ||
                 serviceHttpUrl.startsWith("https://")
-        ) { "serviceUrl MUST start with http:// or https://" }
+        ) { "serviceHttpUrl MUST start with http:// or https://" }
         require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
         require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
     }

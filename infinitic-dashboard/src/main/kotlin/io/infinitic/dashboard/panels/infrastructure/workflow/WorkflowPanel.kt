@@ -23,21 +23,25 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.task
+package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
+import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
+import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
 import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
 import io.infinitic.dashboard.panels.infrastructure.jobs.update
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
-import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicSet
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.pulsar.topics.WorkflowTopic
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kweb.Element
 import kweb.ElementCreator
@@ -52,44 +56,61 @@ import kweb.p
 import kweb.span
 import kweb.state.KVar
 import kweb.state.property
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
-class InfraTaskPanel private constructor(private val taskName: String) : Panel() {
-
+class WorkflowPanel private constructor(private val workflowName: String) : Panel() {
     companion object {
-        const val template = "/infra/t/{name}"
+        private val instances: ConcurrentHashMap<String, WorkflowPanel> = ConcurrentHashMap()
 
-        private val instances: ConcurrentHashMap<String, InfraTaskPanel> = ConcurrentHashMap()
-
-        fun from(taskName: String) = instances.computeIfAbsent(taskName) { InfraTaskPanel(taskName) }
+        fun from(workflowName: String) = instances.computeIfAbsent(workflowName) { WorkflowPanel(workflowName) }
     }
 
     override val menu = InfraMenu
 
-    override val url = "/infra/t/$taskName"
+    override val url = "/infra/w/$workflowName"
 
-    private val state = KVar(InfraTaskState(taskName))
+    private val workflowState = KVar(WorkflowState(workflowName))
+    private val workflowIsLoading = workflowState.property(WorkflowState::isLoading)
+    private val workflowLastUpdated = workflowState.property(WorkflowState::lastUpdatedAt)
 
-    private val lastUpdated = state.property(InfraTaskState::lastUpdated)
-    private val selectionTopicType: KVar<TopicSet> = KVar(TaskTopic.EXECUTORS)
-    private val selectionTopicStats = KVar(TopicStats(""))
+    private val workflowTaskState = KVar(WorkflowTaskState(workflowName))
+    private val workflowTaskIsLoading = workflowTaskState.property(WorkflowTaskState::isLoading)
+    private val workflowTaskLastUpdated = workflowTaskState.property(WorkflowTaskState::lastUpdatedAt)
+
+    private val selectionTopicType: KVar<TopicSet> = KVar(WorkflowTopic.ENGINE_NEW)
+    private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
 
     lateinit var job: Job
 
     init {
-        // making sure slideover content is updated
-        state.addListener { _, new ->
-            selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
+        // this listener ensures that the slideover appear/disappear with right content
+        workflowState.addListener { _, new ->
+            if (selectionTopicType.value is WorkflowTopic) {
+                selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
+            }
+        }
+
+        // this listener ensures that the slideover appear/disappear with right content
+        workflowTaskState.addListener { _, new ->
+            if (selectionTopicType.value is WorkflowTaskTopic) {
+                selectionTopicStats.value = new.topicsStats[selectionTopicType.value]!!
+            }
         }
     }
 
     override fun onEnter() {
         if (! this::job.isInitialized || job.isCancelled) {
             job = GlobalScope.launch {
-                // update of task names every 30 seconds
-                update(state)
+                // update of workflow task's topics every 30 seconds
+                update(workflowState)
+                // shift the updates
+                delay(2000)
+                // update of workflow's topics every 30 seconds
+                update(workflowTaskState)
             }
         }
     }
@@ -98,7 +119,6 @@ class InfraTaskPanel private constructor(private val taskName: String) : Panel()
         if (this::job.isInitialized) {
             job.cancel()
         }
-        selectionSlide.close()
     }
 
     override fun render(creator: ElementCreator<Element>): Unit = with(creator) {
@@ -116,9 +136,9 @@ class InfraTaskPanel private constructor(private val taskName: String) : Panel()
                                             classes("text-sm font-medium text-gray-500 hover:text-gray-700")
                                             setAttribute("aria-current", InfraMenu.title)
                                             text(InfraMenu.title)
-                                            href = InfraPanel.url
+                                            href = AllJobsPanel.url
                                         }
-                                        span().classes("sr-only").text("Infrastructure")
+                                        span().classes("sr-only").text(InfraMenu.title)
                                     }
                                 }
                                 li {
@@ -130,24 +150,52 @@ class InfraTaskPanel private constructor(private val taskName: String) : Panel()
                         }
                         // title
                         h2().classes("mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate")
-                            .text(taskName)
+                            .text(workflowName)
                     }
                 }
             }
         }
-        // TASK TOPICS
+
+        // WORKFLOW ENGINE
+        displayTopicSet(
+            "Workflow engine's topics",
+            "Here are the topics used by the workflow engine for this workflow.",
+            workflowIsLoading,
+            workflowLastUpdated,
+            workflowState
+        )
+
+        // WORKFLOW TASK
+        displayTopicSet(
+            "WorkflowTask's topics",
+            "Here are the topics used by the task engine for this workflowTask.",
+            workflowTaskIsLoading,
+            workflowTaskLastUpdated,
+            workflowTaskState
+        )
+
+        // SELECTION SLIDE
+        selectionSlide.render(this)
+    }
+
+    private fun ElementCreator<Element>.displayTopicSet(
+        title: String,
+        text: String,
+        isLoading: KVar<Boolean>,
+        lastUpdated: KVar<Instant>,
+        state: KVar<out JobState<out TopicSet>>
+
+    ) {
         div().classes("pt-8 pb-8").new {
             div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
-                displayJobSectionHeader("Task's topics", lastUpdated)
+                displayJobSectionHeader(title, isLoading, lastUpdated)
                 p().classes("mt-7 text-sm text-gray-500").new {
                     span()
-                        .text("Here are the topics used for this task.")
+                        .text(text)
                         .addText(" Click on a row to get more details on its real-time stats.")
                 }
-                displayJobStatsTable(taskName, state, selectionSlide, selectionTopicType, selectionTopicStats)
+                displayJobStatsTable(workflowName, state, selectionSlide, selectionTopicType, selectionTopicStats)
             }
         }
-
-        selectionSlide.render(this)
     }
 }

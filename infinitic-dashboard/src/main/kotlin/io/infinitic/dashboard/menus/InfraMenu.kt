@@ -26,9 +26,9 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
+import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
 import io.infinitic.dashboard.svgs.icons.iconPulsar
 
 object InfraMenu : MenuItem("Workers & Topics", { iconPulsar() }) {
-    override var current: Panel = InfraPanel
+    override var current: Panel = AllJobsPanel
 }

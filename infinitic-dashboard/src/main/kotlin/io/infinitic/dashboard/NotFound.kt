@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
+import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
 import kweb.Element
 import kweb.ElementCreator
 import kweb.a
@@ -43,7 +43,7 @@ object NotFound {
             element("main").classes("flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8").new {
                 div().classes("flex-shrink-0 flex justify-center").new {
                     with(a()) {
-                        href = InfraPanel.url
+                        href = AllJobsPanel.url
                         new {
                             span().classes("sr-only").text("Infinitic")
                             img().classes("h-12 w-auto")
@@ -62,7 +62,7 @@ object NotFound {
                             .text("Sorry, we couldn’t find the page you’re looking for.")
                         div().classes("mt-6").new {
                             with(a()) {
-                                href = InfraPanel.url
+                                href = AllJobsPanel.url
                                 classes("text-base font-medium text-indigo-600 hover:text-indigo-500")
                                 new {
                                     span().text("Go back home")

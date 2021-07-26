@@ -29,7 +29,7 @@ import io.infinitic.dashboard.Infinitic
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
 import io.infinitic.pulsar.topics.TopicSet
 import kweb.Element
@@ -44,13 +44,14 @@ import kweb.td
 import kweb.th
 import kweb.thead
 import kweb.tr
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 internal fun ElementCreator<Element>.displayJobStatsTable(
     name: String,
-    state: KVar<out InfraJobState<out TopicSet>>,
+    state: KVar<out JobState<out TopicSet>>,
     selectionSlide: Slideover<*>,
     selectionType: KVar<TopicSet>,
-    selectionStats: KVar<TopicStats>
+    selectionStats: KVar<Request<PartitionedTopicStats>>
 ) {
     // Topics table
     div().classes("pt-5").new {
@@ -84,11 +85,11 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                         tbody().new {
                                             state.topicsStats.forEach {
                                                 val type = it.key
-                                                val stats = it.value
+                                                val request = it.value
                                                 val topic = Infinitic.topicName.of(type, name)
                                                 val row = tr()
 
-                                                when (val status = stats.request) {
+                                                when (request) {
                                                     is Loading ->
                                                         row.classes("bg-white").new {
                                                             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
@@ -108,11 +109,11 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                                                 .text(type.prefix)
                                                             td().classes("px-6 py-4 text-sm text-gray-500 text-center italic")
                                                                 .setAttribute("colspan", 3)
-                                                                .text(status.title)
+                                                                .text(request.title)
                                                             td().classes("px-6 py-4 text-sm text-gray-500")
                                                                 .text(topic)
                                                         }
-                                                    is Completed -> status.result.subscriptions.map {
+                                                    is Completed -> request.result.subscriptions.map {
                                                         row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                                                             td().classes("px-6 py-4 text-sm font-medium text-gray-900")
                                                                 .text(type.prefix)
@@ -127,11 +128,11 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                                                         }
                                                     }
                                                 }
-                                                if (stats.request !is Loading<*>) {
+                                                if (request !is Loading<*>) {
                                                     row.on.click {
                                                         if (selectionType.value != type) {
                                                             selectionType.value = type
-                                                            selectionStats.value = stats
+                                                            selectionStats.value = request
                                                         }
 
                                                         selectionSlide.open()

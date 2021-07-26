@@ -23,21 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.requests
+package io.infinitic.dashboard.panels.infrastructure.task
 
-import io.infinitic.common.serDe.json.Json
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import io.infinitic.dashboard.Infinitic.topicName
+import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
+import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.pulsar.topics.TaskTopic
 import java.time.Instant
 
-data class TopicStats(
-    val topic: String,
-    val request: Request<PartitionedTopicStats> = Loading(),
-    val lastUpdated: Instant = Instant.now()
-) {
-    val text: String
-        get() = when (request) {
-            is Loading -> "Loading..."
-            is Failed -> request.error.stackTraceToString()
-            is Completed -> Json.stringify(request.result, true)
-        }
+data class TaskState(
+    override val name: String,
+    override val topicsStats: TopicsStats<TaskTopic> = TaskTopic.values().associateWith { Loading() },
+    val isLoading: Boolean = isLoading(topicsStats),
+    val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
+) : JobState<TaskTopic>(name, topicsStats) {
+    override fun create(name: String, topicsStats: TopicsStats<TaskTopic>) =
+        TaskState(name = name, topicsStats = topicsStats)
+
+    override fun getTopic(type: TaskTopic) = topicName.of(type, name)
 }
