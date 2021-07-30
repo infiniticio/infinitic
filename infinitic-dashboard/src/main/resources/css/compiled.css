@@ -861,6 +861,10 @@ select {
   height: 3rem;
 }
 
+.h-44 {
+  height: 11rem;
+}
+
 .h-96 {
   height: 24rem;
 }
@@ -1566,6 +1570,11 @@ select {
     -webkit-animation-timing-function: cubic-bezier(0,0,0.2,1);
             animation-timing-function: cubic-bezier(0,0,0.2,1);
   }
+}
+
+.animate-spin {
+  -webkit-animation: spin 1s linear infinite;
+          animation: spin 1s linear infinite;
 }
 
 @media (min-width: 640px) {

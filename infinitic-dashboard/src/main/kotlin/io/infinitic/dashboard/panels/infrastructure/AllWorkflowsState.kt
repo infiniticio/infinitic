@@ -23,12 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.menus
+package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.panels.tasks.TasksPanel
-import io.infinitic.dashboard.svgs.icons.iconTask
+import io.infinitic.dashboard.Infinitic
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.time.Instant
 
-object TaskMenu : MenuItem("Tasks", { iconTask() }) {
-    override var current: Panel = TasksPanel
+data class AllWorkflowsState(
+    override val names: JobNames = Loading(),
+    override val stats: JobStats = mapOf(),
+    val isLoading: Boolean = isLoading(names, stats),
+    val lastUpdatedAt: Instant = lastUpdatedAt(names, stats)
+) : AllJobsState(names, stats) {
+
+    override fun create(names: JobNames, stats: JobStats) =
+        AllWorkflowsState(names = names, stats = stats)
+
+    override fun getNames() = Infinitic.admin.workflows
+
+    override fun getPartitionedStats(name: String): PartitionedTopicStats {
+        val topic = Infinitic.topicName.of(WorkflowTaskTopic.EXECUTORS, name)
+
+        return Infinitic.topics.getPartitionedStats(topic, true, true, true)
+    }
 }

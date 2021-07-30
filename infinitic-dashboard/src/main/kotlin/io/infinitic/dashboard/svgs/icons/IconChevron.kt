@@ -23,18 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.requests
+package io.infinitic.dashboard.svgs.icons
 
-import java.time.Instant
+import io.infinitic.dashboard.svgs.path
+import io.infinitic.dashboard.svgs.svg
+import kweb.Element
+import kweb.ElementCreator
+import kweb.new
 
-data class JobNames(
-    val request: Request<Set<String>> = Loading(),
-    val lastUpdated: Instant = Instant.now()
-) {
-    val text: String
-        get() = when (request) {
-            is Loading -> "Loading..."
-            is Failed -> request.error.stackTraceToString()
-            is Completed -> request.result.joinToString()
+fun ElementCreator<Element>.iconChevron(): Element {
+    val svg = svg()
+    svg
+        .setClasses("h-6 w-6")
+        .setAttribute("fill", "none")
+        .setAttribute("viewBox", "0 0 24 24")
+        .setAttribute("stroke", "currentColor")
+        .new {
+            path()
+                .setAttribute("stroke-linecap", "round")
+                .setAttribute("stroke-linejoin", "round")
+                .setAttribute("stroke-width", "2")
+                .setAttribute("d", "M9 5l7 7-7 7")
         }
+
+    return svg
 }

@@ -26,15 +26,16 @@
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconChevron
 import io.infinitic.dashboard.menus.InfraMenu
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
-import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
+import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
+import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
 import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
 import io.infinitic.dashboard.panels.infrastructure.jobs.update
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.dashboard.panels.infrastructure.requests.Request
+import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.pulsar.topics.TopicSet
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.topics.WorkflowTopic
@@ -55,28 +56,31 @@ import kweb.p
 import kweb.span
 import kweb.state.KVar
 import kweb.state.property
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
-class InfraWorkflowPanel private constructor(private val workflowName: String) : Panel() {
+class WorkflowPanel private constructor(private val workflowName: String) : Panel() {
     companion object {
-        private val instances: ConcurrentHashMap<String, InfraWorkflowPanel> = ConcurrentHashMap()
+        private val instances: ConcurrentHashMap<String, WorkflowPanel> = ConcurrentHashMap()
 
-        fun from(workflowName: String) = instances.computeIfAbsent(workflowName) { InfraWorkflowPanel(workflowName) }
+        fun from(workflowName: String) = instances.computeIfAbsent(workflowName) { WorkflowPanel(workflowName) }
     }
 
     override val menu = InfraMenu
 
     override val url = "/infra/w/$workflowName"
 
-    private val workflowState = KVar(InfraWorkflowState(workflowName))
-    private val workflowLastUpdated = workflowState.property(InfraWorkflowState::lastUpdated)
+    private val workflowState = KVar(WorkflowState(workflowName))
+    private val workflowIsLoading = workflowState.property(WorkflowState::isLoading)
+    private val workflowLastUpdated = workflowState.property(WorkflowState::lastUpdatedAt)
 
-    private val workflowTaskState = KVar(InfraWorkflowTaskState(workflowName))
-    private val workflowTaskLastUpdated = workflowTaskState.property(InfraWorkflowTaskState::lastUpdated)
+    private val workflowTaskState = KVar(WorkflowTaskState(workflowName))
+    private val workflowTaskIsLoading = workflowTaskState.property(WorkflowTaskState::isLoading)
+    private val workflowTaskLastUpdated = workflowTaskState.property(WorkflowTaskState::lastUpdatedAt)
 
     private val selectionTopicType: KVar<TopicSet> = KVar(WorkflowTopic.ENGINE_NEW)
-    private val selectionTopicStats = KVar(TopicStats("Null"))
+    private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
 
@@ -132,7 +136,7 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
                                             classes("text-sm font-medium text-gray-500 hover:text-gray-700")
                                             setAttribute("aria-current", InfraMenu.title)
                                             text(InfraMenu.title)
-                                            href = InfraPanel.url
+                                            href = AllJobsPanel.url
                                         }
                                         span().classes("sr-only").text(InfraMenu.title)
                                     }
@@ -156,6 +160,7 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
         displayTopicSet(
             "Workflow engine's topics",
             "Here are the topics used by the workflow engine for this workflow.",
+            workflowIsLoading,
             workflowLastUpdated,
             workflowState
         )
@@ -164,6 +169,7 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
         displayTopicSet(
             "WorkflowTask's topics",
             "Here are the topics used by the task engine for this workflowTask.",
+            workflowTaskIsLoading,
             workflowTaskLastUpdated,
             workflowTaskState
         )
@@ -175,13 +181,14 @@ class InfraWorkflowPanel private constructor(private val workflowName: String) :
     private fun ElementCreator<Element>.displayTopicSet(
         title: String,
         text: String,
+        isLoading: KVar<Boolean>,
         lastUpdated: KVar<Instant>,
-        state: KVar<out InfraJobState<out TopicSet>>
+        state: KVar<out JobState<out TopicSet>>
 
     ) {
         div().classes("pt-8 pb-8").new {
             div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
-                displayJobSectionHeader(title, lastUpdated)
+                displayJobSectionHeader(title, isLoading, lastUpdated)
                 p().classes("mt-7 text-sm text-gray-500").new {
                     span()
                         .text(text)

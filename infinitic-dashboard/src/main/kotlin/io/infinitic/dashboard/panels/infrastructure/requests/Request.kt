@@ -26,14 +26,36 @@
 package io.infinitic.dashboard.panels.infrastructure.requests
 
 import org.apache.pulsar.client.admin.PulsarAdminException
+import java.time.Instant
 
-sealed class Request<T>
+sealed class Request<T> {
+    abstract val isLoading: Boolean
+    abstract val lastUpdated: Instant
+    abstract fun copyLoading(): Request<T>
+}
 
-class Loading<T> : Request<T>()
+data class Loading<T>(
+    override val lastUpdated: Instant = Instant.now()
+) : Request<T>() {
+    override val isLoading = true
+    override fun copyLoading() = copy()
+}
 
-class Completed<T>(val result: T) : Request<T>()
+data class Completed<T>(
+    val result: T,
+    override val isLoading: Boolean = false,
+    override val lastUpdated: Instant = Instant.now()
+) : Request<T>() {
+    override fun copyLoading() = copy(isLoading = true)
+}
 
-class Failed<T>(val error: Exception) : Request<T>() {
+data class Failed<T>(
+    val error: Exception,
+    override val isLoading: Boolean = false,
+    override val lastUpdated: Instant = Instant.now()
+) : Request<T>() {
+    override fun copyLoading() = copy(isLoading = true)
+
     val title: String
         get() = when (error) {
             is PulsarAdminException.NotFoundException -> "not found!"

@@ -26,7 +26,7 @@
 package io.infinitic.dashboard.menus
 
 import io.infinitic.dashboard.AppPanel
-import io.infinitic.dashboard.icons.iconClose
+import io.infinitic.dashboard.svgs.icons.iconClose
 import io.infinitic.dashboard.toggleMobileMenu
 import kweb.Element
 import kweb.ElementCreator

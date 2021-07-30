@@ -23,12 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.menus
+package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.panels.tasks.TasksPanel
-import io.infinitic.dashboard.svgs.icons.iconTask
-
-object TaskMenu : MenuItem("Tasks", { iconTask() }) {
-    override var current: Panel = TasksPanel
+enum class JobType {
+    TASK,
+    WORKFLOW,
 }

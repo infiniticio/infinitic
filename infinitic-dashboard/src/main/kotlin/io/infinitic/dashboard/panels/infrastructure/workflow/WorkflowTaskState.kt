@@ -23,12 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.menus
+package io.infinitic.dashboard.panels.infrastructure.workflow
 
-import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.panels.tasks.TasksPanel
-import io.infinitic.dashboard.svgs.icons.iconTask
+import io.infinitic.dashboard.Infinitic.topicName
+import io.infinitic.dashboard.panels.infrastructure.jobs.JobState
+import io.infinitic.dashboard.panels.infrastructure.jobs.TopicsStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
+import java.time.Instant
 
-object TaskMenu : MenuItem("Tasks", { iconTask() }) {
-    override var current: Panel = TasksPanel
+data class WorkflowTaskState(
+    override val name: String,
+    override val topicsStats: TopicsStats<WorkflowTaskTopic> = WorkflowTaskTopic.values().associateWith { Loading() },
+    val isLoading: Boolean = isLoading(topicsStats),
+    val lastUpdatedAt: Instant = lastUpdatedAt(topicsStats)
+) : JobState<WorkflowTaskTopic>(name, topicsStats) {
+    override fun create(name: String, topicsStats: TopicsStats<WorkflowTaskTopic>) =
+        WorkflowTaskState(name = name, topicsStats = topicsStats)
+
+    override fun getTopic(type: WorkflowTaskTopic) = topicName.of(type, name)
 }

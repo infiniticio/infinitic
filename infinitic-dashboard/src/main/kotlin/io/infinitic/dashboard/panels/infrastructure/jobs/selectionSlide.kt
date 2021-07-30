@@ -25,8 +25,12 @@
 
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
+import io.infinitic.common.serDe.json.Json
 import io.infinitic.dashboard.panels.infrastructure.lastUpdated
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Completed
+import io.infinitic.dashboard.panels.infrastructure.requests.Failed
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
 import io.infinitic.pulsar.topics.TopicSet
 import kweb.a
@@ -34,10 +38,11 @@ import kweb.new
 import kweb.p
 import kweb.span
 import kweb.state.KVar
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 
 internal fun selectionSlide(
     selectionType: KVar<TopicSet>,
-    selectionStats: KVar<TopicStats>
+    selectionStats: KVar<Request<PartitionedTopicStats>>
 ) = Slideover(
     selectionType.map { "${it.prefix} stats".replaceFirstChar { c -> c.uppercase() } },
     selectionStats
@@ -51,6 +56,12 @@ internal fun selectionSlide(
         span().text(")")
     }
     p().classes("mt-7 text-sm text-gray-500").new {
-        element("pre").text(it.value.text)
+        element("pre").text(
+            when (val request = it.value) {
+                is Loading -> "Loading..."
+                is Failed -> request.error.stackTraceToString()
+                is Completed -> Json.stringify(request.result, true)
+            }
+        )
     }
 }

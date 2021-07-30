@@ -81,7 +81,7 @@ object Libs {
     }
 
     object Kweb {
-        const val core = "com.github.kwebio:kweb-core:0.10.9"
+        const val core = "com.github.kwebio:kweb-core:0.10.13"
     }
 
     object EasyRandom {

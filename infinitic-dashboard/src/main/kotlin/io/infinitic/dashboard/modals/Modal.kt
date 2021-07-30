@@ -25,8 +25,8 @@
 
 package io.infinitic.dashboard.modals
 
-import io.infinitic.dashboard.icons.iconClose
-import io.infinitic.dashboard.icons.iconWarning
+import io.infinitic.dashboard.svgs.icons.iconClose
+import io.infinitic.dashboard.svgs.icons.iconWarning
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

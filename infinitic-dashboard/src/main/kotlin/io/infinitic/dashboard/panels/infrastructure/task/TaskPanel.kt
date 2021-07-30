@@ -26,14 +26,15 @@
 package io.infinitic.dashboard.panels.infrastructure.task
 
 import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.icons.iconChevron
 import io.infinitic.dashboard.menus.InfraMenu
-import io.infinitic.dashboard.panels.infrastructure.InfraPanel
+import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobStatsTable
 import io.infinitic.dashboard.panels.infrastructure.jobs.selectionSlide
 import io.infinitic.dashboard.panels.infrastructure.jobs.update
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.dashboard.panels.infrastructure.requests.Request
+import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicSet
 import kotlinx.coroutines.GlobalScope
@@ -52,27 +53,30 @@ import kweb.p
 import kweb.span
 import kweb.state.KVar
 import kweb.state.property
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.util.concurrent.ConcurrentHashMap
 
-class InfraTaskPanel private constructor(private val taskName: String) : Panel() {
+class TaskPanel private constructor(private val taskName: String) : Panel() {
 
     companion object {
         const val template = "/infra/t/{name}"
 
-        private val instances: ConcurrentHashMap<String, InfraTaskPanel> = ConcurrentHashMap()
+        private val instances: ConcurrentHashMap<String, TaskPanel> = ConcurrentHashMap()
 
-        fun from(taskName: String) = instances.computeIfAbsent(taskName) { InfraTaskPanel(taskName) }
+        fun from(taskName: String) = instances.computeIfAbsent(taskName) { TaskPanel(taskName) }
     }
 
     override val menu = InfraMenu
 
     override val url = "/infra/t/$taskName"
 
-    private val state = KVar(InfraTaskState(taskName))
+    private val state = KVar(TaskState(taskName))
 
-    private val lastUpdated = state.property(InfraTaskState::lastUpdated)
+    private val lastUpdated = state.property(TaskState::lastUpdatedAt)
+    private val isLoading = state.property(TaskState::isLoading)
+
     private val selectionTopicType: KVar<TopicSet> = KVar(TaskTopic.EXECUTORS)
-    private val selectionTopicStats = KVar(TopicStats(""))
+    private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
     private val selectionSlide = selectionSlide(selectionTopicType, selectionTopicStats)
 
@@ -116,7 +120,7 @@ class InfraTaskPanel private constructor(private val taskName: String) : Panel()
                                             classes("text-sm font-medium text-gray-500 hover:text-gray-700")
                                             setAttribute("aria-current", InfraMenu.title)
                                             text(InfraMenu.title)
-                                            href = InfraPanel.url
+                                            href = AllJobsPanel.url
                                         }
                                         span().classes("sr-only").text("Infrastructure")
                                     }
@@ -138,7 +142,7 @@ class InfraTaskPanel private constructor(private val taskName: String) : Panel()
         // TASK TOPICS
         div().classes("pt-8 pb-8").new {
             div().classes("max-w-7xl mx-auto sm:px-6 md:px-8").new {
-                displayJobSectionHeader("Task's topics", lastUpdated)
+                displayJobSectionHeader("Task's topics", isLoading, lastUpdated)
                 p().classes("mt-7 text-sm text-gray-500").new {
                     span()
                         .text("Here are the topics used for this task.")

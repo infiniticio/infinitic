@@ -23,20 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.task
+package io.infinitic.dashboard.svgs.icons
 
-import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
-import io.infinitic.pulsar.topics.TaskTopic
-import java.time.Instant
+import io.infinitic.dashboard.svgs.path
+import io.infinitic.dashboard.svgs.svg
+import kweb.Element
+import kweb.ElementCreator
+import kweb.new
 
-data class InfraTaskState(
-    override val name: String,
-    override val topicsStats: Map<TaskTopic, TopicStats> =
-        TaskTopic.values().map { it }.associateWith { TopicStats(topicName.of(it, name)) },
-    override val lastUpdated: Instant = Instant.now()
-) : InfraJobState<TaskTopic> {
-    override fun create(name: String, topicsStats: Map<TaskTopic, TopicStats>, lastUpdated: Instant) =
-        InfraTaskState(name, topicsStats, lastUpdated)
+fun ElementCreator<Element>.iconHamburger(): Element {
+    val svg = svg()
+    svg
+        .setClasses("h-6 w-6")
+        .setAttribute("fill", "none")
+        .setAttribute("viewBox", "0 0 24 24")
+        .setAttribute("stroke", "currentColor")
+        .new {
+            path()
+                .setAttribute("stroke-linecap", "round")
+                .setAttribute("stroke-linejoin", "round")
+                .setAttribute("stroke-width", "2")
+                .setAttribute("d", "M4 6h16M4 12h16M4 18h16")
+        }
+
+    return svg
 }

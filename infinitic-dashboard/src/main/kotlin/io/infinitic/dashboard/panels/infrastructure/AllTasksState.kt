@@ -23,20 +23,29 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.workflow
+package io.infinitic.dashboard.panels.infrastructure
 
-import io.infinitic.dashboard.Infinitic.topicName
-import io.infinitic.dashboard.panels.infrastructure.jobs.InfraJobState
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
-import io.infinitic.pulsar.topics.WorkflowTopic
+import io.infinitic.dashboard.Infinitic
+import io.infinitic.dashboard.panels.infrastructure.requests.Loading
+import io.infinitic.pulsar.topics.TaskTopic
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
-data class InfraWorkflowState(
-    override val name: String,
-    override val topicsStats: Map<WorkflowTopic, TopicStats> =
-        WorkflowTopic.values().map { it }.associateWith { TopicStats(topicName.of(it, name)) },
-    override val lastUpdated: Instant = Instant.now()
-) : InfraJobState<WorkflowTopic> {
-    override fun create(name: String, topicsStats: Map<WorkflowTopic, TopicStats>, lastUpdated: Instant) =
-        InfraWorkflowState(name, topicsStats, lastUpdated)
+data class AllTasksState(
+    override val names: JobNames = Loading(),
+    override val stats: JobStats = mapOf(),
+    val isLoading: Boolean = isLoading(names, stats),
+    val lastUpdatedAt: Instant = lastUpdatedAt(names, stats)
+) : AllJobsState(names, stats) {
+
+    override fun create(names: JobNames, stats: JobStats) =
+        AllTasksState(names = names, stats = stats)
+
+    override fun getNames() = Infinitic.admin.tasks
+
+    override fun getPartitionedStats(name: String): PartitionedTopicStats {
+        val topic = Infinitic.topicName.of(TaskTopic.EXECUTORS, name)
+
+        return Infinitic.topics.getPartitionedStats(topic, true, true, true)
+    }
 }

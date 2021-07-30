@@ -23,21 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure.requests
+package io.infinitic.dashboard.svgs.icons
 
-import io.infinitic.common.serDe.json.Json
-import org.apache.pulsar.common.policies.data.PartitionedTopicStats
-import java.time.Instant
+import io.infinitic.dashboard.svgs.path
+import io.infinitic.dashboard.svgs.svg
+import kweb.Element
+import kweb.ElementCreator
+import kweb.new
 
-data class TopicStats(
-    val topic: String,
-    val request: Request<PartitionedTopicStats> = Loading(),
-    val lastUpdated: Instant = Instant.now()
-) {
-    val text: String
-        get() = when (request) {
-            is Loading -> "Loading..."
-            is Failed -> request.error.stackTraceToString()
-            is Completed -> Json.stringify(request.result, true)
+fun ElementCreator<Element>.iconWarning(): Element {
+    val svg = svg()
+    svg
+        .setClasses("h-6 w-6")
+        .setAttribute("fill", "none")
+        .setAttribute("viewBox", "0 0 24 24")
+        .setAttribute("stroke", "currentColor")
+        .new {
+            path()
+                .setAttribute("stroke-linecap", "round")
+                .setAttribute("stroke-linejoin", "round")
+                .setAttribute("stroke-width", "2")
+                .setAttribute("d", "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z")
         }
+
+    return svg
 }

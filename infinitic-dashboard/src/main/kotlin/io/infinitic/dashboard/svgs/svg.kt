@@ -23,9 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.panels.infrastructure
+package io.infinitic.dashboard.svgs
 
-enum class InfraType {
-    TASK,
-    WORKFLOW,
-}
+import kweb.Element
+import kweb.ElementCreator
+
+const val SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+
+internal fun ElementCreator<Element>.svg(): Element =
+    element("svg", namespace = SVG_NAMESPACE)
+        .setAttribute("xmlns", SVG_NAMESPACE)
+
+internal fun ElementCreator<Element>.path(): Element =
+    element("path", namespace = SVG_NAMESPACE)
+
+internal fun ElementCreator<Element>.g(): Element =
+    element("g", namespace = SVG_NAMESPACE)

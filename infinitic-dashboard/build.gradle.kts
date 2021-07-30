@@ -23,15 +23,12 @@
  * Licensor: infinitic.io
  */
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 repositories {
     maven("https://jitpack.io")
 }
 
 plugins {
     application
-    id(Plugins.Shadow.id).version(Plugins.Shadow.version)
 }
 
 application {
@@ -42,14 +39,6 @@ dependencies {
     implementation(Libs.Kweb.core)
 
     implementation(project(":infinitic-pulsar"))
-}
-
-tasks.withType<ShadowJar> {
-    manifest {
-        attributes("Main-Class" to "io.infinitic.dashboard.MainKt")
-    }
-    // https://stackoverflow.com/questions/48636944/how-to-avoid-a-java-lang-exceptionininitializererror-when-trying-to-run-a-ktor-a
-    mergeServiceFiles()
 }
 
 apply("../publish.gradle.kts")

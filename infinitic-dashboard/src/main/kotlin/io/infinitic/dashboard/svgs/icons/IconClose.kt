@@ -23,12 +23,28 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.dashboard.menus
+package io.infinitic.dashboard.svgs.icons
 
-import io.infinitic.dashboard.Panel
-import io.infinitic.dashboard.panels.tasks.TasksPanel
-import io.infinitic.dashboard.svgs.icons.iconTask
+import io.infinitic.dashboard.svgs.path
+import io.infinitic.dashboard.svgs.svg
+import kweb.Element
+import kweb.ElementCreator
+import kweb.new
 
-object TaskMenu : MenuItem("Tasks", { iconTask() }) {
-    override var current: Panel = TasksPanel
+fun ElementCreator<Element>.iconClose(): Element {
+    val svg = svg()
+    svg
+        .setClasses("h-6 w-6")
+        .setAttribute("fill", "none")
+        .setAttribute("viewBox", "0 0 24 24")
+        .setAttribute("stroke", "currentColor")
+        .new {
+            path()
+                .setAttribute("stroke-linecap", "round")
+                .setAttribute("stroke-linejoin", "round")
+                .setAttribute("stroke-width", "2")
+                .setAttribute("d", "M6 18L18 6M6 6l12 12")
+        }
+
+    return svg
 }

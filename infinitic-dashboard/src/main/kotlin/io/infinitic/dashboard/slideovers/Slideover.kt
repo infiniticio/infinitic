@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard.slideovers
 
-import io.infinitic.dashboard.icons.iconClose
+import io.infinitic.dashboard.svgs.icons.iconClose
 import kweb.Element
 import kweb.ElementCreator
 import kweb.button

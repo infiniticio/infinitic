@@ -28,59 +28,63 @@ package io.infinitic.dashboard.panels.infrastructure.jobs
 import io.infinitic.dashboard.Infinitic.topics
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
 import io.infinitic.dashboard.panels.infrastructure.requests.Failed
-import io.infinitic.dashboard.panels.infrastructure.requests.TopicStats
+import io.infinitic.dashboard.panels.infrastructure.requests.Request
+import io.infinitic.pulsar.topics.TopicSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kweb.state.KVar
 import mu.KotlinLogging
+import org.apache.pulsar.common.policies.data.PartitionedTopicStats
 import java.time.Instant
 
 private const val UPDATE_DELAY = 5000L
 
 private val logger = KotlinLogging.logger {}
 
-internal fun <S, T : InfraJobState<S>> CoroutineScope.update(kvar: KVar<T>) = launch {
+typealias TopicsStats<T> = Map<T, Request<PartitionedTopicStats>>
+
+abstract class JobState<T : TopicSet>(
+    open val name: String,
+    open val topicsStats: TopicsStats<T>,
+) {
+    abstract fun create(
+        name: String = this.name,
+        topicsStats: TopicsStats<T>
+    ): JobState<T>
+
+    companion object {
+        fun <T> isLoading(topicsStats: TopicsStats<T>): Boolean = topicsStats.any { it.value.isLoading }
+        fun <T> lastUpdatedAt(topicsStats: TopicsStats<T>): Instant = topicsStats.maxOfOrNull { it.value.lastUpdated } ?: Instant.now()
+    }
+
+    abstract fun getTopic(type: T): String
+
+    fun statsLoading() = create(topicsStats = topicsStats.mapValues { it.value.copyLoading() })
+}
+
+internal fun <S : TopicSet, T : JobState<S>> CoroutineScope.update(kvar: KVar<T>) = launch {
     while (isActive) {
         with(kvar) {
             val delay = launch { delay(UPDATE_DELAY) }
             logger.debug { "Updating stats for ${value.name}" }
-
-            val map = mutableMapOf<S, TopicStats>()
+            // loading indicator
+            value = value.statsLoading() as T
+            // request stats one by one
+            val topicsStats = mutableMapOf<S, Request<PartitionedTopicStats>>()
             value.topicsStats.forEach {
                 try {
-                    val stats = topics.getPartitionedStats(it.value.topic, true, true, true)
-                    map[it.key] = TopicStats(
-                        request = Completed(stats),
-                        topic = it.value.topic
-                    )
+                    val stats = topics.getPartitionedStats(value.getTopic(it.key), true, true, true)
+                    topicsStats[it.key] = Completed(stats)
                 } catch (e: Exception) {
-                    map[it.key] = TopicStats(
-                        request = Failed(e),
-                        topic = it.value.topic
-                    )
+                    topicsStats[it.key] = Failed(e)
                 }
             }
-
-            value = value.create(
-                topicsStats = map,
-                lastUpdated = Instant.now(),
-            ) as T
-
+            // set value
+            value = value.create(topicsStats = topicsStats,) as T
+            // wait at least UPDATE_DELAY
             delay.join()
         }
     }
-}
-
-interface InfraJobState<T> {
-    val name: String
-    val topicsStats: Map<T, TopicStats>
-    val lastUpdated: Instant
-
-    fun create(
-        name: String = this.name,
-        topicsStats: Map<T, TopicStats> = this.topicsStats,
-        lastUpdated: Instant = this.lastUpdated
-    ): InfraJobState<T>
 }

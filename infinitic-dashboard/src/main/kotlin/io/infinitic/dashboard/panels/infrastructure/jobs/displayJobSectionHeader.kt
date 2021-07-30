@@ -25,8 +25,8 @@
 
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
-import io.infinitic.dashboard.icons.iconRefresh
 import io.infinitic.dashboard.panels.infrastructure.lastUpdated
+import io.infinitic.dashboard.svgs.icons.iconRefresh
 import kweb.Element
 import kweb.ElementCreator
 import kweb.div
@@ -38,6 +38,7 @@ import java.time.Instant
 
 internal fun ElementCreator<Element>.displayJobSectionHeader(
     title: String,
+    isLoading: KVar<Boolean>,
     lastUpdated: KVar<Instant>
 ) {
     div().classes("pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between").new {
@@ -45,7 +46,7 @@ internal fun ElementCreator<Element>.displayJobSectionHeader(
         div().classes("mt-3 sm:mt-0").new {
             val div = div().classes("inline-flex items-center py-2 text-sm text-gray-500")
             div.new {
-                iconRefresh().classes("mr-1.5 h-5 w-5 text-gray-400")
+                iconRefresh().classes(isLoading.map { "mr-1.5 h-5 w-5 text-gray-400" + if (it) " animate-spin" else "" })
                 span().text(lastUpdated.map { lastUpdated(it) })
             }
         }
