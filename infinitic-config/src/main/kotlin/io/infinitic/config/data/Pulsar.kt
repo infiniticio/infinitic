@@ -35,7 +35,8 @@ data class Pulsar(
     @JvmField val namespace: String,
     @JvmField val allowedClusters: Set<String>? = null,
     @JvmField val tlsAllowInsecureConnection: Boolean = false,
-    @JvmField val tlsEnableHostnameVerification: Boolean = false
+    @JvmField val tlsEnableHostnameVerification: Boolean = false,
+    @JvmField val tlsTrustCertsFilePath: String? = null
 ) {
     init {
         require(
@@ -56,6 +57,7 @@ data class Pulsar(
             .serviceHttpUrl(webServiceUrl)
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
             .enableTlsHostnameVerification(tlsEnableHostnameVerification)
+            .also { if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath) }
             .build()
     }
 
@@ -65,6 +67,7 @@ data class Pulsar(
             .serviceUrl(brokerServiceUrl)
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
             .enableTlsHostnameVerification(tlsEnableHostnameVerification)
+            .also { if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath) }
             .build()
     }
 }
