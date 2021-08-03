@@ -29,20 +29,20 @@ import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.PulsarClient
 
 data class Pulsar(
-    @JvmField val serviceUrl: String = "pulsar://localhost:6650/",
-    @JvmField val serviceHttpUrl: String = "http://localhost:8080",
+    @JvmField val brokerServiceUrl: String = "pulsar://localhost:6650/",
+    @JvmField val webServiceUrl: String = "http://localhost:8080",
     @JvmField val tenant: String,
     @JvmField val namespace: String,
     @JvmField val allowedClusters: Set<String>? = null
 ) {
     init {
         require(
-            serviceUrl.startsWith("pulsar://") ||
-                serviceUrl.startsWith("pulsar+ssl://")
+            brokerServiceUrl.startsWith("pulsar://") ||
+                brokerServiceUrl.startsWith("pulsar+ssl://")
         ) { "serviceUrl MUST start with pulsar:// or pulsar+ssl://" }
         require(
-            serviceHttpUrl.startsWith("http://") ||
-                serviceHttpUrl.startsWith("https://")
+            webServiceUrl.startsWith("http://") ||
+                webServiceUrl.startsWith("https://")
         ) { "serviceHttpUrl MUST start with http:// or https://" }
         require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
         require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
@@ -51,7 +51,7 @@ data class Pulsar(
     val admin: PulsarAdmin by lazy {
         PulsarAdmin
             .builder()
-            .serviceHttpUrl(serviceHttpUrl)
+            .serviceHttpUrl(webServiceUrl)
             .allowTlsInsecureConnection(true)
             .build()
     }
@@ -59,7 +59,7 @@ data class Pulsar(
     val client: PulsarClient by lazy {
         PulsarClient
             .builder()
-            .serviceUrl(serviceUrl)
+            .serviceUrl(brokerServiceUrl)
             .build()
     }
 }
