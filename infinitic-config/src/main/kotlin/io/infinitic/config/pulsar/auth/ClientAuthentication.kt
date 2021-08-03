@@ -23,19 +23,6 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    api(Libs.Serialization.json)
+package io.infinitic.config.pulsar.auth
 
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-    implementation(Libs.Pulsar.client)
-    implementation(Libs.Pulsar.clientAdmin)
-    implementation(Libs.Pulsar.authAthenz)
-    implementation(Libs.Pulsar.authSasl)
-
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-}
-
-apply("../publish.gradle.kts")
+sealed class ClientAuthentication

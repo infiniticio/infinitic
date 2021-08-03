@@ -23,19 +23,14 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    api(Libs.Serialization.json)
+package io.infinitic.config.pulsar.auth
 
-    implementation(Libs.Hoplite.core)
-    implementation(Libs.Hoplite.yaml)
-    implementation(Libs.Pulsar.client)
-    implementation(Libs.Pulsar.clientAdmin)
-    implementation(Libs.Pulsar.authAthenz)
-    implementation(Libs.Pulsar.authSasl)
+import com.sksamuel.hoplite.Masked
 
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-common"))
-}
-
-apply("../publish.gradle.kts")
+data class AuthenticationAthenz(
+    val tenantDomain: String,
+    val tenantService: String,
+    val providerDomain: String,
+    val privateKey: Masked,
+    val keyId: String = "0",
+) : ClientAuthentication()

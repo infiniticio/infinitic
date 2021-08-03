@@ -78,6 +78,8 @@ object Libs {
         const val client = "org.apache.pulsar:pulsar-client:$version"
         const val clientAdmin = "org.apache.pulsar:pulsar-client-admin:$version"
         const val functions = "org.apache.pulsar:pulsar-functions-api:$version"
+        const val authAthenz = "org.apache.pulsar:pulsar-client-auth-athenz:$version"
+        const val authSasl = "org.apache.pulsar:pulsar-client-auth-sasl:$version"
     }
 
     object Kweb {
