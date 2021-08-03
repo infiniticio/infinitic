@@ -34,7 +34,8 @@ data class Pulsar(
     @JvmField val tenant: String,
     @JvmField val namespace: String,
     @JvmField val allowedClusters: Set<String>? = null,
-    @JvmField val tlsAllowInsecureConnection: Boolean = false
+    @JvmField val tlsAllowInsecureConnection: Boolean = false,
+    @JvmField val tlsEnableHostnameVerification: Boolean = false
 ) {
     init {
         require(
@@ -54,6 +55,7 @@ data class Pulsar(
             .builder()
             .serviceHttpUrl(webServiceUrl)
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
+            .enableTlsHostnameVerification(tlsEnableHostnameVerification)
             .build()
     }
 
@@ -62,6 +64,7 @@ data class Pulsar(
             .builder()
             .serviceUrl(brokerServiceUrl)
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
+            .enableTlsHostnameVerification(tlsEnableHostnameVerification)
             .build()
     }
 }
