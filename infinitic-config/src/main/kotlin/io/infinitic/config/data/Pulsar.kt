@@ -42,11 +42,11 @@ data class Pulsar(
         require(
             brokerServiceUrl.startsWith("pulsar://") ||
                 brokerServiceUrl.startsWith("pulsar+ssl://")
-        ) { "serviceUrl MUST start with pulsar:// or pulsar+ssl://" }
+        ) { "brokerServiceUrl MUST start with pulsar:// or pulsar+ssl://" }
         require(
             webServiceUrl.startsWith("http://") ||
                 webServiceUrl.startsWith("https://")
-        ) { "serviceHttpUrl MUST start with http:// or https://" }
+        ) { "webServiceUrl MUST start with http:// or https://" }
         require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
         require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
     }
