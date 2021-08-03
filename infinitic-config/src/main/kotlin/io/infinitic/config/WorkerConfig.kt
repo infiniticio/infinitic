@@ -27,7 +27,7 @@ package io.infinitic.config
 
 import io.infinitic.cache.StateCache
 import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.config.data.Pulsar
+import io.infinitic.config.pulsar.Pulsar
 import io.infinitic.config.data.Task
 import io.infinitic.config.data.Transport
 import io.infinitic.config.data.Workflow
@@ -82,7 +82,7 @@ data class WorkerConfig(
      */
     @JvmField val caffeine: Caffeine? = null,
 
-) {
+    ) {
     init {
         // apply default, if not set
         tasks.map { task ->

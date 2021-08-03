@@ -25,7 +25,7 @@
 
 package io.infinitic.config
 
-import io.infinitic.config.data.Pulsar
+import io.infinitic.config.pulsar.Pulsar
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 

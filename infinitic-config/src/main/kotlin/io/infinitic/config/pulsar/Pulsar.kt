@@ -23,8 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.config.data
+package io.infinitic.config.pulsar
 
+import com.sksamuel.hoplite.Masked
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.PulsarClient
 
@@ -36,7 +37,11 @@ data class Pulsar(
     @JvmField val allowedClusters: Set<String>? = null,
     @JvmField val tlsAllowInsecureConnection: Boolean = false,
     @JvmField val tlsEnableHostnameVerification: Boolean = false,
-    @JvmField val tlsTrustCertsFilePath: String? = null
+    @JvmField val tlsTrustCertsFilePath: String? = null,
+    @JvmField val useKeyStoreTls: Boolean = false,
+    @JvmField val tlsTrustStoreType: TlsTrustStoreType = TlsTrustStoreType.JKS,
+    @JvmField val tlsTrustStorePath: String? = null,
+    @JvmField val tlsTrustStorePassword: Masked? = null
 ) {
     init {
         require(
@@ -49,6 +54,10 @@ data class Pulsar(
         ) { "webServiceUrl MUST start with http:// or https://" }
         require(tenant.isNotEmpty()) { "tenant can NOT be empty" }
         require(namespace.isNotEmpty()) { "namespace can NOT be empty" }
+        if (useKeyStoreTls) {
+            require(tlsTrustStorePath != null) { "tlsTrustStorePath MUST be defined if useKeyStoreTls is true" }
+            require(tlsTrustStorePassword != null) { "tlsTrustStorePassword MUST be defined if useKeyStoreTls is true" }
+        }
     }
 
     val admin: PulsarAdmin by lazy {
@@ -58,6 +67,12 @@ data class Pulsar(
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
             .enableTlsHostnameVerification(tlsEnableHostnameVerification)
             .also { if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath) }
+            .also { if (useKeyStoreTls) with(it) {
+                useKeyStoreTls(true)
+                tlsTrustStoreType(tlsTrustStoreType.toString())
+                tlsTrustStorePath(tlsTrustStorePath!!)
+                tlsTrustStorePassword(tlsTrustStorePassword!!.value)
+            }}
             .build()
     }
 
@@ -68,6 +83,12 @@ data class Pulsar(
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
             .enableTlsHostnameVerification(tlsEnableHostnameVerification)
             .also { if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath) }
+            .also { if (useKeyStoreTls) with(it) {
+                useKeyStoreTls(true)
+                tlsTrustStoreType(tlsTrustStoreType.toString())
+                tlsTrustStorePath(tlsTrustStorePath!!)
+                tlsTrustStorePassword(tlsTrustStorePassword!!.value)
+            }}
             .build()
     }
 }
