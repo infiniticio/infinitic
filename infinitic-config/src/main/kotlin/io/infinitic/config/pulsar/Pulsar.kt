@@ -37,7 +37,6 @@ import org.apache.pulsar.client.api.AuthenticationFactory
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2
 
-
 data class Pulsar(
     @JvmField val tenant: String,
     @JvmField val namespace: String,
@@ -77,14 +76,16 @@ data class Pulsar(
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
             .enableTlsHostnameVerification(tlsEnableHostnameVerification)
             .also { if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath) }
-            .also { if (useKeyStoreTls) with(it) {
-                useKeyStoreTls(true)
-                tlsTrustStoreType(tlsTrustStoreType.toString())
-                tlsTrustStorePath(tlsTrustStorePath!!)
-                tlsTrustStorePassword(tlsTrustStorePassword!!.value)
-            }}
             .also {
-                when(authentication) {
+                if (useKeyStoreTls) with(it) {
+                    useKeyStoreTls(true)
+                    tlsTrustStoreType(tlsTrustStoreType.toString())
+                    tlsTrustStorePath(tlsTrustStorePath!!)
+                    tlsTrustStorePassword(tlsTrustStorePassword!!.value)
+                }
+            }
+            .also {
+                when (authentication) {
                     is AuthenticationToken -> it.authentication(
                         AuthenticationFactory.token(authentication.token)
                     )
@@ -120,14 +121,16 @@ data class Pulsar(
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
             .enableTlsHostnameVerification(tlsEnableHostnameVerification)
             .also { if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath) }
-            .also { if (useKeyStoreTls) with(it) {
-                useKeyStoreTls(true)
-                tlsTrustStoreType(tlsTrustStoreType.toString())
-                tlsTrustStorePath(tlsTrustStorePath!!)
-                tlsTrustStorePassword(tlsTrustStorePassword!!.value)
-            }}
             .also {
-                when(authentication) {
+                if (useKeyStoreTls) with(it) {
+                    useKeyStoreTls(true)
+                    tlsTrustStoreType(tlsTrustStoreType.toString())
+                    tlsTrustStorePath(tlsTrustStorePath!!)
+                    tlsTrustStorePassword(tlsTrustStorePassword!!.value)
+                }
+            }
+            .also {
+                when (authentication) {
                     is AuthenticationToken -> it.authentication(
                         AuthenticationFactory.token(authentication.token)
                     )

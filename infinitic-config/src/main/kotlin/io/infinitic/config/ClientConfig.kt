@@ -25,12 +25,12 @@
 
 package io.infinitic.config
 
-import io.infinitic.config.pulsar.Pulsar
 import io.infinitic.config.data.Task
 import io.infinitic.config.data.Transport
 import io.infinitic.config.data.Workflow
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
+import io.infinitic.config.pulsar.Pulsar
 
 data class ClientConfig(
     /*
@@ -58,7 +58,7 @@ data class ClientConfig(
      */
     @JvmField val workflows: List<Workflow> = listOf(),
 
-    ) {
+) {
     init {
         if (transport == Transport.pulsar) {
             require(pulsar != null) { "Missing Pulsar configuration" }

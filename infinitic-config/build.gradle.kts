@@ -24,8 +24,6 @@
  */
 
 dependencies {
-    api(Libs.Serialization.json)
-
     implementation(Libs.Hoplite.core)
     implementation(Libs.Hoplite.yaml)
     implementation(Libs.Pulsar.client)
