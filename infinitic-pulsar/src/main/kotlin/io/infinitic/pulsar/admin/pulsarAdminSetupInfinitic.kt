@@ -27,7 +27,6 @@
 package io.infinitic.pulsar.admin
 
 import io.infinitic.pulsar.PulsarInfiniticAdmin
-import io.infinitic.pulsar.schemas.getPostSchemaPayload
 import kotlinx.coroutines.future.await
 import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
@@ -38,30 +37,22 @@ import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicType
-import kotlin.reflect.KClass
 
 private val logger = KotlinLogging.logger(PulsarInfiniticAdmin::class.java.name)
 
 suspend fun PulsarAdmin.setupInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>?) {
-    createTenant(this, tenant, getAllowedClusters(this, allowedClusters))
+    try {
+        createTenant(this, tenant, allowedClusters)
+    } catch (e: PulsarAdminException.NotAuthorizedException) {
+        // in some cases, user has access only to an existing tenant, without admin rights to the entire cluster
+        logger.info { "Skipping tenant creation due to a NotAuthorizedException" }
+        logger.debug { e.printStackTrace() }
+    }
 
     createNamespace(this, tenant, namespace)
 }
 
-private suspend fun getAllowedClusters(admin: PulsarAdmin, allowedClusters: Set<String>? = null): Set<String> {
-    // get all existing clusters
-    val existingClusters: Set<String> = admin.clusters().clustersAsync.await().toSet()
-
-    // if authorized clusters are provided, check that they exist
-    allowedClusters?.map {
-        if (! existingClusters.contains(it)) throw RuntimeException("Unknown cluster $it")
-    }
-
-    // if authorizedClusters is not provided, default to all clusters
-    return allowedClusters ?: existingClusters
-}
-
-private suspend fun createTenant(admin: PulsarAdmin, tenant: String, allowedClusters: Set<String>) {
+private suspend fun createTenant(admin: PulsarAdmin, tenant: String, allowedClusters: Set<String>?) {
     // create Infinitic tenant info
     // if authorizedClusters is not provided, default is all clusters
     val tenantInfo = TenantInfo().apply {
@@ -116,23 +107,6 @@ private suspend fun createNamespace(admin: PulsarAdmin, tenant: String, namespac
         logger.info { "Creating namespace $fullNamespace with policies $policies" }
         admin.namespaces().createNamespaceAsync(fullNamespace, policies).await()
     }
-}
-
-private suspend fun createPartitionedTopic(admin: PulsarAdmin, topic: String) {
-    // create topic as partitioned topic with one partition
-    try {
-        logger.info { "Creating partitioned topic $topic" }
-        admin.topics().createPartitionedTopicAsync(topic, 1).await()
-    } catch (e: PulsarAdminException.ConflictException) {
-        logger.info { "Topic $topic already exist" }
-        // the topic already exists
-    }
-}
-
-private suspend fun <T : Any> setSchema(admin: PulsarAdmin, topic: String, klass: KClass<T>) {
-    val schema = getPostSchemaPayload(klass)
-    logger.info("Uploading topic {} with schema {}", topic, schema)
-    admin.schemas().createSchemaAsync(topic, schema).await()
 }
 
 private fun getFullNamespace(tenantName: String, namespace: String) =
