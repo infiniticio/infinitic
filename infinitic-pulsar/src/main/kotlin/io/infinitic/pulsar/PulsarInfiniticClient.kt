@@ -50,7 +50,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
 
     private var job: Job
 
-    private val producerName = getProducerName(pulsarClient, name)
+    private val producerName = getProducerName(pulsarClient, pulsarTenant, pulsarNamespace, name)
 
     override val scope = CoroutineScope(Dispatchers.IO + Job())
 

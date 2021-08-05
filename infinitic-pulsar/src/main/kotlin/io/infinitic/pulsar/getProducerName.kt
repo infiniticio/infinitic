@@ -25,17 +25,23 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.pulsar.topics.TopicName
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
 import kotlin.system.exitProcess
 
 /*
-Utility useful to check the uniqueness of a connected producer's name or to provide a unique name
+Useful to check the uniqueness of a connected producer's name or to provide a unique name
  */
-internal fun getProducerName(pulsarClient: PulsarClient, name: String?): String {
+internal fun getProducerName(
+    pulsarClient: PulsarClient,
+    pulsarTenant: String,
+    pulsarNamespace: String,
+    name: String?
+): String {
     val producer = try {
         pulsarClient.newProducer()
-            .topic("producers")
+            .topic(TopicName(pulsarTenant, pulsarNamespace).getPersistentTopicFullName("namer"))
             .also {
                 if (name != null) {
                     it.producerName(name)
@@ -44,9 +50,11 @@ internal fun getProducerName(pulsarClient: PulsarClient, name: String?): String 
             .create()
     } catch (e: PulsarClientException.ProducerBusyException) {
         pulsarClient.close()
-        System.err.print("Another worker with name \"$name\" is already connected. Please make sure to use a unique name. Closing.")
+        System.err.print("Another worker with name \"$name\" is already connected. Please make sure to use a unique name.")
         exitProcess(1)
     }
+
+    producer.close()
 
     return producer.producerName
 }

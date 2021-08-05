@@ -164,7 +164,7 @@ class PulsarInfiniticWorker private constructor(
         pulsarClient: PulsarClient,
         config: WorkerConfig
     ) = launch {
-        val workerName = getProducerName(pulsarClient, config.name)
+        val workerName = getProducerName(pulsarClient, config.pulsar.tenant, config.pulsar.namespace, config.name)
         val tenant = config.pulsar.tenant
         val namespace = config.pulsar.namespace
         val pulsarConsumerFactory = PulsarConsumerFactory(pulsarClient, tenant, namespace)
