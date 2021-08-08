@@ -41,7 +41,8 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     @JvmField val pulsarAdmin: PulsarAdmin,
     @JvmField val tenant: String,
     @JvmField val namespace: String,
-    @JvmField val allowedClusters: Set<String>? = null
+    @JvmField val allowedClusters: Set<String>? = null,
+    @JvmField val adminRoles: Set<String>? = null
 ) {
     val topicNamer = TopicName(tenant, namespace)
 
@@ -54,7 +55,8 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
             pulsarAdmin,
             adminConfig.pulsar.tenant,
             adminConfig.pulsar.namespace,
-            adminConfig.pulsar.allowedClusters
+            adminConfig.pulsar.allowedClusters,
+            adminConfig.pulsar.adminRoles
         )
 
         /**
@@ -112,7 +114,7 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     /**
      * Create Pulsar tenant and namespace if it does not exist, with adhoc settings
      */
-    fun setupPulsar() = runBlocking { pulsarAdmin.setupInfinitic(tenant, namespace, allowedClusters) }
+    fun setupPulsar() = runBlocking { pulsarAdmin.setupInfinitic(tenant, namespace, allowedClusters, adminRoles) }
 
     /**
      * Close Pulsar client

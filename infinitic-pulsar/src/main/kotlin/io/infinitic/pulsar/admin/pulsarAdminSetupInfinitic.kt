@@ -40,9 +40,14 @@ import org.apache.pulsar.common.policies.data.TopicType
 
 private val logger = KotlinLogging.logger(PulsarInfiniticAdmin::class.java.name)
 
-suspend fun PulsarAdmin.setupInfinitic(tenant: String, namespace: String, allowedClusters: Set<String>?) {
+suspend fun PulsarAdmin.setupInfinitic(
+    tenant: String,
+    namespace: String,
+    allowedClusters: Set<String>?,
+    adminRoles: Set<String>?
+) {
     try {
-        createTenant(this, tenant, allowedClusters)
+        createTenant(this, tenant, allowedClusters, adminRoles)
     } catch (e: PulsarAdminException.NotAuthorizedException) {
         // in some cases, user has access only to an existing tenant, without admin rights to the entire cluster
         logger.info { "Skipping tenant creation due to a NotAuthorizedException" }
@@ -52,23 +57,36 @@ suspend fun PulsarAdmin.setupInfinitic(tenant: String, namespace: String, allowe
     createNamespace(this, tenant, namespace)
 }
 
-private suspend fun createTenant(admin: PulsarAdmin, tenant: String, allowedClusters: Set<String>?) {
+private suspend fun createTenant(
+    admin: PulsarAdmin,
+    tenant: String,
+    allowedClusters: Set<String>?,
+    adminRoles: Set<String>?
+) {
     // create Infinitic tenant info
-    // if authorizedClusters is not provided, default is all clusters
     val tenantInfo = TenantInfo().apply {
-        this.allowedClusters = allowedClusters
+        // if authorizedClusters is not provided, default is all clusters
+        this.allowedClusters = when (allowedClusters) {
+            null -> admin.clusters().clustersAsync.await().toSet()
+            else -> allowedClusters
+        }
+        // apply adminRoles if provided
+        if (adminRoles != null) this.adminRoles = adminRoles
     }
 
     // get all existing tenant
     val tenants = admin.tenants().tenantsAsync.await()
 
     // create or update infinitic tenant
-    if (!tenants.contains(tenant)) {
-        logger.info { "Creating tenant $tenant with info $tenantInfo" }
-        admin.tenants().createTenantAsync(tenant, tenantInfo).await()
-    } else {
-        logger.info { "Updating tenant $tenant with info $tenantInfo" }
-        admin.tenants().updateTenantAsync(tenant, tenantInfo).await()
+    when (tenants.contains(tenant)) {
+        true -> {
+            logger.info { "Updating tenant $tenant with info $tenantInfo" }
+            admin.tenants().updateTenantAsync(tenant, tenantInfo).await()
+        }
+        false -> {
+            logger.info { "Creating tenant $tenant with info $tenantInfo" }
+            admin.tenants().createTenantAsync(tenant, tenantInfo).await()
+        }
     }
 }
 

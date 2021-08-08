@@ -37,8 +37,8 @@ redis:
   database: 0
 
 pulsar:
-  serviceUrl: pulsar://localhost:6650
-  serviceHttpUrl: http://localhost:8080
+  brokerServiceUrl: pulsar://localhost:6650
+  webServiceUrl: http://localhost:8080
   tenant: infinitic
   namespace: dev
 

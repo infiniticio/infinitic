@@ -37,7 +37,7 @@ const { Client } = require('@infinitic/client');
 const client = new Client({
   pulsar: {
     client: {
-      serviceUrl: 'pulsar://localhost:6650',
+      brokerServiceUrl: 'pulsar://localhost:6650',
     },
   },
 });
@@ -74,7 +74,7 @@ import { Client } from '@infinitic/client';
 const client = new Client({
   pulsar: {
     client: {
-      serviceUrl: 'pulsar://localhost:6650',
+      brokerServiceUrl: 'pulsar://localhost:6650',
     },
   },
 });

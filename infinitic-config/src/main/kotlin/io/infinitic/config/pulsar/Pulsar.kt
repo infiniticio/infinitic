@@ -43,6 +43,7 @@ data class Pulsar(
     @JvmField val brokerServiceUrl: String = "pulsar://localhost:6650/",
     @JvmField val webServiceUrl: String = "http://localhost:8080",
     @JvmField val allowedClusters: Set<String>? = null,
+    @JvmField val adminRoles: Set<String>? = null,
     @JvmField val tlsAllowInsecureConnection: Boolean = false,
     @JvmField val tlsEnableHostnameVerification: Boolean = false,
     @JvmField val tlsTrustCertsFilePath: String? = null,
