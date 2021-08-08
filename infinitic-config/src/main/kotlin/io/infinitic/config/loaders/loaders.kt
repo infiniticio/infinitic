@@ -26,24 +26,37 @@ package io.infinitic.config.loaders
 
 import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.PropertySource
+import mu.KotlinLogging
 import java.io.File
 
-internal inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T = ConfigLoader
-    .Builder()
-    .also { builder ->
-        resources.toList().map {
-            builder.addSource(PropertySource.resource(it, false))
-        }
-    }
-    .build()
-    .loadConfigOrThrow()
+private val logger = KotlinLogging.logger("io.infinitic.config.loaders")
 
-internal inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T = ConfigLoader
-    .Builder()
-    .also { builder ->
-        files.toList().map {
-            builder.addSource(PropertySource.file(File(it), false))
+internal inline fun <reified T : Any> loadConfigFromResource(resources: List<String>): T {
+    val config = ConfigLoader
+        .Builder()
+        .also { builder ->
+            resources.toList().map {
+                builder.addSource(PropertySource.resource(it, false))
+            }
         }
-    }
-    .build()
-    .loadConfigOrThrow()
+        .build()
+        .loadConfigOrThrow<T>()
+    logger.info { "Config loaded from resource: $config" }
+
+    return config
+}
+
+internal inline fun <reified T : Any> loadConfigFromFile(files: List<String>): T {
+    val config = ConfigLoader
+        .Builder()
+        .also { builder ->
+            files.toList().map {
+                builder.addSource(PropertySource.file(File(it), false))
+            }
+        }
+        .build()
+        .loadConfigOrThrow<T>()
+    logger.info { "Config loaded from file: $config" }
+
+    return config
+}
