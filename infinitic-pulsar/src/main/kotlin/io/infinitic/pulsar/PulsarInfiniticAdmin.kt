@@ -34,6 +34,7 @@ import io.infinitic.pulsar.topics.WorkflowTopic
 import kotlinx.coroutines.runBlocking
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import java.io.Closeable
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 
@@ -43,7 +44,7 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     @JvmField val namespace: String,
     @JvmField val allowedClusters: Set<String>? = null,
     @JvmField val adminRoles: Set<String>? = null
-) {
+) : Closeable {
     val topicNamer = TopicName(tenant, namespace)
 
     companion object {
@@ -119,7 +120,7 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     /**
      * Close Pulsar client
      */
-    fun close() = pulsarAdmin.close()
+    override fun close() = pulsarAdmin.close()
 
     /**
      * Prints stats for workflows and tasks topics

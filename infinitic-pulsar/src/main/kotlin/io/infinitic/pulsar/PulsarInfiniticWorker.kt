@@ -67,13 +67,14 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.apache.pulsar.client.api.PulsarClient
 import org.jetbrains.annotations.TestOnly
+import java.io.Closeable
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class PulsarInfiniticWorker private constructor(
     @JvmField val pulsarClient: PulsarClient,
     @JvmField val workerConfig: WorkerConfig
-) {
+) : Closeable {
     private val logger = KotlinLogging.logger {}
 
     private val taskStorages = mutableMapOf<TaskName, TaskStateStorage>()
@@ -117,7 +118,7 @@ class PulsarInfiniticWorker private constructor(
     /**
      * Close worker
      */
-    fun close() = pulsarClient.close()
+    override fun close() = pulsarClient.close()
 
     /**
      * Start worker

@@ -29,9 +29,10 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import kotlinx.coroutines.CoroutineScope
+import java.io.Closeable
 import java.util.UUID
 
-interface InfiniticClient {
+interface InfiniticClient : Closeable {
     val clientName: ClientName
 
     val scope: CoroutineScope
@@ -39,7 +40,7 @@ interface InfiniticClient {
     /**
      * Close client
      */
-    fun close()
+    override fun close()
 
     /**
      * Create stub for a new task
