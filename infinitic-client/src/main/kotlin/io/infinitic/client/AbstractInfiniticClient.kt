@@ -74,21 +74,16 @@ abstract class AbstractInfiniticClient : InfiniticClient {
 
     private val logger = KotlinLogging.logger {}
 
-    private var _dispatcher: ClientDispatcher? = null
-
-    private val dispatcher: ClientDispatcher
-        get() = _dispatcher ?: run {
-            _dispatcher = ClientDispatcher(
-                scope,
-                clientName,
-                sendToTaskTagEngine,
-                sendToTaskEngine,
-                sendToWorkflowTagEngine,
-                sendToWorkflowEngine
-            )
-
-            _dispatcher!!
-        }
+    private val dispatcher by lazy {
+        ClientDispatcher(
+            scope,
+            clientName,
+            sendToTaskTagEngine,
+            sendToTaskEngine,
+            sendToWorkflowTagEngine,
+            sendToWorkflowEngine
+        )
+    }
 
     suspend fun handle(message: ClientMessage) {
         logger.debug { "receiving $message" }

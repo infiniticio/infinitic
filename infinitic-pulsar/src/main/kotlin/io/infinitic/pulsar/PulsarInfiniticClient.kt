@@ -37,6 +37,7 @@ import io.infinitic.pulsar.workers.startClientResponseWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import org.apache.pulsar.client.api.PulsarClient
 import io.infinitic.inMemory.InMemoryInfiniticClient as InMemoryClient
 
@@ -48,43 +49,45 @@ class PulsarInfiniticClient @JvmOverloads constructor(
     name: String? = null
 ) : AbstractInfiniticClient() {
 
-    private var job: Job
-
-    private val producerName = getProducerName(pulsarClient, pulsarTenant, pulsarNamespace, name)
-
     override val scope = CoroutineScope(Dispatchers.IO + Job())
 
-    override val clientName = ClientName(producerName)
+    private val producerName by lazy { getProducerName(pulsarClient, pulsarTenant, pulsarNamespace, name) }
 
-    private val pulsarOutput =
-        PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
+    override val clientName by lazy { ClientName(producerName) }
 
-    override val sendToTaskTagEngine =
-        pulsarOutput.sendToTaskTagEngine(TopicType.NEW, true)
-
-    override val sendToTaskEngine =
-        pulsarOutput.sendToTaskEngine(TopicType.NEW, null, true)
-
-    override val sendToWorkflowTagEngine =
-        pulsarOutput.sendToWorkflowTagEngine(TopicType.NEW, true)
-
-    override val sendToWorkflowEngine =
-        pulsarOutput.sendToWorkflowEngine(TopicType.NEW, true)
-
-    override fun close() {
-        job.cancel()
-        pulsarClient.close()
-    }
-
-    init {
+    private val pulsarOutput by lazy {
+        // making sure client response handler is now initialized
         val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
             .newClientConsumer(producerName, ClientName(producerName))
 
-        job = scope.startClientResponseWorker(this, clientResponseConsumer)
+        scope.startClientResponseWorker(this, clientResponseConsumer)
+
+        // returns PulsarOutput instance
+        PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
+    }
+
+    override val sendToTaskTagEngine by lazy {
+        pulsarOutput.sendToTaskTagEngine(TopicType.NEW, true)
+    }
+
+    override val sendToTaskEngine by lazy {
+        pulsarOutput.sendToTaskEngine(TopicType.NEW, null, true)
+    }
+
+    override val sendToWorkflowTagEngine by lazy {
+        pulsarOutput.sendToWorkflowTagEngine(TopicType.NEW, true)
+    }
+
+    override val sendToWorkflowEngine by lazy {
+        pulsarOutput.sendToWorkflowEngine(TopicType.NEW, true)
+    }
+
+    override fun close() {
+        scope.cancel()
+        pulsarClient.close()
     }
 
     companion object {
-
         /**
          * Create Client from a custom PulsarClient and a ClientConfig instance
          */
