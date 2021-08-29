@@ -103,13 +103,14 @@ class WorkflowEngine(
 
         storage.putState(message.workflowId, state)
 
-        // delete state if terminated
-        // the delay makes tests easier, avoiding failure of synchronous requests
-        if (state.workflowStatus == WorkflowStatus.TERMINATED) {
-            CoroutineScope(coroutineContext).launch {
+        // delete state if terminated / canceled
+        // the delay makes easier to get result of deferred.await() in tests
+        when (state.workflowStatus) {
+            WorkflowStatus.TERMINATED, WorkflowStatus.CANCELED -> CoroutineScope(coroutineContext).launch {
                 delay(2000L)
                 storage.delState(message.workflowId)
             }
+            WorkflowStatus.ALIVE -> Unit
         }
     }
 
@@ -145,7 +146,10 @@ class WorkflowEngine(
         }
 
         // discard all message if already terminated (except client request)
-        if (state.workflowStatus == WorkflowStatus.TERMINATED && message !is WaitWorkflow) {
+        if (
+            (state.workflowStatus == WorkflowStatus.TERMINATED || state.workflowStatus == WorkflowStatus.CANCELED) &&
+            message !is WaitWorkflow
+        ) {
             logDiscardingMessage(message, "as workflow is already terminated")
 
             return@coroutineScope null
