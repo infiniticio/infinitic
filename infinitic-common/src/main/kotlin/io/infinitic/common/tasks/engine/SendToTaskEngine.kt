@@ -27,4 +27,4 @@ package io.infinitic.common.tasks.engine
 
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 
-typealias SendToTaskEngine = suspend (TaskEngineMessage) -> Unit
+typealias SendToTaskEngine = (TaskEngineMessage) -> Unit

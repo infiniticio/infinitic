@@ -60,10 +60,11 @@ import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.apache.pulsar.client.api.PulsarClient
 import org.jetbrains.annotations.TestOnly
@@ -84,6 +85,9 @@ class PulsarInfiniticWorker private constructor(
     private val workflowTaskStorages = mutableMapOf<WorkflowName, TaskStateStorage>()
     private val perNameStorages = mutableMapOf<TaskName, MetricsPerNameStateStorage>()
     private val globalStorages = mutableMapOf<TaskName, MetricsGlobalStateStorage>()
+
+    private val runningThreadPool = Executors.newCachedThreadPool()
+    val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
 
     companion object {
         /**
@@ -118,7 +122,12 @@ class PulsarInfiniticWorker private constructor(
     /**
      * Close worker
      */
-    override fun close() = pulsarClient.close()
+    override fun close() {
+        runningScope.cancel()
+        runningThreadPool.shutdown()
+
+        pulsarClient.close()
+    }
 
     /**
      * Start worker
@@ -126,22 +135,11 @@ class PulsarInfiniticWorker private constructor(
     fun start() {
         when (workerConfig.transport) {
             Transport.inMemory -> {
-                logger.info { "Infinitic Worker closing due to `inMemory` transport setting" }
+                logger.info { "Infinitic Worker is closing due to `inMemory` transport setting" }
                 close()
             }
             Transport.pulsar -> {
-                val threadPool = Executors.newCachedThreadPool()
-
-                runBlocking(threadPool.asCoroutineDispatcher()) {
-                    try {
-                        coroutineScope { start(pulsarClient, workerConfig) }
-                    } finally {
-                        // closing Pulsar client is necessary to avoid other key-shared subscriptions to be blocked
-                        close()
-                        // shutdown the threadPool is necessary for the worker to close
-                        threadPool.shutdown()
-                    }
-                }
+                runningScope.future { start(pulsarClient, workerConfig) }.join()
             }
         }
     }
@@ -177,14 +175,14 @@ class PulsarInfiniticWorker private constructor(
 
         for (workflow in config.workflows) {
             val workflowName = WorkflowName(workflow.name)
-            println("Workflow $workflowName:")
+            logger.info { "Workflow $workflowName:" }
 
             // starting task executors running workflows tasks
             workflow.`class`?.let {
-                println(
+                logger.info {
                     "- workflow executor".padEnd(25) +
                         ": (instances: ${workflow.concurrency}) ${workflow.instance::class.java.name}"
-                )
+                }
                 taskExecutorRegister.registerWorkflow(workflow.name) { workflow.instance }
                 startPulsarTaskExecutors(
                     workflowName,
@@ -199,13 +197,12 @@ class PulsarInfiniticWorker private constructor(
 
             workflow.tagEngine?.let {
                 // starting engines managing tags of workflows
-                println(
+                logger.info {
                     "- tag engine".padEnd(25) + ": (" +
                         "storage: ${it.stateStorage}" +
                         ", cache: ${it.stateCache}" +
                         ", instances: ${it.concurrency})"
-
-                )
+                }
 
                 val storage = BinaryWorkflowTagStorage(
                     CachedKeyValueStorage(
@@ -232,12 +229,12 @@ class PulsarInfiniticWorker private constructor(
 
             // starting engines managing workflowTasks
             workflow.taskEngine?.let {
-                println(
+                logger.info {
                     "- workflow task engine".padEnd(25) + ": (" +
                         "storage: ${it.stateStorage}" +
                         ", cache: ${it.stateCache}" +
                         ", instances: ${it.concurrency})"
-                )
+                }
 
                 val storage = BinaryTaskStateStorage(
                     CachedKeyValueStorage(
@@ -268,13 +265,12 @@ class PulsarInfiniticWorker private constructor(
 
             // starting engines managing workflows
             workflow.workflowEngine?.let {
-                println(
+                logger.info {
                     "- workflow engine".padEnd(25) + ": (" +
                         "storage: ${it.stateStorage}" +
                         ", cache: ${it.stateCache}" +
                         ", instances: ${it.concurrency})"
-
-                )
+                }
 
                 val storage = BinaryWorkflowStateStorage(
                     CachedKeyValueStorage(
@@ -302,20 +298,18 @@ class PulsarInfiniticWorker private constructor(
                     pulsarOutput
                 )
             }
-
-            println()
         }
 
         for (task in config.tasks) {
             val taskName = TaskName(task.name)
-            println("Task $taskName:")
+            logger.info { "Task $taskName:" }
 
             // starting task executors running tasks
             task.`class`?.let {
-                println(
+                logger.info {
                     "- task executor".padEnd(25) +
                         ": (instances: ${task.concurrency}) ${task.instance::class.java.name}"
-                )
+                }
                 taskExecutorRegister.registerTask(task.name) { task.instance }
                 startPulsarTaskExecutors(
                     taskName,
@@ -330,13 +324,12 @@ class PulsarInfiniticWorker private constructor(
 
             // starting engines managing tags of tasks
             task.tagEngine?.let {
-                println(
+                logger.info {
                     "- tag engine".padEnd(25) + ": (" +
                         "storage: ${it.stateStorage}" +
                         ", cache: ${it.stateCache}" +
                         ", instances: ${it.concurrency})"
-
-                )
+                }
 
                 val storage = BinaryTaskTagStorage(
                     CachedKeyValueStorage(
@@ -348,7 +341,6 @@ class PulsarInfiniticWorker private constructor(
                         it.stateStorage!!.getKeySetStorage(workerConfig)
                     )
                 )
-
                 taskTagStorages[taskName] = storage
 
                 startPulsarTaskTagEngines(
@@ -363,12 +355,12 @@ class PulsarInfiniticWorker private constructor(
 
             // starting engines managing tasks
             task.taskEngine?.let {
-                println(
+                logger.info {
                     "- task engine".padEnd(25) + ": (" +
                         "storage: ${it.stateStorage}" +
                         ", cache: ${it.stateCache}" +
                         ", instances: ${it.concurrency})"
-                )
+                }
 
                 val storage = BinaryTaskStateStorage(
                     CachedKeyValueStorage(
@@ -376,7 +368,6 @@ class PulsarInfiniticWorker private constructor(
                         it.stateStorage!!.getKeyValueStorage(workerConfig)
                     )
                 )
-
                 taskStorages[taskName] = storage
 
                 startPulsarTaskEngines(
@@ -398,11 +389,11 @@ class PulsarInfiniticWorker private constructor(
             }
 
             task.metrics?.let {
-                println(
+                logger.info {
                     "- metrics engine".padEnd(25) + ": (" +
                         "storage: ${it.stateStorage}" +
                         ", cache: ${it.stateCacheOrDefault})"
-                )
+                }
 
                 val perNameStorage = BinaryMetricsPerNameStateStorage(
                     CachedKeyValueStorage(
@@ -410,7 +401,6 @@ class PulsarInfiniticWorker private constructor(
                         it.stateStorage!!.getKeyValueStorage(workerConfig)
                     )
                 )
-
                 perNameStorages[taskName] = perNameStorage
 
                 startPulsarMetricsPerNameEngines(
@@ -427,7 +417,6 @@ class PulsarInfiniticWorker private constructor(
                         it.stateStorage!!.getKeyValueStorage(workerConfig)
                     )
                 )
-
                 globalStorages[taskName] = globalStorage
 
                 startPulsarMetricsGlobalEngine(
@@ -436,9 +425,7 @@ class PulsarInfiniticWorker private constructor(
                     globalStorage
                 )
             }
-            println()
         }
-
-        println("Worker \"$workerName\" ready")
+        logger.info { "Worker \"$workerName\" ready" }
     }
 }

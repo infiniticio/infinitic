@@ -46,7 +46,7 @@ object Libs {
     }
 
     object Jackson {
-        private const val version = "2.12.3"
+        private const val version = "2.12.5"
         const val core = "com.fasterxml.jackson.core:jackson-core:$version"
         const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
         const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -54,13 +54,13 @@ object Libs {
     }
 
     object Kotest {
-        private const val version = "4.3.2"
+        private const val version = "4.6.1"
         const val property = "io.kotest:kotest-property-jvm:$version"
         const val junit5 = "io.kotest:kotest-runner-junit5-jvm:$version"
     }
 
     object Mockk {
-        const val mockk = "io.mockk:mockk:1.10.6"
+        const val mockk = "io.mockk:mockk:1.12.0"
     }
 
     object Avro4k {
@@ -68,7 +68,7 @@ object Libs {
     }
 
     object Hoplite {
-        private const val version = "1.4.0"
+        private const val version = "1.4.7"
         const val core = "com.sksamuel.hoplite:hoplite-core:$version"
         const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
     }

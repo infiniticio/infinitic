@@ -28,19 +28,21 @@ package io.infinitic.client
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import kotlinx.coroutines.CoroutineScope
 import java.io.Closeable
 import java.util.UUID
 
 interface InfiniticClient : Closeable {
     val clientName: ClientName
 
-    val scope: CoroutineScope
-
     /**
      * Close client
      */
     override fun close()
+
+    /**
+     * Wait for all current operations to complete
+     */
+    fun join()
 
     /**
      * Create stub for a new task

@@ -25,6 +25,7 @@
 
 dependencies {
     api(Libs.Coroutines.core)
+    implementation(Libs.Coroutines.jdk8)
 
     api(project(":infinitic-common"))
     api(project(":infinitic-config"))

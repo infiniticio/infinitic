@@ -46,20 +46,16 @@ import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import java.util.concurrent.Executors
+import mu.KotlinLogging
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
     taskExecutorRegister: TaskExecutorRegister,
     val name: String? = null
 ) : AbstractInfiniticClient() {
+
     companion object {
-        val logger: Logger = LoggerFactory.getLogger(InMemoryInfiniticClient::class.java.name)
+        private val logger = KotlinLogging.logger {}
 
         /**
          * Create InfiniticClient from a ClientConfig
@@ -85,15 +81,9 @@ class InMemoryInfiniticClient(
         }
     }
 
-    private val job: Job
-
-    private val threadPool = Executors.newCachedThreadPool()
-
-    override val scope = CoroutineScope(threadPool.asCoroutineDispatcher() + Job())
-
     override val clientName: ClientName = ClientName(name ?: "client: inMemory")
 
-    private val inMemoryOutput = InMemoryOutput(scope)
+    private val inMemoryOutput = InMemoryOutput(sendingScope)
 
     override val sendToTaskTagEngine = inMemoryOutput.sendCommandsToTaskTagEngine
 
@@ -102,11 +92,6 @@ class InMemoryInfiniticClient(
     override val sendToWorkflowTagEngine = inMemoryOutput.sendCommandsToWorkflowTagEngine
 
     override val sendToWorkflowEngine = inMemoryOutput.sendCommandsToWorkflowEngine
-
-    override fun close() {
-        job.cancel()
-        threadPool.shutdown()
-    }
 
     private val keyValueStorage = InMemoryKeyValueStorage()
     private val keySetStorage = InMemoryKeySetStorage()
@@ -119,7 +104,7 @@ class InMemoryInfiniticClient(
     val metricsGlobalStorage: MetricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
 
     init {
-        job = scope.startInMemory(
+        runningScope.startInMemory(
             taskExecutorRegister,
             this,
             inMemoryOutput,

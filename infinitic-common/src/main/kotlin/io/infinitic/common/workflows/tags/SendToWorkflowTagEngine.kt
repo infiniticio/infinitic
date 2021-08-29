@@ -27,4 +27,4 @@ package io.infinitic.common.workflows.tags
 
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 
-typealias SendToWorkflowTagEngine = suspend (WorkflowTagEngineMessage) -> Unit
+typealias SendToWorkflowTagEngine = (WorkflowTagEngineMessage) -> Unit

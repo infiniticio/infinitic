@@ -90,7 +90,7 @@ class TaskEngine(
         // the delay makes tests easier, avoiding failure of synchronous requests
         if (state.taskStatus.isTerminated) {
             CoroutineScope(coroutineContext).launch {
-                delay(200L)
+                delay(2000L)
                 storage.delState(message.taskId)
             }
         }

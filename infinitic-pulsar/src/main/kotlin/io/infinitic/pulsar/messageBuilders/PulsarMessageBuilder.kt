@@ -28,7 +28,6 @@ package io.infinitic.pulsar.messageBuilders
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
 import io.infinitic.pulsar.schemas.schemaDefinition
-import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.MessageId
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.TypedMessageBuilder
@@ -57,9 +56,9 @@ inline fun <reified T : Envelope<*>> PulsarMessageBuilder.sendPulsarMessageAsync
     }
     .sendAsync()
 
-suspend inline fun <reified T : Envelope<*>> PulsarMessageBuilder.sendPulsarMessage(
+inline fun <reified T : Envelope<*>> PulsarMessageBuilder.sendPulsarMessage(
     topic: String,
     msg: T,
     key: String?,
     after: MillisDuration
-): MessageId = sendPulsarMessageAsync(topic, msg, key, after).await()
+): MessageId = sendPulsarMessageAsync(topic, msg, key, after).join()

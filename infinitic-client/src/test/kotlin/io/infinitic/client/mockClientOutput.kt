@@ -49,8 +49,8 @@ import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -68,9 +68,9 @@ fun mockSendToTaskTagEngine(
                     taskTag = it.taskTag,
                     taskIds = setOf(TaskId(), TaskId())
                 )
-                GlobalScope.launch {
+                client.runningScope.launch {
                     // delay is useful to ensure that the client is listening before sending the event
-                    delay(50)
+                    delay(100)
                     client.handle(taskIdsPerTag)
                 }
             }
@@ -93,9 +93,9 @@ fun mockSendToWorkflowTagEngine(
                     workflowTag = it.workflowTag,
                     workflowIds = setOf(WorkflowId(), WorkflowId())
                 )
-                GlobalScope.launch {
+                client.runningScope.launch {
                     // delay is useful to ensure that the client is listening before sending the event
-                    delay(50)
+                    delay(100)
                     client.handle(workflowIdsPerTag)
                 }
             }
@@ -108,8 +108,8 @@ fun mockSendToTaskEngine(
     client: AbstractInfiniticClient,
     message: CapturingSlot<TaskEngineMessage>
 ): SendToTaskEngine {
-    val mock = mockk<SendToTaskEngine>()
-    coEvery { mock(capture(message)) } coAnswers {
+    val sendToTaskEngine = mockk<SendToTaskEngine>()
+    every { sendToTaskEngine(capture(message)) } answers {
         val msg = message.captured
         if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
             val taskCompleted = TaskCompleted(
@@ -118,15 +118,15 @@ fun mockSendToTaskEngine(
                 taskReturnValue = MethodReturnValue.from("success"),
                 taskMeta = TaskMeta()
             )
-            GlobalScope.launch {
+            client.runningScope.launch {
                 // delay is useful to ensure that the client is listening before sending the event
-                delay(50)
+                delay(100)
                 client.handle(taskCompleted)
             }
         }
     }
 
-    return mock
+    return sendToTaskEngine
 }
 
 fun mockSendToWorkflowEngine(
@@ -142,9 +142,9 @@ fun mockSendToWorkflowEngine(
                 workflowId = msg.workflowId,
                 workflowReturnValue = MethodReturnValue.from("success")
             )
-            GlobalScope.launch {
+            client.runningScope.launch {
                 // delay is useful to ensure that the client is listening before sending the event
-                delay(50)
+                delay(100)
                 client.handle(workflowCompleted)
             }
         }

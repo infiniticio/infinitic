@@ -68,7 +68,7 @@ fun CoroutineScope.startInMemory(
 
     startClientWorker(
         client,
-        inputChannel = output.clientEventsChannel,
+        inputChannel = output.clientChannel,
         outputChannel = output.logChannel,
     )
 

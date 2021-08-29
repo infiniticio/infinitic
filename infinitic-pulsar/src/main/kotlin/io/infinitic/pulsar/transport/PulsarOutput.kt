@@ -46,7 +46,6 @@ import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilder
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromClient
 import io.infinitic.pulsar.messageBuilders.PulsarMessageBuilderFromFunction
 import io.infinitic.pulsar.messageBuilders.sendPulsarMessage
-import io.infinitic.pulsar.messageBuilders.sendPulsarMessageAsync
 import io.infinitic.pulsar.topics.GlobalTopic
 import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicName
@@ -99,7 +98,7 @@ class PulsarOutput(
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
-    fun sendToTaskTagEngine(topicType: TopicType, async: Boolean = false): SendToTaskTagEngine = { message ->
+    fun sendToTaskTagEngine(topicType: TopicType): SendToTaskTagEngine = { message ->
         val taskTopic = when (topicType) {
             TopicType.NEW -> TaskTopic.TAG_NEW
             TopicType.EXISTING -> TaskTopic.TAG_EXISTING
@@ -107,13 +106,10 @@ class PulsarOutput(
         val topic = topicName.of(taskTopic, "${message.taskName}")
         val key = "${message.taskTag}"
         logger.debug { "topic: $topic, sendToTaskTagEngine: $message" }
-        when (async) {
-            true -> pulsarMessageBuilder.sendPulsarMessageAsync(topic, message.envelope(), key, zero)
-            false -> pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
-        }
+        pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
-    fun sendToTaskEngine(topicType: TopicType, name: Name? = null, async: Boolean = false): SendToTaskEngine = { message ->
+    fun sendToTaskEngine(topicType: TopicType, name: Name? = null): SendToTaskEngine = { message ->
         val topic = when (name) {
             is WorkflowName -> {
                 val workflowTaskTopic = when (topicType) {
@@ -140,10 +136,7 @@ class PulsarOutput(
         }
         val key = "${message.taskId}"
         logger.debug { "topic: $topic, sendToTaskEngine: $message" }
-        when (async) {
-            true -> pulsarMessageBuilder.sendPulsarMessageAsync(topic, message.envelope(), key, zero)
-            false -> pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
-        }
+        pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
     fun sendToTaskEngineAfter(name: Name? = null): SendToTaskEngineAfter = { message, after ->
@@ -158,7 +151,7 @@ class PulsarOutput(
         pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, after)
     }
 
-    fun sendToWorkflowTagEngine(topicType: TopicType, async: Boolean = false): SendToWorkflowTagEngine = { message ->
+    fun sendToWorkflowTagEngine(topicType: TopicType): SendToWorkflowTagEngine = { message ->
         val workflowTopic = when (topicType) {
             TopicType.NEW -> WorkflowTopic.TAG_NEW
             TopicType.EXISTING -> WorkflowTopic.TAG_EXISTING
@@ -166,13 +159,10 @@ class PulsarOutput(
         val topic = topicName.of(workflowTopic, "${message.workflowName}")
         val key = "${message.workflowTag}"
         logger.debug { "topic: $topic, sendToWorkflowTagEngine: $message" }
-        when (async) {
-            true -> pulsarMessageBuilder.sendPulsarMessageAsync(topic, message.envelope(), key, zero)
-            false -> pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
-        }
+        pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
-    fun sendToWorkflowEngine(topicType: TopicType, async: Boolean = false): SendToWorkflowEngine = { message ->
+    fun sendToWorkflowEngine(topicType: TopicType): SendToWorkflowEngine = { message ->
         val workflowTopic = when (topicType) {
             TopicType.NEW -> WorkflowTopic.ENGINE_NEW
             TopicType.EXISTING -> WorkflowTopic.ENGINE_EXISTING
@@ -180,10 +170,7 @@ class PulsarOutput(
         val topic = topicName.of(workflowTopic, "${message.workflowName}")
         val key = "${message.workflowId}"
         logger.debug { "topic: $topic, sendToWorkflowEngine: $message" }
-        when (async) {
-            true -> pulsarMessageBuilder.sendPulsarMessageAsync(topic, message.envelope(), key, zero)
-            false -> pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
-        }
+        pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
     fun sendToWorkflowEngineAfter(): SendToWorkflowEngineAfter = { message, after ->
