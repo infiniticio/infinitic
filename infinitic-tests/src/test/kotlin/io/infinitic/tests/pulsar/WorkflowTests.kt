@@ -133,17 +133,10 @@ internal class WorkflowTests : StringSpec({
     }
 
     "Simple Sequential Workflow" {
-        val deferred = client.async(workflowA) { seq1() }
-        client.join()
-
-        deferred.await() shouldBe "123"
-    }
-
-    "Wait for synchronous Workflow" {
         workflowA.seq1() shouldBe "123"
     }
 
-    "Wait for asynchronous Workflow" {
+    "Wait for a dispatched Workflow" {
         val deferred = client.async(workflowA) { seq1() }
         client.join()
 

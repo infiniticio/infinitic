@@ -107,7 +107,7 @@ class WorkflowEngine(
         // the delay makes tests easier, avoiding failure of synchronous requests
         if (state.workflowStatus == WorkflowStatus.TERMINATED) {
             CoroutineScope(coroutineContext).launch {
-                delay(200L)
+                delay(2000L)
                 storage.delState(message.workflowId)
             }
         }
