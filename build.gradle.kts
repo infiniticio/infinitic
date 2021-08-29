@@ -68,7 +68,6 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
-
     }
 
     // For Kotlin sources
