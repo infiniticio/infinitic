@@ -45,6 +45,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.delay
 import kotlin.concurrent.thread
 
 internal class TaskTests : StringSpec({
@@ -223,6 +224,9 @@ internal class TaskTests : StringSpec({
         client.getTaskIds<TaskTest>("bar") shouldBe setOf(deferred.id)
 
         deferred.await()
+
+        // wait a bit to ensure tag propagation
+        delay(200)
 
         client.getTaskIds<TaskTest>("foo") shouldBe setOf()
         client.getTaskIds<TaskTest>("bar") shouldBe setOf()
