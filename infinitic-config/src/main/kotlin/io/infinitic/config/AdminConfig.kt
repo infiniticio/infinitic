@@ -33,7 +33,7 @@ data class AdminConfig(
     /*
     Pulsar configuration
      */
-    @JvmField val pulsar: Pulsar
+    val pulsar: Pulsar
 ) {
     companion object {
         /**

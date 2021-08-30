@@ -68,11 +68,9 @@ import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.lang.RuntimeException
-import kotlin.coroutines.coroutineContext
 
 class WorkflowEngine(
     storage: WorkflowStateStorage,
@@ -104,12 +102,8 @@ class WorkflowEngine(
         storage.putState(message.workflowId, state)
 
         // delete state if terminated / canceled
-        // the delay makes easier to get result of deferred.await() in tests
         when (state.workflowStatus) {
-            WorkflowStatus.TERMINATED, WorkflowStatus.CANCELED -> CoroutineScope(coroutineContext).launch {
-                delay(2000L)
-                storage.delState(message.workflowId)
-            }
+            WorkflowStatus.TERMINATED, WorkflowStatus.CANCELED -> storage.delState(message.workflowId)
             WorkflowStatus.ALIVE -> Unit
         }
     }

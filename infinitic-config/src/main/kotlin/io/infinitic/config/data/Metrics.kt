@@ -30,8 +30,8 @@ import io.infinitic.config.merge.Mergeable
 import io.infinitic.storage.StateStorage
 
 data class Metrics(
-    @JvmField var stateStorage: StateStorage? = null,
-    @JvmField var stateCache: StateCache? = null
+    var stateStorage: StateStorage? = null,
+    var stateCache: StateCache? = null
 ) : Mergeable {
     val stateCacheOrDefault: StateCache
         get() = stateCache ?: StateCache.none

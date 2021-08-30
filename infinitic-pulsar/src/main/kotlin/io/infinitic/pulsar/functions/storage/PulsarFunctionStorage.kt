@@ -22,14 +22,26 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.config.storage
 
-import io.infinitic.common.storage.keyCounter.KeyCounterStorage
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.InMemoryKeyCounterStorage
-import io.infinitic.storage.redis.RedisKeyCounterStorage
+package io.infinitic.pulsar.functions.storage
 
-fun StateStorage.getKeyCounterStorage(workerConfig: io.infinitic.config.WorkerConfig): KeyCounterStorage = when (this) {
-    StateStorage.inMemory -> InMemoryKeyCounterStorage()
-    StateStorage.redis -> RedisKeyCounterStorage.of(workerConfig.redis!!)
+import io.infinitic.common.storage.keyValue.KeyValueStorage
+import org.apache.pulsar.functions.api.Context
+import org.jetbrains.annotations.TestOnly
+import java.nio.ByteBuffer
+
+class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
+    override suspend fun getValue(key: String): ByteArray? =
+        context.getState(key).array()
+
+    override suspend fun putValue(key: String, value: ByteArray) =
+        context.putState(key, ByteBuffer.wrap(value))
+
+    override suspend fun delValue(key: String) =
+        context.deleteState(key)
+
+    @TestOnly
+    override fun flush() {
+        // flush is used in tests, no actual implementation needed here
+    }
 }

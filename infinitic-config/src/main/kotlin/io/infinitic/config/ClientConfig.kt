@@ -25,9 +25,7 @@
 
 package io.infinitic.config
 
-import io.infinitic.config.data.Task
 import io.infinitic.config.data.Transport
-import io.infinitic.config.data.Workflow
 import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.config.pulsar.Pulsar
@@ -36,28 +34,17 @@ data class ClientConfig(
     /*
    Client name
     */
-    @JvmField val name: String? = null,
+    val name: String? = null,
 
     /*
     Transport configuration
      */
-    @JvmField val transport: Transport = Transport.pulsar,
+    val transport: Transport = Transport.pulsar,
 
     /*
     Pulsar configuration
      */
-    @JvmField val pulsar: Pulsar? = null,
-
-    /*
-    Tasks configuration (Used only with transport: inMemory)
-     */
-    @JvmField val tasks: List<Task> = listOf(),
-
-    /*
-    Workflows configuration (Used only with transport: inMemory)
-     */
-    @JvmField val workflows: List<Workflow> = listOf(),
-
+    val pulsar: Pulsar? = null
 ) {
     init {
         if (transport == Transport.pulsar) {

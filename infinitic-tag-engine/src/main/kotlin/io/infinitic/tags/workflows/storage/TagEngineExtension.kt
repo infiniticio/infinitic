@@ -22,14 +22,23 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.config.storage
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import io.infinitic.storage.StateStorage
-import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.storage.redis.RedisKeyValueStorage
+@file:JvmName("WorkflowTagStorageKt")
 
-fun StateStorage.getKeyValueStorage(workerConfig: io.infinitic.config.WorkerConfig): KeyValueStorage = when (this) {
-    StateStorage.inMemory -> InMemoryKeyValueStorage()
-    StateStorage.redis -> RedisKeyValueStorage.of(workerConfig.redis!!)
-}
+package io.infinitic.tags.workflows.storage
+
+import io.infinitic.common.storage.keySet.CachedKeySetStorage
+import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
+import io.infinitic.config.WorkerConfig
+import io.infinitic.config.data.TagEngine
+
+fun TagEngine.workflowStorage(workerConfig: WorkerConfig) = BinaryWorkflowTagStorage(
+    CachedKeyValueStorage(
+        stateCache!!.keyValue(workerConfig),
+        stateStorage!!.keyValue(workerConfig)
+    ),
+    CachedKeySetStorage(
+        stateCache!!.keySet(workerConfig),
+        stateStorage!!.keySet(workerConfig)
+    )
+)

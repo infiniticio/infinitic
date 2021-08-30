@@ -25,12 +25,18 @@
 
 package io.infinitic.common.storage.keyValue
 
+import io.infinitic.common.data.MillisDuration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
+import kotlin.coroutines.coroutineContext
 
 open class CachedKeyValueStorage(
     val cache: KeyValueCache<ByteArray>,
-    val storage: KeyValueStorage
+    val storage: KeyValueStorage,
+    private val cachePersistenceAfterDeletion: MillisDuration = MillisDuration(0L)
 ) : KeyValueStorage {
 
     private val logger = KotlinLogging.logger {}
@@ -51,7 +57,13 @@ open class CachedKeyValueStorage(
 
     override suspend fun delValue(key: String) {
         storage.delValue(key)
-        cache.delValue(key)
+        when {
+            cachePersistenceAfterDeletion <= 0 -> cache.delValue(key)
+            cachePersistenceAfterDeletion > 0 -> CoroutineScope(coroutineContext).launch {
+                delay(cachePersistenceAfterDeletion.long)
+                cache.delValue(key)
+            }
+        }
     }
 
     @TestOnly

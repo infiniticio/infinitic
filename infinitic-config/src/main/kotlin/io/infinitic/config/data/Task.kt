@@ -30,12 +30,12 @@ import java.lang.reflect.InvocationTargetException
 import io.infinitic.tasks.Task as TaskInstance
 
 data class Task(
-    @JvmField val name: String,
-    @JvmField val `class`: String? = null,
-    @JvmField val concurrency: Int = 1,
-    @JvmField var tagEngine: TagEngine? = TagEngine().apply { default = true },
-    @JvmField var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
-    @JvmField var metrics: Metrics? = Metrics()
+    val name: String,
+    val `class`: String? = null,
+    val concurrency: Int = 1,
+    var tagEngine: TagEngine? = TagEngine().apply { default = true },
+    var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
+    var metrics: Metrics? = Metrics()
 ) {
     private lateinit var _constructor: Constructor<out Any>
 

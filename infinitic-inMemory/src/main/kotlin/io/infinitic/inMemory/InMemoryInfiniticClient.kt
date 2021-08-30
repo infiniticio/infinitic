@@ -27,7 +27,9 @@ package io.infinitic.inMemory
 
 import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.config.ClientConfig
+import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
+import io.infinitic.config.WorkerConfig
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
@@ -40,44 +42,31 @@ import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
 import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
 import io.infinitic.tags.workflows.storage.WorkflowTagStorage
-import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
-import mu.KotlinLogging
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
-    taskExecutorRegister: TaskExecutorRegister,
+    workerConfig: WorkerConfig,
     val name: String? = null
 ) : AbstractInfiniticClient() {
 
-    companion object {
-        private val logger = KotlinLogging.logger {}
+    val taskExecutorRegister = TaskExecutorRegisterImpl()
 
-        /**
-         * Create InfiniticClient from a ClientConfig
-         */
-        @JvmStatic
-        fun fromConfig(clientConfig: ClientConfig): InMemoryInfiniticClient {
-            val register = TaskExecutorRegisterImpl()
-            clientConfig.tasks.forEach {
-                register.registerTask(it.name) { it.instance }
-            }
-            if (clientConfig.tasks.isEmpty()) {
-                logger.warn("No task registered in your ClientConfig file")
-            }
+    init {
+        require(workerConfig.tasks.isNotEmpty()) { "No task registered in your config file" }
 
-            clientConfig.workflows.forEach {
-                register.registerWorkflow(it.name) { it.instance }
-            }
-            if (clientConfig.workflows.isEmpty()) {
-                logger.warn("No workflow registered in your ClientConfig file")
-            }
+        workerConfig.tasks.forEach {
+            taskExecutorRegister.registerTask(it.name) { it.instance }
+        }
 
-            return InMemoryInfiniticClient(register, clientConfig.name)
+        require(workerConfig.workflows.isNotEmpty()) { "No workflow registered in your config file" }
+
+        workerConfig.workflows.forEach {
+            taskExecutorRegister.registerWorkflow(it.name) { it.instance }
         }
     }
 
@@ -97,11 +86,25 @@ class InMemoryInfiniticClient(
     private val keySetStorage = InMemoryKeySetStorage()
 
     val taskTagStorage: TaskTagStorage = BinaryTaskTagStorage(keyValueStorage, keySetStorage)
-    val taskStorage: TaskStateStorage = BinaryTaskStateStorage(keyValueStorage)
     val workflowTagStorage: WorkflowTagStorage = BinaryWorkflowTagStorage(keyValueStorage, keySetStorage)
-    val workflowStateStorage: WorkflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
     val metricsPerNameStorage: MetricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
     val metricsGlobalStorage: MetricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
+
+    val taskStorage: TaskStateStorage = BinaryTaskStateStorage(
+        CachedKeyValueStorage(
+            workerConfig.stateCache.keyValue(workerConfig),
+            workerConfig.stateStorage!!.keyValue(workerConfig),
+            cachePersistenceAfterDeletion = MillisDuration(workerConfig.stateCachePersistenceAfterDeletion)
+        )
+    )
+
+    val workflowStateStorage: WorkflowStateStorage = BinaryWorkflowStateStorage(
+        CachedKeyValueStorage(
+            workerConfig.stateCache.keyValue(workerConfig),
+            workerConfig.stateStorage!!.keyValue(workerConfig),
+            cachePersistenceAfterDeletion = MillisDuration(workerConfig.stateCachePersistenceAfterDeletion)
+        )
+    )
 
     init {
         runningScope.startInMemory(

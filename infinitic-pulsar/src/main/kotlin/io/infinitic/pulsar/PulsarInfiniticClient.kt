@@ -30,6 +30,7 @@ import io.infinitic.client.InfiniticClient
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.config.ClientConfig
+import io.infinitic.config.WorkerConfig
 import io.infinitic.config.data.Transport
 import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
@@ -40,9 +41,9 @@ import io.infinitic.inMemory.InMemoryInfiniticClient as InMemoryClient
 
 @Suppress("unused", "MemberVisibilityCanBePrivate", "CanBeParameter")
 class PulsarInfiniticClient @JvmOverloads constructor(
-    @JvmField val pulsarClient: PulsarClient,
-    @JvmField val pulsarTenant: String,
-    @JvmField val pulsarNamespace: String,
+    val pulsarClient: PulsarClient,
+    val pulsarTenant: String,
+    val pulsarNamespace: String,
     name: String? = null
 ) : AbstractInfiniticClient() {
 
@@ -87,16 +88,12 @@ class PulsarInfiniticClient @JvmOverloads constructor(
          * Create Client from a custom PulsarClient and a ClientConfig instance
          */
         @JvmStatic
-        fun from(pulsarClient: PulsarClient, clientConfig: ClientConfig): InfiniticClient = when (clientConfig.transport) {
-            Transport.pulsar -> PulsarInfiniticClient(
-                pulsarClient,
-                clientConfig.pulsar!!.tenant,
-                clientConfig.pulsar!!.namespace,
-                clientConfig.name
-            )
-
-            Transport.inMemory -> InMemoryClient.fromConfig(clientConfig)
-        }
+        fun from(pulsarClient: PulsarClient, clientConfig: ClientConfig): InfiniticClient = PulsarInfiniticClient(
+            pulsarClient,
+            clientConfig.pulsar!!.tenant,
+            clientConfig.pulsar!!.namespace,
+            clientConfig.name
+        )
 
         /**
          * Create Client from a ClientConfig instance
@@ -109,14 +106,32 @@ class PulsarInfiniticClient @JvmOverloads constructor(
          * Create Client from file in resources directory
          */
         @JvmStatic
-        fun fromConfigResource(vararg resources: String) =
-            fromConfig(ClientConfig.fromResource(*resources))
+        fun fromConfigResource(vararg resources: String): InfiniticClient {
+            val clientConfig = ClientConfig.fromResource(*resources)
+
+            return when (clientConfig.transport) {
+                Transport.pulsar -> fromConfig(clientConfig)
+                Transport.inMemory -> {
+                    val workerConfig = WorkerConfig.fromResource(*resources)
+                    InMemoryClient(workerConfig, clientConfig.name)
+                }
+            }
+        }
 
         /**
          * Create Client from file in system file
          */
         @JvmStatic
-        fun fromConfigFile(vararg files: String) =
-            fromConfig(ClientConfig.fromFile(*files))
+        fun fromConfigFile(vararg files: String): InfiniticClient {
+            val clientConfig = ClientConfig.fromFile(*files)
+
+            return when (clientConfig.transport) {
+                Transport.pulsar -> fromConfig(clientConfig)
+                Transport.inMemory -> {
+                    val workerConfig = WorkerConfig.fromFile(*files)
+                    InMemoryClient(workerConfig, clientConfig.name)
+                }
+            }
+        }
     }
 }

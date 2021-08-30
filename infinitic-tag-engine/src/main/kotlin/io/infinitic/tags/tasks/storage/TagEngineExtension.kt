@@ -22,16 +22,23 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.config.cache
 
-import io.infinitic.cache.StateCache
-import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineKeySetCache
-import io.infinitic.cache.no.NoCache
-import io.infinitic.common.storage.keySet.KeySetCache
+@file:JvmName("WorkflowTagStorageKt")
+
+package io.infinitic.tags.tasks.storage
+
+import io.infinitic.common.storage.keySet.CachedKeySetStorage
+import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.config.WorkerConfig
+import io.infinitic.config.data.TagEngine
 
-fun StateCache.getKeySetCache(workerConfig: WorkerConfig): KeySetCache<ByteArray> = when (this) {
-    StateCache.none -> NoCache()
-    StateCache.caffeine -> CaffeineKeySetCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
-}
+fun TagEngine.taskStorage(workerConfig: WorkerConfig) = BinaryTaskTagStorage(
+    CachedKeyValueStorage(
+        stateCache!!.keyValue(workerConfig),
+        stateStorage!!.keyValue(workerConfig)
+    ),
+    CachedKeySetStorage(
+        stateCache!!.keySet(workerConfig),
+        stateStorage!!.keySet(workerConfig)
+    )
+)

@@ -39,11 +39,11 @@ import java.io.Closeable
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 
 class PulsarInfiniticAdmin @JvmOverloads constructor(
-    @JvmField val pulsarAdmin: PulsarAdmin,
-    @JvmField val tenant: String,
-    @JvmField val namespace: String,
-    @JvmField val allowedClusters: Set<String>? = null,
-    @JvmField val adminRoles: Set<String>? = null
+    val pulsarAdmin: PulsarAdmin,
+    val tenant: String,
+    val namespace: String,
+    val allowedClusters: Set<String>? = null,
+    val adminRoles: Set<String>? = null
 ) : Closeable {
     val topicNamer = TopicName(tenant, namespace)
 

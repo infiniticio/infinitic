@@ -395,7 +395,7 @@ internal class WorkflowTests : StringSpec({
         deferred.await() shouldBe "foobar42"
     }
 
-    "Canceling async workflow" {
+    "Cancelling async workflow" {
         val deferred = client.async(workflowA) { channel1() }
         client.join()
 
@@ -404,7 +404,7 @@ internal class WorkflowTests : StringSpec({
         shouldThrow<CanceledDeferredException> { deferred.await() }
     }
 
-    "Canceling workflow" {
+    "Cancelling workflow" {
         val deferred = client.async(workflowA) { channel1() }
         client.join()
 
@@ -436,25 +436,25 @@ internal class WorkflowTests : StringSpec({
         workflowA.failing3b() shouldBe 100
     }
 
-    "Canceling task on main path should throw " {
+    "Cancelling task on main path should throw " {
         val e = shouldThrow<FailedDeferredException> { workflowA.failing4() }
 
         e.causeError?.errorName shouldBe CanceledInWorkflowException::class.java.name
         e.causeError?.whereName shouldBe TaskA::class.java.name
     }
 
-    "Canceling task not on main path should not throw " {
+    "Cancelling task not on main path should not throw " {
         workflowA.failing5() shouldBe 100
     }
 
-    "Canceling child workflow on main path should throw" {
+    "Cancelling child workflow on main path should throw" {
         val e = shouldThrow<FailedDeferredException> { workflowB.cancelChild1() }
 
         e.causeError?.errorName shouldBe CanceledInWorkflowException::class.java.name
         e.causeError?.whereName shouldBe WorkflowA::class.java.name
     }
 
-    "Canceling child workflow not on main path should not throw" {
+    "Cancelling child workflow not on main path should not throw" {
         workflowB.cancelChild2() shouldBe 100
     }
 
@@ -490,7 +490,7 @@ internal class WorkflowTests : StringSpec({
         client.async(workflowATagged) { cancel1() }
         client.join()
 
-        delay(2000)
+        delay(1000)
         client.getWorkflowIds<WorkflowA>("foo").size shouldBe 2
 
         client.cancel(workflowATagged)

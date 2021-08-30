@@ -29,11 +29,11 @@ import com.sksamuel.hoplite.Masked
 import redis.clients.jedis.Protocol
 
 data class Redis(
-    @JvmField val host: String = Protocol.DEFAULT_HOST,
-    @JvmField var port: Int = Protocol.DEFAULT_PORT,
-    @JvmField var timeout: Int = Protocol.DEFAULT_TIMEOUT,
-    @JvmField var user: String? = null,
-    @JvmField var password: Masked? = null,
-    @JvmField var database: Int = Protocol.DEFAULT_DATABASE,
-    @JvmField var ssl: Boolean = false
+    val host: String = Protocol.DEFAULT_HOST,
+    var port: Int = Protocol.DEFAULT_PORT,
+    var timeout: Int = Protocol.DEFAULT_TIMEOUT,
+    var user: String? = null,
+    var password: Masked? = null,
+    var database: Int = Protocol.DEFAULT_DATABASE,
+    var ssl: Boolean = false
 )

@@ -25,8 +25,39 @@
 
 package io.infinitic.cache
 
+import io.infinitic.cache.caffeine.Caffeine
+import io.infinitic.cache.caffeine.CaffeineKeyCounterCache
+import io.infinitic.cache.caffeine.CaffeineKeySetCache
+import io.infinitic.cache.caffeine.CaffeineKeyValueCache
+import io.infinitic.cache.no.NoCache
+import io.infinitic.common.storage.keyCounter.KeyCounterCache
+import io.infinitic.common.storage.keySet.KeySetCache
+import io.infinitic.common.storage.keyValue.KeyValueCache
+
 @Suppress("EnumEntryName")
-enum class StateCache {
-    none,
-    caffeine
+enum class StateCache : KeyCounter, KeySet, KeyValue {
+    none {
+        override fun keyCounter(config: CacheConfig) = NoCache<Long>()
+        override fun keySet(config: CacheConfig) = NoCache<ByteArray>()
+        override fun keyValue(config: CacheConfig) = NoCache<ByteArray>()
+    },
+    caffeine {
+        override fun keyCounter(config: CacheConfig) = CaffeineKeyCounterCache(caffeineConfig(config))
+        override fun keySet(config: CacheConfig) = CaffeineKeySetCache(caffeineConfig(config))
+        override fun keyValue(config: CacheConfig) = CaffeineKeyValueCache<ByteArray>(caffeineConfig(config))
+
+        private fun caffeineConfig(config: CacheConfig) = config.caffeine ?: Caffeine(expireAfterAccess = 3600)
+    }
+}
+
+private interface KeyCounter {
+    fun keyCounter(config: CacheConfig): KeyCounterCache
+}
+
+private interface KeySet {
+    fun keySet(config: CacheConfig): KeySetCache<ByteArray>
+}
+
+private interface KeyValue {
+    fun keyValue(config: CacheConfig): KeyValueCache<ByteArray>
 }

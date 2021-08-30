@@ -33,17 +33,17 @@ data class DashboardConfig(
     /*
     Pulsar configuration
      */
-    @JvmField val pulsar: Pulsar,
+    val pulsar: Pulsar,
 
     /*
     Port configuration
      */
-    @JvmField val port: Int = 16097,
+    val port: Int = 16097,
 
     /*
     Debug (KWeb) configuration
      */
-    @JvmField val debug: Boolean = true
+    val debug: Boolean = true
 ) {
 
     companion object {

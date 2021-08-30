@@ -160,6 +160,7 @@ internal class TaskEngineTests : StringSpec({
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
             taskStateStorage.putState(msgIn.taskId, ofType())
+            taskStateStorage.delState(msgIn.taskId)
         }
         verifyAll()
 
@@ -263,6 +264,7 @@ internal class TaskEngineTests : StringSpec({
             sendToTaskTagEngine(ofType<RemoveTaskTag>())
             sendToMetricsPerName(ofType<TaskStatusUpdated>())
             taskStateStorage.putState(msgIn.taskId, ofType())
+            taskStateStorage.delState(msgIn.taskId)
         }
         verifyAll()
 

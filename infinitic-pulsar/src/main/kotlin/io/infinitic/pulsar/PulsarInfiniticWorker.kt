@@ -25,16 +25,13 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.storage.keySet.CachedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.config.WorkerConfig
-import io.infinitic.config.cache.getKeySetCache
-import io.infinitic.config.cache.getKeyValueCache
 import io.infinitic.config.data.Transport
-import io.infinitic.config.storage.getKeySetStorage
-import io.infinitic.config.storage.getKeyValueStorage
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
@@ -73,8 +70,8 @@ import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class PulsarInfiniticWorker private constructor(
-    @JvmField val pulsarClient: PulsarClient,
-    @JvmField val workerConfig: WorkerConfig
+    val pulsarClient: PulsarClient,
+    val workerConfig: WorkerConfig
 ) : Closeable {
     private val logger = KotlinLogging.logger {}
 
@@ -206,12 +203,12 @@ class PulsarInfiniticWorker private constructor(
 
                 val storage = BinaryWorkflowTagStorage(
                     CachedKeyValueStorage(
-                        it.stateCache!!.getKeyValueCache(workerConfig),
-                        it.stateStorage!!.getKeyValueStorage(workerConfig)
+                        it.stateCache!!.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig)
                     ),
                     CachedKeySetStorage(
-                        it.stateCache!!.getKeySetCache(workerConfig),
-                        it.stateStorage!!.getKeySetStorage(workerConfig)
+                        it.stateCache!!.keySet(workerConfig),
+                        it.stateStorage!!.keySet(workerConfig)
                     )
                 )
 
@@ -238,8 +235,9 @@ class PulsarInfiniticWorker private constructor(
 
                 val storage = BinaryTaskStateStorage(
                     CachedKeyValueStorage(
-                        it.stateCache!!.getKeyValueCache(workerConfig),
-                        it.stateStorage!!.getKeyValueStorage(workerConfig)
+                        it.stateCache!!.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig),
+                        cachePersistenceAfterDeletion = MillisDuration(workerConfig.stateCachePersistenceAfterDeletion)
                     )
                 )
 
@@ -274,8 +272,9 @@ class PulsarInfiniticWorker private constructor(
 
                 val storage = BinaryWorkflowStateStorage(
                     CachedKeyValueStorage(
-                        it.stateCache!!.getKeyValueCache(workerConfig),
-                        it.stateStorage!!.getKeyValueStorage(workerConfig)
+                        it.stateCache!!.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig),
+                        cachePersistenceAfterDeletion = MillisDuration(workerConfig.stateCachePersistenceAfterDeletion)
                     )
                 )
 
@@ -333,12 +332,12 @@ class PulsarInfiniticWorker private constructor(
 
                 val storage = BinaryTaskTagStorage(
                     CachedKeyValueStorage(
-                        it.stateCache!!.getKeyValueCache(workerConfig),
-                        it.stateStorage!!.getKeyValueStorage(workerConfig)
+                        it.stateCache!!.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig)
                     ),
                     CachedKeySetStorage(
-                        it.stateCache!!.getKeySetCache(workerConfig),
-                        it.stateStorage!!.getKeySetStorage(workerConfig)
+                        it.stateCache!!.keySet(workerConfig),
+                        it.stateStorage!!.keySet(workerConfig)
                     )
                 )
                 taskTagStorages[taskName] = storage
@@ -364,8 +363,8 @@ class PulsarInfiniticWorker private constructor(
 
                 val storage = BinaryTaskStateStorage(
                     CachedKeyValueStorage(
-                        it.stateCache!!.getKeyValueCache(workerConfig),
-                        it.stateStorage!!.getKeyValueStorage(workerConfig)
+                        it.stateCache!!.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig)
                     )
                 )
                 taskStorages[taskName] = storage
@@ -397,8 +396,8 @@ class PulsarInfiniticWorker private constructor(
 
                 val perNameStorage = BinaryMetricsPerNameStateStorage(
                     CachedKeyValueStorage(
-                        it.stateCacheOrDefault.getKeyValueCache(workerConfig),
-                        it.stateStorage!!.getKeyValueStorage(workerConfig)
+                        it.stateCacheOrDefault.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig)
                     )
                 )
                 perNameStorages[taskName] = perNameStorage
@@ -413,8 +412,8 @@ class PulsarInfiniticWorker private constructor(
 
                 val globalStorage = BinaryMetricsGlobalStateStorage(
                     CachedKeyValueStorage(
-                        it.stateCacheOrDefault.getKeyValueCache(workerConfig),
-                        it.stateStorage!!.getKeyValueStorage(workerConfig)
+                        it.stateCacheOrDefault.keyValue(workerConfig),
+                        it.stateStorage!!.keyValue(workerConfig)
                     )
                 )
                 globalStorages[taskName] = globalStorage

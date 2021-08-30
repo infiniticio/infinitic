@@ -23,25 +23,23 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.storage
+package io.infinitic.cache
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import org.apache.pulsar.functions.api.Context
-import org.jetbrains.annotations.TestOnly
-import java.nio.ByteBuffer
+import io.infinitic.cache.caffeine.Caffeine
 
-class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
-    override suspend fun getValue(key: String): ByteArray? =
-        context.getState(key).array()
+interface CacheConfig {
+    /*
+    Default state cache
+     */
+    var stateCache: StateCache
 
-    override suspend fun putValue(key: String, value: ByteArray) =
-        context.putState(key, ByteBuffer.wrap(value))
+    /*
+    State can be persisted in cache after deletion (useful for tests)
+     */
+    var stateCachePersistenceAfterDeletion: Long
 
-    override suspend fun delValue(key: String) =
-        context.deleteState(key)
-
-    @TestOnly
-    override fun flush() {
-        // flush is used in tests, no actual implementation needed here
-    }
+    /*
+    Caffeine configuration
+     */
+    val caffeine: Caffeine?
 }

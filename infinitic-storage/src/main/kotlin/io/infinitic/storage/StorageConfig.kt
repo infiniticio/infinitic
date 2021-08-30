@@ -22,16 +22,19 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.config.cache
 
-import io.infinitic.cache.StateCache
-import io.infinitic.cache.caffeine.Caffeine
-import io.infinitic.cache.caffeine.CaffeineKeyValueCache
-import io.infinitic.cache.no.NoCache
-import io.infinitic.common.storage.keyValue.KeyValueCache
-import io.infinitic.config.WorkerConfig
+package io.infinitic.storage
 
-fun <T> StateCache.getKeyValueCache(workerConfig: WorkerConfig): KeyValueCache<T> = when (this) {
-    StateCache.none -> NoCache()
-    StateCache.caffeine -> CaffeineKeyValueCache(workerConfig.caffeine ?: Caffeine(expireAfterAccess = 3600))
+import io.infinitic.storage.redis.Redis
+
+interface StorageConfig {
+    /*
+     Default state storage
+      */
+    var stateStorage: StateStorage?
+
+    /*
+    Redis configuration
+     */
+    val redis: Redis?
 }

@@ -30,12 +30,12 @@ import java.lang.reflect.InvocationTargetException
 import io.infinitic.workflows.Workflow as WorkflowInstance
 
 data class Workflow(
-    @JvmField val name: String,
-    @JvmField val `class`: String? = null,
-    @JvmField val concurrency: Int = 1,
-    @JvmField var tagEngine: TagEngine? = TagEngine().apply { default = true },
-    @JvmField var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
-    @JvmField var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true }
+    val name: String,
+    val `class`: String? = null,
+    val concurrency: Int = 1,
+    var tagEngine: TagEngine? = TagEngine().apply { default = true },
+    var taskEngine: TaskEngine? = TaskEngine().apply { default = true },
+    var workflowEngine: WorkflowEngine? = WorkflowEngine().apply { default = true }
 ) {
     private lateinit var _constructor: Constructor<out Any>
 

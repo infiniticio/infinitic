@@ -25,6 +25,7 @@
 
 package io.infinitic.config
 
+import io.infinitic.cache.CacheConfig
 import io.infinitic.cache.StateCache
 import io.infinitic.cache.caffeine.Caffeine
 import io.infinitic.config.data.Task
@@ -34,55 +35,61 @@ import io.infinitic.config.loaders.loadConfigFromFile
 import io.infinitic.config.loaders.loadConfigFromResource
 import io.infinitic.config.pulsar.Pulsar
 import io.infinitic.storage.StateStorage
+import io.infinitic.storage.StorageConfig
 import io.infinitic.storage.redis.Redis
 
 data class WorkerConfig(
     /*
     Worker name - used to identify multiple workers
      */
-    @JvmField val name: String? = null,
+    val name: String? = null,
 
     /*
     Transport configuration
      */
-    @JvmField val transport: Transport = Transport.pulsar,
+    val transport: Transport = Transport.pulsar,
 
     /*
     Default state storage
      */
-    @JvmField var stateStorage: StateStorage? = null,
-
-    /*
-    Default state cache
-     */
-    @JvmField var stateCache: StateCache = StateCache.caffeine,
-
-    /*
-    Pulsar configuration
-     */
-    @JvmField val pulsar: Pulsar,
-
-    /*
-    Tasks configuration
-     */
-    @JvmField val tasks: List<Task> = listOf(),
-
-    /*
-    Workflows configuration
-     */
-    @JvmField val workflows: List<Workflow> = listOf(),
+    override var stateStorage: StateStorage? = null,
 
     /*
     Redis configuration
      */
-    @JvmField val redis: Redis? = null,
+    override val redis: Redis? = null,
+
+    /*
+    Default state cache
+     */
+    override var stateCache: StateCache = StateCache.caffeine,
+
+    /*
+    State can be persisted in cache after deletion (useful for tests)
+     */
+    override var stateCachePersistenceAfterDeletion: Long = 0L,
 
     /*
     Caffeine configuration
      */
-    @JvmField val caffeine: Caffeine? = null,
+    override val caffeine: Caffeine? = null,
 
-) {
+    /*
+    Pulsar configuration
+     */
+    val pulsar: Pulsar,
+
+    /*
+    Tasks configuration
+     */
+    val tasks: List<Task> = listOf(),
+
+    /*
+    Workflows configuration
+     */
+    val workflows: List<Workflow> = listOf(),
+
+) : CacheConfig, StorageConfig {
     init {
         // apply default, if not set
         tasks.map { task ->

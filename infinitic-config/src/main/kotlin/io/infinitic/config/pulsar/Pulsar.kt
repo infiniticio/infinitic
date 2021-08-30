@@ -38,20 +38,20 @@ import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2
 
 data class Pulsar(
-    @JvmField val tenant: String,
-    @JvmField val namespace: String,
-    @JvmField val brokerServiceUrl: String = "pulsar://localhost:6650/",
-    @JvmField val webServiceUrl: String = "http://localhost:8080",
-    @JvmField val allowedClusters: Set<String>? = null,
-    @JvmField val adminRoles: Set<String>? = null,
-    @JvmField val tlsAllowInsecureConnection: Boolean = false,
-    @JvmField val tlsEnableHostnameVerification: Boolean = false,
-    @JvmField val tlsTrustCertsFilePath: String? = null,
-    @JvmField val useKeyStoreTls: Boolean = false,
-    @JvmField val tlsTrustStoreType: TlsTrustStoreType = TlsTrustStoreType.JKS,
-    @JvmField val tlsTrustStorePath: String? = null,
-    @JvmField val tlsTrustStorePassword: Masked? = null,
-    @JvmField val authentication: ClientAuthentication? = null
+    val tenant: String,
+    val namespace: String,
+    val brokerServiceUrl: String = "pulsar://localhost:6650/",
+    val webServiceUrl: String = "http://localhost:8080",
+    val allowedClusters: Set<String>? = null,
+    val adminRoles: Set<String>? = null,
+    val tlsAllowInsecureConnection: Boolean = false,
+    val tlsEnableHostnameVerification: Boolean = false,
+    val tlsTrustCertsFilePath: String? = null,
+    val useKeyStoreTls: Boolean = false,
+    val tlsTrustStoreType: TlsTrustStoreType = TlsTrustStoreType.JKS,
+    val tlsTrustStorePath: String? = null,
+    val tlsTrustStorePassword: Masked? = null,
+    val authentication: ClientAuthentication? = null
 ) {
     init {
         require(
