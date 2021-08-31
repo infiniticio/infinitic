@@ -51,57 +51,60 @@ import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.future
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 
 fun mockSendToTaskTagEngine(
     client: AbstractInfiniticClient,
-    slots: MutableList<TaskTagEngineMessage>
+    taskTagSlots: MutableList<TaskTagEngineMessage>
 ): SendToTaskTagEngine {
-    val mock = mockk<SendToTaskTagEngine>()
-    coEvery { mock(capture(slots)) } coAnswers {
-        slots.forEach {
-            if (it is GetTaskIds) {
-                val taskIdsPerTag = TaskIdsPerTag(
-                    clientName = client.clientName,
-                    taskName = it.taskName,
-                    taskTag = it.taskTag,
-                    taskIds = setOf(TaskId(), TaskId())
-                )
-                client.runningScope.launch {
-                    // delay is useful to ensure that the client is listening before sending the event
+    val sendToTaskTagEngine = mockk<SendToTaskTagEngine>()
+    every { sendToTaskTagEngine(capture(taskTagSlots)) } answers {
+        client.sendingScope.future {
+            taskTagSlots.forEach {
+                if (it is GetTaskIds) {
+                    val taskIdsPerTag = TaskIdsPerTag(
+                        clientName = client.clientName,
+                        taskName = it.taskName,
+                        taskTag = it.taskTag,
+                        taskIds = setOf(TaskId(), TaskId())
+                    )
                     delay(100)
                     client.handle(taskIdsPerTag)
                 }
             }
-        }
+        }.join()
     }
-    return mock
+    return sendToTaskTagEngine
 }
 
 fun mockSendToWorkflowTagEngine(
     client: AbstractInfiniticClient,
-    slots: MutableList<WorkflowTagEngineMessage>
+    workflowTagSlots: MutableList<WorkflowTagEngineMessage>
 ): SendToWorkflowTagEngine {
-    val mock = mockk<SendToWorkflowTagEngine>()
-    coEvery { mock(capture(slots)) } coAnswers {
-        slots.forEach {
-            if (it is GetWorkflowIds) {
-                val workflowIdsPerTag = WorkflowIdsPerTag(
-                    clientName = client.clientName,
-                    workflowName = it.workflowName,
-                    workflowTag = it.workflowTag,
-                    workflowIds = setOf(WorkflowId(), WorkflowId())
-                )
-                client.runningScope.launch {
-                    // delay is useful to ensure that the client is listening before sending the event
+    val sendToWorkflowTagEngine = mockk<SendToWorkflowTagEngine>()
+    every { sendToWorkflowTagEngine(capture(workflowTagSlots)) } answers {
+        client.sendingScope.future {
+            workflowTagSlots.forEach {
+                delay(100)
+                if (it is GetWorkflowIds) {
+                    val workflowIdsPerTag = WorkflowIdsPerTag(
+                        clientName = client.clientName,
+                        workflowName = it.workflowName,
+                        workflowTag = it.workflowTag,
+                        workflowIds = setOf(WorkflowId(), WorkflowId())
+                    )
                     delay(100)
                     client.handle(workflowIdsPerTag)
                 }
             }
-        }
+        }.join()
     }
-    return mock
+    return sendToWorkflowTagEngine
 }
 
 fun mockSendToTaskEngine(
@@ -110,20 +113,19 @@ fun mockSendToTaskEngine(
 ): SendToTaskEngine {
     val sendToTaskEngine = mockk<SendToTaskEngine>()
     every { sendToTaskEngine(capture(message)) } answers {
-        val msg = message.captured
-        if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
-            val taskCompleted = TaskCompleted(
-                clientName = client.clientName,
-                taskId = msg.taskId,
-                taskReturnValue = MethodReturnValue.from("success"),
-                taskMeta = TaskMeta()
-            )
-            client.runningScope.launch {
-                // delay is useful to ensure that the client is listening before sending the event
+        client.sendingScope.future {
+            val msg = message.captured
+            if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
+                val taskCompleted = TaskCompleted(
+                    clientName = client.clientName,
+                    taskId = msg.taskId,
+                    taskReturnValue = MethodReturnValue.from("success"),
+                    taskMeta = TaskMeta()
+                )
                 delay(100)
                 client.handle(taskCompleted)
             }
-        }
+        }.join()
     }
 
     return sendToTaskEngine
@@ -134,20 +136,19 @@ fun mockSendToWorkflowEngine(
     message: CapturingSlot<WorkflowEngineMessage>
 ): SendToWorkflowEngine {
     val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(message)) } coAnswers {
-        val msg = message.captured
-        if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
-            val workflowCompleted = WorkflowCompleted(
-                clientName = client.clientName,
-                workflowId = msg.workflowId,
-                workflowReturnValue = MethodReturnValue.from("success")
-            )
-            client.runningScope.launch {
-                // delay is useful to ensure that the client is listening before sending the event
+    every { mock(capture(message)) } answers {
+        client.sendingScope.future {
+            val msg = message.captured
+            if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
+                val workflowCompleted = WorkflowCompleted(
+                    clientName = client.clientName,
+                    workflowId = msg.workflowId,
+                    workflowReturnValue = MethodReturnValue.from("success")
+                )
                 delay(100)
                 client.handle(workflowCompleted)
             }
-        }
+        }.join()
     }
 
     return mock
