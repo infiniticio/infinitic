@@ -203,7 +203,7 @@ internal class TaskTests : StringSpec({
 
         after { client.cancelTask<TaskTest>("foo") }
 
-        after {
+        after(0) {
             after(0) { shouldThrow<CanceledDeferredException> { deferred1.await() } }
             after(0) { shouldThrow<CanceledDeferredException> { deferred2.await() } }
         }.join()
