@@ -32,6 +32,7 @@ dependencies {
     implementation(Libs.Coroutines.jdk8)
     implementation(Libs.Pulsar.functions)
     implementation(Libs.Hoplite.core)
+    implementation(Libs.Hoplite.yaml)
 
     api(Libs.Pulsar.client)
     api(Libs.Pulsar.clientAdmin)
@@ -39,6 +40,7 @@ dependencies {
     api(Libs.Pulsar.authSasl)
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))
+    api(project(":infinitic-worker"))
 
     implementation(project(":infinitic-metrics-engines"))
     implementation(project(":infinitic-tag-engine"))
@@ -46,7 +48,6 @@ dependencies {
     implementation(project(":infinitic-task-executor"))
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-inMemory"))
-    implementation(project(":infinitic-worker"))
 
     testImplementation(Libs.Kotlin.reflect)
 }

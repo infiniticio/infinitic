@@ -64,7 +64,7 @@ class UnknownTaskException(
     taskId: String,
     taskName: String,
 ) : ClientRunException(
-    msg = "Unknown workflow instance: $taskName ($taskId)",
+    msg = "Unknown task instance: $taskName ($taskId)",
     help = "This instance is probably already completed"
 )
 
