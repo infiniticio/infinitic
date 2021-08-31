@@ -47,9 +47,6 @@ data class CommandId(override val id: UUID = UUID.randomUUID()) : Id(id) {
     constructor(eventId: ChannelEventId) : this(eventId.id)
 }
 
-@Serializable(with = CommandIdSerializer::class)
-data class TaskAttemptId(override val id: UUID = UUID.randomUUID()) : Id(id)
-
 object CommandIdSerializer : KSerializer<CommandId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CommandId", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: CommandId) { encoder.encodeString("${value.id}") }

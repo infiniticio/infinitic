@@ -62,6 +62,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.slot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import mu.KotlinLogging
 import java.util.UUID
 
 private val taskTagSlots = mutableListOf<TaskTagEngineMessage>()
@@ -248,8 +249,8 @@ class ClientTaskTests : StringSpec({
         // when
         val options = TestFactory.random<TaskOptions>()
         val meta = mapOf(
-            "foo" to TestFactory.random<ByteArray>(),
-            "bar" to TestFactory.random<ByteArray>()
+            "foo" to TestFactory.random(),
+            "bar" to TestFactory.random()
         )
         val fakeTask = client.newTask<FakeTask>(options = options, meta = meta)
         val deferred: Deferred<Unit> = client.async(fakeTask) { m1() }.join()
@@ -306,7 +307,7 @@ class ClientTaskTests : StringSpec({
                 taskMeta = TaskMeta()
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            KotlinLogging.logger {}.error("TO REMOVE : ${e.stackTraceToString()}")
             throw e
         }
     }

@@ -64,6 +64,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.slot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import mu.KotlinLogging
 import java.util.UUID
 
 private val taskTagSlots = mutableListOf<TaskTagEngineMessage>()
@@ -259,8 +260,8 @@ class ClientWorkflowTests : StringSpec({
         // when
         val options = TestFactory.random<WorkflowOptions>()
         val meta = mapOf(
-            "foo" to TestFactory.random<ByteArray>(),
-            "bar" to TestFactory.random<ByteArray>()
+            "foo" to TestFactory.random(),
+            "bar" to TestFactory.random()
         )
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>(options = options, meta = meta)
 
@@ -320,7 +321,7 @@ class ClientWorkflowTests : StringSpec({
                 workflowMeta = WorkflowMeta()
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            KotlinLogging.logger {}.error("TO REMOVE : ${e.stackTraceToString()}")
             throw e
         }
     }
