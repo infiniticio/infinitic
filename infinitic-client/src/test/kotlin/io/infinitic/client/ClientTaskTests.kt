@@ -62,7 +62,6 @@ import io.kotest.matchers.shouldBe
 import io.mockk.slot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import mu.KotlinLogging
 import java.util.UUID
 
 private val taskTagSlots = mutableListOf<TaskTagEngineMessage>()
