@@ -36,7 +36,7 @@ plugins {
     id(Plugins.Kotlin.id).version(Plugins.Kotlin.version) apply false
     id(Plugins.Serialization.id).version(Plugins.Serialization.version) apply false
     id(Plugins.Ktlint.id).version(Plugins.Ktlint.version) apply false
-    id(Plugins.TestLogger.id).version(Plugins.TestLogger.version) apply false
+    id(Plugins.TestLogger.id).version(Plugins.TestLogger.version) apply true
 }
 
 subprojects {
@@ -68,6 +68,10 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+
+        testlogger {
+            showFullStackTraces = true
+        }
     }
 
     tasks.withType<KotlinCompile> {

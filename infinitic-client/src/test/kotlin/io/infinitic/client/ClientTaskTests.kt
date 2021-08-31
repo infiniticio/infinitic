@@ -249,8 +249,8 @@ class ClientTaskTests : StringSpec({
         // when
         val options = TestFactory.random<TaskOptions>()
         val meta = mapOf(
-            "foo" to TestFactory.random(),
-            "bar" to TestFactory.random()
+            "foo" to TestFactory.random<ByteArray>(),
+            "bar" to TestFactory.random<ByteArray>()
         )
         val fakeTask = client.newTask<FakeTask>(options = options, meta = meta)
         val deferred: Deferred<Unit> = client.async(fakeTask) { m1() }.join()

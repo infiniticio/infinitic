@@ -260,8 +260,8 @@ class ClientWorkflowTests : StringSpec({
         // when
         val options = TestFactory.random<WorkflowOptions>()
         val meta = mapOf(
-            "foo" to TestFactory.random(),
-            "bar" to TestFactory.random()
+            "foo" to TestFactory.random<ByteArray>(),
+            "bar" to TestFactory.random<ByteArray>()
         )
         val fakeWorkflow = client.newWorkflow<FakeWorkflow>(options = options, meta = meta)
 
