@@ -273,37 +273,42 @@ class ClientTaskTests : StringSpec({
     }
 
     "dispatch method with tags" {
-        // when
-        val fakeTask = client.newTask<FakeTask>(tags = setOf("foo", "bar"))
-        val deferred: Deferred<Unit> = client.async(fakeTask) { m1() }.join()
-        // then
-        taskTagSlots.toSet() shouldBe setOf(
-            AddTaskTag(
-                taskTag = TaskTag("foo"),
-                taskName = TaskName(FakeTask::class.java.name),
-                taskId = TaskId(deferred.id),
-            ),
-            AddTaskTag(
-                taskTag = TaskTag("bar"),
-                taskName = TaskName(FakeTask::class.java.name),
-                taskId = TaskId(deferred.id),
+        try {
+            // when
+            val fakeTask = client.newTask<FakeTask>(tags = setOf("foo", "bar"))
+            val deferred: Deferred<Unit> = client.async(fakeTask) { m1() }.join()
+            // then
+            taskTagSlots.toSet() shouldBe setOf(
+                AddTaskTag(
+                    taskTag = TaskTag("foo"),
+                    taskName = TaskName(FakeTask::class.java.name),
+                    taskId = TaskId(deferred.id),
+                ),
+                AddTaskTag(
+                    taskTag = TaskTag("bar"),
+                    taskName = TaskName(FakeTask::class.java.name),
+                    taskId = TaskId(deferred.id),
+                )
             )
-        )
-        taskSlot.captured shouldBe DispatchTask(
-            clientName = client.clientName,
-            clientWaiting = false,
-            taskId = TaskId(deferred.id),
-            taskName = TaskName(FakeTask::class.java.name),
-            methodName = MethodName("m1"),
-            methodParameterTypes = MethodParameterTypes(listOf()),
-            methodParameters = MethodParameters(),
-            workflowId = null,
-            workflowName = null,
-            methodRunId = null,
-            taskTags = setOf(TaskTag("foo"), TaskTag("bar")),
-            taskOptions = TaskOptions(),
-            taskMeta = TaskMeta()
-        )
+            taskSlot.captured shouldBe DispatchTask(
+                clientName = client.clientName,
+                clientWaiting = false,
+                taskId = TaskId(deferred.id),
+                taskName = TaskName(FakeTask::class.java.name),
+                methodName = MethodName("m1"),
+                methodParameterTypes = MethodParameterTypes(listOf()),
+                methodParameters = MethodParameters(),
+                workflowId = null,
+                workflowName = null,
+                methodRunId = null,
+                taskTags = setOf(TaskTag("foo"), TaskTag("bar")),
+                taskOptions = TaskOptions(),
+                taskMeta = TaskMeta()
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
     }
 
     "dispatch a method with a primitive as parameter" {
