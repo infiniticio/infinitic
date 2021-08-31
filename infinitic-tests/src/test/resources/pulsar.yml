@@ -28,8 +28,6 @@ stateStorage: inMemory
 
 stateCache: caffeine
 
-stateCachePersistenceAfterDeletion: 60000
-
 pulsar:
   brokerServiceUrl: pulsar://localhost:6650
   webServiceUrl: http://localhost:8080

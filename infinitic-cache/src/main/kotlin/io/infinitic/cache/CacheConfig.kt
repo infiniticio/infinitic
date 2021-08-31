@@ -34,11 +34,6 @@ interface CacheConfig {
     var stateCache: StateCache
 
     /*
-    State can be persisted in cache after deletion (useful for tests)
-     */
-    var stateCachePersistenceAfterDeletion: Long
-
-    /*
     Caffeine configuration
      */
     val caffeine: Caffeine?

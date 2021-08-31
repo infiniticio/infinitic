@@ -71,6 +71,7 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import java.lang.reflect.Proxy
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -249,7 +250,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      *  Cancel a task or a workflow from a stub
      */
-    override fun <T : Any> cancel(proxy: T) {
+    override fun <T : Any> cancel(proxy: T): CompletableFuture<Unit> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "cancel")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -291,7 +292,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Retry a task or a workflowTask from a stub
      */
-    override fun <T : Any> retry(proxy: T) {
+    override fun <T : Any> retry(proxy: T): CompletableFuture<Unit> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -302,10 +303,10 @@ abstract class AbstractInfiniticClient : InfiniticClient {
         }
     }
 
-    private fun <T : Any> cancelTaskHandler(handler: TaskProxyHandler<T>) {
+    private fun <T : Any> cancelTaskHandler(handler: TaskProxyHandler<T>): CompletableFuture<Unit> {
         if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "cancel")
 
-        sendingScope.future {
+        return sendingScope.future {
             when {
                 handler.perTaskId != null -> {
                     val msg = CancelTask(
@@ -323,13 +324,15 @@ abstract class AbstractInfiniticClient : InfiniticClient {
                 }
                 else -> thisShouldNotHappen()
             }
+
+            Unit
         }
     }
 
-    private fun <T : Any> retryTaskHandler(handler: TaskProxyHandler<T>) {
+    private fun <T : Any> retryTaskHandler(handler: TaskProxyHandler<T>): CompletableFuture<Unit> {
         if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "retry")
 
-        sendingScope.future {
+        return sendingScope.future {
             when {
                 handler.perTaskId != null -> {
                     val msg = RetryTask(
@@ -347,6 +350,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
                 }
                 else -> thisShouldNotHappen()
             }
+
+            Unit
         }
     }
 
@@ -365,10 +370,10 @@ abstract class AbstractInfiniticClient : InfiniticClient {
         }
     }
 
-    private fun <T : Any> cancelWorkflowHandler(handler: WorkflowProxyHandler<T>) {
+    private fun <T : Any> cancelWorkflowHandler(handler: WorkflowProxyHandler<T>): CompletableFuture<Unit> {
         if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException("${handler.workflowName}", "cancel")
 
-        sendingScope.future {
+        return sendingScope.future {
             when {
                 handler.perWorkflowId != null -> {
                     val msg = CancelWorkflow(
@@ -386,13 +391,15 @@ abstract class AbstractInfiniticClient : InfiniticClient {
                 }
                 else -> thisShouldNotHappen()
             }
+
+            Unit
         }
     }
 
-    private fun <T : Any> retryWorkflowHandler(handler: WorkflowProxyHandler<T>) {
+    private fun <T : Any> retryWorkflowHandler(handler: WorkflowProxyHandler<T>): CompletableFuture<Unit> {
         if (handler.isNew()) throw CanNotApplyOnNewWorkflowStubException("${handler.workflowName}", "retry")
 
-        sendingScope.future {
+        return sendingScope.future {
             when {
                 handler.perWorkflowId != null -> {
                     val msg = RetryWorkflowTask(
@@ -410,6 +417,8 @@ abstract class AbstractInfiniticClient : InfiniticClient {
                 }
                 else -> thisShouldNotHappen()
             }
+
+            Unit
         }
     }
 

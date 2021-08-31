@@ -40,8 +40,7 @@ class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
     override suspend fun delValue(key: String) =
         context.deleteState(key)
 
-    @TestOnly
-    override fun flush() {
+    @TestOnly override fun flush() {
         // flush is used in tests, no actual implementation needed here
     }
 }

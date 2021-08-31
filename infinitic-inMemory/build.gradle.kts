@@ -28,7 +28,7 @@ dependencies {
     implementation(Libs.Coroutines.jdk8)
 
     api(project(":infinitic-common"))
-    api(project(":infinitic-config"))
+    api(project(":infinitic-transport"))
     api(project(":infinitic-client"))
     api(project(":infinitic-storage"))
     implementation(project(":infinitic-cache"))
@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-metrics-engines"))
     implementation(project(":infinitic-task-executor"))
+    implementation(project(":infinitic-worker"))
 
     testImplementation(Libs.Coroutines.jdk8)
 }

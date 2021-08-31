@@ -88,6 +88,7 @@ import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import kotlin.reflect.full.isSubclassOf
 
 internal class ClientDispatcher(
@@ -169,7 +170,7 @@ internal class ClientDispatcher(
         handler.perTaskId = taskId
 
         // send messages asynchronously
-        scope.future {
+        val future = scope.future {
 
             // add provided tags for this id
             handler.taskTags!!.map {
@@ -198,9 +199,11 @@ internal class ClientDispatcher(
                 taskMeta = taskMeta
             )
             launch { sendToTaskEngine(dispatchTask) }
+
+            Unit
         }
 
-        return DeferredTask(taskName, taskId, isSync, this)
+        return DeferredTask(taskName, taskId, isSync, this, future)
     }
 
     internal fun <T> await(deferredTask: DeferredTask<T>): T {
@@ -272,7 +275,7 @@ internal class ClientDispatcher(
         val isSync = handler.isSync
 
         // send messages asynchronously
-        scope.future() {
+        val future = scope.future() {
 
             // add provided tags
             handler.workflowTags!!.map {
@@ -301,6 +304,8 @@ internal class ClientDispatcher(
                 workflowOptions = handler.workflowOptions!!
             )
             launch { sendToWorkflowEngine(dispatchWorkflow) }
+
+            Unit
         }
 
         // handler now target an existing task
@@ -308,7 +313,7 @@ internal class ClientDispatcher(
         // reset isSync only
         handler.isSync = true
 
-        return DeferredWorkflow(workflowName, workflowId, isSync, this)
+        return DeferredWorkflow(workflowName, workflowId, isSync, this, future)
     }
 
     internal fun <T> await(deferredWorkflow: DeferredWorkflow<T>): T {
@@ -355,12 +360,10 @@ internal class ClientDispatcher(
     }
 
     // synchronous send on a channel: existingWorkflow.channel.send()
-    override fun dispatchAndWait(handler: SendChannelProxyHandler<*>) {
-        dispatch(handler)
-    }
+    override fun dispatchAndWait(handler: SendChannelProxyHandler<*>) = dispatch(handler)
 
     // asynchronous send on a channel: async(existingWorkflow.channel) { send() }
-    private fun dispatch(handler: SendChannelProxyHandler<*>) {
+    private fun dispatch(handler: SendChannelProxyHandler<*>): CompletableFuture<Unit> {
         val method = handler.method
 
         if (method.name != SendChannel<*>::send.name) throw UnknownMethodInSendChannelException(
@@ -371,7 +374,7 @@ internal class ClientDispatcher(
 
         val event = handler.methodArgs[0]
 
-        scope.future() {
+        return scope.future() {
             when {
                 handler.perTag != null -> {
                     val sendToChannelPerTag = SendToChannelPerTag(
@@ -400,6 +403,8 @@ internal class ClientDispatcher(
                 }
                 else -> thisShouldNotHappen()
             }
+
+            Unit
         }
     }
 }

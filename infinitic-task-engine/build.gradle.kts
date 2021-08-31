@@ -27,6 +27,7 @@ dependencies {
     implementation(Libs.Coroutines.core)
 
     implementation(project(":infinitic-cache"))
+    implementation(project(":infinitic-storage"))
     implementation(project(":infinitic-common"))
 }
 

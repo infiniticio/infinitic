@@ -45,8 +45,7 @@ class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
         stateStorage.remove(key)
     }
 
-    @TestOnly
-    override fun flush() {
+    @TestOnly override fun flush() {
         stateStorage.clear()
     }
 }

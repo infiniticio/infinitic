@@ -25,7 +25,7 @@
 
 package io.infinitic.dashboard
 
-import io.infinitic.config.DashboardConfig
+import io.infinitic.dashboard.config.DashboardConfig
 import io.infinitic.dashboard.modals.Modal
 import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
 import io.infinitic.dashboard.panels.infrastructure.task.TaskPanel

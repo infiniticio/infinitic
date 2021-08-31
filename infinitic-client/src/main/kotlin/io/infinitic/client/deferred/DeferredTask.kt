@@ -29,15 +29,27 @@ import io.infinitic.client.ClientDispatcher
 import io.infinitic.client.Deferred
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.exceptions.thisShouldNotHappen
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 
 internal class DeferredTask<T> (
     internal val taskName: TaskName,
     internal val taskId: TaskId,
     internal val isSync: Boolean,
-    private val dispatcher: ClientDispatcher
+    private val dispatcher: ClientDispatcher,
+    private val future: CompletableFuture<Unit>? = null
 ) : Deferred<T> {
     override fun await(): T = dispatcher.await(this)
+
+    override fun join(): Deferred<T> {
+        when (future) {
+            null -> thisShouldNotHappen()
+            else -> future.join()
+        }
+
+        return this
+    }
 
     override val id: UUID
         get() = taskId.id

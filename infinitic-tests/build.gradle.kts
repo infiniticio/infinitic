@@ -38,8 +38,11 @@ dependencies {
     implementation(project(":infinitic-task-executor"))
     implementation(project(":infinitic-storage"))
     implementation(project(":infinitic-tag-engine"))
+    implementation(project(":infinitic-worker"))
 
     testImplementation(project(":infinitic-inMemory"))
+//    testImplementation(Libs.Hoplite.core)
+    testImplementation(Libs.Hoplite.yaml)
     // should be removed with pulsar 2.8
     testImplementation("org.apache.avro:avro") { version { strictly("1.9.+") } }
 }

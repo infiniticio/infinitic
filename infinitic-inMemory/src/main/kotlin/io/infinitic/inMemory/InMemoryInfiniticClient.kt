@@ -27,9 +27,7 @@ package io.infinitic.inMemory
 
 import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
-import io.infinitic.config.WorkerConfig
 import io.infinitic.inMemory.transport.InMemoryOutput
 import io.infinitic.inMemory.workers.startInMemory
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
@@ -45,6 +43,7 @@ import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
 import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
+import io.infinitic.worker.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 
@@ -93,16 +92,14 @@ class InMemoryInfiniticClient(
     val taskStorage: TaskStateStorage = BinaryTaskStateStorage(
         CachedKeyValueStorage(
             workerConfig.stateCache.keyValue(workerConfig),
-            workerConfig.stateStorage!!.keyValue(workerConfig),
-            cachePersistenceAfterDeletion = MillisDuration(workerConfig.stateCachePersistenceAfterDeletion)
+            workerConfig.stateStorage!!.keyValue(workerConfig)
         )
     )
 
     val workflowStateStorage: WorkflowStateStorage = BinaryWorkflowStateStorage(
         CachedKeyValueStorage(
             workerConfig.stateCache.keyValue(workerConfig),
-            workerConfig.stateStorage!!.keyValue(workerConfig),
-            cachePersistenceAfterDeletion = MillisDuration(workerConfig.stateCachePersistenceAfterDeletion)
+            workerConfig.stateStorage!!.keyValue(workerConfig)
         )
     )
 

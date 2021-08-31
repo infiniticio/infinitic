@@ -99,12 +99,9 @@ class WorkflowEngine(
     suspend fun handle(message: WorkflowEngineMessage) {
         val state = process(message) ?: return
 
-        storage.putState(message.workflowId, state)
-
-        // delete state if terminated / canceled
         when (state.workflowStatus) {
             WorkflowStatus.TERMINATED, WorkflowStatus.CANCELED -> storage.delState(message.workflowId)
-            WorkflowStatus.ALIVE -> Unit
+            WorkflowStatus.ALIVE -> storage.putState(message.workflowId, state)
         }
     }
 

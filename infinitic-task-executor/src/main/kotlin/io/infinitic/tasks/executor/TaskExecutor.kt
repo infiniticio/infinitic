@@ -128,7 +128,7 @@ class TaskExecutor(
         output
     }
 
-    private suspend fun failTaskWithRetry(
+    private fun failTaskWithRetry(
         task: Task,
         msg: ExecuteTaskAttempt,
         cause: Exception
@@ -181,7 +181,7 @@ class TaskExecutor(
         DurationBeforeRetryFailed(e)
     }
 
-    private suspend fun sendTaskAttemptFailed(
+    private fun sendTaskAttemptFailed(
         message: ExecuteTaskAttempt,
         cause: Throwable,
         delay: MillisDuration?,
@@ -203,7 +203,7 @@ class TaskExecutor(
         sendToTaskEngine(taskAttemptFailed)
     }
 
-    private suspend fun sendTaskCompleted(
+    private fun sendTaskCompleted(
         message: ExecuteTaskAttempt,
         returnValue: Any?,
         taskMeta: TaskMeta

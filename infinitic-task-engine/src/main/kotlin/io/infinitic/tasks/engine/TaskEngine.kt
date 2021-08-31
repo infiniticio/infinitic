@@ -82,12 +82,9 @@ class TaskEngine(
     suspend fun handle(message: TaskEngineMessage) {
         val state = process(message) ?: return
 
-        // Update stored state
-        storage.putState(message.taskId, state)
-
-        // delete state if terminated
-        if (state.taskStatus.isTerminated) {
-            storage.delState(message.taskId)
+        when (state.taskStatus.isTerminated) {
+            false -> storage.putState(message.taskId, state)
+            true -> storage.delState(message.taskId)
         }
     }
 

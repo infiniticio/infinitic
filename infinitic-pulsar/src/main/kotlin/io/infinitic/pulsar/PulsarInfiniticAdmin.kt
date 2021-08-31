@@ -25,8 +25,8 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.config.AdminConfig
 import io.infinitic.pulsar.admin.setupInfinitic
+import io.infinitic.pulsar.config.AdminConfig
 import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicName
 import io.infinitic.pulsar.topics.WorkflowTaskTopic

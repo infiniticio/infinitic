@@ -43,8 +43,8 @@ import org.apache.pulsar.client.api.Consumer
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskDelayEngines(
     name: Name,
-    consumerName: String,
     concurrency: Int,
+    consumerName: String,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {

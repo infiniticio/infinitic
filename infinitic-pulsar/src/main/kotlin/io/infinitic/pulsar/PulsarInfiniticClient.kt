@@ -29,13 +29,13 @@ import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
-import io.infinitic.config.ClientConfig
-import io.infinitic.config.WorkerConfig
-import io.infinitic.config.data.Transport
+import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startClientResponseWorker
+import io.infinitic.transport.Transport
+import io.infinitic.worker.config.WorkerConfig
 import org.apache.pulsar.client.api.PulsarClient
 import io.infinitic.inMemory.InMemoryInfiniticClient as InMemoryClient
 
@@ -91,7 +91,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
         fun from(pulsarClient: PulsarClient, clientConfig: ClientConfig): InfiniticClient = PulsarInfiniticClient(
             pulsarClient,
             clientConfig.pulsar!!.tenant,
-            clientConfig.pulsar!!.namespace,
+            clientConfig.pulsar.namespace,
             clientConfig.name
         )
 

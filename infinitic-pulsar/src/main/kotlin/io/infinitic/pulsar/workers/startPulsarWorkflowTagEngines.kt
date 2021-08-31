@@ -44,9 +44,9 @@ typealias PulsarWorkflowTagEngineMessageToProcess = PulsarMessageToProcess<Workf
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarWorkflowTagEngines(
     workflowName: WorkflowName,
-    consumerName: String,
     concurrency: Int,
     storage: WorkflowTagStorage,
+    consumerName: String,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {

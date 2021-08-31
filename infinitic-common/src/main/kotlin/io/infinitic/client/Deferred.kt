@@ -28,6 +28,7 @@ package io.infinitic.client
 import java.util.UUID
 
 interface Deferred<T> {
-    fun await(): T
     val id: UUID
+    fun await(): T
+    fun join(): Deferred<T>
 }

@@ -30,6 +30,7 @@ plugins {
 dependencies {
     api(Libs.Serialization.json)
     api(Libs.JsonPath.jayway)
+    implementation(Libs.Hoplite.core)
     implementation(Libs.Jackson.databind)
     implementation(Libs.Jackson.kotlin)
     implementation(Libs.Jackson.jsr310)
@@ -39,6 +40,7 @@ dependencies {
 
     testFixturesImplementation(Libs.Kotlin.reflect)
     testFixturesImplementation(Libs.EasyRandom.core)
+    testFixturesImplementation(Libs.Coroutines.core)
 }
 
 apply("../publish.gradle.kts")

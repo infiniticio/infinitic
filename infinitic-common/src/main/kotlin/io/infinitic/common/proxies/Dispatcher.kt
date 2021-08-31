@@ -27,6 +27,7 @@ package io.infinitic.common.proxies
 
 import io.infinitic.exceptions.clients.SuspendMethodNotSupportedException
 import java.lang.reflect.Method
+import java.util.concurrent.CompletableFuture
 import kotlin.reflect.jvm.kotlinFunction
 
 interface Dispatcher {
@@ -34,7 +35,7 @@ interface Dispatcher {
 
     fun <S> dispatchAndWait(handler: WorkflowProxyHandler<*>): S
 
-    fun dispatchAndWait(handler: SendChannelProxyHandler<*>)
+    fun dispatchAndWait(handler: SendChannelProxyHandler<*>): CompletableFuture<Unit>
 
     fun checkMethodIsNotSuspend(method: Method) {
         if (method.kotlinFunction?.isSuspend == true) throw SuspendMethodNotSupportedException(method.declaringClass.name, method.name)

@@ -81,6 +81,7 @@ import io.infinitic.workflows.WorkflowContext
 import mu.KotlinLogging
 import java.lang.reflect.Proxy
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
@@ -398,7 +399,7 @@ internal class WorkflowContextImpl(
     /*
      * Send event to another workflow's channel
      */
-    override fun dispatchAndWait(handler: SendChannelProxyHandler<*>) {
+    override fun dispatchAndWait(handler: SendChannelProxyHandler<*>): CompletableFuture<Unit> {
         TODO("Not yet implemented")
     }
 

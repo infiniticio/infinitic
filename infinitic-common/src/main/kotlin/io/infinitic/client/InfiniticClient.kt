@@ -30,6 +30,7 @@ import io.infinitic.common.tasks.data.TaskOptions
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
 import java.io.Closeable
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 
 interface InfiniticClient : Closeable {
     val clientName: ClientName
@@ -250,7 +251,7 @@ interface InfiniticClient : Closeable {
     /**
      *  Cancel a task or a workflow from a stub
      */
-    fun <T : Any> cancel(proxy: T)
+    fun <T : Any> cancel(proxy: T): CompletableFuture<Unit>
 
     /**
      *  Cancel a task by id
@@ -287,7 +288,7 @@ interface InfiniticClient : Closeable {
     /**
      * Retry a task or a workflowTask from a stub
      */
-    fun <T : Any> retry(proxy: T)
+    fun <T : Any> retry(proxy: T): CompletableFuture<Unit>
 
     /**
      * Retry a task by id
