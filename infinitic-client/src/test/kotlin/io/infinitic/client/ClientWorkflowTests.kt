@@ -284,40 +284,45 @@ class ClientWorkflowTests : StringSpec({
         )
     }
 
-    "Should be able to dispatch a workflow without tags" {
+    "Should be able to dispatch a workflow with tags" {
         // when
-        val tags = setOf("foo", "bar")
-        val fakeWorkflow = client.newWorkflow<FakeWorkflow>(tags = tags)
-        val deferred = client.async(fakeWorkflow) { m1() }.join()
-        // then
-        workflowTagSlots.size shouldBe 2
-        workflowTagSlots.toSet() shouldBe setOf(
-            AddWorkflowTag(
-                workflowTag = WorkflowTag("foo"),
-                workflowName = WorkflowName(FakeWorkflow::class.java.name),
-                workflowId = WorkflowId(deferred.id),
-            ),
-            AddWorkflowTag(
-                workflowTag = WorkflowTag("bar"),
-                workflowName = WorkflowName(FakeWorkflow::class.java.name),
-                workflowId = WorkflowId(deferred.id),
+        try {
+            val tags = setOf("foo", "bar")
+            val fakeWorkflow = client.newWorkflow<FakeWorkflow>(tags = tags)
+            val deferred = client.async(fakeWorkflow) { m1() }.join()
+            // then
+            workflowTagSlots.size shouldBe 2
+            workflowTagSlots.toSet() shouldBe setOf(
+                AddWorkflowTag(
+                    workflowTag = WorkflowTag("foo"),
+                    workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                    workflowId = WorkflowId(deferred.id),
+                ),
+                AddWorkflowTag(
+                    workflowTag = WorkflowTag("bar"),
+                    workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                    workflowId = WorkflowId(deferred.id),
+                )
             )
-        )
-        workflowSlot.captured shouldBe DispatchWorkflow(
-            clientName = client.clientName,
-            clientWaiting = false,
-            workflowId = WorkflowId(deferred.id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            methodName = MethodName("m1"),
-            methodParameterTypes = MethodParameterTypes(listOf()),
-            methodParameters = MethodParameters(),
-            parentWorkflowId = null,
-            parentWorkflowName = null,
-            parentMethodRunId = null,
-            workflowTags = setOf(WorkflowTag("foo"), WorkflowTag("bar")),
-            workflowOptions = WorkflowOptions(),
-            workflowMeta = WorkflowMeta()
-        )
+            workflowSlot.captured shouldBe DispatchWorkflow(
+                clientName = client.clientName,
+                clientWaiting = false,
+                workflowId = WorkflowId(deferred.id),
+                workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                methodName = MethodName("m1"),
+                methodParameterTypes = MethodParameterTypes(listOf()),
+                methodParameters = MethodParameters(),
+                parentWorkflowId = null,
+                parentWorkflowName = null,
+                parentMethodRunId = null,
+                workflowTags = setOf(WorkflowTag("foo"), WorkflowTag("bar")),
+                workflowOptions = WorkflowOptions(),
+                workflowMeta = WorkflowMeta()
+            )
+        } catch (e:Exception) {
+            e.printStackTrace()
+            throw e
+        }
     }
 
     "Should be able to dispatch a workflow with a primitive as parameter" {
