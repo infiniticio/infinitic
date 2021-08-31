@@ -94,7 +94,9 @@ class TaskTagEngine(
     }
 
     private suspend fun removeTaskTag(message: RemoveTaskTag) {
+        println("removeTaskId - start - ${message.taskTag} ${message.taskName} ${message.taskId}",)
         storage.removeTaskId(message.taskTag, message.taskName, message.taskId)
+        println("removeTaskId - end - ${message.taskTag} ${message.taskName} ${message.taskId}",)
     }
 
     private suspend fun retryTaskPerTag(message: RetryTaskPerTag) {
