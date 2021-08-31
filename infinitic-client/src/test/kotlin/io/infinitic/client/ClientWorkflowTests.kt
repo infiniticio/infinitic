@@ -319,7 +319,7 @@ class ClientWorkflowTests : StringSpec({
                 workflowOptions = WorkflowOptions(),
                 workflowMeta = WorkflowMeta()
             )
-        } catch (e:Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
             throw e
         }
