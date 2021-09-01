@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.client
+package io.infinitic.client.proxies
 
 import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.deferred.DeferredWorkflow

@@ -34,6 +34,7 @@ import io.infinitic.common.workflows.executors.parser.setPropertiesToObject
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowContext
+import io.infinitic.workflows.WorkflowDispatcher
 import java.lang.RuntimeException
 import java.lang.reflect.Proxy
 import kotlin.reflect.full.createType
@@ -57,6 +58,8 @@ internal fun Workflow.setProperties(
 internal fun Workflow.getProperties() = getPropertiesFromObject(this) {
     // excludes context
     it.first.returnType.javaType.typeName != WorkflowContext::class.java.name &&
+        // excludes dispatcher
+        it.first.returnType.javaType.typeName != WorkflowDispatcher::class.java.name &&
         // excludes Channels
         !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
         // excludes Proxies (tasks and workflows)

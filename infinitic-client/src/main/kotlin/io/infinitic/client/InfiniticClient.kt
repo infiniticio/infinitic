@@ -27,6 +27,8 @@ package io.infinitic.client
 
 import io.infinitic.client.deferred.DeferredTask
 import io.infinitic.client.deferred.DeferredWorkflow
+import io.infinitic.client.proxies.ClientDispatcher
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.proxies.SendChannelProxyHandler
 import io.infinitic.common.proxies.TaskProxyHandler
@@ -69,13 +71,16 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import java.io.Closeable
 import java.lang.reflect.Proxy
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
-abstract class AbstractInfiniticClient : InfiniticClient {
+abstract class InfiniticClient : Closeable {
+    abstract val clientName: ClientName
+
     protected abstract val sendToTaskTagEngine: SendToTaskTagEngine
     protected abstract val sendToTaskEngine: SendToTaskEngine
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
@@ -105,6 +110,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     override fun close() {
         // first make sure that all messages are sent
         join()
+
         // only then, close everything
         sendingScope.cancel()
         sendThreadPool.shutdown()
@@ -113,24 +119,25 @@ abstract class AbstractInfiniticClient : InfiniticClient {
         runningThreadPool.shutdown()
     }
 
+    fun join() = runBlocking {
+        sendingScope.coroutineContext.job.children.forEach { it.join() }
+    }
+
     suspend fun handle(message: ClientMessage) {
         logger.debug { "receiving $message" }
 
         dispatcher.handle(message)
     }
 
-    override fun join() = runBlocking {
-        sendingScope.coroutineContext.job.children.forEach { it.join() }
-    }
-
     /**
      * Create stub for a new task
      */
-    override fun <T : Any> newTask(
+    @JvmOverloads
+    fun <T : Any> newTask(
         klass: Class<out T>,
-        tags: Set<String>,
-        options: TaskOptions?,
-        meta: Map<String, ByteArray>
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
     ): T = TaskProxyHandler(
         klass = klass,
         taskTags = tags.map { TaskTag(it) }.toSet(),
@@ -141,7 +148,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Create stub for an existing task targeted per id
      */
-    override fun <T : Any> getTask(
+    fun <T : Any> getTask(
         klass: Class<out T>,
         id: UUID
     ): T = TaskProxyHandler(
@@ -153,7 +160,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Create stub for an existing task targeted per tag
      */
-    override fun <T : Any> getTask(
+    fun <T : Any> getTask(
         klass: Class<out T>,
         tag: String
     ): T = TaskProxyHandler(
@@ -165,7 +172,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Synchronous call to get task'ids per tag and name
      */
-    override fun <T : Any> getTaskIds(
+    fun <T : Any> getTaskIds(
         klass: Class<out T>,
         tag: String
     ): Set<UUID> = dispatcher.getTaskIdsPerTag(
@@ -176,11 +183,12 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Create stub for a new workflow
      */
-    override fun <T : Any> newWorkflow(
+    @JvmOverloads
+    fun <T : Any> newWorkflow(
         klass: Class<out T>,
-        tags: Set<String>,
-        options: WorkflowOptions?,
-        meta: Map<String, ByteArray>
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf()
     ): T = WorkflowProxyHandler(
         klass = klass,
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
@@ -191,7 +199,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Create stub for an existing workflow per id
      */
-    override fun <T : Any> getWorkflow(
+    fun <T : Any> getWorkflow(
         klass: Class<out T>,
         id: UUID
     ): T = WorkflowProxyHandler(
@@ -203,7 +211,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Create stub for an existing workflow per tag
      */
-    override fun <T : Any> getWorkflow(
+    fun <T : Any> getWorkflow(
         klass: Class<out T>,
         tag: String
     ): T = WorkflowProxyHandler(
@@ -215,7 +223,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      * Synchronous call to get WorkflowIds per tag and name
      */
-    override fun <T : Any> getWorkflowIds(
+    fun <T : Any> getWorkflowIds(
         klass: Class<out T>,
         tag: String
     ): Set<UUID> = dispatcher.getWorkflowIdsPerTag(
@@ -226,7 +234,7 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     /**
      *  Asynchronously process a task or a workflow
      */
-    override fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
+    fun <T : Any, S> dispatch(proxy: T, method: T.() -> S): Deferred<S> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "async")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -248,9 +256,33 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     /**
+     *  Asynchronously process a task (helper)
+     */
+    @JvmOverloads
+    fun <T : Any, S> dispatchTask(
+        klass: Class<out T>,
+        tags: Set<String> = setOf(),
+        options: TaskOptions? = null,
+        meta: Map<String, ByteArray> = mapOf(),
+        method: T.() -> S
+    ) = dispatch(newTask(klass, tags, options, meta), method)
+
+    /**
+     *  Asynchronously process a workflow (helper)
+     */
+    @JvmOverloads
+    fun <T : Any, S> dispatchWorkflow(
+        klass: Class<out T>,
+        tags: Set<String> = setOf(),
+        options: WorkflowOptions? = null,
+        meta: Map<String, ByteArray> = mapOf(),
+        method: T.() -> S
+    ) = dispatch(newWorkflow(klass, tags, options, meta), method)
+
+    /**
      *  Cancel a task or a workflow from a stub
      */
-    override fun <T : Any> cancel(proxy: T): CompletableFuture<Unit> {
+    fun <T : Any> cancel(proxy: T): CompletableFuture<Unit> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "cancel")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -262,9 +294,41 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     /**
+     *  Cancel a task by id
+     */
+    fun <T : Any> cancelTask(
+        klass: Class<out T>,
+        id: UUID
+    ) = cancel(getTask(klass, id))
+
+    /**
+     *  Cancel a task by tag
+     */
+    fun <T : Any> cancelTask(
+        klass: Class<out T>,
+        tag: String
+    ) = cancel(getTask(klass, tag))
+
+    /**
+     *  Cancel a workflow by id
+     */
+    fun <T : Any> cancelWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ) = cancel(getWorkflow(klass, id))
+
+    /**
+     *  Cancel a workflow by tag
+     */
+    fun <T : Any> cancelWorkflow(
+        klass: Class<out T>,
+        tag: String
+    ) = cancel(getWorkflow(klass, tag))
+
+    /**
      * Await a task or a workflowTask from a stub
      */
-    override fun <T : Any> await(proxy: T): Any {
+    fun <T : Any> await(proxy: T): Any {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -276,9 +340,25 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     /**
+     * Await a task by id
+     */
+    fun <T : Any> awaitTask(
+        klass: Class<out T>,
+        id: UUID
+    ): Any = await(getTask(klass, id))
+
+    /**
+     * Await a workflow by id
+     */
+    fun <T : Any> awaitWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ): Any = await(getWorkflow(klass, id))
+
+    /**
      *  Complete a task or a workflow from a stub
      */
-    override fun <T : Any> complete(proxy: T, value: Any?) {
+    fun <T : Any> complete(proxy: T, value: Any?) {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "complete")
 
         when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -290,9 +370,45 @@ abstract class AbstractInfiniticClient : InfiniticClient {
     }
 
     /**
+     *  Complete a task by id
+     */
+    fun <T : Any> completeTask(
+        klass: Class<out T>,
+        id: UUID,
+        value: Any?
+    ) = complete(getTask(klass, id), value)
+
+    /**
+     *  Complete a task by tag
+     */
+    fun <T : Any> completeTask(
+        klass: Class<out T>,
+        tag: String,
+        value: Any?
+    ) = complete(getTask(klass, tag), value)
+
+    /**
+     *  Complete a workflow by id
+     */
+    fun <T : Any> completeWorkflow(
+        klass: Class<out T>,
+        id: UUID,
+        value: Any?
+    ) = complete(getWorkflow(klass, id), value)
+
+    /**
+     *  Complete a workflow by tag
+     */
+    fun <T : Any> completeWorkflow(
+        klass: Class<out T>,
+        tag: String,
+        value: Any?
+    ) = complete(getWorkflow(klass, tag), value)
+
+    /**
      * Retry a task or a workflowTask from a stub
      */
-    override fun <T : Any> retry(proxy: T): CompletableFuture<Unit> {
+    fun <T : Any> retry(proxy: T): CompletableFuture<Unit> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "retry")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -302,6 +418,38 @@ abstract class AbstractInfiniticClient : InfiniticClient {
             else -> throw RuntimeException("Unknown handle type ${handler::class}")
         }
     }
+
+    /**
+     * Retry a task by id
+     */
+    fun <T : Any> retryTask(
+        klass: Class<out T>,
+        id: UUID
+    ) = retry(getTask(klass, id))
+
+    /**
+     * Retry a task by tag
+     */
+    fun <T : Any> retryTask(
+        klass: Class<out T>,
+        tag: String
+    ) = retry(getTask(klass, tag))
+
+    /**
+     * Retry a workflow by id
+     */
+    fun <T : Any> retryWorkflow(
+        klass: Class<out T>,
+        id: UUID
+    ) = retry(getWorkflow(klass, id))
+
+    /**
+     * Retry a workflow by tag
+     */
+    fun <T : Any> retryWorkflow(
+        klass: Class<out T>,
+        tag: String
+    ) = retry(getWorkflow(klass, tag))
 
     private fun <T : Any> cancelTaskHandler(handler: TaskProxyHandler<T>): CompletableFuture<Unit> {
         if (handler.isNew()) throw CanNotApplyOnNewTaskStubException("${handler.taskName}", "cancel")

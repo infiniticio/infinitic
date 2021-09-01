@@ -70,7 +70,7 @@ internal class TaskTests : StringSpec({
     "Asynchronous execution succeeds at first try" {
         TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
 
-        val deferred = client.async(taskTest) { await(400L) }.join()
+        val deferred = client.dispatch(taskTest) { await(400L) }.join()
 
         deferred.await() shouldBe 400L
     }
@@ -100,7 +100,7 @@ internal class TaskTests : StringSpec({
             }
         }
 
-        val deferred = client.async(taskTest) { log() }.join()
+        val deferred = client.dispatch(taskTest) { log() }.join()
 
         deferred.await() shouldBe "00000000001"
     }
@@ -167,7 +167,7 @@ internal class TaskTests : StringSpec({
                 else -> Status.SUCCESS
             }
         }
-        val deferred = client.async(taskTestWithTags) { log() }.join()
+        val deferred = client.dispatch(taskTestWithTags) { log() }.join()
 
         shouldThrow<FailedDeferredException> { deferred.await() }
 
@@ -179,7 +179,7 @@ internal class TaskTests : StringSpec({
     "Task canceled during automatic retry" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
 
-        val deferred = client.async(taskTest) { log() }.join()
+        val deferred = client.dispatch(taskTest) { log() }.join()
 
         after { client.cancel(taskTest) }
 
@@ -189,7 +189,7 @@ internal class TaskTests : StringSpec({
     "Task canceled using A tag" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
 
-        val deferred = client.async(taskTestWithTags) { log() }.join()
+        val deferred = client.dispatch(taskTestWithTags) { log() }.join()
 
         after { client.cancelTask<TaskTest>("foo") }
 
@@ -199,8 +199,8 @@ internal class TaskTests : StringSpec({
     "2 Task canceled using A tag" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
 
-        val deferred1 = client.async(taskTestWithTags) { log() }.join()
-        val deferred2 = client.async(taskTestWithTags) { log() }.join()
+        val deferred1 = client.dispatch(taskTestWithTags) { log() }.join()
+        val deferred2 = client.dispatch(taskTestWithTags) { log() }.join()
 
         after { client.cancelTask<TaskTest>("foo") }
 
@@ -213,7 +213,7 @@ internal class TaskTests : StringSpec({
     "Tag should be added then deleted after completion" {
         TaskTestImpl.behavior = { _, _ -> Status.SUCCESS }
 
-        val deferred = client.async(taskTestWithTags) { await(200) }.join()
+        val deferred = client.dispatch(taskTestWithTags) { await(200) }.join()
 
         client.getTaskIds<TaskTest>("foo").contains(deferred.id) shouldBe true
         client.getTaskIds<TaskTest>("bar").contains(deferred.id) shouldBe true
@@ -230,7 +230,7 @@ internal class TaskTests : StringSpec({
     "Tag should be added then deleted after cancellation" {
         TaskTestImpl.behavior = { _, _ -> Status.FAILED_WITH_RETRY }
 
-        val deferred = client.async(taskTestWithTags) { log() }.join()
+        val deferred = client.dispatch(taskTestWithTags) { log() }.join()
 
         client.getTaskIds<TaskTest>("foo").contains(deferred.id) shouldBe true
         client.getTaskIds<TaskTest>("bar").contains(deferred.id) shouldBe true

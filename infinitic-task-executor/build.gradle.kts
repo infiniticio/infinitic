@@ -29,7 +29,6 @@ dependencies {
 
     implementation(project(":infinitic-client"))
     implementation(project(":infinitic-common"))
-    implementation(project(":infinitic-workflow-task"))
 }
 
 apply("../publish.gradle.kts")

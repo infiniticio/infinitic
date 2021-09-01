@@ -55,7 +55,7 @@ import kotlinx.coroutines.future.future
 import java.util.concurrent.CopyOnWriteArrayList
 
 fun mockSendToTaskTagEngine(
-    client: AbstractInfiniticClient,
+    client: InfiniticClient,
     taskTagSlots: CopyOnWriteArrayList<TaskTagEngineMessage>
 ): SendToTaskTagEngine {
     val sendToTaskTagEngine = mockk<SendToTaskTagEngine>()
@@ -79,7 +79,7 @@ fun mockSendToTaskTagEngine(
 }
 
 fun mockSendToWorkflowTagEngine(
-    client: AbstractInfiniticClient,
+    client: InfiniticClient,
     workflowTagSlots: CopyOnWriteArrayList<WorkflowTagEngineMessage>
 ): SendToWorkflowTagEngine {
     val sendToWorkflowTagEngine = mockk<SendToWorkflowTagEngine>()
@@ -103,7 +103,7 @@ fun mockSendToWorkflowTagEngine(
 }
 
 fun mockSendToTaskEngine(
-    client: AbstractInfiniticClient,
+    client: InfiniticClient,
     message: CapturingSlot<TaskEngineMessage>
 ): SendToTaskEngine {
     val sendToTaskEngine = mockk<SendToTaskEngine>()
@@ -127,7 +127,7 @@ fun mockSendToTaskEngine(
 }
 
 fun mockSendToWorkflowEngine(
-    client: AbstractInfiniticClient,
+    client: InfiniticClient,
     message: CapturingSlot<WorkflowEngineMessage>
 ): SendToWorkflowEngine {
     val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()

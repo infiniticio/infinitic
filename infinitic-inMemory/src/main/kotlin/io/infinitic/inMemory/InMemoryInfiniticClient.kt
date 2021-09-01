@@ -25,7 +25,7 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.client.AbstractInfiniticClient
+import io.infinitic.client.InfiniticClient
 import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.inMemory.transport.InMemoryOutput
@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 class InMemoryInfiniticClient(
     workerConfig: WorkerConfig,
     val name: String? = null
-) : AbstractInfiniticClient() {
+) : InfiniticClient() {
 
     private val inMemoryOutput = InMemoryOutput(sendingScope)
 

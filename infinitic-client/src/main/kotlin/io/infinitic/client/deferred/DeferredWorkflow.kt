@@ -25,8 +25,8 @@
 
 package io.infinitic.client.deferred
 
-import io.infinitic.client.ClientDispatcher
 import io.infinitic.client.Deferred
+import io.infinitic.client.proxies.ClientDispatcher
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.exceptions.thisShouldNotHappen

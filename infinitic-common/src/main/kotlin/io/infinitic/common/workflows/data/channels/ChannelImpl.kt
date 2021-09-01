@@ -29,11 +29,11 @@ import com.jayway.jsonpath.Criteria
 import io.infinitic.exceptions.workflows.NameNotInitializedInChannelException
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Deferred
-import io.infinitic.workflows.WorkflowContext
+import io.infinitic.workflows.WorkflowDispatcher
 import java.util.concurrent.CompletableFuture
 
 class ChannelImpl<T : Any>(
-    private val context: () -> WorkflowContext
+    private val context: () -> WorkflowDispatcher
 ) : Channel<T> {
     lateinit var name: String
 

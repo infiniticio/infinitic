@@ -40,11 +40,12 @@ import java.time.Instant
 @Suppress("unused")
 abstract class Workflow {
     lateinit var context: WorkflowContext
+    lateinit var dispatcher: WorkflowDispatcher
 
     /*
      *  Create a channel
      */
-    fun <T : Any> channel(): Channel<T> = ChannelImpl { context }
+    fun <T : Any> channel(): Channel<T> = ChannelImpl { dispatcher }
 
     /*
      * Stub task
@@ -59,7 +60,7 @@ abstract class Workflow {
         taskTags = tags.map { TaskTag(it) }.toSet(),
         taskOptions = options,
         taskMeta = TaskMeta(meta)
-    ) { context }.stub()
+    ) { dispatcher }.stub()
 
     /*
      * (Kotlin) Stub task
@@ -83,7 +84,7 @@ abstract class Workflow {
         workflowTags = tags.map { WorkflowTag(it) }.toSet(),
         workflowOptions = options,
         workflowMeta = WorkflowMeta(meta)
-    ) { context }.stub()
+    ) { dispatcher }.stub()
 
     /*
      * Stub workflow
@@ -98,25 +99,25 @@ abstract class Workflow {
     /*
      *  Dispatch a task or a workflow asynchronously
      */
-    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> = context.async(proxy, method)
+    fun <T : Any, S> dispatch(proxy: T, method: T.() -> S): Deferred<S> = dispatcher.dispatch(proxy, method)
 
     /*
      * Create an async branch
      */
-    fun <S> async(branch: () -> S): Deferred<S> = context.async(branch)
+    fun <S> async(branch: () -> S): Deferred<S> = dispatcher.async(branch)
 
     /*
      * Create an inline task
      */
-    fun <S> inline(task: () -> S): S = context.inline(task)
+    fun <S> inline(task: () -> S): S = dispatcher.inline(task)
 
     /*
      * Create a timer from a duration
      */
-    fun timer(duration: Duration): Deferred<Instant> = context.timer(duration)
+    fun timer(duration: Duration): Deferred<Instant> = dispatcher.timer(duration)
 
     /*
      * Create a timer from an instant
      */
-    fun timer(instant: Instant): Deferred<Instant> = context.timer(instant)
+    fun timer(instant: Instant): Deferred<Instant> = dispatcher.timer(instant)
 }

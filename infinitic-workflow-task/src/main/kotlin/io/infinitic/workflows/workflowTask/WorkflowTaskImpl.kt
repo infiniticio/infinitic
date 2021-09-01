@@ -66,7 +66,8 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         )
 
         // set context
-        workflow.context = WorkflowContextImpl(workflowTaskParameters, setProperties)
+        workflow.context = WorkflowContextImpl(workflowTaskParameters)
+        workflow.dispatcher = WorkflowDispatcherImpl(workflowTaskParameters, setProperties)
 
         // initialize name of channels for this workflow, based on the methods that provide them
         setChannelNames(workflow)
@@ -95,8 +96,8 @@ class WorkflowTaskImpl : Task(), WorkflowTask {
         val properties = workflow.getProperties()
 
         return WorkflowTaskReturnValue(
-            (workflow.context as WorkflowContextImpl).newCommands,
-            (workflow.context as WorkflowContextImpl).newSteps,
+            (workflow.dispatcher as WorkflowDispatcherImpl).newCommands,
+            (workflow.dispatcher as WorkflowDispatcherImpl).newSteps,
             properties,
             methodReturnValue
         )

@@ -29,6 +29,7 @@ import io.infinitic.common.data.Name
 import io.infinitic.common.storage.keySet.CachedKeySetStorage
 import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.common.tasks.data.TaskName
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
@@ -44,6 +45,7 @@ import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.worker.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -93,6 +95,9 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
      * Start worker
      */
     open fun start() {
+        // register WorkflowTasks
+        taskExecutorRegister.registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
+
         runningScope.future { start() }.join()
     }
 

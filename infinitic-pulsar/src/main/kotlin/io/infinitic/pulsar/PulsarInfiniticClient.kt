@@ -25,7 +25,6 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
@@ -42,7 +41,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
     val pulsarTenant: String,
     val pulsarNamespace: String,
     name: String? = null
-) : AbstractInfiniticClient() {
+) : InfiniticClient() {
 
     private val producerName by lazy { getProducerName(pulsarClient, pulsarTenant, pulsarNamespace, name) }
 

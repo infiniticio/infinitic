@@ -25,25 +25,18 @@
 
 package io.infinitic.tasks.executor.register
 
-import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskExecutorRegister
 import io.infinitic.tasks.TaskFactory
 import io.infinitic.tasks.WorkflowFactory
 import io.infinitic.workflows.Workflow
-import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
 
 class TaskExecutorRegisterImpl : TaskExecutorRegister {
     // map task name <> task factory
     private val registeredTasks = mutableMapOf<String, TaskFactory>()
     // map workflow name <> workflow factory
     private val registeredWorkflows = mutableMapOf<String, WorkflowFactory>()
-
-    // WorkflowTask auto register
-    init {
-        registerTask(WorkflowTask::class.java.name) { WorkflowTaskImpl() }
-    }
 
     override fun registerTask(name: String, factory: () -> Task) {
         registeredTasks[name] = factory
