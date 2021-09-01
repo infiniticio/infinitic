@@ -60,7 +60,7 @@ abstract class InfiniticWorker(open val workerConfig: WorkerConfig) : Closeable 
     protected val logger = KotlinLogging.logger {}
 
     private val runningThreadPool = Executors.newCachedThreadPool()
-    protected val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
+    val runningScope = CoroutineScope(runningThreadPool.asCoroutineDispatcher() + Job())
 
     protected val taskExecutorRegister = TaskExecutorRegisterImpl()
 

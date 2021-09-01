@@ -26,9 +26,11 @@
 dependencies {
     implementation(project(":infinitic-cache"))
     implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-pulsar"))
     implementation(project(":infinitic-transport"))
-    implementation(project(":infinitic-worker"))
+    api(project(":infinitic-inMemory"))
+    api(project(":infinitic-pulsar"))
+    api(project(":infinitic-worker"))
+    api(project(":infinitic-client"))
 }
 
 apply("../publish.gradle.kts")

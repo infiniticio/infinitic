@@ -26,26 +26,12 @@
 package io.infinitic.inMemory
 
 import io.infinitic.client.AbstractInfiniticClient
+import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.storage.keyValue.CachedKeyValueStorage
 import io.infinitic.inMemory.transport.InMemoryOutput
-import io.infinitic.inMemory.workers.startInMemory
-import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
-import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
-import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
-import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
-import io.infinitic.storage.inMemory.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
-import io.infinitic.tags.tasks.storage.TaskTagStorage
-import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
-import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
-import io.infinitic.tasks.engine.storage.TaskStateStorage
-import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
 import io.infinitic.worker.config.WorkerConfig
-import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
@@ -53,67 +39,48 @@ class InMemoryInfiniticClient(
     val name: String? = null
 ) : AbstractInfiniticClient() {
 
-    val taskExecutorRegister = TaskExecutorRegisterImpl()
+    private val inMemoryOutput = InMemoryOutput(sendingScope)
 
-    init {
-        require(workerConfig.tasks.isNotEmpty()) { "No task registered in your config file" }
-
-        workerConfig.tasks.forEach {
-            taskExecutorRegister.registerTask(it.name) { it.instance }
-        }
-
-        require(workerConfig.workflows.isNotEmpty()) { "No workflow registered in your config file" }
-
-        workerConfig.workflows.forEach {
-            taskExecutorRegister.registerWorkflow(it.name) { it.instance }
+    private val worker by lazy {
+        InMemoryInfiniticWorker(workerConfig).apply {
+            output = inMemoryOutput
+            client = this@InMemoryInfiniticClient
+            name = clientName.name
         }
     }
 
-    override val clientName: ClientName = ClientName(name ?: "client: inMemory")
-
-    private val inMemoryOutput = InMemoryOutput(sendingScope)
+    override val clientName: ClientName = ClientName(name ?: "inMemory")
 
     override val sendToTaskTagEngine = inMemoryOutput.sendCommandsToTaskTagEngine
 
-    override val sendToTaskEngine = inMemoryOutput.sendCommandsToTaskEngine
+    override val sendToTaskEngine = inMemoryOutput.sendCommandsToTaskEngine()
 
     override val sendToWorkflowTagEngine = inMemoryOutput.sendCommandsToWorkflowTagEngine
 
     override val sendToWorkflowEngine = inMemoryOutput.sendCommandsToWorkflowEngine
 
-    private val keyValueStorage = InMemoryKeyValueStorage()
-    private val keySetStorage = InMemoryKeySetStorage()
-
-    val taskTagStorage: TaskTagStorage = BinaryTaskTagStorage(keyValueStorage, keySetStorage)
-    val workflowTagStorage: WorkflowTagStorage = BinaryWorkflowTagStorage(keyValueStorage, keySetStorage)
-    val metricsPerNameStorage: MetricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
-    val metricsGlobalStorage: MetricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
-
-    val taskStorage: TaskStateStorage = BinaryTaskStateStorage(
-        CachedKeyValueStorage(
-            workerConfig.stateCache.keyValue(workerConfig),
-            workerConfig.stateStorage!!.keyValue(workerConfig)
-        )
-    )
-
-    val workflowStateStorage: WorkflowStateStorage = BinaryWorkflowStateStorage(
-        CachedKeyValueStorage(
-            workerConfig.stateCache.keyValue(workerConfig),
-            workerConfig.stateStorage!!.keyValue(workerConfig)
-        )
-    )
-
     init {
-        runningScope.startInMemory(
-            taskExecutorRegister,
-            this,
-            inMemoryOutput,
-            taskTagStorage,
-            taskStorage,
-            workflowTagStorage,
-            workflowStateStorage,
-            metricsPerNameStorage,
-            metricsGlobalStorage
-        ) { }
+        runningScope.launch {
+            launch(CoroutineName("in-memory-client-logger")) {
+                @Suppress("ControlFlowWithEmptyBody")
+                for (messageToProcess in inMemoryOutput.logChannel) {
+                    // just clear the channel
+                }
+            }
+
+            startClientWorker(
+                this@InMemoryInfiniticClient,
+                inputChannel = inMemoryOutput.clientChannel,
+                outputChannel = inMemoryOutput.logChannel,
+            )
+        }
+
+        worker.runningScope.launch { worker.start() }
+    }
+
+    override fun close() {
+        super.close()
+
+        worker.close()
     }
 }

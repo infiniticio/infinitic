@@ -24,25 +24,15 @@
  */
 
 dependencies {
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
-    implementation(Libs.Jackson.databind) // <= check why this dependency is necessary
-
-    implementation(Libs.Slf4j.simple)
-    implementation(Libs.Kotest.junit5)
-    implementation(Libs.Kotest.property)
-    implementation(Libs.Mockk.mockk)
-    implementation(testFixtures(project(":infinitic-common")))
-
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-tag-engine"))
-    implementation(project(":infinitic-worker"))
-
-    testImplementation(project(":infinitic-inMemory"))
-//    testImplementation(Libs.Hoplite.core)
+    testImplementation(Libs.Coroutines.core)
+    testImplementation(Libs.Coroutines.jdk8)
+    testImplementation(Libs.Hoplite.core)
     testImplementation(Libs.Hoplite.yaml)
+
+    testImplementation(project(":infinitic-factory"))
+    testImplementation(project(":infinitic-inMemory"))
+    testImplementation(project(":infinitic-pulsar"))
+
     // should be removed with pulsar 2.8
     testImplementation("org.apache.avro:avro") { version { strictly("1.9.+") } }
 }

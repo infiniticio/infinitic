@@ -34,8 +34,8 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.exceptions.clients.CanceledDeferredException
 import io.infinitic.exceptions.clients.FailedDeferredException
-import io.infinitic.pulsar.PulsarInfiniticClient
-import io.infinitic.pulsar.PulsarInfiniticWorker
+import io.infinitic.factory.InfiniticClient
+import io.infinitic.factory.InfiniticWorker
 import io.infinitic.tests.tasks.TaskA
 import io.infinitic.tests.workflows.Obj1
 import io.infinitic.tests.workflows.Obj2
@@ -64,8 +64,8 @@ internal class WorkflowTests : StringSpec({
     lateinit var workflowB: WorkflowB
     lateinit var workflowAnnotated: WorkflowAnnotated
 
-    val client = autoClose(PulsarInfiniticClient.fromConfigResource("/pulsar.yml"))
-    val worker = autoClose(PulsarInfiniticWorker.fromConfigResource("/pulsar.yml"))
+    val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
+    val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
 
     beforeSpec {
         thread { worker.start() }

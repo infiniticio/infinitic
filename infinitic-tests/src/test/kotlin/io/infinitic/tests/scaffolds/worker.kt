@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.scaffolds
+package io.infinitic.tests.scaffolds
 
 import io.infinitic.inMemory.transport.InMemoryMessageToProcess
 import kotlinx.coroutines.CoroutineScope
