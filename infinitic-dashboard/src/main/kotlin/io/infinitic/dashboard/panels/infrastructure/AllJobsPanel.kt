@@ -195,10 +195,10 @@ object AllJobsPanel : Panel() {
                                                         }
                                                     }
                                                     tbody().new {
-                                                        when (val request = state.names) {
+                                                        when (val names = state.names) {
                                                             is Loading -> displayNamesLoading()
                                                             is Failed -> displayNamesError(state.names, JobType.WORKFLOW)
-                                                            is Completed -> request.result.forEach {
+                                                            is Completed -> names.result.forEach {
                                                                 when (val request = state.stats[it]!!) {
                                                                     is Loading -> displayExecutorLoading(it, JobType.WORKFLOW)
                                                                     is Failed -> displayExecutorError(it, JobType.WORKFLOW)

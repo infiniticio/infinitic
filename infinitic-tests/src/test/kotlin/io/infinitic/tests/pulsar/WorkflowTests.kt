@@ -468,30 +468,31 @@ internal class WorkflowTests : StringSpec({
     }
 
     "child workflow is canceled when parent workflow is canceled - tag are also added and deleted" {
+
         client.async(workflowATagged) { cancel1() }.join()
 
         delay(1000)
-        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 2
+        val size = client.getWorkflowIds<WorkflowA>("foo").size
 
         client.cancel(workflowATagged).join()
 
         delay(1000)
-        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
+        client.getWorkflowIds<WorkflowA>("foo").size shouldBe size - 2
     }
 
     "Tag should be added then deleted after completion" {
-        client.async(workflowATagged) { channel1() }.join()
+        val deferred = client.async(workflowATagged) { channel1() }.join()
 
         // delay is necessary to be sure that tag engine has processed
         delay(500)
-        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 1
+        client.getWorkflowIds<WorkflowA>("foo").contains(deferred.id) shouldBe true
 
         // complete workflow
         client.getWorkflow<WorkflowA>("foo").channelA.send("").join()
 
         // delay is necessary to be sure that tag engine has processed
         delay(500)
-        client.getWorkflowIds<WorkflowA>("foo").size shouldBe 0
+        client.getWorkflowIds<WorkflowA>("foo").contains(deferred.id) shouldBe false
     }
 
     "Annotated Workflow" {

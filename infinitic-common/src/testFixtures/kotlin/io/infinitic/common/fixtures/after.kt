@@ -30,7 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-fun after(delay: Long = 100L, f: suspend () -> Unit) = CoroutineScope(Dispatchers.IO).launch {
+fun after(delay: Long = 100L, f: suspend CoroutineScope.() -> Unit) = CoroutineScope(Dispatchers.IO).launch {
     delay(delay)
     f()
 }

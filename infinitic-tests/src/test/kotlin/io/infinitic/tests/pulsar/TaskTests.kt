@@ -45,6 +45,7 @@ import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.concurrent.thread
 
 internal class TaskTests : StringSpec({
@@ -204,8 +205,8 @@ internal class TaskTests : StringSpec({
         after { client.cancelTask<TaskTest>("foo") }
 
         after(0) {
-            after(0) { shouldThrow<CanceledDeferredException> { deferred1.await() } }
-            after(0) { shouldThrow<CanceledDeferredException> { deferred2.await() } }
+            launch { shouldThrow<CanceledDeferredException> { deferred1.await() } }
+            launch { shouldThrow<CanceledDeferredException> { deferred2.await() } }
         }.join()
     }
 
@@ -214,16 +215,16 @@ internal class TaskTests : StringSpec({
 
         val deferred = client.async(taskTestWithTags) { await(200) }.join()
 
-        client.getTaskIds<TaskTest>("foo") shouldBe setOf(deferred.id)
-        client.getTaskIds<TaskTest>("bar") shouldBe setOf(deferred.id)
+        client.getTaskIds<TaskTest>("foo").contains(deferred.id) shouldBe true
+        client.getTaskIds<TaskTest>("bar").contains(deferred.id) shouldBe true
 
         deferred.await()
 
         // wait a bit to ensure tag propagation
         delay(200)
 
-        client.getTaskIds<TaskTest>("foo") shouldBe setOf()
-        client.getTaskIds<TaskTest>("bar") shouldBe setOf()
+        client.getTaskIds<TaskTest>("foo").contains(deferred.id) shouldBe false
+        client.getTaskIds<TaskTest>("bar").contains(deferred.id) shouldBe false
     }
 
     "Tag should be added then deleted after cancellation" {
@@ -231,8 +232,8 @@ internal class TaskTests : StringSpec({
 
         val deferred = client.async(taskTestWithTags) { log() }.join()
 
-        client.getTaskIds<TaskTest>("foo") shouldBe setOf(deferred.id)
-        client.getTaskIds<TaskTest>("bar") shouldBe setOf(deferred.id)
+        client.getTaskIds<TaskTest>("foo").contains(deferred.id) shouldBe true
+        client.getTaskIds<TaskTest>("bar").contains(deferred.id) shouldBe true
 
         after { client.cancel(taskTestWithTags) }
 
@@ -240,8 +241,8 @@ internal class TaskTests : StringSpec({
 
         // wait a bit to ensure tag propagation
         delay(200)
-        client.getTaskIds<TaskTest>("foo") shouldBe setOf()
-        client.getTaskIds<TaskTest>("bar") shouldBe setOf()
+        client.getTaskIds<TaskTest>("foo").contains(deferred.id) shouldBe false
+        client.getTaskIds<TaskTest>("bar").contains(deferred.id) shouldBe false
     }
 
     "get tags from context" {
