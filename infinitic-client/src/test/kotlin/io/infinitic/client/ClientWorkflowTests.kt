@@ -65,10 +65,11 @@ import io.mockk.slot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import java.util.UUID
+import java.util.concurrent.CopyOnWriteArrayList
 
-private val taskTagSlots = mutableListOf<TaskTagEngineMessage>()
+private val taskTagSlots = CopyOnWriteArrayList<TaskTagEngineMessage>() // multithread update
+private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagEngineMessage>() // multithread update
 private val taskSlot = slot<TaskEngineMessage>()
-private val workflowTagSlots = mutableListOf<WorkflowTagEngineMessage>()
 private val workflowSlot = slot<WorkflowEngineMessage>()
 
 class ClientWorkflow : AbstractInfiniticClient() {
