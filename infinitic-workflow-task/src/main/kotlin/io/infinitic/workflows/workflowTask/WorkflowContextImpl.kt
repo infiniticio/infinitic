@@ -29,19 +29,16 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.workflows.WorkflowContext
 import java.util.UUID
 
-internal class WorkflowContextImpl(
+internal data class WorkflowContextImpl(
     private val workflowTaskParameters: WorkflowTaskParameters
 ) : WorkflowContext {
 
     // internal workflow id
-    override val id: UUID
-        get() = workflowTaskParameters.workflowId.id
+    override val id: UUID = workflowTaskParameters.workflowId.id
 
     // workflow tags provided at launch
-    override val tags: Set<String>
-        get() = workflowTaskParameters.workflowTags.map { it.tag }.toSet()
+    override val tags: Set<String> = workflowTaskParameters.workflowTags.map { it.tag }.toSet()
 
     // workflow meta provided at launch
-    override val meta: Map<String, ByteArray>
-        get() = workflowTaskParameters.workflowMeta.map
+    override val meta: Map<String, ByteArray> = workflowTaskParameters.workflowMeta.map
 }

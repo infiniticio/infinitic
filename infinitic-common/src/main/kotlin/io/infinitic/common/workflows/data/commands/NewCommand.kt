@@ -37,7 +37,7 @@ data class NewCommand(
     val commandSimpleName: CommandSimpleName,
     val commandPosition: MethodRunPosition
 ) {
-    val commandStatus: CommandStatus = CommandOngoing
+    val commandStatus: CommandStatus = CommandStatus.CommandRunning
 
     val commandHash: CommandHash = command.hash()
 

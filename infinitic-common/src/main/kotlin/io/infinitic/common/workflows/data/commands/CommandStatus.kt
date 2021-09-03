@@ -35,27 +35,27 @@ sealed class CommandStatus {
      * A command is terminated if canceled or completed, failed is considered a transient state
      */
     fun isTerminated() = this is CommandCompleted || this is CommandCanceled
+
+    @Serializable
+    object CommandRunning : CommandStatus() {
+        override fun equals(other: Any?) = javaClass == other?.javaClass
+        override fun toString(): String = CommandRunning::class.java.name
+    }
+
+    @Serializable
+    data class CommandCompleted(
+        val returnValue: CommandReturnValue,
+        val completionWorkflowTaskIndex: WorkflowTaskIndex
+    ) : CommandStatus()
+
+    @Serializable
+    data class CommandCanceled(
+        val cancellationWorkflowTaskIndex: WorkflowTaskIndex
+    ) : CommandStatus()
+
+    @Serializable
+    data class CommandOngoingFailure(
+        val error: Error,
+        val failureWorkflowTaskIndex: WorkflowTaskIndex
+    ) : CommandStatus()
 }
-
-@Serializable
-object CommandOngoing : CommandStatus() {
-    override fun equals(other: Any?) = javaClass == other?.javaClass
-    override fun toString(): String = CommandOngoing::class.java.name
-}
-
-@Serializable
-data class CommandCompleted(
-    val returnValue: CommandReturnValue,
-    val completionWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()
-
-@Serializable
-data class CommandCanceled(
-    val cancellationWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()
-
-@Serializable
-data class CommandOngoingFailure(
-    val error: Error,
-    val failureWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()

@@ -55,7 +55,7 @@ internal fun CoroutineScope.dispatchWorkflow(
     )
 
     val state = WorkflowState(
-        workflowStatus = WorkflowStatus.ALIVE,
+        workflowStatus = WorkflowStatus.MAIN_RUNNING,
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,

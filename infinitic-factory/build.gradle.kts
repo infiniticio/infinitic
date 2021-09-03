@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":infinitic-cache"))
     implementation(project(":infinitic-storage"))
     implementation(project(":infinitic-transport"))
+
     api(project(":infinitic-inMemory"))
     api(project(":infinitic-pulsar"))
     api(project(":infinitic-worker"))

@@ -41,11 +41,11 @@ dependencies {
     api(project(":infinitic-common"))
     api(project(":infinitic-client"))
     api(project(":infinitic-worker"))
+    api(project(":infinitic-task-executor"))
 
     implementation(project(":infinitic-metrics-engines"))
     implementation(project(":infinitic-tag-engine"))
     implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-task-executor"))
     implementation(project(":infinitic-workflow-engine"))
 
     testImplementation(Libs.Kotlin.reflect)

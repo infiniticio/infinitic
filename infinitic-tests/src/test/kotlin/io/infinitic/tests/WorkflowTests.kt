@@ -23,8 +23,9 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.pulsar
+package io.infinitic.tests
 
+import com.github.valfirst.slf4jtest.TestLoggerFactory
 import io.infinitic.client.getWorkflow
 import io.infinitic.client.getWorkflowIds
 import io.infinitic.client.newWorkflow
@@ -42,12 +43,14 @@ import io.infinitic.tests.workflows.Obj2
 import io.infinitic.tests.workflows.WorkflowA
 import io.infinitic.tests.workflows.WorkflowAnnotated
 import io.infinitic.tests.workflows.WorkflowB
+import io.infinitic.workflows.engine.WorkflowEngine
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.configuration
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
+import uk.org.lidalia.slf4jext.Level
 import java.time.Instant
 import kotlin.concurrent.thread
 import io.infinitic.exceptions.workflows.CanceledDeferredException as CanceledInWorkflowException
@@ -67,11 +70,20 @@ internal class WorkflowTests : StringSpec({
     val client = autoClose(InfiniticClient.fromConfigResource("/pulsar.yml"))
     val worker = autoClose(InfiniticWorker.fromConfigResource("/pulsar.yml"))
 
+    val logger = TestLoggerFactory.getTestLogger(WorkflowTests::class.java)
+
     beforeSpec {
+        // print info level log - despite using inMemory TestLoggerFactory implementation
+        TestLoggerFactory.getInstance().printLevel = Level.DEBUG
+
         thread { worker.start() }
     }
 
     beforeTest {
+        // note that log events of previous test can continue to fill at this stage, due to asynchronous calls
+        TestLoggerFactory.clearAll()
+        logger.clear()
+
         worker.storageFlush()
 
         workflowA = client.newWorkflow()
@@ -79,6 +91,10 @@ internal class WorkflowTests : StringSpec({
         workflowAnnotated = client.newWorkflow()
         workflowAMeta = client.newWorkflow(meta = mapOf("foo" to "bar".toByteArray()))
         workflowB = client.newWorkflow()
+    }
+
+    afterTest {
+//        checkDiscardingState()
     }
 
     "empty Workflow" {
@@ -145,6 +161,14 @@ internal class WorkflowTests : StringSpec({
 
     "Sequential Workflow with an async branch with 2 tasks" {
         workflowA.seq4() shouldBe "23bac"
+
+//        checkDiscardingState()
+    }
+
+    "Workflow waiting deferred in wrong order" {
+        workflowA.seq5() shouldBe 600
+
+//        checkDiscardingState()
     }
 
     "Test Deferred methods" {
@@ -205,6 +229,9 @@ internal class WorkflowTests : StringSpec({
 
     "Check prop1" {
         workflowA.prop1() shouldBe "ac"
+
+        // should not discard state before completing the async branch
+//        checkDiscardingState()
     }
 
     "Check prop2" {
@@ -501,3 +528,14 @@ internal class WorkflowTests : StringSpec({
         result shouldBe "abc"
     }
 })
+
+private suspend fun checkDiscardingState() {
+    // make sure all events are recorded
+    delay(1000)
+    // check that workflow state is not deleted too early
+    TestLoggerFactory.getAllLoggingEvents()
+        .filter { it.level == Level.INFO }
+        .map { "${it.timestamp} ${it.message}" }
+        .joinToString("\n")
+        .contains(WorkflowEngine.NO_STATE_DISCARDING_REASON) shouldBe false
+}

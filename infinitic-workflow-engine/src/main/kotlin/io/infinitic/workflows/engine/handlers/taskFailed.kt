@@ -26,7 +26,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandOngoingFailure
+import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
@@ -46,7 +46,7 @@ internal fun CoroutineScope.taskFailed(
             msg
         )
         false -> {
-            val commandStatus = CommandOngoingFailure(
+            val commandStatus = CommandStatus.CommandOngoingFailure(
                 msg.error,
                 state.workflowTaskIndex
             )

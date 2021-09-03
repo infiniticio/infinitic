@@ -66,6 +66,7 @@ interface WorkflowA : ParentInterface {
     fun seq2(): String
     fun seq3(): String
     fun seq4(): String
+    fun seq5(): Long
     fun deferred1(): String
     fun or1(): String
     fun or2(): Any
@@ -188,6 +189,17 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         str = taskA.concat(str, "3")
 
         return str + d.await() // should be "23bac"
+    }
+
+    override fun seq5(): Long {
+        var l = 0L
+        val d1 = dispatch(taskA) { await(500) }
+        val d2 = dispatch(taskA) { await(100) }
+
+        l += d1.await()
+        l += d2.await()
+
+        return l // should be 1100
     }
 
     override fun deferred1(): String {
@@ -330,9 +342,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun prop1(): String {
         p1 = "a"
 
-        async {
-            p1 += "b"
-        }
+        async { p1 += "b" }
+
         p1 += "c"
 
         return p1 // should be "ac"
@@ -341,9 +352,8 @@ class WorkflowAImpl : Workflow(), WorkflowA {
     override fun prop2(): String {
         p1 = "a"
 
-        async {
-            p1 += "b"
-        }
+        async { p1 += "b" }
+
         p1 += "c"
         taskA.await(100)
         p1 += "d"

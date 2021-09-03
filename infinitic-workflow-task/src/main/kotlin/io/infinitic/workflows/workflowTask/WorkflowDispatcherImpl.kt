@@ -41,10 +41,10 @@ import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelImpl
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.commands.Command
-import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
+import io.infinitic.common.workflows.data.commands.CommandStatus.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.DispatchTask

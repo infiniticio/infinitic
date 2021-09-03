@@ -40,7 +40,7 @@ internal fun CoroutineScope.cancelWorkflow(
     output: WorkflowEngineOutput,
     state: WorkflowState
 ) {
-    state.workflowStatus = WorkflowStatus.CANCELED
+    state.workflowStatus = WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED
 
     state.methodRuns.forEach { methodRun ->
         // tell parents

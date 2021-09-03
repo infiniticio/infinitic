@@ -23,7 +23,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests.pulsar
+package io.infinitic.tests
 
 import io.infinitic.pulsar.PulsarInfiniticAdmin
 

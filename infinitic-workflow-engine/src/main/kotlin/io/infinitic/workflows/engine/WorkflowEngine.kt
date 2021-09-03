@@ -81,6 +81,11 @@ class WorkflowEngine(
     sendToWorkflowEngine: SendToWorkflowEngine,
     sendToWorkflowEngineAfter: SendToWorkflowEngineAfter
 ) {
+
+    companion object {
+        const val NO_STATE_DISCARDING_REASON = "for having null state"
+    }
+
     private val logger = KotlinLogging.logger {}
 
     private lateinit var scope: CoroutineScope
@@ -100,8 +105,8 @@ class WorkflowEngine(
         val state = process(message) ?: return
 
         when (state.workflowStatus) {
-            WorkflowStatus.TERMINATED, WorkflowStatus.CANCELED -> storage.delState(message.workflowId)
-            WorkflowStatus.ALIVE -> storage.putState(message.workflowId, state)
+            WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED, WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED -> storage.delState(message.workflowId)
+            WorkflowStatus.MAIN_RUNNING, WorkflowStatus.MAIN_COMPLETED_NOT_ALL_TERMINATED -> storage.putState(message.workflowId, state)
         }
     }
 
@@ -124,7 +129,7 @@ class WorkflowEngine(
                 launch { output.sendEventsToClient(unknownWorkflow) }
             }
             // discard all other messages if workflow is already terminated
-            logDiscardingMessage(message, "for having null state")
+            logDiscardingMessage(message, NO_STATE_DISCARDING_REASON)
 
             return@coroutineScope null
         }
@@ -138,7 +143,7 @@ class WorkflowEngine(
 
         // discard all message if already terminated (except client request)
         if (
-            (state.workflowStatus == WorkflowStatus.TERMINATED || state.workflowStatus == WorkflowStatus.CANCELED) &&
+            (state.workflowStatus == WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED || state.workflowStatus == WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED) &&
             message !is WaitWorkflow
         ) {
             logDiscardingMessage(message, "as workflow is already terminated")
@@ -184,7 +189,7 @@ class WorkflowEngine(
 
         // process all buffered messages
         while (
-            state.workflowStatus == WorkflowStatus.ALIVE &&
+            state.workflowStatus == WorkflowStatus.MAIN_RUNNING &&
             state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
@@ -231,17 +236,17 @@ class WorkflowEngine(
 
         // workflow is terminated if all methodRuns have been deleted
         if (state.methodRuns.size == 0) {
-            state.workflowStatus = WorkflowStatus.TERMINATED
+            state.workflowStatus = WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED
         }
 
         if (state.workflowStatus != oldStatus) {
             when (state.workflowStatus) {
-                WorkflowStatus.ALIVE -> Unit
-                WorkflowStatus.TERMINATED -> {
+                WorkflowStatus.MAIN_RUNNING -> Unit
+                WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED -> {
                     // remove tags reference to this instance
                     removeTags(output, state)
                 }
-                WorkflowStatus.CANCELED -> {
+                WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED -> {
                     // send cancellation info to waiting clients
                     state.methodRuns.forEach { methodRun ->
                         methodRun.waitingClients.forEach {
@@ -273,13 +278,13 @@ class WorkflowEngine(
     private fun CoroutineScope.waitWorkflow(output: WorkflowEngineOutput, state: WorkflowState, msg: WaitWorkflow) {
         val main = state.methodRuns.find { it.methodRunId.id == msg.workflowId.id }
         when {
-            // main branch is already completed
+            // main branch is already terminated
             (main == null) -> {
                 val workflowAlreadyCompleted = WorkflowAlreadyCompleted(msg.clientName, msg.workflowId)
                 launch { output.sendEventsToClient(workflowAlreadyCompleted) }
             }
             // workflow is canceled
-            state.workflowStatus == WorkflowStatus.CANCELED -> {
+            state.workflowStatus == WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED -> {
                 val workflowCanceled = WorkflowCanceled(msg.clientName, msg.workflowId)
                 launch { output.sendEventsToClient(workflowCanceled) }
             }

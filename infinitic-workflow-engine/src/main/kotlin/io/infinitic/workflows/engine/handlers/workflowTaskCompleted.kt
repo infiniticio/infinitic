@@ -33,8 +33,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.tags.messages.AddTaskTag
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
-import io.infinitic.common.workflows.data.commands.CommandCompleted
-import io.infinitic.common.workflows.data.commands.CommandOngoing
+import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.EndAsync
@@ -50,7 +49,6 @@ import io.infinitic.common.workflows.data.commands.StartInstantTimer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepFailed
-import io.infinitic.common.workflows.data.steps.StepOngoing
 import io.infinitic.common.workflows.data.steps.StepOngoingFailure
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
@@ -128,7 +126,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
                 stepPosition = it.stepPosition,
                 step = it.step,
                 stepHash = it.stepHash,
-                stepStatus = StepOngoing
+                stepStatus = it.step.stepStatus()
             )
         )
     }
@@ -231,7 +229,7 @@ private fun CoroutineScope.endAsync(
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
     }
 
-    val commandStatus = CommandCompleted(
+    val commandStatus = CommandStatus.CommandCompleted(
         command.asyncReturnValue,
         state.workflowTaskIndex
     )
@@ -256,7 +254,7 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_INLINE_TASK
     }
     // past command completed
-    pastStartInlineTask.commandStatus = CommandCompleted(
+    pastStartInlineTask.commandStatus = CommandStatus.CommandCompleted(
         returnValue = command.inlineTaskReturnValue,
         completionWorkflowTaskIndex = state.workflowTaskIndex
     )
@@ -413,7 +411,7 @@ private fun addPastCommand(
         commandHash = newCommand.commandHash,
         commandName = newCommand.commandName,
         commandSimpleName = newCommand.commandSimpleName,
-        commandStatus = CommandOngoing
+        commandStatus = CommandStatus.CommandRunning
     )
 
     methodRun.pastCommands.add(pastCommand)

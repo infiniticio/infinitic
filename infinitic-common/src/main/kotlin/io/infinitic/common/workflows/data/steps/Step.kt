@@ -26,12 +26,12 @@
 package io.infinitic.common.workflows.data.steps
 
 import io.infinitic.common.serDe.SerializedData
-import io.infinitic.common.workflows.data.commands.CommandCanceled
-import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandOngoing
-import io.infinitic.common.workflows.data.commands.CommandOngoingFailure
 import io.infinitic.common.workflows.data.commands.CommandStatus
+import io.infinitic.common.workflows.data.commands.CommandStatus.CommandCanceled
+import io.infinitic.common.workflows.data.commands.CommandStatus.CommandCompleted
+import io.infinitic.common.workflows.data.commands.CommandStatus.CommandOngoingFailure
+import io.infinitic.common.workflows.data.commands.CommandStatus.CommandRunning
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
@@ -69,7 +69,7 @@ sealed class Step {
         }
 
         override fun stepStatusAt(index: WorkflowTaskIndex) = when (val status = commandStatus) {
-            is CommandOngoing -> StepOngoing
+            is CommandRunning -> StepOngoing
             is CommandCompleted -> when (index >= status.completionWorkflowTaskIndex) {
                 true -> StepCompleted(StepReturnValue.from(status.returnValue.get()), status.completionWorkflowTaskIndex)
                 false -> StepOngoing
@@ -85,7 +85,7 @@ sealed class Step {
         }
 
         companion object {
-            fun from(newCommand: NewCommand) = Id(newCommand.commandId, CommandOngoing)
+            fun from(newCommand: NewCommand) = Id(newCommand.commandId, CommandRunning)
             fun from(pastCommand: PastCommand) = Id(pastCommand.commandId, pastCommand.commandStatus)
         }
     }

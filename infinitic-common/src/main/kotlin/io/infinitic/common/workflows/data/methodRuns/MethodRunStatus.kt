@@ -23,21 +23,13 @@
  * Licensor: infinitic.io
  */
 
-dependencies {
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
+package io.infinitic.common.workflows.data.methodRuns
 
-    api(project(":infinitic-common"))
-    api(project(":infinitic-transport"))
-    api(project(":infinitic-client"))
-    api(project(":infinitic-storage"))
-    implementation(project(":infinitic-cache"))
-    implementation(project(":infinitic-tag-engine"))
-    implementation(project(":infinitic-task-engine"))
-    implementation(project(":infinitic-workflow-engine"))
-    implementation(project(":infinitic-metrics-engines"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-worker"))
+import kotlinx.serialization.Serializable
+
+@Serializable
+enum class MethodRunStatus {
+    RUNNING,
+    CANCELED,
+    COMPLETED
 }
-
-apply("../publish.gradle.kts")
