@@ -42,7 +42,7 @@ internal fun CoroutineScope.taskCanceled(
     when (msg.isWorkflowTask()) {
         true -> TODO()
         false -> {
-            val commandStatus = CommandStatus.CommandCanceled(state.workflowTaskIndex)
+            val commandStatus = CommandStatus.Canceled(state.workflowTaskIndex)
 
             commandTerminated(
                 workflowEngineOutput,

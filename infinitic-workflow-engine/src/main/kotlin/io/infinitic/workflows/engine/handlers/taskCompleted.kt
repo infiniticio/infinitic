@@ -47,7 +47,7 @@ internal fun CoroutineScope.taskCompleted(
             msg
         )
         false -> {
-            val commandStatus = CommandStatus.CommandCompleted(
+            val commandStatus = CommandStatus.Completed(
                 CommandReturnValue(msg.taskReturnValue.serializedData),
                 state.workflowTaskIndex
             )

@@ -39,7 +39,7 @@ internal fun CoroutineScope.childWorkflowCompleted(
     state: WorkflowState,
     msg: ChildWorkflowCompleted
 ) {
-    val commandStatus = CommandStatus.CommandCompleted(
+    val commandStatus = CommandStatus.Completed(
         CommandReturnValue(msg.childWorkflowReturnValue.serializedData),
         state.workflowTaskIndex
     )

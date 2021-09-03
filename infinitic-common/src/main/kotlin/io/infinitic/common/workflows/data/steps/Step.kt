@@ -28,10 +28,10 @@ package io.infinitic.common.workflows.data.steps
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
-import io.infinitic.common.workflows.data.commands.CommandStatus.CommandCanceled
-import io.infinitic.common.workflows.data.commands.CommandStatus.CommandCompleted
-import io.infinitic.common.workflows.data.commands.CommandStatus.CommandOngoingFailure
-import io.infinitic.common.workflows.data.commands.CommandStatus.CommandRunning
+import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
+import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
+import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
+import io.infinitic.common.workflows.data.commands.CommandStatus.Running
 import io.infinitic.common.workflows.data.commands.NewCommand
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
@@ -69,23 +69,23 @@ sealed class Step {
         }
 
         override fun stepStatusAt(index: WorkflowTaskIndex) = when (val status = commandStatus) {
-            is CommandRunning -> StepOngoing
-            is CommandCompleted -> when (index >= status.completionWorkflowTaskIndex) {
+            is Running -> StepOngoing
+            is Completed -> when (index >= status.completionWorkflowTaskIndex) {
                 true -> StepCompleted(StepReturnValue.from(status.returnValue.get()), status.completionWorkflowTaskIndex)
                 false -> StepOngoing
             }
-            is CommandCanceled -> when (index >= status.cancellationWorkflowTaskIndex) {
+            is Canceled -> when (index >= status.cancellationWorkflowTaskIndex) {
                 true -> StepCanceled(commandId, status.cancellationWorkflowTaskIndex)
                 false -> StepOngoing
             }
-            is CommandOngoingFailure -> when (index >= status.failureWorkflowTaskIndex) {
+            is CurrentlyFailed -> when (index >= status.failureWorkflowTaskIndex) {
                 true -> StepOngoingFailure(commandId, status.failureWorkflowTaskIndex)
                 false -> StepOngoing
             }
         }
 
         companion object {
-            fun from(newCommand: NewCommand) = Id(newCommand.commandId, CommandRunning)
+            fun from(newCommand: NewCommand) = Id(newCommand.commandId, Running)
             fun from(pastCommand: PastCommand) = Id(pastCommand.commandId, pastCommand.commandStatus)
         }
     }

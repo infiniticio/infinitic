@@ -60,7 +60,8 @@ import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
-import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
+import io.infinitic.exceptions.thisShouldNotHappen
+import io.infinitic.workflows.engine.helpers.clearHistoryOfTerminatedMethodRun
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -104,7 +105,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
 
     // add new commands to past commands
     workflowTaskOutput.newCommands.forEach {
-        // making when an expression to force exhaustiveness
+        @Suppress("UNUSED_VARIABLE")
         val o = when (it.command) {
             is DispatchTaskInWorkflow -> dispatchTask(output, methodRun, it, state)
             is DispatchChildWorkflow -> dispatchChildWorkflow(output, methodRun, it, state)
@@ -164,7 +165,8 @@ internal fun CoroutineScope.workflowTaskCompleted(
         val commandId = state.bufferedCommands.first()
         val pastCommand = methodRun.getPastCommand(commandId)
 
-        when (pastCommand.commandType) {
+        @Suppress("UNUSED_VARIABLE")
+        val o: Any = when (pastCommand.commandType) {
             CommandType.START_ASYNC -> {
                 // update pastCommand with a copy (!) of current properties and anticipated workflowTaskIndex
                 pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap()
@@ -203,12 +205,15 @@ internal fun CoroutineScope.workflowTaskCompleted(
                     }
                 }
             }
-            else -> throw RuntimeException("This should not happen: unmanaged ${pastCommand.commandType} type in  state.bufferedCommands")
+            CommandType.SENT_TO_CHANNEL,
+            CommandType.START_INLINE_TASK,
+            CommandType.END_INLINE_TASK -> throw thisShouldNotHappen(
+                "unmanaged ${pastCommand.commandType} type in state.bufferedCommands"
+            )
         }
     }
 
-    // if everything is completed in methodRun then filter state
-    cleanMethodRunIfNeeded(methodRun, state)
+    clearHistoryOfTerminatedMethodRun(methodRun, state)
 }
 
 private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
@@ -229,7 +234,7 @@ private fun CoroutineScope.endAsync(
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
     }
 
-    val commandStatus = CommandStatus.CommandCompleted(
+    val commandStatus = CommandStatus.Completed(
         command.asyncReturnValue,
         state.workflowTaskIndex
     )
@@ -254,7 +259,7 @@ private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: W
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_INLINE_TASK
     }
     // past command completed
-    pastStartInlineTask.commandStatus = CommandStatus.CommandCompleted(
+    pastStartInlineTask.commandStatus = CommandStatus.Completed(
         returnValue = command.inlineTaskReturnValue,
         completionWorkflowTaskIndex = state.workflowTaskIndex
     )
@@ -411,7 +416,7 @@ private fun addPastCommand(
         commandHash = newCommand.commandHash,
         commandName = newCommand.commandName,
         commandSimpleName = newCommand.commandSimpleName,
-        commandStatus = CommandStatus.CommandRunning
+        commandStatus = CommandStatus.Running
     )
 
     methodRun.pastCommands.add(pastCommand)

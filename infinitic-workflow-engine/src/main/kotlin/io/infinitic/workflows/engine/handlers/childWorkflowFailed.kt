@@ -38,7 +38,7 @@ internal fun CoroutineScope.childWorkflowFailed(
     state: WorkflowState,
     msg: ChildWorkflowFailed
 ) {
-    val commandStatus = CommandStatus.CommandOngoingFailure(msg.childWorkflowError, state.workflowTaskIndex)
+    val commandStatus = CommandStatus.CurrentlyFailed(msg.childWorkflowError, state.workflowTaskIndex)
 
     commandTerminated(
         workflowEngineOutput,

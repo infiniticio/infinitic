@@ -25,25 +25,11 @@
 
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.engine.state.WorkflowState
 
-internal fun cleanMethodRunIfNeeded(methodRun: MethodRun, state: WorkflowState) {
-    // if everything is completed in methodRun then filter state
-    if (methodRun.methodReturnValue != null && methodRun.pastSteps.all { it.isTerminated() }) {
-        state.methodRuns.remove(methodRun)
-
-        state.receivingChannels.removeAll {
-            it.methodRunId == methodRun.methodRunId
-        }
-
-        removeUnusedPropertyHash(state)
-    }
-}
-
 internal fun removeUnusedPropertyHash(state: WorkflowState) {
-    // get set of all hashes still in use
+    // set of all hashes still in use
     val propertyHashes = mutableSetOf<PropertyHash>()
 
     state.methodRuns.forEach { methodRun ->
@@ -57,7 +43,7 @@ internal fun removeUnusedPropertyHash(state: WorkflowState) {
     }
     state.currentPropertiesNameHash.forEach { propertyHashes.add(it.value) }
 
-    // remove each propertyHashValue entry not in propertyHashes
+    // remove all propertyHashValue not in use anymore
     state.propertiesHashValue.keys
         .filter { it !in propertyHashes }
         .forEach { state.propertiesHashValue.remove(it) }

@@ -49,7 +49,7 @@ internal fun CoroutineScope.sendToChannel(
         ?.also {
             state.receivingChannels.remove(it)
 
-            val commandStatus = CommandStatus.CommandCompleted(
+            val commandStatus = CommandStatus.Completed(
                 CommandReturnValue(msg.channelEvent.serializedData),
                 state.workflowTaskIndex
             )

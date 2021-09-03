@@ -251,7 +251,7 @@ abstract class InfiniticClient : Closeable {
                 dispatcher.dispatch(handler)
             }
             is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
-            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+            else -> thisShouldNotHappen("unknown handle type ${handler::class}")
         }
     }
 
@@ -289,7 +289,7 @@ abstract class InfiniticClient : Closeable {
             is TaskProxyHandler<*> -> cancelTaskHandler(handler)
             is WorkflowProxyHandler<*> -> cancelWorkflowHandler(handler)
             is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("cancel")
-            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+            else -> thisShouldNotHappen("Unknown handle type ${handler::class}")
         }
     }
 
@@ -335,7 +335,7 @@ abstract class InfiniticClient : Closeable {
             is TaskProxyHandler<*> -> awaitTaskHandler(handler)
             is WorkflowProxyHandler<*> -> awaitWorkflowHandler(handler)
             is SendChannelProxyHandler<*> -> throw CanNotApplyOnChannelException("await")
-            else -> throw RuntimeException("Unknown handle type ${handler::class}")
+            else -> thisShouldNotHappen("Unknown handle type ${handler::class}")
         }
     }
 

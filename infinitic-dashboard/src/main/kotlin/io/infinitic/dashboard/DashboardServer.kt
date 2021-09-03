@@ -36,6 +36,9 @@ import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import io.infinitic.dashboard.plugins.images.imagesPlugin
 import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
 import io.infinitic.pulsar.PulsarInfiniticAdmin
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kweb.ElementCreator
 import kweb.Kweb
 import kweb.WebBrowser
@@ -58,6 +61,9 @@ class DashboardServer(
     private val logger = KotlinLogging.logger {}
 
     companion object {
+
+        internal val scope = CoroutineScope(Dispatchers.IO + Job())
+
         /**
          * Create Dashboard from a custom PulsarAdmin and a DashboardConfig instance
          */

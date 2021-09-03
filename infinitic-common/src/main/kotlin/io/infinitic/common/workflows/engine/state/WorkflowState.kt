@@ -156,6 +156,8 @@ data class WorkflowState(
 
     fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull() { it.methodRunId == methodRunId }
 
+    fun getMainMethodRun() = methodRuns.find { it.methodRunId.id == workflowId.id }
+
     /**
      * true if the current workflow task is on main path
      */

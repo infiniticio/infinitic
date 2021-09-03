@@ -35,7 +35,7 @@ import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus.CommandRunning
+import io.infinitic.common.workflows.data.commands.CommandStatus.Running
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
@@ -109,7 +109,7 @@ object TestFactory {
     }
 
     private fun steps(): Map<String, Step> {
-        fun getStepId() = Step.Id(CommandId(), CommandRunning)
+        fun getStepId() = Step.Id(CommandId(), Running)
         val stepA = getStepId()
         val stepB = getStepId()
         val stepC = getStepId()

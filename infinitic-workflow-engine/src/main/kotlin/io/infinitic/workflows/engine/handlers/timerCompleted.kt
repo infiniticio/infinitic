@@ -39,7 +39,7 @@ internal fun CoroutineScope.timerCompleted(
     state: WorkflowState,
     msg: TimerCompleted
 ) {
-    val commandStatus = CommandStatus.CommandCompleted(CommandReturnValue.now(), state.workflowTaskIndex)
+    val commandStatus = CommandStatus.Completed(CommandReturnValue.now(), state.workflowTaskIndex)
 
     commandTerminated(
         workflowEngineOutput,

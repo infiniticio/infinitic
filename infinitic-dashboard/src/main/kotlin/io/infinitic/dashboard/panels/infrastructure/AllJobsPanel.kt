@@ -25,6 +25,7 @@
 
 package io.infinitic.dashboard.panels.infrastructure
 
+import io.infinitic.dashboard.DashboardServer
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.jobs.displayJobSectionHeader
@@ -36,7 +37,6 @@ import io.infinitic.dashboard.panels.infrastructure.task.TaskPanel
 import io.infinitic.dashboard.panels.infrastructure.workflow.WorkflowPanel
 import io.infinitic.dashboard.routeTo
 import io.infinitic.dashboard.slideovers.Slideover
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -121,7 +121,7 @@ object AllJobsPanel : Panel() {
 
     override fun onEnter() {
         if (! this::job.isInitialized || job.isCancelled) {
-            job = GlobalScope.launch {
+            job = DashboardServer.scope.launch {
                 // update of task names every 30 seconds
                 update(infraTasksState)
                 // shift the updates
@@ -265,10 +265,10 @@ object AllJobsPanel : Panel() {
                                                             is Loading -> displayNamesLoading()
                                                             is Failed -> displayNamesError(state.names, JobType.TASK)
                                                             is Completed -> request.result.forEach {
-                                                                when (val request = state.stats[it]!!) {
+                                                                when (val stats = state.stats[it]!!) {
                                                                     is Loading -> displayExecutorLoading(it, JobType.TASK)
                                                                     is Failed -> displayExecutorError(it, JobType.TASK)
-                                                                    is Completed -> displayExecutorStats(it, request.result, JobType.TASK)
+                                                                    is Completed -> displayExecutorStats(it, stats.result, JobType.TASK)
                                                                 }
                                                             }
                                                         }

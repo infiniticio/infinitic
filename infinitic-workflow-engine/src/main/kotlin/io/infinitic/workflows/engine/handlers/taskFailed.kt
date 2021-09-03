@@ -46,7 +46,7 @@ internal fun CoroutineScope.taskFailed(
             msg
         )
         false -> {
-            val commandStatus = CommandStatus.CommandOngoingFailure(
+            val commandStatus = CommandStatus.CurrentlyFailed(
                 msg.error,
                 state.workflowTaskIndex
             )

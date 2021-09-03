@@ -33,6 +33,7 @@ import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
+import io.infinitic.exceptions.thisShouldNotHappen
 import kotlinx.serialization.KSerializer
 import java.lang.reflect.Modifier.isStatic
 import kotlin.reflect.KClass
@@ -72,5 +73,5 @@ fun <T : Any> kserializer(klass: KClass<T>) = when (klass) {
     WorkflowTagEngineEnvelope::class -> WorkflowTagEngineEnvelope.serializer()
     MetricsPerNameEnvelope::class -> MetricsPerNameEnvelope.serializer()
     MetricsGlobalEnvelope::class -> MetricsGlobalEnvelope.serializer()
-    else -> throw RuntimeException("This should not happen: applying kserializer with ${klass.qualifiedName}")
+    else -> thisShouldNotHappen("applying kserializer with ${klass.qualifiedName}")
 } as KSerializer <T>

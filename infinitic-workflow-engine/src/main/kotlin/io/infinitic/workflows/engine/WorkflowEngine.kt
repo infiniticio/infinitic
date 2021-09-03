@@ -52,6 +52,7 @@ import io.infinitic.common.workflows.engine.messages.interfaces.MethodRunMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
+import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.childWorkflowCanceled
 import io.infinitic.workflows.engine.handlers.childWorkflowCompleted
@@ -70,7 +71,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import java.lang.RuntimeException
 
 class WorkflowEngine(
     storage: WorkflowStateStorage,
@@ -104,9 +104,13 @@ class WorkflowEngine(
     suspend fun handle(message: WorkflowEngineMessage) {
         val state = process(message) ?: return
 
-        when (state.workflowStatus) {
-            WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED, WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED -> storage.delState(message.workflowId)
-            WorkflowStatus.MAIN_RUNNING, WorkflowStatus.MAIN_COMPLETED_NOT_ALL_TERMINATED -> storage.putState(message.workflowId, state)
+        @Suppress("UNUSED_VARIABLE")
+        val o = when (state.workflowStatus) {
+            WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED,
+            WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED -> storage.delState(message.workflowId)
+            WorkflowStatus.MAIN_RUNNING,
+            WorkflowStatus.MAIN_COMPLETED_NOT_ALL_TERMINATED,
+            WorkflowStatus.MAIN_CANCELED_NOT_ALL_TERMINATED -> storage.putState(message.workflowId, state)
         }
     }
 
@@ -218,8 +222,9 @@ class WorkflowEngine(
 
         val oldStatus = state.workflowStatus
 
-        val o = when (message) {
-            is DispatchWorkflow -> throw RuntimeException("DispatchWorkflow should not reach this point")
+        @Suppress("UNUSED_VARIABLE")
+        val m = when (message) {
+            is DispatchWorkflow -> thisShouldNotHappen("DispatchWorkflow should not reach this point")
             is CancelWorkflow -> cancelWorkflow(output, state)
             is SendToChannel -> sendToChannel(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)
@@ -240,13 +245,15 @@ class WorkflowEngine(
         }
 
         if (state.workflowStatus != oldStatus) {
-            when (state.workflowStatus) {
+            @Suppress("UNUSED_VARIABLE")
+            val s = when (state.workflowStatus) {
                 WorkflowStatus.MAIN_RUNNING -> Unit
-                WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED -> {
+                WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED, WorkflowStatus.MAIN_COMPLETED_NOT_ALL_TERMINATED -> {
                     // remove tags reference to this instance
                     removeTags(output, state)
                 }
-                WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED -> {
+                // WARNING THIS TEST SHOULD NOT BE ON MAIN
+                WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED, WorkflowStatus.MAIN_CANCELED_NOT_ALL_TERMINATED -> {
                     // send cancellation info to waiting clients
                     state.methodRuns.forEach { methodRun ->
                         methodRun.waitingClients.forEach {

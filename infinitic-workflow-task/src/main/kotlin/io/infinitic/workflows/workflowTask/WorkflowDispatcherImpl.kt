@@ -44,7 +44,7 @@ import io.infinitic.common.workflows.data.commands.Command
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
 import io.infinitic.common.workflows.data.commands.CommandSimpleName
-import io.infinitic.common.workflows.data.commands.CommandStatus.CommandCompleted
+import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.DispatchTask
@@ -70,6 +70,7 @@ import io.infinitic.common.workflows.data.steps.StepFailed
 import io.infinitic.common.workflows.data.steps.StepOngoing
 import io.infinitic.common.workflows.data.steps.StepOngoingFailure
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.exceptions.workflows.CanceledDeferredException
 import io.infinitic.exceptions.workflows.FailedDeferredException
 import io.infinitic.exceptions.workflows.ShouldNotUseAsyncFunctionInsideInlinedTaskException
@@ -231,8 +232,8 @@ internal class WorkflowDispatcherImpl(
         } else {
             @Suppress("UNCHECKED_CAST")
             return when (val status = pastCommand.commandStatus) {
-                is CommandCompleted -> status.returnValue.get() as S
-                else -> throw RuntimeException("This should not happen: inline task with status $status")
+                is Completed -> status.returnValue.get() as S
+                else -> thisShouldNotHappen("inline task with status $status")
             }
         }
     }

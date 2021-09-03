@@ -23,18 +23,18 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.methodRuns
+package io.infinitic.workflows.engine.helpers
 
-import kotlinx.serialization.Serializable
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.engine.state.WorkflowState
 
-@Serializable
-enum class MethodRunStatus {
-    RUNNING,
-    CANCELED,
-    COMPLETED;
+internal fun clearHistoryOfTerminatedMethodRun(methodRun: MethodRun, state: WorkflowState) {
+    if (methodRun.isTerminated()) {
+        state.methodRuns.remove(methodRun)
 
-    /**
-     * A methodRun is terminated if canceled or completed
-     */
-    fun isTerminated() = this == CANCELED || this == COMPLETED
+        // clean receivingChannels once deleted
+        state.receivingChannels.removeAll { it.methodRunId == methodRun.methodRunId }
+
+        removeUnusedPropertyHash(state)
+    }
 }

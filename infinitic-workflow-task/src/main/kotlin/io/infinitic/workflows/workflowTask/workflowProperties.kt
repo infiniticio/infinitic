@@ -31,11 +31,11 @@ import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
 import io.infinitic.common.workflows.executors.parser.getPropertiesFromObject
 import io.infinitic.common.workflows.executors.parser.setPropertiesToObject
+import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.Channel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.WorkflowContext
 import io.infinitic.workflows.WorkflowDispatcher
-import java.lang.RuntimeException
 import java.lang.reflect.Proxy
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.hasAnnotation
@@ -48,7 +48,7 @@ internal fun Workflow.setProperties(
     propertiesNameHash: Map<PropertyName, PropertyHash>
 ) {
     val properties = propertiesNameHash.mapValues {
-        propertiesHashValue[it.value] ?: throw RuntimeException("This should not happen: unknown hash ${it.value} in $propertiesHashValue")
+        propertiesHashValue[it.value] ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
     }
 
     setPropertiesToObject(this, properties)
