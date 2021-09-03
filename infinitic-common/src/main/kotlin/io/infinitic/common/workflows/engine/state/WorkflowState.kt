@@ -43,7 +43,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.thisShouldNotHappen
@@ -51,11 +50,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowState(
-    /**
-     * Workflow's status
-     */
-    var workflowStatus: WorkflowStatus,
-
     /**
      * Id of last handled message (used to ensure idempotency)
      */

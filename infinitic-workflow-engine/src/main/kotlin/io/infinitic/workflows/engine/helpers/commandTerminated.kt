@@ -49,24 +49,24 @@ internal fun CoroutineScope.commandTerminated(
     // update command status
     pastCommand.commandStatus = commandStatus
 
-    // trigger a new workflow task for the first step solved by this command
-    // note: pastSteps is naturally ordered by time (workflowTaskIndex) => the first branch completed is the earliest step
-    methodRun.pastSteps
-        .find { it.isTerminatedBy(pastCommand) }
-        ?.also {
-            // update pastStep with a copy (!) of current properties and anticipated workflowTaskIndex
-            it.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
-            it.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
+    // trigger a new workflow task for the *first* step solved by this command
+    // note: pastSteps is ordered per workflowTaskIndex (time) => the first completed step is the earliest
+    val pastStep = methodRun.pastSteps.find { it.isTerminatedBy(pastCommand) }
 
-            // dispatch a new workflowTask
-            dispatchWorkflowTask(
-                workflowEngineOutput,
-                state,
-                methodRun,
-                it.stepPosition
-            )
-            // keep this command as we could have another pastStep solved by it
-            state.bufferedCommands.add(pastCommand.commandId)
-        }
-        ?: if (methodRun.isTerminated()) state.removeMethodRun(methodRun) else Unit // if everything is completed in methodRun then filter state
+    if (pastStep != null) {
+        // update pastStep with a copy (!) of current properties and anticipated workflowTaskIndex
+        pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
+        pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
+
+        // dispatch a new workflowTask
+        dispatchWorkflowTask(
+            workflowEngineOutput,
+            state,
+            methodRun,
+            pastStep.stepPosition
+        )
+
+        // keep this command as we could have another pastStep solved by it
+        state.bufferedCommands.add(pastCommand.commandId)
+    }
 }

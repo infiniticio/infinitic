@@ -26,12 +26,9 @@
 package io.infinitic.workflows.engine
 
 import io.infinitic.common.clients.messages.UnknownWorkflow
-import io.infinitic.common.clients.messages.WorkflowAlreadyCompleted
-import io.infinitic.common.clients.messages.WorkflowCanceled
 import io.infinitic.common.clients.transport.SendToClient
 import io.infinitic.common.tasks.engine.SendToTaskEngine
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
-import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.engine.SendToWorkflowEngine
 import io.infinitic.common.workflows.engine.SendToWorkflowEngineAfter
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
@@ -63,6 +60,7 @@ import io.infinitic.workflows.engine.handlers.taskCanceled
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.taskFailed
 import io.infinitic.workflows.engine.handlers.timerCompleted
+import io.infinitic.workflows.engine.handlers.waitWorkflow
 import io.infinitic.workflows.engine.helpers.removeTags
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
@@ -104,12 +102,9 @@ class WorkflowEngine(
     suspend fun handle(message: WorkflowEngineMessage) {
         val state = process(message) ?: return
 
-        @Suppress("UNUSED_VARIABLE")
-        val o = when (state.workflowStatus) {
-            WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED,
-            WorkflowStatus.CANCELED -> storage.delState(message.workflowId)
-            WorkflowStatus.MAIN_RUNNING,
-            WorkflowStatus.MAIN_COMPLETED_NOT_ALL_TERMINATED -> storage.putState(message.workflowId, state)
+        when (state.methodRuns.size) {
+            0 -> storage.delState(message.workflowId)
+            else -> storage.putState(message.workflowId, state)
         }
     }
 
@@ -140,13 +135,6 @@ class WorkflowEngine(
         // check if this message has already been handled
         if (state.lastMessageId == message.messageId) {
             logDiscardingMessage(message, "as state already contains this messageId")
-
-            return@coroutineScope null
-        }
-
-        // discard all message if already terminated (except client request)
-        if (state.workflowStatus.isTerminated() && message !is WaitWorkflow) {
-            logDiscardingMessage(message, "as workflow is already terminated")
 
             return@coroutineScope null
         }
@@ -189,7 +177,7 @@ class WorkflowEngine(
 
         // process all buffered messages
         while (
-            state.workflowStatus.isRunning() &&
+            state.methodRuns.size > 0 &&
             state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
@@ -197,6 +185,9 @@ class WorkflowEngine(
             logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered message $bufferedMsg" }
             processMessage(state, bufferedMsg)
         }
+
+        // if nothing more to do, then remove reference to this workflow in tags
+        if (state.methodRuns.size == 0) { removeTags(output, state) }
 
         return@coroutineScope state
     }
@@ -216,8 +207,6 @@ class WorkflowEngine(
             return
         }
 
-        val oldStatus = state.workflowStatus
-
         @Suppress("UNUSED_VARIABLE")
         val m = when (message) {
             is DispatchWorkflow -> thisShouldNotHappen("DispatchWorkflow should not reach this point")
@@ -233,33 +222,6 @@ class WorkflowEngine(
             is TaskFailed -> taskFailed(output, state, message)
             is TaskCanceled -> taskCanceled(output, state, message)
             is TaskCompleted -> taskCompleted(output, state, message)
-        }
-
-        // workflow is terminated if all methodRuns have been deleted
-        if (state.methodRuns.size == 0) {
-            state.workflowStatus = WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED
-        }
-
-        if (oldStatus.isRunning() && state.workflowStatus.isTerminated()) {
-            // remove tags reference to this instance
-            removeTags(output, state)
-        }
-    }
-
-    private fun CoroutineScope.waitWorkflow(output: WorkflowEngineOutput, state: WorkflowState, msg: WaitWorkflow) {
-        val main = state.methodRuns.find { it.methodRunId.id == msg.workflowId.id }
-        when {
-            // main branch is already terminated
-            (main == null) -> {
-                val workflowAlreadyCompleted = WorkflowAlreadyCompleted(msg.clientName, msg.workflowId)
-                launch { output.sendEventsToClient(workflowAlreadyCompleted) }
-            }
-            // workflow is canceled
-            state.workflowStatus == WorkflowStatus.CANCELED -> {
-                val workflowCanceled = WorkflowCanceled(msg.clientName, msg.workflowId)
-                launch { output.sendEventsToClient(workflowCanceled) }
-            }
-            else -> main.waitingClients.add(msg.clientName)
         }
     }
 }

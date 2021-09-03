@@ -30,11 +30,9 @@ import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
-import io.infinitic.workflows.engine.helpers.removeTags
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -44,8 +42,6 @@ internal fun CoroutineScope.cancelWorkflow(
     state: WorkflowState,
     message: CancelWorkflow
 ) {
-    state.workflowStatus = WorkflowStatus.CANCELED
-
     state.methodRuns.forEach { methodRun ->
         // inform waiting clients of cancellation
         methodRun.waitingClients.forEach {
@@ -83,7 +79,4 @@ internal fun CoroutineScope.cancelWorkflow(
 
     // clean state
     state.removeAllMethodRuns()
-
-    // remove tags reference to this instance
-    removeTags(output, state)
 }

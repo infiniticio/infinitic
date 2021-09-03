@@ -23,33 +23,22 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.workflows.data.workflows
+package io.infinitic.workflows.engine.handlers
 
-import kotlinx.serialization.Serializable
+import io.infinitic.common.clients.messages.WorkflowAlreadyCompleted
+import io.infinitic.common.workflows.engine.messages.WaitWorkflow
+import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-@Serializable
-enum class WorkflowStatus {
-    /**
-     * Main workflow branch is running
-     */
-    MAIN_RUNNING,
-
-    /**
-     * Main workflow branch is canceled, and all other branches are terminated
-     */
-    CANCELED,
-
-    /**
-     * Main workflow's branch is completed, but at least one another branch is running
-     */
-    MAIN_COMPLETED_NOT_ALL_TERMINATED,
-
-    /**
-     * Main workflow's branch is completed, and all other branches are terminated
-     */
-    MAIN_COMPLETED_ALL_TERMINATED;
-
-    fun isTerminated() = this == MAIN_COMPLETED_ALL_TERMINATED || this == CANCELED
-    fun isCanceled() = this == CANCELED
-    fun isRunning() = ! isTerminated()
+internal fun CoroutineScope.waitWorkflow(output: WorkflowEngineOutput, state: WorkflowState, msg: WaitWorkflow) {
+    when (val main = state.getMainMethodRun()) {
+        null -> {
+            // main branch is already completed (can not be canceled, the state would be deleted)
+            val workflowAlreadyCompleted = WorkflowAlreadyCompleted(msg.clientName, msg.workflowId)
+            launch { output.sendEventsToClient(workflowAlreadyCompleted) }
+        }
+        else -> main.waitingClients.add(msg.clientName)
+    }
 }
