@@ -401,7 +401,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         }
         p1 += "d"
 
-        taskA.await(100)
+        taskA.await(1500)
 
         return p1 // should be "adbc"
     }

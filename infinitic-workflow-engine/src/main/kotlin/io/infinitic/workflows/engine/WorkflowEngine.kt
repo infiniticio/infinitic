@@ -167,7 +167,7 @@ class WorkflowEngine(
             message !is WaitWorkflow
         ) {
             // buffer this message
-            state.bufferedMessages.add(message)
+            state.messagesBuffer.add(message)
 
             return@coroutineScope state
         }
@@ -179,9 +179,9 @@ class WorkflowEngine(
         while (
             state.methodRuns.size > 0 &&
             state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
-            state.bufferedMessages.size > 0 // if there is at least one buffered message
+            state.messagesBuffer.size > 0 // if there is at least one buffered message
         ) {
-            val bufferedMsg = state.bufferedMessages.removeAt(0)
+            val bufferedMsg = state.messagesBuffer.removeAt(0)
             logger.debug { "workflowId ${bufferedMsg.workflowId} - processing buffered message $bufferedMsg" }
             processMessage(state, bufferedMsg)
         }

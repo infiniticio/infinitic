@@ -38,13 +38,11 @@ internal fun CoroutineScope.childWorkflowCanceled(
     state: WorkflowState,
     msg: ChildWorkflowCanceled
 ) {
-    val commandStatus = Canceled(state.workflowTaskIndex)
-
     commandTerminated(
         workflowEngineOutput,
         state,
         msg.methodRunId,
         CommandId(msg.childWorkflowId),
-        commandStatus
+        Canceled(state.workflowTaskIndex)
     )
 }

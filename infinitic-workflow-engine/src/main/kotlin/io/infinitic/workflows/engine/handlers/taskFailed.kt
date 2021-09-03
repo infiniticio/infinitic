@@ -26,7 +26,7 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandStatus
+import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
 import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
@@ -45,19 +45,12 @@ internal fun CoroutineScope.taskFailed(
             state,
             msg
         )
-        false -> {
-            val commandStatus = CommandStatus.CurrentlyFailed(
-                msg.error,
-                state.workflowTaskIndex
-            )
-
-            commandTerminated(
-                workflowEngineOutput,
-                state,
-                msg.methodRunId,
-                CommandId(msg.taskId),
-                commandStatus
-            )
-        }
+        false -> commandTerminated(
+            workflowEngineOutput,
+            state,
+            msg.methodRunId,
+            CommandId(msg.taskId),
+            CurrentlyFailed(msg.error, state.workflowTaskIndex)
+        )
     }
 }

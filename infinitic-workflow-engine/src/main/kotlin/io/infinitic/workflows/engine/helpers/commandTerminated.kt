@@ -27,12 +27,20 @@ package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
+import io.infinitic.common.workflows.data.commands.PastCommand
+import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 
+/**
+ * Return true if this command terminates a step
+ */
+
+// trigger a new workflow task for the *first* step solved by this command
+// note: pastSteps is ordered per workflowTaskIndex (time) => the first completed step is the earliest
 internal fun CoroutineScope.commandTerminated(
     workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
@@ -43,17 +51,34 @@ internal fun CoroutineScope.commandTerminated(
     val methodRun = state.getMethodRun(methodRunId)!!
     val pastCommand = methodRun.getPastCommand(commandId)
 
-    // do nothing if this command is already terminated (canceled or completed, failed is considered transient)
+    // do nothing if this command is already terminated (i.e. canceled or completed, failed is transient)
     if (pastCommand.isTerminated()) return
 
     // update command status
     pastCommand.commandStatus = commandStatus
 
-    // trigger a new workflow task for the *first* step solved by this command
-    // note: pastSteps is ordered per workflowTaskIndex (time) => the first completed step is the earliest
-    val pastStep = methodRun.pastSteps.find { it.isTerminatedBy(pastCommand) }
+    if (stepTerminated(
+            workflowEngineOutput,
+            state,
+            methodRun,
+            pastCommand
+        )
+    ) {
+        // keep this command as we could have another pastStep solved by it
+        state.runningMethodRunBufferedCommands.add(commandId)
+    }
+}
 
-    if (pastStep != null) {
+// trigger a new workflow task for the *first* step solved by this command
+// note: pastSteps is ordered per workflowTaskIndex (time) => the first completed step is the earliest
+internal fun CoroutineScope.stepTerminated(
+    workflowEngineOutput: WorkflowEngineOutput,
+    state: WorkflowState,
+    methodRun: MethodRun,
+    pastCommand: PastCommand
+): Boolean = when (val pastStep = methodRun.pastSteps.find { it.isTerminatedBy(pastCommand) }) {
+    null -> false
+    else -> {
         // update pastStep with a copy (!) of current properties and anticipated workflowTaskIndex
         pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
         pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
@@ -65,8 +90,6 @@ internal fun CoroutineScope.commandTerminated(
             methodRun,
             pastStep.stepPosition
         )
-
-        // keep this command as we could have another pastStep solved by it
-        state.bufferedCommands.add(pastCommand.commandId)
+        true
     }
 }

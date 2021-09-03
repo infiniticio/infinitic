@@ -96,6 +96,14 @@ data class WorkflowState(
     var runningMethodRunPosition: MethodRunPosition? = null,
 
     /**
+     * In some situations, we know that multiples branches must be processed.
+     * As WorkflowTask handles branch one by one, we orderly buffer these branches here
+     * (it happens when a workflowTask decide to launch more than one async branch,
+     * or when more than one branch' steps are completed by the same message)
+     */
+    val runningMethodRunBufferedCommands: MutableList<CommandId> = mutableListOf(),
+
+    /**
      * Instant when WorkflowTask currently running was triggered
      */
     var runningWorkflowTaskInstant: MillisInstant? = null,
@@ -128,17 +136,9 @@ data class WorkflowState(
 
     /**
      * Messages received while a WorkflowTask is still running.
-     * They can not be handled immediately, so are stored in this buffer
+     * They can not be handled immediately, so we store them in this buffer
      */
-    val bufferedMessages: MutableList<WorkflowEngineMessage> = mutableListOf(),
-
-    /**
-     * In some situations, we know that multiples branches must be processed.
-     * As WorkflowTask handles branch one by one, we orderly buffer these branches here
-     * (it happens when a workflowTask decide to launch more than one async branch,
-     * or when more than one branch' steps are completed by the same message)
-     */
-    val bufferedCommands: MutableList<CommandId> = mutableListOf()
+    val messagesBuffer: MutableList<WorkflowEngineMessage> = mutableListOf(),
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())

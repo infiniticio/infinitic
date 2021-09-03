@@ -83,7 +83,7 @@ data class MethodRun(
         pastCommands.first { it.commandId == commandId }
 
     /**
-     * To be terminated, a method should provide a return value and have all steps terminated.
+     * To be terminated, a method should provide a return value and have all steps and branches terminated.
      * We add a constraint on child-workflows as well to ensure that this methodRun is not deleted
      * before child workflows are completed, so that child workflows can be canceled
      * if the workflow itself is canceled
@@ -91,6 +91,6 @@ data class MethodRun(
     fun isTerminated() = methodReturnValue != null &&
         pastSteps.all { it.isTerminated() } &&
         pastCommands
-            .filter { it.commandType == CommandType.DISPATCH_CHILD_WORKFLOW }
+            .filter { it.commandType == CommandType.DISPATCH_CHILD_WORKFLOW || it.commandType == CommandType.START_ASYNC }
             .all { it.isTerminated() }
 }

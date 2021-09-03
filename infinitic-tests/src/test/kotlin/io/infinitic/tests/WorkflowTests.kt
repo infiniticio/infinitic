@@ -231,7 +231,7 @@ internal class WorkflowTests : StringSpec({
         workflowA.prop1() shouldBe "ac"
 
         // should not discard state before completing the async branch
-//        checkDiscardingState()
+        checkDiscardingState()
     }
 
     "Check prop2" {
