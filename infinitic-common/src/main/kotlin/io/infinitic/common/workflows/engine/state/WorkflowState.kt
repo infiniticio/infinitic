@@ -156,6 +156,26 @@ data class WorkflowState(
 
     fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull() { it.methodRunId == methodRunId }
 
+    fun removeMethodRun(methodRun: MethodRun) {
+        methodRuns.remove(methodRun)
+
+        // clean receivingChannels once deleted
+        receivingChannels.removeAll { it.methodRunId == methodRun.methodRunId }
+
+        // clean properties
+        removeUnusedPropertyHash()
+    }
+
+    fun removeAllMethodRuns() {
+        methodRuns.clear()
+
+        // clean receivingChannels once deleted
+        receivingChannels.clear()
+
+        // clean properties
+        removeUnusedPropertyHash()
+    }
+
     fun getMainMethodRun() = methodRuns.find { it.methodRunId.id == workflowId.id }
 
     /**
@@ -166,5 +186,29 @@ data class WorkflowState(
 
         return p.isOnMainPath() &&
             getRunningMethodRun().getCommandByPosition(p)?.commandType != CommandType.START_ASYNC
+    }
+
+    /**
+     * After completion or cancellation of methodRuns, we can clean up the properties not used anymore
+     */
+    private fun removeUnusedPropertyHash() {
+        // set of all hashes still in use
+        val propertyHashes = mutableSetOf<PropertyHash>()
+
+        methodRuns.forEach { methodRun ->
+            methodRun.pastSteps.forEach { pastStep ->
+                pastStep.propertiesNameHashAtTermination?.forEach { propertyHashes.add(it.value) }
+            }
+            methodRun.pastCommands.forEach { pastCommand ->
+                pastCommand.propertiesNameHashAtStart?.forEach { propertyHashes.add(it.value) }
+            }
+            methodRun.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
+        }
+        currentPropertiesNameHash.forEach { propertyHashes.add(it.value) }
+
+        // remove all propertyHashValue not in use anymore
+        propertiesHashValue.keys
+            .filter { it !in propertyHashes }
+            .forEach { propertiesHashValue.remove(it) }
     }
 }

@@ -39,6 +39,7 @@ import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -518,7 +519,8 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
             workflowId = WorkflowId(id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
         )
     }
 
@@ -530,7 +532,8 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
             workflowTag = WorkflowTag("foo"),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
         )
         workflowSlot.isCaptured shouldBe false
     }
@@ -543,7 +546,8 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 1
         workflowTagSlots[0] shouldBe CancelWorkflowPerTag(
             workflowTag = WorkflowTag("foo"),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
         )
         workflowSlot.isCaptured shouldBe false
     }
@@ -557,7 +561,8 @@ class ClientWorkflowTests : StringSpec({
         workflowTagSlots.size shouldBe 0
         workflowSlot.captured shouldBe CancelWorkflow(
             workflowId = WorkflowId(deferred.id),
-            workflowName = WorkflowName(FakeWorkflow::class.java.name)
+            workflowName = WorkflowName(FakeWorkflow::class.java.name),
+            reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
         )
     }
 

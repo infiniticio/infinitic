@@ -35,14 +35,9 @@ enum class WorkflowStatus {
     MAIN_RUNNING,
 
     /**
-     * Main workflow branch is canceled, but at least one another branch still running
-     */
-    MAIN_CANCELED_NOT_ALL_TERMINATED,
-
-    /**
      * Main workflow branch is canceled, and all other branches are terminated
      */
-    MAIN_CANCELED_ALL_TERMINATED,
+    CANCELED,
 
     /**
      * Main workflow's branch is completed, but at least one another branch is running
@@ -52,5 +47,9 @@ enum class WorkflowStatus {
     /**
      * Main workflow's branch is completed, and all other branches are terminated
      */
-    MAIN_COMPLETED_ALL_TERMINATED
+    MAIN_COMPLETED_ALL_TERMINATED;
+
+    fun isTerminated() = this == MAIN_COMPLETED_ALL_TERMINATED || this == CANCELED
+    fun isCanceled() = this == CANCELED
+    fun isRunning() = ! isTerminated()
 }

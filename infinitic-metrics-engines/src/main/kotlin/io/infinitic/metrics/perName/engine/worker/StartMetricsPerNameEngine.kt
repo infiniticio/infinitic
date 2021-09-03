@@ -41,7 +41,7 @@ private val logger = KotlinLogging.logger(MetricsPerNameEngine::class.java.name)
 
 typealias MetricsPerNameMessageToProcess = MessageToProcess<MetricsPerNameMessage>
 
-private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwable) = logger.error {
+private fun logError(messageToProcess: MetricsPerNameMessageToProcess, e: Throwable) = logger.error(e) {
     "exception on message ${messageToProcess.message}: $e"
 }
 

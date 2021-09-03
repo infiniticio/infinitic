@@ -61,7 +61,6 @@ import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
 import io.infinitic.exceptions.thisShouldNotHappen
-import io.infinitic.workflows.engine.helpers.clearHistoryOfTerminatedMethodRun
 import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
@@ -213,7 +212,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
         }
     }
 
-    clearHistoryOfTerminatedMethodRun(methodRun, state)
+    if (methodRun.isTerminated()) state.removeMethodRun(methodRun)
 }
 
 private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {

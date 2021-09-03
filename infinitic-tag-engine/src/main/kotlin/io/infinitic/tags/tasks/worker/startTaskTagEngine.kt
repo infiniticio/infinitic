@@ -44,7 +44,7 @@ private val logger = KotlinLogging.logger(TaskTagEngine::class.java.name)
 
 typealias TaskTagEngineMessageToProcess = MessageToProcess<TaskTagEngineMessage>
 
-private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Throwable) = logger.error {
+private fun logError(messageToProcess: TaskTagEngineMessageToProcess, e: Throwable) = logger.error(e) {
     "exception on message ${messageToProcess.message}: $e"
 }
 

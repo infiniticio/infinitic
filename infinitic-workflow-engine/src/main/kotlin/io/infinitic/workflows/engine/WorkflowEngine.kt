@@ -51,7 +51,6 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.common.workflows.engine.messages.interfaces.MethodRunMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
-import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
 import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.workflows.engine.handlers.cancelWorkflow
 import io.infinitic.workflows.engine.handlers.childWorkflowCanceled
@@ -64,6 +63,7 @@ import io.infinitic.workflows.engine.handlers.taskCanceled
 import io.infinitic.workflows.engine.handlers.taskCompleted
 import io.infinitic.workflows.engine.handlers.taskFailed
 import io.infinitic.workflows.engine.handlers.timerCompleted
+import io.infinitic.workflows.engine.helpers.removeTags
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
@@ -107,10 +107,9 @@ class WorkflowEngine(
         @Suppress("UNUSED_VARIABLE")
         val o = when (state.workflowStatus) {
             WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED,
-            WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED -> storage.delState(message.workflowId)
+            WorkflowStatus.CANCELED -> storage.delState(message.workflowId)
             WorkflowStatus.MAIN_RUNNING,
-            WorkflowStatus.MAIN_COMPLETED_NOT_ALL_TERMINATED,
-            WorkflowStatus.MAIN_CANCELED_NOT_ALL_TERMINATED -> storage.putState(message.workflowId, state)
+            WorkflowStatus.MAIN_COMPLETED_NOT_ALL_TERMINATED -> storage.putState(message.workflowId, state)
         }
     }
 
@@ -146,10 +145,7 @@ class WorkflowEngine(
         }
 
         // discard all message if already terminated (except client request)
-        if (
-            (state.workflowStatus == WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED || state.workflowStatus == WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED) &&
-            message !is WaitWorkflow
-        ) {
+        if (state.workflowStatus.isTerminated() && message !is WaitWorkflow) {
             logDiscardingMessage(message, "as workflow is already terminated")
 
             return@coroutineScope null
@@ -193,7 +189,7 @@ class WorkflowEngine(
 
         // process all buffered messages
         while (
-            state.workflowStatus == WorkflowStatus.MAIN_RUNNING &&
+            state.workflowStatus.isRunning() &&
             state.runningWorkflowTaskId == null && // if a workflowTask is not ongoing
             state.bufferedMessages.size > 0 // if there is at least one buffered message
         ) {
@@ -225,7 +221,7 @@ class WorkflowEngine(
         @Suppress("UNUSED_VARIABLE")
         val m = when (message) {
             is DispatchWorkflow -> thisShouldNotHappen("DispatchWorkflow should not reach this point")
-            is CancelWorkflow -> cancelWorkflow(output, state)
+            is CancelWorkflow -> cancelWorkflow(output, state, message)
             is SendToChannel -> sendToChannel(output, state, message)
             is WaitWorkflow -> waitWorkflow(output, state, message)
             is CompleteWorkflow -> TODO()
@@ -244,41 +240,9 @@ class WorkflowEngine(
             state.workflowStatus = WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED
         }
 
-        if (state.workflowStatus != oldStatus) {
-            @Suppress("UNUSED_VARIABLE")
-            val s = when (state.workflowStatus) {
-                WorkflowStatus.MAIN_RUNNING -> Unit
-                WorkflowStatus.MAIN_COMPLETED_ALL_TERMINATED, WorkflowStatus.MAIN_COMPLETED_NOT_ALL_TERMINATED -> {
-                    // remove tags reference to this instance
-                    removeTags(output, state)
-                }
-                // WARNING THIS TEST SHOULD NOT BE ON MAIN
-                WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED, WorkflowStatus.MAIN_CANCELED_NOT_ALL_TERMINATED -> {
-                    // send cancellation info to waiting clients
-                    state.methodRuns.forEach { methodRun ->
-                        methodRun.waitingClients.forEach {
-                            val workflowCanceled = WorkflowCanceled(
-                                clientName = it,
-                                workflowId = state.workflowId,
-                            )
-                            launch { output.sendEventsToClient(workflowCanceled) }
-                        }
-                        // remove tags reference to this instance
-                        removeTags(output, state)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun CoroutineScope.removeTags(output: WorkflowEngineOutput, state: WorkflowState) {
-        state.workflowTags.map {
-            val removeWorkflowTag = RemoveWorkflowTag(
-                workflowTag = it,
-                workflowName = state.workflowName,
-                workflowId = state.workflowId,
-            )
-            launch { output.sendToWorkflowTagEngine(removeWorkflowTag) }
+        if (oldStatus.isRunning() && state.workflowStatus.isTerminated()) {
+            // remove tags reference to this instance
+            removeTags(output, state)
         }
     }
 
@@ -291,7 +255,7 @@ class WorkflowEngine(
                 launch { output.sendEventsToClient(workflowAlreadyCompleted) }
             }
             // workflow is canceled
-            state.workflowStatus == WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED -> {
+            state.workflowStatus == WorkflowStatus.CANCELED -> {
                 val workflowCanceled = WorkflowCanceled(msg.clientName, msg.workflowId)
                 launch { output.sendEventsToClient(workflowCanceled) }
             }

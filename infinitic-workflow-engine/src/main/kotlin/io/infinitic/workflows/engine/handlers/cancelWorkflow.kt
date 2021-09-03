@@ -25,26 +25,39 @@
 
 package io.infinitic.workflows.engine.handlers
 
+import io.infinitic.common.clients.messages.WorkflowCanceled
 import io.infinitic.common.workflows.data.commands.CommandType
+import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.workflows.engine.helpers.removeTags
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 internal fun CoroutineScope.cancelWorkflow(
     output: WorkflowEngineOutput,
-    state: WorkflowState
+    state: WorkflowState,
+    message: CancelWorkflow
 ) {
-    state.workflowStatus = WorkflowStatus.MAIN_CANCELED_ALL_TERMINATED
+    state.workflowStatus = WorkflowStatus.CANCELED
 
     state.methodRuns.forEach { methodRun ->
-        // tell parents
-        if (methodRun.parentWorkflowId != null) {
+        // inform waiting clients of cancellation
+        methodRun.waitingClients.forEach {
+            val workflowCanceled = WorkflowCanceled(
+                clientName = it,
+                workflowId = state.workflowId,
+            )
+            launch { output.sendEventsToClient(workflowCanceled) }
+        }
+
+        // inform parents of cancellation (if parent did not trigger the cancellation!)
+        if (message.reason != WorkflowCancellationReason.CANCELED_BY_PARENT && methodRun.parentWorkflowId != null) {
             val childWorkflowCanceled = ChildWorkflowCanceled(
                 workflowId = methodRun.parentWorkflowId!!,
                 workflowName = methodRun.parentWorkflowName!!,
@@ -61,9 +74,16 @@ internal fun CoroutineScope.cancelWorkflow(
             .forEach {
                 val cancelWorkflow = CancelWorkflow(
                     workflowId = WorkflowId(it.commandId.id),
-                    workflowName = WorkflowName("${it.commandName}")
+                    workflowName = WorkflowName("${it.commandName}"),
+                    reason = WorkflowCancellationReason.CANCELED_BY_PARENT
                 )
                 launch { output.sendToWorkflowEngine(cancelWorkflow) }
             }
     }
+
+    // clean state
+    state.removeAllMethodRuns()
+
+    // remove tags reference to this instance
+    removeTags(output, state)
 }

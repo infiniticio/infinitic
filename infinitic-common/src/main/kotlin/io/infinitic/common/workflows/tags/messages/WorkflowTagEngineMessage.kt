@@ -32,6 +32,7 @@ import io.infinitic.common.workflows.data.channels.ChannelEvent
 import io.infinitic.common.workflows.data.channels.ChannelEventId
 import io.infinitic.common.workflows.data.channels.ChannelEventType
 import io.infinitic.common.workflows.data.channels.ChannelName
+import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -61,7 +62,8 @@ data class SendToChannelPerTag(
 @Serializable
 data class CancelWorkflowPerTag(
     override val workflowTag: WorkflowTag,
-    override val workflowName: WorkflowName
+    override val workflowName: WorkflowName,
+    val reason: WorkflowCancellationReason
 ) : WorkflowTagEngineMessage()
 
 @Serializable

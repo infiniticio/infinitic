@@ -36,7 +36,7 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger(InfiniticClient::class.java.name)
 
-private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = logger.error {
+private fun logError(messageToProcess: ClientMessageToProcess, e: Exception) = logger.error(e) {
     "exception on message ${messageToProcess.message}: $e"
 }
 

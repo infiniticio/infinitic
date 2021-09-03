@@ -124,7 +124,8 @@ class WorkflowTagEngine(
             false -> ids.forEach {
                 val cancelWorkflow = CancelWorkflow(
                     workflowId = it,
-                    workflowName = message.workflowName
+                    workflowName = message.workflowName,
+                    reason = message.reason
                 )
                 scope.launch { sendToWorkflowEngine(cancelWorkflow) }
             }

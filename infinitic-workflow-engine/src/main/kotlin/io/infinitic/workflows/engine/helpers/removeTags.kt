@@ -25,16 +25,20 @@
 
 package io.infinitic.workflows.engine.helpers
 
-import io.infinitic.common.workflows.data.methodRuns.MethodRun
+import io.infinitic.common.workflows.data.workflowTasks.plus
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.tags.messages.RemoveWorkflowTag
+import io.infinitic.workflows.engine.output.WorkflowEngineOutput
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-internal fun clearHistoryOfTerminatedMethodRun(methodRun: MethodRun, state: WorkflowState) {
-    if (methodRun.isTerminated()) {
-        state.methodRuns.remove(methodRun)
-
-        // clean receivingChannels once deleted
-        state.receivingChannels.removeAll { it.methodRunId == methodRun.methodRunId }
-
-        removeUnusedPropertyHash(state)
+internal fun CoroutineScope.removeTags(workflowEngineOutput: WorkflowEngineOutput, state: WorkflowState) {
+    state.workflowTags.map {
+        val removeWorkflowTag = RemoveWorkflowTag(
+            workflowTag = it,
+            workflowName = state.workflowName,
+            workflowId = state.workflowId,
+        )
+        launch { workflowEngineOutput.sendToWorkflowTagEngine(removeWorkflowTag) }
     }
 }

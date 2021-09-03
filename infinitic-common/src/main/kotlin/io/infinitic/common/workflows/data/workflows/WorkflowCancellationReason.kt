@@ -23,34 +23,19 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.messageBuilders
+package io.infinitic.common.workflows.data.workflows
 
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.messages.Envelope
-import io.infinitic.pulsar.schemas.schemaDefinition
-import org.apache.pulsar.client.api.MessageId
-import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.TypedMessageBuilder
-import org.apache.pulsar.client.impl.schema.AvroSchema
-import java.util.concurrent.TimeUnit
+import kotlinx.serialization.Serializable
 
-interface PulsarMessageBuilder {
-    fun <O> newMessage(topicName: String, schema: Schema<O>): TypedMessageBuilder<O>
+@Serializable
+enum class WorkflowCancellationReason {
+    /**
+     * Cancellation was directly asked by user
+     */
+    CANCELED_BY_CLIENT,
+
+    /**
+     * Parent workflow was canceled
+     */
+    CANCELED_BY_PARENT
 }
-
-inline fun <reified T : Envelope<*>> PulsarMessageBuilder.sendPulsarMessage(
-    topic: String,
-    msg: T,
-    key: String?,
-    after: MillisDuration
-): MessageId = newMessage(topic, AvroSchema.of(schemaDefinition<T>()))
-    .value(msg)
-    .also {
-        if (key != null) {
-            it.key(key)
-        }
-        if (after.long > 0) {
-            it.deliverAfter(after.long, TimeUnit.MILLISECONDS)
-        }
-    }
-    .send()

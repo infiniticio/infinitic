@@ -44,6 +44,7 @@ import io.infinitic.common.tasks.engine.messages.RetryTask
 import io.infinitic.common.tasks.tags.SendToTaskTagEngine
 import io.infinitic.common.tasks.tags.messages.CancelTaskPerTag
 import io.infinitic.common.tasks.tags.messages.RetryTaskPerTag
+import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -526,14 +527,16 @@ abstract class InfiniticClient : Closeable {
                 handler.perWorkflowId != null -> {
                     val msg = CancelWorkflow(
                         workflowId = handler.perWorkflowId!!,
-                        workflowName = handler.workflowName
+                        workflowName = handler.workflowName,
+                        reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
                     )
                     launch { sendToWorkflowEngine(msg) }
                 }
                 handler.perTag != null -> {
                     val msg = CancelWorkflowPerTag(
                         workflowTag = handler.perTag!!,
-                        workflowName = handler.workflowName
+                        workflowName = handler.workflowName,
+                        reason = WorkflowCancellationReason.CANCELED_BY_CLIENT
                     )
                     launch { sendToWorkflowTagEngine(msg) }
                 }

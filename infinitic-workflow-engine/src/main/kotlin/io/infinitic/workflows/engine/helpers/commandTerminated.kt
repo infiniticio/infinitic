@@ -68,5 +68,5 @@ internal fun CoroutineScope.commandTerminated(
             // keep this command as we could have another pastStep solved by it
             state.bufferedCommands.add(pastCommand.commandId)
         }
-        ?: clearHistoryOfTerminatedMethodRun(methodRun, state) // if everything is completed in methodRun then filter state
+        ?: if (methodRun.isTerminated()) state.removeMethodRun(methodRun) else Unit // if everything is completed in methodRun then filter state
 }
