@@ -152,7 +152,6 @@ internal class WorkflowDispatcherImpl(
         // async branch is processed only if on path of targetPosition
         if (methodRunIndex.leadsTo(workflowTaskParameters.targetPosition)) {
             // update workflowTaskIndex to value linked to first processing of this branch
-            println(pastCommand)
             workflowTaskIndex = pastCommand.workflowTaskIndexAtStart!!
 
             // update workflow instance properties

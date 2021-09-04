@@ -163,7 +163,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
         val commandId = state.runningMethodRunBufferedCommands.first()
         val pastCommand = methodRun.getPastCommand(commandId)
 
-        if (pastCommand.commandType == CommandType.START_ASYNC) {
+        if (pastCommand.commandType == CommandType.START_ASYNC && ! pastCommand.isTerminated()) {
             // update pastCommand with a copy (!) of current properties and anticipated workflowTaskIndex
             pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap()
             pastCommand.workflowTaskIndexAtStart = state.workflowTaskIndex + 1
@@ -188,55 +188,6 @@ internal fun CoroutineScope.workflowTaskCompleted(
                 state.runningMethodRunBufferedCommands.removeFirst()
             }
         }
-
-//        val pastCommand = methodRun.getPastCommand(commandId)
-//
-//        @Suppress("UNUSED_VARIABLE")
-//        val o: Any = when (pastCommand.commandType) {
-//            CommandType.START_ASYNC -> {
-//                // update pastCommand with a copy (!) of current properties and anticipated workflowTaskIndex
-//                pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap()
-//                pastCommand.workflowTaskIndexAtStart = state.workflowTaskIndex + 1
-//                // dispatch a new workflowTask
-//                dispatchWorkflowTask(
-//                    workflowEngineOutput,
-//                    state,
-//                    methodRun,
-//                    pastCommand.commandPosition
-//                )
-//                // removes this command
-//                state.terminatedCommandsBuffer.removeAt(0)
-//            }
-//            CommandType.DISPATCH_CHILD_WORKFLOW,
-//            CommandType.DISPATCH_TASK,
-//            CommandType.START_DURATION_TIMER,
-//            CommandType.START_INSTANT_TIMER,
-//            CommandType.RECEIVE_IN_CHANNEL,
-//            CommandType.END_ASYNC -> {
-//                // note: pastSteps is naturally ordered by time => the first branch completed is the earliest step
-//                when (val pastStep = methodRun.pastSteps.find { it.isTerminatedBy(pastCommand) }) {
-//                    null -> state.terminatedCommandsBuffer.removeAt(0)
-//                    else -> {
-//                        // update pastStep with current properties and anticipated workflowTaskIndex
-//                        pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
-//                        pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
-//                        // dispatch a new workflowTask
-//                        dispatchWorkflowTask(
-//                            workflowEngineOutput,
-//                            state,
-//                            methodRun,
-//                            pastStep.stepPosition
-//                        )
-//                        // state.bufferedCommands is untouched as we could have another pastStep solved by this command
-//                    }
-//                }
-//            }
-//            CommandType.SENT_TO_CHANNEL,
-//            CommandType.START_INLINE_TASK,
-//            CommandType.END_INLINE_TASK -> throw thisShouldNotHappen(
-//                "unmanaged ${pastCommand.commandType} type in state.bufferedTerminatedCommands"
-//            )
-//        }
     }
 
     if (methodRun.isTerminated()) state.removeMethodRun(methodRun)

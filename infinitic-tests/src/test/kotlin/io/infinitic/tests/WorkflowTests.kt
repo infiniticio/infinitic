@@ -93,10 +93,6 @@ internal class WorkflowTests : StringSpec({
         workflowB = client.newWorkflow()
     }
 
-    afterTest {
-//        checkDiscardingState()
-    }
-
     "empty Workflow" {
         workflowA.empty() shouldBe "void"
     }
@@ -189,6 +185,8 @@ internal class WorkflowTests : StringSpec({
 
     "Or step with Status checking" {
         workflowA.or4() shouldBe "baba"
+
+        expectDiscardingForHavingNullState(true)
     }
 
     "And step with 3 async tasks" {
@@ -231,7 +229,7 @@ internal class WorkflowTests : StringSpec({
         workflowA.prop1() shouldBe "ac"
 
         // should not discard state before completing the async branch
-        checkDiscardingState()
+        expectDiscardingForHavingNullState()
     }
 
     "Check prop2" {
@@ -252,6 +250,8 @@ internal class WorkflowTests : StringSpec({
 
     "Check prop6" {
         workflowA.prop6() shouldBe "abab"
+
+        expectDiscardingForHavingNullState()
     }
 
     "Check prop7" {
@@ -438,10 +438,14 @@ internal class WorkflowTests : StringSpec({
 
     "failing task not on main path should not throw" {
         workflowA.failing3() shouldBe 100
+
+        expectDiscardingForHavingNullState()
     }
 
     "failing instruction not on main path should not throw" {
         workflowA.failing3b() shouldBe 100
+
+        expectDiscardingForHavingNullState()
     }
 
     "Cancelling task on main path should throw " {
@@ -529,7 +533,7 @@ internal class WorkflowTests : StringSpec({
     }
 })
 
-private suspend fun checkDiscardingState() {
+private suspend fun expectDiscardingForHavingNullState(expected: Boolean = false) {
     // make sure all events are recorded
     delay(1000)
     // check that workflow state is not deleted too early
@@ -537,5 +541,5 @@ private suspend fun checkDiscardingState() {
         .filter { it.level == Level.INFO }
         .map { "${it.timestamp} ${it.message}" }
         .joinToString("\n")
-        .contains(WorkflowEngine.NO_STATE_DISCARDING_REASON) shouldBe false
+        .contains(WorkflowEngine.NO_STATE_DISCARDING_REASON) shouldBe expected
 }

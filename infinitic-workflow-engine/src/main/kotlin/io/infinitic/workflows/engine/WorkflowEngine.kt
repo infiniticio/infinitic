@@ -81,7 +81,7 @@ class WorkflowEngine(
 ) {
 
     companion object {
-        const val NO_STATE_DISCARDING_REASON = "for having null state"
+        const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
     }
 
     private val logger = KotlinLogging.logger {}

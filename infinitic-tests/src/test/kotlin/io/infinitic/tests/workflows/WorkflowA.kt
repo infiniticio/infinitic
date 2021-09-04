@@ -264,14 +264,13 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         var s3 = taskA.concat("1", "2")
 
         val d1 = dispatch(taskA) { reverse("ab") }
-        val d2 = timer(Duration.ofMillis(50))
+        val d2 = timer(Duration.ofMillis(200))
         val d = (d1 or d2)
-        if ((d1 or d2).status() != DeferredStatus.COMPLETED) {
+        if (d.status() != DeferredStatus.COMPLETED) {
             s3 = taskA.reverse("ab")
         }
-        d.await()
 
-        return d1.await() + s3 // should be "baba"
+        return (d.await() as String) + s3 // should be "baba"
     }
 
     override fun and1(): List<String> {
@@ -401,7 +400,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         }
         p1 += "d"
 
-        taskA.await(1500)
+        taskA.await(100)
 
         return p1 // should be "adbc"
     }
@@ -445,6 +444,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun channel2(): Any {
         val deferredChannel = channelA.receive()
+
         val deferredTimer = timer(Duration.ofMillis(1000))
 
         return (deferredChannel or deferredTimer).await()
@@ -561,6 +561,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
 
     override fun failing5(): Long {
         val deferred = dispatch(taskA) { await(1000) }
+
         taskA.cancelTaskA(deferred.id!!)
 
         async { deferred.await() }
