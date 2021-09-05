@@ -89,8 +89,6 @@ abstract class MethodProxyHandler<T>(protected open val klass: Class<T>) : Invoc
      * invoke method is called when a method is applied to the proxy instance
      */
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        if (method.name == "toString") return klass.name
-
         // store method and args
         this.methods.add(method)
         this.args.add(args ?: arrayOf())
