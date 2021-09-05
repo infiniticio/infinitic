@@ -75,12 +75,9 @@ class WorkflowProxyHandler<T : Any>(
     }
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        if (method.declaringClass == Object::class.java) return when (method.name) {
-            "toString" -> klass.name
-            else -> method.invoke(args)
-        }
-
         val any = super.invoke(proxy, method, args)
+
+        if (method.declaringClass == Object::class.java) return any
 
         return when (isSync) {
             true -> dispatcherFn().dispatchAndWait(this)

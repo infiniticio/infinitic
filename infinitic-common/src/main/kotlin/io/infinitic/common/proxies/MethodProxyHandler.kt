@@ -89,11 +89,18 @@ abstract class MethodProxyHandler<T>(protected open val klass: Class<T>) : Invoc
      * invoke method is called when a method is applied to the proxy instance
      */
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        val default = getAsyncReturnValue(method)
+
+        if (method.declaringClass == Object::class.java) return when (method.name) {
+            "toString" -> klass.name
+            else -> default
+        }
+
         // store method and args
         this.methods.add(method)
         this.args.add(args ?: arrayOf())
 
-        return getAsyncReturnValue(method)
+        return default
     }
 
     /*
@@ -118,7 +125,7 @@ abstract class MethodProxyHandler<T>(protected open val klass: Class<T>) : Invoc
     /**
      * Returns a type-compatible value to avoid a java runtime exception
      */
-    private fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {
+    protected fun getAsyncReturnValue(method: Method) = when (method.returnType.name) {
         "long" -> 0L
         "int" -> 0
         "short" -> 0.toShort()
