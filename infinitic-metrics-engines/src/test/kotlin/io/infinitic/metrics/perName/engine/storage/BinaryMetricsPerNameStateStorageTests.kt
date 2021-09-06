@@ -46,12 +46,12 @@ class BinaryMetricsPerNameStateStorageTests : ShouldSpec({
             // given
             val taskName = TaskName(TestFactory.random(String::class))
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.getValue(any()) } returns null
+            coEvery { storage.get(any()) } returns null
             // when
             val stateStorage = BinaryMetricsPerNameStateStorage(storage)
             val state = stateStorage.getState(taskName)
             // then
-            coVerify(exactly = 1) { storage.getValue("metricsPerName.state.$taskName") }
+            coVerify(exactly = 1) { storage.get("metricsPerName.state.$taskName") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -60,12 +60,12 @@ class BinaryMetricsPerNameStateStorageTests : ShouldSpec({
             // given
             val stateIn = TestFactory.random<MetricsPerNameState>()
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
+            coEvery { storage.get(any()) } returns stateIn.toByteArray()
             // when
             val stateStorage = BinaryMetricsPerNameStateStorage(storage)
             val stateOut = stateStorage.getState(stateIn.taskName)
             // then
-            coVerify(exactly = 1) { storage.getValue("metricsPerName.state.${stateIn.taskName}") }
+            coVerify(exactly = 1) { storage.get("metricsPerName.state.${stateIn.taskName}") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
@@ -78,7 +78,7 @@ class BinaryMetricsPerNameStateStorageTests : ShouldSpec({
             val state = TestFactory.random<MetricsPerNameState>()
             val storage = mockk<KeyValueStorage>()
             val binSlot = slot<ByteArray>()
-            coEvery { storage.putValue("metricsPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
+            coEvery { storage.put("metricsPerName.state.${state.taskName}", capture(binSlot)) } returns Unit
             // when
             val stateStorage = BinaryMetricsPerNameStateStorage(storage)
             stateStorage.putState(state.taskName, state)
@@ -93,12 +93,12 @@ class BinaryMetricsPerNameStateStorageTests : ShouldSpec({
             // given
             val state = TestFactory.random(MetricsPerNameState::class)
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.delValue(any()) } just runs
+            coEvery { storage.del(any()) } just runs
             // when
             val stateStorage = BinaryMetricsPerNameStateStorage(storage)
             stateStorage.delState(state.taskName)
             // then
-            coVerify(exactly = 1) { storage.delValue("metricsPerName.state.${state.taskName}") }
+            coVerify(exactly = 1) { storage.del("metricsPerName.state.${state.taskName}") }
             confirmVerified(storage)
         }
     }

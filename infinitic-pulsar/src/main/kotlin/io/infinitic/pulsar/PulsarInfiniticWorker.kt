@@ -30,6 +30,11 @@ import io.infinitic.common.tasks.data.TaskName
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
+import io.infinitic.pulsar.topics.GlobalTopic
+import io.infinitic.pulsar.topics.TaskTopic
+import io.infinitic.pulsar.topics.TopicName
+import io.infinitic.pulsar.topics.WorkflowTaskTopic
+import io.infinitic.pulsar.topics.WorkflowTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startPulsarMetricsGlobalEngine
@@ -48,28 +53,31 @@ import io.infinitic.worker.InfiniticWorker
 import io.infinitic.worker.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.future.future
+import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.PulsarClient
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class PulsarInfiniticWorker private constructor(
     val pulsarClient: PulsarClient,
+    val pulsarAdmin: PulsarAdmin,
     override val workerConfig: WorkerConfig
 ) : InfiniticWorker(workerConfig) {
 
     companion object {
         /**
-         * Create PulsarInfiniticWorker from a custom PulsarClient and a WorkerConfig instance
+         * Create PulsarInfiniticWorker from a custom PulsarClient and PulsarAdmin and a WorkerConfig instance
          */
         @JvmStatic
-        fun from(pulsarClient: PulsarClient, workerConfig: WorkerConfig) =
-            PulsarInfiniticWorker(pulsarClient, workerConfig)
+        fun from(pulsarClient: PulsarClient, pulsarAdmin: PulsarAdmin, workerConfig: WorkerConfig) =
+            PulsarInfiniticWorker(pulsarClient, pulsarAdmin, workerConfig)
 
         /**
          * Create PulsarInfiniticWorker from a WorkerConfig instance
          */
         @JvmStatic
         fun fromConfig(workerConfig: WorkerConfig): PulsarInfiniticWorker =
-            PulsarInfiniticWorker(workerConfig.pulsar!!.client, workerConfig)
+            PulsarInfiniticWorker(workerConfig.pulsar!!.client, workerConfig.pulsar!!.admin, workerConfig)
 
         /**
          * Create PulsarInfiniticWorker from a config in resources directory
@@ -100,7 +108,7 @@ class PulsarInfiniticWorker private constructor(
         PulsarOutput.from(pulsarClient, pulsar.tenant, pulsar.namespace, name)
     }
 
-    private val clientFactory = { PulsarInfiniticClient(pulsarClient, pulsar.tenant, pulsar.namespace) }
+    private val clientFactory = { PulsarInfiniticClient(pulsarClient, pulsarAdmin, pulsar.tenant, pulsar.namespace) }
 
     /**
      * Close worker
@@ -109,8 +117,55 @@ class PulsarInfiniticWorker private constructor(
         super.close()
 
         pulsarClient.close()
+        pulsarAdmin.close()
     }
 
+    override fun start() {
+        // make sure all needed topics exists
+        runningScope.future {
+            val namer = TopicName(pulsar.tenant, pulsar.namespace)
+            val topics = pulsarAdmin.topics().getPartitionedTopicList("${pulsar.tenant}/${pulsar.namespace}")
+
+            GlobalTopic.values().forEach {
+                val topicName = namer.of(it)
+                if (!topics.contains(topicName)) {
+                    logger.warn { "Creation of topic: $topicName" }
+                    pulsarAdmin.topics().createPartitionedTopicAsync(topicName, 1)
+                }
+            }
+
+            for (workflow in workerConfig.workflows) {
+
+                WorkflowTopic.values().forEach {
+                    val topicName = namer.of(it, workflow.name)
+                    if (!topics.contains(topicName)) {
+                        logger.warn { "Creation of topic: $topicName" }
+                        pulsarAdmin.topics().createPartitionedTopicAsync(topicName, 1)
+                    }
+                }
+
+                WorkflowTaskTopic.values().forEach {
+                    val topicName = namer.of(it, workflow.name)
+                    if (!topics.contains(topicName)) {
+                        logger.warn { "Creation of topic: $topicName" }
+                        pulsarAdmin.topics().createPartitionedTopicAsync(topicName, 1)
+                    }
+                }
+            }
+
+            for (task in workerConfig.tasks) {
+                TaskTopic.values().forEach {
+                    val topicName = namer.of(it, task.name)
+                    if (!topics.contains(topicName)) {
+                        logger.warn { "Creation of topic: $topicName" }
+                        pulsarAdmin.topics().createPartitionedTopicAsync(topicName, 1)
+                    }
+                }
+            }
+        }.join()
+
+        super.start()
+    }
     override fun CoroutineScope.startTaskExecutors(name: Name, concurrency: Int) {
         startPulsarTaskExecutors(
             name,

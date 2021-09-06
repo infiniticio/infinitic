@@ -201,7 +201,7 @@ class PulsarOutput(
         }
         val key = null
         logger.debug { "topic: $topic, sendToMetricsPerName: $message" }
-        pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
+//        pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }
 
     fun sendToMetricsGlobal(): SendToMetricsGlobal = { message: MetricsGlobalMessage ->

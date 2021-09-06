@@ -25,6 +25,7 @@
 
 package io.infinitic.pulsar
 
+import io.infinitic.pulsar.topics.GlobalTopic
 import io.infinitic.pulsar.topics.TopicName
 import org.apache.pulsar.client.api.PulsarClient
 import org.apache.pulsar.client.api.PulsarClientException
@@ -41,7 +42,7 @@ internal fun getProducerName(
 ): String {
     val producer = try {
         pulsarClient.newProducer()
-            .topic(TopicName(pulsarTenant, pulsarNamespace).getPersistentTopicFullName("namer"))
+            .topic(TopicName(pulsarTenant, pulsarNamespace).of(GlobalTopic.NAMER))
             .also {
                 if (name != null) {
                     it.producerName(name)

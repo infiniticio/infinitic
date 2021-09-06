@@ -28,9 +28,9 @@ package io.infinitic.common.storage.keyCounter
 import io.infinitic.common.storage.Flushable
 
 interface KeyCounterCache : Flushable {
-    fun getCounter(key: String): Long?
+    fun get(key: String): Long?
 
-    fun setCounter(key: String, amount: Long)
+    fun set(key: String, amount: Long)
 
-    fun incrCounter(key: String, amount: Long)
+    fun incr(key: String, amount: Long)
 }

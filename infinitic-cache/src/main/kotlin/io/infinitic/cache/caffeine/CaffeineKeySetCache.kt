@@ -38,21 +38,21 @@ class CaffeineKeySetCache(config: CaffeineConfig) : KeySetCache<ByteArray>, Flus
     private var caffeine: Cache<String, Set<Bytes>> =
         Caffeine.newBuilder().setup(config).build()
 
-    override fun getSet(key: String): Set<ByteArray>? {
+    override fun get(key: String): Set<ByteArray>? {
         return caffeine.get(key) { null }
             ?.map { it.content }?.toSet()
     }
 
-    override fun setSet(key: String, value: Set<ByteArray>) {
+    override fun set(key: String, value: Set<ByteArray>) {
         caffeine.put(key, value.map { Bytes(it) }.toMutableSet())
     }
 
-    override fun addToSet(key: String, value: ByteArray) {
+    override fun add(key: String, value: ByteArray) {
         caffeine.getIfPresent(key)
             ?.also { caffeine.put(key, it.plus(Bytes(value))) }
     }
 
-    override fun removeFromSet(key: String, value: ByteArray) {
+    override fun remove(key: String, value: ByteArray) {
         caffeine.getIfPresent(key)
             ?.also { caffeine.put(key, it.minus(Bytes(value))) }
     }

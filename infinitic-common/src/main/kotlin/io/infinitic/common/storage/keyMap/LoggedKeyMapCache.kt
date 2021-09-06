@@ -23,25 +23,47 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keyCounter
+package io.infinitic.common.storage.keyMap
 
 import mu.KotlinLogging
 
-class LoggedKeyCounterStorage(
-    val storage: KeyCounterStorage
-) : KeyCounterStorage by storage {
+class LoggedKeyMapCache<T>(
+    val cache: KeyMapCache<T>
+) : KeyMapCache<T> by cache {
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun get(key: String): Long {
-        val value = storage.get(key)
-        logger.debug { "key $key - getCounter $value" }
+    override suspend fun get(key: String, field: String): T? {
+        val value = cache.get(key, field)
+        logger.debug { "key $key - get field $field value $value" }
 
         return value
     }
 
-    override suspend fun incr(key: String, amount: Long) {
-        logger.debug { "key $key - incrCounter $amount" }
-        storage.incr(key, amount)
+    override suspend fun get(key: String): Map<String, T>? {
+        val map = cache.get(key)
+        logger.debug { "key $key - get fields ${map?.keys?.joinToString(", ")}" }
+
+        return map
+    }
+
+    override suspend fun put(key: String, field: String, value: T) {
+        logger.debug { "key $key - put field $field value $value" }
+        cache.put(key, field, value)
+    }
+
+    override suspend fun set(key: String, map: Map<String, T>) {
+        logger.debug { "key $key - put fields ${map.keys.joinToString(", ")}" }
+        cache.set(key, map)
+    }
+
+    override suspend fun del(key: String, field: String) {
+        logger.debug { "key $key - del field $field" }
+        cache.del(key, field)
+    }
+
+    override suspend fun del(key: String) {
+        logger.debug { "key $key - del" }
+        cache.del(key)
     }
 }

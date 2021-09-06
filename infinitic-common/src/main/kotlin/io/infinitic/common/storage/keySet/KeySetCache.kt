@@ -28,8 +28,8 @@ package io.infinitic.common.storage.keySet
 import io.infinitic.common.storage.Flushable
 
 interface KeySetCache<T> : Flushable {
-    fun getSet(key: String): Set<T>?
-    fun setSet(key: String, value: Set<T>)
-    fun addToSet(key: String, value: T)
-    fun removeFromSet(key: String, value: T)
+    fun get(key: String): Set<T>?
+    fun set(key: String, value: Set<T>)
+    fun add(key: String, value: T)
+    fun remove(key: String, value: T)
 }

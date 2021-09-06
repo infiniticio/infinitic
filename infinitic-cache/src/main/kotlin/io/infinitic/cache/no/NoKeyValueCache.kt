@@ -25,13 +25,10 @@
 
 package io.infinitic.cache.no
 
-import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyCounter.KeyCounterCache
-import io.infinitic.common.storage.keySet.KeySetCache
 import io.infinitic.common.storage.keyValue.KeyValueCache
 import org.jetbrains.annotations.TestOnly
 
-class NoCache<T>() : KeyValueCache<T>, KeySetCache<T>, KeyCounterCache, Flushable {
+class NoKeyValueCache<T>() : KeyValueCache<T> {
 
     override fun getValue(key: String): T? {
         return null
@@ -42,34 +39,6 @@ class NoCache<T>() : KeyValueCache<T>, KeySetCache<T>, KeyCounterCache, Flushabl
     }
 
     override fun delValue(key: String) {
-        // nothing
-    }
-
-    override fun getCounter(key: String): Long? {
-        return null
-    }
-
-    override fun setCounter(key: String, amount: Long) {
-        // nothing
-    }
-
-    override fun incrCounter(key: String, amount: Long) {
-        // nothing
-    }
-
-    override fun getSet(key: String): Set<T>? {
-        return null
-    }
-
-    override fun setSet(key: String, value: Set<T>) {
-        // nothing
-    }
-
-    override fun addToSet(key: String, value: T) {
-        // nothing
-    }
-
-    override fun removeFromSet(key: String, value: T) {
         // nothing
     }
 

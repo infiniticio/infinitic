@@ -48,31 +48,31 @@ class BinaryTaskTagStorage(
     override suspend fun getLastMessageId(tag: TaskTag, taskName: TaskName): MessageId? {
         val key = getTagMessageIdKey(tag, taskName)
 
-        return keyValueStorage.getValue(key)
+        return keyValueStorage.get(key)
             ?.let { MessageId.fromByteArray(it) }
     }
 
     override suspend fun setLastMessageId(tag: TaskTag, taskName: TaskName, messageId: MessageId) {
         val key = getTagMessageIdKey(tag, taskName)
-        keyValueStorage.putValue(key, messageId.toByteArray())
+        keyValueStorage.put(key, messageId.toByteArray())
     }
 
     override suspend fun getTaskIds(tag: TaskTag, taskName: TaskName): Set<TaskId> {
         val key = getTagSetIdsKey(tag, taskName)
         return keySetStorage
-            .getSet(key)
+            .get(key)
             .map { TaskId(it.toUUID()) }
             .toSet()
     }
 
     override suspend fun addTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
         val key = getTagSetIdsKey(tag, taskName)
-        keySetStorage.addToSet(key, taskId.id.toByteArray())
+        keySetStorage.add(key, taskId.id.toByteArray())
     }
 
     override suspend fun removeTaskId(tag: TaskTag, taskName: TaskName, taskId: TaskId) {
         val key = getTagSetIdsKey(tag, taskName)
-        keySetStorage.removeFromSet(key, taskId.id.toByteArray())
+        keySetStorage.remove(key, taskId.id.toByteArray())
     }
 
     private fun getTagMessageIdKey(tag: TaskTag, taskName: TaskName) = "task:$taskName|tag:$tag|messageId"

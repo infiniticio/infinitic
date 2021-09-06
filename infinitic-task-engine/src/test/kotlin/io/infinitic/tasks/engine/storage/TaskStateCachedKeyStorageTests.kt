@@ -43,13 +43,13 @@ class TaskStateCachedKeyStorageTests : ShouldSpec({
             val taskId = TestFactory.random<TaskId>()
             // mocking
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.getValue(any()) } returns null
+            coEvery { storage.get(any()) } returns null
             // given
             val stateStorage = BinaryTaskStateStorage(storage)
             // when
             val state = stateStorage.getState(taskId)
             // then
-            coVerify(exactly = 1) { storage.getValue("task.state.$taskId") }
+            coVerify(exactly = 1) { storage.get("task.state.$taskId") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -58,13 +58,13 @@ class TaskStateCachedKeyStorageTests : ShouldSpec({
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random<TaskState>()
-            coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
+            coEvery { storage.get(any()) } returns stateIn.toByteArray()
             // given
             val stateStorage = BinaryTaskStateStorage(storage)
             // when
             val stateOut = stateStorage.getState(stateIn.taskId)
             // then
-            coVerify(exactly = 1) { storage.getValue("task.state.${stateIn.taskId}") }
+            coVerify(exactly = 1) { storage.get("task.state.${stateIn.taskId}") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
@@ -77,7 +77,7 @@ class TaskStateCachedKeyStorageTests : ShouldSpec({
             val stateIn = TestFactory.random<TaskState>()
             val binSlot = slot<ByteArray>()
 
-            coEvery { storage.putValue("task.state.${stateIn.taskId}", capture(binSlot)) } returns Unit
+            coEvery { storage.put("task.state.${stateIn.taskId}", capture(binSlot)) } returns Unit
             // given
             val stateStorage = BinaryTaskStateStorage(storage)
             // when
@@ -93,13 +93,13 @@ class TaskStateCachedKeyStorageTests : ShouldSpec({
             // mocking
             val context = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random<TaskState>()
-            coEvery { context.delValue(any()) } returns Unit
+            coEvery { context.del(any()) } returns Unit
             // given
             val stageStorage = BinaryTaskStateStorage(context)
             // when
             stageStorage.delState(stateIn.taskId)
             // then
-            coVerify(exactly = 1) { context.delValue("task.state.${stateIn.taskId}") }
+            coVerify(exactly = 1) { context.del("task.state.${stateIn.taskId}") }
             confirmVerified(context)
         }
     }

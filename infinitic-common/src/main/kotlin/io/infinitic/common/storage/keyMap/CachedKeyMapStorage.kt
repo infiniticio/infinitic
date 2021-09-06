@@ -23,32 +23,50 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.storage.keySet
+package io.infinitic.common.storage.keyMap
 
 import mu.KotlinLogging
 import org.jetbrains.annotations.TestOnly
 
-class CachedKeySetStorage(
-    val cache: KeySetCache<ByteArray>,
-    val storage: KeySetStorage
-) : KeySetStorage {
+class CachedKeyMapStorage(
+    val cache: KeyMapCache<ByteArray>,
+    val storage: KeyMapStorage
+) : KeyMapStorage {
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun get(key: String): Set<ByteArray> = cache.get(key)
+    override suspend fun get(key: String, field: String): ByteArray? = cache.get(key, field)
         ?: run {
-            logger.debug { "key $key - getSet - absent from cache, get from storage" }
-            storage.get(key)
-                .also { cache.set(key, it) }
+            logger.debug { "key $key - get field $field - absent from cache, get from storage" }
+            storage.get(key, field)
+                ?.also { cache.put(key, field, it) }
         }
 
-    override suspend fun add(key: String, value: ByteArray) {
-        storage.add(key, value)
-        cache.add(key, value)
+    override suspend fun get(key: String): Map<String, ByteArray>? = cache.get(key)
+        ?: run {
+            logger.debug { "key $key - get - absent from cache, get from storage" }
+            storage.get(key)
+                ?.also { cache.set(key, it) }
+        }
+
+    override suspend fun put(key: String, field: String, value: ByteArray) {
+        storage.put(key, field, value)
+        cache.put(key, field, value)
     }
-    override suspend fun remove(key: String, value: ByteArray) {
-        cache.remove(key, value)
-        storage.remove(key, value)
+
+    override suspend fun put(key: String, map: Map<String, ByteArray>) {
+        storage.put(key, map)
+        cache.set(key, map)
+    }
+
+    override suspend fun del(key: String, field: String) {
+        cache.del(key, field)
+        storage.del(key, field)
+    }
+
+    override suspend fun del(key: String) {
+        cache.del(key)
+        storage.del(key)
     }
 
     @TestOnly

@@ -23,24 +23,39 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.pulsar.functions.storage
+package io.infinitic.cache.no
 
-import io.infinitic.common.storage.keyValue.KeyValueStorage
-import org.apache.pulsar.functions.api.Context
+import io.infinitic.common.storage.keyMap.KeyMapCache
 import org.jetbrains.annotations.TestOnly
-import java.nio.ByteBuffer
 
-class PulsarFunctionStorage(private val context: Context) : KeyValueStorage {
-    override suspend fun get(key: String): ByteArray? =
-        context.getState(key).array()
+class NoKeyMapCache<T>() : KeyMapCache<T> {
 
-    override suspend fun put(key: String, value: ByteArray) =
-        context.putState(key, ByteBuffer.wrap(value))
+    override suspend fun get(key: String, field: String): T? {
+        return null
+    }
 
-    override suspend fun del(key: String) =
-        context.deleteState(key)
+    override suspend fun put(key: String, field: String, value: T) {
+        // nothing
+    }
 
-    @TestOnly override fun flush() {
-        // flush is used in tests, no actual implementation needed here
+    override suspend fun del(key: String, field: String) {
+        // nothing
+    }
+
+    override suspend fun get(key: String): Map<String, T>? {
+        return null
+    }
+
+    override suspend fun set(key: String, map: Map<String, T>) {
+        // nothing
+    }
+
+    override suspend fun del(key: String) {
+        // nothing
+    }
+
+    @TestOnly
+    override fun flush() {
+        // nothing
     }
 }

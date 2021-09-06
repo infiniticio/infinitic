@@ -27,25 +27,43 @@ package io.infinitic.cache.caffeine
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.infinitic.common.data.Bytes
 import io.infinitic.common.storage.Flushable
-import io.infinitic.common.storage.keyCounter.KeyCounterCache
+import io.infinitic.common.storage.keyMap.KeyMapCache
 import org.jetbrains.annotations.TestOnly
 import io.infinitic.cache.caffeine.Caffeine as CaffeineConfig
 
-class CaffeineKeyCounterCache(config: CaffeineConfig) : KeyCounterCache, Flushable {
-    private var caffeine: Cache<String, Long> =
+class CaffeineKeyMapCache(config: CaffeineConfig) : KeyMapCache<ByteArray>, Flushable {
+
+    private var caffeine: Cache<String, Map<String, Bytes>> =
         Caffeine.newBuilder().setup(config).build()
 
-    override fun get(key: String): Long? = caffeine.getIfPresent(key)
-
-    override fun set(key: String, amount: Long) {
-        caffeine.put(key, amount)
+    override suspend fun get(key: String): Map<String, ByteArray>? {
+        return caffeine.getIfPresent(key)
+            ?.mapValues { it.value.content }
     }
 
-    override fun incr(key: String, amount: Long) {
-        get(key)?.also {
-            caffeine.put(key, it + amount)
-        }
+    override suspend fun get(key: String, field: String): ByteArray? {
+        return caffeine.getIfPresent(key)
+            ?.get(field)?.content
+    }
+
+    override suspend fun put(key: String, field: String, value: ByteArray) {
+        caffeine.getIfPresent(key)
+            ?.run { caffeine.put(key, plus(field to Bytes(value))) }
+    }
+
+    override suspend fun del(key: String, field: String) {
+        caffeine.getIfPresent(key)
+            ?.run { caffeine.put(key, minus(field)) }
+    }
+
+    override suspend fun set(key: String, map: Map<String, ByteArray>) {
+        caffeine.put(key, map.mapValues { Bytes(it.value) })
+    }
+
+    override suspend fun del(key: String) {
+        caffeine.invalidate(key)
     }
 
     @TestOnly

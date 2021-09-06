@@ -41,13 +41,13 @@ class RedisKeySetStorage(
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
-    override suspend fun getSet(key: String): Set<ByteArray> =
+    override suspend fun get(key: String): Set<ByteArray> =
         pool.resource.use { it.smembers(key.toByteArray()) }
 
-    override suspend fun addToSet(key: String, value: ByteArray) =
+    override suspend fun add(key: String, value: ByteArray) =
         pool.resource.use { it.sadd(key.toByteArray(), value); Unit }
 
-    override suspend fun removeFromSet(key: String, value: ByteArray) =
+    override suspend fun remove(key: String, value: ByteArray) =
         pool.resource.use { it.srem(key.toByteArray(), value); Unit }
 
     @TestOnly

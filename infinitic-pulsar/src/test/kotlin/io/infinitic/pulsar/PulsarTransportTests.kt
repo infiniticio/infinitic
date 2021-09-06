@@ -61,9 +61,9 @@ class PulsarTransportTests : StringSpec({
         include(shouldBeAbleToSendMessageToTaskEngineCommandsTopic(TestFactory.random(it)))
     }
 
-    MetricsPerNameMessage::class.sealedSubclasses.forEach {
-        include(shouldBeAbleToSendMessageToMetricsPerNameTopic(TestFactory.random(it)))
-    }
+//    MetricsPerNameMessage::class.sealedSubclasses.forEach {
+//        include(shouldBeAbleToSendMessageToMetricsPerNameTopic(TestFactory.random(it)))
+//    }
 
     MetricsGlobalMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToMetricsGlobalTopic(TestFactory.random(it)))
@@ -132,33 +132,33 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
     }
 }
 
-private fun shouldBeAbleToSendMessageToMetricsPerNameTopic(msg: MetricsPerNameMessage) = stringSpec {
-    "${msg::class.simpleName!!} can be send to MetricsPerName topic " {
-        // given
-        val context = context()
-        val builder = mockk<TypedMessageBuilder<MetricsPerNameEnvelope>>()
-        val slotSchema = slot<AvroSchema<MetricsPerNameEnvelope>>()
-        every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
-        every { builder.value(any()) } returns builder
-        every { builder.key(any()) } returns builder
-        every { builder.send() } returns mockk()
-        // when
-        PulsarOutput.from(context).sendToMetricsPerName()(msg)
-        // then
-        verify {
-            context.newOutputMessage(
-                "persistent://tenant/namespace/task-metrics: ${msg.taskName}",
-                slotSchema.captured
-            )
-        }
-        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MetricsPerNameEnvelope>()).avroSchema
-        verifyAll {
-            builder.value(MetricsPerNameEnvelope.from(msg))
-            builder.send()
-        }
-        confirmVerified(builder)
-    }
-}
+//private fun shouldBeAbleToSendMessageToMetricsPerNameTopic(msg: MetricsPerNameMessage) = stringSpec {
+//    "${msg::class.simpleName!!} can be send to MetricsPerName topic " {
+//        // given
+//        val context = context()
+//        val builder = mockk<TypedMessageBuilder<MetricsPerNameEnvelope>>()
+//        val slotSchema = slot<AvroSchema<MetricsPerNameEnvelope>>()
+//        every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
+//        every { builder.value(any()) } returns builder
+//        every { builder.key(any()) } returns builder
+//        every { builder.send() } returns mockk()
+//        // when
+//        PulsarOutput.from(context).sendToMetricsPerName()(msg)
+//        // then
+//        verify {
+//            context.newOutputMessage(
+//                "persistent://tenant/namespace/task-metrics: ${msg.taskName}",
+//                slotSchema.captured
+//            )
+//        }
+//        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MetricsPerNameEnvelope>()).avroSchema
+//        verifyAll {
+//            builder.value(MetricsPerNameEnvelope.from(msg))
+//            builder.send()
+//        }
+//        confirmVerified(builder)
+//    }
+//}
 
 private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: MetricsGlobalMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MetricsGlobal topic " {

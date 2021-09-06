@@ -33,15 +33,15 @@ import java.util.concurrent.ConcurrentHashMap
 class InMemoryKeyValueStorage : KeyValueStorage, Flushable {
     private val stateStorage = ConcurrentHashMap<String, ByteArray>()
 
-    override suspend fun getValue(key: String): ByteArray? {
+    override suspend fun get(key: String): ByteArray? {
         return stateStorage[key]
     }
 
-    override suspend fun putValue(key: String, value: ByteArray) {
+    override suspend fun put(key: String, value: ByteArray) {
         stateStorage[key] = value
     }
 
-    override suspend fun delValue(key: String) {
+    override suspend fun del(key: String) {
         stateStorage.remove(key)
     }
 

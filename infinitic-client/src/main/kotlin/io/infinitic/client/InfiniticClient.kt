@@ -87,7 +87,7 @@ abstract class InfiniticClient : Closeable {
     protected abstract val sendToWorkflowTagEngine: SendToWorkflowTagEngine
     protected abstract val sendToWorkflowEngine: SendToWorkflowEngine
 
-    private val logger = KotlinLogging.logger {}
+    protected val logger = KotlinLogging.logger {}
 
     private val sendThreadPool = Executors.newCachedThreadPool()
 
@@ -235,7 +235,7 @@ abstract class InfiniticClient : Closeable {
     /**
      *  Asynchronously process a task or a workflow
      */
-    fun <T : Any, S> dispatch(proxy: T, method: T.() -> S): Deferred<S> {
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> {
         if (proxy !is Proxy) throw NotAStubException(proxy::class.java.name, "async")
 
         return when (val handler = Proxy.getInvocationHandler(proxy)) {
@@ -260,25 +260,25 @@ abstract class InfiniticClient : Closeable {
      *  Asynchronously process a task (helper)
      */
     @JvmOverloads
-    fun <T : Any, S> dispatchTask(
+    fun <T : Any, S> asyncTask(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: TaskOptions? = null,
         meta: Map<String, ByteArray> = mapOf(),
         method: T.() -> S
-    ) = dispatch(newTask(klass, tags, options, meta), method)
+    ) = async(newTask(klass, tags, options, meta), method)
 
     /**
      *  Asynchronously process a workflow (helper)
      */
     @JvmOverloads
-    fun <T : Any, S> dispatchWorkflow(
+    fun <T : Any, S> asyncWorkflow(
         klass: Class<out T>,
         tags: Set<String> = setOf(),
         options: WorkflowOptions? = null,
         meta: Map<String, ByteArray> = mapOf(),
         method: T.() -> S
-    ) = dispatch(newWorkflow(klass, tags, options, meta), method)
+    ) = async(newWorkflow(klass, tags, options, meta), method)
 
     /**
      *  Cancel a task or a workflow from a stub

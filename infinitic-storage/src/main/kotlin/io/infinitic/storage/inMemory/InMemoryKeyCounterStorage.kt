@@ -33,10 +33,10 @@ import java.util.concurrent.ConcurrentHashMap
 class InMemoryKeyCounterStorage() : KeyCounterStorage, Flushable {
     private val counterStorage = ConcurrentHashMap<String, Long>()
 
-    override suspend fun getCounter(key: String) = counterStorage[key] ?: 0L
+    override suspend fun get(key: String) = counterStorage[key] ?: 0L
 
-    override suspend fun incrCounter(key: String, amount: Long) {
-        counterStorage[key] = getCounter(key) + amount
+    override suspend fun incr(key: String, amount: Long) {
+        counterStorage[key] = get(key) + amount
     }
 
     @TestOnly
