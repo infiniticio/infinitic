@@ -36,6 +36,7 @@ import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import io.infinitic.dashboard.plugins.images.imagesPlugin
 import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
 import io.infinitic.pulsar.PulsarInfiniticAdmin
+import io.infinitic.transport.pulsar.Pulsar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -49,13 +50,12 @@ import org.apache.pulsar.client.admin.PulsarAdmin
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
 class DashboardServer(
     val pulsarAdmin: PulsarAdmin,
-    val tenant: String,
-    val namespace: String,
+    val pulsar: Pulsar,
     val port: Int,
-    val debug: Boolean
+    val debug: Boolean,
 ) {
     init {
-        Infinitic.admin = PulsarInfiniticAdmin(pulsarAdmin, tenant, namespace)
+        Infinitic.admin = PulsarInfiniticAdmin(pulsarAdmin, pulsar)
     }
 
     private val logger = KotlinLogging.logger {}
@@ -70,8 +70,7 @@ class DashboardServer(
         @JvmStatic
         fun from(pulsarAdmin: PulsarAdmin, dashboardConfig: DashboardConfig) = DashboardServer(
             pulsarAdmin,
-            dashboardConfig.pulsar.tenant,
-            dashboardConfig.pulsar.namespace,
+            dashboardConfig.pulsar,
             dashboardConfig.port,
             dashboardConfig.debug
         )
@@ -153,6 +152,6 @@ internal fun WebBrowser.routeTo(to: Panel) {
 
 internal object Infinitic {
     lateinit var admin: PulsarInfiniticAdmin
-    val topicName by lazy { admin.topicNamer }
+    val topicName by lazy { admin.topicName }
     val topics by lazy { admin.pulsarAdmin.topics() }
 }

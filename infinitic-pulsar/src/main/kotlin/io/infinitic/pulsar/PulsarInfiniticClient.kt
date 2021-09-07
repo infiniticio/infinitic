@@ -55,7 +55,7 @@ class PulsarInfiniticClient @JvmOverloads constructor(
 
     private val pulsarOutput by lazy {
         // create client's topic
-        pulsarAdmin.topics().createNonPartitionedTopic(topicClient)
+        pulsarAdmin.topics().createNonPartitionedTopicAsync(topicClient).join()
 
         // initialize response job handler
         val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)

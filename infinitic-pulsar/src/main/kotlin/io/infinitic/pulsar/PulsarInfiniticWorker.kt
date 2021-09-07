@@ -31,10 +31,12 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
 import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
 import io.infinitic.pulsar.topics.GlobalTopic
+import io.infinitic.pulsar.topics.TOPIC_WITH_DELAYS
 import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicName
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.topics.WorkflowTopic
+import io.infinitic.pulsar.topics.createInfiniticPartitionedTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startPulsarMetricsGlobalEngine
@@ -54,8 +56,11 @@ import io.infinitic.worker.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.launch
 import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.client.api.PulsarClient
+import kotlin.system.exitProcess
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 class PulsarInfiniticWorker private constructor(
@@ -96,6 +101,8 @@ class PulsarInfiniticWorker private constructor(
 
     val pulsar = workerConfig.pulsar!!
 
+    private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
+
     override val name by lazy {
         getProducerName(pulsarClient, pulsar.tenant, pulsar.namespace, workerConfig.name)
     }
@@ -123,42 +130,83 @@ class PulsarInfiniticWorker private constructor(
     override fun start() {
         // make sure all needed topics exists
         runningScope.future {
-            val namer = TopicName(pulsar.tenant, pulsar.namespace)
-            val topics = pulsarAdmin.topics().getPartitionedTopicList("${pulsar.tenant}/${pulsar.namespace}")
+            // check that tenant exists or create it
+            checkTenant()
+            // check that namespace exists or create it
+            checkNamespace()
+
+            val topicName = TopicName(pulsar.tenant, pulsar.namespace)
+
+            // check that namespace has valid policies or try to apply them at topic level
+            val topicPolicy = when (
+                with(pulsarAdmin.namespaces().getPolicies(fullNamespace)) {
+                    retention_policies == null ||
+                        (retention_policies.retentionTimeInMinutes == 0 && retention_policies.retentionSizeInMB == 0L) ||
+                        deduplicationEnabled == null || deduplicationEnabled == false
+                }
+            ) {
+                true -> pulsar.topicPolicy
+                false -> null
+            }
+
+            // get current existing topics
+            val topics = pulsarAdmin.topics().getPartitionedTopicList(fullNamespace)
 
             GlobalTopic.values().forEach {
-                val topicName = namer.of(it)
-                if (!topics.contains(topicName)) {
-                    logger.warn { "Creation of topic: $topicName" }
-                    pulsarAdmin.topics().createPartitionedTopicAsync(topicName, 1)
+                val name = topicName.of(it)
+                if (!topics.contains(name)) {
+                    logger.warn { "Creation of topic: $name" }
+                    launch {
+                        pulsarAdmin.topics().createInfiniticPartitionedTopic(
+                            name,
+                            it.prefix.contains(TOPIC_WITH_DELAYS),
+                            topicPolicy
+                        )
+                    }
                 }
             }
 
             for (workflow in workerConfig.workflows) {
-
                 WorkflowTopic.values().forEach {
-                    val topicName = namer.of(it, workflow.name)
-                    if (!topics.contains(topicName)) {
-                        logger.warn { "Creation of topic: $topicName" }
-                        pulsarAdmin.topics().createPartitionedTopicAsync(topicName, 1)
+                    val name = topicName.of(it, workflow.name)
+                    if (!topics.contains(name)) {
+                        logger.warn { "Creation of topic: $name" }
+                        launch {
+                            pulsarAdmin.topics().createInfiniticPartitionedTopic(
+                                name,
+                                it.prefix.contains(TOPIC_WITH_DELAYS),
+                                topicPolicy,
+                            )
+                        }
                     }
                 }
-
                 WorkflowTaskTopic.values().forEach {
-                    val topicName = namer.of(it, workflow.name)
-                    if (!topics.contains(topicName)) {
-                        logger.warn { "Creation of topic: $topicName" }
-                        pulsarAdmin.topics().createPartitionedTopicAsync(topicName, 1)
+                    val name = topicName.of(it, workflow.name)
+                    if (!topics.contains(name)) {
+                        logger.warn { "Creation of topic: $name" }
+                        launch {
+                            pulsarAdmin.topics().createInfiniticPartitionedTopic(
+                                name,
+                                it.prefix.contains(TOPIC_WITH_DELAYS),
+                                topicPolicy
+                            )
+                        }
                     }
                 }
             }
 
             for (task in workerConfig.tasks) {
                 TaskTopic.values().forEach {
-                    val topicName = namer.of(it, task.name)
-                    if (!topics.contains(topicName)) {
-                        logger.warn { "Creation of topic: $topicName" }
-                        pulsarAdmin.topics().createPartitionedTopicAsync(topicName, 1)
+                    val name = topicName.of(it, task.name)
+                    if (!topics.contains(name)) {
+                        logger.warn { "Creation of topic: $name" }
+                        launch {
+                            pulsarAdmin.topics().createInfiniticPartitionedTopic(
+                                name,
+                                it.prefix.contains(TOPIC_WITH_DELAYS),
+                                topicPolicy
+                            )
+                        }
                     }
                 }
             }
@@ -166,6 +214,37 @@ class PulsarInfiniticWorker private constructor(
 
         super.start()
     }
+
+    private fun checkTenant() {
+        try {
+            pulsarAdmin.tenants().getTenantInfo(pulsar.tenant)
+        } catch (e: PulsarAdminException.NotFoundException) {
+            logger.warn { "Tenant ${pulsar.tenant} does not exist." }
+            try {
+                PulsarInfiniticAdmin(pulsarAdmin, pulsar).createTenant()
+            } catch (e: Exception) {
+                logger.error(e) {}
+                close()
+                exitProcess(1)
+            }
+        }
+    }
+
+    private fun checkNamespace() {
+        try {
+            pulsarAdmin.namespaces().getPolicies(fullNamespace)
+        } catch (e: PulsarAdminException.NotFoundException) {
+            logger.warn { "Namespace $fullNamespace does not exist." }
+            try {
+                PulsarInfiniticAdmin(pulsarAdmin, pulsar).createNamespace()
+            } catch (e: Exception) {
+                logger.error(e) {}
+                close()
+                exitProcess(1)
+            }
+        }
+    }
+
     override fun CoroutineScope.startTaskExecutors(name: Name, concurrency: Int) {
         startPulsarTaskExecutors(
             name,

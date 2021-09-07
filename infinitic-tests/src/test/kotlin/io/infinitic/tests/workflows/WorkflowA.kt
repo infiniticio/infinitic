@@ -264,7 +264,7 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         var s3 = taskA.concat("1", "2")
 
         val d1 = dispatch(taskA) { reverse("ab") }
-        val d2 = timer(Duration.ofMillis(200))
+        val d2 = timer(Duration.ofMillis(2000))
         val d = (d1 or d2)
         if (d.status() != DeferredStatus.COMPLETED) {
             s3 = taskA.reverse("ab")

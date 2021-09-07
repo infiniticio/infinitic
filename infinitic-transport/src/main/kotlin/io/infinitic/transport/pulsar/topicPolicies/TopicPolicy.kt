@@ -23,16 +23,13 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.tests
+package io.infinitic.transport.pulsar.topicPolicies
 
-import io.infinitic.pulsar.PulsarInfiniticAdmin
-
-fun main() {
-    val admin = PulsarInfiniticAdmin.fromConfigResource("/pulsar.yml")
-
-    admin.setupPulsar()
-
-    admin.printTopicStats()
-
-    admin.close()
-}
+data class TopicPolicy(
+    val deduplicationEnabled: Boolean = true,
+    val retentionTimeInMinutes: Int = 60 * 24 * 7,
+    val retentionSizeInMB: Int = 1024,
+    val messageTTLInSeconds: Int = 3600 * 24 * 14,
+    val maxMessageSize: Int? = null,
+    val delayedDeliveryTickTimeMillis: Long = 1000
+)

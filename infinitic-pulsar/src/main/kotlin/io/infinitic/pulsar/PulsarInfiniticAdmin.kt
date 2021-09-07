@@ -25,27 +25,35 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.pulsar.admin.setupInfinitic
 import io.infinitic.pulsar.config.AdminConfig
 import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicName
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.topics.WorkflowTopic
-import kotlinx.coroutines.runBlocking
+import io.infinitic.transport.pulsar.Pulsar
+import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.common.policies.data.AutoTopicCreationOverride
+import org.apache.pulsar.common.policies.data.DelayedDeliveryPolicies
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import org.apache.pulsar.common.policies.data.Policies
+import org.apache.pulsar.common.policies.data.RetentionPolicies
+import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
+import org.apache.pulsar.common.policies.data.TenantInfo
+import org.apache.pulsar.common.policies.data.TopicType
 import java.io.Closeable
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
 
-class PulsarInfiniticAdmin @JvmOverloads constructor(
+class PulsarInfiniticAdmin constructor(
     val pulsarAdmin: PulsarAdmin,
-    val tenant: String,
-    val namespace: String,
-    val allowedClusters: Set<String>? = null,
-    val adminRoles: Set<String>? = null
+    val pulsar: Pulsar
 ) : Closeable {
-    val topicNamer = TopicName(tenant, namespace)
+    internal val logger = KotlinLogging.logger { }
+
+    val topicName = TopicName(pulsar.tenant, pulsar.namespace)
+
+    private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
     companion object {
         /**
@@ -54,10 +62,7 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
         @JvmStatic
         fun from(pulsarAdmin: PulsarAdmin, adminConfig: AdminConfig) = PulsarInfiniticAdmin(
             pulsarAdmin,
-            adminConfig.pulsar.tenant,
-            adminConfig.pulsar.namespace,
-            adminConfig.pulsar.allowedClusters,
-            adminConfig.pulsar.adminRoles
+            adminConfig.pulsar
         )
 
         /**
@@ -85,37 +90,100 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
     /**
      * Set of topics for current tenant and namespace
      */
-    val topics: Set<String>
-        get() = pulsarAdmin.topics().getPartitionedTopicList("$tenant/$namespace").toSet()
+    val topics: Set<String> by lazy {
+        pulsarAdmin.topics().getPartitionedTopicList(fullNamespace).toSet()
+    }
 
     /**
      * Set of task's names for current tenant and namespace
      */
-    val tasks: Set<String>
-        get() {
-            val tasks = mutableSetOf<String>()
-            val prefix = topicNamer.of(TaskTopic.EXECUTORS, "")
-            topics.map { if (it.startsWith(prefix)) tasks.add(it.removePrefix(prefix)) }
+    val tasks: Set<String> by lazy {
+        val tasks = mutableSetOf<String>()
+        val prefix = topicName.of(TaskTopic.EXECUTORS, "")
+        topics.map { if (it.startsWith(prefix)) tasks.add(it.removePrefix(prefix)) }
 
-            return tasks
-        }
+        tasks
+    }
 
     /**
      * Set of workflow's names for current tenant and namespace
      */
-    val workflows: Set<String>
-        get() {
-            val workflows = mutableSetOf<String>()
-            val prefix = topicNamer.of(WorkflowTaskTopic.EXECUTORS, "")
-            topics.map { if (it.startsWith(prefix)) workflows.add(it.removePrefix(prefix)) }
+    val workflows: Set<String> by lazy {
+        val workflows = mutableSetOf<String>()
+        val prefix = topicName.of(WorkflowTaskTopic.EXECUTORS, "")
+        topics.map { if (it.startsWith(prefix)) workflows.add(it.removePrefix(prefix)) }
 
-            return workflows
-        }
+        workflows
+    }
 
     /**
-     * Create Pulsar tenant and namespace if it does not exist, with adhoc settings
+     * Create Pulsar tenant
      */
-    fun setupPulsar() = runBlocking { pulsarAdmin.setupInfinitic(tenant, namespace, allowedClusters, adminRoles) }
+    fun createTenant() {
+        // create Infinitic tenant info
+        val tenantInfo = TenantInfo().apply {
+            // if authorizedClusters is not provided, default is all clusters
+            allowedClusters = when (pulsar.allowedClusters) {
+                null -> pulsarAdmin.clusters().clusters.toSet()
+                else -> pulsar.allowedClusters
+            }
+            // apply adminRoles if provided
+            if (adminRoles != null) this.adminRoles = adminRoles
+        }
+
+        // get all existing tenants
+        val tenants = pulsarAdmin.tenants().tenants
+
+        when (tenants.contains(pulsar.tenant)) {
+            true -> logger.info { "Skipping tenant creation: tenant ${pulsar.tenant} already exists" }
+            false -> {
+                logger.warn { "Creating tenant ${pulsar.tenant} with info $tenantInfo" }
+                pulsarAdmin.tenants().createTenant(pulsar.tenant, tenantInfo)
+            }
+        }
+    }
+
+    /**
+     * Create Pulsar namespace
+     */
+    fun createNamespace() {
+        // get all existing namespaces
+        val existingNamespaces = pulsarAdmin.namespaces().getNamespaces(pulsar.tenant)
+
+        when (existingNamespaces.contains(fullNamespace)) {
+            true -> logger.info { "Skipping namespace creation: namespace $fullNamespace already exists" }
+            false -> {
+                val policies = Policies().apply {
+                    // all new topics (especially tasks and workflows) are partitioned
+                    autoTopicCreationOverride = AutoTopicCreationOverride(
+                        false,
+                        TopicType.PARTITIONED.toString(),
+                        1
+                    )
+                    // schema are mandatory for producers/consumers
+                    schema_validation_enforced = true
+                    // this allow topic auto creation for task / workflows
+                    is_allow_auto_update_schema = true
+                    // Changes allowed: add optional fields, delete fields
+                    schema_compatibility_strategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE
+
+                    // default topic policies
+                    deduplicationEnabled = pulsar.topicPolicy.deduplicationEnabled
+                    retention_policies = RetentionPolicies(
+                        pulsar.topicPolicy.retentionTimeInMinutes,
+                        pulsar.topicPolicy.retentionSizeInMB
+                    )
+                    message_ttl_in_seconds = pulsar.topicPolicy.messageTTLInSeconds
+                    delayed_delivery_policies = DelayedDeliveryPolicies(
+                        pulsar.topicPolicy.delayedDeliveryTickTimeMillis,
+                        true
+                    )
+                }
+                logger.warn { "Creating namespace $fullNamespace with policies $policies" }
+                pulsarAdmin.namespaces().createNamespace(fullNamespace, policies)
+            }
+        }
+    }
 
     /**
      * Close Pulsar client
@@ -127,116 +195,60 @@ class PulsarInfiniticAdmin @JvmOverloads constructor(
      */
     fun printTopicStats() {
         // get list of all topics
-        val leftAlignFormat = "| %-42s | %11d | %10d | %10f |%n"
         val line = "+--------------------------------------------+-------------+------------+------------+%n"
         val title = "| Subscription                               | NbConsumers | MsgBacklog | MsgRateOut |%n"
 
         println("WORKFLOWS")
         println()
 
-        workflows.forEach {
-            println(it)
+        workflows.forEach { workflow ->
+            println(workflow)
 
             System.out.format(line)
             System.out.format(title)
             System.out.format(line)
 
-            // workflow-new engine
-            var topic = topicNamer.of(WorkflowTopic.ENGINE_NEW, it)
-            var stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
+            WorkflowTopic.values().forEach {
+                val topic = topicName.of(it, workflow)
+                val stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+                displayStatsLine(stats)
+            }
 
-            // workflow-existing engine
-            topic = topicNamer.of(WorkflowTopic.ENGINE_EXISTING, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // workflow-delays engine
-            topic = topicNamer.of(WorkflowTopic.DELAYS, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // tag workflow-new engine
-            topic = topicNamer.of(WorkflowTopic.TAG_NEW, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // tag workflow engine events
-            topic = topicNamer.of(WorkflowTopic.TAG_EXISTING, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // workflow tasks-new engine
-            topic = topicNamer.of(WorkflowTaskTopic.ENGINE_NEW, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // workflow tasks-existing engine
-            topic = topicNamer.of(WorkflowTaskTopic.ENGINE_EXISTING, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // workflow executors
-            topic = topicNamer.of(WorkflowTaskTopic.EXECUTORS, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
+            WorkflowTaskTopic.values().forEach {
+                val topic = topicName.of(it, workflow)
+                val stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+                displayStatsLine(stats)
+            }
 
             System.out.format(line)
-            println("")
+            println()
         }
 
         // print tasks stats
         println("TASKS")
         println()
 
-        tasks.forEach {
-            println(it)
+        tasks.forEach { task ->
+            println(task)
 
             System.out.format(line)
             System.out.format(title)
             System.out.format(line)
 
-            // task-new engine
-            var topic = topicNamer.of(TaskTopic.ENGINE_NEW, it)
-            var stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // task-existing engine
-            topic = topicNamer.of(TaskTopic.ENGINE_EXISTING, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // task delays engine
-            topic = topicNamer.of(TaskTopic.DELAYS, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // tag task-new engine
-            topic = topicNamer.of(TaskTopic.TAG_NEW, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // tag task-existing engine
-            topic = topicNamer.of(TaskTopic.TAG_EXISTING, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // task executors
-            topic = topicNamer.of(TaskTopic.EXECUTORS, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
-
-            // task metrics
-            topic = topicNamer.of(TaskTopic.METRICS, it)
-            stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
-            displayStatsLine(stats, leftAlignFormat)
+            TaskTopic.values().forEach {
+                val topic = topicName.of(it, task)
+                val stats = pulsarAdmin.topics().getPartitionedStats(topic, true, true, true)
+                displayStatsLine(stats)
+            }
 
             System.out.format(line)
-            println("")
+            println()
         }
     }
 
-    private fun displayStatsLine(stats: PartitionedTopicStats, format: String) {
+    private fun displayStatsLine(stats: PartitionedTopicStats) {
+        val format = "| %-42s | %11d | %10d | %10f |%n"
+
         stats.subscriptions.map {
             System.out.format(
                 format,

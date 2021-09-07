@@ -32,6 +32,7 @@ import io.infinitic.transport.pulsar.auth.AuthenticationOAuth2
 import io.infinitic.transport.pulsar.auth.AuthenticationSasl
 import io.infinitic.transport.pulsar.auth.AuthenticationToken
 import io.infinitic.transport.pulsar.auth.ClientAuthentication
+import io.infinitic.transport.pulsar.topicPolicies.TopicPolicy
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.AuthenticationFactory
 import org.apache.pulsar.client.api.PulsarClient
@@ -51,7 +52,8 @@ data class Pulsar(
     val tlsTrustStoreType: TlsTrustStoreType = TlsTrustStoreType.JKS,
     val tlsTrustStorePath: String? = null,
     val tlsTrustStorePassword: Masked? = null,
-    val authentication: ClientAuthentication? = null
+    val authentication: ClientAuthentication? = null,
+    val topicPolicy: TopicPolicy = TopicPolicy()
 ) {
     init {
         require(
@@ -80,7 +82,9 @@ data class Pulsar(
             .serviceHttpUrl(webServiceUrl)
             .allowTlsInsecureConnection(tlsAllowInsecureConnection)
             .enableTlsHostnameVerification(tlsEnableHostnameVerification)
-            .also { if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath) }
+            .also {
+                if (tlsTrustCertsFilePath != null) it.tlsTrustCertsFilePath(tlsTrustCertsFilePath)
+            }
             .also {
                 if (useKeyStoreTls) with(it) {
                     useKeyStoreTls(true)

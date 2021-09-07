@@ -25,6 +25,52 @@
 
 package io.infinitic.pulsar.topics
 
+import io.infinitic.pulsar.PulsarInfiniticAdmin
+import io.infinitic.transport.pulsar.topicPolicies.TopicPolicy
+import mu.KotlinLogging
+import org.apache.pulsar.client.admin.PulsarAdminException
+import org.apache.pulsar.client.admin.Topics
+import org.apache.pulsar.common.policies.data.DelayedDeliveryPolicies
+import org.apache.pulsar.common.policies.data.RetentionPolicies
+
 interface TopicSet {
     val prefix: String
+}
+
+internal fun Topics.createInfiniticPartitionedTopic(
+    topicName: String,
+    withDelay: Boolean,
+    topicPolicy: TopicPolicy?,
+) {
+    createPartitionedTopic(topicName, 1)
+
+    if (topicPolicy != null) {
+        try {
+            applyInfiniticTopicPolicy(topicName, topicPolicy, withDelay)
+        } catch (e: PulsarAdminException.NotAllowedException) {
+            val logger = KotlinLogging.logger(PulsarInfiniticAdmin::class.java.name)
+            logger.warn {
+                "Unable to set topic policy: " +
+                    "please check that your namespace has recommended settings" +
+                    " (see ${TopicPolicy::class.java.name})"
+            }
+        }
+    }
+}
+
+private fun Topics.applyInfiniticTopicPolicy(topicName: String, topicPolicy: TopicPolicy, withDelay: Boolean) {
+    enableDeduplication(topicName, topicPolicy.deduplicationEnabled)
+    setRetention(
+        topicName,
+        RetentionPolicies(
+            topicPolicy.retentionTimeInMinutes,
+            topicPolicy.retentionSizeInMB
+        )
+    )
+    setMessageTTL(topicName, topicPolicy.messageTTLInSeconds)
+    topicPolicy.maxMessageSize?.also { setMaxMessageSize(topicName, it) }
+    setDelayedDeliveryPolicy(
+        topicName,
+        DelayedDeliveryPolicies(topicPolicy.delayedDeliveryTickTimeMillis, withDelay)
+    )
 }

@@ -27,6 +27,8 @@ package io.infinitic.pulsar.topics
 
 import io.infinitic.common.clients.data.ClientName
 
+const val TOPIC_WITH_DELAYS = "delays"
+
 class TopicName(private val tenantName: String, private val namespace: String) {
 
     fun of(clientName: ClientName) = getPersistentTopicFullName("client: $clientName")

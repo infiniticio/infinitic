@@ -30,6 +30,6 @@ enum class WorkflowTopic(override val prefix: String) : TopicSet {
     TAG_EXISTING("workflow-tag-existing"),
     ENGINE_NEW("workflow-engine-new"),
     ENGINE_EXISTING("workflow-engine-existing"),
-    DELAYS("workflow-delays"),
+    DELAYS("workflow-$TOPIC_WITH_DELAYS"),
     METRICS("workflow-metrics")
 }
