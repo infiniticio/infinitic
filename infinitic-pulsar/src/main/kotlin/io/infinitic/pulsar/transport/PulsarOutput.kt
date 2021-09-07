@@ -199,7 +199,7 @@ class PulsarOutput(
             null -> topicName.of(TaskTopic.METRICS, "${message.taskName}")
             else -> throw thisShouldNotHappen()
         }
-        val key = null
+//        val key = null
         logger.debug { "topic: $topic, sendToMetricsPerName: $message" }
 //        pulsarMessageBuilder.sendPulsarMessage(topic, message.envelope(), key, zero)
     }

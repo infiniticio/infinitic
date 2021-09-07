@@ -49,13 +49,13 @@ class PulsarInfiniticAdmin constructor(
     val pulsarAdmin: PulsarAdmin,
     val pulsar: Pulsar
 ) : Closeable {
-    internal val logger = KotlinLogging.logger { }
-
     val topicName = TopicName(pulsar.tenant, pulsar.namespace)
 
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
     companion object {
+        internal val logger = KotlinLogging.logger { }
+
         /**
          * Create InfiniticAdmin from a custom PulsarAdmin and an AdminConfig instance
          */

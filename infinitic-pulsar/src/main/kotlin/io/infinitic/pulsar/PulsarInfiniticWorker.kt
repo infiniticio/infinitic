@@ -36,7 +36,6 @@ import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicName
 import io.infinitic.pulsar.topics.WorkflowTaskTopic
 import io.infinitic.pulsar.topics.WorkflowTopic
-import io.infinitic.pulsar.topics.createInfiniticPartitionedTopic
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startPulsarMetricsGlobalEngine
@@ -51,15 +50,22 @@ import io.infinitic.pulsar.workers.startPulsarWorkflowTagEngines
 import io.infinitic.tags.tasks.storage.TaskTagStorage
 import io.infinitic.tags.workflows.storage.WorkflowTagStorage
 import io.infinitic.tasks.engine.storage.TaskStateStorage
+import io.infinitic.transport.pulsar.topicPolicies.TopicPolicy
 import io.infinitic.worker.InfiniticWorker
 import io.infinitic.worker.config.WorkerConfig
 import io.infinitic.workflows.engine.storage.WorkflowStateStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
+import org.apache.pulsar.client.admin.Namespaces
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
+import org.apache.pulsar.client.admin.Tenants
+import org.apache.pulsar.client.admin.Topics
 import org.apache.pulsar.client.api.PulsarClient
+import org.apache.pulsar.common.policies.data.DelayedDeliveryPolicies
+import org.apache.pulsar.common.policies.data.Policies
+import org.apache.pulsar.common.policies.data.RetentionPolicies
 import kotlin.system.exitProcess
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -127,33 +133,117 @@ class PulsarInfiniticWorker private constructor(
         pulsarAdmin.close()
     }
 
+    /**
+     * Start worker
+     */
     override fun start() {
         // make sure all needed topics exists
         runningScope.future {
-            // check that tenant exists or create it
-            checkTenant()
-            // check that namespace exists or create it
-            checkNamespace()
-
-            val topicName = TopicName(pulsar.tenant, pulsar.namespace)
-
-            // check that namespace has valid policies or try to apply them at topic level
-            val topicPolicy = when (
-                with(pulsarAdmin.namespaces().getPolicies(fullNamespace)) {
-                    retention_policies == null ||
-                        (retention_policies.retentionTimeInMinutes == 0 && retention_policies.retentionSizeInMB == 0L) ||
-                        deduplicationEnabled == null || deduplicationEnabled == false
+            try {
+                // check that tenant exists or create it
+                pulsarAdmin.tenants().checkOrCreateTenant()
+                // check that namespace exists or create it
+                pulsarAdmin.namespaces().checkOrCreateNamespace()
+                // check that topics exist or create them
+                checkOrCreateTopics()
+            } catch (e: Exception) {
+                logger.error(e) {
+                    when (e) {
+                        is PulsarAdminException.NotAuthorizedException -> "Not authorized - check your credentials"
+                        else -> Unit
+                    }
                 }
-            ) {
-                true -> pulsar.topicPolicy
-                false -> null
+                close()
+                exitProcess(1)
             }
+        }.join()
 
-            // get current existing topics
-            val topics = pulsarAdmin.topics().getPartitionedTopicList(fullNamespace)
+        super.start()
+    }
 
-            GlobalTopic.values().forEach {
-                val name = topicName.of(it)
+    private fun Tenants.checkOrCreateTenant() {
+        try {
+            getTenantInfo(pulsar.tenant)
+        } catch (e: PulsarAdminException.NotFoundException) {
+            logger.warn { "Tenant ${pulsar.tenant} does not exist." }
+            try {
+                PulsarInfiniticAdmin(pulsarAdmin, pulsar).createTenant()
+            } catch (e: Exception) {
+                logger.error(e) {}
+                close()
+                exitProcess(1)
+            }
+        } catch (e: PulsarAdminException.NotAllowedException) {
+            logger.warn { "Not allowed to get info for tenant ${pulsar.tenant}" }
+        }
+    }
+
+    private fun Namespaces.checkOrCreateNamespace() {
+        try {
+            getPolicies(fullNamespace)
+        } catch (e: PulsarAdminException.NotFoundException) {
+            logger.warn { "Namespace $fullNamespace does not exist." }
+            try {
+                PulsarInfiniticAdmin(pulsarAdmin, pulsar).createNamespace()
+            } catch (e: Exception) {
+                logger.error(e) {}
+                close()
+                exitProcess(1)
+            }
+        } catch (e: PulsarAdminException.NotAllowedException) {
+            logger.warn { "Not allowed to get info for namespace $fullNamespace" }
+        }
+    }
+
+    private fun CoroutineScope.checkOrCreateTopics() {
+        val topicName = TopicName(pulsar.tenant, pulsar.namespace)
+
+        // check that namespace has valid policies or try to apply them at topic level
+        val p = pulsarAdmin.namespaces().getPolicies()
+
+        val topicPolicy = when (
+            p?.retention_policies == null ||
+                (p.retention_policies.retentionTimeInMinutes == 0 && p.retention_policies.retentionSizeInMB == 0L) ||
+                p.deduplicationEnabled == null ||
+                p.deduplicationEnabled == false
+        ) {
+            true -> pulsar.topicPolicy
+            false -> null
+        }
+
+        // get current existing topics
+        val topics = pulsarAdmin.topics().getPartitionedTopicList()
+
+        GlobalTopic.values().forEach {
+            val name = topicName.of(it)
+            if (!topics.contains(name)) {
+                logger.warn { "Creation of topic: $name" }
+                launch {
+                    pulsarAdmin.topics().createInfiniticPartitionedTopic(
+                        name,
+                        it.prefix.contains(TOPIC_WITH_DELAYS),
+                        topicPolicy
+                    )
+                }
+            }
+        }
+
+        for (workflow in workerConfig.workflows) {
+            WorkflowTopic.values().forEach {
+                val name = topicName.of(it, workflow.name)
+                if (!topics.contains(name)) {
+                    logger.warn { "Creation of topic: $name" }
+                    launch {
+                        pulsarAdmin.topics().createInfiniticPartitionedTopic(
+                            name,
+                            it.prefix.contains(TOPIC_WITH_DELAYS),
+                            topicPolicy,
+                        )
+                    }
+                }
+            }
+            WorkflowTaskTopic.values().forEach {
+                val name = topicName.of(it, workflow.name)
                 if (!topics.contains(name)) {
                     logger.warn { "Creation of topic: $name" }
                     launch {
@@ -165,82 +255,86 @@ class PulsarInfiniticWorker private constructor(
                     }
                 }
             }
+        }
 
-            for (workflow in workerConfig.workflows) {
-                WorkflowTopic.values().forEach {
-                    val name = topicName.of(it, workflow.name)
-                    if (!topics.contains(name)) {
-                        logger.warn { "Creation of topic: $name" }
-                        launch {
-                            pulsarAdmin.topics().createInfiniticPartitionedTopic(
-                                name,
-                                it.prefix.contains(TOPIC_WITH_DELAYS),
-                                topicPolicy,
-                            )
-                        }
+        for (task in workerConfig.tasks) {
+            TaskTopic.values().forEach {
+                val name = topicName.of(it, task.name)
+                if (!topics.contains(name)) {
+                    logger.warn { "Creation of topic: $name" }
+                    launch {
+                        pulsarAdmin.topics().createInfiniticPartitionedTopic(
+                            name,
+                            it.prefix.contains(TOPIC_WITH_DELAYS),
+                            topicPolicy
+                        )
                     }
                 }
-                WorkflowTaskTopic.values().forEach {
-                    val name = topicName.of(it, workflow.name)
-                    if (!topics.contains(name)) {
-                        logger.warn { "Creation of topic: $name" }
-                        launch {
-                            pulsarAdmin.topics().createInfiniticPartitionedTopic(
-                                name,
-                                it.prefix.contains(TOPIC_WITH_DELAYS),
-                                topicPolicy
-                            )
-                        }
-                    }
-                }
-            }
-
-            for (task in workerConfig.tasks) {
-                TaskTopic.values().forEach {
-                    val name = topicName.of(it, task.name)
-                    if (!topics.contains(name)) {
-                        logger.warn { "Creation of topic: $name" }
-                        launch {
-                            pulsarAdmin.topics().createInfiniticPartitionedTopic(
-                                name,
-                                it.prefix.contains(TOPIC_WITH_DELAYS),
-                                topicPolicy
-                            )
-                        }
-                    }
-                }
-            }
-        }.join()
-
-        super.start()
-    }
-
-    private fun checkTenant() {
-        try {
-            pulsarAdmin.tenants().getTenantInfo(pulsar.tenant)
-        } catch (e: PulsarAdminException.NotFoundException) {
-            logger.warn { "Tenant ${pulsar.tenant} does not exist." }
-            try {
-                PulsarInfiniticAdmin(pulsarAdmin, pulsar).createTenant()
-            } catch (e: Exception) {
-                logger.error(e) {}
-                close()
-                exitProcess(1)
             }
         }
     }
 
-    private fun checkNamespace() {
+    private fun Namespaces.getPolicies(): Policies? {
+        return try {
+            getPolicies(fullNamespace)
+        } catch (e: PulsarAdminException.NotAllowedException) {
+            logger.warn { "Not allowed to get policies for namespace $fullNamespace." }
+            null
+        }
+    }
+
+    private fun Topics.getPartitionedTopicList(): MutableList<String> {
+        return try {
+            getPartitionedTopicList(fullNamespace)
+        } catch (e: PulsarAdminException.NotAllowedException) {
+            logger.warn { "Not allowed to get list of topics for  $fullNamespace." }
+            mutableListOf()
+        }
+    }
+
+    private fun Topics.createInfiniticPartitionedTopic(
+        topicName: String,
+        withDelay: Boolean,
+        topicPolicy: TopicPolicy?,
+    ) {
         try {
-            pulsarAdmin.namespaces().getPolicies(fullNamespace)
-        } catch (e: PulsarAdminException.NotFoundException) {
-            logger.warn { "Namespace $fullNamespace does not exist." }
-            try {
-                PulsarInfiniticAdmin(pulsarAdmin, pulsar).createNamespace()
-            } catch (e: Exception) {
-                logger.error(e) {}
-                close()
-                exitProcess(1)
+            createPartitionedTopic(topicName, 1)
+            // apply policy, if provided
+            if (topicPolicy != null) applyInfiniticTopicPolicy(topicName, withDelay, topicPolicy)
+        } catch (e: PulsarAdminException.ConflictException) {
+            logger.warn { "Topic already exists: $topicName" }
+        } catch (e: Exception) {
+            logger.error(e) { "Unable to create topic $topicName - check your settings" }
+            close()
+            exitProcess(1)
+        }
+    }
+
+    private fun Topics.applyInfiniticTopicPolicy(
+        topicName: String,
+        withDelay: Boolean,
+        topicPolicy: TopicPolicy
+    ) {
+        try {
+            enableDeduplication(topicName, topicPolicy.deduplicationEnabled)
+            setRetention(
+                topicName,
+                RetentionPolicies(
+                    topicPolicy.retentionTimeInMinutes,
+                    topicPolicy.retentionSizeInMB
+                )
+            )
+            setMessageTTL(topicName, topicPolicy.messageTTLInSeconds)
+            topicPolicy.maxMessageSize?.also { setMaxMessageSize(topicName, it) }
+            setDelayedDeliveryPolicy(
+                topicName,
+                DelayedDeliveryPolicies(topicPolicy.delayedDeliveryTickTimeMillis, withDelay)
+            )
+        } catch (e: PulsarAdminException.NotAllowedException) {
+            logger.warn {
+                "Unable to set policies for topic $topicName - " +
+                    "please check that namespace $fullNamespace has recommended settings" +
+                    " (e.g. see default ${TopicPolicy::class.java.name})"
             }
         }
     }
