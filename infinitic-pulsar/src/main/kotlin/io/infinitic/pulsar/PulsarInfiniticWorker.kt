@@ -162,15 +162,12 @@ class PulsarInfiniticWorker private constructor(
             getTenantInfo(pulsar.tenant)
         } catch (e: PulsarAdminException.NotFoundException) {
             logger.warn { "Tenant ${pulsar.tenant} does not exist." }
-            try {
-                PulsarInfiniticAdmin(pulsarAdmin, pulsar).createTenant()
-            } catch (e: Exception) {
-                logger.error(e) {}
-                close()
-                exitProcess(1)
-            }
+            // create tenant
+            PulsarInfiniticAdmin(pulsarAdmin, pulsar).createTenant()
         } catch (e: PulsarAdminException.NotAllowedException) {
-            logger.warn { "Not allowed to get info for tenant ${pulsar.tenant}" }
+            logger.warn { "Not allowed to get info for tenant ${pulsar.tenant}: ${e.message}" }
+        } catch (e: PulsarAdminException.NotAuthorizedException) {
+            logger.warn { "Not authorized to get info for tenant ${pulsar.tenant}: ${e.message}" }
         }
     }
 
@@ -179,15 +176,12 @@ class PulsarInfiniticWorker private constructor(
             getPolicies(fullNamespace)
         } catch (e: PulsarAdminException.NotFoundException) {
             logger.warn { "Namespace $fullNamespace does not exist." }
-            try {
-                PulsarInfiniticAdmin(pulsarAdmin, pulsar).createNamespace()
-            } catch (e: Exception) {
-                logger.error(e) {}
-                close()
-                exitProcess(1)
-            }
+            // create namespace
+            PulsarInfiniticAdmin(pulsarAdmin, pulsar).createNamespace()
         } catch (e: PulsarAdminException.NotAllowedException) {
-            logger.warn { "Not allowed to get info for namespace $fullNamespace" }
+            logger.warn { "Not allowed to get policies for namespace $fullNamespace: ${e.message}" }
+        } catch (e: PulsarAdminException.NotAuthorizedException) {
+            logger.warn { "Not authorized to get policies for namespace $fullNamespace: ${e.message}" }
         }
     }
 
@@ -247,7 +241,10 @@ class PulsarInfiniticWorker private constructor(
             logger.warn { "Current namespace policies: $policies" }
             policies
         } catch (e: PulsarAdminException.NotAllowedException) {
-            logger.warn { "Not allowed to get policies for namespace $fullNamespace." }
+            logger.warn { "Not allowed to get policies for namespace $fullNamespace: ${e.message}" }
+            null
+        } catch (e: PulsarAdminException.NotAuthorizedException) {
+            logger.warn { "Not authorized to get policies for namespace $fullNamespace: ${e.message}" }
             null
         }
     }
@@ -256,7 +253,10 @@ class PulsarInfiniticWorker private constructor(
         return try {
             getPartitionedTopicList(fullNamespace)
         } catch (e: PulsarAdminException.NotAllowedException) {
-            logger.warn { "Not allowed to get list of topics for  $fullNamespace." }
+            logger.warn { "Not allowed to get list of topics for $fullNamespace: ${e.message}" }
+            mutableListOf()
+        } catch (e: PulsarAdminException.NotAuthorizedException) {
+            logger.warn { "Not authorized to get list of topics for $fullNamespace: ${e.message}" }
             mutableListOf()
         }
     }
@@ -266,10 +266,6 @@ class PulsarInfiniticWorker private constructor(
             createPartitionedTopic(topicName, 1)
         } catch (e: PulsarAdminException.ConflictException) {
             logger.warn { "Topic already exists: $topicName" }
-        } catch (e: Exception) {
-            logger.error(e) { "Unable to create topic $topicName - check your settings" }
-            close()
-            exitProcess(1)
         }
     }
 
