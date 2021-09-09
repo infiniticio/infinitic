@@ -61,7 +61,6 @@ import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.client.admin.Tenants
 import org.apache.pulsar.client.admin.Topics
 import org.apache.pulsar.client.api.PulsarClient
-import org.apache.pulsar.common.policies.data.Policies
 import kotlin.system.exitProcess
 
 @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -102,6 +101,8 @@ class PulsarInfiniticWorker private constructor(
     }
 
     val pulsar = workerConfig.pulsar!!
+
+    val infiniticAdmin by lazy { PulsarInfiniticAdmin(pulsarAdmin, pulsar) }
 
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
 
@@ -159,11 +160,7 @@ class PulsarInfiniticWorker private constructor(
 
     private fun Tenants.checkOrCreateTenant() {
         try {
-            getTenantInfo(pulsar.tenant)
-        } catch (e: PulsarAdminException.NotFoundException) {
-            logger.warn { "Tenant ${pulsar.tenant} does not exist." }
-            // create tenant
-            PulsarInfiniticAdmin(pulsarAdmin, pulsar).createTenant()
+            infiniticAdmin.createTenant()
         } catch (e: PulsarAdminException.NotAllowedException) {
             logger.warn { "Not allowed to get info for tenant ${pulsar.tenant}: ${e.message}" }
         } catch (e: PulsarAdminException.NotAuthorizedException) {
@@ -172,16 +169,25 @@ class PulsarInfiniticWorker private constructor(
     }
 
     private fun Namespaces.checkOrCreateNamespace() {
-        try {
-            getPolicies(fullNamespace)
-        } catch (e: PulsarAdminException.NotFoundException) {
-            logger.warn { "Namespace $fullNamespace does not exist." }
-            // create namespace
-            PulsarInfiniticAdmin(pulsarAdmin, pulsar).createNamespace()
+        val existing = try {
+            ! infiniticAdmin.createNamespace()
         } catch (e: PulsarAdminException.NotAllowedException) {
             logger.warn { "Not allowed to get policies for namespace $fullNamespace: ${e.message}" }
+            true
         } catch (e: PulsarAdminException.NotAuthorizedException) {
             logger.warn { "Not authorized to get policies for namespace $fullNamespace: ${e.message}" }
+            true
+        }
+
+        if (existing) {
+            // already existing namespace
+            try {
+                if (pulsar.policies.forceUpdate) infiniticAdmin.updatePolicies()
+            } catch (e: PulsarAdminException.NotAllowedException) {
+                logger.warn { "Not allowed to set policies for namespace $fullNamespace: ${e.message}" }
+            } catch (e: PulsarAdminException.NotAuthorizedException) {
+                logger.warn { "Not authorized to set policies for namespace $fullNamespace: ${e.message}" }
+            }
         }
     }
 
@@ -194,7 +200,7 @@ class PulsarInfiniticWorker private constructor(
         GlobalTopic.values().forEach {
             val name = topicName.of(it)
             if (!topics.contains(name)) {
-                logger.warn { "Creation of topic: $name" }
+                logger.info { "Creation of topic: $name" }
                 launch {
                     pulsarAdmin.topics().createInfiniticPartitionedTopic(name)
                 }
@@ -205,7 +211,7 @@ class PulsarInfiniticWorker private constructor(
             WorkflowTopic.values().forEach {
                 val name = topicName.of(it, workflow.name)
                 if (!topics.contains(name)) {
-                    logger.warn { "Creation of topic: $name" }
+                    logger.info { "Creation of topic: $name" }
                     launch {
                         pulsarAdmin.topics().createInfiniticPartitionedTopic(name)
                     }
@@ -214,7 +220,7 @@ class PulsarInfiniticWorker private constructor(
             WorkflowTaskTopic.values().forEach {
                 val name = topicName.of(it, workflow.name)
                 if (!topics.contains(name)) {
-                    logger.warn { "Creation of topic: $name" }
+                    logger.info { "Creation of topic: $name" }
                     launch {
                         pulsarAdmin.topics().createInfiniticPartitionedTopic(name)
                     }
@@ -226,26 +232,12 @@ class PulsarInfiniticWorker private constructor(
             TaskTopic.values().forEach {
                 val name = topicName.of(it, task.name)
                 if (!topics.contains(name)) {
-                    logger.warn { "Creation of topic: $name" }
+                    logger.info { "Creation of topic: $name" }
                     launch {
                         pulsarAdmin.topics().createInfiniticPartitionedTopic(name)
                     }
                 }
             }
-        }
-    }
-
-    private fun Namespaces.getPolicies(): Policies? {
-        return try {
-            val policies = getPolicies(fullNamespace)
-            logger.warn { "Current namespace policies: $policies" }
-            policies
-        } catch (e: PulsarAdminException.NotAllowedException) {
-            logger.warn { "Not allowed to get policies for namespace $fullNamespace: ${e.message}" }
-            null
-        } catch (e: PulsarAdminException.NotAuthorizedException) {
-            logger.warn { "Not authorized to get policies for namespace $fullNamespace: ${e.message}" }
-            null
         }
     }
 

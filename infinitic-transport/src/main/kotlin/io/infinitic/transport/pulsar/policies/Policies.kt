@@ -23,9 +23,10 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.transport.pulsar.topicPolicies
+package io.infinitic.transport.pulsar.policies
 
-data class TopicPolicy(
+data class Policies(
+    val forceUpdate: Boolean = false,
     val deduplicationEnabled: Boolean = true,
     val retentionTimeInMinutes: Int = 60 * 24 * 7,
     val retentionSizeInMB: Int = 1024,

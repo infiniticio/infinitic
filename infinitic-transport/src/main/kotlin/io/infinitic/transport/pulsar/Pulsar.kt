@@ -32,7 +32,7 @@ import io.infinitic.transport.pulsar.auth.AuthenticationOAuth2
 import io.infinitic.transport.pulsar.auth.AuthenticationSasl
 import io.infinitic.transport.pulsar.auth.AuthenticationToken
 import io.infinitic.transport.pulsar.auth.ClientAuthentication
-import io.infinitic.transport.pulsar.topicPolicies.TopicPolicy
+import io.infinitic.transport.pulsar.policies.Policies
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.AuthenticationFactory
 import org.apache.pulsar.client.api.PulsarClient
@@ -53,7 +53,7 @@ data class Pulsar(
     val tlsTrustStorePath: String? = null,
     val tlsTrustStorePassword: Masked? = null,
     val authentication: ClientAuthentication? = null,
-    val topicPolicy: TopicPolicy = TopicPolicy()
+    val policies: Policies = Policies()
 ) {
     init {
         require(

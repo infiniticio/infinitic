@@ -33,6 +33,7 @@ import io.infinitic.pulsar.topics.WorkflowTopic
 import io.infinitic.transport.pulsar.Pulsar
 import mu.KotlinLogging
 import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.common.policies.data.AutoTopicCreationOverride
 import org.apache.pulsar.common.policies.data.DelayedDeliveryPolicies
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
@@ -52,6 +53,47 @@ class PulsarInfiniticAdmin constructor(
     val topicName = TopicName(pulsar.tenant, pulsar.namespace)
 
     private val fullNamespace = "${pulsar.tenant}/${pulsar.namespace}"
+
+    private val policies: Policies by lazy {
+        Policies().apply {
+            // all new topics (especially tasks and workflows) are partitioned
+            autoTopicCreationOverride = AutoTopicCreationOverride(
+                false,
+                TopicType.PARTITIONED.toString(),
+                1
+            )
+            // schema are mandatory for producers/consumers
+            schema_validation_enforced = true
+            // this allow topic auto creation for task / workflows
+            is_allow_auto_update_schema = true
+            // Changes allowed: add optional fields, delete fields
+            schema_compatibility_strategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE
+
+            // default topic policies
+            deduplicationEnabled = pulsar.policies.deduplicationEnabled
+            retention_policies = RetentionPolicies(
+                pulsar.policies.retentionTimeInMinutes,
+                pulsar.policies.retentionSizeInMB
+            )
+            message_ttl_in_seconds = pulsar.policies.messageTTLInSeconds
+            delayed_delivery_policies = DelayedDeliveryPolicies(
+                pulsar.policies.delayedDeliveryTickTimeMillis,
+                true
+            )
+        }
+    }
+
+    private val tenantInfo by lazy {
+        TenantInfo().apply {
+            // if authorizedClusters is not provided, default is all clusters
+            allowedClusters = when (pulsar.allowedClusters) {
+                null -> pulsarAdmin.clusters().clusters.toSet()
+                else -> pulsar.allowedClusters
+            }
+            // apply adminRoles if provided
+            if (adminRoles != null) this.adminRoles = adminRoles
+        }
+    }
 
     companion object {
         internal val logger = KotlinLogging.logger { }
@@ -120,24 +162,12 @@ class PulsarInfiniticAdmin constructor(
      * Create Pulsar tenant
      */
     fun createTenant() {
-        // create Infinitic tenant info
-        val tenantInfo = TenantInfo().apply {
-            // if authorizedClusters is not provided, default is all clusters
-            allowedClusters = when (pulsar.allowedClusters) {
-                null -> pulsarAdmin.clusters().clusters.toSet()
-                else -> pulsar.allowedClusters
-            }
-            // apply adminRoles if provided
-            if (adminRoles != null) this.adminRoles = adminRoles
-        }
-
-        // get all existing tenants
-        val tenants = pulsarAdmin.tenants().tenants
-
-        when (tenants.contains(pulsar.tenant)) {
-            true -> logger.info { "Skipping tenant creation: tenant ${pulsar.tenant} already exists" }
-            false -> {
-                logger.warn { "Creating tenant ${pulsar.tenant} with info $tenantInfo" }
+        with(pulsarAdmin.tenants()) {
+            try {
+                logger.info { "checking if tenant ${pulsar.tenant} already exists by requesting its info" }
+                getTenantInfo(pulsar.tenant)
+                logger.warn { "Tenant ${pulsar.tenant} already exists" }
+            } catch (e: PulsarAdminException.NotFoundException) {
                 pulsarAdmin.tenants().createTenant(pulsar.tenant, tenantInfo)
             }
         }
@@ -145,43 +175,38 @@ class PulsarInfiniticAdmin constructor(
 
     /**
      * Create Pulsar namespace
+     * Returns a boolean indicating if the namespace was actually created
      */
-    fun createNamespace() {
-        // get all existing namespaces
-        val existingNamespaces = pulsarAdmin.namespaces().getNamespaces(pulsar.tenant)
+    fun createNamespace(): Boolean = with(pulsarAdmin.namespaces()) {
+        try {
+            logger.info { "checking if namespace $fullNamespace already exists by requesting its policies" }
+            getPolicies(fullNamespace)
+            logger.warn { "Namespace $fullNamespace already exists" }
+            false
+        } catch (e: PulsarAdminException.NotFoundException) {
+            pulsarAdmin.namespaces().createNamespace(fullNamespace, policies)
+            true
+        }
+    }
 
-        when (existingNamespaces.contains(fullNamespace)) {
-            true -> logger.info { "Skipping namespace creation: namespace $fullNamespace already exists" }
-            false -> {
-                val policies = Policies().apply {
-                    // all new topics (especially tasks and workflows) are partitioned
-                    autoTopicCreationOverride = AutoTopicCreationOverride(
-                        false,
-                        TopicType.PARTITIONED.toString(),
-                        1
-                    )
-                    // schema are mandatory for producers/consumers
-                    schema_validation_enforced = true
-                    // this allow topic auto creation for task / workflows
-                    is_allow_auto_update_schema = true
-                    // Changes allowed: add optional fields, delete fields
-                    schema_compatibility_strategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE
-
-                    // default topic policies
-                    deduplicationEnabled = pulsar.topicPolicy.deduplicationEnabled
-                    retention_policies = RetentionPolicies(
-                        pulsar.topicPolicy.retentionTimeInMinutes,
-                        pulsar.topicPolicy.retentionSizeInMB
-                    )
-                    message_ttl_in_seconds = pulsar.topicPolicy.messageTTLInSeconds
-                    delayed_delivery_policies = DelayedDeliveryPolicies(
-                        pulsar.topicPolicy.delayedDeliveryTickTimeMillis,
-                        true
-                    )
-                }
-                logger.warn { "Creating namespace $fullNamespace with policies $policies" }
-                pulsarAdmin.namespaces().createNamespace(fullNamespace, policies)
+    /**
+     * Update policies for namespace
+     */
+    fun updatePolicies() {
+        with(pulsarAdmin.namespaces()) {
+            setAutoTopicCreation(fullNamespace, policies.autoTopicCreationOverride)
+            setSchemaValidationEnforced(fullNamespace, policies.schema_validation_enforced)
+            setIsAllowAutoUpdateSchema(fullNamespace, policies.is_allow_auto_update_schema)
+            setSchemaCompatibilityStrategy(fullNamespace, policies.schema_compatibility_strategy)
+            setDeduplicationStatus(fullNamespace, policies.deduplicationEnabled)
+            try {
+                setRetention(fullNamespace, policies.retention_policies)
+            } catch (e: PulsarAdminException.PreconditionFailedException) {
+                // TODO check why
+                logger.warn { "Failing to update namespace's retention policies" }
             }
+            setNamespaceMessageTTL(fullNamespace, policies.message_ttl_in_seconds)
+            setDelayedDeliveryMessages(fullNamespace, policies.delayed_delivery_policies)
         }
     }
 
