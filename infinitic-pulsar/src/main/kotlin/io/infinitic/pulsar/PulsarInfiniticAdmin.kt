@@ -160,26 +160,29 @@ class PulsarInfiniticAdmin constructor(
 
     /**
      * Create Pulsar tenant
+     *
+     * Returns a boolean indicating if the tenant was actually created
      */
-    fun createTenant() {
-        with(pulsarAdmin.tenants()) {
-            try {
-                logger.info { "checking if tenant ${pulsar.tenant} already exists by requesting its info" }
-                getTenantInfo(pulsar.tenant)
-                logger.warn { "Tenant ${pulsar.tenant} already exists" }
-            } catch (e: PulsarAdminException.NotFoundException) {
-                pulsarAdmin.tenants().createTenant(pulsar.tenant, tenantInfo)
-            }
+    fun createTenant(): Boolean = with(pulsarAdmin.tenants()) {
+        try {
+            logger.info { "Checking if tenant ${pulsar.tenant} already exists by requesting its info" }
+            getTenantInfo(pulsar.tenant)
+            logger.warn { "Tenant ${pulsar.tenant} already exists" }
+            false
+        } catch (e: PulsarAdminException.NotFoundException) {
+            pulsarAdmin.tenants().createTenant(pulsar.tenant, tenantInfo)
+            true
         }
     }
 
     /**
      * Create Pulsar namespace
+     *
      * Returns a boolean indicating if the namespace was actually created
      */
     fun createNamespace(): Boolean = with(pulsarAdmin.namespaces()) {
         try {
-            logger.info { "checking if namespace $fullNamespace already exists by requesting its policies" }
+            logger.info { "Checking if namespace $fullNamespace already exists by requesting its policies" }
             getPolicies(fullNamespace)
             logger.warn { "Namespace $fullNamespace already exists" }
             false
@@ -194,19 +197,46 @@ class PulsarInfiniticAdmin constructor(
      */
     fun updatePolicies() {
         with(pulsarAdmin.namespaces()) {
-            setAutoTopicCreation(fullNamespace, policies.autoTopicCreationOverride)
-            setSchemaValidationEnforced(fullNamespace, policies.schema_validation_enforced)
-            setIsAllowAutoUpdateSchema(fullNamespace, policies.is_allow_auto_update_schema)
-            setSchemaCompatibilityStrategy(fullNamespace, policies.schema_compatibility_strategy)
-            setDeduplicationStatus(fullNamespace, policies.deduplicationEnabled)
+            try {
+                setAutoTopicCreation(fullNamespace, policies.autoTopicCreationOverride)
+            } catch (e: PulsarAdminException) {
+                logger.warn { "Failing to update autoTopicCreationOverride policy: ${e.message}" }
+            }
+            try {
+                setSchemaValidationEnforced(fullNamespace, policies.schema_validation_enforced)
+            } catch (e: PulsarAdminException) {
+                logger.warn { "Failing to update schema_validation_enforced policy: ${e.message}" }
+            }
+            try {
+                setIsAllowAutoUpdateSchema(fullNamespace, policies.is_allow_auto_update_schema)
+            } catch (e: PulsarAdminException) {
+                logger.warn { "Failing to update is_allow_auto_update_schema policy: ${e.message}" }
+            }
+            try {
+                setSchemaCompatibilityStrategy(fullNamespace, policies.schema_compatibility_strategy)
+            } catch (e: PulsarAdminException) {
+                logger.warn { "Failing to update schema_compatibility_strategy policy: ${e.message}" }
+            }
+            try {
+                setDeduplicationStatus(fullNamespace, policies.deduplicationEnabled)
+            } catch (e: PulsarAdminException) {
+                logger.warn { "Failing to update deduplicationEnabled policy: ${e.message}" }
+            }
             try {
                 setRetention(fullNamespace, policies.retention_policies)
-            } catch (e: PulsarAdminException.PreconditionFailedException) {
-                // TODO check why
-                logger.warn { "Failing to update namespace's retention policies" }
+            } catch (e: PulsarAdminException) {
+                logger.warn { "Failing to update namespace's retention_policies: ${e.message}" }
             }
-            setNamespaceMessageTTL(fullNamespace, policies.message_ttl_in_seconds)
-            setDelayedDeliveryMessages(fullNamespace, policies.delayed_delivery_policies)
+            try {
+                setNamespaceMessageTTL(fullNamespace, policies.message_ttl_in_seconds)
+            } catch (e: PulsarAdminException) {
+                logger.warn { "Failing to update namespace's message_ttl_in_seconds policy: ${e.message}" }
+            }
+            try {
+                setDelayedDeliveryMessages(fullNamespace, policies.delayed_delivery_policies)
+            } catch (e: PulsarAdminException) {
+                logger.warn { "Failing to update namespace's delayed_delivery_policies policy: ${e.message}" }
+            }
         }
     }
 
