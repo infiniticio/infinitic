@@ -161,16 +161,18 @@ class PulsarInfiniticAdmin constructor(
     /**
      * Create Pulsar tenant
      *
-     * Returns a boolean indicating if the tenant was actually created
+     * Returns true if the tenant was created, false if already existing
      */
     fun createTenant(): Boolean = with(pulsarAdmin.tenants()) {
         try {
             logger.info { "Checking if tenant ${pulsar.tenant} already exists by requesting its info" }
             getTenantInfo(pulsar.tenant)
             logger.warn { "Tenant ${pulsar.tenant} already exists" }
+
             false
         } catch (e: PulsarAdminException.NotFoundException) {
             pulsarAdmin.tenants().createTenant(pulsar.tenant, tenantInfo)
+
             true
         }
     }
@@ -178,16 +180,18 @@ class PulsarInfiniticAdmin constructor(
     /**
      * Create Pulsar namespace
      *
-     * Returns a boolean indicating if the namespace was actually created
+     * Returns true if the namespace was created, false if already existing
      */
     fun createNamespace(): Boolean = with(pulsarAdmin.namespaces()) {
         try {
             logger.info { "Checking if namespace $fullNamespace already exists by requesting its policies" }
             getPolicies(fullNamespace)
             logger.warn { "Namespace $fullNamespace already exists" }
+
             false
         } catch (e: PulsarAdminException.NotFoundException) {
             pulsarAdmin.namespaces().createNamespace(fullNamespace, policies)
+
             true
         }
     }
