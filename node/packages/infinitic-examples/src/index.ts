@@ -32,7 +32,7 @@ import { RefundBooking } from './tasks/refund-booking';
 const opts = {
   pulsar: {
     client: {
-      serviceUrl: 'pulsar://localhost:6650',
+      brokerServiceUrl: 'pulsar://localhost:6650',
     },
   },
 };

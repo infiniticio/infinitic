@@ -28,8 +28,6 @@ package io.infinitic.pulsar
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.metrics.global.messages.MetricsGlobalEnvelope
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameEnvelope
-import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 import io.infinitic.common.tasks.engine.messages.TaskEngineEnvelope
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 import io.infinitic.common.tasks.executors.messages.TaskExecutorEnvelope
@@ -51,7 +49,6 @@ import io.mockk.verifyAll
 import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.impl.schema.AvroSchema
 import org.apache.pulsar.functions.api.Context
-import java.util.concurrent.CompletableFuture
 
 class PulsarTransportTests : StringSpec({
     WorkflowEngineMessage::class.sealedSubclasses.forEach {
@@ -62,9 +59,9 @@ class PulsarTransportTests : StringSpec({
         include(shouldBeAbleToSendMessageToTaskEngineCommandsTopic(TestFactory.random(it)))
     }
 
-    MetricsPerNameMessage::class.sealedSubclasses.forEach {
-        include(shouldBeAbleToSendMessageToMetricsPerNameTopic(TestFactory.random(it)))
-    }
+//    MetricsPerNameMessage::class.sealedSubclasses.forEach {
+//        include(shouldBeAbleToSendMessageToMetricsPerNameTopic(TestFactory.random(it)))
+//    }
 
     MetricsGlobalMessage::class.sealedSubclasses.forEach {
         include(shouldBeAbleToSendMessageToMetricsGlobalTopic(TestFactory.random(it)))
@@ -84,7 +81,7 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
-        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
+        every { builder.send() } returns mockk()
         // when
         PulsarOutput.from(context).sendToWorkflowEngine(TopicType.NEW)(msg)
         // then
@@ -98,7 +95,7 @@ private fun shouldBeAbleToSendMessageToWorkflowEngineCommandsTopic(msg: Workflow
         verifyAll {
             builder.value(WorkflowEngineEnvelope.from(msg))
             builder.key("${msg.workflowId}")
-            builder.sendAsync()
+            builder.send()
         }
         confirmVerified(builder)
     }
@@ -113,7 +110,7 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
-        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
+        every { builder.send() } returns mockk()
         // when
         PulsarOutput.from(context).sendToTaskEngine(TopicType.NEW)(msg)
         // then
@@ -127,39 +124,39 @@ private fun shouldBeAbleToSendMessageToTaskEngineCommandsTopic(msg: TaskEngineMe
         verifyAll {
             builder.value(TaskEngineEnvelope.from(msg))
             builder.key("${msg.taskId}")
-            builder.sendAsync()
+            builder.send()
         }
         confirmVerified(builder)
     }
 }
 
-private fun shouldBeAbleToSendMessageToMetricsPerNameTopic(msg: MetricsPerNameMessage) = stringSpec {
-    "${msg::class.simpleName!!} can be send to MetricsPerName topic " {
-        // given
-        val context = context()
-        val builder = mockk<TypedMessageBuilder<MetricsPerNameEnvelope>>()
-        val slotSchema = slot<AvroSchema<MetricsPerNameEnvelope>>()
-        every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
-        every { builder.value(any()) } returns builder
-        every { builder.key(any()) } returns builder
-        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
-        // when
-        PulsarOutput.from(context).sendToMetricsPerName()(msg)
-        // then
-        verify {
-            context.newOutputMessage(
-                "persistent://tenant/namespace/task-metrics: ${msg.taskName}",
-                slotSchema.captured
-            )
-        }
-        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MetricsPerNameEnvelope>()).avroSchema
-        verifyAll {
-            builder.value(MetricsPerNameEnvelope.from(msg))
-            builder.sendAsync()
-        }
-        confirmVerified(builder)
-    }
-}
+// private fun shouldBeAbleToSendMessageToMetricsPerNameTopic(msg: MetricsPerNameMessage) = stringSpec {
+//    "${msg::class.simpleName!!} can be send to MetricsPerName topic " {
+//        // given
+//        val context = context()
+//        val builder = mockk<TypedMessageBuilder<MetricsPerNameEnvelope>>()
+//        val slotSchema = slot<AvroSchema<MetricsPerNameEnvelope>>()
+//        every { context.newOutputMessage(any(), capture(slotSchema)) } returns builder
+//        every { builder.value(any()) } returns builder
+//        every { builder.key(any()) } returns builder
+//        every { builder.send() } returns mockk()
+//        // when
+//        PulsarOutput.from(context).sendToMetricsPerName()(msg)
+//        // then
+//        verify {
+//            context.newOutputMessage(
+//                "persistent://tenant/namespace/task-metrics: ${msg.taskName}",
+//                slotSchema.captured
+//            )
+//        }
+//        slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MetricsPerNameEnvelope>()).avroSchema
+//        verifyAll {
+//            builder.value(MetricsPerNameEnvelope.from(msg))
+//            builder.send()
+//        }
+//        confirmVerified(builder)
+//    }
+// }
 
 private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: MetricsGlobalMessage) = stringSpec {
     "${msg::class.simpleName!!} can be send to MetricsGlobal topic " {
@@ -171,7 +168,7 @@ private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: MetricsGlobalMess
         every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
-        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
+        every { builder.send() } returns mockk()
         // when
         PulsarOutput.from(context).sendToMetricsGlobal()(msg)
         // then
@@ -179,7 +176,7 @@ private fun shouldBeAbleToSendMessageToMetricsGlobalTopic(msg: MetricsGlobalMess
         slotTopic.captured shouldBe "persistent://tenant/namespace/global-metrics"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<MetricsGlobalEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(MetricsGlobalEnvelope.from(msg)) }
-        verify(exactly = 1) { builder.sendAsync() }
+        verify(exactly = 1) { builder.send() }
         confirmVerified(builder)
     }
 }
@@ -193,7 +190,7 @@ private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessag
         every { context.newOutputMessage(capture(slotTopic), capture(slotSchema)) } returns builder
         every { builder.value(any()) } returns builder
         every { builder.key(any()) } returns builder
-        every { builder.sendAsync() } returns CompletableFuture.completedFuture(mockk())
+        every { builder.send() } returns mockk()
         // when
         PulsarOutput.from(context).sendToTaskExecutors()(msg)
         // then
@@ -201,7 +198,7 @@ private fun shouldBeAbleToSendMessageToTaskExecutorTopic(msg: TaskExecutorMessag
         slotTopic.captured shouldBe "persistent://tenant/namespace/task-executors: ${msg.taskName}"
         slotSchema.captured.avroSchema shouldBe AvroSchema.of(schemaDefinition<TaskExecutorEnvelope>()).avroSchema
         verify(exactly = 1) { builder.value(TaskExecutorEnvelope.from(msg)) }
-        verify(exactly = 1) { builder.sendAsync() }
+        verify(exactly = 1) { builder.send() }
         confirmVerified(builder)
     }
 }

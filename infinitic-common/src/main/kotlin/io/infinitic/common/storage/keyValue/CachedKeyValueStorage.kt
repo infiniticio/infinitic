@@ -35,22 +35,22 @@ open class CachedKeyValueStorage(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getValue(key: String): ByteArray? {
+    override suspend fun get(key: String): ByteArray? {
         return cache.getValue(key)
             ?: run {
                 logger.debug { "key $key - getValue - absent from cache, get from storage" }
-                storage.getValue(key)
+                storage.get(key)
                     ?.also { cache.putValue(key, it) }
             }
     }
 
-    override suspend fun putValue(key: String, value: ByteArray) {
-        storage.putValue(key, value)
+    override suspend fun put(key: String, value: ByteArray) {
+        storage.put(key, value)
         cache.putValue(key, value)
     }
 
-    override suspend fun delValue(key: String) {
-        storage.delValue(key)
+    override suspend fun del(key: String) {
+        storage.del(key)
         cache.delValue(key)
     }
 

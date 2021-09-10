@@ -28,4 +28,4 @@ package io.infinitic.common.tasks.engine
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.tasks.engine.messages.TaskEngineMessage
 
-typealias SendToTaskEngineAfter = suspend (TaskEngineMessage, MillisDuration) -> Unit
+typealias SendToTaskEngineAfter = (TaskEngineMessage, MillisDuration) -> Unit

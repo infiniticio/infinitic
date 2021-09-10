@@ -39,8 +39,8 @@ import org.apache.pulsar.client.api.Consumer
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarWorkflowDelayEngines(
     workflowName: WorkflowName,
-    consumerName: String,
     concurrency: Int,
+    consumerName: String,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {

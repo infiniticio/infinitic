@@ -26,21 +26,20 @@
 package io.infinitic.storage.inMemory
 
 import io.infinitic.common.data.Bytes
-import io.infinitic.common.storage.Flushable
 import io.infinitic.common.storage.keySet.KeySetStorage
 
-class InMemoryKeySetStorage : KeySetStorage, Flushable {
+class InMemoryKeySetStorage : KeySetStorage {
     val storage = mutableMapOf<String, MutableSet<Bytes>>()
 
-    override suspend fun getSet(key: String): Set<ByteArray> {
+    override suspend fun get(key: String): Set<ByteArray> {
         return getBytesPerKey(key).map { it.content }.toSet()
     }
 
-    override suspend fun addToSet(key: String, value: ByteArray) {
+    override suspend fun add(key: String, value: ByteArray) {
         getBytesPerKey(key).add(Bytes(value))
     }
 
-    override suspend fun removeFromSet(key: String, value: ByteArray) {
+    override suspend fun remove(key: String, value: ByteArray) {
         getBytesPerKey(key).remove(Bytes(value))
 
         // clean key if now empty

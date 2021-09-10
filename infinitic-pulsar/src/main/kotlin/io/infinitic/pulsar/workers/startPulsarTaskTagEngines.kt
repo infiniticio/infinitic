@@ -44,9 +44,9 @@ typealias PulsarTaskTagEngineMessageToProcess = PulsarMessageToProcess<TaskTagEn
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskTagEngines(
     taskName: TaskName,
-    consumerName: String,
     concurrency: Int,
     storage: TaskTagStorage,
+    consumerName: String,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {

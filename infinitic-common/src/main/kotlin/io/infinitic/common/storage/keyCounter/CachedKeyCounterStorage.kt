@@ -36,16 +36,16 @@ class CachedKeyCounterStorage(
 
     val logger: Logger = LoggerFactory.getLogger(javaClass)
 
-    override suspend fun getCounter(key: String) = cache.getCounter(key)
+    override suspend fun get(key: String) = cache.get(key)
         ?: run {
             logger.debug("key {} - getCounter - absent from cache, get from storage", key)
-            storage.getCounter(key)
-                .also { cache.setCounter(key, it) }
+            storage.get(key)
+                .also { cache.set(key, it) }
         }
 
-    override suspend fun incrCounter(key: String, amount: Long) {
-        cache.incrCounter(key, amount)
-        storage.incrCounter(key, amount)
+    override suspend fun incr(key: String, amount: Long) {
+        cache.incr(key, amount)
+        storage.incr(key, amount)
     }
 
     @TestOnly

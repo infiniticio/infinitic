@@ -42,6 +42,7 @@ import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
+import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -89,7 +90,8 @@ data class WaitWorkflow(
 @Serializable
 data class CancelWorkflow(
     override val workflowId: WorkflowId,
-    override val workflowName: WorkflowName
+    override val workflowName: WorkflowName,
+    val reason: WorkflowCancellationReason
 ) : WorkflowEngineMessage()
 
 @Serializable

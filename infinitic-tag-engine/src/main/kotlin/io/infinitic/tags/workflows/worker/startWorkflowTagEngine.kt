@@ -44,7 +44,7 @@ private val logger = KotlinLogging.logger(WorkflowTagEngine::class.java.name)
 
 typealias WorkflowTagEngineMessageToProcess = MessageToProcess<WorkflowTagEngineMessage>
 
-private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Throwable) = logger.error {
+private fun logError(messageToProcess: WorkflowTagEngineMessageToProcess, e: Throwable) = logger.error(e) {
     "exception on message ${messageToProcess.message}: $e"
 }
 

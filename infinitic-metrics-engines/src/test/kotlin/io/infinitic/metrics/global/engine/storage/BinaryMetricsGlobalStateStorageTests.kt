@@ -41,13 +41,13 @@ class BinaryMetricsGlobalStateStorageTests : ShouldSpec({
         should("return null when state does not exist") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.getValue(any()) } returns null
+            coEvery { storage.get(any()) } returns null
             // given
             val stateStorage = BinaryMetricsGlobalStateStorage(storage)
             // when
             val state = stateStorage.getState()
             // then
-            coVerify(exactly = 1) { storage.getValue("metricsGlobal.state") }
+            coVerify(exactly = 1) { storage.get("metricsGlobal.state") }
             confirmVerified(storage)
             state shouldBe null
         }
@@ -56,13 +56,13 @@ class BinaryMetricsGlobalStateStorageTests : ShouldSpec({
             // mocking
             val storage = mockk<KeyValueStorage>()
             val stateIn = TestFactory.random(MetricsGlobalState::class)
-            coEvery { storage.getValue(any()) } returns stateIn.toByteArray()
+            coEvery { storage.get(any()) } returns stateIn.toByteArray()
             // given
             val stateStorage = BinaryMetricsGlobalStateStorage(storage)
             // when
             val stateOut = stateStorage.getState()
             // then
-            coVerify(exactly = 1) { storage.getValue("metricsGlobal.state") }
+            coVerify(exactly = 1) { storage.get("metricsGlobal.state") }
             confirmVerified(storage)
             stateOut shouldBe stateIn
         }
@@ -75,7 +75,7 @@ class BinaryMetricsGlobalStateStorageTests : ShouldSpec({
             val stateIn = TestFactory.random(MetricsGlobalState::class)
             val binSlot = slot<ByteArray>()
 
-            coEvery { storage.putValue("metricsGlobal.state", capture(binSlot)) } returns Unit
+            coEvery { storage.put("metricsGlobal.state", capture(binSlot)) } returns Unit
             // given
             val stateStorage = BinaryMetricsGlobalStateStorage(storage)
             // when
@@ -90,13 +90,13 @@ class BinaryMetricsGlobalStateStorageTests : ShouldSpec({
         should("delete state") {
             // mocking
             val storage = mockk<KeyValueStorage>()
-            coEvery { storage.delValue(any()) } returns Unit
+            coEvery { storage.del(any()) } returns Unit
             // given
             val stageStorage = BinaryMetricsGlobalStateStorage(storage)
             // when
             stageStorage.delState()
             // then
-            coVerify(exactly = 1) { storage.delValue("metricsGlobal.state") }
+            coVerify(exactly = 1) { storage.del("metricsGlobal.state") }
             confirmVerified(storage)
         }
     }

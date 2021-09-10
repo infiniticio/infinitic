@@ -25,9 +25,9 @@
 
 package io.infinitic.dashboard.modals
 
+import io.infinitic.dashboard.DashboardServer
 import io.infinitic.dashboard.svgs.icons.iconClose
 import io.infinitic.dashboard.svgs.icons.iconWarning
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kweb.Element
@@ -50,7 +50,7 @@ object Modal {
     }
 
     private fun close() {
-        GlobalScope.launch {
+        DashboardServer.scope.launch {
             showModal.value = false
             delay(1000)
             display.value = false

@@ -27,4 +27,4 @@ package io.infinitic.common.clients.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
 
-typealias SendToClient = suspend (ClientMessage) -> Unit
+typealias SendToClient = (ClientMessage) -> Unit

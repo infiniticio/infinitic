@@ -42,7 +42,7 @@ private val logger = KotlinLogging.logger(TaskExecutor::class.java.name)
 
 typealias TaskExecutorMessageToProcess = MessageToProcess<TaskExecutorMessage>
 
-private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Throwable) = logger.error {
+private fun logError(messageToProcess: TaskExecutorMessageToProcess, e: Throwable) = logger.error(e) {
     "exception on message ${messageToProcess.message}: $e"
 }
 

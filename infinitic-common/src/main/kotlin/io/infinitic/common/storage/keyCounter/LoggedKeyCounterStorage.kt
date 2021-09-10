@@ -33,15 +33,15 @@ class LoggedKeyCounterStorage(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getCounter(key: String): Long {
-        val value = storage.getCounter(key)
+    override suspend fun get(key: String): Long {
+        val value = storage.get(key)
         logger.debug { "key $key - getCounter $value" }
 
         return value
     }
 
-    override suspend fun incrCounter(key: String, amount: Long) {
+    override suspend fun incr(key: String, amount: Long) {
         logger.debug { "key $key - incrCounter $amount" }
-        storage.incrCounter(key, amount)
+        storage.incr(key, amount)
     }
 }

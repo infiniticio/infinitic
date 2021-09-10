@@ -25,9 +25,11 @@
 
 package io.infinitic.dashboard
 
+import io.infinitic.exceptions.thisShouldNotHappen
+
 fun main(args: Array<String>) {
     // get name of config file
-    val file = args.getOrNull(0) ?: throw RuntimeException("Please provide a DashboardConfig configuration file")
+    val file = args.getOrNull(0) ?: thisShouldNotHappen("Please provide a DashboardConfig configuration file")
     // start server
     DashboardServer.fromConfigFile(file).start()
 }

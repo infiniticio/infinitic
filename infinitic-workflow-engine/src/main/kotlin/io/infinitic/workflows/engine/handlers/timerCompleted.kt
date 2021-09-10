@@ -25,9 +25,9 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
+import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
@@ -39,13 +39,11 @@ internal fun CoroutineScope.timerCompleted(
     state: WorkflowState,
     msg: TimerCompleted
 ) {
-    val commandStatus = CommandCompleted(CommandReturnValue.now(), state.workflowTaskIndex)
-
     commandTerminated(
         workflowEngineOutput,
         state,
         msg.methodRunId,
         CommandId(msg.timerId),
-        commandStatus
+        Completed(CommandReturnValue.now(), state.workflowTaskIndex)
     )
 }

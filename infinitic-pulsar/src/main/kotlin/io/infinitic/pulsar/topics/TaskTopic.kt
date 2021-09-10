@@ -30,7 +30,7 @@ enum class TaskTopic(override val prefix: String) : TopicSet {
     TAG_EXISTING("task-tag-existing"),
     ENGINE_NEW("task-engine-new"),
     ENGINE_EXISTING("task-engine-existing"),
-    DELAYS("task-delays"),
+    DELAYS("task-$TOPIC_WITH_DELAYS"),
     EXECUTORS("task-executors"),
     METRICS("task-metrics")
 }

@@ -27,4 +27,4 @@ package io.infinitic.common.workflows.engine
 
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 
-typealias SendToWorkflowEngine = suspend (WorkflowEngineMessage) -> Unit
+typealias SendToWorkflowEngine = (WorkflowEngineMessage) -> Unit

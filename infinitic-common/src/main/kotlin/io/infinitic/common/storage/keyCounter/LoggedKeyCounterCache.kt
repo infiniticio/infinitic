@@ -33,20 +33,20 @@ class LoggedKeyCounterCache(
 
     private val logger = KotlinLogging.logger {}
 
-    override fun getCounter(key: String): Long? {
-        val value = cache.getCounter(key)
+    override fun get(key: String): Long? {
+        val value = cache.get(key)
         logger.debug { "key $key - getCounter $value" }
 
         return value
     }
 
-    override fun setCounter(key: String, amount: Long) {
+    override fun set(key: String, amount: Long) {
         logger.debug { "key $key - setCounter $amount" }
-        cache.setCounter(key, amount)
+        cache.set(key, amount)
     }
 
-    override fun incrCounter(key: String, amount: Long) {
+    override fun incr(key: String, amount: Long) {
         logger.debug { "key $key - incrCounter $amount" }
-        cache.incrCounter(key, amount)
+        cache.incr(key, amount)
     }
 }

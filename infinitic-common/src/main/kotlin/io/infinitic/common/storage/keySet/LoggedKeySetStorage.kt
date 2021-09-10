@@ -33,20 +33,20 @@ class LoggedKeySetStorage(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getSet(key: String): Set<ByteArray> {
-        val value = storage.getSet(key)
+    override suspend fun get(key: String): Set<ByteArray> {
+        val value = storage.get(key)
         logger.debug { "key $key - getSet.size ${value.size}" }
 
         return value
     }
 
-    override suspend fun addToSet(key: String, value: ByteArray) {
+    override suspend fun add(key: String, value: ByteArray) {
         logger.debug { "key $key - addToSet $value" }
-        storage.addToSet(key, value)
+        storage.add(key, value)
     }
 
-    override suspend fun removeFromSet(key: String, value: ByteArray) {
+    override suspend fun remove(key: String, value: ByteArray) {
         logger.debug { "key $key - removeFromSet $value" }
-        storage.removeFromSet(key, value)
+        storage.remove(key, value)
     }
 }

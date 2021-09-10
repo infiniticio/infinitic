@@ -36,14 +36,14 @@ class CaffeineKeyCounterCache(config: CaffeineConfig) : KeyCounterCache, Flushab
     private var caffeine: Cache<String, Long> =
         Caffeine.newBuilder().setup(config).build()
 
-    override fun getCounter(key: String): Long? = caffeine.getIfPresent(key)
+    override fun get(key: String): Long? = caffeine.getIfPresent(key)
 
-    override fun setCounter(key: String, amount: Long) {
+    override fun set(key: String, amount: Long) {
         caffeine.put(key, amount)
     }
 
-    override fun incrCounter(key: String, amount: Long) {
-        getCounter(key)?.also {
+    override fun incr(key: String, amount: Long) {
+        get(key)?.also {
             caffeine.put(key, it + amount)
         }
     }

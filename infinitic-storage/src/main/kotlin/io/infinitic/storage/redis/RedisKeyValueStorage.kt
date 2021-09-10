@@ -41,13 +41,13 @@ class RedisKeyValueStorage(
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
-    override suspend fun getValue(key: String): ByteArray? =
+    override suspend fun get(key: String): ByteArray? =
         pool.resource.use { it.get(key.toByteArray()) }
 
-    override suspend fun putValue(key: String, value: ByteArray) =
+    override suspend fun put(key: String, value: ByteArray) =
         pool.resource.use { it.set(key.toByteArray(), value); Unit }
 
-    override suspend fun delValue(key: String) =
+    override suspend fun del(key: String) =
         pool.resource.use { it.del(key.toByteArray()); Unit }
 
     @TestOnly

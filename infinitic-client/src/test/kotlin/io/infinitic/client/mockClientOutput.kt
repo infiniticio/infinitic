@@ -48,19 +48,19 @@ import io.infinitic.common.workflows.tags.SendToWorkflowTagEngine
 import io.infinitic.common.workflows.tags.messages.GetWorkflowIds
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.mockk.CapturingSlot
-import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.future.future
+import java.util.concurrent.CopyOnWriteArrayList
 
 fun mockSendToTaskTagEngine(
-    client: AbstractInfiniticClient,
-    slots: MutableList<TaskTagEngineMessage>
+    client: InfiniticClient,
+    taskTagSlots: CopyOnWriteArrayList<TaskTagEngineMessage>
 ): SendToTaskTagEngine {
-    val mock = mockk<SendToTaskTagEngine>()
-    coEvery { mock(capture(slots)) } coAnswers {
-        slots.forEach {
+    val sendToTaskTagEngine = mockk<SendToTaskTagEngine>()
+    every { sendToTaskTagEngine(capture(taskTagSlots)) } answers {
+        taskTagSlots.forEach {
             if (it is GetTaskIds) {
                 val taskIdsPerTag = TaskIdsPerTag(
                     clientName = client.clientName,
@@ -68,24 +68,23 @@ fun mockSendToTaskTagEngine(
                     taskTag = it.taskTag,
                     taskIds = setOf(TaskId(), TaskId())
                 )
-                GlobalScope.launch {
-                    // delay is useful to ensure that the client is listening before sending the event
-                    delay(50)
+                client.sendingScope.future {
+                    delay(100)
                     client.handle(taskIdsPerTag)
                 }
             }
         }
     }
-    return mock
+    return sendToTaskTagEngine
 }
 
 fun mockSendToWorkflowTagEngine(
-    client: AbstractInfiniticClient,
-    slots: MutableList<WorkflowTagEngineMessage>
+    client: InfiniticClient,
+    workflowTagSlots: CopyOnWriteArrayList<WorkflowTagEngineMessage>
 ): SendToWorkflowTagEngine {
-    val mock = mockk<SendToWorkflowTagEngine>()
-    coEvery { mock(capture(slots)) } coAnswers {
-        slots.forEach {
+    val sendToWorkflowTagEngine = mockk<SendToWorkflowTagEngine>()
+    every { sendToWorkflowTagEngine(capture(workflowTagSlots)) } answers {
+        workflowTagSlots.forEach {
             if (it is GetWorkflowIds) {
                 val workflowIdsPerTag = WorkflowIdsPerTag(
                     clientName = client.clientName,
@@ -93,23 +92,22 @@ fun mockSendToWorkflowTagEngine(
                     workflowTag = it.workflowTag,
                     workflowIds = setOf(WorkflowId(), WorkflowId())
                 )
-                GlobalScope.launch {
-                    // delay is useful to ensure that the client is listening before sending the event
-                    delay(50)
+                client.sendingScope.future {
+                    delay(100)
                     client.handle(workflowIdsPerTag)
                 }
             }
         }
     }
-    return mock
+    return sendToWorkflowTagEngine
 }
 
 fun mockSendToTaskEngine(
-    client: AbstractInfiniticClient,
+    client: InfiniticClient,
     message: CapturingSlot<TaskEngineMessage>
 ): SendToTaskEngine {
-    val mock = mockk<SendToTaskEngine>()
-    coEvery { mock(capture(message)) } coAnswers {
+    val sendToTaskEngine = mockk<SendToTaskEngine>()
+    every { sendToTaskEngine(capture(message)) } answers {
         val msg = message.captured
         if ((msg is DispatchTask && msg.clientWaiting) || (msg is WaitTask)) {
             val taskCompleted = TaskCompleted(
@@ -118,23 +116,22 @@ fun mockSendToTaskEngine(
                 taskReturnValue = MethodReturnValue.from("success"),
                 taskMeta = TaskMeta()
             )
-            GlobalScope.launch {
-                // delay is useful to ensure that the client is listening before sending the event
-                delay(50)
+            client.sendingScope.future {
+                delay(100)
                 client.handle(taskCompleted)
             }
         }
     }
 
-    return mock
+    return sendToTaskEngine
 }
 
 fun mockSendToWorkflowEngine(
-    client: AbstractInfiniticClient,
+    client: InfiniticClient,
     message: CapturingSlot<WorkflowEngineMessage>
 ): SendToWorkflowEngine {
-    val mock = mockk<SendToWorkflowEngine>()
-    coEvery { mock(capture(message)) } coAnswers {
+    val sendToWorkflowEngine = mockk<SendToWorkflowEngine>()
+    every { sendToWorkflowEngine(capture(message)) } answers {
         val msg = message.captured
         if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
             val workflowCompleted = WorkflowCompleted(
@@ -142,13 +139,12 @@ fun mockSendToWorkflowEngine(
                 workflowId = msg.workflowId,
                 workflowReturnValue = MethodReturnValue.from("success")
             )
-            GlobalScope.launch {
-                // delay is useful to ensure that the client is listening before sending the event
-                delay(50)
+            client.sendingScope.future {
+                delay(100)
                 client.handle(workflowCompleted)
             }
         }
     }
 
-    return mock
+    return sendToWorkflowEngine
 }

@@ -35,20 +35,20 @@ class CachedKeySetStorage(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getSet(key: String): Set<ByteArray> = cache.getSet(key)
+    override suspend fun get(key: String): Set<ByteArray> = cache.get(key)
         ?: run {
             logger.debug { "key $key - getSet - absent from cache, get from storage" }
-            storage.getSet(key)
-                .also { cache.setSet(key, it) }
+            storage.get(key)
+                .also { cache.set(key, it) }
         }
 
-    override suspend fun addToSet(key: String, value: ByteArray) {
-        storage.addToSet(key, value)
-        cache.addToSet(key, value)
+    override suspend fun add(key: String, value: ByteArray) {
+        storage.add(key, value)
+        cache.add(key, value)
     }
-    override suspend fun removeFromSet(key: String, value: ByteArray) {
-        cache.removeFromSet(key, value)
-        storage.removeFromSet(key, value)
+    override suspend fun remove(key: String, value: ByteArray) {
+        cache.remove(key, value)
+        storage.remove(key, value)
     }
 
     @TestOnly

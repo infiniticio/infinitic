@@ -40,17 +40,17 @@ class BinaryMetricsPerNameStateStorage(
 
     override suspend fun getState(name: Name): MetricsPerNameState? {
         val key = getMetricsPerNameStateKey(name)
-        return storage.getValue(key)
+        return storage.get(key)
             ?.let { MetricsPerNameState.fromByteArray(it) }
     }
     override suspend fun putState(name: Name, state: MetricsPerNameState) {
         val key = getMetricsPerNameStateKey(name)
-        storage.putValue(key, state.toByteArray())
+        storage.put(key, state.toByteArray())
     }
 
     override suspend fun delState(name: Name) {
         val key = getMetricsPerNameStateKey(name)
-        storage.delValue(key)
+        storage.del(key)
     }
 
     private fun getMetricsPerNameStateKey(name: Name) = "metricsPerName.state.$name"

@@ -76,7 +76,8 @@ class TaskExecutorTests : StringSpec({
     val slots = mutableListOf<TaskEngineMessage>()
     val taskExecutorRegister = TaskExecutorRegisterImpl()
     val mockClientFactory = mockk<()-> InfiniticClient>()
-    val taskExecutor = TaskExecutor(taskExecutorRegister, mockSendToTaskEngine(slots), mockClientFactory)
+    val taskExecutor =
+        TaskExecutor(taskExecutorRegister, mockSendToTaskEngine(slots), mockClientFactory)
 
     // ensure slots are emptied between each test
     beforeTest {

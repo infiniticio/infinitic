@@ -48,31 +48,31 @@ class BinaryWorkflowTagStorage(
     override suspend fun getLastMessageId(tag: WorkflowTag, workflowName: WorkflowName): MessageId? {
         val key = getTagMessageIdKey(tag, workflowName)
 
-        return keyValueStorage.getValue(key)
+        return keyValueStorage.get(key)
             ?.let { MessageId.fromByteArray(it) }
     }
 
     override suspend fun setLastMessageId(tag: WorkflowTag, workflowName: WorkflowName, messageId: MessageId) {
         val key = getTagMessageIdKey(tag, workflowName)
-        keyValueStorage.putValue(key, messageId.toByteArray())
+        keyValueStorage.put(key, messageId.toByteArray())
     }
 
     override suspend fun getWorkflowIds(tag: WorkflowTag, workflowName: WorkflowName): Set<WorkflowId> {
         val key = getTagSetIdsKey(tag, workflowName)
         return keySetStorage
-            .getSet(key)
+            .get(key)
             .map { WorkflowId(it.toUUID()) }
             .toSet()
     }
 
     override suspend fun addWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
         val key = getTagSetIdsKey(tag, workflowName)
-        keySetStorage.addToSet(key, workflowId.id.toByteArray())
+        keySetStorage.add(key, workflowId.id.toByteArray())
     }
 
     override suspend fun removeWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId) {
         val key = getTagSetIdsKey(tag, workflowName)
-        keySetStorage.removeFromSet(key, workflowId.id.toByteArray())
+        keySetStorage.remove(key, workflowId.id.toByteArray())
     }
 
     private fun getTagMessageIdKey(tag: WorkflowTag, workflowName: WorkflowName) = "workflow:$workflowName|tag:$tag|messageId"

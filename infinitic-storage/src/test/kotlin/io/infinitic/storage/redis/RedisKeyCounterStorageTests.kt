@@ -43,7 +43,7 @@ class RedisKeyCounterStorageTests : StringSpec({
     }
 
     beforeTest {
-        storage.incrCounter("foo", 42)
+        storage.incr("foo", 42)
     }
 
     afterTest {
@@ -51,22 +51,22 @@ class RedisKeyCounterStorageTests : StringSpec({
     }
 
     "getCounter should return 0 on unknown key" {
-        storage.getCounter("unknown") shouldBe 0
+        storage.get("unknown") shouldBe 0
     }
 
     "getCounter should return value on known key" {
-        storage.getCounter("foo") shouldBe 42
+        storage.get("foo") shouldBe 42
     }
 
     "incrCounter on unknown key should incr value from 0" {
-        storage.incrCounter("unknown", 42)
+        storage.incr("unknown", 42)
 
-        storage.getCounter("unknown") shouldBe 42
+        storage.get("unknown") shouldBe 42
     }
 
     "incrCounter on known key should incr value from current" {
-        storage.incrCounter("foo", -7)
+        storage.incr("foo", -7)
 
-        storage.getCounter("foo") shouldBe 35
+        storage.get("foo") shouldBe 35
     }
 })

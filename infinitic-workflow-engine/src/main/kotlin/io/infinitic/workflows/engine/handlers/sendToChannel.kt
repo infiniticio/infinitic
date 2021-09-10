@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandReturnValue
+import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.SendToChannel
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
@@ -49,17 +49,12 @@ internal fun CoroutineScope.sendToChannel(
         ?.also {
             state.receivingChannels.remove(it)
 
-            val commandStatus = CommandCompleted(
-                CommandReturnValue(msg.channelEvent.serializedData),
-                state.workflowTaskIndex
-            )
-
             commandTerminated(
                 workflowEngineOutput,
                 state,
                 it.methodRunId,
                 it.commandId,
-                commandStatus
+                Completed(CommandReturnValue(msg.channelEvent.serializedData), state.workflowTaskIndex)
             )
         }
         ?: logger.debug { "discarding non-waited event $msg" }

@@ -48,9 +48,9 @@ typealias PulsarTaskEngineMessageToProcess = PulsarMessageToProcess<TaskEngineMe
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarTaskEngines(
     name: Name,
-    consumerName: String,
     concurrency: Int,
     storage: TaskStateStorage,
+    consumerName: String,
     consumerFactory: PulsarConsumerFactory,
     output: PulsarOutput
 ) {

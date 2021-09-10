@@ -27,6 +27,7 @@ package io.infinitic.common.workflows.executors.parser
 
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.exceptions.thisShouldNotHappen
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
@@ -36,7 +37,7 @@ fun <T : Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyVa
     values.forEach { (name, value) ->
         properties.find { it.name == name.name }
             ?.let { setProperty(obj, it, value.get()) }
-            ?: throw RuntimeException("Trying to set unknown property ${obj::class.java.name}:${name.name}")
+            ?: thisShouldNotHappen("Trying to set unknown property ${obj::class.java.name}:${name.name}")
     }
 }
 

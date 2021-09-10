@@ -43,7 +43,7 @@ class RedisKeyValueStorageTests : StringSpec({
     }
 
     beforeTest {
-        storage.putValue("foo", "bar".toByteArray())
+        storage.put("foo", "bar".toByteArray())
     }
 
     afterTest {
@@ -51,32 +51,32 @@ class RedisKeyValueStorageTests : StringSpec({
     }
 
     "getValue should return null on unknown key" {
-        storage.getValue("unknown") shouldBe null
+        storage.get("unknown") shouldBe null
     }
 
     "getValue should return value" {
-        storage.getValue("foo").contentEquals("bar".toByteArray()) shouldBe true
+        storage.get("foo").contentEquals("bar".toByteArray()) shouldBe true
     }
 
     "putValue on new key should create value" {
-        storage.putValue("foo2", "bar2".toByteArray())
+        storage.put("foo2", "bar2".toByteArray())
 
-        storage.getValue("foo2").contentEquals("bar2".toByteArray()) shouldBe true
+        storage.get("foo2").contentEquals("bar2".toByteArray()) shouldBe true
     }
 
     "putValue on existing key should update value" {
-        storage.putValue("foo", "bar2".toByteArray())
+        storage.put("foo", "bar2".toByteArray())
 
-        storage.getValue("foo").contentEquals("bar2".toByteArray()) shouldBe true
+        storage.get("foo").contentEquals("bar2".toByteArray()) shouldBe true
     }
 
     "delValue on unknown key does nothing" {
-        storage.delValue("unknown")
+        storage.del("unknown")
     }
 
     "delValue should delete value" {
-        storage.delValue("foo")
+        storage.del("foo")
 
-        storage.getValue("foo") shouldBe null
+        storage.get("foo") shouldBe null
     }
 })

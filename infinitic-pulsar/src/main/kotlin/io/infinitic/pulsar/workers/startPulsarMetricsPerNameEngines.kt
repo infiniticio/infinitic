@@ -43,9 +43,9 @@ typealias PulsarMetricsPerNameMessageToProcess = PulsarMessageToProcess<MetricsP
 @Suppress("UNCHECKED_CAST")
 fun CoroutineScope.startPulsarMetricsPerNameEngines(
     taskName: TaskName,
+    storage: MetricsPerNameStateStorage,
     consumerName: String,
     consumerFactory: PulsarConsumerFactory,
-    storage: MetricsPerNameStateStorage,
     pulsarOutput: PulsarOutput
 ) {
     val inputChannel = Channel<PulsarMetricsPerNameMessageToProcess>()

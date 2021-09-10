@@ -32,30 +32,30 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class CommandStatus {
     /**
-     * A command is terminated if canceled or completed, failed is considered a transient state
+     * A command is terminated if canceled or completed, failed is a transient state
      */
-    fun isTerminated() = this is CommandCompleted || this is CommandCanceled
+    fun isTerminated() = this is Completed || this is Canceled
+
+    @Serializable
+    object Running : CommandStatus() {
+        override fun equals(other: Any?) = javaClass == other?.javaClass
+        override fun toString(): String = Running::class.java.name
+    }
+
+    @Serializable
+    data class Completed(
+        val returnValue: CommandReturnValue,
+        val completionWorkflowTaskIndex: WorkflowTaskIndex
+    ) : CommandStatus()
+
+    @Serializable
+    data class Canceled(
+        val cancellationWorkflowTaskIndex: WorkflowTaskIndex
+    ) : CommandStatus()
+
+    @Serializable
+    data class CurrentlyFailed(
+        val error: Error,
+        val failureWorkflowTaskIndex: WorkflowTaskIndex
+    ) : CommandStatus()
 }
-
-@Serializable
-object CommandOngoing : CommandStatus() {
-    override fun equals(other: Any?) = javaClass == other?.javaClass
-    override fun toString(): String = CommandOngoing::class.java.name
-}
-
-@Serializable
-data class CommandCompleted(
-    val returnValue: CommandReturnValue,
-    val completionWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()
-
-@Serializable
-data class CommandCanceled(
-    val cancellationWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()
-
-@Serializable
-data class CommandOngoingFailure(
-    val error: Error,
-    val failureWorkflowTaskIndex: WorkflowTaskIndex
-) : CommandStatus()

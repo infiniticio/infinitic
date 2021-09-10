@@ -41,11 +41,11 @@ class RedisKeyCounterStorage(
         Runtime.getRuntime().addShutdownHook(Thread { pool.close() })
     }
 
-    override suspend fun getCounter(key: String): Long =
+    override suspend fun get(key: String): Long =
         pool.resource.use { it.get(key.toByteArray()) }
             ?.let { String(it) }?.toLong() ?: 0L
 
-    override suspend fun incrCounter(key: String, amount: Long) =
+    override suspend fun incr(key: String, amount: Long) =
         pool.resource.use { it.incrBy(key.toByteArray(), amount); Unit }
 
     fun test(key: String, amount: Long) =

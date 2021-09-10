@@ -24,10 +24,11 @@
  */
 
 dependencies {
-    api(Libs.Coroutines.core)
+    implementation(Libs.Coroutines.core)
+    implementation(Libs.Coroutines.jdk8)
 
     api(project(":infinitic-common"))
-    api(project(":infinitic-config"))
+    api(project(":infinitic-transport"))
     api(project(":infinitic-client"))
     api(project(":infinitic-storage"))
     implementation(project(":infinitic-cache"))
@@ -36,8 +37,7 @@ dependencies {
     implementation(project(":infinitic-workflow-engine"))
     implementation(project(":infinitic-metrics-engines"))
     implementation(project(":infinitic-task-executor"))
-
-    testImplementation(Libs.Coroutines.jdk8)
+    implementation(project(":infinitic-worker"))
 }
 
 apply("../publish.gradle.kts")

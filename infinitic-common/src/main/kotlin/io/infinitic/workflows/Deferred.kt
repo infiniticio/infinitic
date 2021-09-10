@@ -34,7 +34,7 @@ import io.infinitic.common.workflows.data.steps.or as stepOr
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 data class Deferred<T> (
     val step: Step,
-    internal val workflowContext: WorkflowContext
+    internal val workflowDispatcher: WorkflowDispatcher
 ) {
     val id: UUID?
         get() = when (step) {
@@ -47,12 +47,12 @@ data class Deferred<T> (
     /*
      * Use this method to wait the completion or cancellation of a deferred and get its result
      */
-    fun await(): T = workflowContext.await(this)
+    fun await(): T = workflowDispatcher.await(this)
 
     /*
      * Use this method to get the status of a deferred
      */
-    fun status(): DeferredStatus = workflowContext.status(this)
+    fun status(): DeferredStatus = workflowDispatcher.status(this)
 
     fun isCompleted() = status() == DeferredStatus.COMPLETED
 
@@ -67,40 +67,40 @@ fun and(vararg others: Deferred<*>) = others.reduce { acc, deferred -> acc and d
 
 @JvmName("orT0")
 infix fun <T> Deferred<out T>.or(other: Deferred<out T>) =
-    Deferred<T>(stepOr(this.step, other.step), this.workflowContext)
+    Deferred<T>(stepOr(this.step, other.step), this.workflowDispatcher)
 
 @JvmName("orT1")
 infix fun <T> Deferred<List<T>>.or(other: Deferred<out T>) =
-    Deferred<Any>(stepOr(this.step, other.step), this.workflowContext)
+    Deferred<Any>(stepOr(this.step, other.step), this.workflowDispatcher)
 
 @JvmName("orT2")
 infix fun <T> Deferred<List<T>>.or(other: Deferred<List<T>>) =
-    Deferred<List<T>>(stepOr(this.step, other.step), this.workflowContext)
+    Deferred<List<T>>(stepOr(this.step, other.step), this.workflowDispatcher)
 
 @JvmName("orT3")
 infix fun <T> Deferred<out T>.or(other: Deferred<List<T>>) =
-    Deferred<Any>(stepOr(this.step, other.step), this.workflowContext)
+    Deferred<Any>(stepOr(this.step, other.step), this.workflowDispatcher)
 
 @JvmName("andT0")
 infix fun <T> Deferred<out T>.and(other: Deferred<out T>) =
-    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowContext)
+    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowDispatcher)
 
 @JvmName("andT1")
 infix fun <T> Deferred<List<T>>.and(other: Deferred<out T>) =
-    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowContext)
+    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowDispatcher)
 
 @JvmName("andT2")
 infix fun <T> Deferred<List<T>>.and(other: Deferred<List<T>>) =
-    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowContext)
+    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowDispatcher)
 
 @JvmName("andT3")
 infix fun <T> Deferred<out T>.and(other: Deferred<List<T>>) =
-    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowContext)
+    Deferred<List<T>>(stepAnd(this.step, other.step), this.workflowDispatcher)
 
 // extension function to apply AND to a List<Deferred<T>>
 fun <T> List<Deferred<T>>.and() =
-    Deferred<List<T>>(Step.And(this.map { it.step }), this.first().workflowContext)
+    Deferred<List<T>>(Step.And(this.map { it.step }), this.first().workflowDispatcher)
 
 // extension function to apply OR to a List<Deferred<T>>
 fun <T> List<Deferred<T>>.or() =
-    Deferred<T>(Step.Or(this.map { it.step }), this.first().workflowContext)
+    Deferred<T>(Step.Or(this.map { it.step }), this.first().workflowDispatcher)

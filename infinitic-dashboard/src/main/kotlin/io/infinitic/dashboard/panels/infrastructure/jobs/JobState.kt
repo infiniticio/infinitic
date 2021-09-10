@@ -70,6 +70,7 @@ internal fun <S : TopicSet, T : JobState<S>> CoroutineScope.update(kvar: KVar<T>
             val delay = launch { delay(UPDATE_DELAY) }
             logger.debug { "Updating stats for ${value.name}" }
             // loading indicator
+            @Suppress("UNCHECKED_CAST")
             value = value.statsLoading() as T
             // request stats one by one
             val topicsStats = mutableMapOf<S, Request<PartitionedTopicStats>>()
@@ -82,6 +83,7 @@ internal fun <S : TopicSet, T : JobState<S>> CoroutineScope.update(kvar: KVar<T>
                 }
             }
             // set value
+            @Suppress("UNCHECKED_CAST")
             value = value.create(topicsStats = topicsStats,) as T
             // wait at least UPDATE_DELAY
             delay.join()

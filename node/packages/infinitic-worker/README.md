@@ -57,7 +57,7 @@ const RefundBooking = require('./tasks/refund-booking');
 const worker = new Worker({
   pulsar: {
     client: {
-      serviceUrl: 'pulsar://localhost:6650',
+      brokerServiceUrl: 'pulsar://localhost:6650',
     },
   },
 });
@@ -114,7 +114,7 @@ import { RefundBooking } from './tasks/refund-booking';
 const worker = new Worker({
   pulsar: {
     client: {
-      serviceUrl: 'pulsar://localhost:6650',
+      brokerServiceUrl: 'pulsar://localhost:6650',
     },
   },
 });

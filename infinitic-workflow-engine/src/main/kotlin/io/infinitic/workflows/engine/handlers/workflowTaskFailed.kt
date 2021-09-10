@@ -26,11 +26,11 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.messages.WorkflowFailed
-import io.infinitic.common.workflows.data.commands.CommandCanceled
-import io.infinitic.common.workflows.data.commands.CommandCompleted
 import io.infinitic.common.workflows.data.commands.CommandId
-import io.infinitic.common.workflows.data.commands.CommandOngoing
-import io.infinitic.common.workflows.data.commands.CommandOngoingFailure
+import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
+import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
+import io.infinitic.common.workflows.data.commands.CommandStatus.CurrentlyFailed
+import io.infinitic.common.workflows.data.commands.CommandStatus.Running
 import io.infinitic.common.workflows.engine.messages.ChildWorkflowFailed
 import io.infinitic.common.workflows.engine.messages.TaskFailed
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -52,10 +52,10 @@ internal fun CoroutineScope.workflowTaskFailed(
         val error = when (msg.error.errorCause == null && msg.error.whereId != null) {
             true -> msg.error.copy(
                 errorCause = when (val commandStatus = methodRun.getPastCommand(CommandId(msg.error.whereId!!)).commandStatus) {
-                    is CommandCompleted -> thisShouldNotHappen()
-                    CommandOngoing -> thisShouldNotHappen()
-                    is CommandOngoingFailure -> commandStatus.error
-                    is CommandCanceled -> null
+                    is Completed -> thisShouldNotHappen()
+                    Running -> thisShouldNotHappen()
+                    is CurrentlyFailed -> commandStatus.error
+                    is Canceled -> null
                 }
             )
             false -> msg.error

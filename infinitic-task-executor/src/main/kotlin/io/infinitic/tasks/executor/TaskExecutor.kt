@@ -128,7 +128,7 @@ class TaskExecutor(
         output
     }
 
-    private suspend fun failTaskWithRetry(
+    private fun failTaskWithRetry(
         task: Task,
         msg: ExecuteTaskAttempt,
         cause: Exception
@@ -173,7 +173,7 @@ class TaskExecutor(
     private fun getDurationBeforeRetry(task: Task, cause: Exception) = try {
         DurationBeforeRetryRetrieved(task.getDurationBeforeRetry(cause))
     } catch (e: Throwable) {
-        logger.error {
+        logger.error(e) {
             "task ${task::class.java.name}: (${task.context.id})" +
                 "error when executing getDurationBeforeRetry method with $cause: " +
                 "$e"
@@ -181,13 +181,13 @@ class TaskExecutor(
         DurationBeforeRetryFailed(e)
     }
 
-    private suspend fun sendTaskAttemptFailed(
+    private fun sendTaskAttemptFailed(
         message: ExecuteTaskAttempt,
         cause: Throwable,
         delay: MillisDuration?,
         taskMeta: TaskMeta
     ) {
-        logger.error { "task ${message.taskName} (${message.taskId}) - error: $cause" }
+        logger.error(cause) { "task ${message.taskName} (${message.taskId}) - error: $cause" }
 
         val taskAttemptFailed = TaskAttemptFailed(
             taskId = message.taskId,
@@ -203,7 +203,7 @@ class TaskExecutor(
         sendToTaskEngine(taskAttemptFailed)
     }
 
-    private suspend fun sendTaskCompleted(
+    private fun sendTaskCompleted(
         message: ExecuteTaskAttempt,
         returnValue: Any?,
         taskMeta: TaskMeta

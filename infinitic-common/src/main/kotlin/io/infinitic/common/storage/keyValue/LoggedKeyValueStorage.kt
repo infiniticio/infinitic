@@ -33,20 +33,20 @@ open class LoggedKeyValueStorage(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getValue(key: String): ByteArray? {
-        val value = storage.getValue(key)
+    override suspend fun get(key: String): ByteArray? {
+        val value = storage.get(key)
         logger.debug { "key $key - getValue $value" }
 
         return value
     }
 
-    override suspend fun putValue(key: String, value: ByteArray) {
+    override suspend fun put(key: String, value: ByteArray) {
         logger.debug { "key $key - putValue $value" }
-        storage.putValue(key, value)
+        storage.put(key, value)
     }
 
-    override suspend fun delValue(key: String) {
+    override suspend fun del(key: String) {
         logger.debug { "key $key - delValue" }
-        storage.delValue(key)
+        storage.del(key)
     }
 }

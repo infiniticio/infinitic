@@ -25,7 +25,6 @@
 
 package io.infinitic.pulsar.functions.storage
 
-import io.infinitic.pulsar.storage.PulsarFunctionStorage
 import org.apache.pulsar.functions.api.Context
 
 fun Context.keyValueStorage() = PulsarFunctionStorage(this)

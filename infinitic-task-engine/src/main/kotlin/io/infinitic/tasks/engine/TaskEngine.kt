@@ -60,7 +60,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import kotlin.coroutines.coroutineContext
 import io.infinitic.common.clients.messages.TaskCanceled as TaskCanceledInClient
 import io.infinitic.common.clients.messages.TaskCompleted as TaskCompletedInClient
 import io.infinitic.common.clients.messages.TaskFailed as TaskFailedInClient
@@ -83,16 +82,9 @@ class TaskEngine(
     suspend fun handle(message: TaskEngineMessage) {
         val state = process(message) ?: return
 
-        // Update stored state
-        storage.putState(message.taskId, state)
-
-        // delete state if terminated
-        // the delay makes tests easier, avoiding failure of synchronous requests
-        if (state.taskStatus.isTerminated) {
-            CoroutineScope(coroutineContext).launch {
-                delay(200L)
-                storage.delState(message.taskId)
-            }
+        when (state.taskStatus.isTerminated) {
+            false -> storage.putState(message.taskId, state)
+            true -> storage.delState(message.taskId)
         }
     }
 

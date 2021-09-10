@@ -27,4 +27,4 @@ package io.infinitic.common.tasks.tags
 
 import io.infinitic.common.tasks.tags.messages.TaskTagEngineMessage
 
-typealias SendToTaskTagEngine = suspend (TaskTagEngineMessage) -> Unit
+typealias SendToTaskTagEngine = (TaskTagEngineMessage) -> Unit

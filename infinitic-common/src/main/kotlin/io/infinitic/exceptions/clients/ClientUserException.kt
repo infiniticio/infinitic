@@ -86,14 +86,6 @@ class NoMethodCallException(
     help = "Make sure to call a method of \"$klass\""
 )
 
-class NoSendMethodCallException(
-    klass: String,
-    channel: String
-) : ClientUserException(
-    msg = "Nothing to send for $klass::$channel",
-    help = "Make sure to call the \"send\" method in the second parameter of client.async($channel())"
-)
-
 class MultipleMethodCallsException(
     klass: String,
     method1: String,

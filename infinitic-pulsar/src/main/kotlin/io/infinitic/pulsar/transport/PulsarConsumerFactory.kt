@@ -37,6 +37,7 @@ import io.infinitic.common.tasks.tags.messages.TaskTagEngineEnvelope
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineEnvelope
+import io.infinitic.exceptions.thisShouldNotHappen
 import io.infinitic.pulsar.schemas.schemaDefinition
 import io.infinitic.pulsar.topics.GlobalTopic
 import io.infinitic.pulsar.topics.TaskTopic
@@ -74,7 +75,7 @@ class PulsarConsumerFactory(
             earliest = false
         )
 
-    fun newConsumer(consumerName: String, taskTopic: TaskTopic, taskName: TaskName): Consumer<out Envelope<*>> {
+    internal fun newConsumer(consumerName: String, taskTopic: TaskTopic, taskName: TaskName): Consumer<out Envelope<*>> {
         val topic = topicName.of(taskTopic, "$taskName")
         val subscriptionName = taskTopic.prefix + "_subscription"
 
@@ -208,6 +209,7 @@ class PulsarConsumerFactory(
                 subscriptionName = subscriptionName,
                 ackTimeout = 60
             )
+            GlobalTopic.NAMER -> throw thisShouldNotHappen()
         }
     }
 

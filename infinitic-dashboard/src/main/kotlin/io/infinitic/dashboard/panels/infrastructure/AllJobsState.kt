@@ -80,6 +80,7 @@ abstract class AllJobsState(
     abstract fun getPartitionedStats(name: String): PartitionedTopicStats
 }
 
+@Suppress("UNCHECKED_CAST")
 fun <T : AllJobsState> CoroutineScope.update(kvar: KVar<T>) = launch {
     while (isActive) {
         with(kvar) {

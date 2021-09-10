@@ -33,47 +33,47 @@ class CaffeineKeySetCacheTests : StringSpec({
     val storage = CaffeineKeySetCache(Caffeine())
 
     beforeTest {
-        storage.setSet("key", setOf("foo".toByteArray(), "bar".toByteArray()))
+        storage.set("key", setOf("foo".toByteArray(), "bar".toByteArray()))
     }
 
     afterTest {
         storage.flush()
     }
 
-    "getSet should return null on unknown key" {
-        storage.getSet("unknown") shouldBe null
+    "get should return null on unknown key" {
+        storage.get("unknown") shouldBe null
     }
 
-    "getSet should return value" {
-        val set = storage.getSet("key")!!
+    "get should return value" {
+        val set = storage.get("key")!!
         set.map { String(it) }.toSet() shouldBe setOf("foo", "bar")
     }
 
-    "addToSet on new key should stay null" {
-        storage.addToSet("foo2", "bar2".toByteArray())
+    "add on new key should stay null" {
+        storage.add("foo2", "bar2".toByteArray())
 
-        storage.getSet("foo2") shouldBe null
+        storage.get("foo2") shouldBe null
     }
 
-    "addToSet on existing key should update value" {
-        storage.addToSet("key", "bar2".toByteArray())
+    "add on existing key should update value" {
+        storage.add("key", "bar2".toByteArray())
 
-        storage.getSet("key")!!.map { String(it) }.toSet() shouldBe setOf("foo", "bar", "bar2")
+        storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("foo", "bar", "bar2")
     }
 
-    "removeFromSet on unknown key does nothing" {
-        storage.removeFromSet("unknown", "foo".toByteArray())
+    "remove on unknown key does nothing" {
+        storage.remove("unknown", "foo".toByteArray())
     }
 
-    "removeFromSet should remove value" {
-        storage.removeFromSet("key", "foo".toByteArray())
+    "remove should remove value" {
+        storage.remove("key", "foo".toByteArray())
 
-        storage.getSet("key")!!.map { String(it) }.toSet() shouldBe setOf("bar")
+        storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("bar")
     }
 
-    "removeFromSet should do nothing if not on set" {
-        storage.removeFromSet("key", "unknown".toByteArray())
+    "remove should do nothing if not on set" {
+        storage.remove("key", "unknown".toByteArray())
 
-        storage.getSet("key")!!.map { String(it) }.toSet() shouldBe setOf("foo", "bar")
+        storage.get("key")!!.map { String(it) }.toSet() shouldBe setOf("foo", "bar")
     }
 })

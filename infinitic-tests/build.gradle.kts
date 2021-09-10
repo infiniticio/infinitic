@@ -24,22 +24,20 @@
  */
 
 dependencies {
-    implementation(Libs.Coroutines.core)
-    implementation(Libs.Coroutines.jdk8)
-    implementation(Libs.Jackson.databind) // <= check why this dependency is necessary
+    implementation("com.github.valfirst:slf4j-test:2.3.0")
 
-    implementation(Libs.Slf4j.simple)
-    implementation(Libs.Kotest.junit5)
-    implementation(Libs.Kotest.property)
-    implementation(Libs.Mockk.mockk)
-    implementation(testFixtures(project(":infinitic-common")))
+    testImplementation(Libs.Coroutines.core)
+    testImplementation(Libs.Coroutines.jdk8)
+    testImplementation(Libs.Hoplite.core)
+    testImplementation(Libs.Hoplite.yaml)
 
-    implementation(project(":infinitic-pulsar"))
-    implementation(project(":infinitic-task-executor"))
-    implementation(project(":infinitic-storage"))
-    implementation(project(":infinitic-tag-engine"))
-
+    testImplementation(project(":infinitic-workflow-engine"))
+    testImplementation(project(":infinitic-task-executor"))
+    testImplementation(project(":infinitic-factory"))
     testImplementation(project(":infinitic-inMemory"))
+    testImplementation(project(":infinitic-pulsar"))
+
+    testImplementation("org.assertj:assertj-core:3.20.2")
     // should be removed with pulsar 2.8
     testImplementation("org.apache.avro:avro") { version { strictly("1.9.+") } }
 }

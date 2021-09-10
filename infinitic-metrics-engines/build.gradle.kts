@@ -28,6 +28,7 @@ dependencies {
 
     api(project(":infinitic-common"))
     api(project(":infinitic-cache"))
+    api(project(":infinitic-storage"))
     api(project(":infinitic-task-engine"))
 }
 

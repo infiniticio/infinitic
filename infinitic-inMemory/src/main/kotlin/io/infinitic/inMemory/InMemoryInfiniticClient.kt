@@ -25,110 +25,62 @@
 
 package io.infinitic.inMemory
 
-import io.infinitic.client.AbstractInfiniticClient
+import io.infinitic.client.InfiniticClient
+import io.infinitic.client.worker.startClientWorker
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.config.ClientConfig
 import io.infinitic.inMemory.transport.InMemoryOutput
-import io.infinitic.inMemory.workers.startInMemory
-import io.infinitic.metrics.global.engine.storage.BinaryMetricsGlobalStateStorage
-import io.infinitic.metrics.global.engine.storage.MetricsGlobalStateStorage
-import io.infinitic.metrics.perName.engine.storage.BinaryMetricsPerNameStateStorage
-import io.infinitic.metrics.perName.engine.storage.MetricsPerNameStateStorage
-import io.infinitic.storage.inMemory.InMemoryKeySetStorage
-import io.infinitic.storage.inMemory.InMemoryKeyValueStorage
-import io.infinitic.tags.tasks.storage.BinaryTaskTagStorage
-import io.infinitic.tags.tasks.storage.TaskTagStorage
-import io.infinitic.tags.workflows.storage.BinaryWorkflowTagStorage
-import io.infinitic.tags.workflows.storage.WorkflowTagStorage
-import io.infinitic.tasks.TaskExecutorRegister
-import io.infinitic.tasks.engine.storage.BinaryTaskStateStorage
-import io.infinitic.tasks.engine.storage.TaskStateStorage
-import io.infinitic.tasks.executor.register.TaskExecutorRegisterImpl
-import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
-import io.infinitic.workflows.engine.storage.WorkflowStateStorage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import java.util.concurrent.Executors
+import io.infinitic.worker.config.WorkerConfig
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InMemoryInfiniticClient(
-    taskExecutorRegister: TaskExecutorRegister,
+    workerConfig: WorkerConfig,
     val name: String? = null
-) : AbstractInfiniticClient() {
-    companion object {
-        val logger: Logger = LoggerFactory.getLogger(InMemoryInfiniticClient::class.java.name)
+) : InfiniticClient() {
 
-        /**
-         * Create InfiniticClient from a ClientConfig
-         */
-        @JvmStatic
-        fun fromConfig(clientConfig: ClientConfig): InMemoryInfiniticClient {
-            val register = TaskExecutorRegisterImpl()
-            clientConfig.tasks.forEach {
-                register.registerTask(it.name) { it.instance }
-            }
-            if (clientConfig.tasks.isEmpty()) {
-                logger.warn("No task registered in your ClientConfig file")
-            }
+    private val inMemoryOutput = InMemoryOutput(sendingScope)
 
-            clientConfig.workflows.forEach {
-                register.registerWorkflow(it.name) { it.instance }
-            }
-            if (clientConfig.workflows.isEmpty()) {
-                logger.warn("No workflow registered in your ClientConfig file")
-            }
-
-            return InMemoryInfiniticClient(register, clientConfig.name)
+    private val worker by lazy {
+        InMemoryInfiniticWorker(workerConfig).apply {
+            output = inMemoryOutput
+            client = this@InMemoryInfiniticClient
+            name = clientName.name
         }
     }
 
-    private val job: Job
-
-    private val threadPool = Executors.newCachedThreadPool()
-
-    override val scope = CoroutineScope(threadPool.asCoroutineDispatcher() + Job())
-
-    override val clientName: ClientName = ClientName(name ?: "client: inMemory")
-
-    private val inMemoryOutput = InMemoryOutput(scope)
+    override val clientName: ClientName = ClientName(name ?: "inMemory")
 
     override val sendToTaskTagEngine = inMemoryOutput.sendCommandsToTaskTagEngine
 
-    override val sendToTaskEngine = inMemoryOutput.sendCommandsToTaskEngine
+    override val sendToTaskEngine = inMemoryOutput.sendCommandsToTaskEngine()
 
     override val sendToWorkflowTagEngine = inMemoryOutput.sendCommandsToWorkflowTagEngine
 
     override val sendToWorkflowEngine = inMemoryOutput.sendCommandsToWorkflowEngine
 
-    override fun close() {
-        job.cancel()
-        threadPool.shutdown()
+    init {
+        runningScope.launch {
+            launch(CoroutineName("in-memory-client-logger")) {
+                @Suppress("ControlFlowWithEmptyBody")
+                for (messageToProcess in inMemoryOutput.logChannel) {
+                    // just clear the channel
+                }
+            }
+
+            startClientWorker(
+                this@InMemoryInfiniticClient,
+                inputChannel = inMemoryOutput.clientChannel,
+                outputChannel = inMemoryOutput.logChannel,
+            )
+        }
+
+        worker.runningScope.launch { worker.start() }
     }
 
-    private val keyValueStorage = InMemoryKeyValueStorage()
-    private val keySetStorage = InMemoryKeySetStorage()
+    override fun close() {
+        super.close()
 
-    val taskTagStorage: TaskTagStorage = BinaryTaskTagStorage(keyValueStorage, keySetStorage)
-    val taskStorage: TaskStateStorage = BinaryTaskStateStorage(keyValueStorage)
-    val workflowTagStorage: WorkflowTagStorage = BinaryWorkflowTagStorage(keyValueStorage, keySetStorage)
-    val workflowStateStorage: WorkflowStateStorage = BinaryWorkflowStateStorage(keyValueStorage)
-    val metricsPerNameStorage: MetricsPerNameStateStorage = BinaryMetricsPerNameStateStorage(keyValueStorage)
-    val metricsGlobalStorage: MetricsGlobalStateStorage = BinaryMetricsGlobalStateStorage(keyValueStorage)
-
-    init {
-        job = scope.startInMemory(
-            taskExecutorRegister,
-            this,
-            inMemoryOutput,
-            taskTagStorage,
-            taskStorage,
-            workflowTagStorage,
-            workflowStateStorage,
-            metricsPerNameStorage,
-            metricsGlobalStorage
-        ) { }
+        worker.close()
     }
 }

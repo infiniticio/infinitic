@@ -28,7 +28,6 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.methodRuns.MethodRunId
 import io.infinitic.common.workflows.data.methodRuns.MethodRunPosition
-import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
@@ -55,7 +54,6 @@ internal fun CoroutineScope.dispatchWorkflow(
     )
 
     val state = WorkflowState(
-        workflowStatus = WorkflowStatus.ALIVE,
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,

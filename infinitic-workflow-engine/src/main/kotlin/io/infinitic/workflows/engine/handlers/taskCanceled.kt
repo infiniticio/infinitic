@@ -25,8 +25,8 @@
 
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.workflows.data.commands.CommandCanceled
 import io.infinitic.common.workflows.data.commands.CommandId
+import io.infinitic.common.workflows.data.commands.CommandStatus.Canceled
 import io.infinitic.common.workflows.engine.messages.TaskCanceled
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.commandTerminated
@@ -41,16 +41,12 @@ internal fun CoroutineScope.taskCanceled(
 
     when (msg.isWorkflowTask()) {
         true -> TODO()
-        false -> {
-            val commandStatus = CommandCanceled(state.workflowTaskIndex)
-
-            commandTerminated(
-                workflowEngineOutput,
-                state,
-                msg.methodRunId,
-                CommandId(msg.taskId),
-                commandStatus
-            )
-        }
+        false -> commandTerminated(
+            workflowEngineOutput,
+            state,
+            msg.methodRunId,
+            CommandId(msg.taskId),
+            Canceled(state.workflowTaskIndex)
+        )
     }
 }

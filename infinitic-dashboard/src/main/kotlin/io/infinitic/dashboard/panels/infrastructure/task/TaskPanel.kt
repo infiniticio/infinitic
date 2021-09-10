@@ -25,6 +25,7 @@
 
 package io.infinitic.dashboard.panels.infrastructure.task
 
+import io.infinitic.dashboard.DashboardServer
 import io.infinitic.dashboard.Panel
 import io.infinitic.dashboard.menus.InfraMenu
 import io.infinitic.dashboard.panels.infrastructure.AllJobsPanel
@@ -37,7 +38,6 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.svgs.icons.iconChevron
 import io.infinitic.pulsar.topics.TaskTopic
 import io.infinitic.pulsar.topics.TopicSet
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kweb.Element
@@ -91,7 +91,7 @@ class TaskPanel private constructor(private val taskName: String) : Panel() {
 
     override fun onEnter() {
         if (! this::job.isInitialized || job.isCancelled) {
-            job = GlobalScope.launch {
+            job = DashboardServer.scope.launch {
                 // update of task names every 30 seconds
                 update(state)
             }

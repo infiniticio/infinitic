@@ -69,6 +69,8 @@ class WorkflowTagEngine(
     // it's important as we can have a lot of them
     private suspend fun process(message: WorkflowTagEngineMessage) = coroutineScope {
         scope = this
+
+        @Suppress("UNUSED_VARIABLE")
         val o = when (message) {
             is AddWorkflowTag -> addWorkflowTag(message)
             is RemoveWorkflowTag -> removeWorkflowTag(message)
@@ -122,7 +124,8 @@ class WorkflowTagEngine(
             false -> ids.forEach {
                 val cancelWorkflow = CancelWorkflow(
                     workflowId = it,
-                    workflowName = message.workflowName
+                    workflowName = message.workflowName,
+                    reason = message.reason
                 )
                 scope.launch { sendToWorkflowEngine(cancelWorkflow) }
             }

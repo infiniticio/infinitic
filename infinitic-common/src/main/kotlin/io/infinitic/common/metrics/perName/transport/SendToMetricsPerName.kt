@@ -27,4 +27,4 @@ package io.infinitic.common.metrics.perName.transport
 
 import io.infinitic.common.metrics.perName.messages.MetricsPerNameMessage
 
-typealias SendToMetricsPerName = suspend (MetricsPerNameMessage) -> Unit
+typealias SendToMetricsPerName = (MetricsPerNameMessage) -> Unit

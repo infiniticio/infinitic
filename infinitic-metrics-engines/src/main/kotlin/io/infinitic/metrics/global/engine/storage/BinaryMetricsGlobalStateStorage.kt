@@ -39,18 +39,18 @@ class BinaryMetricsGlobalStateStorage(
 
     override suspend fun getState(): MetricsGlobalState? {
         val key = getMetricsGlobalStateKey()
-        return storage.getValue(key)
+        return storage.get(key)
             ?.let { MetricsGlobalState.fromByteArray(it) }
     }
 
     override suspend fun putState(state: MetricsGlobalState) {
         val key = getMetricsGlobalStateKey()
-        storage.putValue(key, state.toByteArray())
+        storage.put(key, state.toByteArray())
     }
 
     override suspend fun delState() {
         val key = getMetricsGlobalStateKey()
-        storage.delValue(key)
+        storage.del(key)
     }
 
     private fun getMetricsGlobalStateKey() = "metricsGlobal.state"

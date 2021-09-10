@@ -33,24 +33,24 @@ class LoggedKeySetCache<T>(
 
     private val logger = KotlinLogging.logger {}
 
-    override fun getSet(key: String): Set<T>? {
-        val value = cache.getSet(key)
+    override fun get(key: String): Set<T>? {
+        val value = cache.get(key)
         logger.debug { "key $key - getSet.size ${value?.size}" }
 
         return value
     }
 
-    override fun setSet(key: String, value: Set<T>) {
+    override fun set(key: String, value: Set<T>) {
         logger.debug { "key $key - setSet.size ${value.size}" }
-        cache.setSet(key, value)
+        cache.set(key, value)
     }
 
-    override fun addToSet(key: String, value: T) {
+    override fun add(key: String, value: T) {
         logger.debug { "key $key - addToSet $value" }
-        cache.addToSet(key, value)
+        cache.add(key, value)
     }
-    override fun removeFromSet(key: String, value: T) {
+    override fun remove(key: String, value: T) {
         logger.debug { "key $key - removeFromSet $value" }
-        cache.removeFromSet(key, value)
+        cache.remove(key, value)
     }
 }

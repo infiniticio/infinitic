@@ -33,8 +33,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.engine.messages.DispatchTask
 import io.infinitic.common.tasks.tags.messages.AddTaskTag
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
-import io.infinitic.common.workflows.data.commands.CommandCompleted
-import io.infinitic.common.workflows.data.commands.CommandOngoing
+import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.CommandType
 import io.infinitic.common.workflows.data.commands.DispatchChildWorkflow
 import io.infinitic.common.workflows.data.commands.EndAsync
@@ -50,7 +49,6 @@ import io.infinitic.common.workflows.data.commands.StartInstantTimer
 import io.infinitic.common.workflows.data.methodRuns.MethodRun
 import io.infinitic.common.workflows.data.steps.PastStep
 import io.infinitic.common.workflows.data.steps.StepFailed
-import io.infinitic.common.workflows.data.steps.StepOngoing
 import io.infinitic.common.workflows.data.steps.StepOngoingFailure
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
@@ -62,9 +60,8 @@ import io.infinitic.common.workflows.engine.messages.TaskCompleted
 import io.infinitic.common.workflows.engine.messages.TimerCompleted
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.tags.messages.AddWorkflowTag
-import io.infinitic.workflows.engine.helpers.cleanMethodRunIfNeeded
-import io.infinitic.workflows.engine.helpers.commandTerminated
 import io.infinitic.workflows.engine.helpers.dispatchWorkflowTask
+import io.infinitic.workflows.engine.helpers.stepTerminated
 import io.infinitic.workflows.engine.output.WorkflowEngineOutput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -72,7 +69,7 @@ import io.infinitic.common.clients.messages.WorkflowCompleted as WorkflowComplet
 import io.infinitic.common.workflows.data.commands.DispatchTask as DispatchTaskInWorkflow
 
 internal fun CoroutineScope.workflowTaskCompleted(
-    output: WorkflowEngineOutput,
+    workflowEngineOutput: WorkflowEngineOutput,
     state: WorkflowState,
     msg: TaskCompleted
 ) {
@@ -106,16 +103,16 @@ internal fun CoroutineScope.workflowTaskCompleted(
 
     // add new commands to past commands
     workflowTaskOutput.newCommands.forEach {
-        // making when an expression to force exhaustiveness
+        @Suppress("UNUSED_VARIABLE")
         val o = when (it.command) {
-            is DispatchTaskInWorkflow -> dispatchTask(output, methodRun, it, state)
-            is DispatchChildWorkflow -> dispatchChildWorkflow(output, methodRun, it, state)
+            is DispatchTaskInWorkflow -> dispatchTask(workflowEngineOutput, methodRun, it, state)
+            is DispatchChildWorkflow -> dispatchChildWorkflow(workflowEngineOutput, methodRun, it, state)
             is StartAsync -> startAsync(methodRun, it, state)
-            is EndAsync -> endAsync(output, methodRun, it, state)
+            is EndAsync -> endAsync(workflowEngineOutput, methodRun, it, state)
             is StartInlineTask -> startInlineTask(methodRun, it)
             is EndInlineTask -> endInlineTask(methodRun, it, state)
-            is StartDurationTimer -> startDurationTimer(output, methodRun, it, state)
-            is StartInstantTimer -> startInstantTimer(output, methodRun, it, state)
+            is StartDurationTimer -> startDurationTimer(workflowEngineOutput, methodRun, it, state)
+            is StartInstantTimer -> startInstantTimer(workflowEngineOutput, methodRun, it, state)
             is ReceiveInChannel -> receiveFromChannel(methodRun, it, state)
             is SendToChannel -> TODO()
         }
@@ -128,7 +125,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
                 stepPosition = it.stepPosition,
                 step = it.step,
                 stepHash = it.stepHash,
-                stepStatus = StepOngoing
+                stepStatus = it.step.stepStatus()
             )
         )
     }
@@ -145,7 +142,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
                 workflowId = state.workflowId,
                 workflowReturnValue = methodRun.methodReturnValue!!
             )
-            launch { output.sendEventsToClient(workflowCompleted) }
+            launch { workflowEngineOutput.sendEventsToClient(workflowCompleted) }
         }
 
         // tell parent workflow if any
@@ -157,66 +154,49 @@ internal fun CoroutineScope.workflowTaskCompleted(
                 childWorkflowId = state.workflowId,
                 childWorkflowReturnValue = workflowTaskOutput.methodReturnValue!!
             )
-            launch { output.sendToWorkflowEngine(childWorkflowCompleted) }
+            launch { workflowEngineOutput.sendToWorkflowEngine(childWorkflowCompleted) }
         }
     }
 
     // does previous commands trigger another workflowTask?
-    while (state.bufferedCommands.isNotEmpty() && state.runningWorkflowTaskId == null) {
-        val commandId = state.bufferedCommands.first()
+    while (state.runningMethodRunBufferedCommands.isNotEmpty() && state.runningWorkflowTaskId == null) {
+        val commandId = state.runningMethodRunBufferedCommands.first()
         val pastCommand = methodRun.getPastCommand(commandId)
 
-        when (pastCommand.commandType) {
-            CommandType.START_ASYNC -> {
-                // update pastCommand with a copy (!) of current properties and anticipated workflowTaskIndex
-                pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap()
-                pastCommand.workflowTaskIndexAtStart = state.workflowTaskIndex + 1
-                // dispatch a new workflowTask
-                dispatchWorkflowTask(
-                    output,
+        if (pastCommand.commandType == CommandType.START_ASYNC && ! pastCommand.isTerminated()) {
+            // update pastCommand with a copy (!) of current properties and anticipated workflowTaskIndex
+            pastCommand.propertiesNameHashAtStart = state.currentPropertiesNameHash.toMap()
+            pastCommand.workflowTaskIndexAtStart = state.workflowTaskIndex + 1
+            // dispatch a new workflowTask
+            dispatchWorkflowTask(
+                workflowEngineOutput,
+                state,
+                methodRun,
+                pastCommand.commandPosition
+            )
+            // removes this command
+            state.runningMethodRunBufferedCommands.removeFirst()
+        } else {
+            if (!stepTerminated(
+                    workflowEngineOutput,
                     state,
                     methodRun,
-                    pastCommand.commandPosition
+                    pastCommand
                 )
-                // removes this command
-                state.bufferedCommands.removeAt(0)
+            ) {
+                // no step is completed, we can remove this command
+                state.runningMethodRunBufferedCommands.removeFirst()
             }
-            CommandType.DISPATCH_CHILD_WORKFLOW,
-            CommandType.DISPATCH_TASK,
-            CommandType.START_DURATION_TIMER,
-            CommandType.START_INSTANT_TIMER,
-            CommandType.RECEIVE_IN_CHANNEL,
-            CommandType.END_ASYNC -> {
-                // note: pastSteps is naturally ordered by time => the first branch completed is the earliest step
-                when (val pastStep = methodRun.pastSteps.find { it.isTerminatedBy(pastCommand) }) {
-                    null -> state.bufferedCommands.removeAt(0)
-                    else -> {
-                        // update pastStep with current properties and anticipated workflowTaskIndex
-                        pastStep.propertiesNameHashAtTermination = state.currentPropertiesNameHash.toMap()
-                        pastStep.workflowTaskIndexAtTermination = state.workflowTaskIndex + 1
-                        // dispatch a new workflowTask
-                        dispatchWorkflowTask(
-                            output,
-                            state,
-                            methodRun,
-                            pastStep.stepPosition
-                        )
-                        // state.bufferedCommands is untouched as we could have another pastStep solved by this command
-                    }
-                }
-            }
-            else -> throw RuntimeException("This should not happen: unmanaged ${pastCommand.commandType} type in  state.bufferedCommands")
         }
     }
 
-    // if everything is completed in methodRun then filter state
-    cleanMethodRunIfNeeded(methodRun, state)
+    if (methodRun.isTerminated()) state.removeMethodRun(methodRun)
 }
 
 private fun startAsync(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
     val pastCommand = addPastCommand(methodRun, newCommand)
 
-    state.bufferedCommands.add(pastCommand.commandId)
+    state.runningMethodRunBufferedCommands.add(pastCommand.commandId)
 }
 
 private fun CoroutineScope.endAsync(
@@ -226,23 +206,28 @@ private fun CoroutineScope.endAsync(
     state: WorkflowState
 ) {
     val command = newCommand.command as EndAsync
+
     // look for previous Start Async command
-    val pastStartAsync = methodRun.pastCommands.first {
+    val pastCommand = methodRun.pastCommands.first {
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_ASYNC
     }
 
-    val commandStatus = CommandCompleted(
-        command.asyncReturnValue,
-        state.workflowTaskIndex
-    )
+    // do nothing if this command is already terminated (i.e. canceled or completed, failed is transient)
+    if (pastCommand.isTerminated()) return
 
-    commandTerminated(
-        output,
-        state,
-        methodRun.methodRunId,
-        pastStartAsync.commandId,
-        commandStatus
-    )
+    // update command status
+    pastCommand.commandStatus = CommandStatus.Completed(command.asyncReturnValue, state.workflowTaskIndex)
+
+    if (stepTerminated(
+            output,
+            state,
+            methodRun,
+            pastCommand
+        )
+    ) {
+        // keep this command as we could have another pastStep solved by it
+        state.runningMethodRunBufferedCommands.add(pastCommand.commandId)
+    }
 }
 
 private fun startInlineTask(methodRun: MethodRun, newCommand: NewCommand) {
@@ -252,11 +237,11 @@ private fun startInlineTask(methodRun: MethodRun, newCommand: NewCommand) {
 private fun endInlineTask(methodRun: MethodRun, newCommand: NewCommand, state: WorkflowState) {
     val command = newCommand.command as EndInlineTask
     // look for previous StartInlineTask command
-    val pastStartInlineTask = methodRun.pastCommands.first {
+    val pastCommand = methodRun.pastCommands.first {
         it.commandPosition == newCommand.commandPosition && it.commandType == CommandType.START_INLINE_TASK
     }
     // past command completed
-    pastStartInlineTask.commandStatus = CommandCompleted(
+    pastCommand.commandStatus = CommandStatus.Completed(
         returnValue = command.inlineTaskReturnValue,
         completionWorkflowTaskIndex = state.workflowTaskIndex
     )
@@ -413,7 +398,7 @@ private fun addPastCommand(
         commandHash = newCommand.commandHash,
         commandName = newCommand.commandName,
         commandSimpleName = newCommand.commandSimpleName,
-        commandStatus = CommandOngoing
+        commandStatus = CommandStatus.Running
     )
 
     methodRun.pastCommands.add(pastCommand)

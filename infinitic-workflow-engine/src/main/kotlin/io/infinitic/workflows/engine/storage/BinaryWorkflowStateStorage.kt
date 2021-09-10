@@ -41,17 +41,17 @@ class BinaryWorkflowStateStorage(
     override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
         val key = getWorkflowStateKey(workflowId)
 
-        return storage.getValue(key)?.let { WorkflowState.fromByteArray(it) }
+        return storage.get(key)?.let { WorkflowState.fromByteArray(it) }
     }
 
     override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
         val key = getWorkflowStateKey(workflowId)
-        storage.putValue(key, workflowState.toByteArray())
+        storage.put(key, workflowState.toByteArray())
     }
 
     override suspend fun delState(workflowId: WorkflowId) {
         val key = getWorkflowStateKey(workflowId)
-        storage.delValue(key)
+        storage.del(key)
     }
 
     private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"

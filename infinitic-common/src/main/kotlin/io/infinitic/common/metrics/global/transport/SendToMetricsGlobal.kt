@@ -27,4 +27,4 @@ package io.infinitic.common.metrics.global.transport
 
 import io.infinitic.common.metrics.global.messages.MetricsGlobalMessage
 
-typealias SendToMetricsGlobal = suspend (MetricsGlobalMessage) -> Unit
+typealias SendToMetricsGlobal = (MetricsGlobalMessage) -> Unit

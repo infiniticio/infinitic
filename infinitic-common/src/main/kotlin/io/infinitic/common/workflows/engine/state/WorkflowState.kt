@@ -43,7 +43,6 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowOptions
-import io.infinitic.common.workflows.data.workflows.WorkflowStatus
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
 import io.infinitic.exceptions.thisShouldNotHappen
@@ -51,11 +50,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WorkflowState(
-    /**
-     * Workflow's status
-     */
-    var workflowStatus: WorkflowStatus,
-
     /**
      * Id of last handled message (used to ensure idempotency)
      */
@@ -102,6 +96,14 @@ data class WorkflowState(
     var runningMethodRunPosition: MethodRunPosition? = null,
 
     /**
+     * In some situations, we know that multiples branches must be processed.
+     * As WorkflowTask handles branch one by one, we orderly buffer these branches here
+     * (it happens when a workflowTask decide to launch more than one async branch,
+     * or when more than one branch' steps are completed by the same message)
+     */
+    val runningMethodRunBufferedCommands: MutableList<CommandId> = mutableListOf(),
+
+    /**
      * Instant when WorkflowTask currently running was triggered
      */
     var runningWorkflowTaskInstant: MillisInstant? = null,
@@ -134,17 +136,9 @@ data class WorkflowState(
 
     /**
      * Messages received while a WorkflowTask is still running.
-     * They can not be handled immediately, so are stored in this buffer
+     * They can not be handled immediately, so we store them in this buffer
      */
-    val bufferedMessages: MutableList<WorkflowEngineMessage> = mutableListOf(),
-
-    /**
-     * In some situations, we know that multiples branches must be processed.
-     * As WorkflowTask handles branch one by one, we orderly buffer these branches here
-     * (it happens when a workflowTask decide to launch more than one async branch,
-     * or when more than one branch' steps are completed by the same message)
-     */
-    val bufferedCommands: MutableList<CommandId> = mutableListOf()
+    val messagesBuffer: MutableList<WorkflowEngineMessage> = mutableListOf(),
 ) {
     companion object {
         fun fromByteArray(bytes: ByteArray) = AvroSerDe.readBinary(bytes, serializer())
@@ -156,6 +150,28 @@ data class WorkflowState(
 
     fun getMethodRun(methodRunId: MethodRunId) = methodRuns.firstOrNull() { it.methodRunId == methodRunId }
 
+    fun removeMethodRun(methodRun: MethodRun) {
+        methodRuns.remove(methodRun)
+
+        // clean receivingChannels once deleted
+        receivingChannels.removeAll { it.methodRunId == methodRun.methodRunId }
+
+        // clean properties
+        removeUnusedPropertyHash()
+    }
+
+    fun removeAllMethodRuns() {
+        methodRuns.clear()
+
+        // clean receivingChannels once deleted
+        receivingChannels.clear()
+
+        // clean properties
+        removeUnusedPropertyHash()
+    }
+
+    fun getMainMethodRun() = methodRuns.find { it.methodRunId.id == workflowId.id }
+
     /**
      * true if the current workflow task is on main path
      */
@@ -164,5 +180,29 @@ data class WorkflowState(
 
         return p.isOnMainPath() &&
             getRunningMethodRun().getCommandByPosition(p)?.commandType != CommandType.START_ASYNC
+    }
+
+    /**
+     * After completion or cancellation of methodRuns, we can clean up the properties not used anymore
+     */
+    private fun removeUnusedPropertyHash() {
+        // set of all hashes still in use
+        val propertyHashes = mutableSetOf<PropertyHash>()
+
+        methodRuns.forEach { methodRun ->
+            methodRun.pastSteps.forEach { pastStep ->
+                pastStep.propertiesNameHashAtTermination?.forEach { propertyHashes.add(it.value) }
+            }
+            methodRun.pastCommands.forEach { pastCommand ->
+                pastCommand.propertiesNameHashAtStart?.forEach { propertyHashes.add(it.value) }
+            }
+            methodRun.propertiesNameHashAtStart.forEach { propertyHashes.add(it.value) }
+        }
+        currentPropertiesNameHash.forEach { propertyHashes.add(it.value) }
+
+        // remove all propertyHashValue not in use anymore
+        propertiesHashValue.keys
+            .filter { it !in propertyHashes }
+            .forEach { propertiesHashValue.remove(it) }
     }
 }

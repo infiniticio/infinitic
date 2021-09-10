@@ -25,100 +25,108 @@
 
 package io.infinitic.pulsar
 
-import io.infinitic.client.AbstractInfiniticClient
 import io.infinitic.client.InfiniticClient
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.config.ClientConfig
-import io.infinitic.config.data.Transport
+import io.infinitic.common.workflows.engine.SendToWorkflowEngine
+import io.infinitic.pulsar.config.ClientConfig
+import io.infinitic.pulsar.topics.TopicName
 import io.infinitic.pulsar.topics.TopicType
 import io.infinitic.pulsar.transport.PulsarConsumerFactory
 import io.infinitic.pulsar.transport.PulsarOutput
 import io.infinitic.pulsar.workers.startClientResponseWorker
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.PulsarClient
-import io.infinitic.inMemory.InMemoryInfiniticClient as InMemoryClient
+import org.apache.pulsar.client.api.PulsarClientException
 
 @Suppress("unused", "MemberVisibilityCanBePrivate", "CanBeParameter")
 class PulsarInfiniticClient @JvmOverloads constructor(
-    @JvmField val pulsarClient: PulsarClient,
-    @JvmField val pulsarTenant: String,
-    @JvmField val pulsarNamespace: String,
+    val pulsarClient: PulsarClient,
+    val pulsarAdmin: PulsarAdmin,
+    val pulsarTenant: String,
+    val pulsarNamespace: String,
     name: String? = null
-) : AbstractInfiniticClient() {
+) : InfiniticClient() {
 
-    private var job: Job
+    private val producerName by lazy { getProducerName(pulsarClient, pulsarTenant, pulsarNamespace, name) }
 
-    private val producerName = getProducerName(pulsarClient, name)
+    override val clientName by lazy { ClientName(producerName) }
 
-    override val scope = CoroutineScope(Dispatchers.IO + Job())
+    private val topicClient by lazy { TopicName(pulsarTenant, pulsarNamespace).of(clientName) }
 
-    override val clientName = ClientName(producerName)
+    private val pulsarOutput by lazy {
+        // create client's topic
+        pulsarAdmin.topics().createNonPartitionedTopicAsync(topicClient).join()
 
-    private val pulsarOutput =
-        PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
-
-    override val sendToTaskTagEngine =
-        pulsarOutput.sendToTaskTagEngine(TopicType.NEW, true)
-
-    override val sendToTaskEngine =
-        pulsarOutput.sendToTaskEngine(TopicType.NEW, null, true)
-
-    override val sendToWorkflowTagEngine =
-        pulsarOutput.sendToWorkflowTagEngine(TopicType.NEW, true)
-
-    override val sendToWorkflowEngine =
-        pulsarOutput.sendToWorkflowEngine(TopicType.NEW, true)
-
-    override fun close() {
-        job.cancel()
-        pulsarClient.close()
-    }
-
-    init {
+        // initialize response job handler
         val clientResponseConsumer = PulsarConsumerFactory(pulsarClient, pulsarTenant, pulsarNamespace)
             .newClientConsumer(producerName, ClientName(producerName))
 
-        job = scope.startClientResponseWorker(this, clientResponseConsumer)
+        runningScope.startClientResponseWorker(this, clientResponseConsumer)
+
+        // returns PulsarOutput instance
+        PulsarOutput.from(pulsarClient, pulsarTenant, pulsarNamespace, producerName)
+    }
+
+    override val sendToTaskTagEngine by lazy {
+        pulsarOutput.sendToTaskTagEngine(TopicType.NEW)
+    }
+
+    override val sendToTaskEngine by lazy {
+        pulsarOutput.sendToTaskEngine(TopicType.NEW, null)
+    }
+
+    override val sendToWorkflowTagEngine by lazy {
+        pulsarOutput.sendToWorkflowTagEngine(TopicType.NEW)
+    }
+
+    override val sendToWorkflowEngine: SendToWorkflowEngine by lazy {
+        pulsarOutput.sendToWorkflowEngine(TopicType.NEW)
+    }
+
+    override fun close() {
+        super.close()
+
+        // force delete client's topic
+        try {
+            pulsarAdmin.topics().delete(topicClient, true)
+        } catch (e: PulsarClientException.TopicDoesNotExistException) {
+            // ignore
+        }
+
+        pulsarClient.close()
+        pulsarAdmin.close()
     }
 
     companion object {
-
         /**
-         * Create Client from a custom PulsarClient and a ClientConfig instance
+         * Create PulsarInfiniticClient from a custom PulsarClient and a ClientConfig instance
          */
         @JvmStatic
-        fun from(pulsarClient: PulsarClient, clientConfig: ClientConfig): InfiniticClient = when (clientConfig.transport) {
-            Transport.pulsar -> PulsarInfiniticClient(
-                pulsarClient,
-                clientConfig.pulsar!!.tenant,
-                clientConfig.pulsar!!.namespace,
-                clientConfig.name
-            )
-
-            Transport.inMemory -> InMemoryClient.fromConfig(clientConfig)
-        }
+        fun from(pulsarClient: PulsarClient, pulsarAdmin: PulsarAdmin, clientConfig: ClientConfig) = PulsarInfiniticClient(
+            pulsarClient,
+            pulsarAdmin,
+            clientConfig.pulsar!!.tenant,
+            clientConfig.pulsar.namespace,
+            clientConfig.name
+        )
 
         /**
-         * Create Client from a ClientConfig instance
+         * Create PulsarInfiniticClient from a ClientConfig instance
          */
         @JvmStatic
         fun fromConfig(clientConfig: ClientConfig): InfiniticClient =
-            from(clientConfig.pulsar!!.client, clientConfig)
+            from(clientConfig.pulsar!!.client, clientConfig.pulsar.admin, clientConfig)
 
         /**
-         * Create Client from file in resources directory
+         * Create PulsarInfiniticClient from file in resources directory
          */
         @JvmStatic
-        fun fromConfigResource(vararg resources: String) =
-            fromConfig(ClientConfig.fromResource(*resources))
+        fun fromConfigResource(vararg resources: String) = fromConfig(ClientConfig.fromResource(*resources))
 
         /**
-         * Create Client from file in system file
+         * Create PulsarInfiniticClient from file in system file
          */
         @JvmStatic
-        fun fromConfigFile(vararg files: String) =
-            fromConfig(ClientConfig.fromFile(*files))
+        fun fromConfigFile(vararg files: String) = fromConfig(ClientConfig.fromFile(*files))
     }
 }

@@ -36,6 +36,7 @@ plugins {
     id(Plugins.Kotlin.id).version(Plugins.Kotlin.version) apply false
     id(Plugins.Serialization.id).version(Plugins.Serialization.version) apply false
     id(Plugins.Ktlint.id).version(Plugins.Ktlint.version) apply false
+    id(Plugins.TestLogger.id).version(Plugins.TestLogger.version) apply true
 }
 
 subprojects {
@@ -46,6 +47,7 @@ subprojects {
     apply(plugin = Plugins.Kotlin.id)
     apply(plugin = Plugins.Serialization.id)
     apply(plugin = Plugins.Ktlint.id)
+    apply(plugin = Plugins.TestLogger.id)
 
     group = Libs.org
     version = Ci.version
@@ -66,12 +68,16 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+
+        testlogger {
+            showFullStackTraces = true
+        }
     }
 
-    // For Kotlin sources
     tasks.withType<KotlinCompile> {
         kotlinOptions {
-            freeCompilerArgs += "-Xjvm-default=enable"
+            freeCompilerArgs = freeCompilerArgs + "-Xjvm-default=enable"
+            freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlin.RequiresOptIn"
             jvmTarget = JavaVersion.VERSION_1_8.toString()
         }
     }
