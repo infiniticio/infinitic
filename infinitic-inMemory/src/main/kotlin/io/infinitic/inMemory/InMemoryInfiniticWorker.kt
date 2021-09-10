@@ -68,7 +68,7 @@ class InMemoryInfiniticWorker(
         if (this::output.isInitialized && this::client.isInitialized && this::name.isInitialized) {
             super.start()
         } else {
-            logger.info { "Can not start ${InMemoryInfiniticWorker::class.java.name} outside of in-memory client - Closing" }
+            logger.warn { "Can not start ${InMemoryInfiniticWorker::class.java.name} outside of an in-memory client - Closing" }
         }
     }
 

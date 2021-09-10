@@ -25,28 +25,39 @@
 
 package io.infinitic.factory
 
-import io.infinitic.inMemory.InMemoryInfiniticWorker
-import io.infinitic.pulsar.PulsarInfiniticWorker
+import io.infinitic.client.InfiniticClient
+import io.infinitic.inMemory.InMemoryInfiniticClient
+import io.infinitic.pulsar.PulsarInfiniticClient
+import io.infinitic.pulsar.config.ClientConfig
 import io.infinitic.transport.Transport
-import io.infinitic.worker.InfiniticWorker
 import io.infinitic.worker.config.WorkerConfig
 
 @Suppress("unused")
-object InfiniticWorker {
+object InfiniticClientFactory {
+
     /**
      * Create InfiniticWorker from file in resources directory
      */
     @JvmStatic
-    fun fromConfigResource(vararg resources: String): InfiniticWorker = fromConfig(WorkerConfig.fromResource(*resources))
+    fun fromConfigResource(vararg resources: String): InfiniticClient {
+        val clientConfig = ClientConfig.fromResource(*resources)
+
+        return when (clientConfig.transport) {
+            Transport.pulsar -> PulsarInfiniticClient.fromConfig(clientConfig)
+            Transport.inMemory -> InMemoryInfiniticClient(WorkerConfig.fromResource(*resources))
+        }
+    }
 
     /**
      * Create InfiniticWorker from file in system file
      */
     @JvmStatic
-    fun fromConfigFile(vararg files: String): InfiniticWorker = fromConfig(WorkerConfig.fromFile(*files))
+    fun fromConfigFile(vararg files: String): InfiniticClient {
+        val clientConfig = ClientConfig.fromFile(*files)
 
-    private fun fromConfig(workerConfig: WorkerConfig) = when (workerConfig.transport) {
-        Transport.pulsar -> PulsarInfiniticWorker.fromConfig(workerConfig)
-        Transport.inMemory -> InMemoryInfiniticWorker(workerConfig)
+        return when (clientConfig.transport) {
+            Transport.pulsar -> PulsarInfiniticClient.fromConfig(clientConfig)
+            Transport.inMemory -> InMemoryInfiniticClient(WorkerConfig.fromFile(*files))
+        }
     }
 }
