@@ -67,6 +67,7 @@ interface WorkflowA : ParentInterface {
     fun seq3(): String
     fun seq4(): String
     fun seq5(): Long
+    fun seq6(): Long
     fun deferred1(): String
     fun or1(): String
     fun or2(): Any
@@ -199,7 +200,21 @@ class WorkflowAImpl : Workflow(), WorkflowA {
         l += d1.await()
         l += d2.await()
 
-        return l // should be 1100
+        return l // should be 600
+    }
+
+    override fun seq6(): Long {
+        var l = 0L
+        val d1 = async(taskA) { await(500) }
+        val d2 = async(taskA) { await(100) }
+
+        l += d1.await()
+        l += d2.await()
+
+        // a new step triggers an additional workflowTask
+        taskA.workflowId()
+
+        return l // should be 600
     }
 
     override fun deferred1(): String {

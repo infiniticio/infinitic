@@ -175,8 +175,12 @@ internal class WorkflowTests : StringSpec({
         workflowA.seq4() shouldBe "23bac"
     }
 
-    "Workflow waiting deferred in wrong order" {
+    "Workflow waiting 2 deferred in wrong order" {
         workflowA.seq5() shouldBe 600
+    }
+
+    "Workflow waiting 2 deferred in wrong order followed by a step" {
+        workflowA.seq6() shouldBe 600
     }
 
     "Test Deferred methods" {
