@@ -35,6 +35,5 @@ data class NewStep(
     val stepPosition: MethodRunPosition
 ) {
     // https://github.com/Kotlin/kotlinx.serialization/issues/133
-    val stepHash: StepHash
-        get() { return step.hash() }
+    val stepHash: StepHash by lazy { step.hash() }
 }

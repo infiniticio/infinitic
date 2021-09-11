@@ -99,7 +99,7 @@ abstract class Workflow {
     /*
      *  Dispatch a task or a workflow asynchronously
      */
-    fun <T : Any, S> dispatch(proxy: T, method: T.() -> S): Deferred<S> = dispatcher.dispatch(proxy, method)
+    fun <T : Any, S> async(proxy: T, method: T.() -> S): Deferred<S> = dispatcher.dispatch(proxy, method)
 
     /*
      * Create an async branch
